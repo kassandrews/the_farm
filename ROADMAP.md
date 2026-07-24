@@ -60,6 +60,31 @@ Recorded in full in DESIGN.md §Materials. The short version and *why*:
   The shop sells what you can't gather — that's what gives the Menace's counter
   a reason to exist, and it keeps the gathered set at three.
 
+### Structures — the model
+
+Recorded in full in DESIGN.md §Structures. The short version and *why*:
+
+- **3/4 oblique, not flat and not isometric.** Not really a free choice — the
+  vendored Meadow sprites are front-facing, so the world has to meet them. The
+  renderer already drew creatures front-on over straight-down ground; structures
+  resolve that by following the creatures.
+- **One storey, not a height axis.** Wall height = 16px = one tile, which keeps
+  every bit of grid math integral and puts a creature at exactly wall height.
+- **Two layers, not one tilemap.** Ground (`overrides` + chunk gen) is untouched;
+  structures live in a new sparse `world.build` keyed `"x,y"`. The whole chunk
+  streaming system stays as-is and the migration is purely additive.
+- **Roofs are derived from enclosure, never placed.** No roof item, no roof cost.
+  The flood-fill that produces them is the same one that answers "does this
+  house satisfy the commission."
+- **One wall material, autotiled** from its four neighbours. Orientation belongs
+  to furniture (a bed is 1×2 and faces a way), never to walls.
+- **Continuous world, roof cutaway, no interior scenes.** Consequence accepted
+  on purpose: no TARDIS interiors — the footprint you build is the room you get.
+- **Build mode flattens the view**, and placement moves out of the ACT button
+  into it. ACT = the tile at your feet; BUILD = tap the map. This also
+  structurally kills the "gathering hijacks the build tool" class of bug that
+  bit us once already.
+
 ### Undecided, deliberately
 
 - **Money vs. barter vs. neither.** Not needed until the shop lands (Phase 3).
@@ -77,13 +102,25 @@ Recorded in full in DESIGN.md §Materials. The short version and *why*:
 ### 2a. Real structures
 
 Right now you can only lay **floors**, so "a house" isn't yet something the game
-understands as an object. Needed before commissions mean anything:
+understands as an object. The model is settled above; this is the build order,
+smallest risk first:
 
-- Walls, doors, roofs. Multi-tile objects with orientation.
-- A notion of an *enclosed room* (flood-fill from a tile, bounded by walls) —
-  this is what makes "a house" checkable, and later what makes interiors and
-  "does this house satisfy the commission" possible.
-- Furniture placement (wooden pieces buildable; soft goods await the shop).
+1. **Raised-object pass — trees and rocks only.** No schema change. Ground stays
+   a flat pass; everything that stands up moves into one Y-sorted pass drawing
+   upward from its footprint. Trees grow to ~24px and overhang the tile behind;
+   walking past one occludes you. This proves the whole 3/4 grammar in a browser
+   before anything is committed to — and if the world *doesn't* suddenly read as
+   dimensional, we find out here, cheaply.
+2. **Structure layer: walls and doors.** Schema v5 (additive `world.build`),
+   four-neighbour autotiling, solidity, build mode with its flattened view and
+   drag-to-paint.
+3. **Rooms and roofs.** Bounded flood-fill (with a fill budget, or open terrain
+   fills forever), derived roofs, the snap-on beat, per-room cutaway alpha.
+4. **Furniture.** Multi-tile with orientation. Wooden pieces only; soft goods
+   await the shop.
+
+Fold in while v5 is open: put `finish` on the build cell (see Known gaps) rather
+than migrating live saves twice.
 
 ### 2b. Commissioned housing — **the flagship**
 
@@ -138,8 +175,9 @@ you trip over them:
   has the intended full mapping recorded as comments.
 - **Finishes are town-wide, not per-tile.** Changing the finish restyles every
   built tile at once, because the selection lives on the world rather than on
-  each placed tile. Fine for now; commissions will likely want per-building
-  finishes, which is a schema change.
+  each placed tile. Commissions will want per-building finishes; the fix rides
+  along with the v5 structure-layer migration (Phase 2a) so live saves only move
+  once.
 - **Villager "witness" has no proximity model for memory** — everyone hears about
   everything (friendship *is* proximity-gated). Fine in a town this small.
 - **PWA icon is a single SVG.** Real raster icons before any app-store-ish push.

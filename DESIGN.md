@@ -200,6 +200,46 @@ Materials are required but never rationed:
 You can be slowed for a minute. You can never be stopped, capped, or made
 to grind.
 
+## Structures and the third dimension
+
+The camera is **3/4 oblique** — ground seen from above, but anything
+standing up shows its face. This was never really a free choice: the
+vendored Meadow sprites are front-facing and can't be re-authored, so the
+world has to meet them. Structures follow the creature convention, not the
+ground convention. Isometric is off the table for the same reason.
+
+**There is no height axis — there is one storey.** Every tile is
+ground-level or one storey tall (16px, exactly one tile, so a creature
+stands exactly wall-height: small creatures, cozy small houses). This is
+the Minecraft organ taken at its minimum: an editable world, not voxels.
+Underground (later) is a layer, not a height.
+
+- **One wall material, autotiled.** The player paints "wall"; the game
+  picks face, side, or corner from the neighbours. Nobody chooses a
+  north-west corner piece from a menu — same rule as finishes, item count
+  stays at the number of *materials*.
+- **Roofs are derived, never placed.** Build walls and a door; when the
+  region encloses, the roof appears. Closing the last gap and watching the
+  roof arrive is the "it's a house now" beat, and it isn't for sale. It
+  also makes "is this an enclosed room" checkable, which is what
+  commissions need to ask.
+- **Orientation belongs to furniture, not to structure.** A bed is 1×2 and
+  faces a way. A wall does not — its neighbours decide how it looks.
+
+**One continuous world; no interior scenes.** Walk in and the roof fades
+away in place — same coordinates, same map, no transition. The cost is
+honest: a house has no TARDIS interior, the footprint you build *is* the
+room you get, which is what makes building it tile by tile mean anything.
+The gain is that a resident genuinely pathing through their own house is a
+thing you can stand in the doorway and watch.
+
+**Build mode flattens the view.** Holding a structure tool drops raised
+faces to translucent outlines, hides roofs, and shows the ground grid —
+plan view while you build, 3/4 while you live there. Tap places, drag
+paints a run. This also splits the verbs cleanly: the **ACT** button is
+what you do to the tile at your feet (dig, gather, plant, water, harvest),
+**BUILD** is a mode where you edit the map by tapping it.
+
 ## Time and the away simulation
 
 - **Real clock, real calendar.** Day/night follows the actual clock; seasons
@@ -249,4 +289,5 @@ with commissioned housing, the first flagship.
 
 - Fishing? (Probably yes eventually; it's the coziest verb not yet listed.)
 - Multiplayer: likely never real-time; maybe async postcards between towns.
-- Decorating interiors vs. exteriors-only at first.
+- ~~Decorating interiors vs. exteriors-only~~ — settled: both, continuously.
+  Interiors are the same world with the roof faded off (see Structures).
