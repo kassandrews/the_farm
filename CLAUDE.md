@@ -8,6 +8,11 @@ DESIGN.md's title note before assuming it implies farming-first. Read
 tone, and the vertical slice. When code and DESIGN.md disagree, stop and
 reconcile the doc first.
 
+Then read `ROADMAP.md`: what's built, what's next, which design decisions
+are already settled (and why), and the known loose ends. It exists so
+those decisions don't get relitigated from scratch — check it before
+proposing a system that touches materials, inventory, or build order.
+
 Sibling project: The Meadow (formerly Cozy Sprites), repo at
 `~/projects/cozy_sprites` — finished and canon. Mine it for content,
 voice, and rendering lessons. Never modify it.
