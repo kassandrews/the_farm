@@ -1,0 +1,18 @@
+{
+  "name": "The Farm",
+  "short_name": "The Farm",
+  "description": "The town retired sprites are sent to. It's real, and it's delightful.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#2b2540",
+  "theme_color": "#2b2540",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
