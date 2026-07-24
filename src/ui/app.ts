@@ -53,6 +53,11 @@ export class App {
   private lastSaveAt = 0;
   private hud!: HudRefs;
   private modalOpen = false;
+  /** Set while tearing down for a "new town". Every save path checks it: the
+   *  reset clears storage and reloads, and an unguarded autosave / unload
+   *  handler firing in that window would write the old world straight back and
+   *  silently cancel the reset. */
+  private resetting = false;
 
   constructor(root: HTMLElement) {
     this.canvas = el("canvas", { id: "scene" });
@@ -191,7 +196,7 @@ export class App {
       if (!speech || !this.world) {
         if (this.world) {
           completeLandClaim(this.world);
-          saveWorld(this.world);
+          this.persist();
         }
         return;
       }
@@ -238,10 +243,7 @@ export class App {
             el("p", {}, [
               "Start a new town? Your homestead, crops, and neighbours here are erased.\n. ... This can't be undone.",
             ]),
-            primaryBtn("Yes, start over", () => {
-              clearWorld();
-              location.reload(); // cleanest reset: reload boots straight to the title
-            }),
+            primaryBtn("Yes, start over", () => this.resetTown()),
             choiceBtn("Cancel", close),
           );
         }),
@@ -285,10 +287,10 @@ export class App {
     window.addEventListener("keyup", (e) => this.keys.delete(e.key.toLowerCase()));
 
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden && this.world) saveWorld(this.world);
+      if (document.hidden) this.persist();
     });
     window.addEventListener("beforeunload", () => {
-      if (this.world) saveWorld(this.world);
+      this.persist();
     });
   }
 
@@ -320,7 +322,7 @@ export class App {
     if (!this.world || this.modalOpen) return;
     const res = contextAction(this.world, this.tool, Date.now());
     this.flash(res.message);
-    saveWorld(this.world);
+    this.persist();
   }
 
   /** Apply held-key movement by nudging the walk target a step ahead each frame,
@@ -363,7 +365,7 @@ export class App {
       this.hud.clock.textContent = clockLabel(Date.now());
       if (now - this.lastSaveAt > AUTOSAVE_MS) {
         this.lastSaveAt = now;
-        saveWorld(this.world);
+        this.persist();
       }
     }
     this.raf = requestAnimationFrame(this.loop);
@@ -394,6 +396,23 @@ export class App {
 
   stop(): void {
     cancelAnimationFrame(this.raf);
+  }
+
+  /** The single write path to storage. Never call saveWorld directly — this is
+   *  what makes `resetting` authoritative (see the field's docblock). */
+  private persist(): void {
+    if (this.world && !this.resetting) saveWorld(this.world);
+  }
+
+  /** Wipe the save and boot back into the title flow. Order matters: stop the
+   *  loop and drop the world FIRST so nothing can re-persist it, then clear
+   *  storage, then reload. */
+  private resetTown(): void {
+    this.resetting = true;
+    this.stop();
+    this.world = null;
+    clearWorld();
+    location.reload();
   }
 }
 
