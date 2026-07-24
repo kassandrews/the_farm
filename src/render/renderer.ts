@@ -2,15 +2,17 @@
 // upscales crisply (image-rendering: pixelated) — the same trick The Meadow
 // uses, so 16×16 sprites and flat tiles stay sharp at any screen size.
 //
-// Layering, back to front: sky wash, the visible tilemap (only the chunks the
-// camera can see — nothing assumes a fixed world), crops, the homestead tent,
-// then depth-sorted movers (villagers + player), then the real-clock day/night
-// tint over everything.
+// Layering, back to front: sky wash, the FLAT ground (only the chunks the
+// camera can see — nothing assumes a fixed world), crops, then one depth-sorted
+// RAISED pass holding everything that stands up — trees, rocks, the tent,
+// villagers, the player, and later walls and roofs — then the real-clock
+// day/night tint over everything. See the Raised docblock for why the standing
+// things share a single sorted pass rather than getting one each.
 
 import type { WorldState, Villager, Player } from "../sim/types";
 import { tileAt, playerTile, isRipe } from "../sim/game";
 import { cropDef, ripeStage } from "../content/crops";
-import { tileDef, PLANK } from "../content/tiles";
+import { tileDef, PLANK, GRASS, TREE, ROCK } from "../content/tiles";
 import { skinDef } from "../content/skins";
 import type { SkinClass } from "../content/skins";
 import { decoHash, chunkCoordOf, getChunk, CHUNK } from "../sim/world";
@@ -22,6 +24,35 @@ import { SpriteCache, drawSpriteQuantized } from "./sprites";
 
 const TILE = 16; // scene px per world tile (matches sprite CELL)
 const SPRITE = 16; // sprite draw size
+
+/** Anything that stands UP out of its tile rather than lying flat in it.
+ *
+ *  The camera is 3/4 oblique (DESIGN §Structures): ground is seen from above,
+ *  but anything with height shows its face and overhangs the tile behind it.
+ *  That only reads correctly if every standing thing — trees, rocks, the tent,
+ *  villagers, the player, and later walls and roofs — is drawn in ONE pass
+ *  sorted by its footprint's world y, so near things overlap far things
+ *  regardless of what kind of thing they are. Draw them in separate passes and
+ *  a villager walks in front of a tree they're standing behind.
+ *
+ *  `y` is the world y of the footprint (the feet line), never the top of the
+ *  art. `bias` breaks ties within a tile: terrain settles behind movers, so
+ *  standing on a tree's own tile still draws you in front of its trunk. */
+interface Raised {
+  y: number;
+  bias: number;
+  draw: () => void;
+}
+
+const BIAS_TERRAIN = 0;
+const BIAS_MOVER = 1;
+
+/** Opacity of a standing thing that would otherwise swallow the player.
+ *  Deliberately low: the intuitive ~0.5 is the worst possible value, because a
+ *  half-opaque crown BLENDS with the sprite underneath and you get a green face
+ *  looking out of the tree. It has to be faint enough to read as "you are
+ *  behind this", not as a tinted player. */
+const HIDDEN_FADE = 0.28;
 
 /** Which material class a built tile is finished in, or null for terrain that
  *  has no finish (grass, water, a tree). Terrain is never re-skinned — a finish
@@ -49,6 +80,8 @@ export class Renderer {
   private scale = 3; // scene px → CSS px
   private t0 = performance.now();
   private canvas: HTMLCanvasElement;
+  /** Rebuilt every frame; see the Raised docblock. */
+  private raised: Raised[] = [];
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -112,10 +145,13 @@ export class Renderer {
     ctx.fillStyle = night ? "#26324a" : "#7fae54";
     ctx.fillRect(0, 0, this.sw, this.sh);
 
+    // Flat ground first, then everything with height in one depth-sorted pass.
+    this.raised.length = 0;
     this.drawTiles(world, t, night);
     this.drawCrops(world, now);
-    this.drawTent(world, night);
-    this.drawMovers(world, t, night);
+    this.collectTent(world, night);
+    this.collectMovers(world, t, night);
+    this.flushRaised();
     this.drawTargetTile(world);
 
     // Real-clock day/night wash over the whole scene.
@@ -168,9 +204,22 @@ export class Renderer {
     for (let ty = tyStart; ty <= tyEnd; ty++) {
       for (let tx = txStart; tx <= txEnd; tx++) {
         const id = tileAt(world, tx, ty);
+        // Resource nodes stand up, so the flat pass draws only the ground they
+        // stand ON and defers the node itself to the raised pass. Without this
+        // a tree is trapped inside its own 16px cell and the world reads flat.
+        if (id === TREE || id === ROCK) {
+          const x = tx;
+          const y = ty;
+          this.raised.push({
+            y,
+            bias: BIAS_TERRAIN,
+            draw: () => (id === TREE ? this.drawTree(world, x, y, night) : this.drawRock(world, x, y, night)),
+          });
+        }
+        const groundId = id === TREE || id === ROCK ? GRASS : id;
         // Built tiles wear the town's selected finish — appearance is a free
         // property of the tile, never a separate item (DESIGN §Materials).
-        const def = finishFor(world, id) ?? tileDef(id);
+        const def = finishFor(world, groundId) ?? tileDef(groundId);
         const px = Math.round(this.sceneX(tx) - TILE / 2);
         const py = Math.round(this.sceneY(ty) - TILE / 2);
         ctx.fillStyle = def.color;
@@ -189,33 +238,6 @@ export class Renderer {
           ctx.fillStyle = "rgba(255,255,255,0.25)";
           const rx = px + 3 + ((Math.sin(t * 1.5 + tx * 1.7 + ty) * 0.5 + 0.5) * (TILE - 6)) | 0;
           ctx.fillRect(rx, py + 6, 2, 1);
-        } else if (def.name === "Tree") {
-          // Trunk plus a layered crown, jittered by the tile hash so a stand of
-          // trees doesn't read as wallpaper.
-          const h = decoHash(tx, ty, world.seed);
-          const jx = Math.floor(h * 3) - 1;
-          ctx.fillStyle = night ? "#4a3628" : "#6b4a33";
-          ctx.fillRect(px + 7 + jx, py + 9, 2, 6);
-          const crown = night ? "#2f5233" : "#417a41";
-          const crownLit = night ? "#3a6440" : "#57975a";
-          ctx.fillStyle = crown;
-          ctx.fillRect(px + 3 + jx, py + 4, 10, 6);
-          ctx.fillRect(px + 4 + jx, py + 2, 8, 3);
-          ctx.fillStyle = crownLit;
-          ctx.fillRect(px + 4 + jx, py + 3, 5, 3); // light from the upper left
-          ctx.fillRect(px + 5 + jx, py + 1, 3, 2);
-        } else if (def.name === "Rock") {
-          const h = decoHash(tx, ty, world.seed);
-          const jx = Math.floor(h * 3) - 1;
-          const body = night ? "#5e6068" : "#8d8a84";
-          const lit = night ? "#74767e" : "#a8a49c";
-          ctx.fillStyle = body;
-          ctx.fillRect(px + 3 + jx, py + 8, 10, 5);
-          ctx.fillRect(px + 5 + jx, py + 5, 6, 4);
-          ctx.fillStyle = lit;
-          ctx.fillRect(px + 5 + jx, py + 6, 3, 2);
-          ctx.fillStyle = night ? "#4a4c54" : "#6f6c66";
-          ctx.fillRect(px + 3 + jx, py + 12, 10, 1); // it sits ON the ground
         } else if (def.name === "Mushrooms") {
           // A couple of caps on the grass, placed by the tile's stable hash so
           // a patch that appeared overnight sits still once you're looking.
@@ -296,7 +318,114 @@ export class Renderer {
     }
   }
 
+  // --- The raised pass --------------------------------------------------------
+  // Everything with height, drawn back to front. Sorting on the FOOTPRINT y
+  // (not the art's top edge) is what makes a 24px tree correctly hide a
+  // villager standing behind it while a villager in front walks over its trunk.
+
+  private flushRaised(): void {
+    this.raised.sort((a, b) => a.y - b.y || a.bias - b.bias);
+    for (const r of this.raised) r.draw();
+  }
+
+  /** Is the thing at (tx, ty) actually covering the player, given how far its
+   *  art rises above its own footprint (`heightTiles`)?
+   *
+   *  Both bounds are tighter than they look like they should be, on purpose. A
+   *  crown is 14px wide and a sprite 16px, so they stop overlapping at about
+   *  0.9 tiles apart — allow a full 1.0 and every DIAGONAL neighbour fades too,
+   *  which reads as the forest flickering as you walk past it. */
+  private hides(world: WorldState, tx: number, ty: number, heightTiles: number): boolean {
+    const p = world.player;
+    // Only things IN FRONT of the player (larger y = nearer the camera) can
+    // cover them, and only within the span the art actually occupies.
+    return ty > p.y && ty - p.y <= heightTiles && Math.abs(tx - p.x) < 0.9;
+  }
+
+  /** A tree: trunk, layered crown, contact shadow. Two and a half tiles tall,
+   *  so it overhangs the ground behind it and you can walk out of sight behind
+   *  one. Jittered by the tile hash so a stand of trees isn't wallpaper. */
+  private drawTree(world: WorldState, tx: number, ty: number, night: boolean): void {
+    const ctx = this.ctx;
+    const h = decoHash(tx, ty, world.seed);
+    const jx = Math.floor(h * 3) - 1;
+    const cx = Math.round(this.sceneX(tx)) + jx;
+    const base = Math.round(this.sceneY(ty) + TILE / 2);
+
+    // Fade rather than vanish when it would otherwise swallow the player —
+    // you should always be able to see where you are (no lost-behind-scenery).
+    const prev = ctx.globalAlpha;
+    if (this.hides(world, tx, ty, 1.3)) ctx.globalAlpha = prev * HIDDEN_FADE;
+
+    // Contact shadow — without it a tall sprite floats instead of standing.
+    ctx.fillStyle = "rgba(0,0,0,0.16)";
+    ctx.fillRect(cx - 4, base - 2, 9, 2);
+
+    ctx.fillStyle = night ? "#4a3628" : "#6b4a33";
+    ctx.fillRect(cx - 1, base - 10, 3, 10);
+    ctx.fillStyle = night ? "#3a2a1e" : "#573a28"; // shaded right side of trunk
+    ctx.fillRect(cx + 1, base - 10, 1, 10);
+
+    // Crown as per-row half-widths: an integer-rect blob, no ellipse maths and
+    // nothing off the pixel grid (CLAUDE.md §Sprite rendering).
+    const rows = [3, 5, 6, 7, 7, 7, 7, 7, 6, 6, 5, 4, 3, 2];
+    const crown = night ? "#2f5233" : "#417a41";
+    const crownLit = night ? "#3a6440" : "#57975a";
+    const top = base - 24;
+    ctx.fillStyle = crown;
+    for (let r = 0; r < rows.length; r++) {
+      ctx.fillRect(cx - rows[r], top + r, rows[r] * 2, 1);
+    }
+    ctx.fillStyle = crownLit; // light from the upper left, as everywhere else
+    for (let r = 1; r <= 6; r++) {
+      ctx.fillRect(cx - rows[r] + 1, top + r, Math.max(2, rows[r] - 1), 1);
+    }
+
+    ctx.globalAlpha = prev;
+  }
+
+  /** A rock: low enough to see over, tall enough to sit in the world rather
+   *  than on the floor plan. */
+  private drawRock(world: WorldState, tx: number, ty: number, night: boolean): void {
+    const ctx = this.ctx;
+    const h = decoHash(tx, ty, world.seed);
+    const jx = Math.floor(h * 3) - 1;
+    const cx = Math.round(this.sceneX(tx)) + jx;
+    const base = Math.round(this.sceneY(ty) + TILE / 2);
+
+    const prev = ctx.globalAlpha;
+    if (this.hides(world, tx, ty, 0.8)) ctx.globalAlpha = prev * HIDDEN_FADE;
+
+    ctx.fillStyle = "rgba(0,0,0,0.16)";
+    ctx.fillRect(cx - 5, base - 2, 11, 2);
+
+    const rows = [3, 5, 6, 6, 7, 7, 7, 7, 7, 6, 5];
+    const body = night ? "#5e6068" : "#8d8a84";
+    const lit = night ? "#74767e" : "#a8a49c";
+    const top = base - 13;
+    ctx.fillStyle = body;
+    for (let r = 0; r < rows.length; r++) {
+      ctx.fillRect(cx - rows[r], top + r, rows[r] * 2, 1);
+    }
+    ctx.fillStyle = lit;
+    for (let r = 1; r <= 4; r++) {
+      ctx.fillRect(cx - rows[r] + 1, top + r, Math.max(2, rows[r] - 2), 1);
+    }
+    ctx.fillStyle = night ? "#4a4c54" : "#6f6c66";
+    ctx.fillRect(cx - 5, base - 2, 11, 1); // it sits ON the ground
+
+    ctx.globalAlpha = prev;
+  }
+
   // --- Tent -------------------------------------------------------------------
+  private collectTent(world: WorldState, night: boolean): void {
+    this.raised.push({
+      y: world.homestead.originY,
+      bias: BIAS_TERRAIN,
+      draw: () => this.drawTent(world, night),
+    });
+  }
+
   private drawTent(world: WorldState, night: boolean): void {
     const ctx = this.ctx;
     const ox = world.homestead.originX;
@@ -307,9 +436,12 @@ export class Renderer {
     const dark = night ? "#8a4f38" : "#a96844";
     const w = 20;
     const h = 15;
-    // A simple ridge tent: a triangle canvas with a dark doorway.
+    // A simple ridge tent: a triangle canvas with a dark doorway. `r` counts
+    // DOWN from the apex, so the half-width grows with r — computing it from
+    // (h - r) instead pitches the tent upside down as a funnel, which is what
+    // it did until the raised pass made it big enough to notice.
     for (let r = 0; r < h; r++) {
-      const half = Math.round(((h - r) / h) * (w / 2));
+      const half = Math.round(((r + 1) / h) * (w / 2));
       ctx.fillStyle = r % 2 === 0 ? canvas : dark;
       ctx.fillRect(cx - half, baseY - h + r, half * 2, 1);
     }
@@ -321,17 +453,16 @@ export class Renderer {
     ctx.fillRect(cx, baseY - h - 1, 1, 2);
   }
 
-  // --- Movers (depth-sorted) --------------------------------------------------
-  private drawMovers(world: WorldState, t: number, night: boolean): void {
-    const movers: { y: number; draw: () => void }[] = [];
+  // --- Movers -----------------------------------------------------------------
+  // No longer sorted among themselves — they go into the one raised pass so a
+  // villager sorts against trees and (soon) walls, not only against each other.
+  private collectMovers(world: WorldState, t: number, night: boolean): void {
     for (const v of world.villagers) {
       // The Quiet Ghost only shows at real-clock night (DESIGN §secret forms).
       if (v.form === "ghost" && !night) continue;
-      movers.push({ y: v.y, draw: () => this.drawVillager(v, t, night) });
+      this.raised.push({ y: v.y, bias: BIAS_MOVER, draw: () => this.drawVillager(v, t, night) });
     }
-    movers.push({ y: world.player.y, draw: () => this.drawPlayer(world.player, t) });
-    movers.sort((a, b) => a.y - b.y);
-    for (const m of movers) m.draw();
+    this.raised.push({ y: world.player.y, bias: BIAS_MOVER, draw: () => this.drawPlayer(world.player, t) });
   }
 
   private drawEntity(
