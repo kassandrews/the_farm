@@ -23,6 +23,8 @@ import { clockLabel } from "../sim/time";
 import { STANDARD_FORMS, FORMS } from "../content/canon/forms";
 import type { AdultForm } from "../content/canon/forms";
 import { importFromMeadow } from "../sim/meadow_import";
+import type { MeadowImport } from "../sim/meadow_import";
+import { recall } from "../sim/memory";
 
 const FIXED_DT = 1 / 60; // seconds per sim step
 const AUTOSAVE_MS = 15_000;
@@ -165,8 +167,57 @@ export class App {
 
     const importBox = el("textarea", {
       class: "import-box",
-      placeholder: "Optional: paste a save exported from The Meadow to import a retired sprite as your neighbour.",
+      placeholder: "Optional: paste a save exported from The Meadow to bring a retired sprite across.",
     }) as HTMLTextAreaElement;
+
+    // The import's fate: embody it, or house it next door. The choice only
+    // appears once a paste actually parses — an empty or unreadable box says
+    // nothing, rather than offering a decision about a sprite that isn't there.
+    let meadowImport: MeadowImport | null = null;
+    let importRole: "villager" | "player" = "villager";
+    const roleRow = el("div", { class: "choices" });
+    const importNote = el("p", {});
+    const importBlock = el("div", {}, [importNote, roleRow]);
+    importBlock.style.display = "none";
+
+    const refreshImport = (): void => {
+      const raw = importBox.value.trim();
+      meadowImport = raw ? importFromMeadow(raw) : null;
+      if (!meadowImport) {
+        importBlock.style.display = "none";
+        // A non-empty box that doesn't parse deserves to say so.
+        importNote.textContent = "";
+        if (raw) {
+          importBlock.style.display = "";
+          importNote.textContent = "That doesn't read as a Meadow save. Check the export string.";
+          roleRow.replaceChildren();
+        }
+        return;
+      }
+      const who = `${meadowImport.name} — ${FORMS[meadowImport.form].name}`;
+      importBlock.style.display = "";
+      importNote.textContent = `${who} came across.`;
+      const buttons: HTMLElement[] = [];
+      const pick = (role: "villager" | "player", label: string) => {
+        const b = choiceBtn(label, () => {
+          importRole = role;
+          for (const other of buttons) other.classList.remove("primary");
+          b.classList.add("primary");
+          // Embodying takes its name and form, so those pickers stop applying.
+          const embodied = role === "player";
+          nameInput.disabled = embodied;
+          for (const fb of formButtons) fb.style.opacity = embodied ? "0.45" : "1";
+        });
+        if (importRole === role) b.classList.add("primary");
+        buttons.push(b);
+        return b;
+      };
+      roleRow.replaceChildren(
+        pick("villager", "They move in next door"),
+        pick("player", "Embody them — you are this sprite"),
+      );
+    };
+    importBox.addEventListener("input", refreshImport);
 
     this.openModal((close) =>
       panel("Settle in", "Choose your sprite", [
@@ -175,10 +226,11 @@ export class App {
         labeled("Form", formRow),
         labeled("Homestead", spotRow),
         labeled("From The Meadow (optional)", importBox),
+        importBlock,
         actionRow([
           primaryBtn("Claim your plot", () => {
-            const meadowImport = importBox.value.trim() ? importFromMeadow(importBox.value) : null;
-            const world = newWorld({ name, form, spot, meadowImport });
+            refreshImport(); // catch a paste that never fired an input event
+            const world = newWorld({ name, form, spot, meadowImport, importRole });
             close();
             this.beginWorld(world);
             this.runLandClaim();
@@ -232,9 +284,19 @@ export class App {
   /** The pause menu: resume, or start a fresh town. Reachable from the HUD so
    *  a reset never needs the browser console (it can't be opened on a phone). */
   private openMenu(): void {
-    const who = this.world ? `${this.world.player.name} · ${FORMS[this.world.player.form].name}` : "The Farm";
+    const p = this.world?.player;
+    const who = p ? `${p.name} · ${FORMS[p.form].name}` : "The Farm";
+    // An embodied import wears its Meadow history here — the one place the
+    // player's own memory log surfaces, stated flatly rather than as a stat.
+    const past: string[] = [];
+    if (p?.imported) {
+      past.push("Came across from The Meadow.");
+      const fav = recall(p.memory, "raised_favorite");
+      if (fav?.value) past.push(`Raised on ${fav.value}, mostly.`);
+    }
     this.openModal((close) => {
       const body = el("div", { class: "choices" });
+      if (past.length > 0) body.append(el("p", {}, [past.join("\n. ... ")]));
       body.append(
         primaryBtn("Resume", close),
         choiceBtn("New town…", () => {

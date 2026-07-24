@@ -19,6 +19,75 @@ export function tileKey(x: number, y: number): string {
   return `${x},${y}`;
 }
 
+// --- Chunk streaming ----------------------------------------------------------
+// A chunk is CHUNK×CHUNK generated tiles, built on first touch and cached. The
+// cache is DERIVED state: it holds nothing an edit could invalidate (overrides
+// live in WorldState and are consulted separately by tileAt), and it is never
+// serialised. Keyed off the world object in a WeakMap so a discarded world —
+// "New town" — drops its chunks for free instead of leaking them.
+
+/** One generated chunk. Uint16Array because TileIds are small stable ints and a
+ *  chunk is hot, per-frame read data. */
+export type Chunk = Uint16Array;
+
+const chunkCache = new WeakMap<WorldState, Map<string, Chunk>>();
+
+export function chunkKey(cx: number, cy: number): string {
+  return `${cx},${cy}`;
+}
+
+/** Chunk coordinate containing a world tile. Floor division so it stays correct
+ *  either side of the origin (the town straddles it). */
+export function chunkCoordOf(x: number, y: number): { cx: number; cy: number } {
+  return { cx: Math.floor(x / CHUNK), cy: Math.floor(y / CHUNK) };
+}
+
+/** Generate one chunk's tiles. Pure given (seed, spot, chunk coord). */
+function generateChunk(seed: number, spot: HomesteadSpot, cx: number, cy: number): Chunk {
+  const tiles = new Uint16Array(CHUNK * CHUNK);
+  const ox = cx * CHUNK;
+  const oy = cy * CHUNK;
+  for (let ty = 0; ty < CHUNK; ty++) {
+    for (let tx = 0; tx < CHUNK; tx++) {
+      tiles[ty * CHUNK + tx] = generatedTile(seed, spot, ox + tx, oy + ty);
+    }
+  }
+  return tiles;
+}
+
+/** The chunk at a chunk coordinate, generating and caching it on first touch.
+ *  This is the lazy-load path — nothing anywhere assumes a bounded world. */
+export function getChunk(world: WorldState, cx: number, cy: number): Chunk {
+  let chunks = chunkCache.get(world);
+  if (!chunks) {
+    chunks = new Map();
+    chunkCache.set(world, chunks);
+  }
+  const key = chunkKey(cx, cy);
+  let chunk = chunks.get(key);
+  if (!chunk) {
+    chunk = generateChunk(world.seed, world.homestead.spot, cx, cy);
+    chunks.set(key, chunk);
+  }
+  return chunk;
+}
+
+/** How many chunks are currently resident — for tests and debugging, so
+ *  "generated lazily" is an assertable claim rather than a comment. */
+export function residentChunkCount(world: WorldState): number {
+  return chunkCache.get(world)?.size ?? 0;
+}
+
+/** The generated (pre-edit) tile, read through the chunk cache. */
+export function baseTileAt(world: WorldState, x: number, y: number): TileId {
+  const { cx, cy } = chunkCoordOf(x, y);
+  const chunk = getChunk(world, cx, cy);
+  // Modulo that stays positive on the negative side of the origin.
+  const lx = x - cx * CHUNK;
+  const ly = y - cy * CHUNK;
+  return chunk[ly * CHUNK + lx];
+}
+
 // --- Town layout --------------------------------------------------------------
 // The town pre-exists around the origin (DESIGN §"Town and homestead"): a stone
 // plaza with the town hall at its north edge. The player's homestead is a plot
@@ -40,18 +109,19 @@ export function generatedTile(_seed: number, spot: HomesteadSpot, x: number, y: 
   return GRASS;
 }
 
-/** The effective surface tile: a player/town edit wins, else generation. */
+/** The effective surface tile: a player/town edit wins, else the generated
+ *  chunk underneath. */
 export function tileAt(world: WorldState, x: number, y: number): TileId {
   const edit = world.overrides[tileKey(x, y)];
   if (edit !== undefined) return edit;
-  return generatedTile(world.seed, world.homestead.spot, x, y);
+  return baseTileAt(world, x, y);
 }
 
 /** Write an edit (dig/place/till). Writing the tile that generation would
  *  already produce clears the override instead, so saves don't accumulate
  *  no-op edits. */
 export function setTile(world: WorldState, x: number, y: number, id: TileId): void {
-  const base = generatedTile(world.seed, world.homestead.spot, x, y);
+  const base = baseTileAt(world, x, y);
   const k = tileKey(x, y);
   if (id === base) delete world.overrides[k];
   else world.overrides[k] = id;

@@ -11,7 +11,7 @@ import type { WorldState, Villager, Player } from "../sim/types";
 import { tileAt, playerTile, isRipe } from "../sim/game";
 import { cropDef, ripeStage } from "../content/crops";
 import { tileDef } from "../content/tiles";
-import { decoHash } from "../sim/world";
+import { decoHash, chunkCoordOf, getChunk, CHUNK } from "../sim/world";
 import { tintAt, isNight, skyPhaseAt } from "../sim/time";
 import { creatureKey } from "../content/canon/sprites";
 import type { Mood, SpriteFrame } from "../content/canon/sprites";
@@ -107,15 +107,46 @@ export class Renderer {
   }
 
   // --- Tilemap ----------------------------------------------------------------
+  // Drawn chunk by chunk: the visible tile span is widened to whole chunks and
+  // each is touched via getChunk, so the camera streams chunks in as it moves
+  // and only what's on screen is ever generated. Within a chunk, tiles still go
+  // through tileAt so player edits (which live outside the chunk) win.
   private drawTiles(world: WorldState, t: number, night: boolean): void {
-    const ctx = this.ctx;
     const x0 = Math.floor(this.cam.x - this.sw / (2 * TILE)) - 1;
     const x1 = Math.ceil(this.cam.x + this.sw / (2 * TILE)) + 1;
     const y0 = Math.floor(this.cam.y - this.sh / (2 * TILE)) - 1;
     const y1 = Math.ceil(this.cam.y + this.sh / (2 * TILE)) + 1;
 
-    for (let ty = y0; ty <= y1; ty++) {
-      for (let tx = x0; tx <= x1; tx++) {
+    const c0 = chunkCoordOf(x0, y0);
+    const c1 = chunkCoordOf(x1, y1);
+    for (let cy = c0.cy; cy <= c1.cy; cy++) {
+      for (let cx = c0.cx; cx <= c1.cx; cx++) {
+        getChunk(world, cx, cy); // stream it in (and keep it resident)
+        this.drawChunkTiles(world, cx, cy, x0, x1, y0, y1, t, night);
+      }
+    }
+  }
+
+  /** Draw the on-screen tiles of one chunk. */
+  private drawChunkTiles(
+    world: WorldState,
+    cx: number,
+    cy: number,
+    x0: number,
+    x1: number,
+    y0: number,
+    y1: number,
+    t: number,
+    night: boolean,
+  ): void {
+    const ctx = this.ctx;
+    const tyStart = Math.max(y0, cy * CHUNK);
+    const tyEnd = Math.min(y1, cy * CHUNK + CHUNK - 1);
+    const txStart = Math.max(x0, cx * CHUNK);
+    const txEnd = Math.min(x1, cx * CHUNK + CHUNK - 1);
+
+    for (let ty = tyStart; ty <= tyEnd; ty++) {
+      for (let tx = txStart; tx <= txEnd; tx++) {
         const def = tileDef(tileAt(world, tx, ty));
         const px = Math.round(this.sceneX(tx) - TILE / 2);
         const py = Math.round(this.sceneY(ty) - TILE / 2);

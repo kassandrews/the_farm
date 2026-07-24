@@ -20,6 +20,12 @@ export interface Player {
   /** Current move target (tap-to-move); null when standing still. */
   target: { x: number; y: number } | null;
   facing: 1 | -1;
+  /** The player's own remembered history. Empty for a freshly hatched sprite;
+   *  seeded from The Meadow when you embody an imported pet, so "its name,
+   *  form, and history come along" (DESIGN §"Player identity"). */
+  memory: MemoryLog;
+  /** True when this sprite was imported rather than hatched here. */
+  imported: boolean;
 }
 
 /** A planted crop, keyed by "x,y" in WorldState.crops. Growth is wall-clock

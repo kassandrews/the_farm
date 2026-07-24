@@ -6,15 +6,28 @@
 
 import type { WorldState } from "./types";
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
- *  parsed object and returns it upgraded. Empty for now — v1 is the first
- *  schema — but the machinery ships from day one so the FIRST breaking change
- *  is a one-line addition here, never a scramble. */
+ *  parsed object and returns it upgraded. */
 const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
-  // 1: (raw) => ({ ...raw, schemaVersion: 2, someNewField: default }),
+  // v1 → v2: the player gained its own memory log and an `imported` flag, so an
+  // embodied Meadow pet can carry its history (DESIGN §"Player identity").
+  // A v1 player was always freshly hatched here, so it has no history to lose:
+  // an empty log and imported=false is the truthful backfill, not a guess.
+  1: (raw) => {
+    const player = (raw.player ?? {}) as Record<string, unknown>;
+    return {
+      ...raw,
+      schemaVersion: 2,
+      player: {
+        ...player,
+        memory: Array.isArray(player.memory) ? player.memory : [],
+        imported: typeof player.imported === "boolean" ? player.imported : false,
+      },
+    };
+  },
 };
 
 /** Bring any older save up to the current schema. Returns null if the blob is

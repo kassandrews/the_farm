@@ -34,3 +34,31 @@ describe("versioned saves", () => {
     expect(migrateSave(JSON.parse(serialize(w)))).not.toBeNull();
   });
 });
+
+describe("migrations", () => {
+  /** A v1 save: the schema before the player carried its own memory log. */
+  function v1Save(): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const player = { ...(w.player as Record<string, unknown>) };
+    delete player.memory;
+    delete player.imported;
+    return { ...w, schemaVersion: 1, player };
+  }
+
+  it("upgrades a v1 save without losing the town", () => {
+    const raw = v1Save();
+    (raw.overrides as Record<string, number>)["3,3"] = 2; // a board they laid
+    const migrated = migrateSave(raw);
+    expect(migrated).not.toBeNull();
+    expect(migrated!.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated!.player.name).toBe("Keeper");
+    expect(migrated!.overrides["3,3"]).toBe(2); // their work survived
+  });
+
+  it("backfills the player's new fields truthfully", () => {
+    // A v1 player was always hatched here, so it has no history to lose.
+    const migrated = migrateSave(v1Save())!;
+    expect(migrated.player.memory).toEqual([]);
+    expect(migrated.player.imported).toBe(false);
+  });
+});

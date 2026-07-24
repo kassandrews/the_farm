@@ -27,8 +27,12 @@ export interface NewWorldOpts {
   form: AdultForm;
   spot: HomesteadSpot;
   seed?: number;
-  /** An imported Meadow sprite becomes the starter resident, if provided. */
+  /** A sprite imported from The Meadow, if the player pasted a save. */
   meadowImport?: MeadowImport | null;
+  /** What the import becomes (DESIGN §"Player identity" offers both):
+   *  "villager" — it moves in as your neighbour (the default);
+   *  "player"   — you embody it, and its name/form/history become yours. */
+  importRole?: "villager" | "player";
 }
 
 /** Homestead origin per chosen spot — all near HOME, nudged for flavour. */
@@ -48,21 +52,28 @@ export function newWorld(opts: NewWorldOpts): WorldState {
   const seed = opts.seed ?? ((Math.random() * 0xffffffff) >>> 0);
   const origin = homesteadOrigin(opts.spot);
 
+  // Embodying an import takes its identity and history wholesale; otherwise the
+  // player is a fresh sprite and the import (if any) moves in next door.
+  const embodying = opts.meadowImport && opts.importRole === "player" ? opts.meadowImport : null;
+
   const player: Player = {
-    name: opts.name.trim() || "New Sprite",
-    form: opts.form,
+    name: embodying ? embodying.name : opts.name.trim() || "New Sprite",
+    form: embodying ? embodying.form : opts.form,
     x: origin.x,
     y: origin.y + 1, // stood just below the tent
     target: null,
     facing: -1,
+    memory: embodying ? [...embodying.memorySeed] : [],
+    imported: embodying !== null,
   };
 
-  // Fixed cast + the one starter resident. A Meadow import overrides the
-  // resident's identity and seeds its memory with raising history.
+  // Fixed cast + the one starter resident. An import you did NOT embody moves
+  // in as that resident, keeping its Meadow name and raising history.
   const villagers = [makeVillager(CAST.office, now)];
-  if (opts.meadowImport) {
-    const def = { ...CAST.resident1, form: opts.meadowImport.form, name: opts.meadowImport.name };
-    villagers.push(makeVillager(def, now, opts.meadowImport.memorySeed));
+  const asNeighbour = embodying ? null : opts.meadowImport;
+  if (asNeighbour) {
+    const def = { ...CAST.resident1, form: asNeighbour.form, name: asNeighbour.name };
+    villagers.push(makeVillager(def, now, asNeighbour.memorySeed));
   } else {
     villagers.push(makeVillager(CAST.resident1, now));
   }
