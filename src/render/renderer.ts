@@ -10,8 +10,11 @@
 import type { WorldState, Villager, Player } from "../sim/types";
 import { tileAt, playerTile, isRipe } from "../sim/game";
 import { cropDef, ripeStage } from "../content/crops";
-import { tileDef } from "../content/tiles";
+import { tileDef, PLANK } from "../content/tiles";
+import { skinDef } from "../content/skins";
+import type { SkinClass } from "../content/skins";
 import { decoHash, chunkCoordOf, getChunk, CHUNK } from "../sim/world";
+import { nodeNear } from "../sim/gather";
 import { tintAt, isNight, skyPhaseAt } from "../sim/time";
 import { creatureKey } from "../content/canon/sprites";
 import type { Mood, SpriteFrame } from "../content/canon/sprites";
@@ -19,6 +22,23 @@ import { SpriteCache, drawSpriteQuantized } from "./sprites";
 
 const TILE = 16; // scene px per world tile (matches sprite CELL)
 const SPRITE = 16; // sprite draw size
+
+/** Which material class a built tile is finished in, or null for terrain that
+ *  has no finish (grass, water, a tree). Terrain is never re-skinned — a finish
+ *  is something you chose when you built, not a filter over the world. */
+function finishClassOf(id: number): SkinClass | null {
+  if (id === PLANK) return "wood";
+  return null;
+}
+
+/** A built tile's appearance under the town's currently selected finish. Falls
+ *  back to the tile's own colours when the tile isn't a built one. */
+function finishFor(world: WorldState, id: number): { name: string; color: string; top?: string; shade?: string } | null {
+  const cls = finishClassOf(id);
+  if (!cls) return null;
+  const skin = skinDef(world.skins.selected[cls]);
+  return { name: tileDef(id).name, color: skin.color, top: skin.top, shade: skin.shade };
+}
 
 export class Renderer {
   private ctx: CanvasRenderingContext2D;
@@ -147,7 +167,10 @@ export class Renderer {
 
     for (let ty = tyStart; ty <= tyEnd; ty++) {
       for (let tx = txStart; tx <= txEnd; tx++) {
-        const def = tileDef(tileAt(world, tx, ty));
+        const id = tileAt(world, tx, ty);
+        // Built tiles wear the town's selected finish — appearance is a free
+        // property of the tile, never a separate item (DESIGN §Materials).
+        const def = finishFor(world, id) ?? tileDef(id);
         const px = Math.round(this.sceneX(tx) - TILE / 2);
         const py = Math.round(this.sceneY(ty) - TILE / 2);
         ctx.fillStyle = def.color;
@@ -166,6 +189,33 @@ export class Renderer {
           ctx.fillStyle = "rgba(255,255,255,0.25)";
           const rx = px + 3 + ((Math.sin(t * 1.5 + tx * 1.7 + ty) * 0.5 + 0.5) * (TILE - 6)) | 0;
           ctx.fillRect(rx, py + 6, 2, 1);
+        } else if (def.name === "Tree") {
+          // Trunk plus a layered crown, jittered by the tile hash so a stand of
+          // trees doesn't read as wallpaper.
+          const h = decoHash(tx, ty, world.seed);
+          const jx = Math.floor(h * 3) - 1;
+          ctx.fillStyle = night ? "#4a3628" : "#6b4a33";
+          ctx.fillRect(px + 7 + jx, py + 9, 2, 6);
+          const crown = night ? "#2f5233" : "#417a41";
+          const crownLit = night ? "#3a6440" : "#57975a";
+          ctx.fillStyle = crown;
+          ctx.fillRect(px + 3 + jx, py + 4, 10, 6);
+          ctx.fillRect(px + 4 + jx, py + 2, 8, 3);
+          ctx.fillStyle = crownLit;
+          ctx.fillRect(px + 4 + jx, py + 3, 5, 3); // light from the upper left
+          ctx.fillRect(px + 5 + jx, py + 1, 3, 2);
+        } else if (def.name === "Rock") {
+          const h = decoHash(tx, ty, world.seed);
+          const jx = Math.floor(h * 3) - 1;
+          const body = night ? "#5e6068" : "#8d8a84";
+          const lit = night ? "#74767e" : "#a8a49c";
+          ctx.fillStyle = body;
+          ctx.fillRect(px + 3 + jx, py + 8, 10, 5);
+          ctx.fillRect(px + 5 + jx, py + 5, 6, 4);
+          ctx.fillStyle = lit;
+          ctx.fillRect(px + 5 + jx, py + 6, 3, 2);
+          ctx.fillStyle = night ? "#4a4c54" : "#6f6c66";
+          ctx.fillRect(px + 3 + jx, py + 12, 10, 1); // it sits ON the ground
         } else if (def.name === "Mushrooms") {
           // A couple of caps on the grass, placed by the tile's stable hash so
           // a patch that appeared overnight sits still once you're looking.
@@ -328,9 +378,18 @@ export class Renderer {
   private drawTargetTile(world: WorldState): void {
     const ctx = this.ctx;
     const { x, y } = playerTile(world);
-    const px = Math.round(this.sceneX(x) - TILE / 2);
-    const py = Math.round(this.sceneY(y) - TILE / 2);
-    ctx.strokeStyle = isRipe(world, x, y) ? "rgba(255,220,120,0.9)" : "rgba(255,255,255,0.5)";
+    // ACT prioritises an adjacent resource node (you can't stand on one), so
+    // the reticle has to point at what will actually happen, not at your feet.
+    const near = nodeNear(world, x, y, world.player.facing);
+    const tx = near ? near.x : x;
+    const ty = near ? near.y : y;
+    const px = Math.round(this.sceneX(tx) - TILE / 2);
+    const py = Math.round(this.sceneY(ty) - TILE / 2);
+    ctx.strokeStyle = near
+      ? "rgba(160,255,150,0.9)" // something to gather
+      : isRipe(world, x, y)
+        ? "rgba(255,220,120,0.9)" // something ripe
+        : "rgba(255,255,255,0.5)";
     ctx.lineWidth = 1;
     ctx.strokeRect(px + 0.5, py + 0.5, TILE - 1, TILE - 1);
   }

@@ -14,6 +14,7 @@ export type MemoryKind =
   // Witnessed here on the Farm:
   | "built_plank" // saw the player lay floorboards
   | "dug" // saw the player dig
+  | "gathered" // saw the player fell a tree or split a rock
   | "planted_carrot"
   | "harvested_carrot"
   | "exhibit" // something the villager did while you were away (see sim/away.ts)

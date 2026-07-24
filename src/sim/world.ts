@@ -9,7 +9,19 @@
 // reshaping callers.
 
 import type { TileId } from "../content/tiles";
-import { GRASS, STONE, WATER, DIRT, FARMLAND, FARMLAND_WET, MUSHROOM, tileDef } from "../content/tiles";
+import {
+  GRASS,
+  STONE,
+  WATER,
+  DIRT,
+  FARMLAND,
+  FARMLAND_WET,
+  MUSHROOM,
+  TREE,
+  ROCK,
+  tileDef,
+} from "../content/tiles";
+import { NODES } from "../content/nodes";
 import type { WorldState, HomesteadSpot } from "./types";
 import { hash2 } from "./rng";
 
@@ -96,15 +108,48 @@ export function baseTileAt(world: WorldState, x: number, y: number): TileId {
 export const PLAZA = { x0: -5, y0: -5, x1: 5, y1: 3 }; // inclusive stone rectangle
 export const HOME = { x: 6, y: 5 }; // homestead origin (tent sits here-ish)
 
-/** Deterministic base terrain at a surface tile, before any edits. The plaza is
- *  paved; a river runs down the west side for the "riverside" flavour; the rest
- *  is grass with the odd generated water tile left out for now. */
-export function generatedTile(_seed: number, spot: HomesteadSpot, x: number, y: number): TileId {
+/** Homestead origin per chosen spot — all near HOME, nudged for flavour. Lives
+ *  here rather than in game.ts because terrain generation needs it (it keeps a
+ *  clearing around your plot), and world.ts must not import upward. */
+export function homesteadOrigin(spot: HomesteadSpot): { x: number; y: number } {
+  switch (spot) {
+    case "riverside":
+      return { x: HOME.x, y: HOME.y };
+    case "forest":
+      return { x: HOME.x + 2, y: HOME.y + 1 };
+    case "hilltop":
+      return { x: HOME.x + 1, y: HOME.y - 1 };
+  }
+}
+
+/** Tiles around the homestead origin kept clear of trees and rocks, so you
+ *  always arrive to somewhere you can actually stand and start building. */
+const HOMESTEAD_CLEARING = 4;
+
+/** Deterministic base terrain at a surface tile, before any edits: paved plaza,
+ *  a river west for the riverside spot, resource nodes scattered by seed, and
+ *  grass everywhere else. */
+export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: number): TileId {
   // Plaza paving.
   if (x >= PLAZA.x0 && x <= PLAZA.x1 && y >= PLAZA.y0 && y <= PLAZA.y1) return STONE;
   // A river along the far west, so the riverside homestead reads true.
   if (spot === "riverside" && x <= -12 && (x + ((y * 3) % 2)) % 7 !== 0) {
     if (x <= -13) return WATER;
+  }
+
+  // Resource nodes. Deterministic from the seed, so a given town's forest is a
+  // real, stable place rather than scenery that reshuffles. Never generated on
+  // the plaza (handled above) or in the homestead clearing.
+  const home = homesteadOrigin(spot);
+  const nearHome =
+    Math.abs(x - home.x) <= HOMESTEAD_CLEARING && Math.abs(y - home.y) <= HOMESTEAD_CLEARING;
+  if (!nearHome) {
+    // Two independent hashes so trees and rocks don't correlate into stripes.
+    const treeRoll = hash2(x, y, seed ^ 0x7a11) / 4294967296;
+    const density = spot === "forest" ? NODES.tree.density * 1.8 : NODES.tree.density;
+    if (treeRoll < density) return TREE;
+    const rockRoll = hash2(x, y, seed ^ 0x20c4) / 4294967296;
+    if (rockRoll < NODES.rock.density) return ROCK;
   }
   return GRASS;
 }

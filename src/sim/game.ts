@@ -10,8 +10,14 @@ import type { CharId } from "../content/cast";
 import { makeVillager, tickVillager, befriend } from "./villagers";
 import { remember } from "./memory";
 import type { MemoryKind } from "./memory";
-import { HOME, dig, placePlank, isWalkable, tileAt } from "./world";
-import { GRASS, DIRT, FARMLAND, FARMLAND_WET } from "../content/tiles";
+import { dig, placePlank, isWalkable, tileAt, setTile, homesteadOrigin } from "./world";
+import { GRASS, DIRT, FARMLAND, FARMLAND_WET, MUSHROOM } from "../content/tiles";
+import { emptyInventory, add, canAfford, spend, shortfall } from "./inventory";
+import type { Cost } from "./inventory";
+import { itemLabel } from "../content/items";
+import type { ItemId } from "../content/items";
+import { gather, nodeNear, updateRegrowth } from "./gather";
+import { starterSkins, defaultSkin } from "../content/skins";
 import { canPlant, plant, water, harvest, isRipe, updateAllCrops, updateCrop } from "./crops";
 import { cropDef, ripeStage } from "../content/crops";
 import type { MeadowImport } from "./meadow_import";
@@ -34,18 +40,6 @@ export interface NewWorldOpts {
    *  "villager" — it moves in as your neighbour (the default);
    *  "player"   — you embody it, and its name/form/history become yours. */
   importRole?: "villager" | "player";
-}
-
-/** Homestead origin per chosen spot — all near HOME, nudged for flavour. */
-function homesteadOrigin(spot: HomesteadSpot): { x: number; y: number } {
-  switch (spot) {
-    case "riverside":
-      return { x: HOME.x, y: HOME.y };
-    case "forest":
-      return { x: HOME.x + 2, y: HOME.y + 1 };
-    case "hilltop":
-      return { x: HOME.x + 1, y: HOME.y - 1 };
-  }
 }
 
 export function newWorld(opts: NewWorldOpts): WorldState {
@@ -89,6 +83,14 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     overrides: {},
     crops: {},
     villagers,
+    // A few boards' worth of wood so the very first thing you try to build
+    // works — you learn the cost by spending it, not by being refused.
+    inventory: { ...emptyInventory(), wood: 8 },
+    regrow: {},
+    skins: {
+      unlocked: starterSkins(),
+      selected: { wood: defaultSkin("wood"), stone: defaultSkin("stone") },
+    },
     flags: { landClaimed: false, onboarded: false },
   };
 }
@@ -128,9 +130,17 @@ export function tick(world: WorldState, dt: number, now: number): void {
 
   for (const v of world.villagers) tickVillager(v, dt, now);
   updateAllCrops(world, now);
+  updateRegrowth(world, now); // the woods come back on the real clock
 }
 
-export type ActionKind = "dig" | "plank" | "plant" | "water" | "harvest" | "none";
+/** What building costs. Deliberately tiny and single-item — a rhythm, not an
+ *  economy (DESIGN §Materials). Digging and gathering appear nowhere here
+ *  because terraforming is always free. */
+export const BUILD_COSTS: Record<"plank", Cost> = {
+  plank: { wood: 1 }, // one tree (8 wood) lays eight boards
+};
+
+export type ActionKind = "dig" | "gather" | "plank" | "plant" | "water" | "harvest" | "none";
 export interface ActionResult {
   kind: ActionKind;
   changed: boolean;
@@ -146,11 +156,47 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
   if (isRipe(world, x, y)) {
     const yielded = harvest(world, x, y, now);
     if (yielded) {
+      add(world.inventory, "carrot", 1); // it goes in the satchel, not into thin air
       witness(world, "harvested_carrot", `a ${yielded}`, now);
       return { kind: "harvest", changed: true, message: `You pulled a ${yielded}. It's a good one.` };
     }
   }
 
+  // Nodes are solid, so you can never stand on one — gathering always targets a
+  // NEIGHBOUR (see nodeNear). Deliberately NOT given blanket priority: a tree
+  // beside you must never hijack a deliberate act, or you couldn't lay a floor
+  // at the forest edge. It runs as a fallback below instead.
+  const near = nodeNear(world, x, y, world.player.facing);
+  const fellNearby = (): ActionResult | null => {
+    if (!near) return null;
+    const got = gather(world, near.x, near.y, now)!;
+    witness(world, "gathered", undefined, now);
+    return {
+      kind: "gather",
+      changed: true,
+      message: `${got.node === "tree" ? "Timber." : "Split it."} ${itemLabel(got.item, got.amount)}.`,
+    };
+  };
+
+  // The gather tool always means the node, when there is one.
+  if (tool === "gather") {
+    const felled = fellNearby();
+    if (felled) return felled;
+  }
+
+  const result = applyTool(world, tool, x, y, now);
+  // Nothing for the held tool to do here, but there's a tree in reach? Do the
+  // obvious thing rather than refuse — that's the phone-friendly shortcut,
+  // without ever overriding an action that would have worked.
+  if (!result.changed) {
+    const felled = fellNearby();
+    if (felled) return felled;
+  }
+  return result;
+}
+
+/** Apply the held tool to the tile underfoot. */
+function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: number): ActionResult {
   switch (tool) {
     case "dig":
       if (dig(world, x, y)) {
@@ -158,12 +204,30 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
         return { kind: "dig", changed: true, message: "You turn the earth." };
       }
       return { kind: "dig", changed: false, message: "Nothing to dig here." };
-    case "plank":
+    case "gather":
+      // Mushrooms are the one gatherable that isn't a node — pick them up.
+      if (tileAt(world, x, y) === MUSHROOM) {
+        setTile(world, x, y, GRASS);
+        add(world.inventory, "mushroom", 1);
+        return { kind: "gather", changed: true, message: "Picked. It comes away cleanly." };
+      }
+      return { kind: "gather", changed: false, message: "Nothing to gather here." };
+    case "plank": {
+      const cost = BUILD_COSTS.plank;
+      if (!canAfford(world.inventory, cost)) {
+        const need = shortfall(world.inventory, cost);
+        const what = (Object.entries(need) as [ItemId, number][])
+          .map(([id, n]) => itemLabel(id, n))
+          .join(", ");
+        return { kind: "plank", changed: false, message: `You'd need ${what}. There are trees.` };
+      }
       if (placePlank(world, x, y)) {
+        spend(world.inventory, cost);
         witness(world, "built_plank", undefined, now);
         return { kind: "plank", changed: true, message: "A board goes down. The house begins." };
       }
       return { kind: "plank", changed: false, message: "Can't lay a board there." };
+    }
     case "plant":
       if (canPlant(world, x, y)) {
         plant(world, x, y, "carrot", now);

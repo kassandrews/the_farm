@@ -33,6 +33,8 @@ export const WATER: TileId = 4;
 export const FARMLAND: TileId = 5; // tilled, dry
 export const FARMLAND_WET: TileId = 6; // tilled, watered (crop drinks from it)
 export const MUSHROOM: TileId = 7; // spread here while you were away — scenery, not a chore
+export const TREE: TileId = 8; // a resource node; solid, gatherable, regrows
+export const ROCK: TileId = 9;
 
 export const TILES: Record<TileId, TileDef> = {
   [GRASS]: {
@@ -81,6 +83,25 @@ export const TILES: Record<TileId, TileDef> = {
     top: "#8a613c",
     shade: "#5f4026",
     tillable: true,
+  },
+  // Resource nodes. Solid — a tree is a real obstacle you walk around, which is
+  // what makes a forest homestead feel like anything. Gathering one clears it
+  // to plain ground (see sim/gather.ts), so land is always yours to shape.
+  [TREE]: {
+    id: TREE,
+    name: "Tree",
+    color: "#6fa04a", // canopy; the renderer draws a trunk and crown over it
+    top: "#7cb054",
+    shade: "#5d8a3e",
+    solid: true,
+  },
+  [ROCK]: {
+    id: ROCK,
+    name: "Rock",
+    color: "#9a958c",
+    top: "#a8a39a",
+    shade: "#827e76",
+    solid: true,
   },
   [MUSHROOM]: {
     id: MUSHROOM,

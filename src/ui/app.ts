@@ -25,6 +25,10 @@ import type { AdultForm } from "../content/canon/forms";
 import { importFromMeadow } from "../sim/meadow_import";
 import type { MeadowImport } from "../sim/meadow_import";
 import { recall } from "../sim/memory";
+import { count } from "../sim/inventory";
+import { ITEM_ORDER, itemDef } from "../content/items";
+import { availableSkins, skinDef } from "../content/skins";
+import type { SkinClass } from "../content/skins";
 import { audio } from "./audio";
 import type { Cue } from "./audio";
 import type { ActionKind } from "../sim/game";
@@ -32,6 +36,7 @@ import type { ActionKind } from "../sim/game";
 /** Which cue a successful action earns. */
 const ACTION_CUES: Record<ActionKind, Cue> = {
   dig: "dig",
+  gather: "harvest",
   plank: "place",
   plant: "plant",
   water: "water",
@@ -44,7 +49,8 @@ const AUTOSAVE_MS = 15_000;
 
 const TOOLS: { id: Tool; icon: string; label: string }[] = [
   { id: "dig", icon: "⛏️", label: "Dig" },
-  { id: "plank", icon: "🪵", label: "Plank" },
+  { id: "gather", icon: "🧺", label: "Gather" },
+  { id: "plank", icon: "🪵", label: "Build floor" },
   { id: "plant", icon: "🌱", label: "Plant" },
   { id: "water", icon: "💧", label: "Water" },
 ];
@@ -83,6 +89,7 @@ export class App {
       (t) => this.selectTool(t),
       () => this.doAction(),
       () => this.openMenu(),
+      () => this.openSatchel(),
     );
     this.wireInput();
     window.addEventListener("resize", () => this.renderer.resize());
@@ -292,6 +299,60 @@ export class App {
         actionRow([primaryBtn("...", close)]),
       ]),
     );
+  }
+
+  // --- Satchel ----------------------------------------------------------------
+  /** What you're carrying, plus the finish picker. Deliberately one panel: the
+   *  two are the whole materials system, and DESIGN §Materials is emphatic that
+   *  appearance costs nothing — showing the free axis right beside the counted
+   *  one is what makes that legible without a word of tutorial. */
+  private openSatchel(): void {
+    if (!this.world) return;
+    const world = this.world;
+    this.openModal(() => {
+      const body = el("div", {});
+
+      // Carried items. Zero-count entries are omitted rather than shown greyed:
+      // an empty row is a to-do list, and this game doesn't hand those out.
+      const carried = ITEM_ORDER.filter((id) => count(world.inventory, id) > 0);
+      if (carried.length === 0) {
+        body.append(el("p", {}, ["Nothing on you. There are trees, and the ground is soft."]));
+      } else {
+        const list = el("div", { class: "satchel" });
+        for (const id of carried) {
+          const def = itemDef(id);
+          list.append(
+            el("div", { class: "satchel-row" }, [
+              el("span", { class: "satchel-icon" }, [def.icon]),
+              el("span", { class: "satchel-name" }, [def.name]),
+              el("span", { class: "satchel-count" }, [String(count(world.inventory, id))]),
+            ]),
+          );
+        }
+        body.append(list);
+      }
+
+      // Finishes — free, weightless, applied to anything you build next.
+      for (const cls of ["wood", "stone"] as SkinClass[]) {
+        const options = availableSkins(world.skins.unlocked, cls);
+        if (options.length === 0) continue;
+        const row = el("div", { class: "choices" });
+        const buttons = options.map((id) => {
+          const b = choiceBtn(skinDef(id).name, () => {
+            world.skins.selected[cls] = id;
+            for (const other of buttons) other.classList.remove("primary");
+            b.classList.add("primary");
+            saveWorld(world);
+          });
+          if (world.skins.selected[cls] === id) b.classList.add("primary");
+          return b;
+        });
+        row.append(...buttons);
+        body.append(labeled(`${cls === "wood" ? "Wood" : "Stone"} finish — free`, row));
+      }
+
+      return panel("Satchel", "What you're carrying", [body]);
+    });
   }
 
   // --- Menu -------------------------------------------------------------------
@@ -516,9 +577,12 @@ function buildHud(
   onTool: (t: Tool) => void,
   onAction: () => void,
   onMenu: () => void,
+  onSatchel: () => void,
 ): HudRefs {
   const menu = el("button", { class: "menu-btn", title: "Menu" }, ["☰"]);
   menu.addEventListener("click", onMenu);
+  const satchel = el("button", { class: "menu-btn satchel-btn", title: "Satchel" }, ["🎒"]);
+  satchel.addEventListener("click", onSatchel);
   const clock = el("div", { class: "clock" }, ["—"]);
   const flash = el("div", {
     class: "clock",
@@ -541,7 +605,7 @@ function buildHud(
   const action = el("button", { class: "action-btn" }, ["ACT"]);
   action.addEventListener("click", onAction);
 
-  const hud = el("div", { class: "hud" }, [menu, clock, flash, palette, action]);
+  const hud = el("div", { class: "hud" }, [menu, satchel, clock, flash, palette, action]);
   root.append(hud);
   return { root: hud, clock, flash, toolButtons };
 }

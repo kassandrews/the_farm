@@ -140,6 +140,45 @@ body {
   transform: scale(0.94);
 }
 
+.satchel-btn {
+  left: 64px;
+}
+
+/* Carried items: icon, name, count. A plain list — no grid, no slots, because
+   there is no capacity to visualise (see sim/inventory.ts). */
+.satchel {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.satchel-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 2px solid var(--panel-edge);
+  border-radius: 10px;
+  background: #fff6e2;
+}
+
+.satchel-icon {
+  font-size: 20px;
+}
+
+.satchel-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.satchel-count {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
 .clock {
   position: absolute;
   top: 14px;

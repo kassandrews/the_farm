@@ -39,9 +39,10 @@ along is the game's thesis; nothing here should ever wink harder than that.
 6. **Real time gates the living world, never your hands.** Crops, night
    visitors, and festivals run on the clock — that's the 5-minute
    check-in. Digging, building, decorating, and the underground have no
-   daily caps, no stamina, no material limits — the hour-three player
+   daily caps, no stamina, no material *scarcity* — the hour-three player
    always has a shovel and a project. This game is meant to be played for
-   hours at a stretch as well as in minutes.
+   hours at a stretch as well as in minutes. (Materials exist and are
+   spent, but are never rationed; see Materials below.)
 
 ## What each inspiration contributes
 
@@ -163,6 +164,41 @@ play.
 
 Opening beat: the Office Creature stamps your land claim. That's the whole
 cutscene.
+
+## Materials
+
+Three gathered classes, and no more: **wood**, **stone**, and **ore** (one
+entry covering every metal). Soft goods — cloth, cushions, curtains — are
+deliberately *not* gatherable; the shop sells what you can't gather, which
+is what gives the Menace's counter a reason to exist.
+
+**Appearance is a separate, free axis.** Any built tile can wear any
+unlocked finish at no cost: pale pine, dark walnut, whitewash. A finish is
+a property of the tile, never a different item. This is the rule that keeps
+the inventory small — item count is the number of *materials* (three), not
+materials × looks (dozens). Changing a finish costs nothing, carries
+nothing, and can be done to things already built. Some finishes are
+available from the start; others are earned through friendship, discovery,
+and the underground, and once earned are permanent and weightless.
+
+There is **no crafting table and no recipe tree** — placing a thing *is*
+making it. Pick an object, see its cost, put it down. This is Animal
+Crossing's placement, not Minecraft's grid; "crafting-tree sprawl" is on
+the explicit not-taken list.
+
+Materials are required but never rationed:
+
+- Terraforming is always free. Digging and shaping land costs nothing,
+  ever — the shovel is never blocked.
+- One tree yields many boards. Cost is a rhythm, not an economy.
+- Felled trees and rocks regrow on the real clock — *unless you've claimed
+  that ground*. Clear a tree and leave bare dirt and it returns; clear it
+  and pave, till, or build there and it's yours for good. The world heals
+  where you aren't invested and stays exactly as you shaped it where you
+  are.
+
+You can be slowed for a minute. You can never be stopped, capped, or made
+to grind.
 
 ## Time and the away simulation
 

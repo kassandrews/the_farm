@@ -5,8 +5,9 @@
 // can drive it; the localStorage wrappers are a thin shell on top.
 
 import type { WorldState } from "./types";
+import { starterSkins, defaultSkin } from "../content/skins";
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -43,6 +44,27 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
         void dwell;
         return rest;
       }),
+    };
+  },
+  // v3 → v4: materials arrived (inventory, resource-node regrowth, finishes).
+  // A v3 town was built when boards were free, so it starts with a stock of
+  // wood rather than being retroactively in debt for a floor it already laid —
+  // never punish someone for having played earlier.
+  3: (raw) => {
+    const skins = (raw.skins ?? {}) as Record<string, unknown>;
+    const selected = (skins.selected ?? {}) as Record<string, unknown>;
+    return {
+      ...raw,
+      schemaVersion: 4,
+      inventory: typeof raw.inventory === "object" && raw.inventory ? raw.inventory : { wood: 8 },
+      regrow: typeof raw.regrow === "object" && raw.regrow ? raw.regrow : {},
+      skins: {
+        unlocked: Array.isArray(skins.unlocked) ? skins.unlocked : starterSkins(),
+        selected: {
+          wood: typeof selected.wood === "string" ? selected.wood : defaultSkin("wood"),
+          stone: typeof selected.stone === "string" ? selected.stone : defaultSkin("stone"),
+        },
+      },
     };
   },
 };
