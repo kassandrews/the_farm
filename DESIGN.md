@@ -1,9 +1,10 @@
-# The Hollow — Design Document
+# The Farm — Design Document
 
-*(working title, sibling of **The Meadow** — formerly Cozy Sprites. "The
-Farm" was considered, but farming here is optional by pillar and the title
-shouldn't promise the one activity you're allowed to skip. Hatched in the
-Meadow, retired to the Hollow. Directory + repo can follow the final name.)*
+*(Sibling of **The Meadow** — formerly Cozy Sprites. In The Meadow,
+retiring pets are "sent to the farm" — the classic euphemism, played as a
+running joke. The name is that joke landing: the farm is real, and it's
+delightful. Farming-the-activity remains fully optional by pillar; the
+title refers to the euphemism, not a chore list.)*
 
 A town-life / homestead / building game set in the Meadow's world.
 Animal Crossing's skeleton, Stardew Valley's verbs, exactly one organ from
@@ -12,12 +13,15 @@ feature idea conflicts with it, the doc wins or the doc gets edited first.
 
 ## Premise
 
-Pets from The Meadow retire. This is where they go.
+When a Meadow pet retires, everyone says it was sent to a farm.
 
-The Hollow is a small town of retired sprites, run (loosely) by a fixed cast
+This is the farm. It's real, and it's delightful.
+
+The Farm is a small town of retired sprites, run (loosely) by a fixed cast
 of canon characters. The player is a sprite too — newly arrived, granted a
 homestead plot on the edge of town, free to do approximately whatever they
-want at whatever pace they want.
+want at whatever pace they want. The reveal that the euphemism was true all
+along is the game's thesis; nothing here should ever wink harder than that.
 
 ## Pillars
 
@@ -67,7 +71,7 @@ Beyond the character import, four gaps all three inspirations share:
    long-session sink in the game. First flagship after the vertical slice.
 2. **NPCs that remember.** AC villagers repeat themselves within a week;
    SDV heart events are finite scripts; Minecraft villagers say "hrm."
-   Hollow residents keep a memory log — imported raising history from The
+   Farm residents keep a memory log — imported raising history from The
    Meadow plus events witnessed here — and dialogue draws on it ("you
    built that fence yourself?"). Scale up the Meadow's `memories.ts`
    pattern; this is what keeps the town alive at hour forty.
@@ -89,7 +93,7 @@ At the start you either:
 - **Embody an imported pet** — one of your retired Meadow adults becomes
   the playable character. Its name, form, and history come along.
 
-There is no egg-raising in The Hollow — decided, not open. Raising is The
+There is no egg-raising on The Farm — decided, not open. Raising is The
 Meadow's whole game; the two should need each other.
 
 Any remaining imports become villagers. Form affects dialogue flavor and
@@ -207,7 +211,6 @@ with commissioned housing, the first flagship.
 
 ## Open questions (decide later, don't block)
 
-- Final name: **The Hollow** (recommended — see title note) vs. "The Farm".
 - Fishing? (Probably yes eventually; it's the coziest verb not yet listed.)
 - Multiplayer: likely never real-time; maybe async postcards between towns.
 - Decorating interiors vs. exteriors-only at first.

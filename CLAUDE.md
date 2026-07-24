@@ -1,7 +1,9 @@
 # CLAUDE.md
 
-The Hollow (working title) is a town-life / homestead / building game set
-in the world of The Meadow — the village where retired sprites live. Read
+The Farm is a town-life / homestead / building game set in the world of
+The Meadow — the town retired sprites are "sent to." The title is The
+Meadow's running retirement euphemism turning out to be true; see
+DESIGN.md's title note before assuming it implies farming-first. Read
 `DESIGN.md` before building anything; it is the source of truth for scope,
 tone, and the vertical slice. When code and DESIGN.md disagree, stop and
 reconcile the doc first.
