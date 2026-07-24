@@ -5,11 +5,12 @@
 
 import { el, modal } from "./dom";
 import { Renderer } from "../render/renderer";
-import type { WorldState, Tool, HomesteadSpot } from "../sim/types";
+import type { WorldState, Tool, BuildTool, HomesteadSpot } from "../sim/types";
 import {
   newWorld,
   tick,
   contextAction,
+  buildAt,
   talk,
   moveTo,
   completeLandClaim,
@@ -47,12 +48,21 @@ const ACTION_CUES: Record<ActionKind, Cue> = {
 const FIXED_DT = 1 / 60; // seconds per sim step
 const AUTOSAVE_MS = 15_000;
 
+// Two palettes, because there are two ways to touch the world (DESIGN
+// §Structures). ACT tools apply to the tile at your feet via the action button.
+// BUILD tools put you in build mode: the view flattens and you tap the map.
 const TOOLS: { id: Tool; icon: string; label: string }[] = [
   { id: "dig", icon: "⛏️", label: "Dig" },
   { id: "gather", icon: "🧺", label: "Gather" },
-  { id: "plank", icon: "🪵", label: "Build floor" },
   { id: "plant", icon: "🌱", label: "Plant" },
   { id: "water", icon: "💧", label: "Water" },
+];
+
+const BUILD_TOOLS: { id: BuildTool; icon: string; label: string }[] = [
+  { id: "plank", icon: "🪵", label: "Floor" },
+  { id: "wall", icon: "🧱", label: "Wall" },
+  { id: "door", icon: "🚪", label: "Door" },
+  { id: "erase", icon: "↩️", label: "Take back down" },
 ];
 
 const SPOTS: { id: HomesteadSpot; name: string; blurb: string }[] = [
@@ -67,6 +77,12 @@ export class App {
   private world: WorldState | null = null;
   private rng: Rng = makeRng(1);
   private tool: Tool = "dig";
+  /** Non-null means BUILD MODE: the view flattens and canvas taps place instead
+   *  of walking. Null means the normal 3/4 living view. */
+  private buildTool: BuildTool | null = null;
+  /** Tiles already painted during the current drag, so dragging back and forth
+   *  over one tile doesn't re-charge or re-message for it. */
+  private painted = new Set<string>();
   private keys = new Set<string>();
   private acc = 0;
   private last = performance.now();
@@ -87,6 +103,7 @@ export class App {
     this.hud = buildHud(
       root,
       (t) => this.selectTool(t),
+      (t) => this.selectBuildTool(t),
       () => this.doAction(),
       () => this.openMenu(),
       () => this.openSatchel(),
@@ -400,6 +417,18 @@ export class App {
   private wireInput(): void {
     this.canvas.addEventListener("pointerdown", (e) => {
       if (this.modalOpen || !this.world) return;
+
+      // In build mode the canvas is a canvas: taps place, drags paint a run.
+      // Laying a wall a tile at a time by walking to each tile would be
+      // miserable on a phone, and painting is the whole reason the view
+      // flattens (DESIGN §Structures).
+      if (this.buildTool) {
+        this.painted.clear();
+        this.canvas.setPointerCapture(e.pointerId);
+        this.buildAtPoint(e.clientX, e.clientY);
+        return;
+      }
+
       const wpt = this.renderer.screenToWorld(e.clientX, e.clientY);
       // Tap a villager you're standing near → talk; otherwise walk there.
       const near = this.villagerNear(wpt.x, wpt.y);
@@ -413,6 +442,19 @@ export class App {
       moveTo(this.world, wpt.x, wpt.y);
     });
 
+    this.canvas.addEventListener("pointermove", (e) => {
+      if (!this.buildTool || this.modalOpen) return;
+      if (!this.canvas.hasPointerCapture(e.pointerId)) return; // only while dragging
+      this.buildAtPoint(e.clientX, e.clientY);
+    });
+
+    const endPaint = (e: PointerEvent) => {
+      if (this.canvas.hasPointerCapture(e.pointerId)) this.canvas.releasePointerCapture(e.pointerId);
+      this.painted.clear();
+    };
+    this.canvas.addEventListener("pointerup", endPaint);
+    this.canvas.addEventListener("pointercancel", endPaint);
+
     window.addEventListener("keydown", (e) => {
       if (this.modalOpen) return;
       const k = e.key.toLowerCase();
@@ -424,6 +466,9 @@ export class App {
         e.preventDefault();
       } else if (k >= "1" && k <= "4") {
         this.selectTool(TOOLS[Number(k) - 1].id);
+      } else if (k === "b") {
+        // Desktop shortcut into build mode; the palette is the touch path.
+        this.selectBuildTool(this.buildTool ?? "wall");
       } else if (k === "e") {
         this.tryTalkNearest();
       }
@@ -457,9 +502,56 @@ export class App {
     if (best) this.openDialogue(best.id);
   }
 
+  /** Pick an ACT tool. Leaving build mode is implicit: choosing something you do
+   *  with your hands is the clearest possible "I'm done editing". */
   private selectTool(t: Tool): void {
     this.tool = t;
-    for (const [id, btn] of this.hud.toolButtons) btn.classList.toggle("selected", id === t);
+    this.buildTool = null;
+    this.syncToolUi();
+  }
+
+  /** Pick a BUILD tool, entering build mode. Tapping the selected one again
+   *  leaves — the palette doubles as the mode toggle, so there's no separate
+   *  button to hunt for. */
+  private selectBuildTool(t: BuildTool): void {
+    this.buildTool = this.buildTool === t ? null : t;
+    this.syncToolUi();
+  }
+
+  private syncToolUi(): void {
+    const building = this.buildTool !== null;
+    for (const [id, btn] of this.hud.toolButtons) {
+      btn.classList.toggle("selected", !building && id === this.tool);
+    }
+    for (const [id, btn] of this.hud.buildButtons) {
+      btn.classList.toggle("selected", id === this.buildTool);
+    }
+    this.renderer.setBuildView(building);
+    this.hud.root.classList.toggle("building", building);
+  }
+
+  /** Apply the held build tool to a tapped tile. Silent on a tile already
+   *  painted this drag, so sweeping back and forth doesn't charge twice. */
+  private buildAtPoint(clientX: number, clientY: number): void {
+    if (!this.world || !this.buildTool) return;
+    const wpt = this.renderer.screenToWorld(clientX, clientY);
+    const x = Math.round(wpt.x);
+    const y = Math.round(wpt.y);
+    const key = `${x},${y}`;
+    if (this.painted.has(key)) return;
+    this.painted.add(key);
+
+    const res = buildAt(this.world, this.buildTool, x, y, Date.now());
+    // Only speak up when something happened or the player is actually short of
+    // materials. Dragging across ground you can't build on shouldn't natter.
+    if (res.changed) {
+      audio.play(this.buildTool === "erase" ? "dig" : "place");
+      this.flash(res.message);
+      this.persist();
+    } else if (res.broke) {
+      audio.play("deny");
+      this.flash(res.message);
+    }
   }
 
   private doAction(): void {
@@ -570,11 +662,13 @@ interface HudRefs {
   clock: HTMLElement;
   flash: HTMLElement;
   toolButtons: [Tool, HTMLElement][];
+  buildButtons: [BuildTool, HTMLElement][];
 }
 
 function buildHud(
   root: HTMLElement,
   onTool: (t: Tool) => void,
+  onBuildTool: (t: BuildTool) => void,
   onAction: () => void,
   onMenu: () => void,
   onSatchel: () => void,
@@ -602,12 +696,21 @@ function buildHud(
     palette.append(btn);
   }
 
+  const buildButtons: [BuildTool, HTMLElement][] = [];
+  const buildPalette = el("div", { class: "tool-palette build-palette" });
+  for (const t of BUILD_TOOLS) {
+    const btn = el("button", { class: "tool", title: t.label }, [t.icon]);
+    btn.addEventListener("click", () => onBuildTool(t.id));
+    buildButtons.push([t.id, btn]);
+    buildPalette.append(btn);
+  }
+
   const action = el("button", { class: "action-btn" }, ["ACT"]);
   action.addEventListener("click", onAction);
 
-  const hud = el("div", { class: "hud" }, [menu, satchel, clock, flash, palette, action]);
+  const hud = el("div", { class: "hud" }, [menu, satchel, clock, flash, palette, buildPalette, action]);
   root.append(hud);
-  return { root: hud, clock, flash, toolButtons };
+  return { root: hud, clock, flash, toolButtons, buildButtons };
 }
 
 // --- Panel helpers ------------------------------------------------------------

@@ -118,7 +118,16 @@ export interface WorldState {
   };
 }
 
-/** A tool the player has selected; the action button applies it. Digging and
- *  gathering are always free; only `plank` spends materials (DESIGN §Materials:
- *  terraforming is never blocked). */
-export type Tool = "dig" | "gather" | "plank" | "plant" | "water";
+/** A tool the ACTION BUTTON applies, to the tile at your feet. All of these are
+ *  free — terraforming is never blocked (DESIGN §Materials).
+ *
+ *  Placement deliberately isn't here. A wall is solid, so "apply to the tile
+ *  underfoot" would wall you into stone and you could never close a room;
+ *  everything you place therefore moved to build mode, which targets a tapped
+ *  tile instead (DESIGN §Structures). See BuildTool. */
+export type Tool = "dig" | "gather" | "plant" | "water";
+
+/** A tool BUILD MODE applies, to a tapped tile. `erase` takes back whatever is
+ *  there and refunds it — building and un-building must never quietly drain
+ *  you. */
+export type BuildTool = "plank" | "wall" | "door" | "erase";

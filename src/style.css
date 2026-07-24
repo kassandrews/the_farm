@@ -68,6 +68,21 @@ body {
   gap: 8px;
 }
 
+/* Build tools sit opposite the act tools, so the two ways of touching the world
+   are never confused for one list. */
+.build-palette {
+  left: auto;
+  right: 12px;
+  bottom: 100px;
+}
+
+/* Build mode dims the act palette and the ACT button — they do nothing while
+   you're editing, and leaving them lit invites taps that go nowhere. */
+.hud.building .tool-palette:not(.build-palette),
+.hud.building .action-btn {
+  opacity: 0.35;
+}
+
 .tool {
   width: 52px;
   height: 52px;

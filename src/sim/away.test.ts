@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { newWorld, summarizeAway, contextAction } from "./game";
+import { newWorld, summarizeAway, contextAction, buildAt } from "./game";
 import { simulateAway } from "./away";
 import { makeRng } from "./rng";
 import { tileKey } from "./world";
@@ -14,7 +14,7 @@ function worldWithBoards(count: number) {
   for (let i = 0; i < count; i++) {
     w.player.x = w.homestead.originX + i;
     w.player.y = w.homestead.originY + 3;
-    contextAction(w, "plank", 1000);
+    buildAt(w, "plank", w.player.x, w.player.y, 1000);
   }
   return w;
 }

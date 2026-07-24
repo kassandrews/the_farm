@@ -23,9 +23,11 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   changes the world, daily (clock-driven) routines, friendship that reads
   through dialogue, and the audio module.
 - **Phase 1 — Materials & gathering** (see the model below).
-- Menu with New town / sound toggle; PWA shell; 86 tests.
+- **Phase 2a steps 1–2** — the raised pass (things stand up and overhang) and
+  the structure layer (walls, doors, build mode). See below.
+- Menu with New town / sound toggle; PWA shell; 99 tests.
 
-**Save schema is at v4.** Every change ships a tested migration — see
+**Save schema is at v5.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -68,8 +70,10 @@ Recorded in full in DESIGN.md §Structures. The short version and *why*:
   vendored Meadow sprites are front-facing, so the world has to meet them. The
   renderer already drew creatures front-on over straight-down ground; structures
   resolve that by following the creatures.
-- **One storey, not a height axis.** Wall height = 16px = one tile, which keeps
-  every bit of grid math integral and puts a creature at exactly wall height.
+- **One storey, not a height axis.** A storey is 24px — one and a HALF tiles.
+  Sixteen was the first guess and it was wrong: standing art is drawn upward
+  from its footprint, so at exactly one tile a wall overhangs nothing and reads
+  as a coloured floor tile. The overhang is the height cue. See DESIGN.
 - **Two layers, not one tilemap.** Ground (`overrides` + chunk gen) is untouched;
   structures live in a new sparse `world.build` keyed `"x,y"`. The whole chunk
   streaming system stays as-is and the migration is purely additive.
@@ -105,22 +109,25 @@ Right now you can only lay **floors**, so "a house" isn't yet something the game
 understands as an object. The model is settled above; this is the build order,
 smallest risk first:
 
-1. **Raised-object pass — trees and rocks only.** No schema change. Ground stays
-   a flat pass; everything that stands up moves into one Y-sorted pass drawing
-   upward from its footprint. Trees grow to ~24px and overhang the tile behind;
-   walking past one occludes you. This proves the whole 3/4 grammar in a browser
-   before anything is committed to — and if the world *doesn't* suddenly read as
-   dimensional, we find out here, cheaply.
-2. **Structure layer: walls and doors.** Schema v5 (additive `world.build`),
-   four-neighbour autotiling, solidity, build mode with its flattened view and
-   drag-to-paint.
-3. **Rooms and roofs.** Bounded flood-fill (with a fill budget, or open terrain
-   fills forever), derived roofs, the snap-on beat, per-room cutaway alpha.
+1. ~~**Raised-object pass — trees and rocks only.**~~ **Done.** Ground stays a
+   flat pass; everything that stands up shares one Y-sorted pass drawing upward
+   from its footprint. It also flushed out two pre-existing bugs the small art
+   had been hiding: the tent rendered upside down, and the tile bevel banded
+   open ground into venetian blinds.
+2. ~~**Structure layer: walls and doors.**~~ **Done.** Schema v5 (additive
+   `world.build`), four-neighbour autotiling, solidity, build mode with its
+   flattened view and drag-to-paint. Placement moved off the ACT button into
+   build mode, so `Tool` no longer carries `plank`.
+3. **Rooms and roofs — next.** Bounded flood-fill (with a fill budget, or open
+   terrain fills forever), derived roofs, the snap-on beat, per-room cutaway
+   alpha. Worth knowing going in: a bare wall shell is an inherently awkward
+   look — every game in this lineage covers it with a roof immediately — so
+   don't over-tune the shell before the roof exists.
 4. **Furniture.** Multi-tile with orientation. Wooden pieces only; soft goods
    await the shop.
 
-Fold in while v5 is open: put `finish` on the build cell (see Known gaps) rather
-than migrating live saves twice.
+Folded into v5 as planned: `finish` lives on the build cell, so per-building
+finishes need no further migration.
 
 ### 2b. Commissioned housing — **the flagship**
 
@@ -173,14 +180,22 @@ you trip over them:
   is intentional, not an oversight.
 - **Only one resident and one fixed-cast member** exist. `src/content/cast.ts`
   has the intended full mapping recorded as comments.
-- **Finishes are town-wide, not per-tile.** Changing the finish restyles every
-  built tile at once, because the selection lives on the world rather than on
-  each placed tile. Commissions will want per-building finishes; the fix rides
-  along with the v5 structure-layer migration (Phase 2a) so live saves only move
-  once.
+- **Finishes are town-wide for FLOORS, per-cell for structures.** Walls and doors
+  store their own finish (v5), so two houses can differ. Plank floors still read
+  the town-wide selection and restyle all at once; worth unifying when floors
+  next get touched.
 - **Villager "witness" has no proximity model for memory** — everyone hears about
   everything (friendship *is* proximity-gated). Fine in a town this small.
 - **PWA icon is a single SVG.** Real raster icons before any app-store-ish push.
+- **Build mode can't pan on touch.** You build within the visible screen; to
+  build elsewhere, leave build mode and walk (or use WASD, which still works in
+  build mode on desktop). An edge-drag pan is the obvious fix when it starts to
+  bite.
+- **The occlusion fade almost never fires now.** It's keyed to the OVERHANG,
+  `(artPx - TILE) / TILE`, which at 24px is half a tile — so a thing one tile in
+  front of you covers your legs and is left alone, because that overlap is the
+  depth cue. It exists for genuinely tall pieces; roofs will be the first real
+  user.
 
 ---
 

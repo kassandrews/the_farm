@@ -9,13 +9,14 @@
 // day/night tint over everything. See the Raised docblock for why the standing
 // things share a single sorted pass rather than getting one each.
 
-import type { WorldState, Villager, Player } from "../sim/types";
+import type { WorldState, Villager, Player, BuildCell } from "../sim/types";
 import { tileAt, playerTile, isRipe } from "../sim/game";
 import { cropDef, ripeStage } from "../content/crops";
 import { tileDef, PLANK, GRASS, TREE, ROCK } from "../content/tiles";
 import { skinDef } from "../content/skins";
 import type { SkinClass } from "../content/skins";
-import { decoHash, chunkCoordOf, getChunk, CHUNK } from "../sim/world";
+import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey } from "../sim/world";
+import { wallMask, CONNECT_N, CONNECT_E, CONNECT_S, CONNECT_W } from "../sim/structures";
 import { nodeNear } from "../sim/gather";
 import { tintAt, isNight, skyPhaseAt } from "../sim/time";
 import { creatureKey } from "../content/canon/sprites";
@@ -54,6 +55,27 @@ const BIAS_MOVER = 1;
  *  behind this", not as a tinted player. */
 const HIDDEN_FADE = 0.28;
 
+/** How tall one storey stands, in scene px.
+ *
+ *  It MUST exceed TILE. A raised thing is drawn upward from its footprint's
+ *  bottom edge, so at exactly 16px a wall would fill its own cell and overhang
+ *  nothing — which is to say it would look like a differently-coloured floor
+ *  tile, the flat plan-view we specifically rejected. The overhang IS the
+ *  height cue. At 24 a wall stands half a tile proud of its cell and a 16px
+ *  creature comes up to two thirds of it: small creatures, cozy small houses. */
+const STOREY = 24;
+/** The lit top surface of a wall, seen from slightly above. */
+const WALL_CAP = 3;
+
+/** Art heights in scene px for the two scenery pieces. Both exceed TILE, which
+ *  is what makes them overhang the tile behind and read as standing up. */
+const TREE_H = 24;
+const ROCK_H = 13;
+
+/** How much the flattened build view knocks back anything standing up, so the
+ *  ground plan underneath is legible while you're editing it. */
+const BUILD_VIEW_FADE = 0.3;
+
 /** What the FLAT layer actually paints for a tile id. Resource nodes stand up
  *  in the raised pass, so the flat layer shows the ground they're rooted in —
  *  and neighbour comparisons have to agree, or every tree gets a bevel drawn
@@ -90,6 +112,14 @@ export class Renderer {
   private canvas: HTMLCanvasElement;
   /** Rebuilt every frame; see the Raised docblock. */
   private raised: Raised[] = [];
+  /** Flattened plan view: on while a build tool is held (DESIGN §Structures —
+   *  plan view while you build, 3/4 while you live there). */
+  private buildView = false;
+
+  /** Toggle the flattened build view. */
+  setBuildView(on: boolean): void {
+    this.buildView = on;
+  }
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -156,6 +186,7 @@ export class Renderer {
     // Flat ground first, then everything with height in one depth-sorted pass.
     this.raised.length = 0;
     this.drawTiles(world, t, night);
+    if (this.buildView) this.drawBuildGrid();
     this.drawCrops(world, now);
     this.collectTent(world, night);
     this.collectMovers(world, t, night);
@@ -223,6 +254,15 @@ export class Renderer {
             bias: BIAS_TERRAIN,
             draw: () => (id === TREE ? this.drawTree(world, x, y, night) : this.drawRock(world, x, y, night)),
           });
+        }
+        // Anything STANDING on this tile. Looked up per visible tile rather
+        // than by walking world.build, so the cost is bounded by the screen and
+        // not by how much the player has ever built.
+        const built = world.build[tileKey(tx, ty)];
+        if (built) {
+          const x = tx;
+          const y = ty;
+          this.raised.push({ y, bias: BIAS_TERRAIN, draw: () => this.drawWall(world, x, y, built) });
         }
         const groundId = groundIdOf(id);
         // Built tiles wear the town's selected finish — appearance is a free
@@ -331,6 +371,23 @@ export class Renderer {
     }
   }
 
+  /** The ground grid, shown only in build view. Placement is per tile, so while
+   *  you're editing you should be able to see the tiles you're editing. */
+  private drawBuildGrid(): void {
+    const ctx = this.ctx;
+    ctx.fillStyle = "rgba(255,255,255,0.10)";
+    const x0 = Math.floor(this.cam.x - this.sw / (2 * TILE)) - 1;
+    const x1 = Math.ceil(this.cam.x + this.sw / (2 * TILE)) + 1;
+    const y0 = Math.floor(this.cam.y - this.sh / (2 * TILE)) - 1;
+    const y1 = Math.ceil(this.cam.y + this.sh / (2 * TILE)) + 1;
+    for (let tx = x0; tx <= x1; tx++) {
+      ctx.fillRect(Math.round(this.sceneX(tx) - TILE / 2), 0, 1, this.sh);
+    }
+    for (let ty = y0; ty <= y1; ty++) {
+      ctx.fillRect(0, Math.round(this.sceneY(ty) - TILE / 2), this.sw, 1);
+    }
+  }
+
   // --- The raised pass --------------------------------------------------------
   // Everything with height, drawn back to front. Sorting on the FOOTPRINT y
   // (not the art's top edge) is what makes a 24px tree correctly hide a
@@ -341,18 +398,99 @@ export class Renderer {
     for (const r of this.raised) r.draw();
   }
 
-  /** Is the thing at (tx, ty) actually covering the player, given how far its
-   *  art rises above its own footprint (`heightTiles`)?
+  /** Is the thing at (tx, ty) actually SWALLOWING the player — not merely
+   *  overlapping them — given how tall its art is in scene px?
    *
-   *  Both bounds are tighter than they look like they should be, on purpose. A
-   *  crown is 14px wide and a sprite 16px, so they stop overlapping at about
-   *  0.9 tiles apart — allow a full 1.0 and every DIAGONAL neighbour fades too,
-   *  which reads as the forest flickering as you walk past it. */
-  private hides(world: WorldState, tx: number, ty: number, heightTiles: number): boolean {
+   *  The reach that matters is the OVERHANG, `(artPx - TILE) / TILE`, not the
+   *  full height: art is drawn upward from its footprint's bottom edge, so only
+   *  the part rising above its own cell can reach the tile behind. At 24px
+   *  that's half a tile, which means a thing one tile in front of you covers
+   *  your legs and nothing else — and that overlap is precisely the depth cue,
+   *  so fading it destroys the effect it was meant to protect. Computing this
+   *  as full height instead made a doorway you were standing at go
+   *  see-through.
+   *
+   *  The horizontal bound is tighter than it looks too: a crown is 14px wide
+   *  and a sprite 16px, so they stop overlapping around 0.9 tiles apart. Allow
+   *  a full 1.0 and every DIAGONAL neighbour fades, which reads as the forest
+   *  flickering as you walk past it. */
+  private hides(world: WorldState, tx: number, ty: number, artPx: number): boolean {
     const p = world.player;
+    const overhang = (artPx - TILE) / TILE;
     // Only things IN FRONT of the player (larger y = nearer the camera) can
-    // cover them, and only within the span the art actually occupies.
-    return ty > p.y && ty - p.y <= heightTiles && Math.abs(tx - p.x) < 0.9;
+    // cover them, and only within the span the art actually reaches.
+    return ty > p.y && ty - p.y <= overhang && Math.abs(tx - p.x) < 0.9;
+  }
+
+  /** A wall or a door, standing one storey out of its tile.
+   *
+   *  There is one wall material and the four-neighbour mask decides how it
+   *  reads (DESIGN §Structures) — the player never picks a corner piece. The
+   *  mask earns its keep most visibly on the CAP: a wall's lit top surface is
+   *  drawn only when nothing joins to the north, because a north-south run
+   *  stacks one wall's cap over the previous wall's face and you get a ladder
+   *  of stripes down the run. Suppressed, the run reads as one continuous
+   *  surface with a single top edge where it actually ends.
+   *
+   *  Night isn't handled here on purpose: the global day/night wash covers the
+   *  whole scene, the same way flat tiles are left alone. */
+  private drawWall(world: WorldState, tx: number, ty: number, cell: BuildCell): void {
+    const ctx = this.ctx;
+    const skin = skinDef(cell.finish);
+    const mask = wallMask(world, tx, ty);
+    const px = Math.round(this.sceneX(tx) - TILE / 2);
+    const base = Math.round(this.sceneY(ty) + TILE / 2);
+    const top = base - STOREY;
+
+    const prev = ctx.globalAlpha;
+    if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
+    else if (this.hides(world, tx, ty, STOREY)) ctx.globalAlpha = prev * HIDDEN_FADE;
+
+    // Contact shadow, only at the front of a run — inside a run the wall in
+    // front covers it anyway, and drawing it regardless bands the run.
+    if (!(mask & CONNECT_S)) {
+      ctx.fillStyle = "rgba(0,0,0,0.16)";
+      ctx.fillRect(px, base, TILE, 2);
+    }
+
+    // A wall with run-mates both behind AND in front is running away from the
+    // camera — a SIDE wall. Its face is hidden by the piece in front of it, so
+    // drawing one gives every enclosure a uniform 24px band on all four sides
+    // and the whole house reads as an earth berm rather than a building. Draw
+    // its top surface instead: consecutive cells' bands are exactly TILE apart,
+    // so a run joins into one seamless strip.
+    const sideOn = mask & CONNECT_N && mask & CONNECT_S;
+    if (sideOn) {
+      // Flat, with no per-cell bottom edge: a side run is one continuous
+      // surface, and an edge drawn on every cell stripes it exactly the way
+      // the tile bevel used to stripe open ground.
+      ctx.fillStyle = skin.top;
+      ctx.fillRect(px, top, TILE, TILE);
+    } else {
+      ctx.fillStyle = skin.color;
+      ctx.fillRect(px, top, TILE, STOREY);
+      if (!(mask & CONNECT_N)) {
+        ctx.fillStyle = skin.top;
+        ctx.fillRect(px, top, TILE, WALL_CAP);
+      }
+    }
+    // Vertical edges where the run stops, so a wall end reads as a corner
+    // rather than as paint that happens to finish.
+    if (!sideOn) {
+      ctx.fillStyle = skin.shade;
+      if (!(mask & CONNECT_W)) ctx.fillRect(px, top, 1, STOREY);
+      if (!(mask & CONNECT_E)) ctx.fillRect(px + TILE - 1, top, 1, STOREY);
+      if (!(mask & CONNECT_S)) ctx.fillRect(px, base - 1, TILE, 1);
+    }
+
+    if (cell.id === "door") {
+      // A hole in the wall, with the wall carried over it as a lintel — so a
+      // doorway reads as cut INTO a run rather than as a gap in it.
+      ctx.fillStyle = "#3a2620";
+      ctx.fillRect(px + 4, base - STOREY + WALL_CAP + 3, TILE - 8, STOREY - WALL_CAP - 3);
+    }
+
+    ctx.globalAlpha = prev;
   }
 
   /** A tree: trunk, layered crown, contact shadow. Two and a half tiles tall,
@@ -368,7 +506,8 @@ export class Renderer {
     // Fade rather than vanish when it would otherwise swallow the player —
     // you should always be able to see where you are (no lost-behind-scenery).
     const prev = ctx.globalAlpha;
-    if (this.hides(world, tx, ty, 1.3)) ctx.globalAlpha = prev * HIDDEN_FADE;
+    if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
+    else if (this.hides(world, tx, ty, TREE_H)) ctx.globalAlpha = prev * HIDDEN_FADE;
 
     // Contact shadow — without it a tall sprite floats instead of standing.
     ctx.fillStyle = "rgba(0,0,0,0.16)";
@@ -381,10 +520,10 @@ export class Renderer {
 
     // Crown as per-row half-widths: an integer-rect blob, no ellipse maths and
     // nothing off the pixel grid (CLAUDE.md §Sprite rendering).
-    const rows = [3, 5, 6, 7, 7, 7, 7, 7, 6, 6, 5, 4, 3, 2];
+    const rows = [3, 5, 6, 7, 7, 7, 7, 7, 6, 6, 5, 4, 3, 2]; // 14 rows + trunk = TREE_H
     const crown = night ? "#2f5233" : "#417a41";
     const crownLit = night ? "#3a6440" : "#57975a";
-    const top = base - 24;
+    const top = base - TREE_H;
     ctx.fillStyle = crown;
     for (let r = 0; r < rows.length; r++) {
       ctx.fillRect(cx - rows[r], top + r, rows[r] * 2, 1);
@@ -407,7 +546,8 @@ export class Renderer {
     const base = Math.round(this.sceneY(ty) + TILE / 2);
 
     const prev = ctx.globalAlpha;
-    if (this.hides(world, tx, ty, 0.8)) ctx.globalAlpha = prev * HIDDEN_FADE;
+    if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
+    else if (this.hides(world, tx, ty, ROCK_H)) ctx.globalAlpha = prev * HIDDEN_FADE;
 
     ctx.fillStyle = "rgba(0,0,0,0.16)";
     ctx.fillRect(cx - 5, base - 2, 11, 2);
@@ -415,7 +555,7 @@ export class Renderer {
     const rows = [3, 5, 6, 6, 7, 7, 7, 7, 7, 6, 5];
     const body = night ? "#5e6068" : "#8d8a84";
     const lit = night ? "#74767e" : "#a8a49c";
-    const top = base - 13;
+    const top = base - ROCK_H;
     ctx.fillStyle = body;
     for (let r = 0; r < rows.length; r++) {
       ctx.fillRect(cx - rows[r], top + r, rows[r] * 2, 1);

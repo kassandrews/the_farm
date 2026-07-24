@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { newWorld, contextAction, BUILD_COSTS } from "./game";
+import { newWorld, contextAction, BUILD_COSTS, buildAt } from "./game";
 import { count, add, spend, canAfford, refund, shortfall, emptyInventory } from "./inventory";
 import { gather, nodeAt, nodeNear, updateRegrowth, pendingRegrowth } from "./gather";
 import { tileAt, setTile, tileKey, generatedTile } from "./world";
@@ -130,8 +130,11 @@ describe("gathering", () => {
     w.player.y = y;
     w.player.facing = 1; // facing the tree
     const wood = count(w.inventory, "wood");
-    const res = contextAction(w, "plank", 1000);
-    expect(res.kind).toBe("plank"); // the board, not the tree
+    // Placement lives in build mode and targets a TAPPED tile, so an adjacent
+    // tree has no way to hijack it — the bug this guards against is now
+    // structurally impossible rather than merely avoided.
+    const res = buildAt(w, "plank", w.player.x, w.player.y, 1000);
+    expect(res.changed).toBe(true);
     expect(tileAt(w, x, y)).toBe(TREE); // tree still standing
     expect(count(w.inventory, "wood")).toBe(wood - 1); // spent, not gained
   });
@@ -204,7 +207,7 @@ describe("building costs", () => {
   it("laying a board spends wood", () => {
     const w = freshWorld();
     const before = count(w.inventory, "wood");
-    const res = contextAction(w, "plank", 1000);
+    const res = buildAt(w, "plank", w.player.x, w.player.y, 1000);
     expect(res.changed).toBe(true);
     expect(count(w.inventory, "wood")).toBe(before - (BUILD_COSTS.plank.wood ?? 0));
   });
@@ -212,7 +215,7 @@ describe("building costs", () => {
   it("refuses politely when short, and takes nothing", () => {
     const w = freshWorld();
     w.inventory = emptyInventory();
-    const res = contextAction(w, "plank", 1000);
+    const res = buildAt(w, "plank", w.player.x, w.player.y, 1000);
     expect(res.changed).toBe(false);
     expect(res.message).toContain("trees"); // points you at the fix
     expect(count(w.inventory, "wood")).toBe(0);

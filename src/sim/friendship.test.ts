@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { newWorld, talk, contextAction } from "./game";
+import { newWorld, talk, buildAt, playerTile } from "./game";
 import { friendshipTier, atLeast } from "./villagers";
 import { speak } from "./dialogue";
 import { makeRng } from "./rng";
@@ -36,7 +36,8 @@ describe("friendship milestones", () => {
     v.x = w.player.x;
     v.y = w.player.y;
     const before = v.friendship;
-    contextAction(w, "plank", 1000);
+    const pt = playerTile(w);
+    buildAt(w, "plank", pt.x, pt.y, 1000);
     expect(v.friendship).toBeGreaterThan(before);
   });
 
@@ -46,7 +47,8 @@ describe("friendship milestones", () => {
     v.x = w.player.x + 40; // across town
     v.y = w.player.y + 40;
     const before = v.friendship;
-    contextAction(w, "plank", 1000);
+    const pt = playerTile(w);
+    buildAt(w, "plank", pt.x, pt.y, 1000);
     expect(v.friendship).toBe(before);
   });
 

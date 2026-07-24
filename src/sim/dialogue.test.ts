@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { newWorld, contextAction, talk } from "./game";
+import { newWorld, talk, buildAt, playerTile } from "./game";
 import { speak } from "./dialogue";
 import { makeRng } from "./rng";
 import { hasMemory } from "./memory";
@@ -28,15 +28,16 @@ describe("memory-driven dialogue", () => {
   it("witnessed Farm events enter every villager's memory", () => {
     const w = importedScholarWorld();
     // Player stands on the homestead; lay a board.
-    const res = contextAction(w, "plank", 1000);
-    expect(res.kind).toBe("plank");
+    const pt = playerTile(w);
+    const res = buildAt(w, "plank", pt.x, pt.y, 1000);
     expect(res.changed).toBe(true);
     for (const v of w.villagers) expect(hasMemory(v.memory, "built_plank")).toBe(true);
   });
 
   it("the scholar can later bring up the board you laid", () => {
     const w = importedScholarWorld();
-    contextAction(w, "plank", 1000);
+    const pt = playerTile(w);
+    buildAt(w, "plank", pt.x, pt.y, 1000);
     const scholar = w.villagers.find((v) => v.id === "resident1")!;
     const rng = makeRng(5);
     const said = new Set<string>();

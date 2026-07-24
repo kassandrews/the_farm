@@ -209,15 +209,26 @@ world has to meet them. Structures follow the creature convention, not the
 ground convention. Isometric is off the table for the same reason.
 
 **There is no height axis — there is one storey.** Every tile is
-ground-level or one storey tall (16px, exactly one tile, so a creature
-stands exactly wall-height: small creatures, cozy small houses). This is
-the Minecraft organ taken at its minimum: an editable world, not voxels.
-Underground (later) is a layer, not a height.
+ground-level or one storey tall. This is the Minecraft organ taken at its
+minimum: an editable world, not voxels. Underground (later) is a layer,
+not a height.
+
+A storey is **24px — one and a half tiles**, not one. Standing art is
+drawn upward from its footprint's bottom edge, so at exactly one tile a
+wall would fill its own cell and overhang nothing, which is to say it would
+look like a differently-coloured floor tile: the flat plan view we
+rejected. **The overhang is the height cue.** At 24px a wall stands half a
+tile proud of its cell and a 16px creature comes up to two thirds of it —
+small creatures, cozy small houses.
 
 - **One wall material, autotiled.** The player paints "wall"; the game
   picks face, side, or corner from the neighbours. Nobody chooses a
   north-west corner piece from a menu — same rule as finishes, item count
   stays at the number of *materials*.
+- **A wall running away from the camera shows its top, not its face.** Its
+  face is hidden behind the piece in front of it, so drawing one gives an
+  enclosure a uniform band on all four sides and the house reads as an
+  earth berm. Only walls with open ground in front of them get a face.
 - **Roofs are derived, never placed.** Build walls and a door; when the
   region encloses, the roof appears. Closing the last gap and watching the
   roof arrive is the "it's a house now" beat, and it isn't for sale. It

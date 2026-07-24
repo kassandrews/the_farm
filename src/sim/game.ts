@@ -3,7 +3,7 @@
 // the context action, talk to a villager, and summarise what happened while the
 // player was away. No DOM, no canvas — still pure logic (CLAUDE.md).
 
-import type { WorldState, Player, Tool, HomesteadSpot } from "./types";
+import type { WorldState, Player, Tool, BuildTool, HomesteadSpot } from "./types";
 import type { AdultForm } from "../content/canon/forms";
 import { CAST } from "../content/cast";
 import type { CharId } from "../content/cast";
@@ -11,8 +11,10 @@ import { makeVillager, tickVillager, befriend } from "./villagers";
 import { remember } from "./memory";
 import type { MemoryKind } from "./memory";
 import { dig, placePlank, isWalkable, tileAt, setTile, homesteadOrigin } from "./world";
-import { GRASS, DIRT, FARMLAND, FARMLAND_WET, MUSHROOM } from "../content/tiles";
-import { emptyInventory, add, canAfford, spend, shortfall } from "./inventory";
+import { placeStructure, removeStructure } from "./structures";
+import { structureDef } from "../content/structures";
+import { GRASS, DIRT, PLANK, FARMLAND, FARMLAND_WET, MUSHROOM } from "../content/tiles";
+import { emptyInventory, add, canAfford, spend, refund, shortfall } from "./inventory";
 import type { Cost } from "./inventory";
 import { itemLabel } from "../content/items";
 import type { ItemId } from "../content/items";
@@ -134,12 +136,20 @@ export function tick(world: WorldState, dt: number, now: number): void {
   updateRegrowth(world, now); // the woods come back on the real clock
 }
 
-/** What building costs. Deliberately tiny and single-item — a rhythm, not an
- *  economy (DESIGN §Materials). Digging and gathering appear nowhere here
- *  because terraforming is always free. */
+/** What building costs. Deliberately tiny — a rhythm, not an economy
+ *  (DESIGN §Materials). Digging and gathering appear nowhere here because
+ *  terraforming is always free. Structures carry their own cost in the content
+ *  table, so this is only the floor. */
 export const BUILD_COSTS: Record<"plank", Cost> = {
   plank: { wood: 1 }, // one tree (8 wood) lays eight boards
 };
+
+/** What a build tool costs to apply. */
+export function buildCost(tool: BuildTool): Cost {
+  if (tool === "plank") return BUILD_COSTS.plank;
+  if (tool === "erase") return {};
+  return structureDef(tool).cost;
+}
 
 export type ActionKind = "dig" | "gather" | "plank" | "plant" | "water" | "harvest" | "none";
 export interface ActionResult {
@@ -213,22 +223,6 @@ function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: num
         return { kind: "gather", changed: true, message: "Picked. It comes away cleanly." };
       }
       return { kind: "gather", changed: false, message: "Nothing to gather here." };
-    case "plank": {
-      const cost = BUILD_COSTS.plank;
-      if (!canAfford(world.inventory, cost)) {
-        const need = shortfall(world.inventory, cost);
-        const what = (Object.entries(need) as [ItemId, number][])
-          .map(([id, n]) => itemLabel(id, n))
-          .join(", ");
-        return { kind: "plank", changed: false, message: `You'd need ${what}. There are trees.` };
-      }
-      if (placePlank(world, x, y)) {
-        spend(world.inventory, cost);
-        witness(world, "built_plank", undefined, now);
-        return { kind: "plank", changed: true, message: "A board goes down. The house begins." };
-      }
-      return { kind: "plank", changed: false, message: "Can't lay a board there." };
-    }
     case "plant":
       if (canPlant(world, x, y)) {
         plant(world, x, y, "carrot", now);
@@ -242,6 +236,64 @@ function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: num
       }
       return { kind: "water", changed: false, message: "Nothing planted to water." };
   }
+}
+
+// --- Build mode ---------------------------------------------------------------
+// Placement targets a TAPPED tile rather than the one underfoot, because a wall
+// is solid: build-where-you-stand would wall you into stone and you could never
+// close a room (DESIGN §Structures). That's the whole reason build mode exists
+// as a separate mode rather than another entry on the action button.
+
+export interface BuildResult {
+  changed: boolean;
+  message: string;
+  /** True when the attempt failed for want of materials, so the UI can say what
+   *  is missing rather than just refusing. */
+  broke: boolean;
+}
+
+/** Apply a build tool to a tile. Spends materials on placement and refunds them
+ *  on erase, so a wall you put up and take down again costs nothing net. */
+export function buildAt(world: WorldState, tool: BuildTool, x: number, y: number, now: number): BuildResult {
+  if (tool === "erase") {
+    const taken = removeStructure(world, x, y);
+    if (taken) {
+      refund(world.inventory, structureDef(taken.id).cost);
+      return { changed: true, message: `${structureDef(taken.id).name} taken back down.`, broke: false };
+    }
+    if (tileAt(world, x, y) === PLANK) {
+      setTile(world, x, y, DIRT);
+      refund(world.inventory, BUILD_COSTS.plank);
+      return { changed: true, message: "Board lifted.", broke: false };
+    }
+    return { changed: false, message: "Nothing built here.", broke: false };
+  }
+
+  const cost = buildCost(tool);
+  if (!canAfford(world.inventory, cost)) {
+    const need = shortfall(world.inventory, cost);
+    const what = (Object.entries(need) as [ItemId, number][]).map(([id, n]) => itemLabel(id, n)).join(", ");
+    return { changed: false, message: `You'd need ${what}. There are trees.`, broke: true };
+  }
+
+  if (tool === "plank") {
+    if (!placePlank(world, x, y)) return { changed: false, message: "Can't lay a board there.", broke: false };
+    spend(world.inventory, cost);
+    witness(world, "built_plank", undefined, now);
+    return { changed: true, message: "A board goes down. The house begins.", broke: false };
+  }
+
+  const finish = world.skins.selected[structureDef(tool).finish];
+  if (!placeStructure(world, x, y, tool, finish)) {
+    return { changed: false, message: `Can't put a ${structureDef(tool).name.toLowerCase()} there.`, broke: false };
+  }
+  spend(world.inventory, cost);
+  witness(world, "built_plank", undefined, now);
+  return { changed: true, message: buildFlavour(tool), broke: false };
+}
+
+function buildFlavour(tool: "wall" | "door"): string {
+  return tool === "wall" ? "A wall goes up. It holds." : "A door. Now it's somewhere you go into.";
 }
 
 /** How close a villager must be to count as having done it *with* you. */
