@@ -16,7 +16,7 @@ import {
   summarizeAway,
 } from "../sim/game";
 import { officeLandClaimLine } from "../sim/dialogue";
-import { saveWorld, loadWorld, hasSave } from "../sim/save";
+import { saveWorld, loadWorld, hasSave, clearWorld } from "../sim/save";
 import { makeRng } from "../sim/rng";
 import type { Rng } from "../sim/rng";
 import { clockLabel } from "../sim/time";
@@ -58,7 +58,12 @@ export class App {
     this.canvas = el("canvas", { id: "scene" });
     root.append(this.canvas);
     this.renderer = new Renderer(this.canvas);
-    this.hud = buildHud(root, (t) => this.selectTool(t), () => this.doAction());
+    this.hud = buildHud(
+      root,
+      (t) => this.selectTool(t),
+      () => this.doAction(),
+      () => this.openMenu(),
+    );
     this.wireInput();
     window.addEventListener("resize", () => this.renderer.resize());
   }
@@ -218,6 +223,33 @@ export class App {
     );
   }
 
+  // --- Menu -------------------------------------------------------------------
+  /** The pause menu: resume, or start a fresh town. Reachable from the HUD so
+   *  a reset never needs the browser console (it can't be opened on a phone). */
+  private openMenu(): void {
+    const who = this.world ? `${this.world.player.name} · ${FORMS[this.world.player.form].name}` : "The Farm";
+    this.openModal((close) => {
+      const body = el("div", { class: "choices" });
+      body.append(
+        primaryBtn("Resume", close),
+        choiceBtn("New town…", () => {
+          // Second step: confirm, because a new town erases this one.
+          body.replaceChildren(
+            el("p", {}, [
+              "Start a new town? Your homestead, crops, and neighbours here are erased.\n. ... This can't be undone.",
+            ]),
+            primaryBtn("Yes, start over", () => {
+              clearWorld();
+              location.reload(); // cleanest reset: reload boots straight to the title
+            }),
+            choiceBtn("Cancel", close),
+          );
+        }),
+      );
+      return panel("Menu", who, [body]);
+    });
+  }
+
   // --- Input ------------------------------------------------------------------
   private wireInput(): void {
     this.canvas.addEventListener("pointerdown", (e) => {
@@ -373,7 +405,14 @@ interface HudRefs {
   toolButtons: [Tool, HTMLElement][];
 }
 
-function buildHud(root: HTMLElement, onTool: (t: Tool) => void, onAction: () => void): HudRefs {
+function buildHud(
+  root: HTMLElement,
+  onTool: (t: Tool) => void,
+  onAction: () => void,
+  onMenu: () => void,
+): HudRefs {
+  const menu = el("button", { class: "menu-btn", title: "Menu" }, ["☰"]);
+  menu.addEventListener("click", onMenu);
   const clock = el("div", { class: "clock" }, ["—"]);
   const flash = el("div", {
     class: "clock",
@@ -396,7 +435,7 @@ function buildHud(root: HTMLElement, onTool: (t: Tool) => void, onAction: () => 
   const action = el("button", { class: "action-btn" }, ["ACT"]);
   action.addEventListener("click", onAction);
 
-  const hud = el("div", { class: "hud" }, [clock, flash, palette, action]);
+  const hud = el("div", { class: "hud" }, [menu, clock, flash, palette, action]);
   root.append(hud);
   return { root: hud, clock, flash, toolButtons };
 }

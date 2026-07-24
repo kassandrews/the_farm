@@ -119,6 +119,27 @@ body {
   cursor: default;
 }
 
+.menu-btn {
+  position: absolute;
+  top: 14px;
+  left: 12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  border: 2px solid var(--panel-edge);
+  background: rgba(20, 16, 31, 0.55);
+  color: #f4ecdd;
+  font-size: 20px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.menu-btn:active {
+  transform: scale(0.94);
+}
+
 .clock {
   position: absolute;
   top: 14px;
