@@ -20,11 +20,17 @@ export type CharId =
   | "office" // Tired Office Creature — town hall, land claims
   | "resident1"; // the one starter resident (overwritten by a Meadow import)
 
+/** One entry in a daily routine: from `fromHour` (local wall-clock, 0–23) this
+ *  is where the villager wants to be. Stops must be listed in ascending hour
+ *  order; the last one wraps around midnight until the first. The Farm runs on
+ *  the real clock (DESIGN §Time), so this is a genuinely daily routine — visit
+ *  at 8am and at 8pm and you'll find people in different places. */
 export interface ScheduleStop {
+  fromHour: number;
   x: number;
   y: number;
-  /** Seconds to dwell here before ambling to the next stop. */
-  dwell: number;
+  /** What they're nominally up to — flavour for future "…is at the plaza" UI. */
+  doing?: string;
 }
 
 export interface CharDef {
@@ -49,7 +55,8 @@ export const CAST: Record<CharId, CharDef> = {
     name: "Tired Office Creature",
     fixed: true,
     home: { x: 0, y: -6 },
-    schedule: [{ x: 0, y: -6, dwell: 999 }], // it does not leave the desk
+    // It does not leave the desk. The desk is the whole personality.
+    schedule: [{ fromHour: 0, x: 0, y: -6, doing: "at the desk" }],
   },
   resident1: {
     id: "resident1",
@@ -57,14 +64,29 @@ export const CAST: Record<CharId, CharDef> = {
     name: "Margfrom",
     fixed: false,
     home: { x: -4, y: -2 },
+    // A real day: fieldwork in the morning, out by your plot after lunch,
+    // back to the plaza for the evening, home once it's properly dark.
     schedule: [
-      { x: -4, y: -2, dwell: 40 }, // by the plaza
-      { x: 3, y: 1, dwell: 25 }, // wanders toward the homestead path
-      { x: 6, y: 5, dwell: 30 }, // out near the player's plot
-      { x: 1, y: 2, dwell: 20 }, // back through the middle
+      { fromHour: 0, x: -4, y: -2, doing: "asleep, probably" },
+      { fromHour: 7, x: 1, y: 2, doing: "conducting morning research" },
+      { fromHour: 11, x: 6, y: 5, doing: "observing your homestead" },
+      { fromHour: 16, x: 3, y: 1, doing: "walking back, thinking" },
+      { fromHour: 19, x: -4, y: -2, doing: "writing it all up" },
     ],
   },
 };
+
+/** Where a character wants to be at a given wall-clock time. Walks the ring
+ *  backwards to the latest stop that has already started; before the first
+ *  stop of the day that's the LAST stop (which ran through midnight). */
+export function scheduledStop(def: CharDef, now: number): ScheduleStop {
+  const hour = new Date(now).getHours();
+  let current = def.schedule[def.schedule.length - 1];
+  for (const stop of def.schedule) {
+    if (stop.fromHour <= hour) current = stop;
+  }
+  return current;
+}
 
 // --- Intended full cast (DESIGN table), recorded for when the town expands ---
 // Kept as data-shaped comments, not code: the museum Scholar, the Menace's

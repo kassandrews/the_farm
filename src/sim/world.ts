@@ -9,7 +9,7 @@
 // reshaping callers.
 
 import type { TileId } from "../content/tiles";
-import { GRASS, STONE, WATER, DIRT, FARMLAND, FARMLAND_WET, tileDef } from "../content/tiles";
+import { GRASS, STONE, WATER, DIRT, FARMLAND, FARMLAND_WET, MUSHROOM, tileDef } from "../content/tiles";
 import type { WorldState, HomesteadSpot } from "./types";
 import { hash2 } from "./rng";
 
@@ -142,9 +142,11 @@ export function decoHash(x: number, y: number, seed: number): number {
 // These enforce what a tool is allowed to do; the game layer calls them from
 // the action button. Each returns whether it changed anything (for feedback).
 
-/** Shovel: grass → dug dirt. */
+/** Shovel: grass (or a patch of mushrooms) → dug dirt. Clearing mushrooms is an
+ *  option, never an errand — they do nothing but sit there looking pleased. */
 export function dig(world: WorldState, x: number, y: number): boolean {
-  if (tileAt(world, x, y) !== GRASS) return false;
+  const t = tileAt(world, x, y);
+  if (t !== GRASS && t !== MUSHROOM) return false;
   setTile(world, x, y, DIRT);
   return true;
 }

@@ -25,6 +25,19 @@ import type { AdultForm } from "../content/canon/forms";
 import { importFromMeadow } from "../sim/meadow_import";
 import type { MeadowImport } from "../sim/meadow_import";
 import { recall } from "../sim/memory";
+import { audio } from "./audio";
+import type { Cue } from "./audio";
+import type { ActionKind } from "../sim/game";
+
+/** Which cue a successful action earns. */
+const ACTION_CUES: Record<ActionKind, Cue> = {
+  dig: "dig",
+  plank: "place",
+  plant: "plant",
+  water: "water",
+  harvest: "harvest",
+  none: "menu",
+};
 
 const FIXED_DT = 1 / 60; // seconds per sim step
 const AUTOSAVE_MS = 15_000;
@@ -272,6 +285,7 @@ export class App {
     if (!this.world) return;
     const speech = talk(this.world, villagerId, this.rng);
     if (!speech) return;
+    audio.play("talk");
     this.openModal((close) =>
       panel(speech.who, "Farm resident", [
         el("p", {}, [speech.text]),
@@ -297,8 +311,15 @@ export class App {
     this.openModal((close) => {
       const body = el("div", { class: "choices" });
       if (past.length > 0) body.append(el("p", {}, [past.join("\n. ... ")]));
+      const soundLabel = () => (audio.isMuted() ? "Sound: off" : "Sound: on");
+      const soundBtn = choiceBtn(soundLabel(), () => {
+        audio.toggleMute();
+        soundBtn.textContent = soundLabel();
+        audio.play("menu"); // silent when it's just been muted — that's the confirmation
+      });
       body.append(
         primaryBtn("Resume", close),
+        soundBtn,
         choiceBtn("New town…", () => {
           // Second step: confirm, because a new town erases this one.
           body.replaceChildren(
@@ -383,6 +404,9 @@ export class App {
   private doAction(): void {
     if (!this.world || this.modalOpen) return;
     const res = contextAction(this.world, this.tool, Date.now());
+    // The cue follows what actually happened, so a refused action sounds
+    // different from a successful one without needing to read the message.
+    audio.play(res.changed ? ACTION_CUES[res.kind] : "deny");
     this.flash(res.message);
     this.persist();
   }
@@ -435,6 +459,7 @@ export class App {
 
   // --- Modal plumbing ---------------------------------------------------------
   private openModal(build: (close: () => void) => HTMLElement): void {
+    audio.play("menu");
     this.modalOpen = true;
     let closeFn: () => void = () => {};
     const content = build(() => closeFn());

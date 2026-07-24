@@ -6,7 +6,7 @@
 
 import type { WorldState } from "./types";
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -26,6 +26,23 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
         memory: Array.isArray(player.memory) ? player.memory : [],
         imported: typeof player.imported === "boolean" ? player.imported : false,
       },
+    };
+  },
+  // v2 → v3: villager schedules became time-of-day driven, so a villager's
+  // position is now derived from the clock rather than from an accumulated
+  // stop index + dwell countdown. Drop the two retired fields; the next tick
+  // walks everyone to their correct post for the current hour anyway.
+  2: (raw) => {
+    const villagers = Array.isArray(raw.villagers) ? raw.villagers : [];
+    return {
+      ...raw,
+      schemaVersion: 3,
+      villagers: villagers.map((v) => {
+        const { stop, dwell, ...rest } = v as Record<string, unknown>;
+        void stop;
+        void dwell;
+        return rest;
+      }),
     };
   },
 };

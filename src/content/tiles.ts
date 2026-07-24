@@ -32,6 +32,7 @@ export const STONE: TileId = 3; // town plaza paving
 export const WATER: TileId = 4;
 export const FARMLAND: TileId = 5; // tilled, dry
 export const FARMLAND_WET: TileId = 6; // tilled, watered (crop drinks from it)
+export const MUSHROOM: TileId = 7; // spread here while you were away — scenery, not a chore
 
 export const TILES: Record<TileId, TileDef> = {
   [GRASS]: {
@@ -79,6 +80,17 @@ export const TILES: Record<TileId, TileDef> = {
     color: "#7a5433",
     top: "#8a613c",
     shade: "#5f4026",
+    tillable: true,
+  },
+  [MUSHROOM]: {
+    id: MUSHROOM,
+    name: "Mushrooms",
+    // Reads as grass with something growing on it (the renderer draws the caps),
+    // so a patch that appeared overnight looks like a gift, not damage.
+    color: "#8bbf5a",
+    top: "#92c561",
+    shade: "#83b352",
+    diggable: true, // clearable if you'd rather have plain grass — never required
     tillable: true,
   },
   [FARMLAND_WET]: {

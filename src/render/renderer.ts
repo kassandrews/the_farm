@@ -166,6 +166,21 @@ export class Renderer {
           ctx.fillStyle = "rgba(255,255,255,0.25)";
           const rx = px + 3 + ((Math.sin(t * 1.5 + tx * 1.7 + ty) * 0.5 + 0.5) * (TILE - 6)) | 0;
           ctx.fillRect(rx, py + 6, 2, 1);
+        } else if (def.name === "Mushrooms") {
+          // A couple of caps on the grass, placed by the tile's stable hash so
+          // a patch that appeared overnight sits still once you're looking.
+          const h = decoHash(tx, ty, world.seed);
+          const mx = px + 4 + Math.floor(h * 6);
+          const my = py + 6 + Math.floor((h * 37) % 5);
+          const cap = night ? "#9c5348" : "#d16a56";
+          for (const [ox, oy, w] of [[0, 0, 3] as const, [4, 3, 2] as const]) {
+            ctx.fillStyle = "#f0e3d0"; // stalk
+            ctx.fillRect(mx + ox + 1, my + oy + 1, 1, 2);
+            ctx.fillStyle = cap;
+            ctx.fillRect(mx + ox, my + oy, w, 1);
+            ctx.fillStyle = "#f7efe2"; // a speck on the cap
+            ctx.fillRect(mx + ox + 1, my + oy, 1, 1);
+          }
         } else if (def.name === "Grass") {
           // Stable tuft speckle so grass reads as texture, not flat paint.
           const h = decoHash(tx, ty, world.seed);

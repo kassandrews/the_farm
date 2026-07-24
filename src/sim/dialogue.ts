@@ -8,6 +8,7 @@
 import type { Villager } from "./types";
 import type { Rng } from "./rng";
 import { recall } from "./memory";
+import { friendshipTier } from "./villagers";
 import type { MemoryKind } from "./memory";
 import {
   OFFICE_LANDCLAIM,
@@ -15,6 +16,7 @@ import {
   OFFICE_IDLE,
   RESIDENT_MEMORY,
   residentIdle,
+  warmLines,
 } from "../content/dialogue";
 
 export interface Speech {
@@ -29,6 +31,7 @@ const MEMORY_CHANCE = 0.6;
 /** Which memories a form is inclined to bring up, richest first. The selector
  *  walks this list and uses the first kind the villager actually remembers. */
 const MEMORY_PRIORITY: MemoryKind[] = [
+  "exhibit", // freshest: something they did while you were out
   "harvested_carrot",
   "built_plank",
   "planted_carrot",
@@ -54,11 +57,15 @@ export function speak(v: Villager, rng: Rng): Speech {
     return { who: v.name, text: memoryLine };
   }
 
+  // Idle voice, plus whatever warmth this villager has unlocked. Pooling rather
+  // than replacing keeps their baseline personality intact — a close friend is
+  // still themselves, just occasionally kinder about it.
   const idle = v.id === "office" ? OFFICE_IDLE : residentIdle(v.form);
-  let text = rng.pick(idle);
-  if (text === v.lastLine && idle.length > 1) {
+  const pool = [...idle, ...warmLines(v.form, friendshipTier(v))];
+  let text = rng.pick(pool);
+  if (text === v.lastLine && pool.length > 1) {
     // one re-roll to dodge an immediate repeat
-    text = rng.pick(idle);
+    text = rng.pick(pool);
   }
   v.lastLine = text;
   return { who: v.name, text };

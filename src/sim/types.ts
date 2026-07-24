@@ -50,10 +50,6 @@ export interface Villager {
   x: number;
   y: number;
   facing: 1 | -1;
-  /** Index into the character's schedule ring. */
-  stop: number;
-  /** Seconds remaining to dwell at the current stop. */
-  dwell: number;
   /** Friendship, grown by talking/doing things together (DESIGN §"Company"). */
   friendship: number;
   memory: MemoryLog;

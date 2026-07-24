@@ -87,12 +87,84 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     planted_carrot: [
       () => "You've planted. I'll monitor the plot. For science, and because I'm nosy.",
     ],
+    // Set by the away simulation when the Scholar mounts an exhibit in your
+    // absence — so the postcard's news is something you can then talk to.
+    exhibit: [
+      (v) => `You missed the unveiling. The exhibit is ${v}. The placard is, I'll admit, a first draft.`,
+      (v) => `Have you seen my ${v} exhibit? Don't read the placard too closely. Or do. I stand by it.`,
+    ],
     harvested_carrot: [
       (v) => `You pulled ${v}. The data is conclusive: you are a farmer now. Congratulations, subject.`,
     ],
   },
   // Other forms fall back to idle if they have no memory line for an event.
 };
+
+// --- Warmth ------------------------------------------------------------------
+// Lines that only unlock as a villager warms to you (see sim/villagers.ts
+// friendshipTier). This is the ONLY way friendship is ever revealed — there is
+// no meter and no heart count in the UI. You're meant to notice that someone
+// started talking to you differently, and not be told a number.
+//
+// Voice rule: warmth in this world is never gushing. A Scholar warming up
+// means it shares its actual findings; a Menace warming up means it insults
+// you more specifically. Nobody becomes a different creature.
+
+export const RESIDENT_WARM: Partial<Record<AdultForm, Partial<Record<"familiar" | "friend" | "close", string[]>>>> = {
+  scholar: {
+    familiar: [
+      "Oh — it's you. I'd recognise that gait anywhere. I've been charting it.",
+      "You again. Good. I need someone to hold the other end of a theory.",
+    ],
+    friend: [
+      "I've started a file on you. It's the flattering kind. Mostly.",
+      "I saved you a finding. It's wrong, but it's the interesting kind of wrong.",
+      "You're the only one here who lets me finish a sentence about soil.",
+    ],
+    close: [
+      "I don't say this to many subjects. ... The research is better when you're around.",
+      "My conclusion, after extensive observation: you're my favourite variable.",
+      ". ... I'd have retired much worse, without you nearby.",
+    ],
+  },
+  office: {
+    familiar: ["Oh, it's you. I'll allow the interruption.", "You. Yes. I have time. I have all the time now."],
+    friend: ["I'd put you on my calendar, but I burned it.", "You're the good kind of meeting."],
+    close: [". ... I'm glad you moved in. That's the whole update.", "You made retirement worth the paperwork."],
+  },
+  menace: {
+    familiar: ["Ah. You. You may approach.", "I've decided you're tolerable. Don't celebrate."],
+    friend: ["You have improved. I take full credit.", "I would be seen with you in public. Publicly."],
+    close: ["You may consider yourself my favourite. Tell no one. ... Tell everyone.", "I have standards. You've met most of them now."],
+  },
+  dog: {
+    familiar: ["You came back! I hoped. I always hope.", "Hi. Hi. Okay. Hi."],
+    friend: ["You're my person. I've made it official. In my head.", "I saved you the good stick."],
+    close: ["I'd follow you anywhere. I have, mostly. You didn't notice.", "Best day. Every day you're here is best day."],
+  },
+  blob: {
+    familiar: ["You've returned. The scene improves.", "Ah, an audience I actually like."],
+    friend: ["I would perform for you specifically.", "You get my better material."],
+    close: ["You're my leading light. Don't tell the plaza.", ". ... I'd hold the stage for you. Curtain and all."],
+  },
+  gremlin: {
+    familiar: ["Oh, it's you. I put your thing back. Mostly.", "You're fine. You're one of the fine ones."],
+    friend: ["I only move YOUR fences a little. That's respect.", "I found something. You can have it. Probably."],
+    close: ["I'd never take anything of yours. ... I'd borrow it dramatically and return it.", "You're my favourite. Don't check your fences."],
+  },
+};
+
+/** Warm lines a villager has unlocked at a given tier, pooled with everything
+ *  below it — a close friend can still say a merely-familiar line. */
+export function warmLines(form: AdultForm, tier: "new" | "familiar" | "friend" | "close"): string[] {
+  const bank = RESIDENT_WARM[form];
+  if (!bank || tier === "new") return [];
+  const pool: string[] = [];
+  pool.push(...(bank.familiar ?? []));
+  if (tier === "friend" || tier === "close") pool.push(...(bank.friend ?? []));
+  if (tier === "close") pool.push(...(bank.close ?? []));
+  return pool;
+}
 
 /** Small helper the sim uses to look up a resident's idle bank with a safe
  *  default, so an unstubbed form never speaks as an empty string. */

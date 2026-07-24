@@ -15,6 +15,7 @@ import { GRASS, DIRT, FARMLAND, FARMLAND_WET } from "../content/tiles";
 import { canPlant, plant, water, harvest, isRipe, updateAllCrops, updateCrop } from "./crops";
 import { cropDef, ripeStage } from "../content/crops";
 import type { MeadowImport } from "./meadow_import";
+import { simulateAway, AWAY_MIN_MS } from "./away";
 import { speak } from "./dialogue";
 import type { Speech } from "./dialogue";
 import type { Rng } from "./rng";
@@ -125,7 +126,7 @@ export function tick(world: WorldState, dt: number, now: number): void {
     }
   }
 
-  for (const v of world.villagers) tickVillager(v, dt);
+  for (const v of world.villagers) tickVillager(v, dt, now);
   updateAllCrops(world, now);
 }
 
@@ -178,12 +179,19 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
   }
 }
 
-/** Broadcast a witnessed event to the town's memory logs. For the slice every
- *  resident "hears about it"; a real proximity model is future work. Dialogue
- *  only surfaces a memory if that villager's bank has a line for it. */
+/** How close a villager must be to count as having done it *with* you. */
+const TOGETHER_RADIUS = 4;
+
+/** Broadcast a witnessed event to the town's memory logs. Everyone hears about
+ *  it (news travels in a town this small), but anyone who was actually STANDING
+ *  THERE also warms to you a little — friendship grows through doing things
+ *  together, not only through gifts (DESIGN §"Company"). Dialogue only surfaces
+ *  a memory if that villager's bank has a line for it. */
 function witness(world: WorldState, kind: MemoryKind, value: string | undefined, now: number): void {
+  const p = world.player;
   for (const v of world.villagers) {
     v.memory = remember(v.memory, { kind, at: now, value });
+    if (Math.hypot(v.x - p.x, v.y - p.y) <= TOGETHER_RADIUS) befriend(v, 1);
   }
 }
 
@@ -206,18 +214,9 @@ export function completeLandClaim(world: WorldState): void {
 // on load: it advances every crop to now and reports what changed, plus one
 // flavour line about the town living on without you.
 
-const AWAY_MIN_MS = 20 * 60 * 1000; // under 20 min away isn't worth a postcard
-
-const TOWN_NEWS = [
-  "The Scholar mounted a new exhibit. It is confidently, gloriously wrong.",
-  "The Gremlin relocated a fence. Nobody saw. Everybody knows.",
-  "Mushrooms spread along the plaza's north edge. The Office Creature filed it under 'later'.",
-  "The Blob rehearsed a monologue to an empty stage. It went well, apparently.",
-  "A quiet went around the plaza and then left. Ordinary stuff.",
-];
-
-/** Summarise time away and advance crops. Returns postcard lines, or an empty
- *  array when the player was barely gone. Mutates the world (crops advance). */
+/** Summarise time away: advance crops, run the town's own offline events, and
+ *  report what actually changed. Returns an empty array when the player was
+ *  barely gone. Mutates the world — that's the point; see sim/away.ts. */
 export function summarizeAway(world: WorldState, now: number, rng: Rng): string[] {
   const elapsed = now - world.lastSaved;
 
@@ -244,7 +243,8 @@ export function summarizeAway(world: WorldState, now: number, rng: Rng): string[
   lines.push(hrs >= 1 ? `You were away about ${hrs} hour${hrs === 1 ? "" : "s"}.` : "You stepped out for a bit.");
   if (ripened > 0) lines.push(`${ripened} carrot${ripened === 1 ? "" : "s"} came ripe while you were gone.`);
   else if (grew > 0) lines.push("Your crops put on some growth.");
-  lines.push(rng.pick(TOWN_NEWS));
+  // …and whatever the town got up to on its own.
+  lines.push(...simulateAway(world, elapsed, now, rng));
   return lines;
 }
 

@@ -16,6 +16,7 @@ export type MemoryKind =
   | "dug" // saw the player dig
   | "planted_carrot"
   | "harvested_carrot"
+  | "exhibit" // something the villager did while you were away (see sim/away.ts)
   | "arrived"; // the villager's own arrival on the Farm
 
 export interface MemoryEvent {

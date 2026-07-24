@@ -61,4 +61,29 @@ describe("migrations", () => {
     expect(migrated.player.memory).toEqual([]);
     expect(migrated.player.imported).toBe(false);
   });
+
+  it("climbs the whole ladder v1 → current in one go", () => {
+    const migrated = migrateSave(v1Save())!;
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    // v3 retired the villagers' stop/dwell fields.
+    for (const v of migrated.villagers) {
+      expect(v).not.toHaveProperty("stop");
+      expect(v).not.toHaveProperty("dwell");
+      // …without losing who they are or what they remember.
+      expect(typeof v.name).toBe("string");
+      expect(Array.isArray(v.memory)).toBe(true);
+    }
+  });
+
+  it("keeps villager identity and memory across the v2 → v3 drop", () => {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const villagers = (w.villagers as Record<string, unknown>[]).map((v) => ({
+      ...v,
+      stop: 2,
+      dwell: 17,
+    }));
+    const migrated = migrateSave({ ...w, schemaVersion: 2, villagers })!;
+    expect(migrated.villagers).toHaveLength(2);
+    expect(migrated.villagers.find((v) => v.id === "resident1")?.name).toBe("Margfrom");
+  });
 });
