@@ -75,6 +75,26 @@ describe("migrations", () => {
     }
   });
 
+  it("gives a v4 town an empty structure layer without disturbing it", () => {
+    // v4 had no way to build anything that stands up, so an empty layer is the
+    // complete backfill — there is nothing to reconstruct, and everything the
+    // player already laid on the GROUND layer has to survive untouched.
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    delete w.build;
+    (w.overrides as Record<string, number>)["4,4"] = 2; // a board they laid
+    const migrated = migrateSave({ ...w, schemaVersion: 4 })!;
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated.build).toEqual({});
+    expect(migrated.overrides["4,4"]).toBe(2);
+  });
+
+  it("does not wipe a structure layer that is already there", () => {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const built = { "9,9": { id: "wall", finish: "pine" } };
+    const migrated = migrateSave({ ...w, schemaVersion: 4, build: built })!;
+    expect(migrated.build["9,9"]).toEqual({ id: "wall", finish: "pine" });
+  });
+
   it("keeps villager identity and memory across the v2 → v3 drop", () => {
     const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
     const villagers = (w.villagers as Record<string, unknown>[]).map((v) => ({

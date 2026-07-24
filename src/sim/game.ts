@@ -81,6 +81,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     player,
     homestead: { spot: opts.spot, originX: origin.x, originY: origin.y },
     overrides: {},
+    build: {},
     crops: {},
     villagers,
     // A few boards' worth of wood so the very first thing you try to build

@@ -81,9 +81,15 @@ export function gather(world: WorldState, x: number, y: number, now: number): Ga
 
 /** Has the player claimed this ground? Anything other than the bare dirt or
  *  grass a felled node leaves behind counts as claimed — paved, tilled, built
- *  on, or planted. */
+ *  on, or planted.
+ *
+ *  "Built on" has to include the STRUCTURE layer, not just the ground tile: a
+ *  wall stands on dirt and leaves the dirt dirt, so checking only the tile
+ *  would let a tree grow back inside your house. */
 function isClaimed(world: WorldState, x: number, y: number): boolean {
-  if (world.crops[tileKey(x, y)]) return true;
+  const key = tileKey(x, y);
+  if (world.crops[key]) return true;
+  if (world.build[key]) return true;
   const t = tileAt(world, x, y);
   return t !== DIRT && t !== GRASS;
 }

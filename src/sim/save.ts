@@ -7,7 +7,7 @@
 import type { WorldState } from "./types";
 import { starterSkins, defaultSkin } from "../content/skins";
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -67,6 +67,15 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       },
     };
   },
+  // v4 → v5: structures arrived — walls and doors standing in their own sparse
+  // layer above the ground tiles (DESIGN §Structures). A v4 town had no way to
+  // build anything that stands up, so an empty layer is the complete and
+  // truthful backfill; there is nothing to reconstruct.
+  4: (raw) => ({
+    ...raw,
+    schemaVersion: 5,
+    build: typeof raw.build === "object" && raw.build ? raw.build : {},
+  }),
 };
 
 /** Bring any older save up to the current schema. Returns null if the blob is

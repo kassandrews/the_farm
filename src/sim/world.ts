@@ -22,6 +22,7 @@ import {
   tileDef,
 } from "../content/tiles";
 import { NODES } from "../content/nodes";
+import { structureDef } from "../content/structures";
 import type { WorldState, HomesteadSpot } from "./types";
 import { hash2 } from "./rng";
 
@@ -172,9 +173,17 @@ export function setTile(world: WorldState, x: number, y: number, id: TileId): vo
   else world.overrides[k] = id;
 }
 
-/** Is this tile walkable? Solid tiles (water, and later structures) block. */
+/** Is this tile walkable? Both layers get a say: a solid tile (water, a tree)
+ *  blocks, and so does a solid structure standing on it. A door is a structure
+ *  that doesn't block, which is the whole point of it being its own row.
+ *
+ *  Reads world.build directly rather than calling into sim/structures.ts, which
+ *  imports this module — the content table is the shared dependency, so the two
+ *  sim modules don't have to import each other. */
 export function isWalkable(world: WorldState, x: number, y: number): boolean {
-  return !tileDef(tileAt(world, x, y)).solid;
+  if (tileDef(tileAt(world, x, y)).solid) return false;
+  const built = world.build[tileKey(x, y)];
+  return !(built && structureDef(built.id).solid);
 }
 
 /** A cheap per-tile decoration hash (0..1) the renderer uses for grass tufts

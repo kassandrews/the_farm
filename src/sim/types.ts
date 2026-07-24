@@ -10,6 +10,7 @@ import type { MemoryLog } from "./memory";
 import type { Inventory } from "./inventory";
 import type { NodeId } from "../content/nodes";
 import type { SkinId, SkinClass } from "../content/skins";
+import type { StructureId } from "../content/structures";
 
 /** Where the player chose to settle (DESIGN §"Town and homestead": 3–4 spots).
  *  Cosmetic-plus-origin: it shifts the homestead plot and its flavour. */
@@ -45,6 +46,19 @@ export interface Crop {
   wateredUntil: number;
 }
 
+/** One built piece, keyed by "x,y" in WorldState.build.
+ *
+ *  `finish` is stored PER CELL rather than read from the town-wide selection,
+ *  which is the fix for the long-standing "changing a finish restyles every
+ *  built tile at once" gap. Commissioned housing needs the Ghost's dark house
+ *  and the Menace's pale one to coexist in the same town, so the finish has to
+ *  live with the piece. It's still free to change and still weightless — a
+ *  finish is a property, never an item (DESIGN §Materials). */
+export interface BuildCell {
+  id: StructureId;
+  finish: SkinId;
+}
+
 export interface Villager {
   id: CharId;
   form: AdultForm;
@@ -72,6 +86,14 @@ export interface WorldState {
   /** Sparse surface-tile edits over deterministic generation, keyed "x,y".
    *  Digging and placing write here; generation supplies everything else. */
   overrides: Record<string, TileId>;
+
+  /** Things STANDING on the ground, keyed "x,y" — walls and doors now,
+   *  furniture later. A separate layer from `overrides` because a tile answers
+   *  "what is the ground here" and this answers "what is standing on it"; a
+   *  wall needs both, floor underneath and wall on top. Sparse, so an
+   *  untouched world carries an empty object. */
+  build: Record<string, BuildCell>;
+
   crops: Record<string, Crop>;
   villagers: Villager[];
 
