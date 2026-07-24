@@ -1,13 +1,14 @@
 # CLAUDE.md
 
-Cozy Hollow (working title) is a town-life / homestead / building game set
-in the Cozy Sprites world — the village where retired sprites live. Read
+The Hollow (working title) is a town-life / homestead / building game set
+in the world of The Meadow — the village where retired sprites live. Read
 `DESIGN.md` before building anything; it is the source of truth for scope,
 tone, and the vertical slice. When code and DESIGN.md disagree, stop and
 reconcile the doc first.
 
-Sibling project: `~/projects/cozy_sprites` — finished and canon. Mine it
-for content, voice, and rendering lessons. Never modify it.
+Sibling project: The Meadow (formerly Cozy Sprites), repo at
+`~/projects/cozy_sprites` — finished and canon. Mine it for content,
+voice, and rendering lessons. Never modify it.
 
 TypeScript + Vite, no framework, canvas 2D. Tests are Vitest, colocated as
 `*.test.ts`. `npm run dev` / `npm test` / `npm run build`.
@@ -43,7 +44,7 @@ imported across repos; cozy_sprites stays untouched.
 
 Opposite of the cozy_sprites rule: saves here are long-lived while the game
 evolves. Every save carries `schemaVersion`; every schema change ships a
-migration function, tested. The Cozy Sprites import path is a separate
+migration function, tested. The Meadow import path is a separate
 read-only adapter for their export JSON — never write back to it.
 
 ## Sprite rendering — hard rule (inherited)
@@ -58,9 +59,19 @@ verify large rendering changes with headless-browser screenshots.
 ## Tone
 
 Deadpan institutional absurdism — small creatures taking ridiculous things
-seriously. Dialogue follows the Cozy Sprites house rules: per-form voice,
+seriously. Dialogue follows The Meadow's house rules: per-form voice,
 brevity, distinct openers, ellipsis style (`. ... Capital`), `"..."` is a
 valid line. Secrets are never spoiled by UI.
+
+## Design invariants (checked in review)
+
+- No stamina/energy meters, no daily caps on gathering or building — real
+  time gates the living world (crops, night, festivals), never the
+  player's hands.
+- Form is identity, never a job: no mechanic may require a player or
+  villager to do an activity because of their form.
+- Villager dialogue must be able to reference remembered events; write
+  dialogue systems against a memory log, not static banks alone.
 
 ## Process
 
