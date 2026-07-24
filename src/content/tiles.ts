@@ -12,7 +12,9 @@ export interface TileDef {
   /** Base fill colour. */
   color: string;
   /** A hair-lighter top edge and a hair-darker bottom, for a soft pixel bevel.
-   *  Omit for flat tiles (water animates its own way). */
+   *  The renderer draws these ONLY where this tile meets a different material —
+   *  drawn on every tile they band a field into venetian blinds. Omit for flat
+   *  tiles (water animates its own way). */
   top?: string;
   shade?: string;
   /** Can the shovel turn this into dug dirt? (grass → dirt) */
@@ -41,8 +43,8 @@ export const TILES: Record<TileId, TileDef> = {
     id: GRASS,
     name: "Grass",
     color: "#8bbf5a",
-    // Bevels kept subtle: grass tiles a whole field, and a strong top/shade
-    // swing reads as venetian-blind banding rather than ground.
+    // Safe to keep a real swing now that the bevel only shows at boundaries:
+    // a field of grass draws none of it, so this is the lip at a path's edge.
     top: "#92c561",
     shade: "#83b352",
     diggable: true,

@@ -54,6 +54,14 @@ const BIAS_MOVER = 1;
  *  behind this", not as a tinted player. */
 const HIDDEN_FADE = 0.28;
 
+/** What the FLAT layer actually paints for a tile id. Resource nodes stand up
+ *  in the raised pass, so the flat layer shows the ground they're rooted in —
+ *  and neighbour comparisons have to agree, or every tree gets a bevel drawn
+ *  around it as if it were a different material. */
+function groundIdOf(id: number): number {
+  return id === TREE || id === ROCK ? GRASS : id;
+}
+
 /** Which material class a built tile is finished in, or null for terrain that
  *  has no finish (grass, water, a tree). Terrain is never re-skinned — a finish
  *  is something you chose when you built, not a filter over the world. */
@@ -216,7 +224,7 @@ export class Renderer {
             draw: () => (id === TREE ? this.drawTree(world, x, y, night) : this.drawRock(world, x, y, night)),
           });
         }
-        const groundId = id === TREE || id === ROCK ? GRASS : id;
+        const groundId = groundIdOf(id);
         // Built tiles wear the town's selected finish — appearance is a free
         // property of the tile, never a separate item (DESIGN §Materials).
         const def = finishFor(world, groundId) ?? tileDef(groundId);
@@ -224,12 +232,17 @@ export class Renderer {
         const py = Math.round(this.sceneY(ty) - TILE / 2);
         ctx.fillStyle = def.color;
         ctx.fillRect(px, py, TILE, TILE);
-        // Soft bevel: lighter top row, darker bottom row.
-        if (def.top) {
+        // The bevel is drawn ONLY where the material changes. On every tile, a
+        // light top row and a dark bottom row pair up across a field into
+        // venetian-blind banding — flat stripes that fight the depth now that
+        // things stand up. Confined to boundaries, the same lip reads as one
+        // material meeting another, which is where it earns its keep and what
+        // makes a laid floor's edge legible against grass.
+        if (def.top && groundIdOf(tileAt(world, tx, ty - 1)) !== groundId) {
           ctx.fillStyle = def.top;
           ctx.fillRect(px, py, TILE, 1);
         }
-        if (def.shade) {
+        if (def.shade && groundIdOf(tileAt(world, tx, ty + 1)) !== groundId) {
           ctx.fillStyle = def.shade;
           ctx.fillRect(px, py + TILE - 1, TILE, 1);
         }
