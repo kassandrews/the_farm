@@ -23,6 +23,23 @@ export function structureAt(world: WorldState, x: number, y: number): BuildCell 
   return world.build[tileKey(x, y)] ?? null;
 }
 
+// --- Change tracking ----------------------------------------------------------
+// Room detection is derived state that's expensive enough to want memoising and
+// cheap enough to recompute whenever the layer actually moves. The counter lives
+// HERE, with the mutations, so sim/rooms.ts can depend on this module without
+// this module having to know rooms exist.
+
+const revisions = new WeakMap<WorldState, number>();
+
+/** Bumped by every structure edit. Not serialised — it's a cache key, not state. */
+export function buildRevision(world: WorldState): number {
+  return revisions.get(world) ?? 0;
+}
+
+function bump(world: WorldState): void {
+  revisions.set(world, buildRevision(world) + 1);
+}
+
 /** Can a structure go here? Ground must be something you could stand on (no
  *  building into the river) and nothing already planted may be paved over —
  *  the same courtesy placePlank extends. An existing piece is NOT a blocker:
@@ -48,6 +65,7 @@ export function placeStructure(
   const existing = structureAt(world, x, y);
   if (existing && existing.id === id && existing.finish === finish) return false;
   world.build[tileKey(x, y)] = { id, finish };
+  bump(world);
   return true;
 }
 
@@ -59,6 +77,7 @@ export function removeStructure(world: WorldState, x: number, y: number): BuildC
   const cell = world.build[key];
   if (!cell) return null;
   delete world.build[key];
+  bump(world);
   return cell;
 }
 

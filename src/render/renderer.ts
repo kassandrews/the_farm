@@ -17,6 +17,8 @@ import { skinDef } from "../content/skins";
 import type { SkinClass } from "../content/skins";
 import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey } from "../sim/world";
 import { wallMask, CONNECT_N, CONNECT_E, CONNECT_S, CONNECT_W } from "../sim/structures";
+import { rooms } from "../sim/rooms";
+import type { Room } from "../sim/rooms";
 import { nodeNear } from "../sim/gather";
 import { tintAt, isNight, skyPhaseAt } from "../sim/time";
 import { creatureKey } from "../content/canon/sprites";
@@ -47,6 +49,9 @@ interface Raised {
 
 const BIAS_TERRAIN = 0;
 const BIAS_MOVER = 1;
+/** Roofs sort above everything sharing their footprint: over the walls holding
+ *  them up, and over anyone standing underneath — who is, after all, indoors. */
+const BIAS_ROOF = 2;
 
 /** Opacity of a standing thing that would otherwise swallow the player.
  *  Deliberately low: the intuitive ~0.5 is the worst possible value, because a
@@ -75,6 +80,10 @@ const ROCK_H = 13;
 /** How much the flattened build view knocks back anything standing up, so the
  *  ground plan underneath is legible while you're editing it. */
 const BUILD_VIEW_FADE = 0.3;
+
+/** Per-frame easing of the roof cutaway. Slow enough to read as a reveal rather
+ *  than a switch; fast enough that you're not waiting to see your own room. */
+const ROOF_FADE_RATE = 0.16;
 
 /** What the FLAT layer actually paints for a tile id. Resource nodes stand up
  *  in the raised pass, so the flat layer shows the ground they're rooted in —
@@ -115,6 +124,20 @@ export class Renderer {
   /** Flattened plan view: on while a build tool is held (DESIGN §Structures —
    *  plan view while you build, 3/4 while you live there). */
   private buildView = false;
+
+  // --- Roof index and cutaway state -------------------------------------------
+  // Rebuilt only when the sim hands back a different rooms array — its own cache
+  // keeps that identity stable across frames, so this costs nothing while you're
+  // just walking around.
+  private roomsRef: Room[] | null = null;
+  /** Cell key → the room whose roof covers it. */
+  private roofIndex = new Map<string, Room>();
+  /** Room id → every cell it roofs, for drawing edges only where a roof ends. */
+  private roofCover = new Map<string, Set<string>>();
+  /** Room id → current roof opacity, eased toward 0 while you're inside. Kept
+   *  across frames so walking through a door FADES the roof rather than
+   *  snapping it, which is the whole feel of the cutaway. */
+  private roofAlpha = new Map<string, number>();
 
   /** Toggle the flattened build view. */
   setBuildView(on: boolean): void {
@@ -182,6 +205,8 @@ export class Renderer {
     // Sky/base wash — a flat ground tone behind the tiles for any gaps.
     ctx.fillStyle = night ? "#26324a" : "#7fae54";
     ctx.fillRect(0, 0, this.sw, this.sh);
+
+    this.syncRoofs(world);
 
     // Flat ground first, then everything with height in one depth-sorted pass.
     this.raised.length = 0;
@@ -258,11 +283,24 @@ export class Renderer {
         // Anything STANDING on this tile. Looked up per visible tile rather
         // than by walking world.build, so the cost is bounded by the screen and
         // not by how much the player has ever built.
-        const built = world.build[tileKey(tx, ty)];
+        const key = tileKey(tx, ty);
+        const built = world.build[key];
         if (built) {
           const x = tx;
           const y = ty;
           this.raised.push({ y, bias: BIAS_TERRAIN, draw: () => this.drawWall(world, x, y, built) });
+        }
+        // Roofs are derived, not stored, so they come from the room index
+        // rather than from the build layer.
+        const roofRoom = this.roofIndex.get(key);
+        if (roofRoom && !this.buildView) {
+          const x = tx;
+          const y = ty;
+          const alpha = this.roofAlpha.get(roofRoom.id) ?? 1;
+          const covered = this.roofCover.get(roofRoom.id)!;
+          if (alpha > 0.02) {
+            this.raised.push({ y, bias: BIAS_ROOF, draw: () => this.drawRoofCell(world, x, y, covered, alpha) });
+          }
         }
         const groundId = groundIdOf(id);
         // Built tiles wear the town's selected finish — appearance is a free
@@ -371,6 +409,40 @@ export class Renderer {
     }
   }
 
+  /** Refresh the roof index and ease each room's cutaway toward its target.
+   *
+   *  Being INSIDE is judged on the room's interior, not its shell, so standing
+   *  in a doorway leaves the roof up — you're in the wall, not in the room, and
+   *  a roof that flickered as you crossed the threshold would be worse than one
+   *  that waited a step. */
+  private syncRoofs(world: WorldState): void {
+    const list = rooms(world);
+    if (list !== this.roomsRef) {
+      this.roomsRef = list;
+      this.roofIndex.clear();
+      this.roofCover.clear();
+      for (const room of list) {
+        const covered = new Set<string>([...room.interior, ...room.shell]);
+        this.roofCover.set(room.id, covered);
+        for (const key of covered) this.roofIndex.set(key, room);
+      }
+      // Forget fade state for rooms that no longer exist, so the map doesn't
+      // grow every time a wall is knocked through and rebuilt.
+      for (const id of [...this.roofAlpha.keys()]) {
+        if (!this.roofCover.has(id)) this.roofAlpha.delete(id);
+      }
+    }
+
+    const { x, y } = playerTile(world);
+    const insideKey = tileKey(x, y);
+    for (const room of list) {
+      const inside = room.interior.has(insideKey);
+      const target = inside ? 0 : 1;
+      const current = this.roofAlpha.get(room.id) ?? 1;
+      this.roofAlpha.set(room.id, current + (target - current) * ROOF_FADE_RATE);
+    }
+  }
+
   /** The ground grid, shown only in build view. Placement is per tile, so while
    *  you're editing you should be able to see the tiles you're editing. */
   private drawBuildGrid(): void {
@@ -420,6 +492,58 @@ export class Renderer {
     // Only things IN FRONT of the player (larger y = nearer the camera) can
     // cover them, and only within the span the art actually reaches.
     return ty > p.y && ty - p.y <= overhang && Math.abs(tx - p.x) < 0.9;
+  }
+
+  /** One cell of a roof, sitting a storey above its footprint.
+   *
+   *  Roofs are derived from enclosure, never placed (DESIGN §Structures), so
+   *  this draws whatever the flood-fill says is covered — interior and shell
+   *  alike. Edges are drawn only where the roof actually ENDS: per-cell edges
+   *  would tile the surface into a grid of boxes, the same mistake the ground
+   *  bevel and the wall side-runs each made once already. */
+  private drawRoofCell(world: WorldState, tx: number, ty: number, covered: Set<string>, alpha: number): void {
+    const ctx = this.ctx;
+    const cell = world.build[tileKey(tx, ty)];
+    const skin = skinDef(cell ? cell.finish : world.skins.selected.wood);
+    const px = Math.round(this.sceneX(tx) - TILE / 2);
+    const py = Math.round(this.sceneY(ty) - TILE / 2) - STOREY;
+
+    const prev = ctx.globalAlpha;
+    ctx.globalAlpha = prev * alpha;
+
+    ctx.fillStyle = skin.shade;
+    ctx.fillRect(px, py, TILE, TILE);
+    ctx.fillStyle = "rgba(0,0,0,0.10)"; // push it clearly darker than its walls
+    ctx.fillRect(px, py, TILE, TILE);
+
+    // Shingle courses. Stepped off the WORLD row rather than the cell, so the
+    // lines run unbroken across the whole roof instead of restarting per tile —
+    // this is banding on purpose, the way the tent's canvas is striped, and it
+    // is the difference between a roof and a brown lid.
+    ctx.fillStyle = "rgba(0,0,0,0.11)";
+    for (let i = 0; i < TILE; i++) {
+      if ((ty * TILE + i) % 4 === 0) ctx.fillRect(px, py + i, TILE, 1);
+    }
+
+    const has = (dx: number, dy: number) => covered.has(tileKey(tx + dx, ty + dy));
+    if (!has(0, -1)) {
+      ctx.fillStyle = skin.top; // sunlit ridge along the far edge
+      ctx.fillRect(px, py, TILE, 2);
+    }
+    if (!has(0, 1)) {
+      ctx.fillStyle = skin.color; // the eave you'd see the underside of
+      ctx.fillRect(px, py + TILE - 2, TILE, 2);
+    }
+    if (!has(-1, 0)) {
+      ctx.fillStyle = skin.color;
+      ctx.fillRect(px, py, 1, TILE);
+    }
+    if (!has(1, 0)) {
+      ctx.fillStyle = skin.color;
+      ctx.fillRect(px + TILE - 1, py, 1, TILE);
+    }
+
+    ctx.globalAlpha = prev;
   }
 
   /** A wall or a door, standing one storey out of its tile.

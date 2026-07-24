@@ -23,9 +23,10 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   changes the world, daily (clock-driven) routines, friendship that reads
   through dialogue, and the audio module.
 - **Phase 1 — Materials & gathering** (see the model below).
-- **Phase 2a steps 1–2** — the raised pass (things stand up and overhang) and
-  the structure layer (walls, doors, build mode). See below.
-- Menu with New town / sound toggle; PWA shell; 99 tests.
+- **Phase 2a steps 1–3** — the raised pass (things stand up and overhang), the
+  structure layer (walls, doors, build mode), and rooms + derived roofs with the
+  cutaway. See below.
+- Menu with New town / sound toggle; PWA shell; 111 tests.
 
 **Save schema is at v5.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
@@ -118,13 +119,13 @@ smallest risk first:
    `world.build`), four-neighbour autotiling, solidity, build mode with its
    flattened view and drag-to-paint. Placement moved off the ACT button into
    build mode, so `Tool` no longer carries `plank`.
-3. **Rooms and roofs — next.** Bounded flood-fill (with a fill budget, or open
-   terrain fills forever), derived roofs, the snap-on beat, per-room cutaway
-   alpha. Worth knowing going in: a bare wall shell is an inherently awkward
-   look — every game in this lineage covers it with a roof immediately — so
-   don't over-tune the shell before the roof exists.
-4. **Furniture.** Multi-tile with orientation. Wooden pieces only; soft goods
-   await the shop.
+3. ~~**Rooms and roofs.**~~ **Done.** Bounded flood-fill (`sim/rooms.ts`),
+   derived roofs, the snap-on beat, per-room cutaway easing. The fill budget
+   (MAX_ROOM) doubles as the definition of "not enclosed" — exceeding it IS the
+   miss answer, which is what keeps the common case cheap.
+4. **Furniture — next.** Multi-tile with orientation. Wooden pieces only; soft
+   goods await the shop. This is where `orientation` finally belongs: a bed is
+   1x2 and faces a way, where a wall's neighbours decide how it looks.
 
 Folded into v5 as planned: `finish` lives on the build cell, so per-building
 finishes need no further migration.
@@ -184,6 +185,10 @@ you trip over them:
   store their own finish (v5), so two houses can differ. Plank floors still read
   the town-wide selection and restyle all at once; worth unifying when floors
   next get touched.
+- **Villagers walk through walls.** Collision was added to the PLAYER's step
+  (per-axis, so you slide along a wall rather than sticking); `tickVillager`
+  still moves freely. Harmless while routines only cross open town, and due for
+  a fix when residents start living in commissioned houses.
 - **Villager "witness" has no proximity model for memory** — everyone hears about
   everything (friendship *is* proximity-gated). Fine in a town this small.
 - **PWA icon is a single SVG.** Real raster icons before any app-store-ish push.

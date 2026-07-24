@@ -12,6 +12,7 @@ import { remember } from "./memory";
 import type { MemoryKind } from "./memory";
 import { dig, placePlank, isWalkable, tileAt, setTile, homesteadOrigin } from "./world";
 import { placeStructure, removeStructure } from "./structures";
+import { rooms } from "./rooms";
 import { structureDef } from "../content/structures";
 import { GRASS, DIRT, PLANK, FARMLAND, FARMLAND_WET, MUSHROOM } from "../content/tiles";
 import { emptyInventory, add, canAfford, spend, refund, shortfall } from "./inventory";
@@ -125,9 +126,20 @@ export function tick(world: WorldState, dt: number, now: number): void {
       p.target = null;
     } else {
       const step = Math.min(dist, PLAYER_SPEED * dt);
-      p.x += (dx / dist) * step;
-      p.y += (dy / dist) * step;
+      // Collide per axis rather than as a point, so a wall STOPS you and a
+      // glancing approach slides along it instead of sticking. Until structures
+      // existed only the destination tile was ever checked, which meant tapping
+      // past a wall walked you straight through it — the walls were scenery.
+      const nx = p.x + (dx / dist) * step;
+      const ny = p.y + (dy / dist) * step;
+      const movedX = isWalkable(world, Math.round(nx), Math.round(p.y));
+      if (movedX) p.x = nx;
+      const movedY = isWalkable(world, Math.round(p.x), Math.round(ny));
+      if (movedY) p.y = ny;
       if (Math.abs(dx) > 0.01) p.facing = dx >= 0 ? 1 : -1;
+      // Pressed flat against something with nowhere to go: drop the target so
+      // we don't grind against it forever.
+      if (!movedX && !movedY) p.target = null;
     }
   }
 
@@ -284,11 +296,18 @@ export function buildAt(world: WorldState, tool: BuildTool, x: number, y: number
   }
 
   const finish = world.skins.selected[structureDef(tool).finish];
+  const roomsBefore = rooms(world).length;
   if (!placeStructure(world, x, y, tool, finish)) {
     return { changed: false, message: `Can't put a ${structureDef(tool).name.toLowerCase()} there.`, broke: false };
   }
   spend(world.inventory, cost);
   witness(world, "built_plank", undefined, now);
+
+  // Closing the last gap is the beat: the roof arrives on its own, because it
+  // was never something you could buy (DESIGN §Structures).
+  if (rooms(world).length > roomsBefore) {
+    return { changed: true, message: "It closes. A roof settles over it, like it had been waiting.", broke: false };
+  }
   return { changed: true, message: buildFlavour(tool), broke: false };
 }
 

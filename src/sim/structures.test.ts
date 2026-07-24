@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { newWorld } from "./game";
+import { newWorld, moveTo, tick } from "./game";
 import { isWalkable, setTile, tileKey } from "./world";
 import { WATER, DIRT, GRASS } from "../content/tiles";
 import {
@@ -174,5 +174,36 @@ describe("building claims the ground", () => {
     updateRegrowth(w, 1000 + nodeDef("tree").regrowMs + nodeDef("rock").regrowMs + 1);
     expect(w.regrow[tileKey(x, y)]).toBeUndefined();
     expect(structureAt(w, x, y)).toBeNull();
+  });
+});
+
+describe("walls stop you", () => {
+  it("blocks a walk that would cross a wall, instead of passing through it", () => {
+    const w = world();
+    for (let y = 18; y <= 24; y++) for (let x = 18; x <= 24; x++) clear(w, x, y);
+    w.player.x = 21;
+    w.player.y = 23;
+    for (let x = 19; x <= 23; x++) placeStructure(w, x, 21, "wall", "pine");
+
+    // Aim for open ground on the far side of the wall.
+    moveTo(w, 21, 19);
+    for (let i = 0; i < 400; i++) tick(w, 1 / 60, 1000);
+
+    // Only the destination tile used to be checked, so the straight-line walk
+    // sailed through. The wall must actually be in the way.
+    expect(w.player.y).toBeGreaterThan(21);
+  });
+
+  it("still lets you through a doorway", () => {
+    const w = world();
+    for (let y = 18; y <= 24; y++) for (let x = 18; x <= 24; x++) clear(w, x, y);
+    w.player.x = 21;
+    w.player.y = 23;
+    for (let x = 19; x <= 23; x++) placeStructure(w, x, 21, "wall", "pine");
+    placeStructure(w, 21, 21, "door", "pine");
+
+    moveTo(w, 21, 19);
+    for (let i = 0; i < 400; i++) tick(w, 1 / 60, 1000);
+    expect(w.player.y).toBeCloseTo(19, 1);
   });
 });
