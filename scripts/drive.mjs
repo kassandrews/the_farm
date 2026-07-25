@@ -101,10 +101,12 @@ export async function drive({
     at: (gx, gy) => [geom.cx + gx * geom.tilePx, geom.cy + gy * geom.tilePx],
     /** True when a point is clear of the HUD palettes. */
     safeArea: (x, y) => x > 90 && x < viewport.width - 150 && y > 60 && y < viewport.height - 40,
-    /** Select a tool/build tool by its button title, e.g. "Wall", "Bed". */
-    tool: async (title) => {
-      const b = await page.$(`button.tool[title="${title}"]`);
-      if (!b) throw new Error(`no tool button titled ${title}`);
+    /** Select a tool/build tool by its accessible name, e.g. "Wall", "Bed".
+     *  It's `aria-label`, not `title`: the HUD draws its own hover hints now, and
+     *  a `title` alongside them would give every button two tooltips. */
+    tool: async (label) => {
+      const b = await page.$(`button.tool[aria-label="${label}"]`);
+      if (!b) throw new Error(`no tool button labelled ${label}`);
       await b.click();
       await page.waitForTimeout(150);
     },

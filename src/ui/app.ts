@@ -3,7 +3,7 @@
 // onboarding, the land-claim opening beat, dialogue, the "while you were out"
 // postcard). This is the ui layer — the only place DOM events meet the sim.
 
-import { el, modal } from "./dom";
+import { el, hoverHint, modal } from "./dom";
 import { Renderer } from "../render/renderer";
 import type { WorldState, Tool, BuildTool, HomesteadSpot } from "../sim/types";
 import { FACINGS, FURNITURE, furnitureDef } from "../content/furniture";
@@ -53,22 +53,28 @@ const AUTOSAVE_MS = 15_000;
 // Two palettes, because there are two ways to touch the world (DESIGN
 // §Structures). ACT tools apply to the tile at your feet via the action button.
 // BUILD tools put you in build mode: the view flattens and you tap the map.
-const TOOLS: { id: Tool; icon: string; label: string }[] = [
-  { id: "dig", icon: "⛏️", label: "Dig" },
-  { id: "gather", icon: "🧺", label: "Gather" },
-  { id: "plant", icon: "🌱", label: "Plant" },
-  { id: "water", icon: "💧", label: "Water" },
+//
+// `hint` is the hover descriptor (desktop only — see `hoverHint`). It says what
+// the button DOES, not what it is: the icon and label already carry the noun,
+// so a hint that repeats it is worth nothing to the person hovering. `key` is
+// the desktop shortcut where one exists; the hint is the only place they're
+// written down, since a keyboard legend would be HUD clutter on a phone.
+const TOOLS: { id: Tool; icon: string; label: string; hint: string; key?: string }[] = [
+  { id: "dig", icon: "⛏️", label: "Dig", hint: "Turn the ground into soil you can plant in.", key: "1" },
+  { id: "gather", icon: "🧺", label: "Gather", hint: "Pick what's ripe, or fell a tree or rock beside you.", key: "2" },
+  { id: "plant", icon: "🌱", label: "Plant", hint: "Sow a seed in tilled soil.", key: "3" },
+  { id: "water", icon: "💧", label: "Water", hint: "Water what's planted. Growth resumes.", key: "4" },
 ];
 
-const BUILD_TOOLS: { id: BuildTool; icon: string; label: string }[] = [
-  { id: "plank", icon: "🪵", label: "Floor" },
-  { id: "wall", icon: "🧱", label: "Wall" },
-  { id: "door", icon: "🚪", label: "Door" },
-  { id: "bed", icon: "🛏️", label: "Bed" },
-  { id: "table", icon: "🪑", label: "Table" },
-  { id: "chair", icon: "💺", label: "Chair" },
-  { id: "shelf", icon: "🗄️", label: "Shelf" },
-  { id: "erase", icon: "↩️", label: "Take back down" },
+const BUILD_TOOLS: { id: BuildTool; icon: string; label: string; hint: string }[] = [
+  { id: "plank", icon: "🪵", label: "Floor", hint: "Lay floorboards. Costs wood." },
+  { id: "wall", icon: "🧱", label: "Wall", hint: "Raise a wall. Close a shape and it gets a roof." },
+  { id: "door", icon: "🚪", label: "Door", hint: "Cut a doorway. Put it on a south wall so it shows." },
+  { id: "bed", icon: "🛏️", label: "Bed", hint: "A bed makes a room somewhere to live." },
+  { id: "table", icon: "🪑", label: "Table", hint: "Place a table. Press R to turn it." },
+  { id: "chair", icon: "💺", label: "Chair", hint: "Place a chair. Press R to turn it." },
+  { id: "shelf", icon: "🗄️", label: "Shelf", hint: "Place a shelf. Press R to turn it." },
+  { id: "erase", icon: "↩️", label: "Take back down", hint: "Remove what you built here. Materials come back." },
 ];
 
 /** Arrows for the rotate button, so the facing is legible without a legend. */
@@ -730,10 +736,12 @@ function buildHud(
   onMenu: () => void,
   onSatchel: () => void,
 ): HudRefs {
-  const menu = el("button", { class: "menu-btn", title: "Menu" }, ["☰"]);
+  const menu = el("button", { class: "menu-btn", ariaLabel: "Menu" }, ["☰"]);
   menu.addEventListener("click", onMenu);
-  const satchel = el("button", { class: "menu-btn satchel-btn", title: "Satchel" }, ["🎒"]);
+  hoverHint(menu, "Menu — sound, and starting a new town.");
+  const satchel = el("button", { class: "menu-btn satchel-btn", ariaLabel: "Satchel" }, ["🎒"]);
   satchel.addEventListener("click", onSatchel);
+  hoverHint(satchel, "Satchel — what you're carrying.");
   const clock = el("div", { class: "clock" }, ["—"]);
   const flash = el("div", {
     class: "clock",
@@ -746,8 +754,9 @@ function buildHud(
   const toolButtons: [Tool, HTMLElement][] = [];
   const palette = el("div", { class: "tool-palette" });
   for (const t of TOOLS) {
-    const btn = el("button", { class: "tool", title: t.label }, [t.icon]);
+    const btn = el("button", { class: "tool", ariaLabel: t.label }, [t.icon]);
     btn.addEventListener("click", () => onTool(t.id));
+    hoverHint(btn, `${t.label} — ${t.hint}${t.key ? `  (${t.key})` : ""}`);
     if (t.id === "dig") btn.classList.add("selected");
     toolButtons.push([t.id, btn]);
     palette.append(btn);
@@ -756,18 +765,21 @@ function buildHud(
   const buildButtons: [BuildTool, HTMLElement][] = [];
   const buildPalette = el("div", { class: "tool-palette build-palette" });
   for (const t of BUILD_TOOLS) {
-    const btn = el("button", { class: "tool", title: t.label }, [t.icon]);
+    const btn = el("button", { class: "tool", ariaLabel: t.label }, [t.icon]);
     btn.addEventListener("click", () => onBuildTool(t.id));
+    hoverHint(btn, `${t.label} — ${t.hint}`);
     buildButtons.push([t.id, btn]);
     buildPalette.append(btn);
   }
 
-  const rotate = el("button", { class: "tool rotate-btn", title: "Rotate" }, ["↓"]);
+  const rotate = el("button", { class: "tool rotate-btn", ariaLabel: "Rotate" }, ["↓"]);
   rotate.addEventListener("click", onRotate);
+  hoverHint(rotate, "Turn the next piece you place.  (R)");
   rotate.style.display = "none";
 
   const action = el("button", { class: "action-btn" }, ["ACT"]);
   action.addEventListener("click", onAction);
+  hoverHint(action, "Use the held tool on the tile you're standing on.  (Space)");
 
   const hud = el("div", { class: "hud" }, [menu, satchel, clock, flash, palette, buildPalette, rotate, action]);
   root.append(hud);

@@ -212,6 +212,26 @@ body {
   letter-spacing: 0.02em;
 }
 
+/* Hover descriptor for HUD buttons (ui/dom.ts `hoverHint`). Desktop only —
+   there is no hover on a phone, and the JS never shows it for a touch pointer.
+   Fixed rather than inside .hud so it can't be clipped by a palette, and
+   pointer-events: none so it can never eat the click it's describing. */
+.hint {
+  position: fixed;
+  z-index: 20;
+  max-width: 240px;
+  padding: 7px 11px;
+  border-radius: 9px;
+  background: rgba(20, 16, 31, 0.92);
+  color: #f4ecdd;
+  font-size: 13px;
+  line-height: 1.35;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
 /* --- Modals: dialogue, postcard, title ------------------------------------ */
 .modal-scrim {
   position: fixed;
