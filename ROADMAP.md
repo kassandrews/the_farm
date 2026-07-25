@@ -214,5 +214,15 @@ you trip over them:
 - Build the current phase before expanding sideways.
 - Every schema change ships a tested migration. The game is live.
 - Verify rendering and interaction changes in a real browser, not just tests —
-  the two worst bugs so far (gathering being unreachable, and gathering
-  hijacking the build tool) both passed unit tests and failed in the browser.
+  the worst bugs so far all passed unit tests and failed on screen: gathering
+  being unreachable, gathering hijacking the build tool, an upside-down tent, a
+  doorway that went see-through when you stood in it. **Use
+  `scripts/drive.mjs`** rather than writing a throwaway harness; its header
+  documents the gotchas (tile size isn't fixed, the HUD swallows clicks,
+  `beforeunload` clobbers seeded saves, evening screenshots are too dark to
+  judge), each of which has cost an hour at least once.
+- **When the browser disagrees with the tests, suspect the harness first.**
+  Three "bugs" this phase were the scaffolding: a house built centred on the
+  player so the cutaway correctly hid its own roof, clicks landing on the HUD
+  instead of the map, and a room placed off-viewport. Reproducing the exact
+  state in a unit test settles it in two minutes.

@@ -63,6 +63,22 @@ its docblock before adding any draw path or animation. Squash thins rows
 (±1px), never drops them. Unit tests can't catch visual regressions;
 verify large rendering changes with headless-browser screenshots.
 
+## Per-cell edges band — hard rule (learned three times)
+
+Never draw an edge, bevel, seam, or highlight on **every cell** of something
+that reads as one continuous surface. Adjacent cells pair their light and dark
+edges into venetian-blind stripes, and the surface stops reading as a surface.
+
+It has caught us three separate times: the ground bevel striped open grass and
+the plaza, the wall side-runs striped a house into rungs, and per-cell roof
+shingles tiled a roof into a grid of boxes.
+
+The fix is the same every time — draw the edge **only where the surface
+actually ends** (compare against the neighbour), or step the texture off the
+**world** coordinate rather than the cell so courses run unbroken across it.
+Deliberate banding, like the tent's striped canvas, is fine; it's banding that
+follows the tile grid that's the bug.
+
 ## Tone
 
 Deadpan institutional absurdism — small creatures taking ridiculous things
