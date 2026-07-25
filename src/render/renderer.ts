@@ -81,6 +81,18 @@ const HIDDEN_FADE = 0.28;
 const STOREY = 24;
 /** The lit top surface of a wall, seen from slightly above. */
 const WALL_CAP = 3;
+/** The doorstep: a flagstone slab, deliberately NOT a wood finish, so it reads
+ *  as a step laid at the threshold rather than as more of the house. */
+const STEP_STONE = "#9a9187";
+const STEP_LIP = "#7d746b";
+const STEP_DEPTH = 5; // how far out from the doorway it reaches
+const STEP_INSET = 3; // margin at each end, so it's a step and not a full edge
+/** Wall left standing either side of a doorway cut into a side run's top
+ *  surface, so the opening reads as a gap in the wall rather than as the run
+ *  simply stopping. */
+const DOOR_JAMB = 3;
+/** How far the roof is pulled back over a side doorway. */
+const DOOR_NOTCH = 4;
 
 /** Art heights in scene px for the two scenery pieces. Both exceed TILE, which
  *  is what makes them overhang the tile behind and read as standing up. */
@@ -401,6 +413,7 @@ export class Renderer {
             ctx.fillRect(gx + 1, gy - 1, 1, 1);
           }
         }
+        this.drawDoorstep(world, tx, ty, px, py);
       }
     }
   }
@@ -580,13 +593,27 @@ export class Renderer {
       ctx.fillStyle = skin.color; // the eave you'd see the underside of
       ctx.fillRect(px, py + TILE - 2, TILE, 2);
     }
-    if (!has(-1, 0)) {
-      ctx.fillStyle = skin.color;
-      ctx.fillRect(px, py, 1, TILE);
+    // A doorway in a SIDE wall gets the roof pulled back over it, so the
+    // house's silhouette is visibly broken where the way in is. Without this a
+    // side door has nothing at all to show for itself: its wall is seen edge-on
+    // (no face to cut) and its top surface is under this very roof. The step on
+    // the ground says "here"; this says "and it's a door".
+    const under = world.build[tileKey(tx, ty)];
+    let sideDoor = false;
+    if (under?.id === "door") {
+      const m = wallMask(world, tx, ty);
+      sideDoor = Boolean(m & CONNECT_N) && Boolean(m & CONNECT_S);
     }
-    if (!has(1, 0)) {
-      ctx.fillStyle = skin.color;
-      ctx.fillRect(px + TILE - 1, py, 1, TILE);
+    for (const dx of [-1, 1]) {
+      if (has(dx, 0)) continue;
+      const ex = dx < 0 ? px : px + TILE - 1;
+      if (sideDoor) {
+        ctx.fillStyle = "#3a2620";
+        ctx.fillRect(dx < 0 ? px : px + TILE - DOOR_NOTCH, py + DOOR_JAMB, DOOR_NOTCH, TILE - DOOR_JAMB * 2);
+      } else {
+        ctx.fillStyle = skin.color;
+        ctx.fillRect(ex, py, 1, TILE);
+      }
     }
 
     ctx.globalAlpha = prev;
@@ -681,6 +708,60 @@ export class Renderer {
     ctx.globalAlpha = prev;
   }
 
+  /** The step outside a doorway, laid flat on the ground beside it.
+   *
+   *  WHY THIS EXISTS, and why it isn't decoration. A door in an east or west
+   *  wall used to be invisible, and the two obvious fixes both fail on the
+   *  projection: there is no face to cut it into (a north-south run is seen
+   *  edge-on, so its face has zero width), and its top surface is covered by
+   *  the roof cell of the row in front of it. The only surface still in view
+   *  outside a roofed house is the GROUND — so that's where the cue goes.
+   *
+   *  It reads architecturally rather than as a marker: doors have doorsteps.
+   *  And it doubles as the visible form of the doorstep rule (ROADMAP §"A door
+   *  needs a south wall and a doorstep") — the cell it lands on is exactly the
+   *  cell that has to stay clear for anyone to get in.
+   *
+   *  Drawn from the GROUND cell looking for adjacent doors, not from the door
+   *  looking out, so it costs one lookup per visible tile and stays bounded by
+   *  the screen like everything else in this pass. Both perpendicular
+   *  neighbours get one: the inside step is under the roof until the cutaway
+   *  lifts, which is correct — a threshold has two sides. */
+  private drawDoorstep(world: WorldState, tx: number, ty: number, px: number, py: number): void {
+    const ctx = this.ctx;
+    for (const [dx, dy] of [
+      [0, -1],
+      [1, 0],
+      [0, 1],
+      [-1, 0],
+    ] as [number, number][]) {
+      const door = world.build[tileKey(tx + dx, ty + dy)];
+      if (!door || door.id !== "door") continue;
+      // Only on the door's APPROACH axis. A door in a north-south run is
+      // entered from the east or west; one in an east-west run from the north
+      // or south. Stepping off the side of a doorway isn't a way in, and a step
+      // drawn there would read as a ledge around the whole house.
+      const mask = wallMask(world, tx + dx, ty + dy);
+      const sideOn = Boolean(mask & CONNECT_N) && Boolean(mask & CONNECT_S);
+      if (sideOn !== (dy === 0)) continue;
+
+      ctx.fillStyle = STEP_STONE;
+      if (dy === 0) {
+        // Door to our east or west: the step hugs that edge, running with the
+        // doorway rather than across it.
+        const sx = dx > 0 ? px + TILE - STEP_DEPTH : px;
+        ctx.fillRect(sx, py + STEP_INSET, STEP_DEPTH, TILE - STEP_INSET * 2);
+        ctx.fillStyle = STEP_LIP;
+        ctx.fillRect(sx, py + TILE - STEP_INSET - 1, STEP_DEPTH, 1);
+      } else {
+        const sy = dy > 0 ? py + TILE - STEP_DEPTH : py;
+        ctx.fillRect(px + STEP_INSET, sy, TILE - STEP_INSET * 2, STEP_DEPTH);
+        ctx.fillStyle = STEP_LIP;
+        ctx.fillRect(px + STEP_INSET, sy + STEP_DEPTH - 1, TILE - STEP_INSET * 2, 1);
+      }
+    }
+  }
+
   /** A wall or a door, standing one storey out of its tile.
    *
    *  There is one wall material and the four-neighbour mask decides how it
@@ -743,10 +824,23 @@ export class Renderer {
     }
 
     if (cell.id === "door") {
-      // A hole in the wall, with the wall carried over it as a lintel — so a
-      // doorway reads as cut INTO a run rather than as a gap in it.
       ctx.fillStyle = "#3a2620";
-      ctx.fillRect(px + 4, base - STOREY + WALL_CAP + 3, TILE - 8, STOREY - WALL_CAP - 3);
+      if (sideOn) {
+        // A door in a SIDE run. The run shows its top surface, not its face, so
+        // there is no face to cut a doorway into — which is why a door on an
+        // east or west wall used to render as nothing at all, leaving a house
+        // you could walk into but couldn't see the way into. Phase 3 judges
+        // houses the player built, so it had to stop being true.
+        //
+        // Read it as a gap in the top surface instead: the run's band is the
+        // wall seen from above, so the opening spans the full THICKNESS (x) and
+        // is inset in y, leaving a jamb of wall at each side of the doorway.
+        ctx.fillRect(px, top + DOOR_JAMB, TILE, TILE - DOOR_JAMB * 2);
+      } else {
+        // A hole in the wall, with the wall carried over it as a lintel — so a
+        // doorway reads as cut INTO a run rather than as a gap in it.
+        ctx.fillRect(px + 4, top + WALL_CAP + 3, TILE - 8, STOREY - WALL_CAP - 3);
+      }
     }
 
     ctx.globalAlpha = prev;
