@@ -32,6 +32,17 @@
 //   • The camera eases toward the player, so tile coords are camera-relative and
 //     drift while it's still catching up. Let it settle before clicking, or move
 //     the player by seeding position rather than by walking.
+//   • The sim is NOT on `window`. To watch live state (has that villager
+//     actually moved?) use `liveSave()`, which flushes through visibilitychange
+//     before reading; plain `save()` returns the last persisted world, which for
+//     a running game is stale and will look like nothing is happening.
+//   • Villagers START at their scheduled stop, so "did they walk here" is
+//     unanswerable unless you put them somewhere else first — via `reseed()`,
+//     which goes through addInitScript for the beforeunload reason above.
+//   • A villager who CANNOT path to their stop snaps to it instantly, which
+//     looks identical to arriving normally. If someone reaches a destination
+//     impossibly fast, the pathfinder found nothing — that's a sealed doorway
+//     or a blocked doorstep, not a fast walk. This hid a real bug for an hour.
 
 import { chromium } from "playwright-core";
 
@@ -100,6 +111,30 @@ export async function drive({
     rotate: async () => (await page.$("button.rotate-btn"))?.click(),
     /** The current save, for asserting on sim state from the outside. */
     save: () => page.evaluate(() => JSON.parse(localStorage.getItem("the-farm-save"))),
+    /** Force a write and read it back — the only way to watch LIVE sim state.
+     *
+     *  The world is not exposed on `window`, and `save()` alone returns whatever
+     *  was last persisted, which for a running game is stale. app.ts persists on
+     *  visibilitychange, so faking a hide flushes the current world to storage
+     *  first. Poll this to watch a villager actually move. */
+    liveSave: async () => {
+      await page.evaluate(() => {
+        Object.defineProperty(document, "hidden", { value: true, configurable: true });
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      await page.waitForTimeout(120);
+      return page.evaluate(() => JSON.parse(localStorage.getItem("the-farm-save")));
+    },
+    /** Reposition villagers (or anything else) BEFORE the app boots, then reload.
+     *  Villagers start already standing at their scheduled stop, so testing that
+     *  someone WALKS somewhere means putting them elsewhere first — and doing it
+     *  through addInitScript, or beforeunload clobbers the write. */
+    reseed: async (fn, arg) => {
+      await ctx.addInitScript(fn, arg);
+      await page.reload({ waitUntil: "networkidle" });
+      await page.waitForTimeout(900);
+      await dismiss(page);
+    },
     shot: (path, clip) => page.screenshot({ path, ...(clip ? { clip } : {}) }),
   };
 }
