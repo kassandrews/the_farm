@@ -11,6 +11,8 @@ import { recall } from "./memory";
 import { friendshipTier } from "./villagers";
 import type { MemoryKind } from "./memory";
 import { describeHome, NOTE_PRIORITY, URGENT } from "./home";
+import type { HomeNote } from "./home";
+import type { AdultForm } from "../content/canon/forms";
 import {
   OFFICE_LANDCLAIM,
   OFFICE_MEMORY,
@@ -99,9 +101,7 @@ export function speak(world: WorldState, v: Villager, rng: Rng): Speech {
  *  deciding that at the call site would put the judgement two modules away from
  *  the vocabulary it's judging. */
 function tryHomeLine(world: WorldState, v: Villager, rng: Rng): { text: string; chance: number } | null {
-  const bank = RESIDENT_HOME[v.form] as
-    | Partial<Record<string, ((value: string) => string)[]>>
-    | undefined;
+  const bank = homeBank(v.form);
   if (!bank) return null;
 
   // describeHome already sorts by NOTE_PRIORITY; walking the priority list
@@ -119,6 +119,26 @@ function tryHomeLine(world: WorldState, v: Villager, rng: Rng): { text: string; 
     };
   }
   return null;
+}
+
+function homeBank(
+  form: AdultForm,
+): Partial<Record<string, ((value: string) => string)[]>> | undefined {
+  return RESIDENT_HOME[form] as Partial<Record<string, ((value: string) => string)[]>> | undefined;
+}
+
+/** One line about a SPECIFIC home note, for a caller that already knows which
+ *  note it wants said. Null when this form has nothing for it.
+ *
+ *  Exists so the commission's payoff moment can use the same banks as idle
+ *  conversation instead of carrying a second set of lines about houses. The
+ *  odds machinery deliberately stays out of it: `tryHomeLine` decides how
+ *  READILY something comes up in passing, and a beat that has already decided
+ *  to speak isn't asking that question. */
+export function homeLineFor(form: AdultForm, note: HomeNote, rng: Rng): string | null {
+  const templates = homeBank(form)?.[note.kind];
+  if (!templates || templates.length === 0) return null;
+  return rng.pick(templates)(note.value);
 }
 
 /** Find a memory-referencing line the villager could say right now, or null. */

@@ -27,6 +27,7 @@ import type { SkinId } from "../content/skins";
 import { skinDef } from "../content/skins";
 import type { FurnitureId } from "../content/furniture";
 import { furnitureDef } from "../content/furniture";
+import { tasteOf } from "../content/tastes";
 import { qualify } from "./assign";
 import { claimedBed } from "./housing";
 import { cellsFor } from "./furniture";
@@ -45,6 +46,13 @@ export type HomeNoteKind =
   | "homeless" // their bed is gone; the claim outlived the furniture
   | "roofless" // the bed is there, the walls aren't. Open sky over the pillow.
   | "sealed" // enclosed with no door: a home nobody can get into
+  // Something they're pleased by. Said occasionally, but ahead of the rest.
+  // TWO kinds rather than one, because "you built it in dark walnut" and "you
+  // put a shelf in" are not the same sentence, and a single bank keyed on
+  // "delight" produced lines like "shelf. ... You paid attention." — found by
+  // reading the real modal, which is the only place the grammar is visible.
+  | "delight_finish" // built of what they like (content/tastes.ts)
+  | "delight_piece" // furnished with what they like
   // Something is true, and worth remarking on. Said occasionally.
   | "bare" // the bed and nothing else
   | "grand"
@@ -66,6 +74,12 @@ export const NOTE_PRIORITY: HomeNoteKind[] = [
   "homeless",
   "roofless",
   "sealed",
+  // Above the plain observations and below the troubles. If you went to the
+  // bother of building someone the thing they like, that is the most
+  // interesting true fact about their house, and them leading with "it's bare"
+  // instead would read as the game not having noticed.
+  "delight_finish",
+  "delight_piece",
   "bare",
   "grand",
   "snug",
@@ -116,6 +130,22 @@ export function describeHome(world: WorldState, v: Villager): HomeNote[] {
 
   const finish = dominantFinish(world, room.shell);
   if (finish) notes.push({ kind: "finish", value: skinDef(finish).name.toLowerCase() });
+
+  // Does any of the above happen to be what this form likes? A match adds a
+  // note; a miss adds nothing and removes nothing (content/tastes.ts). The
+  // finish outranks the piece because choosing what a house is MADE of is the
+  // more deliberate act — you can drop a chair in anywhere, but you built those
+  // walls that colour on purpose.
+  const taste = tasteOf(v.form);
+  if (taste) {
+    if (taste.finish && finish === taste.finish) {
+      notes.push({ kind: "delight_finish", value: skinDef(taste.finish).name.toLowerCase() });
+      // `some` rather than `includes`: `others` has already had "bed" filtered
+      // out of its type, and a bed is not a taste anyway — everyone gets one.
+    } else if (taste.piece && others.some((id) => id === taste.piece)) {
+      notes.push({ kind: "delight_piece", value: furnitureDef(taste.piece).name.toLowerCase() });
+    }
+  }
 
   return notes.sort(
     (a, b) => NOTE_PRIORITY.indexOf(a.kind) - NOTE_PRIORITY.indexOf(b.kind),

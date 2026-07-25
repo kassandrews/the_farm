@@ -42,7 +42,10 @@ DESIGN.md, if it's a rule about the game rather than about build order).
 - **Phase 3b — commissioned housing, complete.** The flagship beat is playable:
   somebody arrives, pitches a tent, and moves into the house you give them. It
   is also the award path for finishes — `whitewash` is now obtainable.
-- Menu with New town / sound toggle; PWA shell; 248 tests.
+- **Phase 3c — taste, complete.** Forms are quietly pleased by particular
+  finishes and furniture, and say so. Delight only; there is no way to express
+  the opposite.
+- Menu with New town / sound toggle; PWA shell; 254 tests.
 
 **Next:** the rest of Phase 3 — the other six fixed cast and their institutions,
 and the money/barter question, which blocks the shop. See below.
@@ -543,12 +546,34 @@ ate taps — during bed picking, the one mode whose whole instruction is "tap th
 map", while displaying the words "Pick a bed for Bissenette". `.hint` beside it
 has carried the fix and a comment explaining it since it was written.
 
+### 3c. Taste — **done**
+
+`content/tastes.ts` says what each form is quietly pleased by; `describeHome`
+adds a `delight_finish` or `delight_piece` note when the house happens to match,
+ranked above the plain observations and below the troubles. The stamp modal uses
+the same banks as idle conversation rather than carrying a second set of lines
+about houses.
+
+- **There is no opposite of the tastes table, and that IS the design.** No
+  `dislikes` field, no penalty, nothing anywhere that reads a house and finds it
+  wanting. The reliable way to keep "taste is delight, never a gate" is to leave
+  the vocabulary no way to say the other thing — a villager who could be
+  disappointed by your house would turn a gift into a review.
+- **Two delight kinds, not one.** "You built it in dark walnut" and "you put a
+  shelf in" are different sentences; one bank keyed on `delight` produced
+  *"shelf. ... You paid attention."* Caught by reading the actual modal, which
+  is the only place the grammar is visible — the unit tests were green.
+- **The Menace has two tastes on purpose.** Whitewash is unlocked BY housing
+  her, so she cannot be living in it the first time; the shelf is what lets her
+  first house please her. A taste that's unreachable at the moment it matters
+  most is a taste nobody ever sees.
+- **Preferences are form-only now.** DESIGN said "form + imported history", which
+  stopped being possible when residents stopped being imports. Corrected there.
+
 ### The rest of Phase 3
 
-- Preferences derived from form + history (the Blob wants drama; the Ghost wants
-  it dark) are only half in: each arrival has their own lines, but nothing reads
-  the finished house's finish or furniture back to them. `sim/home.ts` already
-  produces that vocabulary, so it is wiring and writing, not machinery.
+- The other six fixed cast and their institutions.
+- The money/barter question, which blocks the shop.
 - The other six fixed cast + their institutions: museum (confidently incorrect
   placards), shop, seed stall, errands board, plaza stage, junk economy.
 - Resolve the **money/barter** question — it blocks the shop.

@@ -18,7 +18,8 @@ import {
   completeLandClaim,
   summarizeAway,
 } from "../sim/game";
-import { officeLandClaimLine } from "../sim/dialogue";
+import { officeLandClaimLine, homeLineFor } from "../sim/dialogue";
+import { describeHome } from "../sim/home";
 import { saveWorld, loadWorld, hasSave, clearWorld } from "../sim/save";
 import { makeRng } from "../sim/rng";
 import type { Rng } from "../sim/rng";
@@ -457,13 +458,24 @@ export class App {
     audio.play("place");
     this.persist();
 
-    const who = world.villagers.find((v) => v.id === id)?.name ?? "They";
+    const resident = world.villagers.find((v) => v.id === id);
+    const who = resident?.name ?? "They";
     const def = arrivalOf(c);
+
+    // If the house happens to suit them, that's what they say instead of their
+    // stock line — the payoff for having built the thing they like belongs at
+    // the moment the house becomes theirs, not three conversations later. No
+    // opposite case exists: a house that DOESN'T suit them says nothing extra
+    // and they use their own line, which is already warm (content/tastes.ts).
+    const delight = resident
+      ? describeHome(world, resident).find((n) => n.kind === "delight_finish" || n.kind === "delight_piece")
+      : undefined;
+    const theirLine = (delight && homeLineFor(resident!.form, delight, this.rng)) || def.housedLine;
     this.openModal(
       (close) =>
         panel("Tired Office Creature", "Town hall", [
           el("p", {}, [`Form 9, discharged. ... ${who} lives at an address now.`]),
-          el("p", { class: "quote" }, [`"${def.housedLine}"`]),
+          el("p", { class: "quote" }, [`"${theirLine}"`]),
           ...(unlocked
             ? [el("p", { class: "unlock" }, [`${skinDef(unlocked).name} is available to build in.`])]
             : []),

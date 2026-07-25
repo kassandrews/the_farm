@@ -120,6 +120,10 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
 // into a chore with a pass/fail on it.
 export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v: string) => string)[]>>>> = {
   scholar: {
+    delight_piece: [
+      (v) => `There's a ${v}. I have put the findings ON it, like a person with furniture.`,
+      (v) => `The ${v} was not in the requirements. I noticed it anyway. I notice things.`,
+    ],
     homeless: [
       () => "My bed is gone. I've filed the observation under 'abrupt'.",
       () => ". ... I'm told the plaza is character-building. I'm collecting data on that.",
@@ -158,23 +162,43 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
     homeless: [() => "My bed has been deaccessioned. No form was filed. I'd have accepted a form."],
   },
   menace: {
+    delight_finish: [
+      (v) => `It's ${v}. ... You paid attention. I am not going to say more than that.`,
+      () => "You built it in the good one. I noticed immediately. I said nothing for an hour.",
+    ],
+    delight_piece: [
+      (v) => `A ${v}. ... You were paying attention. I won't be saying more than that.`,
+      (v) => `You put a ${v} in it. I know what that means. Don't make me say what it means.`,
+    ],
     homeless: [() => "My bed. Gone. I am choosing to find this dramatic rather than upsetting."],
     bare: [() => "It is empty. I am the decor. Still — one could add to me."],
     snug: [() => "Compact. I have decided that's deliberate, and therefore tasteful."],
     finish: [(v) => `${v}. Acceptable. I'd have chosen it myself, given the chance.`],
   },
   dog: {
+    delight_piece: [
+      (v) => `A ${v}! For me! I've been sitting on it. Near it. Both.`,
+      (v) => `You remembered about the ${v}. You REMEMBERED.`,
+    ],
     homeless: [() => "Where's my bed? Where's my BED. Okay. Okay. It's fine. Is it fine?"],
     bare: [() => "It's got a bed! That's the important one. That's the main one."],
     grand: [() => "It's SO big. I ran a lap. I'm going to run another one."],
     furnished: [(v) => `There's a ${v}! I sit near it. It's a good ${v}.`],
   },
   blob: {
+    delight_finish: [
+      (v) => `${v}. I walk in and the room does a little hush. Every time.`,
+      (v) => `You built it in ${v}. You understand the assignment. The assignment is atmosphere.`,
+    ],
     homeless: [() => "I have been made homeless. Tragically. Beautifully. Someone should be watching this."],
     grand: [() => "The proportions are theatrical. I enter it. I make an entrance."],
     snug: [() => "Intimate staging. Every seat is a good seat. There is one seat."],
   },
   gremlin: {
+    delight_piece: [
+      (v) => `A ${v}. Do you know what I can put UNDER a ${v}? Neither do you. Yet.`,
+      (v) => `The ${v} is perfect. I've already got plans. They're mostly legal.`,
+    ],
     homeless: [() => "Someone took my bed. I respect it. I want it back."],
     bare: [() => "Nothing in it yet. Give me a week."],
     furnished: [(v) => `I moved the ${v}. Slightly. You won't be able to prove it.`],

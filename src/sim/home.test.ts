@@ -5,6 +5,7 @@ import { GRASS } from "../content/tiles";
 import { add } from "./inventory";
 import { assign } from "./assign";
 import { describeHome, SNUG, GRAND } from "./home";
+import { TASTES } from "../content/tastes";
 import { speak } from "./dialogue";
 import { makeRng } from "./rng";
 
@@ -188,5 +189,62 @@ describe("saying it out loud", () => {
   it("talking still works for a villager with no home lines for their form", () => {
     const w = world();
     expect(talk(w, "office", makeRng(2))).not.toBeNull();
+  });
+});
+
+describe("taste", () => {
+  it("says nothing extra about a house that isn't to their taste", () => {
+    const w = world();
+    const bed = house(w, 40, 40);
+    assign(w, "resident1", bed.x, bed.y);
+    // Margfrom is a scholar and scholars like a shelf. There isn't one, and
+    // that costs her nothing: no note, no grumble, no missing-points readout.
+    // The vocabulary has no word for disappointment, which is the design.
+    expect(kinds(w)).not.toContain("delight_piece");
+    expect(kinds(w)).toContain("bare");
+  });
+
+  it("notices the piece their form likes", () => {
+    const w = world();
+    const bed = house(w, 40, 40);
+    assign(w, "resident1", bed.x, bed.y);
+    expect(TASTES.scholar!.piece).toBe("shelf");
+    buildAt(w, "shelf", 42, 41, Date.now(), "s");
+    expect(kinds(w)).toContain("delight_piece");
+  });
+
+  it("is not fooled by furniture that isn't the one they like", () => {
+    const w = world();
+    const bed = house(w, 40, 40);
+    assign(w, "resident1", bed.x, bed.y);
+    buildAt(w, "chair", 42, 41, Date.now(), "s");
+    expect(kinds(w)).not.toContain("delight_piece");
+    expect(kinds(w)).toContain("furnished"); // still worth remarking on
+  });
+
+  it("puts delight ahead of the plain observations", () => {
+    const w = world();
+    const bed = house(w, 40, 40);
+    assign(w, "resident1", bed.x, bed.y);
+    buildAt(w, "shelf", 42, 41, Date.now(), "s");
+    const notes = describeHome(w, resident(w));
+    // Built them the thing they like and they lead with it. Anything else
+    // reads as the game not having noticed what you did.
+    expect(notes[0].kind).toBe("delight_piece");
+  });
+
+  it("names what pleased them, so the line can say it", () => {
+    const w = world();
+    const bed = house(w, 40, 40);
+    assign(w, "resident1", bed.x, bed.y);
+    buildAt(w, "shelf", 42, 41, Date.now(), "s");
+    const note = describeHome(w, resident(w)).find((n) => n.kind === "delight_piece")!;
+    expect(note.value).toBe("shelf");
+  });
+
+  it("has no taste at all for the deskbound", () => {
+    // An institution delighted by soft furnishings would be the game mistaking
+    // him for a person.
+    expect(TASTES.office).toBeUndefined();
   });
 });

@@ -63,11 +63,13 @@ Beyond the character import, four gaps all three inspirations share:
 
 1. **Commissioned housing — the flagship.** In AC, villager houses are
    stock; in Minecraft you can build anything but nobody cares; SDV's town
-   is frozen. Here, an arriving import pitches a tent and *you build their
+   is frozen. Here, an arrival pitches a tent and *you build their
    house* — tile by tile, from materials you gathered — to *their* tastes
    (the Menace has standards; the Blob wants drama; the Ghost wants it
-   dark; preferences derive from form + imported history). Then they
-   genuinely live in it: path through it, comment on it, tweak a shelf.
+   dark). Preferences derive from **form**, and from form alone: residents
+   are not imports (see Importing, below), so there is no imported history
+   to draw on. Then they genuinely live in it: path through it, comment on
+   it, tweak a shelf.
    Repeatable, fuses all three inspirations at once, and is the deepest
    long-session sink in the game. First flagship after the vertical slice.
 
