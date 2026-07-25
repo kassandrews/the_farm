@@ -1,0 +1,121 @@
+// Stamping the town's pre-existing buildings into the world.
+//
+// Two callers, one code path, deliberately: newWorld() stamps into a fresh
+// world, and the v6→v7 migration stamps into a live save that predates
+// buildings existing. If those drifted apart, a returning player's town would
+// differ from a new player's in ways nobody would think to test.
+//
+// That's also why the target here is a structural subset rather than
+// WorldState — a save mid-migration is a bag of raw parsed JSON, not a
+// WorldState yet, and this has to work on both.
+//
+// The stamp is authoritative about its own ground: it writes the floor under
+// the whole footprint before placing anything. Otherwise a building could land
+// on a generated tree or (for the riverside spot) the river, and half of it
+// would silently fail to place — canPlaceStructure refuses solid ground. An
+// authored building comes with the ground it stands on.
+
+import type { BuildCell, FurnitureCell } from "./types";
+import type { TileId } from "../content/tiles";
+import { PLANK, GRASS } from "../content/tiles";
+import { tileDef } from "../content/tiles";
+import type { TownBuilding } from "../content/town";
+import { allTownBuildings, footprintCells, isPerimeter } from "../content/town";
+import { tileKey } from "./world";
+
+/** Answers what generation would put at a tile, before any edits. Both callers
+ *  can supply one — a live world knows its own, and a save being migrated still
+ *  carries the seed and homestead spot that determine it. */
+export type TerrainProbe = (x: number, y: number) => TileId;
+
+/** How much ground in front of a door the stamp will clear if it has to:
+ *  three wide, two deep. One cell would be enough to guarantee entry — the
+ *  approach apron is wider so the doorstep can't be ringed in by unlucky
+ *  neighbours either. */
+const APRON_W = 1; // cells either side of the door
+const APRON_D = 2; // cells outward from the wall
+
+/** The parts of a world a stamp touches. WorldState satisfies this, and so does
+ *  a half-migrated save object once its layers are known to exist. */
+export interface StampTarget {
+  overrides: Record<string, TileId>;
+  build: Record<string, BuildCell>;
+  furniture: Record<string, FurnitureCell>;
+  crops: Record<string, unknown>;
+}
+
+/** Has the player already claimed this cell for something of their own?
+ *
+ *  Ground edits deliberately DON'T count. Digging or paving is cheap to redo and
+ *  the stamp rewrites the floor anyway; what must never be bulldozed is
+ *  something the player stood up or planted, which represents real time. */
+function occupied(t: StampTarget, x: number, y: number): boolean {
+  const key = tileKey(x, y);
+  return key in t.build || key in t.furniture || key in t.crops;
+}
+
+/** Stamp one building. Returns false without touching anything when the player
+ *  has built or planted anywhere in its footprint.
+ *
+ *  All-or-nothing on purpose: a building stamped around someone's existing shed
+ *  would be a roofless L-shape with a door into a wall, which is worse than the
+ *  building simply not being there. The whole-footprint check is conservative,
+ *  and being conservative is the right bias when the alternative is destroying
+ *  something a live player built. */
+export function stampBuilding(t: StampTarget, b: TownBuilding, probe?: TerrainProbe): boolean {
+  const cells = footprintCells(b);
+  if (cells.some((c) => occupied(t, c.x, c.y))) return false;
+
+  // Floor first, so nothing lands on a tree or in the river.
+  for (const c of cells) t.overrides[tileKey(c.x, c.y)] = PLANK;
+
+  clearApron(t, b, probe);
+
+  for (const c of cells) {
+    if (!isPerimeter(b, c.x, c.y)) continue;
+    const isDoor = c.x === b.door.x && c.y === b.door.y;
+    t.build[tileKey(c.x, c.y)] = { id: isDoor ? "door" : "wall", finish: b.finish };
+  }
+
+  for (const f of b.furniture) {
+    t.furniture[tileKey(f.x, f.y)] = { id: f.id, facing: f.facing, finish: b.finish };
+  }
+
+  return true;
+}
+
+/** Clear a path to the front door, but ONLY where generation put something
+ *  solid there.
+ *
+ *  This is not belt-and-braces. The cell directly outside a door is the only way
+ *  in: its diagonals are blocked by the door's own wall run, and the pathfinder
+ *  won't cut a corner between two walls. So one generated tree on the doorstep
+ *  seals the building completely — and the symptom is nearly invisible, because
+ *  a villager who can't path home snaps there instead and looks fine doing it.
+ *
+ *  Conditional on purpose. Paving unconditionally would lay a plank porch across
+ *  the plaza in front of the town hall, where the stone is already perfectly
+ *  walkable and the apron would just be a scar. */
+function clearApron(t: StampTarget, b: TownBuilding, probe?: TerrainProbe): void {
+  if (!probe) return;
+  for (let d = 1; d <= APRON_D; d++) {
+    for (let dx = -APRON_W; dx <= APRON_W; dx++) {
+      const x = b.door.x + dx;
+      const y = b.door.y + d; // doors face south, so "out" is +y
+      const key = tileKey(x, y);
+      if (key in t.overrides) continue; // already decided, by us or by the player
+      if (!tileDef(probe(x, y)).solid) continue; // nothing in the way
+      t.overrides[key] = GRASS;
+    }
+  }
+}
+
+/** Stamp every town building. Returns the ids that were actually placed, so a
+ *  migration can say what it did rather than claiming success it didn't have. */
+export function stampTown(t: StampTarget, probe?: TerrainProbe): string[] {
+  const placed: string[] = [];
+  for (const b of allTownBuildings()) {
+    if (stampBuilding(t, b, probe)) placed.push(b.id);
+  }
+  return placed;
+}

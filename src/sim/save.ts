@@ -4,10 +4,13 @@
 // function, tested. `migrateSave` is pure (no localStorage) precisely so tests
 // can drive it; the localStorage wrappers are a thin shell on top.
 
-import type { WorldState } from "./types";
+import type { WorldState, HomesteadSpot } from "./types";
 import { starterSkins, defaultSkin } from "../content/skins";
+import { stampTown } from "./town";
+import type { StampTarget } from "./town";
+import { generatedTile } from "./world";
 
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -84,6 +87,42 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
     schemaVersion: 6,
     furniture: typeof raw.furniture === "object" && raw.furniture ? raw.furniture : {},
   }),
+  // v6 → v7: the town gained real buildings (a town hall, Margfrom's house).
+  //
+  // Unlike v4→v5 and v5→v6, an empty backfill would NOT be truthful here: a
+  // returning player's town would permanently lack buildings every new town
+  // has, and nothing would ever add them. So this migration stamps them in.
+  //
+  // It is the first migration that WRITES rather than backfills, which makes it
+  // the first that could destroy something. stampBuilding refuses any building
+  // whose footprint contains anything the player built or planted, all or
+  // nothing — so a town where someone happened to build west of the plaza
+  // simply keeps their house and doesn't get Margfrom's. Ground edits don't
+  // block it; a dug tile is cheap to redo and the stamp lays its own floor.
+  6: (raw) => {
+    const target = {
+      overrides: (typeof raw.overrides === "object" && raw.overrides ? raw.overrides : {}) as Record<string, number>,
+      build: (typeof raw.build === "object" && raw.build ? raw.build : {}) as StampTarget["build"],
+      furniture: (typeof raw.furniture === "object" && raw.furniture
+        ? raw.furniture
+        : {}) as StampTarget["furniture"],
+      crops: (typeof raw.crops === "object" && raw.crops ? raw.crops : {}) as Record<string, unknown>,
+    };
+    // The doorstep clear needs to know what generation put outside the door.
+    // A save still carries everything that determines it — the seed and the
+    // homestead spot — so the migration can answer exactly as newWorld does.
+    const seed = typeof raw.seed === "number" ? raw.seed : 0;
+    const homestead = (raw.homestead ?? {}) as Record<string, unknown>;
+    const spot = (typeof homestead.spot === "string" ? homestead.spot : "hilltop") as HomesteadSpot;
+    stampTown(target, (x, y) => generatedTile(seed, spot, x, y));
+    return {
+      ...raw,
+      schemaVersion: 7,
+      overrides: target.overrides,
+      build: target.build,
+      furniture: target.furniture,
+    };
+  },
 };
 
 /** Bring any older save up to the current schema. Returns null if the blob is

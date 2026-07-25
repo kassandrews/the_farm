@@ -1,0 +1,250 @@
+import { describe, it, expect } from "vitest";
+import { newWorld, tick } from "./game";
+import { tileKey, isWalkable, tileAt } from "./world";
+import { PLANK, WATER, TREE } from "../content/tiles";
+import { rooms, roomAt } from "./rooms";
+import { findPath } from "./path";
+import { stampBuilding, stampTown } from "./town";
+import type { StampTarget } from "./town";
+import { TOWN_BUILDINGS, allTownBuildings, footprintCells, isPerimeter } from "../content/town";
+import { CAST, scheduledStop } from "../content/cast";
+
+function world(spot: "riverside" | "forest" | "hilltop" = "hilltop", seed = 7) {
+  return newWorld({ name: "Test", form: "blob", spot, seed });
+}
+
+/** Local-time epoch ms at a given hour today. */
+function at(hour: number): number {
+  return new Date(2026, 6, 24, hour, 0, 0, 0).getTime();
+}
+
+function blankTarget(): StampTarget {
+  return { overrides: {}, build: {}, furniture: {}, crops: {} };
+}
+
+describe("the town's own buildings", () => {
+  it("are there from the moment a world is created", () => {
+    const w = world();
+    for (const b of allTownBuildings()) {
+      expect(w.build[tileKey(b.x0, b.y0)]).toMatchObject({ id: "wall" });
+      expect(w.build[tileKey(b.door.x, b.door.y)]).toMatchObject({ id: "door" });
+    }
+  });
+
+  it("enclose properly, so the derived roof arrives on its own", () => {
+    const w = world();
+    // Every building is a room the flood-fill recognises — the same mechanism
+    // that will answer "is this a house" for a Phase 3 commission.
+    for (const b of allTownBuildings()) {
+      const inside = roomAt(w, b.x0 + 1, b.y0 + 1);
+      expect(inside).not.toBeNull();
+    }
+    expect(rooms(w).length).toBeGreaterThanOrEqual(allTownBuildings().length);
+  });
+
+  it("bring their own floor, so nothing lands in a river or a tree", () => {
+    // riverside puts water to the west and forest raises tree density — the two
+    // ways an authored building could land on solid ground and half-fail.
+    for (const spot of ["riverside", "forest", "hilltop"] as const) {
+      for (let seed = 0; seed < 12; seed++) {
+        const w = world(spot, seed);
+        for (const b of allTownBuildings()) {
+          for (const c of footprintCells(b)) {
+            expect(tileAt(w, c.x, c.y)).toBe(PLANK);
+            expect(tileAt(w, c.x, c.y)).not.toBe(WATER);
+            expect(tileAt(w, c.x, c.y)).not.toBe(TREE);
+          }
+        }
+      }
+    }
+  });
+
+  it("keep the doorstep clear, or one unlucky tree seals the house", () => {
+    // The cell directly outside a door is the ONLY way in: its diagonals are
+    // blocked by the door's own wall run (findPath won't cut a corner), so a
+    // generated tree landing there makes the building unenterable. Found in the
+    // browser, where Margfrom teleported home instead of walking — the snap
+    // rule doing its job and hiding a real bug behind it.
+    for (const spot of ["riverside", "forest", "hilltop"] as const) {
+      for (let seed = 0; seed < 25; seed++) {
+        const w = world(spot, seed);
+        for (const b of allTownBuildings()) {
+          const step = { x: b.door.x, y: b.door.y + 1 };
+          expect(
+            isWalkable(w, step.x, step.y),
+            `${b.id} doorstep blocked on ${spot}/${seed}`,
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("place a wall on every perimeter cell except the doorway", () => {
+    const w = world();
+    for (const b of allTownBuildings()) {
+      for (const c of footprintCells(b)) {
+        const cell = w.build[tileKey(c.x, c.y)];
+        if (!isPerimeter(b, c.x, c.y)) {
+          expect(cell).toBeUndefined(); // interiors stay clear
+        } else if (c.x === b.door.x && c.y === b.door.y) {
+          expect(cell).toMatchObject({ id: "door" });
+        } else {
+          expect(cell).toMatchObject({ id: "wall" });
+        }
+      }
+    }
+  });
+
+  it("can be walked into through the door and not through the walls", () => {
+    const w = world();
+    const b = TOWN_BUILDINGS.townhall;
+    // Standing on the plaza, south of the hall.
+    const from = { x: b.door.x, y: b.y1 + 3 };
+    const inside = { x: b.door.x, y: b.y1 - 1 };
+    const legs = findPath(w, from, inside);
+    expect(legs).not.toBeNull();
+    expect(legs!.some((p) => p.x === b.door.x && p.y === b.door.y)).toBe(true);
+    // The walls either side of the door are genuinely solid.
+    expect(isWalkable(w, b.door.x - 1, b.door.y)).toBe(false);
+    expect(isWalkable(w, b.door.x + 1, b.door.y)).toBe(false);
+  });
+
+  it("put every door on a SOUTH wall, where it can actually be seen", () => {
+    // Not a style preference. A wall running away from the camera shows its top
+    // rather than its face (DESIGN §Structures), so a door in an east or west
+    // wall renders as nothing at all — pathable, invisible. Caught on screen,
+    // not in a test, which is why this test now exists.
+    for (const b of allTownBuildings()) {
+      expect(b.door.y).toBe(b.y1);
+      expect(b.door.x).toBeGreaterThan(b.x0);
+      expect(b.door.x).toBeLessThan(b.x1);
+    }
+  });
+
+  it("never lets its own furniture seal the front door", () => {
+    // A solid piece parked in the entryway would lock the resident out of the
+    // house we just gave them, and the symptom would be subtle: they'd snap
+    // home every night instead of walking in, and look fine doing it.
+    const w = world();
+    for (const b of allTownBuildings()) {
+      const outside = { x: b.door.x, y: b.y1 + 1 };
+      for (const c of footprintCells(b)) {
+        if (isPerimeter(b, c.x, c.y)) continue;
+        if (!isWalkable(w, c.x, c.y)) continue; // solid furniture is allowed to be solid
+        const legs = findPath(w, outside, c);
+        expect(legs, `interior cell ${c.x},${c.y} of ${b.id} is cut off`).not.toBeNull();
+        expect(legs!.some((p) => p.x === b.door.x && p.y === b.door.y)).toBe(true);
+      }
+    }
+  });
+
+  it("are demolishable like anything else — no protected flag", () => {
+    const w = world();
+    const b = TOWN_BUILDINGS.townhall;
+    const key = tileKey(b.x0, b.y0);
+    expect(w.build[key]).toBeDefined();
+    delete w.build[key];
+    expect(w.build[key]).toBeUndefined();
+  });
+});
+
+describe("Margfrom actually lives in her house", () => {
+  it("has her overnight post inside her own four walls", () => {
+    const w = world();
+    const stop = scheduledStop(CAST.resident1, at(2));
+    const house = TOWN_BUILDINGS.margfrom_house;
+    expect(stop.x).toBeGreaterThan(house.x0);
+    expect(stop.x).toBeLessThan(house.x1);
+    expect(stop.y).toBeGreaterThan(house.y0);
+    expect(stop.y).toBeLessThan(house.y1);
+    // And it's somewhere she can actually stand.
+    expect(isWalkable(w, stop.x, stop.y)).toBe(true);
+  });
+
+  it("can always reach her own bed, whatever terrain the seed generated", () => {
+    // The end-to-end version of the doorstep bug: she teleported home in the
+    // browser because no route existed, and the snap rule made that look normal.
+    const stop = scheduledStop(CAST.resident1, at(2));
+    const house = TOWN_BUILDINGS.margfrom_house;
+    for (const spot of ["riverside", "forest", "hilltop"] as const) {
+      for (let seed = 0; seed < 25; seed++) {
+        const w = world(spot, seed);
+        const outside = { x: house.door.x, y: house.door.y + 2 };
+        const legs = findPath(w, outside, stop);
+        expect(legs, `no route to bed on ${spot}/${seed}`).not.toBeNull();
+        expect(legs!.some((p) => p.x === house.door.x && p.y === house.door.y)).toBe(true);
+      }
+    }
+  });
+
+  it("is beside the bed, not on it — a solid bed is not a place to stand", () => {
+    const w = world();
+    const stop = scheduledStop(CAST.resident1, at(2));
+    const bed = TOWN_BUILDINGS.margfrom_house.furniture.find((f) => f.id === "bed")!;
+    expect(Math.abs(stop.x - bed.x) + Math.abs(stop.y - bed.y)).toBe(1);
+    expect(isWalkable(w, bed.x, bed.y)).toBe(false);
+  });
+
+  it("walks home through her own front door", () => {
+    const w = world();
+    const v = w.villagers.find((x) => x.id === "resident1")!;
+    const house = TOWN_BUILDINGS.margfrom_house;
+    const stop = scheduledStop(CAST.resident1, at(2));
+
+    // Park her out on the plaza and let her walk home at 2am.
+    v.x = 0;
+    v.y = -1;
+    let usedDoor = false;
+    for (let i = 0; i < 3000; i++) {
+      tick(w, 1 / 60, at(2));
+      if (Math.round(v.x) === house.door.x && Math.round(v.y) === house.door.y) usedDoor = true;
+      expect(isWalkable(w, Math.round(v.x), Math.round(v.y))).toBe(true);
+    }
+    expect(usedDoor).toBe(true);
+    expect(Math.hypot(v.x - stop.x, v.y - stop.y)).toBeLessThan(0.2);
+  });
+});
+
+describe("stamping", () => {
+  it("refuses a building whose footprint holds player work, all or nothing", () => {
+    const t = blankTarget();
+    const b = TOWN_BUILDINGS.townhall;
+    t.build[tileKey(b.x1, b.y1)] = { id: "wall", finish: "walnut" };
+
+    expect(stampBuilding(t, b)).toBe(false);
+    // Nothing at all was written — not the floor, not a single wall.
+    expect(Object.keys(t.overrides)).toEqual([]);
+    expect(Object.keys(t.build)).toEqual([tileKey(b.x1, b.y1)]);
+    expect(Object.keys(t.furniture)).toEqual([]);
+  });
+
+  it("refuses over furniture and over crops too", () => {
+    const b = TOWN_BUILDINGS.margfrom_house;
+
+    const withFurniture = blankTarget();
+    withFurniture.furniture[tileKey(b.x0 + 1, b.y0 + 1)] = {
+      id: "chair",
+      facing: "s",
+      finish: "pine",
+    };
+    expect(stampBuilding(withFurniture, b)).toBe(false);
+
+    const withCrop = blankTarget();
+    withCrop.crops[tileKey(b.x0 + 2, b.y0 + 2)] = {};
+    expect(stampBuilding(withCrop, b)).toBe(false);
+  });
+
+  it("is not blocked by a mere ground edit", () => {
+    const t = blankTarget();
+    const b = TOWN_BUILDINGS.townhall;
+    t.overrides[tileKey(b.x0 + 1, b.y0 + 1)] = 1; // dirt, from a shovel
+    expect(stampBuilding(t, b)).toBe(true);
+  });
+
+  it("won't stamp the same town twice over itself", () => {
+    const t = blankTarget();
+    expect(stampTown(t).length).toBe(allTownBuildings().length);
+    // Second pass sees its own walls and declines every one of them.
+    expect(stampTown(t)).toEqual([]);
+  });
+});

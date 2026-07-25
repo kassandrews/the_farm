@@ -14,6 +14,13 @@ import { footprint, furnitureDef } from "../content/furniture";
 
 function world() {
   const w = newWorld({ name: "Test", form: "blob", spot: "hilltop", seed: 3 });
+  // A blank canvas. These tests are about the anchor mechanism itself, so the
+  // town's own furniture (src/content/town.ts) is noise that would make every
+  // "what's in the layer" assertion a restatement of the town layout. Tests
+  // about the town living alongside the player's work are in save.test.ts and
+  // town.test.ts, where the buildings are the point.
+  w.build = {};
+  w.furniture = {};
   // Open ground: generated trees and rocks are solid and would rightly refuse.
   for (let y = 15; y <= 35; y++) for (let x = 15; x <= 35; x++) setTile(w, x, y, GRASS);
   w.inventory.wood = 500;

@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { newWorld } from "./game";
 import { serialize, deserialize, migrateSave, SCHEMA_VERSION } from "./save";
+import { tileKey } from "./world";
+import { TOWN_BUILDINGS, footprintCells } from "../content/town";
 
 function freshWorld() {
   return newWorld({ name: "Keeper", form: "menace", spot: "riverside", seed: 99 });
@@ -95,13 +97,13 @@ describe("migrations", () => {
     expect(migrated.build["9,9"]).toEqual({ id: "wall", finish: "pine" });
   });
 
-  it("gives a v5 town an empty furniture layer, keeping its walls", () => {
+  it("gives a v5 town a furniture layer, keeping its walls", () => {
     const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
     delete w.furniture;
     const built = { "9,9": { id: "wall", finish: "pine" } };
     const migrated = migrateSave({ ...w, schemaVersion: 5, build: built })!;
     expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(migrated.furniture).toEqual({});
+    expect(typeof migrated.furniture).toBe("object");
     expect(migrated.build["9,9"]).toEqual({ id: "wall", finish: "pine" });
   });
 
@@ -110,9 +112,75 @@ describe("migrations", () => {
     // keep working for a save that predates every one of them.
     const migrated = migrateSave(v1Save())!;
     expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(migrated.build).toEqual({});
-    expect(migrated.furniture).toEqual({});
     expect(migrated.player.name).toBe("Keeper");
+    // v7 stamps the town in, so a save from before buildings existed comes out
+    // with the same town a new game gets rather than a permanently empty one.
+    expect(migrated.build[tileKey(TOWN_BUILDINGS.townhall.door.x, TOWN_BUILDINGS.townhall.door.y)]).toMatchObject(
+      { id: "door" },
+    );
+  });
+
+  // --- v6 → v7: the first migration that WRITES ---------------------------
+  // Every migration before this one backfilled a missing field. This one adds
+  // buildings to a town that already exists, which means it is the first that
+  // could take something away. These tests are the guard on that.
+
+  /** A v6 save: a real world, wound back to before buildings existed. */
+  function v6Save(extra: Record<string, unknown> = {}) {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    return { ...w, schemaVersion: 6, build: {}, furniture: {}, crops: {}, overrides: {}, ...extra };
+  }
+
+  it("stamps the town into a save that predates buildings", () => {
+    const migrated = migrateSave(v6Save())!;
+    const hall = TOWN_BUILDINGS.townhall;
+    expect(migrated.build[tileKey(hall.x0, hall.y0)]).toMatchObject({ id: "wall" });
+    expect(migrated.build[tileKey(hall.door.x, hall.door.y)]).toMatchObject({ id: "door" });
+    const bed = TOWN_BUILDINGS.margfrom_house.furniture[0];
+    expect(migrated.furniture[tileKey(bed.x, bed.y)]).toMatchObject({ id: "bed" });
+  });
+
+  it("NEVER stamps over something the player built", () => {
+    // A shed standing in one corner of where the town hall would go.
+    const hall = TOWN_BUILDINGS.townhall;
+    const mine = tileKey(hall.x1, hall.y1);
+    const migrated = migrateSave(
+      v6Save({ build: { [mine]: { id: "wall", finish: "walnut" } } }),
+    )!;
+    // Their wall is untouched, in their finish...
+    expect(migrated.build[mine]).toEqual({ id: "wall", finish: "walnut" });
+    // ...and the hall didn't land half-built around it.
+    const stampedElsewhere = footprintCells(hall).filter(
+      (c) => tileKey(c.x, c.y) !== mine && tileKey(c.x, c.y) in migrated.build,
+    );
+    expect(stampedElsewhere).toEqual([]);
+  });
+
+  it("NEVER buries a crop the player planted", () => {
+    const house = TOWN_BUILDINGS.margfrom_house;
+    const planted = tileKey(house.x0 + 1, house.y0 + 1);
+    const migrated = migrateSave(
+      v6Save({ crops: { [planted]: { cropId: "carrot", stage: 1 } } }),
+    )!;
+    expect(migrated.crops[planted]).toBeDefined();
+    expect(tileKey(house.door.x, house.door.y) in migrated.build).toBe(false);
+  });
+
+  it("skips only the building that clashes, not the whole town", () => {
+    const hall = TOWN_BUILDINGS.townhall;
+    const migrated = migrateSave(
+      v6Save({ build: { [tileKey(hall.door.x, hall.door.y)]: { id: "wall", finish: "walnut" } } }),
+    )!;
+    // The hall is refused, but Margfrom still gets her house.
+    const house = TOWN_BUILDINGS.margfrom_house;
+    expect(migrated.build[tileKey(house.door.x, house.door.y)]).toMatchObject({ id: "door" });
+  });
+
+  it("lets a ground edit through — a dug tile is cheap to redo", () => {
+    const hall = TOWN_BUILDINGS.townhall;
+    const dug = tileKey(hall.x0 + 1, hall.y0 + 1);
+    const migrated = migrateSave(v6Save({ overrides: { [dug]: 1 } }))!;
+    expect(migrated.build[tileKey(hall.door.x, hall.door.y)]).toMatchObject({ id: "door" });
   });
 
   it("keeps villager identity and memory across the v2 → v3 drop", () => {

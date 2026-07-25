@@ -38,11 +38,17 @@ describe("away simulation", () => {
 
   it("NEVER destroys the player's work — the Gremlin moves a board, never eats it", () => {
     // Run many absences with different seeds; the board count must hold.
+    //
+    // Counted as a DELTA rather than against a literal, because the town's own
+    // buildings are floored in plank too (src/content/town.ts) and the absolute
+    // number is now an implementation detail of the town layout. The invariant
+    // was never "there are four boards" — it's "nothing goes missing" — and this
+    // way the town's floors are covered by it as well.
     for (let seed = 0; seed < 40; seed++) {
       const w = worldWithBoards(4);
-      expect(countTiles(w, PLANK)).toBe(4);
+      const before = countTiles(w, PLANK);
       simulateAway(w, 72 * HOUR, Date.now(), makeRng(seed));
-      expect(countTiles(w, PLANK)).toBe(4);
+      expect(countTiles(w, PLANK)).toBe(before);
     }
   });
 

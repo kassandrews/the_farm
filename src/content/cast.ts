@@ -63,15 +63,18 @@ export const CAST: Record<CharId, CharDef> = {
     form: "scholar",
     name: "Margfrom",
     fixed: false,
-    home: { x: -4, y: -2 },
+    // Beside her bed, inside margfrom_house (src/content/town.ts). She used to
+    // sleep at (-4,-2) — which is ON the plaza paving, a thing nobody noticed
+    // because there was no building anywhere to notice it against.
+    home: { x: -9, y: -3 },
     // A real day: fieldwork in the morning, out by your plot after lunch,
     // back to the plaza for the evening, home once it's properly dark.
     schedule: [
-      { fromHour: 0, x: -4, y: -2, doing: "asleep, probably" },
+      { fromHour: 0, x: -9, y: -3, doing: "asleep, probably" },
       { fromHour: 7, x: 1, y: 2, doing: "conducting morning research" },
       { fromHour: 11, x: 6, y: 5, doing: "observing your homestead" },
       { fromHour: 16, x: 3, y: 1, doing: "walking back, thinking" },
-      { fromHour: 19, x: -4, y: -2, doing: "writing it all up" },
+      { fromHour: 19, x: -9, y: -3, doing: "writing it all up" },
     ],
   },
 };

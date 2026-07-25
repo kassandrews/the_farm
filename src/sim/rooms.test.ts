@@ -6,7 +6,15 @@ import { placeStructure, removeStructure } from "./structures";
 import { rooms, roomAt, roofRoomAt, findRoom, MAX_ROOM } from "./rooms";
 
 function world() {
-  return newWorld({ name: "Test", form: "blob", spot: "hilltop", seed: 7 });
+  const w = newWorld({ name: "Test", form: "blob", spot: "hilltop", seed: 7 });
+  // A blank canvas. These tests are about the flood-fill itself, and the town's
+  // buildings (src/content/town.ts) are enclosed rooms in their own right — so
+  // every "how many rooms" assertion would otherwise be counting the town
+  // layout instead of the mechanism. That the town's own buildings enclose
+  // correctly is asserted in town.test.ts, where it's the point.
+  w.build = {};
+  w.furniture = {};
+  return w;
 }
 
 /** Lay a rectangular wall shell, clearing generated terrain first. Returns the

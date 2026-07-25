@@ -10,9 +10,19 @@ import type { CharId } from "../content/cast";
 import { makeVillager, tickVillager, befriend } from "./villagers";
 import { remember } from "./memory";
 import type { MemoryKind } from "./memory";
-import { dig, canDig, placePlank, isWalkable, tileAt, setTile, homesteadOrigin } from "./world";
+import {
+  dig,
+  canDig,
+  placePlank,
+  isWalkable,
+  tileAt,
+  setTile,
+  homesteadOrigin,
+  generatedTile,
+} from "./world";
 import { placeStructure, removeStructure } from "./structures";
 import { rooms } from "./rooms";
+import { stampTown } from "./town";
 import { placeFurniture, removeFurnitureAt } from "./furniture";
 import { FURNITURE, furnitureDef } from "../content/furniture";
 import type { FurnitureId, Facing } from "../content/furniture";
@@ -79,7 +89,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     villagers.push(makeVillager(CAST.resident1, now));
   }
 
-  return {
+  const world: WorldState = {
     schemaVersion: SCHEMA_VERSION,
     seed,
     createdAt: now,
@@ -101,6 +111,14 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     },
     flags: { landClaimed: false, onboarded: false },
   };
+
+  // The town pre-exists (DESIGN §"Town and homestead"). Stamped rather than
+  // generated so its buildings are ordinary build cells you can take apart —
+  // see sim/town.ts. The probe lets it clear a doorstep that generation
+  // happened to drop a tree on.
+  stampTown(world, (x, y) => generatedTile(seed, opts.spot, x, y));
+
+  return world;
 }
 
 /** The tile the player is standing on (rounded to the grid). */

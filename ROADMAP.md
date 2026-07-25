@@ -135,6 +135,32 @@ wood — it's the **arrangement**. Twenty minutes of walls, gone to one drag.
 - **No expiry timer.** A button that vanishes as you reach for it is its own
   small betrayal.
 
+### A door needs a south wall and a doorstep
+
+Two bugs from the same afternoon, both found on screen and neither catchable by
+the tests that existed. Both are about a door being *reachable* versus being
+*apparent*, and both now have tests.
+
+**Doors only read on south walls.** A wall running away from the camera shows
+its top, not its face (DESIGN §Structures), so a door cut into an east or west
+wall renders as nothing at all. Margfrom's first front door was on her east
+wall: perfectly pathable, completely invisible. You could walk in only if you
+already knew where to.
+
+**A door's doorstep is its only way in.** The cell directly outside a door is
+the sole approach — its diagonals are blocked by the door's own wall run, and
+the pathfinder won't cut a corner between two walls. So a single generated tree
+landing there seals the building. `stampBuilding` now clears an apron in front
+of each door, but *only* where generation put something solid, so the stone
+plaza in front of the town hall stays stone instead of growing a plank scar.
+
+The reason this one was nearly invisible is worth remembering: **the snap rule
+hides unreachability.** A villager who can't path home teleports there and looks
+completely normal doing it. Margfrom was "getting home fine" for as long as it
+took to notice she never crossed the intervening ground. When a villager reaches
+somewhere impossibly fast, suspect the pathfinder found nothing — don't assume
+they walked.
+
 ### The reticle is the promise
 
 `actionTarget(world, tool)` in `src/sim/game.ts` is the ONE place that decides
@@ -234,10 +260,21 @@ Build order, smallest risk first:
    against a wall — off-screen it's invisible, and it keeps "come back and
    everyone is at their correct post" true.
 
-2. **Authored town buildings + the v7 migration.** Margfrom's house, and a town
-   hall shell around the Office Creature, who has been standing at bare
-   coordinate `(0,-6)` since the slice. A table of stamped rooms in
-   `src/content/town.ts`, seeded at world creation.
+2. ~~**Authored town buildings + the v7 migration.**~~ **Done.** Margfrom's
+   house and a town hall around the Office Creature, who had been standing at
+   bare coordinate `(0,-6)` since the slice. `src/content/town.ts` is the table;
+   `src/sim/town.ts` stamps it.
+
+   `newWorld` and the migration call the SAME stamp, deliberately — if those
+   drifted, a returning player's town would differ from a new player's in ways
+   nobody would think to test. That's why the stamp target is a structural
+   subset rather than a `WorldState`: a save mid-migration is raw parsed JSON.
+
+   v7 is the first migration that WRITES rather than backfills, so it's the
+   first that could destroy something. `stampBuilding` refuses, all or nothing,
+   any building whose footprint contains something the player built or planted;
+   ground edits don't block it, since a dug tile is cheap to redo and the stamp
+   lays its own floor anyway.
 
 3. **Dynamic home resolution.** `cast.ts` hardcodes `home: {x,y}` into schedule
    stops; a home the player can move, demolish, or build fresh cannot be a
@@ -314,10 +351,20 @@ you trip over them:
   store their own finish (v5), so two houses can differ. Plank floors still read
   the town-wide selection and restyle all at once; worth unifying when floors
   next get touched.
-- ~~**Villagers walk through walls and furniture.**~~ Fixed in 2b step 1; they
-  path now (`sim/path.ts`). Still unverified *on screen* — there is nothing in
-  the town for anyone to walk through until step 2 lands the authored buildings,
-  so the browser check is deferred to there rather than skipped.
+- ~~**Villagers walk through walls and furniture.**~~ Fixed in 2b step 1
+  (`sim/path.ts`), and verified on screen in step 2: Margfrom walks from the
+  plaza, through her own doorway, to her bed, standing in a wall at no point.
+- **A door on an east or west wall is invisible.** Only south-facing walls draw
+  a face for a doorway to appear in, so a player who builds a house entered from
+  the side gets one they can walk into but can't see the way into. The town's own
+  buildings dodge it by convention (asserted in `town.test.ts`), which does
+  nothing for player-built houses. The real fix is in the renderer — draw a
+  doorway on a side wall's top run — and it wants doing before commissions in
+  Phase 3, where a house you built is judged.
+- **Nothing guarantees a PLAYER-built house has a clear doorstep.** The town's
+  stamp clears its own apron; a player who walls a doorway in against a tree gets
+  a house nobody can enter, and the villager will snap inside rather than
+  complain. Worth a build-mode warning when a door's only approach is solid.
 - **Villager "witness" has no proximity model for memory** — everyone hears about
   everything (friendship *is* proximity-gated). Fine in a town this small.
 - **PWA icon is a single SVG.** Real raster icons before any app-store-ish push.
