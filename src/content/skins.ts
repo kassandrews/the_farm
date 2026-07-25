@@ -16,8 +16,18 @@
 // those and the picker simply doesn't show them.
 
 /** Which built material a finish applies to. Finishes never cross classes —
- *  walnut is a wood finish; it has nothing to say about stone. */
-export type SkinClass = "wood" | "stone";
+ *  walnut is a wood finish; it has nothing to say about stone.
+ *
+ *  `cloth` is the odd one out and worth a note: it is the only class whose
+ *  MATERIAL you cannot gather. You buy cloth from the Menace's counter and the
+ *  colours are then free, exactly like wood — the scarce thing is the stuff,
+ *  never the look. That is the whole rule of this file, applied to a material
+ *  that happens to arrive by barter instead of by axe. */
+export type SkinClass = "wood" | "stone" | "cloth";
+
+/** Every class, in picker order. A list rather than four call sites writing
+ *  `["wood", "stone"]` and one of them forgetting to grow. */
+export const SKIN_CLASSES: SkinClass[] = ["wood", "stone", "cloth"];
 
 export type SkinId =
   // Wood
@@ -27,7 +37,10 @@ export type SkinId =
   | "ash"
   // Stone
   | "granite"
-  | "slate";
+  | "slate"
+  // Cloth
+  | "undyed"
+  | "madder";
 
 export interface SkinDef {
   id: SkinId;
@@ -106,6 +119,28 @@ export const SKINS: Record<SkinId, SkinDef> = {
     starter: false,
     hint: "Found further down than most people dig.",
   },
+  // --- Cloth --------------------------------------------------------------
+  // Both starters, and that is not an oversight. Cloth is already gated by
+  // having to be bartered for; gating its COLOUR too would charge twice for
+  // one thing and break the rule that appearance is free.
+  undyed: {
+    id: "undyed",
+    name: "Undyed",
+    applies: "cloth",
+    color: "#d8cdb6",
+    top: "#e6dcc8",
+    shade: "#b8ad96",
+    starter: true,
+  },
+  madder: {
+    id: "madder",
+    name: "Madder red",
+    applies: "cloth",
+    color: "#b2564a",
+    top: "#c46557",
+    shade: "#8e4239",
+    starter: true,
+  },
 };
 
 export function skinDef(id: SkinId): SkinDef {
@@ -126,5 +161,7 @@ export function availableSkins(unlocked: readonly SkinId[], applies: SkinClass):
 
 /** The default finish for a class, used when a save has none selected yet. */
 export function defaultSkin(applies: SkinClass): SkinId {
-  return applies === "wood" ? "pine" : "granite";
+  if (applies === "wood") return "pine";
+  if (applies === "stone") return "granite";
+  return "undyed";
 }

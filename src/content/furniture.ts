@@ -5,17 +5,24 @@
 // neighbours decide how it's drawn); a bed is 1x2 and genuinely faces a way.
 // So `facing` lives here and nowhere in src/content/structures.ts.
 //
-// Everything here is WOODEN. Soft goods — cushions, curtains, rugs — are
-// deliberately not buildable and never will be: the shop sells what you can't
-// gather, and that's what gives the Menace's counter a reason to exist
-// (DESIGN §Materials). Resist adding a cloth row.
+// Most of this is WOODEN, and the soft rows work the same way with a material
+// you cannot gather. The original rule here read "resist adding a cloth row",
+// which was aimed at the right thing and stated slightly too broadly: what must
+// never happen is soft goods being BUILDABLE OUT OF WHAT YOU GATHER, because
+// then the Menace's counter has no reason to exist (DESIGN §Materials).
+//
+// A cushion costs `cloth`, and cloth is bought from her and from nowhere else.
+// So the counter still guards the whole soft category, placement still works
+// exactly the way it does for a chair, and "placing a thing IS making it" needs
+// no exception. What you barter for is the stuff; what you do with it is free.
 //
 // Ids are stored in saves, so they are STABLE. Add rows; never rename one
 // without a migration.
 
 import type { ItemId } from "./items";
+import type { SkinClass } from "./skins";
 
-export type FurnitureId = "bed" | "table" | "chair" | "shelf";
+export type FurnitureId = "bed" | "table" | "chair" | "shelf" | "cushion" | "rug";
 
 /** Which way a piece is turned. "s" is the default — facing the camera. */
 export type Facing = "n" | "e" | "s" | "w";
@@ -36,7 +43,7 @@ export interface FurnitureDef {
   /** How far it stands off the floor, in scene px. Below TILE on purpose for
    *  the low pieces — they should read as sitting IN the room, not looming. */
   height: number;
-  finish: "wood" | "stone";
+  finish: SkinClass;
 }
 
 export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
@@ -80,6 +87,32 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     solid: false,
     height: 18,
     finish: "wood",
+  },
+  // --- Soft goods, bought not gathered -------------------------------------
+  // Both are LOW and both are walk-on. A cushion you had to path around would
+  // make a small room annoying, and rooms here are exactly as big as you built
+  // them — the same reasoning that keeps chairs sparing, applied harder to the
+  // things whose whole job is to make a floor feel lived on.
+  cushion: {
+    id: "cushion",
+    name: "Cushion",
+    cost: { cloth: 2 },
+    w: 1,
+    h: 1,
+    solid: false,
+    height: 4,
+    finish: "cloth",
+  },
+  rug: {
+    id: "rug",
+    name: "Rug",
+    cost: { cloth: 4 },
+    w: 2,
+    h: 2,
+    solid: false,
+    // Almost flat: a rug is a floor that is nicer, not a thing standing on one.
+    height: 1,
+    finish: "cloth",
   },
 };
 

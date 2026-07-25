@@ -6,13 +6,14 @@
 
 import type { WorldState, HomesteadSpot } from "./types";
 import { starterSkins, defaultSkin } from "../content/skins";
-import { stampTown } from "./town";
+import { stampTown, ensureFixedCast } from "./town";
 import type { StampTarget } from "./town";
 import { generatedTile, tileKey } from "./world";
+import { makeVillager } from "./villagers";
 import { authoredBed } from "../content/town";
 import type { CharId } from "../content/cast";
 
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -167,7 +168,77 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
     schemaVersion: 9,
     commissions: Array.isArray(raw.commissions) ? raw.commissions : [],
   }),
+  // v9 → v10: cloth. Soft goods arrive with the Menace's counter, and cloth is
+  // a third finish CLASS, so `skins.selected` gains a slot for it.
+  //
+  // The unlocked list gains the starters it doesn't have. Both cloth finishes
+  // are starters, and `availableSkins` shows only what's unlocked, so without
+  // this an existing town would buy cloth and find the picker empty. Unioning
+  // rather than appending keeps it idempotent, and it can only ever ADD — a
+  // migration that removed a finish someone had earned would be unforgivable
+  // for a save format whose whole promise is that the town survives.
+  9: (raw) => {
+    const now = Date.now();
+    const shop = stampInto(raw);
+    const skins = (raw.skins ?? {}) as Record<string, unknown>;
+    const selected = (skins.selected ?? {}) as Record<string, unknown>;
+    const unlocked = Array.isArray(skins.unlocked) ? (skins.unlocked as string[]) : [];
+    return {
+      ...raw,
+      schemaVersion: 10,
+      skins: {
+        ...skins,
+        unlocked: [...new Set([...unlocked, ...starterSkins()])],
+        selected: { ...selected, cloth: selected.cloth ?? defaultSkin("cloth") },
+      },
+      // …and the shop, and the shopkeeper. Both, or neither is any good: a
+      // counter with nobody behind it is stranger to walk into than no shop,
+      // and a shopkeeper standing in a field is worse than both.
+      //
+      // stampTown re-runs the WHOLE table, which is safe and is why it's used
+      // rather than a one-building special case: stampBuilding refuses any
+      // footprint that already contains something, so the town hall and
+      // Margfrom's house are skipped because their own walls are sitting in
+      // them. Only genuinely new buildings land. The same guard also means a
+      // player who built where the shop goes simply keeps their building.
+      overrides: shop.overrides,
+      build: shop.build,
+      furniture: shop.furniture,
+      // ensureFixedCast is the SAME function newWorld uses, for the reason the
+      // v7 stamp records: two paths that build the town differently is a bug
+      // nobody would think to test for.
+      villagers: withFixedCast(raw, now),
+    };
+  },
 };
+
+/** Re-stamp the town's table into a save, adding only what isn't there.
+ *
+ *  Shares the v6→v7 target-building code because the two do the same job on the
+ *  same shapes; a save mid-migration is raw parsed JSON, which is what
+ *  StampTarget exists for. */
+function stampInto(raw: Record<string, unknown>): StampTarget {
+  const target: StampTarget = {
+    overrides: (typeof raw.overrides === "object" && raw.overrides ? raw.overrides : {}) as Record<string, number>,
+    build: (typeof raw.build === "object" && raw.build ? raw.build : {}) as StampTarget["build"],
+    furniture: (typeof raw.furniture === "object" && raw.furniture ? raw.furniture : {}) as StampTarget["furniture"],
+    crops: (typeof raw.crops === "object" && raw.crops ? raw.crops : {}) as Record<string, unknown>,
+  };
+  const seed = typeof raw.seed === "number" ? raw.seed : 0;
+  const homestead = (raw.homestead ?? {}) as Record<string, unknown>;
+  const spot = (typeof homestead.spot === "string" ? homestead.spot : "hilltop") as HomesteadSpot;
+  stampTown(target, (x, y) => generatedTile(seed, spot, x, y));
+  return target;
+}
+
+/** The villager list with any missing INSTITUTION appended. Residents are
+ *  deliberately not touched — someone moving in is an event (a commission),
+ *  never something a migration conjures. */
+function withFixedCast(raw: Record<string, unknown>, now: number): unknown[] {
+  const villagers = Array.isArray(raw.villagers) ? [...(raw.villagers as { id: string }[])] : [];
+  ensureFixedCast({ villagers }, now, (def, at) => makeVillager(def, at));
+  return villagers;
+}
 
 /** Bring any older save up to the current schema. Returns null if the blob is
  *  unrecognisable or from a FUTURE version we can't understand (better to start

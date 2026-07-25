@@ -43,9 +43,9 @@ import {
   arrivalOf,
   shortfallText,
 } from "../sim/commission";
-import { ITEM_ORDER, itemDef } from "../content/items";
-import { availableSkins, skinDef } from "../content/skins";
-import type { SkinClass } from "../content/skins";
+import { ITEM_ORDER, itemDef, itemLabel } from "../content/items";
+import { offers, trade } from "../sim/shop";
+import { availableSkins, skinDef, SKIN_CLASSES } from "../content/skins";
 import { audio } from "./audio";
 import type { Cue } from "./audio";
 import type { ActionKind } from "../sim/game";
@@ -88,6 +88,8 @@ const BUILD_TOOLS: { id: BuildTool; icon: string; label: string; hint: string }[
   { id: "table", icon: "🪑", label: "Table", hint: "Place a table. Press R to turn it." },
   { id: "chair", icon: "💺", label: "Chair", hint: "Place a chair. Press R to turn it." },
   { id: "shelf", icon: "🗄️", label: "Shelf", hint: "Place a shelf. Press R to turn it." },
+  { id: "cushion", icon: "🛋️", label: "Cushion", hint: "Costs cloth. The Menace sells cloth." },
+  { id: "rug", icon: "🧶", label: "Rug", hint: "Costs cloth. Walk right over it." },
   { id: "erase", icon: "↩️", label: "Take back down", hint: "Remove what you built here. Materials come back." },
 ];
 
@@ -390,6 +392,14 @@ export class App {
     // option at all.
     const offerable = beds(world).length > 0;
 
+    // The shopkeeper's conversation IS her counter. A dialogue box that then
+    // offers a "shop" button would be a menu in front of a menu, and she is a
+    // person you go and see rather than a UI you open.
+    if (villagerId === "shop") {
+      this.openShop();
+      return;
+    }
+
     this.openModal(
       (close) =>
         panel(speech.who, "Farm resident", [
@@ -408,6 +418,60 @@ export class App {
         ]),
       { dismissable: true },
     );
+  }
+
+  // --- The counter ----------------------------------------------------------------
+  /** The Menace's shop. Barter, so every row shows what she'll take INSTEAD of
+   *  each other and you pick which of your things to part with.
+   *
+   *  Rows you can't afford are shown and disabled rather than hidden: a counter
+   *  that only displays what you can buy today never teaches you what it's for,
+   *  and "12 wood" sitting there greyed out is the entire tutorial for how
+   *  cloth works. That's the opposite of the satchel's rule, which omits what
+   *  you haven't got — one is a list of what you have, this is an offer.
+   *
+   *  Rebuilt from scratch after each trade rather than patched in place: the
+   *  panel is a pure function of the inventory, and re-deriving it is both
+   *  shorter and immune to the class of bug where a count goes stale. */
+  private openShop(): void {
+    if (!this.world) return;
+    const world = this.world;
+
+    this.openModal((close) => {
+      const body = el("div", {});
+      const render = () => {
+        body.replaceChildren();
+        for (const { row, affordable } of offers(world)) {
+          body.append(
+            el("div", { class: "who" }, [`${itemLabel(row.gives, row.givesCount)}, for any of:`]),
+          );
+          const choices = el("div", { class: "choices" });
+          for (const price of row.accepts) {
+            const can = affordable.includes(price);
+            const b = choiceBtn(itemLabel(price.item, price.count), () => {
+              if (!trade(world, row, price)) return;
+              audio.play("place");
+              this.persist();
+              this.flash(row.line);
+              render();
+            });
+            if (!can) {
+              b.setAttribute("disabled", "true");
+              b.style.opacity = "0.4";
+            }
+            choices.append(b);
+          }
+          body.append(choices);
+        }
+      };
+      render();
+
+      return panel("Fancy Little Menace", "The Counter", [
+        el("p", {}, ["Cloth. ... You can't grow it, and you certainly can't chop it down."]),
+        body,
+        actionRow([primaryBtn("That's all", close)]),
+      ]);
+    }, { dismissable: true });
   }
 
   // --- Commissions --------------------------------------------------------------
@@ -610,7 +674,7 @@ export class App {
       }
 
       // Finishes — free, weightless, applied to anything you build next.
-      for (const cls of ["wood", "stone"] as SkinClass[]) {
+      for (const cls of SKIN_CLASSES) {
         const options = availableSkins(world.skins.unlocked, cls);
         if (options.length === 0) continue;
         const row = el("div", { class: "choices" });

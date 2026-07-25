@@ -16,6 +16,8 @@
 // authored building comes with the ground it stands on.
 
 import type { BuildCell, FurnitureCell } from "./types";
+import type { CharDef } from "../content/cast";
+import { CAST } from "../content/cast";
 import type { TileId } from "../content/tiles";
 import { PLANK, GRASS } from "../content/tiles";
 import { tileDef } from "../content/tiles";
@@ -118,4 +120,42 @@ export function stampTown(t: StampTarget, probe?: TerrainProbe): string[] {
     if (stampBuilding(t, b, probe)) placed.push(b.id);
   }
   return placed;
+}
+
+// --- The fixed cast ------------------------------------------------------------
+
+/** The subset of a world that needs to hold people. Structural, for the same
+ *  reason StampTarget is: a save mid-migration is raw parsed JSON, not a
+ *  WorldState. */
+export interface CastTarget {
+  villagers: { id: string }[];
+}
+
+/** Make sure every authored INSTITUTION is actually standing in the town.
+ *
+ *  Called by `newWorld` and by the migration, deliberately the same function —
+ *  the v7 stamp established why (ROADMAP 2b step 2): if the two drifted, a
+ *  returning player's town would differ from a new player's in ways nobody
+ *  would think to test. A shop building with nobody behind the counter is
+ *  exactly that bug, and it is what happens if only one of the two knows about
+ *  a new cast row.
+ *
+ *  Additive and idempotent: it only ever appends someone MISSING, so it can be
+ *  run on every load and can never disturb a villager who is already there —
+ *  including one the player has since rehoused or befriended.
+ *
+ *  Residents are not its business. Only `fixed` cast: an institution is part of
+ *  the furniture of the town and should appear the moment the town has a
+ *  building for them, whereas a resident arriving is an EVENT (a commission)
+ *  and must never be conjured by a migration. */
+export function ensureFixedCast<T extends CastTarget>(
+  target: T,
+  now: number,
+  make: (def: CharDef, now: number) => unknown,
+): void {
+  for (const def of Object.values(CAST)) {
+    if (!def.fixed) continue;
+    if (target.villagers.some((v) => v.id === def.id)) continue;
+    target.villagers.push(make(def, now) as { id: string });
+  }
 }

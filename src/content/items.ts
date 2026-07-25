@@ -7,11 +7,11 @@
 // every metal). Everything else here is produce — grown or foraged, bound for
 // eating, gifting, and the museum rather than construction.
 
-export type ItemId = "wood" | "stone" | "ore" | "carrot" | "mushroom";
+export type ItemId = "wood" | "stone" | "ore" | "carrot" | "mushroom" | "cloth";
 
 /** What an item is for. Drives which UI groups it and, later, what the shop
  *  and museum will accept. */
-export type ItemCategory = "material" | "produce";
+export type ItemCategory = "material" | "produce" | "soft";
 
 export interface ItemDef {
   id: ItemId;
@@ -64,6 +64,16 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     category: "produce",
     blurb: "Came up overnight, uninvited, entirely welcome.",
   },
+  // The ONE thing in this table you cannot gather. It is why the Menace's
+  // counter exists (DESIGN §Materials): the shop sells what the world won't
+  // give you, and cloth is that. Everything soft is made of it.
+  cloth: {
+    id: "cloth",
+    name: "Cloth",
+    icon: "🧵",
+    category: "soft",
+    blurb: "Bartered for, not found. Nothing out there grows in bolts.",
+  },
 };
 
 export function itemDef(id: ItemId): ItemDef {
@@ -79,4 +89,4 @@ export function itemLabel(id: ItemId, count: number): string {
 
 /** Display order in the satchel: materials first (you're usually building),
  *  then produce. Stable, so the list never reshuffles under your thumb. */
-export const ITEM_ORDER: ItemId[] = ["wood", "stone", "ore", "carrot", "mushroom"];
+export const ITEM_ORDER: ItemId[] = ["wood", "stone", "ore", "cloth", "carrot", "mushroom"];

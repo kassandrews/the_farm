@@ -259,6 +259,67 @@ describe("migrations", () => {
     expect(migrated.commissions).toEqual(existing);
   });
 
+  // --- v9 → v10: cloth ------------------------------------------------------
+
+  function v9Save(extra: Record<string, unknown> = {}) {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const skins = w.skins as { unlocked: string[]; selected: Record<string, string> };
+    const { cloth, ...selected } = skins.selected;
+    void cloth;
+    return {
+      ...w,
+      schemaVersion: 9,
+      skins: { unlocked: skins.unlocked.filter((id) => id !== "undyed" && id !== "madder"), selected },
+      ...extra,
+    };
+  }
+
+  it("gives an existing town somewhere to put a cloth finish", () => {
+    const migrated = migrateSave(v9Save())!;
+    expect(migrated.skins.selected.cloth).toBe("undyed");
+  });
+
+  it("unlocks the cloth starters, or the picker would be empty", () => {
+    // Without this an existing town could buy cloth and find nothing to build
+    // it in — availableSkins shows only what's unlocked.
+    const migrated = migrateSave(v9Save())!;
+    expect(migrated.skins.unlocked).toContain("undyed");
+    expect(migrated.skins.unlocked).toContain("madder");
+  });
+
+  it("never takes away a finish that was earned", () => {
+    const save = v9Save();
+    (save.skins as { unlocked: string[] }).unlocked.push("whitewash");
+    const migrated = migrateSave(save)!;
+    expect(migrated.skins.unlocked).toContain("whitewash");
+  });
+
+  it("brings the shop AND the shopkeeper to an existing town", () => {
+    // Both or neither: a counter with nobody behind it is stranger to walk into
+    // than no shop, and a shopkeeper standing in a field is worse than both.
+    const migrated = migrateSave(v9Save())!;
+    const shop = TOWN_BUILDINGS.shop;
+    expect(migrated.build[tileKey(shop.door.x, shop.door.y)]).toMatchObject({ id: "door" });
+    expect(migrated.villagers.find((v) => v.id === "shop")).toBeDefined();
+  });
+
+  it("does not disturb the buildings a returning town already had", () => {
+    // The v10 stamp re-runs the whole table; stampBuilding's occupied check is
+    // what stops it rewriting the town hall it finds already standing there.
+    const save = v9Save();
+    const hall = TOWN_BUILDINGS.townhall;
+    const corner = tileKey(hall.x0, hall.y0);
+    (save.build as Record<string, unknown>)[corner] = { id: "wall", finish: "walnut" };
+    const migrated = migrateSave(save)!;
+    expect(migrated.build[corner]).toEqual({ id: "wall", finish: "walnut" });
+  });
+
+  it("leaves a chosen cloth finish alone", () => {
+    const save = v9Save();
+    (save.skins as { selected: Record<string, string> }).selected.cloth = "madder";
+    expect(migrateSave(save)!.skins.selected.cloth).toBe("madder");
+  });
+
   it("keeps villager identity and memory across the v2 → v3 drop", () => {
     const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
     const villagers = (w.villagers as Record<string, unknown>[]).map((v) => ({
@@ -267,7 +328,10 @@ describe("migrations", () => {
       dwell: 17,
     }));
     const migrated = migrateSave({ ...w, schemaVersion: 2, villagers })!;
-    expect(migrated.villagers).toHaveLength(2);
     expect(migrated.villagers.find((v) => v.id === "resident1")?.name).toBe("Margfrom");
+    // The count is deliberately not asserted: v10 adds the shopkeeper, and any
+    // later institution will add another. What must hold is that the people
+    // who were already there are still themselves.
+    expect(migrated.villagers.find((v) => v.id === "office")).toBeDefined();
   });
 });

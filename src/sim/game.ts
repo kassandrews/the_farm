@@ -3,7 +3,7 @@
 // the context action, talk to a villager, and summarise what happened while the
 // player was away. No DOM, no canvas — still pure logic (CLAUDE.md).
 
-import type { WorldState, Player, Tool, BuildTool, HomesteadSpot } from "./types";
+import type { WorldState, Player, Villager, Tool, BuildTool, HomesteadSpot } from "./types";
 import type { AdultForm } from "../content/canon/forms";
 import { CAST } from "../content/cast";
 import type { CharId } from "../content/cast";
@@ -23,7 +23,7 @@ import {
 } from "./world";
 import { placeStructure, removeStructure } from "./structures";
 import { rooms } from "./rooms";
-import { stampTown } from "./town";
+import { stampTown, ensureFixedCast } from "./town";
 import { settleResidents } from "./housing";
 import { placeFurniture, removeFurnitureAt } from "./furniture";
 import { FURNITURE, furnitureDef } from "../content/furniture";
@@ -82,7 +82,10 @@ export function newWorld(opts: NewWorldOpts): WorldState {
 
   // Fixed cast + the one starter resident. An import you did NOT embody moves
   // in as that resident, keeping its Meadow name and raising history.
-  const villagers = [makeVillager(CAST.office, now)];
+  // Every authored institution, from the table — not a hand-written list that
+  // has to be remembered when a new one is added (see town.ts ensureFixedCast).
+  const villagers: Villager[] = [];
+  ensureFixedCast({ villagers }, now, (def, at) => makeVillager(def, at));
   const asNeighbour = embodying ? null : opts.meadowImport;
   if (asNeighbour) {
     const def = { ...CAST.resident1, form: asNeighbour.form, name: asNeighbour.name };
@@ -110,7 +113,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     regrow: {},
     skins: {
       unlocked: starterSkins(),
-      selected: { wood: defaultSkin("wood"), stone: defaultSkin("stone") },
+      selected: { wood: defaultSkin("wood"), stone: defaultSkin("stone"), cloth: defaultSkin("cloth") },
     },
     flags: { landClaimed: false, onboarded: false },
   };
@@ -425,6 +428,10 @@ function furnitureFlavour(id: FurnitureId): string {
       return "A chair, facing the way you left it.";
     case "shelf":
       return "A shelf. It waits.";
+    case "cushion":
+      return "A cushion. The floor has been upgraded to a place you can be.";
+    case "rug":
+      return "A rug. The room stops echoing and starts being a room.";
   }
 }
 

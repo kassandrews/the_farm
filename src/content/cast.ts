@@ -21,6 +21,7 @@ import type { AdultForm } from "./canon/forms";
  *  table are keyed on it and a missing row should be a type error. */
 export type AuthoredId =
   | "office" // Tired Office Creature — town hall, land claims
+  | "shop" // Fancy Little Menace — the counter, and the only source of cloth
   | "resident1"; // the one starter resident
 
 /** Someone the town has since taken in. Newcomers arrive at run time (see
@@ -102,6 +103,20 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // for one character who never moves. What happens when you demolish the town
     // hall around him is a line of dialogue (Phase 3), not a pathing problem.
     schedule: [{ fromHour: 0, x: 0, y: -6, doing: "at the desk" }],
+  },
+  shop: {
+    id: "shop",
+    form: "menace",
+    name: "Fancy Little Menace",
+    fixed: true,
+    // Behind the counter, permanently. Like the Office Creature she is an
+    // INSTITUTION rather than a resident: no bed, no ring, no home stop.
+    //
+    // She is a menace and so is Bissenette, the first arrival, and that is
+    // allowed — "forms are species, not singletons" (DESIGN §Importing). The
+    // museum curator will be a specific scholar while Margfrom is just a
+    // scholar who lives here; this is the same shape.
+    schedule: [{ fromHour: 0, x: 9, y: -2, doing: "behind the counter" }],
   },
   resident1: {
     id: "resident1",

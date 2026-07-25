@@ -21,7 +21,7 @@ import type { SkinId } from "./skins";
 import type { FurnitureId, Facing } from "./furniture";
 import type { CharId } from "./cast";
 
-export type TownBuildingId = "townhall" | "margfrom_house";
+export type TownBuildingId = "townhall" | "margfrom_house" | "shop";
 
 /** A piece of furniture that comes with the building, at an absolute anchor. */
 export interface TownFurniture {
@@ -111,6 +111,35 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       { x: -10, y: -1, id: "table", facing: "s" },
       { x: -9, y: -2, id: "chair", facing: "s" },
       { x: -8, y: -3, id: "shelf", facing: "s" },
+    ],
+  },
+
+  // The Menace's shop, east of the plaza and facing it, so the two things the
+  // town does TO you — stamping your paperwork and judging your purchases —
+  // sit on opposite sides of the same square.
+  shop: {
+    id: "shop",
+    name: "The Counter",
+    x0: 7,
+    y0: -4,
+    x1: 12,
+    y1: 0,
+    // The door is at the EAST end rather than the middle, because the counter
+    // runs along the west half and a table is solid. Two tables spanning the
+    // whole row sealed the shop — caught by town.test.ts's "never lets its own
+    // furniture seal the front door", which is exactly the bug it was written
+    // for and exactly the one a layout written by eye produces.
+    door: { x: 11, y: 0 },
+    finish: "whitewash",
+    furniture: [
+      // The counter: one 2x1 table across the west half, with her behind it at
+      // (9,-2). You come in past the end of it, which is how a shop works.
+      { x: 8, y: -1, id: "table", facing: "s" },
+      // Stock, along the back wall. Shelves rather than anything soft: the
+      // soft goods are the point of the visit and she is not going to leave
+      // them lying about where you could just take one.
+      { x: 8, y: -3, id: "shelf", facing: "s" },
+      { x: 11, y: -3, id: "shelf", facing: "s" },
     ],
   },
 };
