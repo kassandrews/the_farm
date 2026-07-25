@@ -261,7 +261,14 @@ describe("migrations", () => {
 
   // --- v9 → v10: cloth ------------------------------------------------------
 
-  function v9Save(extra: Record<string, unknown> = {}) {
+  // The return type is annotated, not inferred, and that is load-bearing: an
+  // object spread of a Record<string, unknown> does NOT carry the index
+  // signature through, so the inferred type is just the keys written literally
+  // below — and reaching for any OTHER field of the save (`save.build`) is then
+  // a compile error. `npm test` never noticed, because vitest doesn't
+  // typecheck; `npm run build` runs tsc across the tests and the Vercel deploy
+  // failed on it. A raw save is a bag of parsed JSON, so say so.
+  function v9Save(extra: Record<string, unknown> = {}): Record<string, unknown> {
     const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
     const skins = w.skins as { unlocked: string[]; selected: Record<string, string> };
     const { cloth, ...selected } = skins.selected;

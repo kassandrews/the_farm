@@ -736,6 +736,14 @@ you trip over them:
   **fix the doc first**, then the code (CLAUDE.md).
 - Build the current phase before expanding sideways.
 - Every schema change ships a tested migration. The game is live.
+- **`npm test` does not typecheck — run `npm run build` before pushing.** Vitest
+  transpiles without checking types, so a fully green test run can sit on top of
+  a `tsc` error and the Vercel deploy is the thing that finds it. It has already
+  happened once: the shop commit shipped a type error in `save.test.ts` (an
+  object spread of a `Record<string, unknown>` drops the index signature, so the
+  helper's inferred return type had only its literal keys) and two deploys
+  failed in a row while the tests stayed green. The error was in a TEST file,
+  which is exactly why nobody looked — `build` runs tsc across those too.
 - Verify rendering and interaction changes in a real browser, not just tests —
   the worst bugs so far all passed unit tests and failed on screen: gathering
   being unreachable, gathering hijacking the build tool, an upside-down tent, a
