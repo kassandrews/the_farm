@@ -10,7 +10,7 @@
 
 import type { Villager, WorldState } from "./types";
 import type { CharDef, CharId } from "../content/cast";
-import { CAST, scheduledStop } from "../content/cast";
+import { charDef, scheduledStop } from "../content/cast";
 import { remember } from "./memory";
 import type { MemoryLog } from "./memory";
 import { findPath } from "./path";
@@ -97,8 +97,8 @@ function setRoute(world: WorldState, id: CharId, route: Route | null): void {
  *  weren't looking. A villager stuck on the wrong side of a wall for a day is a
  *  worse lie than one who got home somehow. */
 export function tickVillager(world: WorldState, v: Villager, dt: number, now: number): void {
-  const def = CAST[v.id];
-  if (!def || def.fixed || def.schedule.length === 0) return;
+  const def = charDef(v);
+  if (def.fixed || def.schedule.length === 0) return;
 
   // Resolved, not read: a "home" stop is a question about where their bed is
   // right now, and the player may have moved it since the last tick.
@@ -150,8 +150,7 @@ export function tickVillager(world: WorldState, v: Villager, dt: number, now: nu
 
 /** What a villager is nominally up to right now — the routine's own label. */
 export function currentActivity(v: Villager, now: number): string | undefined {
-  const def = CAST[v.id];
-  return def ? scheduledStop(def, now).doing : undefined;
+  return scheduledStop(charDef(v), now).doing;
 }
 
 /** Friendship grows a little each meaningful interaction — a chat, or a job

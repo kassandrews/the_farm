@@ -12,7 +12,7 @@ import { generatedTile, tileKey } from "./world";
 import { authoredBed } from "../content/town";
 import type { CharId } from "../content/cast";
 
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -153,6 +153,20 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       }),
     };
   },
+  // v8 → v9: commissioned housing (Phase 3). Purely additive — an empty list.
+  //
+  // Nothing is backfilled and nothing can be. A commission records that someone
+  // ARRIVED and asked, and no v8 town has ever had anyone arrive; inventing a
+  // form for Margfrom would file paperwork about a house she has lived in since
+  // the vertical slice. The first arrival is due FIRST_ARRIVAL_MS after the
+  // town was created (sim/commission.ts), and every existing town is long past
+  // that — so a returning player gets a knock at the door on their next visit,
+  // which is exactly the right way to meet a new feature.
+  8: (raw) => ({
+    ...raw,
+    schemaVersion: 9,
+    commissions: Array.isArray(raw.commissions) ? raw.commissions : [],
+  }),
 };
 
 /** Bring any older save up to the current schema. Returns null if the blob is

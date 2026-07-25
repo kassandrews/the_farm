@@ -5,7 +5,7 @@
 import type { TileId } from "../content/tiles";
 import type { CropId } from "../content/crops";
 import type { AdultForm } from "../content/canon/forms";
-import type { CharId } from "../content/cast";
+import type { CharId, NewcomerId } from "../content/cast";
 import type { MemoryLog } from "./memory";
 import type { Inventory } from "./inventory";
 import type { NodeId } from "../content/nodes";
@@ -99,6 +99,32 @@ export interface Villager {
   homeBed: string | null;
 }
 
+/** One piece of housing paperwork — the flagship beat, as state.
+ *
+ *  Deliberately does NOT record where the newcomer lives. That's `homeBed` on
+ *  the villager, and it stays the only record: a commission that also knew
+ *  would be the same fact written twice, which is what the housing model
+ *  refuses. What lives here is what only the paperwork knows — who asked, when,
+ *  where their tent is, and whether it's been signed off. */
+export interface Commission {
+  id: NewcomerId;
+  /** Row in content/arrivals.ts. Stored rather than looked up by name, so
+   *  editing the table's prose can't orphan a live save's commission. */
+  index: number;
+  arrivedAt: number;
+  /** Where they're camping until they have somewhere better. Not a build cell
+   *  and not furniture — a tent isn't a structure, has no solidity, and must
+   *  never be something the room flood-fill has to have an opinion about. */
+  tent: { x: number; y: number };
+  /** When the Office Creature handed the form over; null until you've spoken to
+   *  him. The commission exists before it's filed — someone is in a tent
+   *  whether or not the paperwork has caught up, which is the joke. */
+  filedAt: number | null;
+  /** When it was satisfied and signed off. Null while it's still open, and the
+   *  record that its reward has already been paid. */
+  stampedAt: number | null;
+}
+
 export interface WorldState {
   schemaVersion: number;
   seed: number;
@@ -126,6 +152,10 @@ export interface WorldState {
 
   crops: Record<string, Crop>;
   villagers: Villager[];
+
+  /** Housing paperwork, oldest first. An arrival's villager is an ordinary
+   *  entry in `villagers` — this is only the form about them. */
+  commissions: Commission[];
 
   /** What you're carrying. No slots, no weight — see sim/inventory.ts. */
   inventory: Inventory;

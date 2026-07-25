@@ -227,6 +227,38 @@ describe("migrations", () => {
     expect(migrated.villagers.find((v) => v.id === "resident1")!.homeBed).toBe(mine);
   });
 
+  // --- v8 → v9: commissioned housing ----------------------------------------
+
+  function v8Save(extra: Record<string, unknown> = {}) {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const { commissions, ...rest } = w;
+    void commissions;
+    return { ...rest, schemaVersion: 8, ...extra };
+  }
+
+  it("gives a returning town an empty commission list", () => {
+    const migrated = migrateSave(v8Save())!;
+    expect(migrated.commissions).toEqual([]);
+  });
+
+  it("files no paperwork about houses people already live in", () => {
+    // Nothing here can be backfilled and nothing should be. A commission
+    // records that somebody ARRIVED and asked; Margfrom has lived in her house
+    // since the vertical slice, and inventing a form about it would be the
+    // town remembering something that didn't happen.
+    const migrated = migrateSave(v8Save())!;
+    expect(migrated.commissions).toHaveLength(0);
+    expect(migrated.villagers.find((v) => v.id === "resident1")!.homeBed).not.toBeNull();
+  });
+
+  it("leaves a v9 save's commissions alone", () => {
+    const existing = [
+      { id: "newcomer:0", index: 0, arrivedAt: 1, tent: { x: 2, y: 3 }, filedAt: null, stampedAt: null },
+    ];
+    const migrated = migrateSave(v8Save({ commissions: existing }))!;
+    expect(migrated.commissions).toEqual(existing);
+  });
+
   it("keeps villager identity and memory across the v2 → v3 drop", () => {
     const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
     const villagers = (w.villagers as Record<string, unknown>[]).map((v) => ({

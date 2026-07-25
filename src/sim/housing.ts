@@ -22,7 +22,7 @@
 
 import type { Villager, WorldState } from "./types";
 import type { ScheduleStop } from "../content/cast";
-import { CAST, scheduledStop } from "../content/cast";
+import { charDef, scheduledStop } from "../content/cast";
 import { authoredBed } from "../content/town";
 import { cellsFor } from "./furniture";
 import { isWalkable, tileKey, parseTileKey } from "./world";
@@ -78,12 +78,38 @@ export function homeStand(world: WorldState, v: Villager): { x: number; y: numbe
  *  — it knows the shape of a day and nothing about houses — and resolution
  *  happens here, in sim, where the world is. */
 export function stopTarget(world: WorldState, v: Villager, now: number): ScheduleStop {
-  const def = CAST[v.id];
-  if (!def) return { fromHour: 0, x: v.x, y: v.y };
-  const stop = scheduledStop(def, now);
+  const stop = scheduledStop(charDef(v), now);
   if (stop.at !== "home") return stop;
   const home = homeStand(world, v);
-  return home ? { ...stop, x: home.x, y: home.y } : stop; // else the fallback it carries
+  if (home) return { ...stop, x: home.x, y: home.y };
+  const tent = tentStand(world, v);
+  return tent ? { ...stop, x: tent.x, y: tent.y } : stop; // else the fallback it carries
+}
+
+/** Where someone waiting on a commission sleeps: beside their own tent.
+ *
+ *  There are two ways to have no bed and they are not the same state. Someone
+ *  whose bed you demolished stands in the plaza at 2am, which is the honest
+ *  picture of a person with nowhere to go. Someone who arrived last week and is
+ *  waiting on a house is CAMPING — they have somewhere, it's just not a house
+ *  yet — and putting them in the square would read as the game losing track of
+ *  a person it knows exactly where to find.
+ *
+ *  Read straight off `world.commissions` rather than through sim/commission.ts,
+ *  which imports this module (via assign.ts) and would make a cycle. The
+ *  commission is plain state in types.ts; that's the shared dependency, the
+ *  same trick isWalkable uses to stay out of sim/structures.ts. */
+function tentStand(world: WorldState, v: Villager): { x: number; y: number } | null {
+  const c = world.commissions?.find((k) => k.id === v.id && k.stampedAt === null);
+  if (!c) return null;
+  // Beside the tent, not in it, for the same reason homeStand stands beside a
+  // bed: you sleep in one and stand next to it.
+  for (const [dx, dy] of AROUND) {
+    const x = c.tent.x + dx;
+    const y = c.tent.y + dy;
+    if (isWalkable(world, x, y)) return { x, y };
+  }
+  return null;
 }
 
 /** Hand out the beds the town authored, once, at world creation.

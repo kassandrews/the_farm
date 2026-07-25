@@ -8,6 +8,7 @@ import type { AdultForm } from "../content/canon/forms";
 import { CAST } from "../content/cast";
 import type { CharId } from "../content/cast";
 import { makeVillager, tickVillager, befriend } from "./villagers";
+import { arrivalDue, admitArrival } from "./commission";
 import { remember } from "./memory";
 import type { MemoryKind } from "./memory";
 import {
@@ -102,6 +103,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     furniture: {},
     crops: {},
     villagers,
+    commissions: [],
     // A few boards' worth of wood so the very first thing you try to build
     // works — you learn the cost by spending it, not by being refused.
     inventory: { ...emptyInventory(), wood: 8 },
@@ -171,6 +173,12 @@ export function tick(world: WorldState, dt: number, now: number): void {
       if (!movedX && !movedY) p.target = null;
     }
   }
+
+  // Someone may be due to move to town. Checked here rather than on load so it
+  // also fires during a long session, and it's safe to ask every tick because
+  // due-ness is derived from the clock — a player who leaves for two days comes
+  // back to one new neighbour, not to forty-eight.
+  if (arrivalDue(world, now)) admitArrival(world, now);
 
   for (const v of world.villagers) tickVillager(world, v, dt, now);
   updateAllCrops(world, now);

@@ -16,9 +16,27 @@
 
 import type { AdultForm } from "./canon/forms";
 
-export type CharId =
+/** The people this table authors: the fixed institutions and the starter
+ *  resident. A closed union, because the dialogue banks and the authored-bed
+ *  table are keyed on it and a missing row should be a type error. */
+export type AuthoredId =
   | "office" // Tired Office Creature — town hall, land claims
-  | "resident1"; // the one starter resident (overwritten by a Meadow import)
+  | "resident1"; // the one starter resident
+
+/** Someone the town has since taken in. Newcomers arrive at run time (see
+ *  sim/commission.ts), so their ids can't be a union — there is no fixed set of
+ *  them, and the whole point of Phase 3 is that the town keeps growing.
+ *
+ *  Numbered rather than named after the arrival, because two Dramatic Blobs may
+ *  both move in ("Forms are species, not singletons" — DESIGN) and an id has to
+ *  survive that. */
+export type NewcomerId = `newcomer:${number}`;
+
+export type CharId = AuthoredId | NewcomerId;
+
+export function isNewcomer(id: CharId): id is NewcomerId {
+  return id.startsWith("newcomer:");
+}
 
 /** One entry in a daily routine: from `fromHour` (local wall-clock, 0–23) this
  *  is where the villager wants to be. Stops must be listed in ascending hour
@@ -71,7 +89,7 @@ const NO_HOME = { x: 0, y: -1 };
 // Town geometry lives in world.ts; these are hand-placed against the plaza.
 // The office sits at the north edge of the plaza; the resident's ring loops
 // from the plaza out toward the player's homestead and back.
-export const CAST: Record<CharId, CharDef> = {
+export const CAST: Record<AuthoredId, CharDef> = {
   office: {
     id: "office",
     form: "office",
@@ -105,6 +123,74 @@ export const CAST: Record<CharId, CharDef> = {
     ],
   },
 };
+
+// --- Newcomers ----------------------------------------------------------------
+// Someone who moved in during Phase 3 has no row in CAST — they didn't exist
+// when this file was written. What they DO have is a name, a form and a
+// friendship, all of which the Villager already carries; the only thing a cast
+// table was supplying that the villager doesn't is a shape of day.
+//
+// So a newcomer's def is DERIVED from the villager rather than stored anywhere.
+// That's the same instinct as the housing model: don't write a fact down twice
+// when one of the copies can be computed. It also means an arrival costs no
+// schema — a newcomer is an ordinary Villager, and this is how they get a
+// routine.
+
+/** The rings a newcomer might walk. Everyone's day has the same shape — home
+ *  overnight, out in the morning, back through the plaza in the evening —
+ *  because the shape is what makes a town feel inhabited; the differences are
+ *  in where they linger.
+ *
+ *  Three of them, picked by the newcomer's number, so the second arrival isn't
+ *  standing inside the first. Deliberately not random: a routine you can learn
+ *  is the point ("visit at 8am and at 8pm and you'll find people in different
+ *  places"), and one that reshuffles is just weather. */
+const NEWCOMER_RINGS: ScheduleStop[][] = [
+  [
+    { fromHour: 0, at: "home", ...NO_HOME, doing: "asleep" },
+    { fromHour: 8, x: -2, y: 1, doing: "getting the measure of the plaza" },
+    { fromHour: 13, x: 4, y: 3, doing: "out by the fields" },
+    { fromHour: 18, x: 0, y: 0, doing: "watching the light go" },
+    { fromHour: 21, at: "home", ...NO_HOME, doing: "in for the night" },
+  ],
+  [
+    { fromHour: 0, at: "home", ...NO_HOME, doing: "asleep" },
+    { fromHour: 9, x: 2, y: -2, doing: "loitering near the town hall" },
+    { fromHour: 14, x: -3, y: 4, doing: "down by the water" },
+    { fromHour: 19, x: 1, y: 0, doing: "in the square, saying little" },
+    { fromHour: 22, at: "home", ...NO_HOME, doing: "turning in" },
+  ],
+  [
+    { fromHour: 0, at: "home", ...NO_HOME, doing: "asleep" },
+    { fromHour: 7, x: 5, y: 1, doing: "up early, unclear why" },
+    { fromHour: 12, x: -1, y: 3, doing: "somewhere near the edge of things" },
+    { fromHour: 17, x: -1, y: 0, doing: "back in the plaza" },
+    { fromHour: 20, at: "home", ...NO_HOME, doing: "home before dark" },
+  ],
+];
+
+/** The numeric part of a newcomer id, for picking their ring. */
+function newcomerNumber(id: NewcomerId): number {
+  const n = Number(id.slice("newcomer:".length));
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Everything a villager needs to walk a day, whoever they are.
+ *
+ *  The ONE place that turns a villager into a routine. It used to be `CAST[id]`
+ *  at four call sites, which silently returned undefined for anyone the table
+ *  didn't author — and an undefined def means "don't move", so a newcomer would
+ *  have stood on their arrival tile forever without a single error. */
+export function charDef(v: { id: CharId; name: string; form: AdultForm; fixed: boolean }): CharDef {
+  if (!isNewcomer(v.id)) return CAST[v.id];
+  return {
+    id: v.id,
+    form: v.form,
+    name: v.name,
+    fixed: false,
+    schedule: NEWCOMER_RINGS[newcomerNumber(v.id) % NEWCOMER_RINGS.length],
+  };
+}
 
 /** Where a character wants to be at a given wall-clock time. Walks the ring
  *  backwards to the latest stop that has already started; before the first
