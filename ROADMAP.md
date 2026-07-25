@@ -38,7 +38,11 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   **Phase 2 is done.**
 - Menu with New town / sound toggle; PWA shell; 221 tests.
 
-**Next: Phase 3** — commissions on top of 2b's machinery. See below.
+- **Phase 3a — the two door gaps, complete.** A door in a side wall now reads
+  (roof notch + a doorstep on the ground), and build mode says so when a doorway
+  has nothing to stand on.
+
+**Next: Phase 3b** — the commission itself, on top of 2b's machinery. See below.
 
 **Save schema is at v8.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
@@ -470,6 +474,24 @@ not against how a test can call the API.
 
 ## Phase 3 — The town
 
+### Settled first: where residents come from
+
+**The Meadow import supplies the PLAYER, and nobody else.** Residents arrive on
+their own. DESIGN has been corrected to match (§"Importing from The Meadow"); the
+old line — "any remaining imports become villagers" — was aspirational text the
+adapter never implemented, since `importFromMeadow` returns exactly one sprite.
+
+The reason to settle it this way rather than the other: commissioned housing is
+the flagship, and a flagship that only fires when the player happens to have
+retired a spare adult in a *different game* is one most players never see. An
+arrival has to be something the town does, not something the save file supplies.
+
+### 3a. The two door gaps — **done**
+
+Both were flagged in Known gaps as wanting doing "before commissions, where a
+house you built is judged", and both are now closed — see there for what each
+one turned out to be.
+
 - **Commissioned housing — the flagship beat.** Now content on top of 2b's
   machinery, not a system of its own. An arriving import pitches a tent; the
   Office Creature files the paperwork (town hall, deadpan, reusing the
@@ -532,17 +554,26 @@ you trip over them:
 - ~~**Villagers walk through walls and furniture.**~~ Fixed in 2b step 1
   (`sim/path.ts`), and verified on screen in step 2: Margfrom walks from the
   plaza, through her own doorway, to her bed, standing in a wall at no point.
-- **A door on an east or west wall is invisible.** Only south-facing walls draw
-  a face for a doorway to appear in, so a player who builds a house entered from
-  the side gets one they can walk into but can't see the way into. The town's own
-  buildings dodge it by convention (asserted in `town.test.ts`), which does
-  nothing for player-built houses. The real fix is in the renderer — draw a
-  doorway on a side wall's top run — and it wants doing before commissions in
-  Phase 3, where a house you built is judged.
-- **Nothing guarantees a PLAYER-built house has a clear doorstep.** The town's
-  stamp clears its own apron; a player who walls a doorway in against a tree gets
-  a house nobody can enter, and the villager will snap inside rather than
-  complain. Worth a build-mode warning when a door's only approach is solid.
+- ~~**A door on an east or west wall is invisible.**~~ Fixed in Phase 3a. The
+  planned fix — "draw a doorway on a side wall's top run" — turned out to be
+  impossible twice over, which is worth keeping: a north-south run is seen
+  edge-on so its face has **zero width**, and its top surface is covered by the
+  roof cell of the row in front of it. Neither the wall's face nor its top is
+  available, so the cue had to leave the wall layer entirely. Two now do it: the
+  roof is pulled back over the doorway (breaking the silhouette where the way in
+  is), and every door gets a flagstone **doorstep** on the ground beside it,
+  which is the only surface still in view outside a roofed house.
+- ~~**Nothing guarantees a PLAYER-built house has a clear doorstep.**~~ Fixed in
+  Phase 3a. `blockedDoorsteps()` in `sim/structures.ts` asks `isWalkable` — the
+  one predicate the player, the villagers and the pathfinder all collide against
+  — so solid furniture counts as well as terrain. Build mode marks the cell to
+  **clear**, not the door, and it's a warning rather than a refusal: a half-built
+  house has sealed doorways constantly, and placement must never be gated on a
+  judgement about whether a building is any good.
+
+  Both approach cells count, not only the outside one. Telling them apart needs
+  the room index, and the answer is the same either way — that step has to be
+  clear — so `structures.ts` doesn't acquire the dependency.
 - **Furniture doesn't invalidate a walking villager's route.** `bump()` in
   `sim/structures.ts` fires on wall and door edits only, but `isWalkable`
   counts solid furniture too — so a route computed before you drop a table

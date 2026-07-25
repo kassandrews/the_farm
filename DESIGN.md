@@ -111,8 +111,15 @@ At the start you either:
 There is no egg-raising on The Farm — decided, not open. Raising is The
 Meadow's whole game; the two should need each other.
 
-Any remaining imports become villagers. Form affects dialogue flavor and
-small affinity perks (see below), never capabilities or obligations.
+**The import supplies your character, and only your character.** Everyone
+else arrives on their own. This is deliberate and it decides the shape of
+the flagship: commissioned housing has to work for a player who has never
+touched The Meadow, and a beat that only fires if you happen to have
+retired a spare adult would be a flagship most players never see. The
+import is a way to arrive as someone, not a supply of villagers.
+
+Form affects dialogue flavor and small affinity perks (see below), never
+capabilities or obligations.
 
 ## Importing from The Meadow
 
@@ -120,12 +127,16 @@ The new game reads The Meadow's export JSON (see cozy_sprites
 `src/pet/persistence.ts`). Treat it as a read-only foreign format with its
 own adapter — never share code, never write back.
 
-Imported adults become **residents**: a commissioned house (see above), a
-daily schedule, hobbies, and dialogue in their form's voice. No jobs, no
-duties. Their Meadow
-history (name, favorite food, how they were raised, memories) seeds their
-dialogue and relationship with the player — nobody else's town has *your*
-specific Dramatic Blob.
+One adult comes across, and it becomes **you** — see Player identity. Its
+Meadow history (name, favorite food, how it was raised, memories) seeds
+the player's own memory log, so your character arrives having had a life:
+nobody else's Farm is played by *your* specific Dramatic Blob.
+
+Residents are not imported. They arrive on their own (see Phase 3 in the
+roadmap), pitch a tent, and get commissioned a house like anyone else. An
+earlier draft had leftover imports become the town's villagers; the
+adapter never did it, and the reason to keep it that way is that the
+flagship must work identically whether or not you've played The Meadow.
 
 Forms are species, not singletons. Importing a second Scholar is fine; the
 museum curator is a specific scholar, yours just lives here. Imports of
