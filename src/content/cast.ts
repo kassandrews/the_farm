@@ -22,6 +22,7 @@ import type { AdultForm } from "./canon/forms";
 export type AuthoredId =
   | "office" // Tired Office Creature — town hall, land claims
   | "shop" // Fancy Little Menace — the counter, and the only source of cloth
+  | "heap" // Gremlin — the junk economy, and the only source of his finishes
   | "resident1"; // the one starter resident
 
 /** Someone the town has since taken in. Newcomers arrive at run time (see
@@ -117,6 +118,19 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // museum curator will be a specific scholar while Margfrom is just a
     // scholar who lives here; this is the same shape.
     schedule: [{ fromHour: 0, x: 9, y: -2, doing: "behind the counter" }],
+  },
+  heap: {
+    id: "heap",
+    form: "gremlin",
+    name: "Gremlin",
+    fixed: true,
+    // At the heap, north-east of the plaza. An INSTITUTION like the other two:
+    // no bed, no ring, no home stop — whatever he does at night, he does here.
+    //
+    // He is a gremlin and so is the fourth arrival in content/arrivals.ts, on
+    // the same footing as the two Menaces: forms are species, not singletons
+    // (DESIGN §Importing). This one is the facility.
+    schedule: [{ fromHour: 0, x: 8, y: -8, doing: "at the facility" }],
   },
   resident1: {
     id: "resident1",

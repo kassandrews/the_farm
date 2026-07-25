@@ -19,6 +19,7 @@
 // and tells them they've just made farming mandatory.
 
 import type { ItemId } from "./items";
+import type { SkinId } from "./skins";
 
 /** One thing she'll take, and how much of it. */
 export interface Price {
@@ -54,6 +55,7 @@ export const SHOP: ShopRow[] = [
       { item: "stone", count: 8 },
       { item: "carrot", count: 4 },
       { item: "mushroom", count: 6 },
+      { item: "junk", count: 5 },
     ],
     line: "Two bolts. ... You'll want more. Everyone wants more, eventually.",
   },
@@ -65,8 +67,54 @@ export const SHOP: ShopRow[] = [
       { item: "stone", count: 22 },
       { item: "carrot", count: 11 },
       { item: "mushroom", count: 16 },
+      { item: "junk", count: 13 },
     ],
     // Slightly better rate, and she is not going to draw attention to it.
     line: "The larger amount. ... It works out better for you. I'm aware. Take it.",
+  },
+];
+
+// --- The heap -----------------------------------------------------------------
+// The Gremlin's counter, which he insists is a facility. It is a pile.
+//
+// He deals in ONE thing in one direction: junk in, finishes out. That is not
+// the Menace's table with different rows, and the difference is the point of
+// him existing at all — she sells what you cannot gather, he takes what nobody
+// wanted. A row here therefore breaks the counter's usual rule and accepts junk
+// and nothing else, which is only allowed because of what he gives back.
+//
+// WHAT HE GIVES IS ALWAYS A FINISH, and that is the load-bearing constraint.
+// A finish is the one reward class in this game that can never be a gate: free
+// to apply, weightless, permanent, and invisible to every acceptance test in
+// the codebase — no commission, no `qualify()`, no room has ever asked what
+// colour anything is (DESIGN §Materials, "taste is delight, never a gate").
+// So a junk-only counter can exist without junk becoming a thing you MUST go
+// and dig. Put a material or a piece of furniture behind this counter and that
+// stops being true immediately; sim/heap.test.ts asserts it never happens.
+//
+// Each row is redeemed ONCE — a finish is permanent, so there is nothing to buy
+// twice. His stock therefore runs out, which is the opposite of the Menace's
+// unlimited counter and is right for the same reason hers is: she is a shop and
+// he is a heap, and a heap is a finite pile of things somebody already threw
+// away. When it's empty he has plenty to say about that.
+
+export interface HeapRow {
+  /** The finish redeemed. Unlocked permanently; nothing is carried. */
+  gives: SkinId;
+  /** Junk only. See the note above for why this counter gets to do that. */
+  cost: number;
+  line: string;
+}
+
+export const HEAP: HeapRow[] = [
+  {
+    gives: "salvage",
+    cost: 8,
+    line: "Boards. ... None of them match. That IS the finish. Keep up.",
+  },
+  {
+    gives: "cobble",
+    cost: 12,
+    line: "Sorted stone. I sorted it. ... Don't ask by what.",
   },
 ];

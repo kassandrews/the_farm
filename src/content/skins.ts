@@ -35,9 +35,11 @@ export type SkinId =
   | "walnut"
   | "whitewash"
   | "ash"
+  | "salvage"
   // Stone
   | "granite"
   | "slate"
+  | "cobble"
   // Cloth
   | "undyed"
   | "madder";
@@ -99,7 +101,33 @@ export const SKINS: Record<SkinId, SkinDef> = {
     starter: false,
     hint: "The Fancy Little Menace has standards, and will share them.",
   },
+  // The Gremlin's two, redeemed at the heap for junk (sim/heap.ts). They are
+  // finishes rather than furniture or materials for a reason that is nearly a
+  // rule: a finish is the only reward class in the game that CANNOT be a gate.
+  // It costs nothing to apply, weighs nothing, and no commission or qualifying
+  // house has ever asked what colour anything is. So a junk-only counter can
+  // hand these out without junk becoming something you must go and get.
+  salvage: {
+    id: "salvage",
+    name: "Salvage",
+    applies: "wood",
+    color: "#9a8468",
+    top: "#ab9678",
+    shade: "#7b6a53",
+    starter: false,
+    hint: "The Gremlin has a facility. He would like you to call it a facility.",
+  },
   // --- Stone --------------------------------------------------------------
+  cobble: {
+    id: "cobble",
+    name: "Cobble",
+    applies: "stone",
+    color: "#8f8a80",
+    top: "#9d978c",
+    shade: "#726d65",
+    starter: false,
+    hint: "The Gremlin sorts stone into piles. The piles mean something to him.",
+  },
   granite: {
     id: "granite",
     name: "Granite",

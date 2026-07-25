@@ -45,6 +45,7 @@ import {
 } from "../sim/commission";
 import { ITEM_ORDER, itemDef, itemLabel } from "../content/items";
 import { offers, trade } from "../sim/shop";
+import { heapOffers, heapExhausted, redeem } from "../sim/heap";
 import { availableSkins, skinDef, SKIN_CLASSES } from "../content/skins";
 import { audio } from "./audio";
 import type { Cue } from "./audio";
@@ -399,6 +400,15 @@ export class App {
       this.openShop();
       return;
     }
+    // Same rule for the Gremlin: the heap is what he is, so talking to him is
+    // standing at it. Two counters, two panels, because they are not the same
+    // transaction — she swaps things for things, he takes junk and unlocks a
+    // finish, and one panel bent to cover both would show a price column that
+    // means something different on each side of it.
+    if (villagerId === "heap") {
+      this.openHeap();
+      return;
+    }
 
     this.openModal(
       (close) =>
@@ -470,6 +480,61 @@ export class App {
         el("p", {}, ["Cloth. ... You can't grow it, and you certainly can't chop it down."]),
         body,
         actionRow([primaryBtn("That's all", close)]),
+      ]);
+    }, { dismissable: true });
+  }
+
+  /** The Gremlin's heap. Junk in, a finish out, and nothing else in either
+   *  direction (content/shop.ts §"The heap").
+   *
+   *  Redeemed rows stay on the list, marked, rather than vanishing: a counter
+   *  that empties as you use it makes the last visit look broken, and seeing
+   *  what you already got from him is half of learning what he's for. Same
+   *  reasoning as the Menace showing rows you can't afford.
+   *
+   *  Rebuilt after each redemption for the same reason her panel is — it is a
+   *  pure function of the junk count and the unlocked list, so re-deriving it
+   *  can't go stale. */
+  private openHeap(): void {
+    if (!this.world) return;
+    const world = this.world;
+
+    this.openModal((close) => {
+      const body = el("div", {});
+      const render = () => {
+        body.replaceChildren();
+        const choices = el("div", { class: "choices" });
+        for (const { row, taken, affordable } of heapOffers(world)) {
+          const label = taken
+            ? `${skinDef(row.gives).name} — yours`
+            : `${skinDef(row.gives).name}, for ${itemLabel("junk", row.cost)}`;
+          const b = choiceBtn(label, () => {
+            if (!redeem(world, row)) return;
+            audio.play("place");
+            this.persist();
+            this.flash(row.line);
+            render();
+          });
+          if (taken || !affordable) {
+            b.setAttribute("disabled", "true");
+            b.style.opacity = "0.4";
+          }
+          choices.append(b);
+        }
+        body.append(choices);
+      };
+      render();
+
+      // What he says when the pile is done. He is not going to restock, and
+      // pretending otherwise would be the first FOMO in the game.
+      const opener = heapExhausted(world)
+        ? "That's the lot. ... You've had everything worth having. Some of it twice, from my side."
+        : "You dug that up. ... Fine. I can do something with it. Probably.";
+
+      return panel("Gremlin", "The Facility", [
+        el("p", {}, [opener]),
+        body,
+        actionRow([primaryBtn("Right", close)]),
       ]);
     }, { dismissable: true });
   }

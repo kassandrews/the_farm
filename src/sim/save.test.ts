@@ -341,4 +341,45 @@ describe("migrations", () => {
     // who were already there are still themselves.
     expect(migrated.villagers.find((v) => v.id === "office")).toBeDefined();
   });
+
+  // --- v10 → v11: the junk economy ------------------------------------------
+
+  function v10Save(): Record<string, unknown> {
+    // Annotated, not inferred — see v9Save. An object spread of a
+    // Record<string, unknown> drops the index signature, and reaching for any
+    // field not written literally here is then a compile error that only
+    // `npm run build` finds.
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    return { ...w, schemaVersion: 10 };
+  }
+
+  it("brings the heap AND the Gremlin to an existing town", () => {
+    // Both or neither, exactly as for the shop in v10: a pile with nobody
+    // sorting it is scenery, and a Gremlin standing in a field is worse.
+    const migrated = migrateSave(v10Save())!;
+    const heap = TOWN_BUILDINGS.heap;
+    expect(migrated.build[tileKey(heap.door.x, heap.door.y)]).toMatchObject({ id: "door" });
+    expect(migrated.villagers.find((v) => v.id === "heap")).toBeDefined();
+  });
+
+  it("adds no fields, because junk needed none", () => {
+    // The whole v11 story. An existing town reads zero junk (the satchel is a
+    // Partial<Record>), and the heap's finishes are non-starters, so its
+    // unlocked list is already correct. If this ever has to change, something
+    // has been designed that the schema didn't want.
+    const before = v10Save();
+    const migrated = migrateSave(before)! as unknown as Record<string, unknown>;
+    const gained = Object.keys(migrated).filter((k) => !(k in before));
+    expect(gained).toEqual([]);
+    expect(migrated.inventory).toEqual(before.inventory);
+    expect(migrated.skins).toEqual(before.skins);
+  });
+
+  it("does not take away a finish redeemed at the heap", () => {
+    // The migration re-runs starterSkins unioning in v10 and must never
+    // subtract; a player who dug for `salvage` keeps it.
+    const save = v10Save();
+    (save.skins as { unlocked: string[] }).unlocked.push("salvage");
+    expect(migrateSave(save)!.skins.unlocked).toContain("salvage");
+  });
 });

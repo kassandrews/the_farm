@@ -13,7 +13,7 @@ import { makeVillager } from "./villagers";
 import { authoredBed } from "../content/town";
 import type { CharId } from "../content/cast";
 
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 11;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -207,6 +207,32 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       // ensureFixedCast is the SAME function newWorld uses, for the reason the
       // v7 stamp records: two paths that build the town differently is a bug
       // nobody would think to test for.
+      villagers: withFixedCast(raw, now),
+    };
+  },
+  // v10 → v11: the junk economy. The Gremlin and his heap, by the same two
+  // moves as v10 — and it adds NO FIELDS AT ALL, which is worth saying out
+  // loud because it's a property of the design rather than luck:
+  //
+  //   • junk is an ordinary item, and the satchel is a Partial<Record>, so a
+  //     save that has never seen junk already reads zero of it;
+  //   • the two heap finishes are non-starters, so `skins.unlocked` is correct
+  //     as it stands — an existing town simply hasn't redeemed them yet;
+  //   • the heap building and the Gremlin are the same idempotent stamp +
+  //     ensureFixedCast the shop used, which is the whole reason those were
+  //     written as one shared path (ROADMAP §"Adding a cast row").
+  //
+  // So the only real work is the version bump, and everything else is a
+  // consequence of decisions already made. That is what a schema is FOR.
+  10: (raw) => {
+    const now = Date.now();
+    const heap = stampInto(raw);
+    return {
+      ...raw,
+      schemaVersion: 11,
+      overrides: heap.overrides,
+      build: heap.build,
+      furniture: heap.furniture,
       villagers: withFixedCast(raw, now),
     };
   },

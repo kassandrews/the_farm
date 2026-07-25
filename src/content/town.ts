@@ -21,7 +21,7 @@ import type { SkinId } from "./skins";
 import type { FurnitureId, Facing } from "./furniture";
 import type { CharId } from "./cast";
 
-export type TownBuildingId = "townhall" | "margfrom_house" | "shop";
+export type TownBuildingId = "townhall" | "margfrom_house" | "shop" | "heap";
 
 /** A piece of furniture that comes with the building, at an absolute anchor. */
 export interface TownFurniture {
@@ -140,6 +140,34 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       // them lying about where you could just take one.
       { x: 8, y: -3, id: "shelf", facing: "s" },
       { x: 11, y: -3, id: "shelf", facing: "s" },
+    ],
+  },
+
+  // The heap, north-east of the plaza — diagonally opposite Margfrom and well
+  // clear of both the town hall (y -9..-5, x -3..3) and the shop (x 7..12,
+  // y -4..0). It is a shed with a pile in it. He calls it a facility, and the
+  // building being an ordinary four-wall box with a door is exactly the joke:
+  // there is nothing facility about it.
+  heap: {
+    id: "heap",
+    name: "The Facility",
+    x0: 6,
+    y0: -11,
+    x1: 10,
+    y1: -6,
+    // South wall, like every door in the town — a wall running away from the
+    // camera has no face to draw a doorway on (see margfrom_house).
+    door: { x: 8, y: -6 },
+    finish: "ash",
+    furniture: [
+      // Shelves he refers to as "the system". He stands at (8,-8), between them.
+      { x: 7, y: -10, id: "shelf", facing: "s" },
+      { x: 9, y: -10, id: "shelf", facing: "s" },
+      // A table off to the west side, clear of the doorway at x 8 — solid
+      // furniture in front of a door seals the building, which is the bug
+      // town.test.ts's "never lets its own furniture seal the front door" was
+      // written for when the shop's counter did exactly that.
+      { x: 6, y: -7, id: "table", facing: "s" },
     ],
   },
 };

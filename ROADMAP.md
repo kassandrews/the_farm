@@ -47,12 +47,14 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   the opposite.
 - **Phase 3d — the shop, complete.** Barter at the Menace's counter, cloth, and
   soft furniture that costs it.
-- Menu with New town / sound toggle; PWA shell; 268 tests.
+- **Phase 3e — the junk economy, complete.** The ground has things in it,
+  digging finds them, and the Gremlin's heap turns them into finishes.
+- Menu with New town / sound toggle; PWA shell; 286 tests.
 
-**Next:** the rest of Phase 3 — the remaining five fixed cast and their
-institutions (museum, seed stall, errands board, plaza stage, junk economy).
+**Next:** the rest of Phase 3 — the remaining four fixed cast and their
+institutions (museum, seed stall, errands board, plaza stage).
 
-**Save schema is at v10.** Every change ships a tested migration — see
+**Save schema is at v11.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -167,6 +169,57 @@ play. That's what decides it.
   other finish — the scarce thing is the stuff, never the look.
 - **Stock is unlimited and never rotates.** A limited or timed stock is FOMO,
   which is pressure wearing a hat.
+
+### Junk — found, never gathered
+
+**Settled in Phase 3e.** DESIGN §Materials had promised junk as a third payment
+axis ("payable from materials *and* produce, and later from junk") without
+saying what it was. The answer had to clear one hurdle: the item table's whole
+rule is that item count is the number of MATERIALS, and junk is a fourth thing
+you can hold.
+
+- **It is not a fourth material, and DESIGN now says so explicitly.** Junk is
+  *found*, never gathered; nothing is built out of it and nothing costs it to
+  place. Without that carve-out written down, the next person opens `items.ts`,
+  counts four, and concludes the three-classes rule has already been broken —
+  so the doc went first.
+- **It rides on the shovel.** Digging was the one verb that yielded nothing, and
+  it is also the verb the pillars protect hardest (terraforming is free and
+  uncapped), which is exactly what makes a find on it safe: there is no swing
+  budget and no cooldown, so it can never become a grind.
+- **What's buried where is a total function of (seed, x, y)**, like the trees —
+  not a per-swing roll. A given town's ground is a real place, and there is
+  nothing to re-roll.
+- **One item, flavoured at pickup.** What you pulled out is a line of toast at
+  the moment you pull it out, and then it is simply junk. Same trick as
+  finishes: variety is free because it isn't carried, and this cost no schema.
+- **The Gremlin's heap gives ONLY finishes, and that is load-bearing.** His
+  counter takes junk and nothing else — which would be a soft "you must dig"
+  gate for anything else he could hand over. A finish is the one reward class
+  that can never gate: free to apply, weightless, and invisible to every
+  acceptance test in the codebase. `sim/heap.test.ts` asserts he never gives a
+  material or a piece of furniture, and that no furniture row ever costs junk.
+- **His stock runs out; hers doesn't.** A finish is permanent, so each row is
+  redeemed once. She is a shop and unlimited; he is a pile of things somebody
+  already threw away, and a pile is finite. Junk's ongoing sink is her counter.
+
+Two things the build settled:
+
+- **`digWithFind` owns the dig AND the payout**, because the un-farmable rule is
+  entirely a rule about ORDER: the payout is decided while the ground is still
+  virgin, and the dig is what ends that. Split across two calls it read fine and
+  paid out on generated TREES — virgin ground, no override, and a failed dig
+  writes nothing to mark the tile spent, so it was infinite junk from one
+  repeated tap. Caught by writing the test, not by playing. Same shape as the
+  reticle rule: when correctness depends on two things agreeing, make it one
+  thing.
+- **One seam left open on purpose.** `setTile` deletes an override when you
+  write back exactly what generation says, so ground restored to its generated
+  state reads as virgin again. Nothing the player can do reaches it (digging is
+  one-way; undo covers build strokes, not ACT) — the single path is the
+  Gremlin's away event moving a plank off a tile that was dug and then paved.
+  Capped at one per absence, and it amounts to him having put something back in
+  your ground. A `dug` set and a schema field would cost more than the bug.
 
 ### Adding a cast row does not add a person
 
@@ -667,6 +720,11 @@ you trip over them:
   but the other five get one or two notes each — a form with no line for its
   richest note falls through to one it can speak to, so nobody goes silent, they
   just repeat sooner. Filling these in is writing, not engineering.
+- **The Gremlin doesn't scatter junk while you're away yet.** His away event
+  still only moves a board. Scattering would tie junk to the check-in loop
+  (pillar 3) and give a homecoming a lap of the town, but it needs somewhere to
+  put a loose object on the ground — a new tile or a small world layer — which
+  is its own decision and was deliberately not improvised alongside the rest.
 - **Ore is defined but unobtainable** until the underground layer exists. This
   is intentional, not an oversight.
 - **Only one fixed-cast member** exists. `src/content/cast.ts` has the intended
