@@ -147,7 +147,7 @@ export function tick(world: WorldState, dt: number, now: number): void {
     }
   }
 
-  for (const v of world.villagers) tickVillager(v, dt, now);
+  for (const v of world.villagers) tickVillager(world, v, dt, now);
   updateAllCrops(world, now);
   updateRegrowth(world, now); // the woods come back on the real clock
 }

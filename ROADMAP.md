@@ -212,10 +212,18 @@ exercised, rather than inventing one under deadline.
 
 Build order, smallest risk first:
 
-1. **Villager pathing and collision.** A* over structure + furniture solidity,
-   doors walkable, with a bounded node budget — the same trick as MAX_ROOM,
-   where exceeding the budget IS the answer. Closes the "villagers walk through
-   walls" gap, and no schema change.
+1. ~~**Villager pathing and collision.**~~ **Done.** `sim/path.ts` — A* over
+   structure + furniture solidity, doors walkable, with a bounded node budget
+   (MAX_PATH_NODES) on the same principle as MAX_ROOM, where exceeding the
+   budget IS the answer. No schema change: routes live in a WeakMap keyed by
+   world, like the build revision and the rooms index, because a half-walked
+   path is a cache and has no business in a save.
+
+   Walkability is `world.isWalkable` — the same predicate the player collides
+   against, deliberately, so nobody ever finds a gap one of you can use and the
+   other can't. Diagonal steps require both shared orthogonals to be open: not
+   cosmetic, but because `rooms.ts` fills four-way, so without it a villager
+   could slip out through the corner of a room the game is drawing a roof over.
 
    The property to preserve is the one `villagers.ts` documents in its own
    header: position is *derived* from the clock, never accumulated, so two days
@@ -306,11 +314,10 @@ you trip over them:
   store their own finish (v5), so two houses can differ. Plank floors still read
   the town-wide selection and restyle all at once; worth unifying when floors
   next get touched.
-- **Villagers walk through walls and furniture.** Collision was added to the
-  PLAYER's step (per-axis, so you slide along a wall rather than sticking);
-  `tickVillager` still moves freely. Harmless while routines only cross open
-  town, and it is **2b step 1** — DESIGN promises residents "path through" the
-  house you built them, which is exactly the case this breaks.
+- ~~**Villagers walk through walls and furniture.**~~ Fixed in 2b step 1; they
+  path now (`sim/path.ts`). Still unverified *on screen* — there is nothing in
+  the town for anyone to walk through until step 2 lands the authored buildings,
+  so the browser check is deferred to there rather than skipped.
 - **Villager "witness" has no proximity model for memory** — everyone hears about
   everything (friendship *is* proximity-gated). Fine in a town this small.
 - **PWA icon is a single SVG.** Real raster icons before any app-store-ish push.
