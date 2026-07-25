@@ -15,7 +15,7 @@ import type { WorldState, BuildCell } from "./types";
 import type { StructureId } from "../content/structures";
 import { structureDef, joinsWallRun } from "../content/structures";
 import type { SkinId } from "../content/skins";
-import { tileAt, tileKey } from "./world";
+import { tileAt, tileKey, isWalkable } from "./world";
 import { tileDef } from "../content/tiles";
 
 /** What's standing on this tile, or null for open ground. */
@@ -123,4 +123,59 @@ export function wallMask(world: WorldState, x: number, y: number): number {
 function joinsAt(world: WorldState, x: number, y: number): boolean {
   const cell = structureAt(world, x, y);
   return cell !== null && joinsWallRun(cell.id);
+}
+
+// --- Doorsteps ----------------------------------------------------------------
+// A door's doorstep is its only way in (ROADMAP §"A door needs a south wall and
+// a doorstep"): the diagonals are blocked by the door's own wall run, and the
+// pathfinder won't cut a corner between two walls. So one tree — or one
+// misplaced shelf — in front of a doorway seals the building.
+//
+// The town's stamp already clears an apron in front of its own doors. Nothing
+// did the same for a house the PLAYER built, and the failure is close to
+// invisible: a villager who can't path home snaps there and looks completely
+// normal doing it. Phase 3 judges houses the player built, so it stopped being
+// acceptable for the game to know this and not say so.
+
+/** The two cells a door is entered from — the ones perpendicular to its run.
+ *
+ *  Returns null for anything that isn't a door. A door in a north-south run is
+ *  entered from the east and west; one in an east-west run from the north and
+ *  south. Stepping off the SIDE of a doorway is not a way in, which is exactly
+ *  why a blocked doorstep seals a building rather than merely inconveniencing
+ *  it. */
+export function doorApproaches(world: WorldState, x: number, y: number): { x: number; y: number }[] | null {
+  if (structureAt(world, x, y)?.id !== "door") return null;
+  const mask = wallMask(world, x, y);
+  const sideOn = Boolean(mask & CONNECT_N) && Boolean(mask & CONNECT_S);
+  return sideOn
+    ? [
+        { x: x - 1, y },
+        { x: x + 1, y },
+      ]
+    : [
+        { x, y: y - 1 },
+        { x, y: y + 1 },
+      ];
+}
+
+/** The approach cells of this door that nobody can stand on.
+ *
+ *  BOTH sides count, not just the outside one. A door whose inside step is
+ *  blocked is just as sealed as one whose outside step is, and telling them
+ *  apart needs the room index — a dependency this module doesn't have and
+ *  shouldn't acquire to answer a question where the honest answer is the same
+ *  either way: that step has to be clear.
+ *
+ *  Empty for a door that's fine, so callers read it as "what's wrong here". */
+export function blockedDoorsteps(world: WorldState, x: number, y: number): { x: number; y: number }[] {
+  const approaches = doorApproaches(world, x, y);
+  if (!approaches) return [];
+  // isWalkable, not a local check: it is the ONE predicate the player, the
+  // villagers and the pathfinder all collide against (sim/path.ts leans on that
+  // deliberately), so a doorstep is clear exactly when the person walking
+  // through it agrees. A second opinion here would find gaps one of them could
+  // use and the other couldn't. It also means solid FURNITURE counts — a table
+  // pushed across the threshold seals a house as thoroughly as a tree.
+  return approaches.filter((a) => !isWalkable(world, a.x, a.y));
 }

@@ -13,7 +13,10 @@ import {
   CONNECT_E,
   CONNECT_S,
   CONNECT_W,
+  doorApproaches,
+  blockedDoorsteps,
 } from "./structures";
+import { placeFurniture } from "./furniture";
 import { gather, updateRegrowth } from "./gather";
 import { nodeDef } from "../content/nodes";
 import { plant } from "./crops";
@@ -205,5 +208,73 @@ describe("walls stop you", () => {
     moveTo(w, 21, 19);
     for (let i = 0; i < 400; i++) tick(w, 1 / 60, 1000);
     expect(w.player.y).toBeCloseTo(19, 1);
+  });
+});
+
+describe("doorsteps", () => {
+  /** A house with its door in the south wall, on cleared ground. */
+  function house(w: ReturnType<typeof world>) {
+    for (let y = 18; y <= 24; y++) for (let x = 18; x <= 24; x++) clear(w, x, y);
+    for (let x = 19; x <= 23; x++) {
+      placeStructure(w, x, 19, "wall", "pine");
+      placeStructure(w, x, 23, "wall", "pine");
+    }
+    for (let y = 20; y <= 22; y++) {
+      placeStructure(w, 19, y, "wall", "pine");
+      placeStructure(w, 23, y, "wall", "pine");
+    }
+    placeStructure(w, 21, 23, "door", "pine");
+  }
+
+  it("knows a door is entered across its run, not along it", () => {
+    const w = world();
+    house(w);
+    // The south door is approached from north and south. Its east and west
+    // neighbours are its own wall run — stepping sideways out of a doorway is
+    // not a way in, which is the whole reason one blocked cell seals a house.
+    expect(doorApproaches(w, 21, 23)).toEqual([
+      { x: 21, y: 22 },
+      { x: 21, y: 24 },
+    ]);
+  });
+
+  it("turns with the wall: a side door is approached east and west", () => {
+    const w = world();
+    house(w);
+    placeStructure(w, 23, 21, "door", "pine");
+    expect(doorApproaches(w, 23, 21)).toEqual([
+      { x: 22, y: 21 },
+      { x: 24, y: 21 },
+    ]);
+  });
+
+  it("says nothing about a doorway with both steps clear", () => {
+    const w = world();
+    house(w);
+    expect(blockedDoorsteps(w, 21, 23)).toEqual([]);
+  });
+
+  it("catches the one tree that seals a building", () => {
+    const w = world();
+    house(w);
+    setTile(w, 21, 24, WATER); // any solid tile: a tree lands here the same way
+    expect(blockedDoorsteps(w, 21, 23)).toEqual([{ x: 21, y: 24 }]);
+  });
+
+  it("counts furniture, because a table across a threshold seals it too", () => {
+    const w = world();
+    house(w);
+    // Inside the doorway rather than outside it — a door you can't get OUT of
+    // is as sealed as one you can't get into, and the villager who can't path
+    // home snaps there looking perfectly normal either way.
+    placeFurniture(w, 21, 22, "table", "s", "pine");
+    expect(blockedDoorsteps(w, 21, 23)).toEqual([{ x: 21, y: 22 }]);
+  });
+
+  it("has no opinion about anything that isn't a door", () => {
+    const w = world();
+    house(w);
+    expect(doorApproaches(w, 20, 23)).toBeNull();
+    expect(blockedDoorsteps(w, 20, 23)).toEqual([]);
   });
 });

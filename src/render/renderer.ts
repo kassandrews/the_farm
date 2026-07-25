@@ -17,7 +17,7 @@ import { tileDef, PLANK, GRASS, TREE, ROCK } from "../content/tiles";
 import { skinDef } from "../content/skins";
 import type { SkinClass } from "../content/skins";
 import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey } from "../sim/world";
-import { wallMask, CONNECT_N, CONNECT_E, CONNECT_S, CONNECT_W } from "../sim/structures";
+import { wallMask, blockedDoorsteps, CONNECT_N, CONNECT_E, CONNECT_S, CONNECT_W } from "../sim/structures";
 import { furnitureDef, footprint } from "../content/furniture";
 import { rooms } from "../sim/rooms";
 import type { Room } from "../sim/rooms";
@@ -148,6 +148,9 @@ export class Renderer {
   private buildView = false;
   /** Mirrors the HUD's held ACT tool, for the reticle. */
   private tool: Tool = "dig";
+  /** Doorsteps nothing can stand on, collected during the flat pass while build
+   *  mode is open — see drawBlockedSteps. */
+  private blockedSteps: { x: number; y: number }[] = [];
   /** Beds offered while choosing someone a home — see setHomeCandidates. */
   private homeCandidates: { x: number; y: number; ok: boolean }[] = [];
 
@@ -253,6 +256,7 @@ export class Renderer {
 
     // Flat ground first, then everything with height in one depth-sorted pass.
     this.raised.length = 0;
+    this.blockedSteps.length = 0;
     this.drawTiles(world, t, night);
     if (this.buildView) this.drawBuildGrid();
     this.drawCrops(world, now);
@@ -260,6 +264,7 @@ export class Renderer {
     this.collectMovers(world, t, night);
     this.flushRaised();
     this.drawTargetTile(world);
+    this.drawBlockedSteps(t);
     this.drawHomeCandidates(t);
 
     // Real-clock day/night wash over the whole scene.
@@ -333,6 +338,13 @@ export class Renderer {
           const x = tx;
           const y = ty;
           this.raised.push({ y, bias: BIAS_TERRAIN, draw: () => this.drawWall(world, x, y, built) });
+          // Only while building: a blocked doorstep is a mistake you make with
+          // the build tools, and it's the build tools that can fix it. Asked
+          // per visible door, so the cost is bounded by the screen like the
+          // rest of this pass.
+          if (this.buildView && built.id === "door") {
+            for (const step of blockedDoorsteps(world, tx, ty)) this.blockedSteps.push(step);
+          }
         }
         // Furniture is collected at its ANCHOR only, so a 2-tile piece is drawn
         // once rather than once per cell it covers. Sorted on its SOUTHERN row
@@ -1067,6 +1079,40 @@ export class Renderer {
    *  than hidden: a bed you can see but aren't offered is a question ("why not
    *  that one?") the panel can answer, where a bed that simply isn't marked
    *  reads as the game failing to notice it. */
+  /** Doorsteps nobody can stand on, marked while build mode is open.
+   *
+   *  The mark goes on the STEP, not on the door: the door is fine, and the cell
+   *  in front of it is the thing to clear. Pointing at the door would be the
+   *  game complaining without saying where to dig.
+   *
+   *  It's a warning and not a refusal, deliberately. Placement is never blocked
+   *  on a judgement about whether a building is any good (DESIGN: structure is
+   *  the only gate, and even that belongs to a commission, not to the tools) —
+   *  and a half-built house legitimately has sealed doorways all the time. What
+   *  this fixes is that the failure was previously SILENT: a villager who can't
+   *  path home snaps there and looks completely normal doing it, so a player
+   *  could never have found this out by watching. */
+  private drawBlockedSteps(t: number): void {
+    if (this.blockedSteps.length === 0) return;
+    const ctx = this.ctx;
+    const pulse = 0.45 + 0.35 * Math.abs(Math.sin(t * 2.2));
+    for (const s of this.blockedSteps) {
+      const px = Math.round(this.sceneX(s.x) - TILE / 2) + 0.5;
+      const py = Math.round(this.sceneY(s.y) - TILE / 2) + 0.5;
+      ctx.strokeStyle = `rgba(255,150,90,${pulse.toFixed(3)})`;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px, py, TILE - 1, TILE - 1);
+      // A cross through it, so it reads as "not this" at a glance rather than
+      // as one more highlight competing with the reticle.
+      ctx.beginPath();
+      ctx.moveTo(px + 3, py + 3);
+      ctx.lineTo(px + TILE - 4, py + TILE - 4);
+      ctx.moveTo(px + TILE - 4, py + 3);
+      ctx.lineTo(px + 3, py + TILE - 4);
+      ctx.stroke();
+    }
+  }
+
   private drawHomeCandidates(t: number): void {
     if (this.homeCandidates.length === 0) return;
     const ctx = this.ctx;
