@@ -198,8 +198,14 @@ body {
   color: var(--accent);
 }
 
+/* The clock, and the flash toast that borrows this class (ui/app.ts buildHud).
+   pointer-events: none for the same reason .hint has it, learned the same way:
+   the flash sits low over the middle of the map, which is exactly where you
+   tap to pick a bed, so it silently ate the tap it was instructing you to
+   make. A read-only overlay must never be able to swallow a click. */
 .clock {
   position: absolute;
+  pointer-events: none;
   top: 14px;
   left: 50%;
   transform: translateX(-50%);

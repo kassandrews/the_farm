@@ -30,6 +30,10 @@ export interface ArrivalDef {
   /** The Office Creature's own summary, read off the form. Deadpan, and about
    *  the paperwork rather than about the person — he is an institution. */
   filing: string;
+  /** What they say the moment the house is theirs. The one line that pays off
+   *  the whole beat, so it is theirs and not their form's — and nobody gushes.
+   *  A house you built is received the way a real gift is: sideways. */
+  housedLine: string;
 }
 
 /** The queue. Order is deliberate, not shuffled: the first arrival is the one
@@ -48,24 +52,28 @@ export const ARRIVALS: ArrivalDef[] = [
     name: "Bissenette",
     unlocks: "whitewash",
     tentLine: "I am not complaining. I am describing the tent.",
+    housedLine: "It will do. ... It will more than do. Do not make this a moment.",
     filing: "Form 9. ... Housing, request for. She has opinions about the tent.",
   },
   {
     form: "dog",
     name: "Rummage",
     tentLine: "The tent's great! It's got a floor and everything. ... Well. Sort of.",
+    housedLine: "It's got a DOOR. I'm going to go in and out of it for a while.",
     filing: "Form 9. ... He says anywhere is fine. They always say that.",
   },
   {
     form: "blob",
     name: "Ouestrine",
     tentLine: "I have decided to find this romantic. It is going poorly.",
+    housedLine: "You built this. With hands. ... I need to sit down, which I can now do indoors.",
     filing: "Form 9. ... Filed under 'urgent', at her insistence. It is not urgent.",
   },
   {
     form: "gremlin",
     name: "Tick",
     tentLine: "Nice tent. ... Is it yours? It's mine now. Kidding. ... Mostly.",
+    housedLine: "Mine. ... Say it back to me. I want to hear how it sounds.",
     filing: "Form 9. ... I have added a note. The note is for my own records.",
   },
 ];

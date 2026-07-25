@@ -31,7 +31,17 @@ import { recall } from "../sim/memory";
 import { count } from "../sim/inventory";
 import { beginStroke, captureCell, endStroke, undoStroke, canUndo, undoLabel } from "../sim/undo";
 import { qualify, assign, beds, rehomeAcrossStroke, bedKeys, pendingRehome, DISQUALIFIER_TEXT } from "../sim/assign";
-import type { CharId } from "../content/cast";
+import type { CharId, NewcomerId } from "../content/cast";
+import { isNewcomer } from "../content/cast";
+import {
+  openCommission,
+  commissionFor,
+  commissionState,
+  stampCommission,
+  fileCommission,
+  arrivalOf,
+  shortfallText,
+} from "../sim/commission";
 import { ITEM_ORDER, itemDef } from "../content/items";
 import { availableSkins, skinDef } from "../content/skins";
 import type { SkinClass } from "../content/skins";
@@ -353,6 +363,26 @@ export class App {
     if (!speech) return;
     audio.play("talk");
 
+    // Two people have something more pressing to say than their idle bank while
+    // a commission is open: the person living in the tent, and the desk holding
+    // the form about it. Both override rather than append — someone waiting on
+    // a house who opens with small talk reads as the game having forgotten.
+    const open = openCommission(world);
+    if (open) {
+      const def = arrivalOf(open);
+      if (villagerId === open.id) {
+        speech.text = def.tentLine;
+      } else if (villagerId === "office") {
+        // Read BEFORE filing, or the first telling never happens: filing sets
+        // the very field that decides whether this is the first telling.
+        const firstTime = open.filedAt === null;
+        fileCommission(open, Date.now());
+        speech.text = firstTime
+          ? def.filing
+          : `${def.filing} ... ${shortfallText(commissionState(world, open))}`;
+      }
+    }
+
     // Offering a home is a CONVERSATION, not a construction act (ROADMAP 2b
     // step 4). It only appears when there's a bed in town to offer — an option
     // that's always there and usually does nothing is a worse tutorial than no
@@ -374,6 +404,70 @@ export class App {
               : []),
             primaryBtn("...", close),
           ]),
+        ]),
+      { dismissable: true },
+    );
+  }
+
+  // --- Commissions --------------------------------------------------------------
+  /** Say when somebody has moved to town — once, and quietly.
+   *
+   *  A FLASH and not a modal, deliberately. The land claim earns a modal because
+   *  it's the opening cutscene and there is nothing else to do; someone pitching
+   *  a tent while you're halfway through a wall does not. What makes the beat
+   *  discoverable is the tent itself, which is a thing you walk past and go and
+   *  look at — the same way you find everything else here.
+   *
+   *  Tracked against the id we last announced rather than a flag on the
+   *  commission, so it stays out of the save: "have I mentioned this" is a fact
+   *  about this session's UI, not about the town. */
+  private announcedArrival: CharId | null = null;
+  private noticeArrival(): void {
+    if (!this.world) return;
+    const open = openCommission(this.world);
+    if (!open || open.id === this.announcedArrival) return;
+    this.announcedArrival = open.id;
+    const who = this.world.villagers.find((v) => v.id === open.id);
+    this.flash(`${who?.name ?? "Someone"} has pitched a tent near the plaza.`);
+  }
+
+  /** Close a commission the moment its house is real, if it just became real.
+   *
+   *  Called after housing someone rather than requiring a trip back to the town
+   *  hall. The round trip is the on-tone joke and it is also a chore, and when
+   *  those two disagree the pillar wins — you finished the house, so the beat
+   *  finishes with it. He still gets the last word; he just doesn't make you
+   *  walk for it. */
+  private settleCommission(id: CharId): void {
+    if (!this.world) return;
+    const world = this.world;
+    if (isNewcomer(id) === false) return;
+    const c = commissionFor(world, id as NewcomerId);
+    if (!c || c.stampedAt !== null) return;
+
+    const state = commissionState(world, c);
+    if (!state.done) {
+      // Housed, but not to the form's satisfaction. Said plainly and once —
+      // it's a fact about the building, not a scolding, and nothing is undone.
+      this.flash(shortfallText(state));
+      return;
+    }
+
+    const unlocked = stampCommission(world, c, Date.now());
+    audio.play("place");
+    this.persist();
+
+    const who = world.villagers.find((v) => v.id === id)?.name ?? "They";
+    const def = arrivalOf(c);
+    this.openModal(
+      (close) =>
+        panel("Tired Office Creature", "Town hall", [
+          el("p", {}, [`Form 9, discharged. ... ${who} lives at an address now.`]),
+          el("p", { class: "quote" }, [`"${def.housedLine}"`]),
+          ...(unlocked
+            ? [el("p", { class: "unlock" }, [`${skinDef(unlocked).name} is available to build in.`])]
+            : []),
+          actionRow([primaryBtn("...", close)]),
         ]),
       { dismissable: true },
     );
@@ -467,6 +561,9 @@ export class App {
         ? `${who} moves in. ${evicted.name} will need somewhere else.`
         : `${who} moves in. It's theirs now.`,
     );
+
+    // If this was the house someone was waiting on, the paperwork closes here.
+    this.settleCommission(id);
   }
 
   // --- Satchel ----------------------------------------------------------------
@@ -848,6 +945,7 @@ export class App {
         tick(this.world, FIXED_DT, wall);
         this.acc -= FIXED_DT;
       }
+      this.noticeArrival();
     } else {
       this.acc = 0;
     }

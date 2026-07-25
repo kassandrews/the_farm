@@ -29,6 +29,7 @@ import { claimedBed } from "./housing";
 import { makeVillager } from "./villagers";
 import { charDef } from "../content/cast";
 import { isWalkable, tileKey } from "./world";
+import type { SkinId } from "../content/skins";
 import { remember } from "./memory";
 
 /** The floor on how small a commissioned house may be, in interior cells.
@@ -173,6 +174,28 @@ export type CommissionState =
   | { done: false; why: "too-small"; size: number }
   | { done: false; why: Extract<Verdict, { ok: false }>["why"] };
 
+/** What's still wrong, on letterhead.
+ *
+ *  The same facts as DISQUALIFIER_TEXT, in the Office Creature's voice rather
+ *  than the player's — one call site produces both, so they can never come to
+ *  disagree about what a house is. He states the deficiency and offers no
+ *  encouragement, because he is a desk. */
+export function shortfallText(state: CommissionState): string {
+  if (state.done) return "In order.";
+  switch (state.why) {
+    case "no-home":
+      return "No address on file. ... They are still in the tent.";
+    case "no-bed":
+      return "No bed. A house without one is a shed with ambitions.";
+    case "no-room":
+      return "The walls do not meet. ... I cannot file an outdoors.";
+    case "no-door":
+      return "No door. ... They would live there exactly once.";
+    case "too-small":
+      return `${state.size} of floor, where the form wants ${MIN_INTERIOR}. ... I don't make the form.`;
+  }
+}
+
 export function commissionState(world: WorldState, c: Commission): CommissionState {
   const v = world.villagers.find((w) => w.id === c.id);
   const bed = v ? claimedBed(world, v) : null;
@@ -193,7 +216,7 @@ export function commissionState(world: WorldState, c: Commission): CommissionSta
  *  rather than by checking whether the finish is already unlocked, because the
  *  two are different questions — a finish may arrive from somewhere else later,
  *  and "has this form been stamped" is the fact this file owns. */
-export function stampCommission(world: WorldState, c: Commission, now: number): string | null {
+export function stampCommission(world: WorldState, c: Commission, now: number): SkinId | null {
   if (c.stampedAt !== null) return null;
   if (!commissionState(world, c).done) return null;
 

@@ -940,14 +940,22 @@ export class Renderer {
     this.raised.push({
       y: world.homestead.originY,
       bias: BIAS_TERRAIN,
-      draw: () => this.drawTent(world, night),
+      draw: () => this.drawTent(world.homestead.originX, world.homestead.originY, night),
     });
+    // A newcomer's tent, for as long as they're waiting on a house. The SAME
+    // tent as the player's, deliberately: you started in one too, and the beat
+    // reads as "they're where you were" rather than as a quest marker. It goes
+    // when the commission is stamped, which is the visible half of housing
+    // them (sim/commission.ts).
+    for (const c of world.commissions ?? []) {
+      if (c.stampedAt !== null) continue;
+      const { x, y } = c.tent;
+      this.raised.push({ y, bias: BIAS_TERRAIN, draw: () => this.drawTent(x, y, night) });
+    }
   }
 
-  private drawTent(world: WorldState, night: boolean): void {
+  private drawTent(ox: number, oy: number, night: boolean): void {
     const ctx = this.ctx;
-    const ox = world.homestead.originX;
-    const oy = world.homestead.originY;
     const cx = Math.round(this.sceneX(ox));
     const baseY = Math.round(this.sceneY(oy) + TILE / 2);
     const canvas = night ? "#b06a4a" : "#d08a5a";
