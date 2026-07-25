@@ -45,12 +45,14 @@ DESIGN.md, if it's a rule about the game rather than about build order).
 - **Phase 3c — taste, complete.** Forms are quietly pleased by particular
   finishes and furniture, and say so. Delight only; there is no way to express
   the opposite.
-- Menu with New town / sound toggle; PWA shell; 254 tests.
+- **Phase 3d — the shop, complete.** Barter at the Menace's counter, cloth, and
+  soft furniture that costs it.
+- Menu with New town / sound toggle; PWA shell; 268 tests.
 
-**Next:** the rest of Phase 3 — the other six fixed cast and their institutions,
-and the money/barter question, which blocks the shop. See below.
+**Next:** the rest of Phase 3 — the remaining five fixed cast and their
+institutions (museum, seed stall, errands board, plaza stage, junk economy).
 
-**Save schema is at v9.** Every change ships a tested migration — see
+**Save schema is at v10.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -138,6 +140,48 @@ Recorded in full in DESIGN.md §Structures. The short version and *why*:
   offer later as an Office Creature service: you un-demolish a municipal
   structure by filing a form. Phase 3 flavour, not built yet.
 
+### The economy — barter, and why it had to be
+
+**Settled in Phase 3d.** The old note here said "do not bake in an assumption",
+and the assumption worth not baking in turned out to be that the question was
+about *flavour*. It's about a pillar.
+
+The shop sells what you can't gather (DESIGN §Materials), so something has to go
+the other way. If that something were a single currency, the fastest way to earn
+it would become the way you're expected to play — and produce is the obvious
+earner, so "farming is fully optional" would quietly become "farm if you want
+cushions". DESIGN says builder, forager and museum-filler are complete ways to
+play. That's what decides it.
+
+- **No wallet, no prices, no abstract number.** Each row in `content/shop.ts`
+  lists a few things she'll take INSTEAD of each other, and you hand over one.
+  Nothing accumulates, so there is nothing to optimise and no score to watch.
+- **Every row must be payable from a material AND from produce.** Asserted in
+  `sim/shop.test.ts`, because it is the rule above made mechanical: add a row
+  that only takes carrots and the test tells you you've made farming mandatory.
+  A second test asserts the world never grows a `money` field.
+- **She sells cloth, not finished cushions.** Cloth is an ordinary item you
+  can't gather; the soft furniture rows cost it. So the satchel, the placement
+  cost model and "placing a thing IS making it" all work unchanged, and no
+  furniture-inventory machinery was needed. Cloth finishes are free, like every
+  other finish — the scarce thing is the stuff, never the look.
+- **Stock is unlimited and never rotates.** A limited or timed stock is FOMO,
+  which is pressure wearing a hat.
+
+### Adding a cast row does not add a person
+
+`newWorld` built its villager list by hand, so the shopkeeper existed in `CAST`
+and nowhere else — a shop building with nobody behind the counter, and an
+existing save that would never get her at all. `ensureFixedCast` in `sim/town.ts`
+is now the ONE function both `newWorld` and the migration call, which is the same
+rule the v7 stamp established for buildings and for the same reason: two paths
+that build the town differently is a bug nobody would think to test for.
+
+It only ever appends a MISSING institution, so it is idempotent and can never
+disturb someone already there. Residents are deliberately out of scope —
+somebody moving in is an event (a commission), never something a migration
+conjures.
+
 ### Build actions are undoable — one stroke, in memory
 
 **Built** — `sim/undo.ts`, Phase 2c. The decisions below all survived contact;
@@ -224,11 +268,8 @@ work here, faint = ACT would do nothing.
 
 ### Undecided, deliberately
 
-- **Money vs. barter vs. neither.** Not needed until the shop lands (Phase 3).
-  Current lean: if money exists it must only buy *optional comfort* and never
-  gate progression, or it quietly turns farming into a job and breaks the
-  no-pressure pillar. Barter (trade produce for goods, no abstract currency) is
-  arguably cozier and still on the table. **Do not bake in an assumption.**
+- ~~**Money vs. barter vs. neither.**~~ **Settled: barter**, with the shop
+  (Phase 3d). Moved up to the settled section below.
 - Fishing, interiors-vs-exteriors, async multiplayer postcards — DESIGN.md's
   own open questions. Still open.
 
@@ -570,13 +611,27 @@ about houses.
 - **Preferences are form-only now.** DESIGN said "form + imported history", which
   stopped being possible when residents stopped being imports. Corrected there.
 
+### 3d. The shop — **done**
+
+The Menace's counter, east of the plaza: `content/shop.ts` (the barter table),
+`sim/shop.ts` (the swap), cloth as an item you can't gather, and `cushion` +
+`rug` as furniture rows that cost it. Schema v10. The economy model is settled
+above, along with the `ensureFixedCast` lesson it forced.
+
+Her conversation IS her counter — a dialogue box with a "shop" button in it
+would be a menu in front of a menu, and she's a person you go and see.
+
+Two Menaces now exist and that's allowed: Bissenette is a menace who lives here,
+the Fancy Little Menace is the institution. "Forms are species, not singletons"
+(DESIGN §Importing) — the museum curator will be a specific scholar while
+Margfrom is just a scholar who lives here.
+
 ### The rest of Phase 3
 
-- The other six fixed cast and their institutions.
-- The money/barter question, which blocks the shop.
-- The other six fixed cast + their institutions: museum (confidently incorrect
-  placards), shop, seed stall, errands board, plaza stage, junk economy.
-- Resolve the **money/barter** question — it blocks the shop.
+- The remaining five fixed cast + their institutions: museum (confidently
+  incorrect placards), seed stall, errands board, plaza stage, junk economy.
+  Junk is worth doing early — it is the third payment axis the shop table is
+  already shaped for.
 - Museum donation loop (gives produce and finds a purpose).
 - Festivals on the real calendar.
 

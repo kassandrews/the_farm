@@ -199,6 +199,16 @@ entry covering every metal). Soft goods — cloth, cushions, curtains — are
 deliberately *not* gatherable; the shop sells what you can't gather, which
 is what gives the Menace's counter a reason to exist.
 
+**The counter is barter, not money** — settled, not open. You hand over
+something you have and she hands over cloth; there is no currency, no
+wallet, and no running total anywhere in the game. The reason is a pillar
+rather than a preference: with a single currency, the fastest way to earn
+it becomes the way you're expected to play, and since produce is the
+obvious earner, "farming is fully optional" would quietly become "farm if
+you want cushions". So every row at the counter must be payable from
+materials *and* from produce, and later from junk — whatever you actually
+do, the town has a use for what it leaves you holding.
+
 **Appearance is a separate, free axis.** Any built tile can wear any
 unlocked finish at no cost: pale pine, dark walnut, whitewash. A finish is
 a property of the tile, never a different item. This is the rule that keeps
