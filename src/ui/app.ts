@@ -29,6 +29,7 @@ import { importFromMeadow } from "../sim/meadow_import";
 import type { MeadowImport } from "../sim/meadow_import";
 import { recall } from "../sim/memory";
 import { count } from "../sim/inventory";
+import { beginStroke, captureCell, endStroke, undoStroke, canUndo, undoLabel } from "../sim/undo";
 import { ITEM_ORDER, itemDef } from "../content/items";
 import { availableSkins, skinDef } from "../content/skins";
 import type { SkinClass } from "../content/skins";
@@ -77,6 +78,16 @@ const BUILD_TOOLS: { id: BuildTool; icon: string; label: string; hint: string }[
   { id: "erase", icon: "↩️", label: "Take back down", hint: "Remove what you built here. Materials come back." },
 ];
 
+/** What the undo control calls the last stroke. A phrase, not a tool name, so it
+ *  drops into "Undo the wall" — after twenty minutes of building, the thing you
+ *  regret and the thing you did last aren't reliably the same, and naming it is
+ *  how the button says which one you're getting. */
+function buildToolLabel(t: BuildTool): string {
+  if (t === "erase") return "taking that down";
+  const def = BUILD_TOOLS.find((b) => b.id === t);
+  return def ? `the ${def.label.toLowerCase()}` : "that";
+}
+
 /** Arrows for the rotate button, so the facing is legible without a legend. */
 const FACING_ARROW: Record<Facing, string> = { s: "↓", w: "←", n: "↑", e: "→" };
 
@@ -123,6 +134,7 @@ export class App {
       (t) => this.selectTool(t),
       (t) => this.selectBuildTool(t),
       () => this.rotate(),
+      () => this.doUndo(),
       () => this.doAction(),
       () => this.openMenu(),
       () => this.openSatchel(),
@@ -449,6 +461,10 @@ export class App {
       // flattens (DESIGN §Structures).
       if (this.buildTool) {
         this.painted.clear();
+        // The stroke boundary for undo is the same span, deliberately: the set
+        // that stops a sweep charging twice is already the game's definition of
+        // "one gesture" (sim/undo.ts).
+        beginStroke(this.world, buildToolLabel(this.buildTool));
         this.canvas.setPointerCapture(e.pointerId);
         this.buildAtPoint(e.clientX, e.clientY);
         return;
@@ -476,6 +492,8 @@ export class App {
     const endPaint = (e: PointerEvent) => {
       if (this.canvas.hasPointerCapture(e.pointerId)) this.canvas.releasePointerCapture(e.pointerId);
       this.painted.clear();
+      if (this.world) endStroke(this.world);
+      this.syncUndoUi();
     };
     this.canvas.addEventListener("pointerup", endPaint);
     this.canvas.addEventListener("pointercancel", endPaint);
@@ -505,6 +523,12 @@ export class App {
         this.selectBuildTool(this.buildTool ?? "wall");
       } else if (k === "e") {
         this.tryTalkNearest();
+      } else if (k === "z") {
+        // Bare Z as well as ctrl/cmd-Z: the browser has no text field to steal
+        // it from here, and one-handed undo beside WASD is what a build session
+        // actually reaches for.
+        this.doUndo();
+        e.preventDefault();
       }
     });
     window.addEventListener("keyup", (e) => this.keys.delete(e.key.toLowerCase()));
@@ -579,6 +603,34 @@ export class App {
     this.hud.rotate.title = rotatable
       ? `${furnitureDef(this.buildTool as never).name} facing ${this.facing.toUpperCase()}`
       : "Rotate";
+
+    this.syncUndoUi();
+  }
+
+  /** Show the undo control only in build mode, and only when there's a stroke to
+   *  take back. It names what it will undo — "Undo the wall" beats "Undo",
+   *  because after a long session the thing you regret and the thing you did
+   *  last aren't reliably the same, and this says which one you're getting.
+   *
+   *  It does NOT vanish on a timer (ROADMAP): a button that disappears as you
+   *  reach for it is its own small betrayal. */
+  private syncUndoUi(): void {
+    const show = this.buildTool !== null && this.world !== null && canUndo(this.world);
+    this.hud.undo.style.display = show ? "" : "none";
+    if (show) this.hud.undo.title = `Undo ${undoLabel(this.world!)}.  (Z)`;
+  }
+
+  private doUndo(): void {
+    if (!this.world || this.modalOpen) return;
+    if (!undoStroke(this.world)) return;
+    audio.play("dig");
+    // Deliberately not "the wall, put back" — the label reads fine on a button
+    // but the erase case ("taking that down, put back") doesn't survive being
+    // made into a sentence. One line that's always true beats four that mostly
+    // are (§Tone: about the object, not about you).
+    this.flash("Back the way it was.");
+    this.persist();
+    this.syncUndoUi();
   }
 
   /** Apply the held build tool to a tapped tile. Silent on a tile already
@@ -592,6 +644,7 @@ export class App {
     if (this.painted.has(key)) return;
     this.painted.add(key);
 
+    captureCell(this.world, x, y); // before the edit — it snapshots the old state
     const res = buildAt(this.world, this.buildTool, x, y, Date.now(), this.facing);
     // Only speak up when something happened or the player is actually short of
     // materials. Dragging across ground you can't build on shouldn't natter.
@@ -725,6 +778,7 @@ interface HudRefs {
   toolButtons: [Tool, HTMLElement][];
   buildButtons: [BuildTool, HTMLElement][];
   rotate: HTMLElement;
+  undo: HTMLElement;
 }
 
 function buildHud(
@@ -732,6 +786,7 @@ function buildHud(
   onTool: (t: Tool) => void,
   onBuildTool: (t: BuildTool) => void,
   onRotate: () => void,
+  onUndo: () => void,
   onAction: () => void,
   onMenu: () => void,
   onSatchel: () => void,
@@ -777,13 +832,29 @@ function buildHud(
   hoverHint(rotate, "Turn the next piece you place.  (R)");
   rotate.style.display = "none";
 
+  // Not ↩ — that's the erase tool's icon, and two buttons in the same palette
+  // with the same glyph is a trap.
+  const undo = el("button", { class: "tool undo-btn", ariaLabel: "Undo" }, ["⟲"]);
+  undo.addEventListener("click", onUndo);
+  undo.style.display = "none";
+
   const action = el("button", { class: "action-btn" }, ["ACT"]);
   action.addEventListener("click", onAction);
   hoverHint(action, "Use the held tool on the tile you're standing on.  (Space)");
 
-  const hud = el("div", { class: "hud" }, [menu, satchel, clock, flash, palette, buildPalette, rotate, action]);
+  const hud = el("div", { class: "hud" }, [
+    menu,
+    satchel,
+    clock,
+    flash,
+    palette,
+    buildPalette,
+    rotate,
+    undo,
+    action,
+  ]);
   root.append(hud);
-  return { root: hud, clock, flash, toolButtons, buildButtons, rotate };
+  return { root: hud, clock, flash, toolButtons, buildButtons, rotate, undo };
 }
 
 // --- Panel helpers ------------------------------------------------------------

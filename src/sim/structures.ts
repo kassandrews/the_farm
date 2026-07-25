@@ -40,6 +40,17 @@ function bump(world: WorldState): void {
   revisions.set(world, buildRevision(world) + 1);
 }
 
+/** Announce that the layer moved by some other hand than the ones above.
+ *
+ *  Exists for sim/undo.ts, which restores whole cells wholesale rather than
+ *  replaying place/remove — it has to put back a wall that was painted OVER a
+ *  door, which no single call here expresses. Everything that derives from the
+ *  build layer keys off this counter, so a restore that skipped it would leave
+ *  the town with the roofs of a house that isn't there any more. */
+export function touchBuild(world: WorldState): void {
+  bump(world);
+}
+
 /** Can a structure go here? Ground must be something you could stand on (no
  *  building into the river) and nothing already planted may be paved over —
  *  the same courtesy placePlank extends. An existing piece is NOT a blocker:

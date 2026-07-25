@@ -29,11 +29,14 @@ DESIGN.md, if it's a rule about the game rather than about build order).
 - **Phase 2b — housing, steps 1–3 of 5.** Villagers path around walls; the town
   has authored buildings; and home is now a claim on a bed rather than a
   coordinate. See below.
-- Menu with New town / sound toggle; PWA shell; 182 tests.
+- **Phase 2c — undo, complete.** `sim/undo.ts`, one level, in memory, no schema
+  change. Pulled AHEAD of 2b step 4 — see below for why.
+- Menu with New town / sound toggle; PWA shell; 192 tests.
 
 **Next: Phase 2b step 4** — assignment. The machinery it needs now exists:
-`sim/housing.ts` resolves a claim, and `claimAuthoredBeds` is the one-off
-starting condition it will generalise.
+`sim/housing.ts` resolves a claim, `claimAuthoredBeds` is the one-off starting
+condition it will generalise, and 2c's stroke buffer is the memory the
+moved-bed case needs.
 
 **Save schema is at v8.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
@@ -125,11 +128,8 @@ Recorded in full in DESIGN.md §Structures. The short version and *why*:
 
 ### Build actions are undoable — one stroke, in memory
 
-**Designed, argued, and NOT BUILT.** Nothing in `src/` implements this; DESIGN
-§Structures describes it in the present tense because DESIGN says what the game
-is, not what has shipped. It has a build slot now — see 2c below. Recorded here
-because the decisions below are settled and shouldn't be re-derived when it
-does get built.
+**Built** — `sim/undo.ts`, Phase 2c. The decisions below all survived contact;
+two more were forced by the implementation and are recorded after them.
 
 Erase already refunds materials, so what a demolition actually costs is never
 wood — it's the **arrangement**. Twenty minutes of walls, gone to one drag.
@@ -147,6 +147,26 @@ wood — it's the **arrangement**. Twenty minutes of walls, gone to one drag.
   than having no undo. Keeps it out of the schema entirely.
 - **No expiry timer.** A button that vanishes as you reach for it is its own
   small betrayal.
+
+Two things the build settled that the design hadn't:
+
+- **The material delta is fixed at endStroke, never computed at undo time.**
+  Measuring "what did the stroke do" by diffing against the pre-stroke inventory
+  *when undo is pressed* folds in everything that happened since — so undoing a
+  wall after felling a tree confiscated the tree's wood. The delta is only
+  honestly the stroke's at the moment the stroke closes. Caught by a test written
+  for exactly this, which is the one case worth keeping in mind if this is ever
+  refactored.
+- **There is no `clearUndo()`, deliberately.** "Gone on reload" needs no call:
+  the buffer is a WeakMap keyed by the world OBJECT, and loading a save or
+  starting a new town mints a fresh one. A function to forget would be a second
+  way to express what the data model already guarantees.
+
+And one thing that fell out free: **undo revives a villager's housing claim.** A
+demolished bed restored at the same anchor key is claimed again with no code,
+because a claim is re-checked against the world on every read (`sim/housing.ts`)
+rather than cleaned up when the bed goes. The stale-tolerant design paid for
+itself here.
 
 ### A door needs a south wall and a doorstep
 
@@ -329,7 +349,27 @@ Build order, smallest risk first:
    place**, which mints a new anchor key, so today it unhouses whoever claimed
    it. That's honest rather than broken — they fall back to the plaza — but
    "rehome someone" is precisely this step's verb, and it should cover the
-   player who was only trying to slide the bed one tile left.
+   player who was only trying to slide the bed one tile left. **2c is now built
+   ahead of this** so the fix costs no new state: a bed placed in the same
+   stroke that removed a claimed one inherits the claim.
+
+   Decided in planning, not yet built:
+
+   - **`qualify()` returns WHY, not a boolean.** `{ ok: true, room, occupant }`
+     or `{ ok: false, why: "no-room" | "no-door" }`. The commission needs to say
+     "it needs a door" in the Office Creature's voice and the assignment panel
+     needs the same fact in the player's; one call site produces both.
+   - **No `too-small` verdict.** `qualify` hands back the `Room` on success, so a
+     commission checks `room.interior.size` against its own threshold at its own
+     call site. A minimum size is a *commission's* requirement, not a housing
+     rule — putting it in `assign.ts` would give housing an opinion DESIGN says
+     it must not have (size beyond the minimum is delight, never a gate).
+   - **The entry point is the dialogue modal, near-gated.** Tap a villager you're
+     standing beside → "There's a room for you" → tap a bed, with the reticle
+     colouring beds by verdict rather than adding a parallel highlight path.
+     Assignment is a conversation, which fits the tone and lets the acceptance
+     carry voice; a build-mode furniture panel can't. Near-gating means rehoming
+     costs a walk, which is the right amount of friction for a social act.
 
 5. **They comment on it.** Dialogue against the actual room: its size, its
    finish, what's in it. The memory log already carries `built_plank`; this adds
@@ -337,23 +377,33 @@ Build order, smallest risk first:
 
 Requires: 2a, the friendship system (done), the memory log (done).
 
-### 2c. Undo — the last thing before commissions
+### 2c. Undo — **done**, and pulled ahead of 2b step 4
 
-The model is settled above ("Build actions are undoable"); this is only the
-build slot for it. It sits here rather than earlier because 2a and 2b are the
-phases that *produce* long build sessions, and it must land before Phase 3:
-a commission means spending twenty minutes arranging someone else's house,
-which is precisely when a wrong drag hurts most.
+The model is settled above ("Build actions are undoable"). Built as `sim/undo.ts`
+plus an undo control in the build HUD (⟲, and `Z`): begin/capture/end hang off
+the stroke span `ui/app.ts` already maintained for its `painted` set, so there is
+exactly one definition of "one gesture". **No schema change and no migration** —
+the buffer is a WeakMap keyed by world, same shape as routes and the rooms index.
 
-Small and self-contained — the stroke buffer lives in a WeakMap keyed by world
-(same shape as routes and the rooms index), so there is **no schema change and
-no migration**. That's the whole point of "in memory, never in the save."
+Two implementation notes worth keeping:
 
-1. The stroke boundary already exists: `ui/app.ts` clears its `painted` set at
-   pointerdown and pointerup precisely to avoid charging twice for a sweep.
-   Capture the prior cell state and the material delta against that same span.
-2. An undo control that restores the cells and reverses the delta clamped at
-   zero. One level, replaced by the next stroke, gone on reload, no expiry.
+- `captureCell` snapshots the target key **and the whole MAX_SPAN anchor window
+  around it**, because erasing a bed by its foot deletes an anchor key up to
+  MAX_SPAN-1 cells away — restoring only the tapped key puts back nothing. First
+  capture in a stroke wins, or overlapping windows from a drag re-snapshot an
+  already-edited cell as its own "prior" state.
+- Restoring writes to `world.build` wholesale rather than replaying
+  place/remove (it has to put back a wall that was painted OVER a door, which no
+  single call expresses), so it must announce the change — hence `touchBuild` in
+  `sim/structures.ts`. Skipping it leaves the town drawing roofs over a house
+  that isn't there.
+
+**Why it moved ahead of 2b step 4.** Step 4's seam is that moving a bed is
+demolish + place, minting a new anchor key and unhousing whoever claimed it.
+Every way of preserving the claim that *doesn't* use a stroke adds a second
+record of where someone lives — which is exactly what the housing model refuses
+("the bed is the claim"). The stroke buffer is already that memory, for its own
+reasons. Doing 2c first means step 4 spends no new state on the case.
 
 ---
 
@@ -437,6 +487,11 @@ you trip over them:
   furniture placement to bump the same counter; the cost is that the rooms
   cache recomputes on furniture edits too, which is a bounded flood fill on a
   user action and almost certainly fine.
+- **Undo covers BUILD strokes only, not ACT.** Digging, tilling, planting and
+  felling go through `contextAction` on the tile underfoot, which has no stroke
+  — it's one tile, one tap, and the ground is cheap to redo. Deliberate: what
+  undo exists to protect is the *arrangement*, and a single dug tile isn't one.
+  If ACT ever gains a drag, it should gain a stroke with it.
 - **Villager "witness" has no proximity model for memory** — everyone hears about
   everything (friendship *is* proximity-gated). Fine in a town this small.
 - **PWA icon is a single SVG.** Real raster icons before any app-store-ish push.

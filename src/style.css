@@ -339,3 +339,13 @@ textarea.import-box {
   bottom: 352px;
   font-size: 22px;
 }
+
+/* Stacked above rotate, in the same right-hand column: both are modifiers on
+   what you're about to do rather than tools, so they read as a group. Undo sits
+   higher because it's reached for less often than turning a piece. */
+.undo-btn {
+  position: absolute;
+  right: 12px;
+  bottom: 404px;
+  font-size: 22px;
+}
