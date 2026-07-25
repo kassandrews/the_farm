@@ -16,6 +16,7 @@ import type { MemoryLog } from "./memory";
 import { findPath } from "./path";
 import type { Point } from "./path";
 import { buildRevision } from "./structures";
+import { stopTarget } from "./housing";
 
 const WALK_SPEED = 2.2; // tiles / second
 
@@ -38,6 +39,10 @@ export function makeVillager(def: CharDef, now: number, memorySeed: MemoryLog = 
     friendship: 0,
     memory,
     lastLine: "",
+    // No bed yet — there may not be a world to hold one. The town hands out its
+    // authored beds after it is stamped (housing.ts settleResidents), which is
+    // also what moves everyone off this fallback position and into their homes.
+    homeBed: null,
   };
 }
 
@@ -95,7 +100,9 @@ export function tickVillager(world: WorldState, v: Villager, dt: number, now: nu
   const def = CAST[v.id];
   if (!def || def.fixed || def.schedule.length === 0) return;
 
-  const stop = scheduledStop(def, now);
+  // Resolved, not read: a "home" stop is a question about where their bed is
+  // right now, and the player may have moved it since the last tick.
+  const stop = stopTarget(world, v, now);
   if (Math.hypot(stop.x - v.x, stop.y - v.y) <= 0.05) {
     v.x = stop.x;
     v.y = stop.y;

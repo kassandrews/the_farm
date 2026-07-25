@@ -86,6 +86,17 @@ export interface Villager {
   memory: MemoryLog;
   /** Last idle line shown, so it doesn't immediately repeat. */
   lastLine: string;
+  /** Anchor key ("x,y") of THEIR bed, or null if they haven't got one.
+   *
+   *  This single field is the whole housing model (sim/housing.ts): a home is
+   *  wherever their bed is, so their room is roomAt(bed) and their bedtime post
+   *  is a cell beside it. Nothing records which room is theirs, because that
+   *  would be the same fact written twice and the copies would drift.
+   *
+   *  A key, not coordinates, so it compares directly against world.furniture's
+   *  own keying. It is allowed to go stale — demolishing a bed doesn't hunt
+   *  through the villager list — and a stale claim simply means homeless. */
+  homeBed: string | null;
 }
 
 export interface WorldState {

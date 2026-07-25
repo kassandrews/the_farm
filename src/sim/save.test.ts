@@ -183,6 +183,50 @@ describe("migrations", () => {
     expect(migrated.build[tileKey(hall.door.x, hall.door.y)]).toMatchObject({ id: "door" });
   });
 
+  // --- v7 → v8: home became a claim on a bed -------------------------------
+
+  /** A v7 save: a real world with its buildings, wound back to before anyone
+   *  had a bed claim. */
+  function v7Save(extra: Record<string, unknown> = {}) {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const villagers = (w.villagers as Record<string, unknown>[]).map(({ homeBed, ...rest }) => {
+      void homeBed;
+      return rest;
+    });
+    return { ...w, schemaVersion: 7, villagers, ...extra };
+  }
+
+  it("claims the bed a returning player's town actually has", () => {
+    const migrated = migrateSave(v7Save())!;
+    const bed = TOWN_BUILDINGS.margfrom_house.furniture.find((f) => f.id === "bed")!;
+    const her = migrated.villagers.find((v) => v.id === "resident1")!;
+    expect(her.homeBed).toBe(tileKey(bed.x, bed.y));
+  });
+
+  it("claims NOTHING when the save has no bed there", () => {
+    // A v7 town whose stamp was refused (the player had built west of the
+    // plaza) has no Margfrom's house and so no bed. The content table still
+    // says where one would go; believing it would point her at furniture that
+    // doesn't exist — which resolves to the plaza, the same place an honest
+    // null gets her, reached by writing down something false first.
+    const migrated = migrateSave(v7Save({ furniture: {} }))!;
+    const her = migrated.villagers.find((v) => v.id === "resident1")!;
+    expect(her.homeBed).toBeNull();
+  });
+
+  it("gives the deskbound fixed cast no bed at all", () => {
+    const migrated = migrateSave(v7Save())!;
+    expect(migrated.villagers.find((v) => v.id === "office")!.homeBed).toBeNull();
+  });
+
+  it("does not overwrite a claim that is already there", () => {
+    const mine = tileKey(8, 6);
+    const save = v7Save();
+    (save.villagers as Record<string, unknown>[]).find((v) => v.id === "resident1")!.homeBed = mine;
+    const migrated = migrateSave(save)!;
+    expect(migrated.villagers.find((v) => v.id === "resident1")!.homeBed).toBe(mine);
+  });
+
   it("keeps villager identity and memory across the v2 → v3 drop", () => {
     const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
     const villagers = (w.villagers as Record<string, unknown>[]).map((v) => ({

@@ -23,6 +23,7 @@ import {
 import { placeStructure, removeStructure } from "./structures";
 import { rooms } from "./rooms";
 import { stampTown } from "./town";
+import { settleResidents } from "./housing";
 import { placeFurniture, removeFurnitureAt } from "./furniture";
 import { FURNITURE, furnitureDef } from "../content/furniture";
 import type { FurnitureId, Facing } from "../content/furniture";
@@ -117,6 +118,12 @@ export function newWorld(opts: NewWorldOpts): WorldState {
   // see sim/town.ts. The probe lets it clear a doorstep that generation
   // happened to drop a tree on.
   stampTown(world, (x, y) => generatedTile(seed, opts.spot, x, y));
+
+  // Only now do the beds exist, so only now can anyone claim one. This also
+  // re-seats everybody at their resolved stop for the current hour — without
+  // it a town created at 2am would open with its residents standing in the
+  // plaza, because they were built before they had anywhere to sleep.
+  settleResidents(world, now);
 
   return world;
 }

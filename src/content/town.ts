@@ -19,6 +19,7 @@
 
 import type { SkinId } from "./skins";
 import type { FurnitureId, Facing } from "./furniture";
+import type { CharId } from "./cast";
 
 export type TownBuildingId = "townhall" | "margfrom_house";
 
@@ -45,6 +46,13 @@ export interface TownBuilding {
   /** Finish for the walls and door. Per-cell since v5, so the town's buildings
    *  can differ from each other and from yours. */
   finish: SkinId;
+  /** Who the town housed here when you arrived, if anyone. This is the ONLY
+   *  authored link between a person and a place, and it is a starting
+   *  condition, not a fact: the villager claims this building's bed once, at
+   *  world creation, and from then on the claim lives on the villager and
+   *  follows the bed wherever you move it (sim/housing.ts). Demolish the bed
+   *  and they are homeless — this table does not drag them back. */
+  resident?: CharId;
   furniture: TownFurniture[];
 }
 
@@ -89,9 +97,13 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // Doors belong on south walls until the renderer can draw them otherwise.
     door: { x: -8, y: 0 },
     finish: "pine",
+    resident: "resident1",
     furniture: [
       // A 1x2 bed along the west wall. Its anchor is what her home resolves to,
-      // and (-9,-3) beside it is where she actually stands to sleep.
+      // and (-9,-3) beside it is where she actually stands to sleep — derived
+      // now (sim/housing.ts picks a walkable neighbour), not authored. Wall the
+      // bed in differently and her side of it moves; the coordinate here is
+      // where the bed starts, not where she stands.
       { x: -10, y: -3, id: "bed", facing: "s" },
       // The table is along the south-west, deliberately clear of the doorway:
       // solid furniture in front of the door would seal her out of her own
@@ -118,6 +130,19 @@ export function footprintCells(b: TownBuilding): { x: number; y: number }[] {
     for (let x = b.x0; x <= b.x1; x++) cells.push({ x, y });
   }
   return cells;
+}
+
+/** The anchor of the bed the town authored for this character, if it authored
+ *  one. Pure lookup over the table — it says where the bed STARTED, never where
+ *  it is now; only the world knows that (see sim/housing.ts, which checks a bed
+ *  is really there before letting anyone claim it). */
+export function authoredBed(id: CharId): { x: number; y: number } | null {
+  for (const b of allTownBuildings()) {
+    if (b.resident !== id) continue;
+    const bed = b.furniture.find((f) => f.id === "bed");
+    if (bed) return { x: bed.x, y: bed.y };
+  }
+  return null;
 }
 
 /** Is this cell part of the wall ring (as opposed to the interior)? */

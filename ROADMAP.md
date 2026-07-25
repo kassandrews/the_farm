@@ -26,14 +26,16 @@ DESIGN.md, if it's a rule about the game rather than about build order).
 - **Phase 2a — real structures, complete.** The raised pass (things stand up and
   overhang), the structure layer (walls, doors, build mode), rooms + derived
   roofs with the cutaway, and furniture. See below.
-- **Phase 2b — housing, steps 1–2 of 5.** Villagers path around walls; the town
-  has authored buildings and Margfrom sleeps in one. See below.
-- Menu with New town / sound toggle; PWA shell; 168 tests.
+- **Phase 2b — housing, steps 1–3 of 5.** Villagers path around walls; the town
+  has authored buildings; and home is now a claim on a bed rather than a
+  coordinate. See below.
+- Menu with New town / sound toggle; PWA shell; 182 tests.
 
-**In progress: Phase 2b step 3** — dynamic home resolution. `cast.ts` still
-hardcodes `home: {x,y}` and literal schedule coordinates.
+**Next: Phase 2b step 4** — assignment. The machinery it needs now exists:
+`sim/housing.ts` resolves a claim, and `claimAuthoredBeds` is the one-off
+starting condition it will generalise.
 
-**Save schema is at v7.** Every change ships a tested migration — see
+**Save schema is at v8.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -287,15 +289,47 @@ Build order, smallest risk first:
    ground edits don't block it, since a dug tile is cheap to redo and the stamp
    lays its own floor anyway.
 
-3. **Dynamic home resolution.** `cast.ts` hardcodes `home: {x,y}` into schedule
-   stops; a home the player can move, demolish, or build fresh cannot be a
-   literal coordinate. Stops gain a symbolic anchor (`at: "home"`) resolved
-   against world state.
+3. ~~**Dynamic home resolution.**~~ **Done.** Schedule stops gained `at: "home"`,
+   resolved against world state in the new `sim/housing.ts`; `Villager.homeBed`
+   holds the anchor key of their bed (schema v8).
+
+   `CharDef.home` turned out to be **dead** — declared and assigned since the
+   slice, read by nothing. The real hardcoding was entirely in the stops, so it
+   was deleted rather than converted.
+
+   Resolution is **total**: a villager whose bed is gone falls back to the
+   middle of the plaza, in public, at 2am. Deliberately *not* the spot their old
+   house occupied — standing on empty grass where a bedroom used to be reads as
+   the game losing track of them, where the town square reads as a person with
+   nowhere to go. That's the true thing, and the one step 5 can give her a line
+   about.
+
+   The claim is allowed to go **stale**. Demolishing a bed doesn't reach into
+   the villager list to tidy up; every read re-checks that the key still holds a
+   bed. One fact in one place, same reasoning as furniture's anchor-only record.
+
+   Two traps worth remembering:
+   - **`newWorld` builds villagers BEFORE it stamps the town**, so at
+     `makeVillager` time no bed exists and every home stop resolves to the
+     fallback. Without `settleResidents` after the stamp, every new town would
+     open with its residents standing in the square — silently breaking the
+     promise `makeVillager`'s own docblock makes.
+   - **The v8 backfill asks the save, not the content table.** A v7 town only
+     has Margfrom's house if the v6→v7 stamp succeeded, so "the table says her
+     bed is at (-10,-3)" is not evidence a bed is there. Claiming one regardless
+     resolves to the plaza anyway — the same place an honest `null` gets her,
+     reached by writing down something false first.
 
 4. **Assignment.** Point a villager at a qualifying room — enclosed, has a door,
    has a free bed. This is the Sims-like "choose an existing house OR build one"
    choice, and it is *also* exactly the acceptance test a Phase 3 commission
    asks. Written once, used twice.
+
+   Step 3 leaves it a specific seam to close: **moving a bed is demolish +
+   place**, which mints a new anchor key, so today it unhouses whoever claimed
+   it. That's honest rather than broken — they fall back to the plaza — but
+   "rehome someone" is precisely this step's verb, and it should cover the
+   player who was only trying to slide the bed one tile left.
 
 5. **They comment on it.** Dialogue against the actual room: its size, its
    finish, what's in it. The memory log already carries `built_plank`; this adds
@@ -394,6 +428,15 @@ you trip over them:
   stamp clears its own apron; a player who walls a doorway in against a tree gets
   a house nobody can enter, and the villager will snap inside rather than
   complain. Worth a build-mode warning when a door's only approach is solid.
+- **Furniture doesn't invalidate a walking villager's route.** `bump()` in
+  `sim/structures.ts` fires on wall and door edits only, but `isWalkable`
+  counts solid furniture too — so a route computed before you drop a table
+  across a corridor stays "valid" and the villager walks through it. Found
+  while wiring step 3, pre-existing since step 1, and not what step 3 changed
+  (moving a *bed* alters the goal, which does invalidate). The fix is for
+  furniture placement to bump the same counter; the cost is that the rooms
+  cache recomputes on furniture edits too, which is a bounded flood fill on a
+  user action and almost certainly fine.
 - **Villager "witness" has no proximity model for memory** — everyone hears about
   everything (friendship *is* proximity-gated). Fine in a town this small.
 - **PWA icon is a single SVG.** Real raster icons before any app-store-ish push.

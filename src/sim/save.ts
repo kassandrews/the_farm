@@ -8,9 +8,11 @@ import type { WorldState, HomesteadSpot } from "./types";
 import { starterSkins, defaultSkin } from "../content/skins";
 import { stampTown } from "./town";
 import type { StampTarget } from "./town";
-import { generatedTile } from "./world";
+import { generatedTile, tileKey } from "./world";
+import { authoredBed } from "../content/town";
+import type { CharId } from "../content/cast";
 
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -121,6 +123,34 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       overrides: target.overrides,
       build: target.build,
       furniture: target.furniture,
+    };
+  },
+  // v7 → v8: a villager's home stopped being a coordinate and became a claim on
+  // a bed (sim/housing.ts), so each one gains `homeBed`.
+  //
+  // The backfill asks the SAVE, not the content table. A v7 town only has
+  // Margfrom's house if the v6→v7 stamp succeeded — and it refuses, all or
+  // nothing, any building whose footprint the player had already built in. So
+  // "the table says her bed is at (-10,-3)" is not evidence that a bed is
+  // there. Claiming one regardless would point her at furniture that doesn't
+  // exist, which resolves to the plaza: the same place an honest null gets her,
+  // reached by writing down something false first.
+  7: (raw) => {
+    const villagers = Array.isArray(raw.villagers) ? raw.villagers : [];
+    const furniture = (typeof raw.furniture === "object" && raw.furniture ? raw.furniture : {}) as Record<
+      string,
+      { id?: string }
+    >;
+    return {
+      ...raw,
+      schemaVersion: 8,
+      villagers: villagers.map((entry) => {
+        const v = entry as Record<string, unknown>;
+        if (typeof v.homeBed === "string" || v.homeBed === null) return v;
+        const bed = typeof v.id === "string" ? authoredBed(v.id as CharId) : null;
+        const key = bed ? tileKey(bed.x, bed.y) : null;
+        return { ...v, homeBed: key && furniture[key]?.id === "bed" ? key : null };
+      }),
     };
   },
 };

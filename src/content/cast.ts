@@ -25,8 +25,22 @@ export type CharId =
  *  order; the last one wraps around midnight until the first. The Farm runs on
  *  the real clock (DESIGN §Time), so this is a genuinely daily routine — visit
  *  at 8am and at 8pm and you'll find people in different places. */
+/** A destination that only the live world can answer.
+ *
+ *  "home" is the villager's own bed — and a bed is furniture the player may
+ *  drag across the room, move to a house they built, or take apart for the six
+ *  wood. So a home stop cannot be a coordinate; it has to be a question, asked
+ *  again every time it's read (resolved in sim/housing.ts). */
+export type StopAnchor = "home";
+
 export interface ScheduleStop {
   fromHour: number;
+  /** Resolved against world state when present. */
+  at?: StopAnchor;
+  /** Where the stop is when `at` is absent — and where it FALLS BACK to when a
+   *  symbolic anchor can't be answered, which for "home" means the villager
+   *  hasn't got one. Resolution is therefore total: a homeless villager stands
+   *  somewhere specific and slightly sad, never nowhere. */
   x: number;
   y: number;
   /** What they're nominally up to — flavour for future "…is at the plaza" UI. */
@@ -41,9 +55,18 @@ export interface CharDef {
   name: string;
   /** Fixed cast are institutions and don't wander far; residents walk a ring. */
   fixed: boolean;
-  home: { x: number; y: number };
   schedule: ScheduleStop[];
 }
+
+/** Where a resident stands when they have no bed to go to: the middle of the
+ *  plaza, in public, at 2am. (Plaza bounds live in sim/world.ts; content can't
+ *  import sim, so this is written out — as every coordinate in this file is.)
+ *
+ *  It is deliberately NOT the spot their old house occupied. Standing on the
+ *  empty grass where a bedroom used to be reads as the game having lost track
+ *  of them; standing in the town square reads as a person with nowhere to go,
+ *  which is the true thing and the one you can apologise for. */
+const NO_HOME = { x: 0, y: -1 };
 
 // Town geometry lives in world.ts; these are hand-placed against the plaza.
 // The office sits at the north edge of the plaza; the resident's ring loops
@@ -54,8 +77,12 @@ export const CAST: Record<CharId, CharDef> = {
     form: "office",
     name: "Tired Office Creature",
     fixed: true,
-    home: { x: 0, y: -6 },
     // It does not leave the desk. The desk is the whole personality.
+    //
+    // Literal, and staying literal: he is an institution, not a resident. He has
+    // no bed to claim, and "at: desk" would be a second symbolic anchor bought
+    // for one character who never moves. What happens when you demolish the town
+    // hall around him is a line of dialogue (Phase 3), not a pathing problem.
     schedule: [{ fromHour: 0, x: 0, y: -6, doing: "at the desk" }],
   },
   resident1: {
@@ -63,18 +90,18 @@ export const CAST: Record<CharId, CharDef> = {
     form: "scholar",
     name: "Margfrom",
     fixed: false,
-    // Beside her bed, inside margfrom_house (src/content/town.ts). She used to
-    // sleep at (-4,-2) — which is ON the plaza paving, a thing nobody noticed
-    // because there was no building anywhere to notice it against.
-    home: { x: -9, y: -3 },
     // A real day: fieldwork in the morning, out by your plot after lunch,
     // back to the plaza for the evening, home once it's properly dark.
+    //
+    // The two home stops are symbolic. She starts in margfrom_house (which the
+    // town authors her a bed in), but nothing here says so — move the bed and
+    // she follows it; take it away and both stops fall back to the plaza.
     schedule: [
-      { fromHour: 0, x: -9, y: -3, doing: "asleep, probably" },
+      { fromHour: 0, at: "home", ...NO_HOME, doing: "asleep, probably" },
       { fromHour: 7, x: 1, y: 2, doing: "conducting morning research" },
       { fromHour: 11, x: 6, y: 5, doing: "observing your homestead" },
       { fromHour: 16, x: 3, y: 1, doing: "walking back, thinking" },
-      { fromHour: 19, x: -9, y: -3, doing: "writing it all up" },
+      { fromHour: 19, at: "home", ...NO_HOME, doing: "writing it all up" },
     ],
   },
 };

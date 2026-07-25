@@ -7,7 +7,7 @@ import { findPath } from "./path";
 import { stampBuilding, stampTown } from "./town";
 import type { StampTarget } from "./town";
 import { TOWN_BUILDINGS, allTownBuildings, footprintCells, isPerimeter } from "../content/town";
-import { CAST, scheduledStop } from "../content/cast";
+import { stopTarget } from "./housing";
 
 function world(spot: "riverside" | "forest" | "hilltop" = "hilltop", seed = 7) {
   return newWorld({ name: "Test", form: "blob", spot, seed });
@@ -149,9 +149,16 @@ describe("the town's own buildings", () => {
 });
 
 describe("Margfrom actually lives in her house", () => {
+  /** Her overnight post, resolved against the world rather than read off the
+   *  table — which is the entire point of the change these tests now cover. */
+  function bedtime(w: ReturnType<typeof world>) {
+    const v = w.villagers.find((x) => x.id === "resident1")!;
+    return stopTarget(w, v, at(2));
+  }
+
   it("has her overnight post inside her own four walls", () => {
     const w = world();
-    const stop = scheduledStop(CAST.resident1, at(2));
+    const stop = bedtime(w);
     const house = TOWN_BUILDINGS.margfrom_house;
     expect(stop.x).toBeGreaterThan(house.x0);
     expect(stop.x).toBeLessThan(house.x1);
@@ -164,13 +171,12 @@ describe("Margfrom actually lives in her house", () => {
   it("can always reach her own bed, whatever terrain the seed generated", () => {
     // The end-to-end version of the doorstep bug: she teleported home in the
     // browser because no route existed, and the snap rule made that look normal.
-    const stop = scheduledStop(CAST.resident1, at(2));
     const house = TOWN_BUILDINGS.margfrom_house;
     for (const spot of ["riverside", "forest", "hilltop"] as const) {
       for (let seed = 0; seed < 25; seed++) {
         const w = world(spot, seed);
         const outside = { x: house.door.x, y: house.door.y + 2 };
-        const legs = findPath(w, outside, stop);
+        const legs = findPath(w, outside, bedtime(w));
         expect(legs, `no route to bed on ${spot}/${seed}`).not.toBeNull();
         expect(legs!.some((p) => p.x === house.door.x && p.y === house.door.y)).toBe(true);
       }
@@ -179,9 +185,11 @@ describe("Margfrom actually lives in her house", () => {
 
   it("is beside the bed, not on it — a solid bed is not a place to stand", () => {
     const w = world();
-    const stop = scheduledStop(CAST.resident1, at(2));
+    const stop = bedtime(w);
     const bed = TOWN_BUILDINGS.margfrom_house.furniture.find((f) => f.id === "bed")!;
-    expect(Math.abs(stop.x - bed.x) + Math.abs(stop.y - bed.y)).toBe(1);
+    // Adjacent to one of the two cells the 1x2 bed covers, and not on either.
+    const near = [0, 1].map((d) => Math.abs(stop.x - bed.x) + Math.abs(stop.y - (bed.y + d)));
+    expect(Math.min(...near)).toBe(1);
     expect(isWalkable(w, bed.x, bed.y)).toBe(false);
   });
 
@@ -189,7 +197,7 @@ describe("Margfrom actually lives in her house", () => {
     const w = world();
     const v = w.villagers.find((x) => x.id === "resident1")!;
     const house = TOWN_BUILDINGS.margfrom_house;
-    const stop = scheduledStop(CAST.resident1, at(2));
+    const stop = bedtime(w);
 
     // Park her out on the plaza and let her walk home at 2am.
     v.x = 0;

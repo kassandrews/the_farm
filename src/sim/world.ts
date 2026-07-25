@@ -33,6 +33,15 @@ export function tileKey(x: number, y: number): string {
   return `${x},${y}`;
 }
 
+/** Read a tile key back into coordinates. Returns null for anything that isn't
+ *  one, because these keys reach us from the SAVE — a hand-edited or corrupted
+ *  blob must produce "no such cell" rather than {x: NaN, y: NaN}, which would
+ *  quietly poison every distance and lookup downstream. */
+export function parseTileKey(key: string): { x: number; y: number } | null {
+  const m = /^(-?\d+),(-?\d+)$/.exec(key);
+  return m ? { x: Number(m[1]), y: Number(m[2]) } : null;
+}
+
 // --- Chunk streaming ----------------------------------------------------------
 // A chunk is CHUNK×CHUNK generated tiles, built on first touch and cached. The
 // cache is DERIVED state: it holds nothing an edit could invalidate (overrides
