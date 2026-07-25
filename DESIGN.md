@@ -199,6 +199,15 @@ entry covering every metal). Soft goods — cloth, cushions, curtains — are
 deliberately *not* gatherable; the shop sells what you can't gather, which
 is what gives the Menace's counter a reason to exist.
 
+**Junk is found, never gathered, and is not a fourth material.** The three
+gathered classes above are the complete list of things you *build* with,
+and junk is not among them: nothing you place costs junk, and no
+structure is made of it. It is what the ground turns up when you dig —
+the Gremlin's whole economy, and the third thing the town will take off
+your hands. Keeping it out of the material set is what stops "three
+gathered classes, ever" from quietly becoming four; a thing you can hold
+is not automatically a thing you can build with.
+
 **The counter is barter, not money** — settled, not open. You hand over
 something you have and she hands over cloth; there is no currency, no
 wallet, and no running total anywhere in the game. The reason is a pillar

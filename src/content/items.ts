@@ -7,11 +7,16 @@
 // every metal). Everything else here is produce — grown or foraged, bound for
 // eating, gifting, and the museum rather than construction.
 
-export type ItemId = "wood" | "stone" | "ore" | "carrot" | "mushroom" | "cloth";
+export type ItemId = "wood" | "stone" | "ore" | "carrot" | "mushroom" | "cloth" | "junk";
 
 /** What an item is for. Drives which UI groups it and, later, what the shop
- *  and museum will accept. */
-export type ItemCategory = "material" | "produce" | "soft";
+ *  and museum will accept.
+ *
+ *  `junk` is its own category and NOT a material, which is the load-bearing
+ *  part (DESIGN §Materials): the three gathered classes are the complete list
+ *  of things you build with, and a fourth thing you can hold must not quietly
+ *  become a fourth thing you build with. Nothing costs junk to place. */
+export type ItemCategory = "material" | "produce" | "soft" | "junk";
 
 export interface ItemDef {
   id: ItemId;
@@ -74,6 +79,18 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     category: "soft",
     blurb: "Bartered for, not found. Nothing out there grows in bolts.",
   },
+  // Found, never gathered — the ground turns it up when you dig (sim/junk.ts).
+  // One row covers every possible object, exactly as one row covers every
+  // metal: what you actually pulled out is a line of flavour at the moment you
+  // pull it out, and then it is simply junk. The Gremlin is the only one who
+  // sees the difference, and he is not going to explain it.
+  junk: {
+    id: "junk",
+    name: "Junk",
+    icon: "🔩",
+    category: "junk",
+    blurb: "It was under there. It is out here now. The Gremlin calls this a supply chain.",
+  },
 };
 
 export function itemDef(id: ItemId): ItemDef {
@@ -89,4 +106,4 @@ export function itemLabel(id: ItemId, count: number): string {
 
 /** Display order in the satchel: materials first (you're usually building),
  *  then produce. Stable, so the list never reshuffles under your thumb. */
-export const ITEM_ORDER: ItemId[] = ["wood", "stone", "ore", "cloth", "carrot", "mushroom"];
+export const ITEM_ORDER: ItemId[] = ["wood", "stone", "ore", "cloth", "carrot", "mushroom", "junk"];

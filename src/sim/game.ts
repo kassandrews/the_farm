@@ -12,7 +12,6 @@ import { arrivalDue, admitArrival } from "./commission";
 import { remember } from "./memory";
 import type { MemoryKind } from "./memory";
 import {
-  dig,
   canDig,
   placePlank,
   isWalkable,
@@ -30,6 +29,7 @@ import { FURNITURE, furnitureDef } from "../content/furniture";
 import type { FurnitureId, Facing } from "../content/furniture";
 import { structureDef } from "../content/structures";
 import { GRASS, DIRT, PLANK, FARMLAND, FARMLAND_WET, MUSHROOM } from "../content/tiles";
+import { digWithFind } from "./junk";
 import { emptyInventory, add, canAfford, spend, refund, shortfall } from "./inventory";
 import type { Cost } from "./inventory";
 import { itemLabel } from "../content/items";
@@ -292,12 +292,20 @@ function toolApplies(world: WorldState, tool: Tool, x: number, y: number): boole
 /** Apply the held tool to the tile underfoot. */
 function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: number): ActionResult {
   switch (tool) {
-    case "dig":
-      if (dig(world, x, y)) {
+    case "dig": {
+      // digWithFind, not dig: the shovel and the ground's contents are one
+      // operation, because the payout has to be decided before the dig writes
+      // its override (sim/junk.ts explains what splitting them cost).
+      const { dug, find } = digWithFind(world, x, y);
+      if (dug) {
         witness(world, "dug", undefined, now);
-        return { kind: "dig", changed: true, message: "You turn the earth." };
+        // The find replaces the usual line rather than joining it. Two toasts
+        // for one tap is a queue, and the interesting sentence should not have
+        // to wait behind "You turn the earth."
+        return { kind: "dig", changed: true, message: find ?? "You turn the earth." };
       }
       return { kind: "dig", changed: false, message: "Nothing to dig here." };
+    }
     case "gather":
       // Mushrooms are the one gatherable that isn't a node — pick them up.
       if (tileAt(world, x, y) === MUSHROOM) {
