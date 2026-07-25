@@ -100,6 +100,87 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
   // Other forms fall back to idle if they have no memory line for an event.
 };
 
+// --- Home --------------------------------------------------------------------
+// What a villager says about the place they live (ROADMAP 2b step 5). Keyed by
+// the note kinds sim/home.ts derives from the actual room — its size, its
+// finish, what's in it, and the three ways it can stop being a home at all.
+//
+// Keyed by plain string rather than by importing HomeNoteKind, for the same
+// reason RESIDENT_MEMORY is: content sits INSIDE sim in the import order
+// (CLAUDE.md §Architecture), so a content table may never reach up into a sim
+// module for a type. `v` is the note's value — a piece's name, a finish's name,
+// a room's size.
+//
+// VOICE RULE, and it's the whole reason this step exists rather than a "house
+// quality: 3/5" readout: nobody grades. A small room is snug, not deficient; a
+// bare one is a room they haven't finished thinking about yet. The only lines
+// with an edge to them are the three about something being WRONG, and even
+// those are about the fact, not about you. DESIGN is explicit that taste is
+// delight and never a gate — a villager who scores your house would turn a gift
+// into a chore with a pass/fail on it.
+export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v: string) => string)[]>>>> = {
+  scholar: {
+    homeless: [
+      () => "My bed is gone. I've filed the observation under 'abrupt'.",
+      () => ". ... I'm told the plaza is character-building. I'm collecting data on that.",
+    ],
+    roofless: [
+      () => "The walls have left. The bed remains. I am studying the sky, involuntarily.",
+    ],
+    sealed: [
+      () => "There's no door. I've been in and out exactly zero times. Rigorous, but limiting.",
+    ],
+    bare: [
+      () => "A bed and four walls. Minimalist. I keep the findings on the floor.",
+      () => "It's unfurnished, which is fine. I've nothing to put down but notes.",
+    ],
+    grand: [
+      (v) => `${v} tiles. I paced it. Twice, for confidence. It's more room than I have thoughts.`,
+      () => "It echoes. I've been testing the echo. Preliminary findings: excellent.",
+    ],
+    snug: [
+      () => "Small. Well-bounded. I can reach everything without standing up.",
+      (v) => `${v} tiles of home. A sample size I can actually manage.`,
+    ],
+    furnished: [
+      (v) => `There's a ${v} in there. I've been using it correctly, mostly.`,
+      (v) => `I've grown fond of the ${v}. Don't move it. I've mapped the room around it.`,
+    ],
+    finish: [
+      (v) => `It's ${v} throughout. I looked it up. I was right, which is rarer than you'd think.`,
+      (v) => `${v}. A good wall. I've written that down, and I stand by it.`,
+    ],
+  },
+  // Other forms fall back to memory or idle when they have no line for a note.
+  // Stubbed lightly here so an imported villager of any form still notices where
+  // they live; fill these in as forms get their proper voices.
+  office: {
+    homeless: [() => "My bed has been deaccessioned. No form was filed. I'd have accepted a form."],
+  },
+  menace: {
+    homeless: [() => "My bed. Gone. I am choosing to find this dramatic rather than upsetting."],
+    bare: [() => "It is empty. I am the decor. Still — one could add to me."],
+    snug: [() => "Compact. I have decided that's deliberate, and therefore tasteful."],
+    finish: [(v) => `${v}. Acceptable. I'd have chosen it myself, given the chance.`],
+  },
+  dog: {
+    homeless: [() => "Where's my bed? Where's my BED. Okay. Okay. It's fine. Is it fine?"],
+    bare: [() => "It's got a bed! That's the important one. That's the main one."],
+    grand: [() => "It's SO big. I ran a lap. I'm going to run another one."],
+    furnished: [(v) => `There's a ${v}! I sit near it. It's a good ${v}.`],
+  },
+  blob: {
+    homeless: [() => "I have been made homeless. Tragically. Beautifully. Someone should be watching this."],
+    grand: [() => "The proportions are theatrical. I enter it. I make an entrance."],
+    snug: [() => "Intimate staging. Every seat is a good seat. There is one seat."],
+  },
+  gremlin: {
+    homeless: [() => "Someone took my bed. I respect it. I want it back."],
+    bare: [() => "Nothing in it yet. Give me a week."],
+    furnished: [(v) => `I moved the ${v}. Slightly. You won't be able to prove it.`],
+  },
+};
+
 // --- Warmth ------------------------------------------------------------------
 // Lines that only unlock as a villager warms to you (see sim/villagers.ts
 // friendshipTier). This is the ONLY way friendship is ever revealed — there is

@@ -441,7 +441,7 @@ export function talk(world: WorldState, id: CharId, rng: Rng): Speech | null {
   const v = world.villagers.find((w) => w.id === id);
   if (!v) return null;
   befriend(v, 2);
-  return speak(v, rng);
+  return speak(world, v, rng);
 }
 
 /** Complete the opening beat: stamp the land claim (DESIGN §"Opening beat"). */

@@ -33,11 +33,12 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   change. Pulled AHEAD of 2b step 4 — see below for why.
 - **Phase 2b step 4 — assignment, complete.** `sim/assign.ts`: `qualify` is the
   acceptance test, offered in conversation, and a moved bed keeps its sleeper.
-- Menu with New town / sound toggle; PWA shell; 210 tests.
+- **Phase 2b step 5 — they comment on it, complete.** `sim/home.ts` reads a
+  villager's home through `qualify()` and hands the banks a small vocabulary.
+  **Phase 2 is done.**
+- Menu with New town / sound toggle; PWA shell; 221 tests.
 
-**Next: Phase 2b step 5** — they comment on the room. The memory log and the
-room itself are both readable now; this is dialogue content against
-`qualify()`'s `room` (its size, its finish, what's in it), not new machinery.
+**Next: Phase 3** — commissions on top of 2b's machinery. See below.
 
 **Save schema is at v8.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
@@ -223,7 +224,7 @@ work here, faint = ACT would do nothing.
 
 ---
 
-## Phase 2 — Structures, then the flagship
+## Phase 2 — Structures, then the flagship — **done**
 
 ### 2a. Real structures — **done**
 
@@ -388,14 +389,41 @@ Build order, smallest risk first:
    the inference, and an ambiguous stroke (two orphans, or two new beds) refuses
    to guess. Losing a bed is announced — silence would mean finding out at 2am.
 
-5. **They comment on it.** Dialogue against the actual room: its size, its
-   finish, what's in it. The memory log already carries `built_plank`; this adds
-   the house itself as something referenceable.
+5. ~~**They comment on it.**~~ **Done.** `sim/home.ts` turns a villager's home
+   into a small vocabulary of things worth remarking on — `homeless`,
+   `roofless`, `sealed`, `bare`, `grand`, `snug`, `furnished`, `finish` — and
+   `RESIDENT_HOME` in `content/dialogue.ts` gives each form lines for them. No
+   new machinery, exactly as planned: it reads `qualify()`'s `Room` and the
+   claim's staleness, both of which step 4 already produced.
 
-   Step 4 leaves two hooks for it: `qualify()` hands back the `Room`, so size and
-   contents are readable without new machinery; and a villager whose bed was
-   demolished is genuinely homeless in the plaza at 2am, which is a thing they
-   should have a line about.
+   **It calls `qualify()` rather than asking the world.** The three trouble
+   notes ARE the three disqualifiers, so "your walls don't meet" is the same
+   verdict the assignment panel shows and the Phase 3 commission will put on
+   letterhead. A third opinion about what a house is would drift from the other
+   two — the reticle rule, applied to housing.
+
+   Two decisions the build settled:
+
+   - **A stale claim speaks; a null claim doesn't.** Homelessness is only worth
+     a line when it's a *change*. A claim pointing at a bed that isn't there any
+     more means something was taken; no claim at all may mean they never wanted
+     one, and the Office Creature complaining nightly about a bed he never had
+     would be the game mistaking an institution for a person. Both states were
+     already distinguished by the data — housing.ts lets a claim go stale rather
+     than tidying up — so this cost no new flag. It does mean an *evicted*
+     villager (whose claim `assign()` clears) says nothing; the eviction is
+     announced at the time, and a permanent grievance would be worse.
+   - **How readily they mention it is part of what the note means.** The trouble
+     notes fire at 0.85, the pleasant ones at 0.35. A villager who mentions a
+     missing bed one time in ten is one the player concludes is fine; a villager
+     who leads with their nice shelf every time is a property listing. The odds
+     therefore live with the vocabulary in `sim/home.ts`, not at the call site.
+
+   Voice rule, and the reason this is lines and not a score: **nobody grades.**
+   A small room is snug, not deficient. DESIGN's "taste is delight, never a
+   gate" applies to what villagers *say* about a house, not only to what a
+   commission accepts — a house-quality readout would turn a gift into a chore
+   with a pass/fail on it.
 
 Requires: 2a, the friendship system (done), the memory log (done).
 
@@ -489,6 +517,10 @@ you trip over them:
   nothing ever adds to `world.skins.unlocked`. The award path is completing a
   **commission**, which is Phase 3 — deliberately left open rather than bolted
   onto 2b's assignment step, where there'd be no reason for it.
+- **Only the Scholar has a full home bank.** `RESIDENT_HOME` covers every form,
+  but the other five get one or two notes each — a form with no line for its
+  richest note falls through to one it can speak to, so nobody goes silent, they
+  just repeat sooner. Filling these in is writing, not engineering.
 - **Ore is defined but unobtainable** until the underground layer exists. This
   is intentional, not an oversight.
 - **Only one resident and one fixed-cast member** exist. `src/content/cast.ts`

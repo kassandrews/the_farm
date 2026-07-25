@@ -20,7 +20,7 @@ describe("memory-driven dialogue", () => {
     const scholar = w.villagers.find((v) => v.id === "resident1")!;
     const rng = makeRng(1);
     const said = new Set<string>();
-    for (let i = 0; i < 80; i++) said.add(speak(scholar, rng).text);
+    for (let i = 0; i < 80; i++) said.add(speak(w, scholar, rng).text);
     // At least one line should be the raised_favorite memory (mentions carrots).
     expect([...said].some((t) => t.includes("carrots"))).toBe(true);
   });
@@ -41,7 +41,7 @@ describe("memory-driven dialogue", () => {
     const scholar = w.villagers.find((v) => v.id === "resident1")!;
     const rng = makeRng(5);
     const said = new Set<string>();
-    for (let i = 0; i < 120; i++) said.add(speak(scholar, rng).text);
+    for (let i = 0; i < 120; i++) said.add(speak(w, scholar, rng).text);
     expect([...said].some((t) => t.toLowerCase().includes("built") || t.toLowerCase().includes("boards"))).toBe(true);
   });
 

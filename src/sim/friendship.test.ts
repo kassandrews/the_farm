@@ -67,12 +67,12 @@ describe("friendship milestones", () => {
     const v = w.villagers.find((x) => x.id === "resident1")!;
 
     const strangerLines = new Set<string>();
-    for (let i = 0; i < 200; i++) strangerLines.add(speak(v, makeRng(i)).text);
+    for (let i = 0; i < 200; i++) strangerLines.add(speak(w, v, makeRng(i)).text);
 
     v.friendship = 100; // close
     const closeOnly = warmLines(v.form, "close").filter((l) => !warmLines(v.form, "friend").includes(l));
     const friendLines = new Set<string>();
-    for (let i = 0; i < 400; i++) friendLines.add(speak(v, makeRng(i)).text);
+    for (let i = 0; i < 400; i++) friendLines.add(speak(w, v, makeRng(i)).text);
 
     expect(closeOnly.length).toBeGreaterThan(0);
     for (const line of closeOnly) expect(strangerLines.has(line)).toBe(false);
