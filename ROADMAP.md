@@ -26,9 +26,14 @@ DESIGN.md, if it's a rule about the game rather than about build order).
 - **Phase 2a — real structures, complete.** The raised pass (things stand up and
   overhang), the structure layer (walls, doors, build mode), rooms + derived
   roofs with the cutaway, and furniture. See below.
-- Menu with New town / sound toggle; PWA shell; 125 tests.
+- **Phase 2b — housing, steps 1–2 of 5.** Villagers path around walls; the town
+  has authored buildings and Margfrom sleeps in one. See below.
+- Menu with New town / sound toggle; PWA shell; 168 tests.
 
-**Save schema is at v6.** Every change ships a tested migration — see
+**In progress: Phase 2b step 3** — dynamic home resolution. `cast.ts` still
+hardcodes `home: {x,y}` and literal schedule coordinates.
+
+**Save schema is at v7.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -117,6 +122,12 @@ Recorded in full in DESIGN.md §Structures. The short version and *why*:
   structure by filing a form. Phase 3 flavour, not built yet.
 
 ### Build actions are undoable — one stroke, in memory
+
+**Designed, argued, and NOT BUILT.** Nothing in `src/` implements this; DESIGN
+§Structures describes it in the present tense because DESIGN says what the game
+is, not what has shipped. It has a build slot now — see 2c below. Recorded here
+because the decisions below are settled and shouldn't be re-derived when it
+does get built.
 
 Erase already refunds materials, so what a demolition actually costs is never
 wood — it's the **arrangement**. Twenty minutes of walls, gone to one drag.
@@ -291,6 +302,24 @@ Build order, smallest risk first:
    the house itself as something referenceable.
 
 Requires: 2a, the friendship system (done), the memory log (done).
+
+### 2c. Undo — the last thing before commissions
+
+The model is settled above ("Build actions are undoable"); this is only the
+build slot for it. It sits here rather than earlier because 2a and 2b are the
+phases that *produce* long build sessions, and it must land before Phase 3:
+a commission means spending twenty minutes arranging someone else's house,
+which is precisely when a wrong drag hurts most.
+
+Small and self-contained — the stroke buffer lives in a WeakMap keyed by world
+(same shape as routes and the rooms index), so there is **no schema change and
+no migration**. That's the whole point of "in memory, never in the save."
+
+1. The stroke boundary already exists: `ui/app.ts` clears its `painted` set at
+   pointerdown and pointerup precisely to avoid charging twice for a sweep.
+   Capture the prior cell state and the material delta against that same span.
+2. An undo control that restores the cells and reverses the delta clamped at
+   zero. One level, replaced by the next stroke, gone on reload, no expiry.
 
 ---
 
