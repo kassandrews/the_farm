@@ -16,15 +16,19 @@ export function el<K extends keyof HTMLElementTagNameMap>(
 }
 
 /** Show a modal panel over a scrim. Returns a close() that removes it. The
- *  panel content is built by the caller; this only handles the frame. */
-export function modal(content: HTMLElement, opts: { dismissable?: boolean } = {}): () => void {
+ *  panel content is built by the caller; this only handles the frame.
+ *
+ *  `onDismiss` makes a tap outside the panel close it — and it calls the
+ *  CALLER's close, never a private one, so the caller's "a modal is open" state
+ *  can't be left set while the panel is gone (which is a frozen game). */
+export function modal(content: HTMLElement, opts: { onDismiss?: () => void } = {}): () => void {
   const scrim = el("div", { class: "modal-scrim" }, [content]);
-  if (opts.dismissable) {
+  const dismiss = opts.onDismiss;
+  if (dismiss) {
     scrim.addEventListener("pointerdown", (e) => {
-      if (e.target === scrim) close();
+      if (e.target === scrim) dismiss();
     });
   }
   document.body.append(scrim);
-  const close = () => scrim.remove();
-  return close;
+  return () => scrim.remove();
 }

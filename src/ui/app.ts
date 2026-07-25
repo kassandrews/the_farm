@@ -151,11 +151,13 @@ export class App {
     if (!this.world) return;
     const lines = summarizeAway(this.world, Date.now(), this.rng);
     if (lines.length === 0) return;
-    this.openModal((close) =>
-      panel("A postcard from the Farm", "While you were out", [
-        el("p", {}, [lines.join("\n. ... ")]),
-        actionRow([primaryBtn("Back to it", close)]),
-      ]),
+    this.openModal(
+      (close) =>
+        panel("A postcard from the Farm", "While you were out", [
+          el("p", {}, [lines.join("\n. ... ")]),
+          actionRow([primaryBtn("Back to it", close)]),
+        ]),
+      { dismissable: true },
     );
   }
 
@@ -323,11 +325,13 @@ export class App {
     const speech = talk(this.world, villagerId, this.rng);
     if (!speech) return;
     audio.play("talk");
-    this.openModal((close) =>
-      panel(speech.who, "Farm resident", [
-        el("p", {}, [speech.text]),
-        actionRow([primaryBtn("...", close)]),
-      ]),
+    this.openModal(
+      (close) =>
+        panel(speech.who, "Farm resident", [
+          el("p", {}, [speech.text]),
+          actionRow([primaryBtn("...", close)]),
+        ]),
+      { dismissable: true },
     );
   }
 
@@ -339,7 +343,7 @@ export class App {
   private openSatchel(): void {
     if (!this.world) return;
     const world = this.world;
-    this.openModal(() => {
+    this.openModal((close) => {
       const body = el("div", {});
 
       // Carried items. Zero-count entries are omitted rather than shown greyed:
@@ -381,8 +385,10 @@ export class App {
         body.append(labeled(`${cls === "wood" ? "Wood" : "Stone"} finish — free`, row));
       }
 
-      return panel("Satchel", "What you're carrying", [body]);
-    });
+      // The way out. A panel with nothing to answer still needs a door in it —
+      // on a phone there is no Escape key and no back gesture into a canvas.
+      return panel("Satchel", "What you're carrying", [body, actionRow([primaryBtn("Done", close)])]);
+    }, { dismissable: true });
   }
 
   // --- Menu -------------------------------------------------------------------
@@ -423,7 +429,7 @@ export class App {
         }),
       );
       return panel("Menu", who, [body]);
-    });
+    }, { dismissable: true });
   }
 
   // --- Input ------------------------------------------------------------------
@@ -469,8 +475,15 @@ export class App {
     this.canvas.addEventListener("pointercancel", endPaint);
 
     window.addEventListener("keydown", (e) => {
-      if (this.modalOpen) return;
       const k = e.key.toLowerCase();
+      if (this.modalOpen) {
+        // Escape backs out of anything you're only looking at (satchel, menu).
+        if (k === "escape" && this.closeModal) {
+          this.closeModal();
+          e.preventDefault();
+        }
+        return;
+      }
       if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) {
         this.keys.add(k);
         e.preventDefault();
@@ -549,6 +562,7 @@ export class App {
       btn.classList.toggle("selected", id === this.buildTool);
     }
     this.renderer.setBuildView(building);
+    this.renderer.setTool(this.tool);
     this.hud.root.classList.toggle("building", building);
 
     // Rotation is a furniture idea; showing it for walls would imply walls have
@@ -642,17 +656,27 @@ export class App {
   };
 
   // --- Modal plumbing ---------------------------------------------------------
-  private openModal(build: (close: () => void) => HTMLElement): void {
+  /** Open a panel. `dismissable` adds the two escape hatches a panel you only
+   *  LOOK at needs — tap outside, or Escape — on top of whatever button the
+   *  panel itself offers. The one-way flows (title, onboarding, the land claim)
+   *  leave it off: those must be answered, not skipped. */
+  private openModal(build: (close: () => void) => HTMLElement, opts: { dismissable?: boolean } = {}): void {
     audio.play("menu");
     this.modalOpen = true;
     let closeFn: () => void = () => {};
-    const content = build(() => closeFn());
-    const close = modal(content);
+    const close = modal(build(() => closeFn()), {
+      onDismiss: opts.dismissable ? () => closeFn() : undefined,
+    });
     closeFn = () => {
       close();
       this.modalOpen = false;
+      this.closeModal = null;
     };
+    this.closeModal = opts.dismissable ? closeFn : null;
   }
+
+  /** Closes the open panel when Escape should work; null otherwise. */
+  private closeModal: (() => void) | null = null;
 
   /** A brief floating status message near the action button. */
   private flash(text: string): void {

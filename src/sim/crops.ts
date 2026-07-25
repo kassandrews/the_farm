@@ -43,6 +43,12 @@ export function plant(world: WorldState, x: number, y: number, cropId: CropId, n
   return true;
 }
 
+/** Is there a plant here to water? The predicate half of `water`, so the ACT
+ *  reticle can promise the watering before it happens (see `actionTarget`). */
+export function canWater(world: WorldState, x: number, y: number): boolean {
+  return world.crops[tileKey(x, y)] !== undefined;
+}
+
 /** Water the plot under a crop: soaks the soil and starts (or resumes) growth. */
 export function water(world: WorldState, x: number, y: number, now: number): boolean {
   const crop = world.crops[tileKey(x, y)];

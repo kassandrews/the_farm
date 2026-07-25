@@ -259,6 +259,10 @@ body {
   gap: 10px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  /* The row is always the LAST thing in a panel, so it needs air above it —
+     otherwise a panel whose body is a list of choices (the satchel) ends with
+     its Done button jammed against the final row. */
+  margin-top: 14px;
 }
 
 .btn {

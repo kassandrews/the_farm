@@ -90,6 +90,22 @@ Recorded in full in DESIGN.md §Structures. The short version and *why*:
   structurally kills the "gathering hijacks the build tool" class of bug that
   bit us once already.
 
+### The reticle is the promise
+
+`actionTarget(world, tool)` in `src/sim/game.ts` is the ONE place that decides
+which tile ACT touches. The renderer draws exactly that tile and colours it by
+the returned `kind`; `contextAction` executes exactly that tile. Neither may
+re-derive it.
+
+This is written down because the two *were* separate, and drifted: the reticle
+lit up green on any node in reach, while ACT gave the held tool priority on the
+tile underfoot — so standing beside a tree with the shovel out highlighted the
+tree and dug the grass. The precedence itself was right (a tree beside you must
+never hijack a deliberate act, or you can't till at the forest edge); the lie
+was that the reticle promised something else. Colour carries the difference now:
+gold = a ripe crop underfoot, green = felling a node, white = the held tool has
+work here, faint = ACT would do nothing.
+
 ### Undecided, deliberately
 
 - **Money vs. barter vs. neither.** Not needed until the shop lands (Phase 3).
@@ -221,6 +237,13 @@ you trip over them:
   documents the gotchas (tile size isn't fixed, the HUD swallows clicks,
   `beforeunload` clobbers seeded saves, evening screenshots are too dark to
   judge), each of which has cost an hour at least once.
+- **Every panel needs a door.** A modal opened from the HUD must be closable
+  three ways — its own button, a tap on the scrim, and Escape — because the
+  satchel shipped with none of them and trapped the player on a phone, where
+  there is no Escape key and no back gesture out of a canvas. `openModal(build,
+  { dismissable: true })` wires the last two; the one-way flows (title,
+  onboarding, land claim) deliberately opt out. Dismissal must run the CALLER's
+  close, or `modalOpen` stays set and the game is frozen behind a vanished panel.
 - **When the browser disagrees with the tests, suspect the harness first.**
   Three "bugs" this phase were the scaffolding: a house built centred on the
   player so the cutaway correctly hid its own roof, clicks landing on the HUD

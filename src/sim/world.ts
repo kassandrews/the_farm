@@ -216,11 +216,17 @@ export function decoHash(x: number, y: number, seed: number): number {
 // These enforce what a tool is allowed to do; the game layer calls them from
 // the action button. Each returns whether it changed anything (for feedback).
 
+/** Is there anything here for the shovel? Split out of `dig` so the ACT reticle
+ *  can promise the dig before it happens (see `actionTarget`). */
+export function canDig(world: WorldState, x: number, y: number): boolean {
+  const t = tileAt(world, x, y);
+  return t === GRASS || t === MUSHROOM;
+}
+
 /** Shovel: grass (or a patch of mushrooms) → dug dirt. Clearing mushrooms is an
  *  option, never an errand — they do nothing but sit there looking pleased. */
 export function dig(world: WorldState, x: number, y: number): boolean {
-  const t = tileAt(world, x, y);
-  if (t !== GRASS && t !== MUSHROOM) return false;
+  if (!canDig(world, x, y)) return false;
   setTile(world, x, y, DIRT);
   return true;
 }

@@ -9,8 +9,9 @@
 // day/night tint over everything. See the Raised docblock for why the standing
 // things share a single sorted pass rather than getting one each.
 
-import type { WorldState, Villager, Player, BuildCell, FurnitureCell } from "../sim/types";
-import { tileAt, playerTile, isRipe } from "../sim/game";
+import type { WorldState, Villager, Player, BuildCell, FurnitureCell, Tool } from "../sim/types";
+import { tileAt, playerTile, actionTarget } from "../sim/game";
+import type { ActionTarget } from "../sim/game";
 import { cropDef, ripeStage } from "../content/crops";
 import { tileDef, PLANK, GRASS, TREE, ROCK } from "../content/tiles";
 import { skinDef } from "../content/skins";
@@ -20,7 +21,6 @@ import { wallMask, CONNECT_N, CONNECT_E, CONNECT_S, CONNECT_W } from "../sim/str
 import { furnitureDef, footprint } from "../content/furniture";
 import { rooms } from "../sim/rooms";
 import type { Room } from "../sim/rooms";
-import { nodeNear } from "../sim/gather";
 import { tintAt, isNight, skyPhaseAt } from "../sim/time";
 import { creatureKey } from "../content/canon/sprites";
 import type { Mood, SpriteFrame } from "../content/canon/sprites";
@@ -28,6 +28,15 @@ import { SpriteCache, drawSpriteQuantized } from "./sprites";
 
 const TILE = 16; // scene px per world tile (matches sprite CELL)
 const SPRITE = 16; // sprite draw size
+
+/** Reticle colour per action kind — the colour is the promise. Faint white means
+ *  ACT would do nothing here, so an unlit square is honest rather than broken. */
+const TARGET_COLOR: Record<ActionTarget["kind"], string> = {
+  harvest: "rgba(255,220,120,0.9)", // something ripe underfoot
+  gather: "rgba(160,255,150,0.9)", // a tree or rock in reach
+  tool: "rgba(255,255,255,0.85)", // the held tool has work here
+  none: "rgba(255,255,255,0.3)",
+};
 
 /** Anything that stands UP out of its tile rather than lying flat in it.
  *
@@ -125,6 +134,8 @@ export class Renderer {
   /** Flattened plan view: on while a build tool is held (DESIGN §Structures —
    *  plan view while you build, 3/4 while you live there). */
   private buildView = false;
+  /** Mirrors the HUD's held ACT tool, for the reticle. */
+  private tool: Tool = "dig";
 
   // --- Roof index and cutaway state -------------------------------------------
   // Rebuilt only when the sim hands back a different rooms array — its own cache
@@ -143,6 +154,12 @@ export class Renderer {
   /** Toggle the flattened build view. */
   setBuildView(on: boolean): void {
     this.buildView = on;
+  }
+
+  /** The held ACT tool. The reticle needs it because which tile ACT lands on
+   *  depends on the tool (see actionTarget). */
+  setTool(tool: Tool): void {
+    this.tool = tool;
   }
 
   constructor(canvas: HTMLCanvasElement) {
@@ -887,21 +904,16 @@ export class Renderer {
   }
 
   // --- Action-target affordance ----------------------------------------------
+  /** The reticle. It draws `actionTarget` and nothing else: the sim decides what
+   *  ACT will touch, so the square you see is always the square the button acts
+   *  on — including its colour, which says which of the three things will
+   *  happen. Never re-derive the target here. */
   private drawTargetTile(world: WorldState): void {
     const ctx = this.ctx;
-    const { x, y } = playerTile(world);
-    // ACT prioritises an adjacent resource node (you can't stand on one), so
-    // the reticle has to point at what will actually happen, not at your feet.
-    const near = nodeNear(world, x, y, world.player.facing);
-    const tx = near ? near.x : x;
-    const ty = near ? near.y : y;
-    const px = Math.round(this.sceneX(tx) - TILE / 2);
-    const py = Math.round(this.sceneY(ty) - TILE / 2);
-    ctx.strokeStyle = near
-      ? "rgba(160,255,150,0.9)" // something to gather
-      : isRipe(world, x, y)
-        ? "rgba(255,220,120,0.9)" // something ripe
-        : "rgba(255,255,255,0.5)";
+    const target = actionTarget(world, this.tool);
+    const px = Math.round(this.sceneX(target.x) - TILE / 2);
+    const py = Math.round(this.sceneY(target.y) - TILE / 2);
+    ctx.strokeStyle = TARGET_COLOR[target.kind];
     ctx.lineWidth = 1;
     ctx.strokeRect(px + 0.5, py + 0.5, TILE - 1, TILE - 1);
   }

@@ -10,7 +10,7 @@ import type { CharId } from "../content/cast";
 import { makeVillager, tickVillager, befriend } from "./villagers";
 import { remember } from "./memory";
 import type { MemoryKind } from "./memory";
-import { dig, placePlank, isWalkable, tileAt, setTile, homesteadOrigin } from "./world";
+import { dig, canDig, placePlank, isWalkable, tileAt, setTile, homesteadOrigin } from "./world";
 import { placeStructure, removeStructure } from "./structures";
 import { rooms } from "./rooms";
 import { placeFurniture, removeFurnitureAt } from "./furniture";
@@ -24,7 +24,7 @@ import { itemLabel } from "../content/items";
 import type { ItemId } from "../content/items";
 import { gather, nodeNear, updateRegrowth } from "./gather";
 import { starterSkins, defaultSkin } from "../content/skins";
-import { canPlant, plant, water, harvest, isRipe, updateAllCrops, updateCrop } from "./crops";
+import { canPlant, plant, water, canWater, harvest, isRipe, updateAllCrops, updateCrop } from "./crops";
 import { cropDef, ripeStage } from "../content/crops";
 import type { MeadowImport } from "./meadow_import";
 import { simulateAway, AWAY_MIN_MS } from "./away";
@@ -175,52 +175,82 @@ export interface ActionResult {
   message: string;
 }
 
-/** The context action button. Harvesting wins when the player stands on a ripe
- *  crop (so the ripe carrot is always one tap away, whatever tool is held);
- *  otherwise the held tool is applied to the tile underfoot. */
-export function contextAction(world: WorldState, tool: Tool, now: number): ActionResult {
-  const { x, y } = playerTile(world);
+/** What ACT is aimed at right now.
+ *
+ *  "harvest" — a ripe crop underfoot; "gather" — a node in reach; "tool" — the
+ *  held tool has something to do on that tile; "none" — nothing will happen. */
+export interface ActionTarget {
+  x: number;
+  y: number;
+  kind: "harvest" | "gather" | "tool" | "none";
+}
 
-  if (isRipe(world, x, y)) {
-    const yielded = harvest(world, x, y, now);
-    if (yielded) {
-      add(world.inventory, "carrot", 1); // it goes in the satchel, not into thin air
-      witness(world, "harvested_carrot", `a ${yielded}`, now);
-      return { kind: "harvest", changed: true, message: `You pulled a ${yielded}. It's a good one.` };
-    }
+/** Where ACT will land, decided in ONE place so the reticle the player sees and
+ *  the tile the button touches can never disagree. The renderer draws this and
+ *  `contextAction` executes it; anything that changes the precedence below
+ *  changes both at once, which is the point.
+ *
+ *  Precedence, and why:
+ *   1. A ripe crop underfoot — the ripe carrot is always one tap away, whatever
+ *      tool is held.
+ *   2. The gather tool always means the node in reach, since nodes are SOLID and
+ *      you can never stand on one (see nodeNear): "the tile underfoot" can never
+ *      reach a tree.
+ *   3. The held tool on the tile underfoot, when it would actually do something.
+ *      Deliberately ahead of the node: a tree beside you must never hijack a
+ *      deliberate act, or you couldn't till the ground at the forest edge.
+ *   4. Otherwise a node in reach — the phone-friendly shortcut, which only ever
+ *      fires when the held tool had nothing to do anyway. */
+export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
+  const { x, y } = playerTile(world);
+  if (isRipe(world, x, y)) return { x, y, kind: "harvest" };
+
+  const near = nodeNear(world, x, y, world.player.facing);
+  if (near && tool === "gather") return { x: near.x, y: near.y, kind: "gather" };
+  if (toolApplies(world, tool, x, y)) return { x, y, kind: "tool" };
+  if (near) return { x: near.x, y: near.y, kind: "gather" };
+  return { x, y, kind: "none" };
+}
+
+/** The context action button: does whatever `actionTarget` is pointing at. */
+export function contextAction(world: WorldState, tool: Tool, now: number): ActionResult {
+  const target = actionTarget(world, tool);
+
+  if (target.kind === "harvest") {
+    const yielded = harvest(world, target.x, target.y, now)!;
+    add(world.inventory, "carrot", 1); // it goes in the satchel, not into thin air
+    witness(world, "harvested_carrot", `a ${yielded}`, now);
+    return { kind: "harvest", changed: true, message: `You pulled a ${yielded}. It's a good one.` };
   }
 
-  // Nodes are solid, so you can never stand on one — gathering always targets a
-  // NEIGHBOUR (see nodeNear). Deliberately NOT given blanket priority: a tree
-  // beside you must never hijack a deliberate act, or you couldn't lay a floor
-  // at the forest edge. It runs as a fallback below instead.
-  const near = nodeNear(world, x, y, world.player.facing);
-  const fellNearby = (): ActionResult | null => {
-    if (!near) return null;
-    const got = gather(world, near.x, near.y, now)!;
+  if (target.kind === "gather") {
+    const got = gather(world, target.x, target.y, now)!;
     witness(world, "gathered", undefined, now);
     return {
       kind: "gather",
       changed: true,
       message: `${got.node === "tree" ? "Timber." : "Split it."} ${itemLabel(got.item, got.amount)}.`,
     };
-  };
-
-  // The gather tool always means the node, when there is one.
-  if (tool === "gather") {
-    const felled = fellNearby();
-    if (felled) return felled;
   }
 
-  const result = applyTool(world, tool, x, y, now);
-  // Nothing for the held tool to do here, but there's a tree in reach? Do the
-  // obvious thing rather than refuse — that's the phone-friendly shortcut,
-  // without ever overriding an action that would have worked.
-  if (!result.changed) {
-    const felled = fellNearby();
-    if (felled) return felled;
+  // "tool" or "none": the held tool on the tile underfoot. When nothing applies
+  // this is what produces the refusal message.
+  return applyTool(world, tool, target.x, target.y, now);
+}
+
+/** Would the held tool change this tile? The dry-run half of `applyTool` — kept
+ *  beside it so the two can't drift. */
+function toolApplies(world: WorldState, tool: Tool, x: number, y: number): boolean {
+  switch (tool) {
+    case "dig":
+      return canDig(world, x, y);
+    case "gather":
+      return tileAt(world, x, y) === MUSHROOM; // the one gatherable that isn't a node
+    case "plant":
+      return canPlant(world, x, y);
+    case "water":
+      return canWater(world, x, y);
   }
-  return result;
 }
 
 /** Apply the held tool to the tile underfoot. */
