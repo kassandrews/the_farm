@@ -30,6 +30,8 @@ import type { MeadowImport } from "../sim/meadow_import";
 import { recall } from "../sim/memory";
 import { count } from "../sim/inventory";
 import { beginStroke, captureCell, endStroke, undoStroke, canUndo, undoLabel } from "../sim/undo";
+import { qualify, assign, beds, rehomeAcrossStroke, bedKeys, pendingRehome, DISQUALIFIER_TEXT } from "../sim/assign";
+import type { CharId } from "../content/cast";
 import { ITEM_ORDER, itemDef } from "../content/items";
 import { availableSkins, skinDef } from "../content/skins";
 import type { SkinClass } from "../content/skins";
@@ -109,6 +111,12 @@ export class App {
   /** Tiles already painted during the current drag, so dragging back and forth
    *  over one tile doesn't re-charge or re-message for it. */
   private painted = new Set<string>();
+  /** The beds standing when the current stroke opened, so a stroke that moves
+   *  one can carry its sleeper across (sim/assign.ts §"The moved-bed seam"). */
+  private strokeBeds: Set<string> | null = null;
+  /** Who we're choosing a home for, while the player picks a bed. Null the rest
+   *  of the time — this is a transient targeting mode, not a stored selection. */
+  private assigning: CharId | null = null;
   /** Which way the next multi-tile piece goes down. Sticky between placements —
    *  you usually put two chairs down the same way round. */
   private facing: Facing = "s";
@@ -338,18 +346,126 @@ export class App {
   }
 
   // --- Dialogue ---------------------------------------------------------------
-  private openDialogue(villagerId: import("../content/cast").CharId): void {
+  private openDialogue(villagerId: CharId): void {
     if (!this.world) return;
-    const speech = talk(this.world, villagerId, this.rng);
+    const world = this.world;
+    const speech = talk(world, villagerId, this.rng);
     if (!speech) return;
     audio.play("talk");
+
+    // Offering a home is a CONVERSATION, not a construction act (ROADMAP 2b
+    // step 4). It only appears when there's a bed in town to offer — an option
+    // that's always there and usually does nothing is a worse tutorial than no
+    // option at all.
+    const offerable = beds(world).length > 0;
+
     this.openModal(
       (close) =>
         panel(speech.who, "Farm resident", [
           el("p", {}, [speech.text]),
-          actionRow([primaryBtn("...", close)]),
+          actionRow([
+            ...(offerable
+              ? [
+                  choiceBtn("There's a room for you", () => {
+                    close();
+                    this.beginAssigning(villagerId);
+                  }),
+                ]
+              : []),
+            primaryBtn("...", close),
+          ]),
         ]),
       { dismissable: true },
+    );
+  }
+
+  // --- Giving someone a home ----------------------------------------------------
+  /** Enter bed-picking mode. The map marks every bed with whether it qualifies,
+   *  and the next tap on one answers. */
+  private beginAssigning(id: CharId): void {
+    if (!this.world) return;
+    this.assigning = id;
+    this.buildTool = null; // building and choosing are different verbs
+    this.syncToolUi();
+    this.syncHomeCandidates();
+    const who = this.world.villagers.find((v) => v.id === id);
+    this.flash(`Pick a bed for ${who?.name ?? "them"}.  (Esc to stop)`);
+  }
+
+  private endAssigning(): void {
+    this.assigning = null;
+    this.renderer.setHomeCandidates([]);
+  }
+
+  private syncHomeCandidates(): void {
+    if (!this.world || !this.assigning) return;
+    this.renderer.setHomeCandidates(
+      beds(this.world).map((b) => ({ x: b.x, y: b.y, ok: b.verdict.ok })),
+    );
+  }
+
+  /** Say out loud when a build stroke changed where someone sleeps.
+   *
+   *  Taking a villager's only bed away is a real consequence and must not happen
+   *  in silence — you'd find out at 2am when they turned up in the plaza. It
+   *  isn't a refusal, though: demolishing your own furniture is always allowed
+   *  (DESIGN §Materials — you can be slowed, never stopped). */
+  private reportRehome(waitingBefore: CharId | null): void {
+    if (!this.world) return;
+    const waitingNow = pendingRehome(this.world);
+    const nameOf = (id: CharId) =>
+      this.world!.villagers.find((v) => v.id === id)?.name ?? "Someone";
+
+    if (waitingNow && waitingNow !== waitingBefore) {
+      this.flash(`${nameOf(waitingNow)} hasn't got a bed now.`);
+    } else if (waitingBefore && !waitingNow) {
+      this.flash(`${nameOf(waitingBefore)} follows it. Same bed, new spot.`);
+    }
+  }
+
+  /** Resolve a tap while choosing. A miss doesn't leave the mode — the player is
+   *  aiming at a small piece of furniture on a phone, and dropping them out on
+   *  the first fat-fingered tap would make this feel like it doesn't work. */
+  private pickHome(x: number, y: number): void {
+    if (!this.world || !this.assigning) return;
+    const world = this.world;
+    const id = this.assigning;
+
+    const verdict = qualify(world, x, y);
+    if (!verdict.ok) {
+      // "No bed there" is almost always a missed tap rather than a decision, so
+      // it stays quiet and keeps the mode; the real reasons get a line.
+      if (verdict.why !== "no-bed") audio.play("deny");
+      this.flash(DISQUALIFIER_TEXT[verdict.why]);
+      return;
+    }
+
+    // Always a NAME, never a pronoun: every sentence below is singular ("X moves
+    // in"), and a "they" fallback makes the verb disagree with itself.
+    const who = world.villagers.find((v) => v.id === id)?.name ?? "Someone";
+    if (verdict.occupant === id) {
+      this.flash(`${who} already sleeps there.`);
+      this.endAssigning();
+      return;
+    }
+
+    const evicted =
+      verdict.occupant !== null
+        ? world.villagers.find((v) => v.id === verdict.occupant)
+        : undefined;
+
+    assign(world, id, x, y);
+    audio.play("place");
+    this.endAssigning();
+    this.persist();
+
+    // Deadpan, about the arrangement rather than about you (§Tone). The eviction
+    // is stated plainly instead of being hidden — it's a consequence the player
+    // chose, and secrets are the only thing this game keeps quiet about.
+    this.flash(
+      evicted
+        ? `${who} moves in. ${evicted.name} will need somewhere else.`
+        : `${who} moves in. It's theirs now.`,
     );
   }
 
@@ -465,12 +581,22 @@ export class App {
         // that stops a sweep charging twice is already the game's definition of
         // "one gesture" (sim/undo.ts).
         beginStroke(this.world, buildToolLabel(this.buildTool));
+        this.strokeBeds = bedKeys(this.world);
         this.canvas.setPointerCapture(e.pointerId);
         this.buildAtPoint(e.clientX, e.clientY);
         return;
       }
 
       const wpt = this.renderer.screenToWorld(e.clientX, e.clientY);
+
+      // Choosing someone a home takes the next tap on the map, before walking or
+      // talking get a look at it — that's what makes it a targeting mode rather
+      // than a thing you can absent-mindedly walk out of.
+      if (this.assigning) {
+        this.pickHome(Math.round(wpt.x), Math.round(wpt.y));
+        return;
+      }
+
       // Tap a villager you're standing near → talk; otherwise walk there.
       const near = this.villagerNear(wpt.x, wpt.y);
       if (near) {
@@ -492,7 +618,17 @@ export class App {
     const endPaint = (e: PointerEvent) => {
       if (this.canvas.hasPointerCapture(e.pointerId)) this.canvas.releasePointerCapture(e.pointerId);
       this.painted.clear();
-      if (this.world) endStroke(this.world);
+      if (this.world) {
+        endStroke(this.world);
+        // Did this stroke take someone's bed away, or give it back? Runs after
+        // the edits so it compares finished states.
+        if (this.strokeBeds) {
+          const waitingBefore = pendingRehome(this.world);
+          rehomeAcrossStroke(this.world, this.strokeBeds);
+          this.reportRehome(waitingBefore);
+        }
+        this.strokeBeds = null;
+      }
       this.syncUndoUi();
     };
     this.canvas.addEventListener("pointerup", endPaint);
@@ -506,6 +642,14 @@ export class App {
           this.closeModal();
           e.preventDefault();
         }
+        return;
+      }
+      // Every mode needs a door — the same rule the modals live by. Bed-picking
+      // has no panel of its own to close, so Escape is its way out.
+      if (k === "escape" && this.assigning) {
+        this.endAssigning();
+        this.flash("Left it for now.");
+        e.preventDefault();
         return;
       }
       if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) {
@@ -565,6 +709,10 @@ export class App {
   private selectTool(t: Tool): void {
     this.tool = t;
     this.buildTool = null;
+    // Picking up a tool leaves bed-picking. This is the mode's door on TOUCH,
+    // where there is no Escape key — the palettes are always on screen, so
+    // there's always a way out (house rule: every panel needs a door).
+    this.endAssigning();
     this.syncToolUi();
   }
 
@@ -573,6 +721,7 @@ export class App {
    *  button to hunt for. */
   private selectBuildTool(t: BuildTool): void {
     this.buildTool = this.buildTool === t ? null : t;
+    this.endAssigning(); // same door, from the other palette
     this.syncToolUi();
   }
 

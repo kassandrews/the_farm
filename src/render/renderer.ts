@@ -136,6 +136,8 @@ export class Renderer {
   private buildView = false;
   /** Mirrors the HUD's held ACT tool, for the reticle. */
   private tool: Tool = "dig";
+  /** Beds offered while choosing someone a home — see setHomeCandidates. */
+  private homeCandidates: { x: number; y: number; ok: boolean }[] = [];
 
   // --- Roof index and cutaway state -------------------------------------------
   // Rebuilt only when the sim hands back a different rooms array — its own cache
@@ -154,6 +156,17 @@ export class Renderer {
   /** Toggle the flattened build view. */
   setBuildView(on: boolean): void {
     this.buildView = on;
+  }
+
+  /** Beds to mark while the player is choosing someone a home, with whether
+   *  each one qualifies. Empty (the default) draws nothing.
+   *
+   *  Deliberately NOT routed through the reticle: the reticle promises exactly
+   *  what ACT will touch and nothing else (ROADMAP §"The reticle is the
+   *  promise"), and these are candidates for a different verb entirely. Two
+   *  meanings on one affordance is how that rule got broken the first time. */
+  setHomeCandidates(cells: { x: number; y: number; ok: boolean }[]): void {
+    this.homeCandidates = cells;
   }
 
   /** The held ACT tool. The reticle needs it because which tile ACT lands on
@@ -235,6 +248,7 @@ export class Renderer {
     this.collectMovers(world, t, night);
     this.flushRaised();
     this.drawTargetTile(world);
+    this.drawHomeCandidates(t);
 
     // Real-clock day/night wash over the whole scene.
     const tint = tintAt(now);
@@ -940,5 +954,37 @@ export class Renderer {
       ctx.lineTo(cx, cy + sy * arm);
     }
     ctx.stroke();
+  }
+
+  /** Mark the beds you could give someone while you're choosing.
+   *
+   *  A closed, breathing square rather than the reticle's corner ticks — these
+   *  mark FURNITURE, not the ground under your feet, so there's no sprite to
+   *  cage and a full outline reads more clearly as "pick one of these". The
+   *  pulse is what says the game is waiting on you; a static outline in a
+   *  transient mode looks like part of the scenery.
+   *
+   *  Drawn LAST, over the roofs, and that's required rather than sloppy: a bed
+   *  only qualifies if its room is enclosed, so every bed worth picking is under
+   *  a roof by definition. Marking them beneath the roof pass would hide exactly
+   *  the ones the player is being asked to choose between.
+   *
+   *  Ones that don't qualify are drawn too, dimmer and in warning colour, rather
+   *  than hidden: a bed you can see but aren't offered is a question ("why not
+   *  that one?") the panel can answer, where a bed that simply isn't marked
+   *  reads as the game failing to notice it. */
+  private drawHomeCandidates(t: number): void {
+    if (this.homeCandidates.length === 0) return;
+    const ctx = this.ctx;
+    const pulse = 0.55 + 0.45 * Math.abs(Math.sin(t * 2.2));
+    for (const c of this.homeCandidates) {
+      const px = Math.round(this.sceneX(c.x) - TILE / 2) + 0.5;
+      const py = Math.round(this.sceneY(c.y) - TILE / 2) + 0.5;
+      ctx.strokeStyle = c.ok
+        ? `rgba(160,255,150,${pulse.toFixed(3)})`
+        : `rgba(255,170,120,${(pulse * 0.5).toFixed(3)})`;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px, py, TILE - 1, TILE - 1);
+    }
   }
 }

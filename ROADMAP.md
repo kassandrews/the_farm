@@ -31,12 +31,13 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   coordinate. See below.
 - **Phase 2c — undo, complete.** `sim/undo.ts`, one level, in memory, no schema
   change. Pulled AHEAD of 2b step 4 — see below for why.
-- Menu with New town / sound toggle; PWA shell; 192 tests.
+- **Phase 2b step 4 — assignment, complete.** `sim/assign.ts`: `qualify` is the
+  acceptance test, offered in conversation, and a moved bed keeps its sleeper.
+- Menu with New town / sound toggle; PWA shell; 210 tests.
 
-**Next: Phase 2b step 4** — assignment. The machinery it needs now exists:
-`sim/housing.ts` resolves a claim, `claimAuthoredBeds` is the one-off starting
-condition it will generalise, and 2c's stroke buffer is the memory the
-moved-bed case needs.
+**Next: Phase 2b step 5** — they comment on the room. The memory log and the
+room itself are both readable now; this is dialogue content against
+`qualify()`'s `room` (its size, its finish, what's in it), not new machinery.
 
 **Save schema is at v8.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
@@ -340,40 +341,61 @@ Build order, smallest risk first:
      resolves to the plaza anyway — the same place an honest `null` gets her,
      reached by writing down something false first.
 
-4. **Assignment.** Point a villager at a qualifying room — enclosed, has a door,
-   has a free bed. This is the Sims-like "choose an existing house OR build one"
-   choice, and it is *also* exactly the acceptance test a Phase 3 commission
-   asks. Written once, used twice.
+4. ~~**Assignment.**~~ **Done.** `sim/assign.ts`. Point a villager at a
+   qualifying room — enclosed, has a door, has a bed. The Sims-like "choose an
+   existing house OR build one" choice, and *also* exactly the acceptance test a
+   Phase 3 commission asks. Written once, used twice.
 
-   Step 3 leaves it a specific seam to close: **moving a bed is demolish +
-   place**, which mints a new anchor key, so today it unhouses whoever claimed
-   it. That's honest rather than broken — they fall back to the plaza — but
-   "rehome someone" is precisely this step's verb, and it should cover the
-   player who was only trying to slide the bed one tile left. **2c is now built
-   ahead of this** so the fix costs no new state: a bed placed in the same
-   stroke that removed a claimed one inherits the claim.
+   - **`qualify()` returns WHY, not a boolean.** `{ ok, room, occupant }` or
+     `{ ok: false, why: "no-bed" | "no-room" | "no-door" }`. The commission will
+     say "it needs a door" in the Office Creature's voice and the assignment
+     flow says the same fact in the player's; one call site produces both, so
+     they can't drift into disagreeing about what a house is.
+   - **No `too-small` verdict**, deliberately. `qualify` hands back the `Room`,
+     so a commission checks `room.interior.size` at its own call site. A minimum
+     size is a *commission's* requirement, not a housing rule — putting it here
+     would give housing an opinion DESIGN says it must not have.
+   - **An occupied bed is reported, not refused.** `occupant` comes back so the
+     caller can present it; assigning over someone evicts them, because two
+     villagers holding one anchor key would be one fact written twice.
+   - **The entry point is conversation, near-gated.** Tap a villager you're
+     beside → "There's a room for you" → tap a bed. Candidate beds get their own
+     pulsing overlay (`setHomeCandidates`) rather than being folded into the
+     reticle — the reticle promises exactly what ACT touches, and two meanings on
+     one affordance is how that rule got broken the first time. The overlay draws
+     OVER roofs on purpose: a qualifying bed is enclosed by definition, so
+     marking it under the roof pass would hide every bed worth picking.
+   - **The mode's door on touch is the tool palette.** Escape works on desktop;
+     a phone has neither Escape nor a panel to close, so picking up any tool
+     leaves bed-picking. A missed tap does NOT leave it — aiming at furniture on
+     a phone, dropping out on the first fat-fingered tap reads as broken.
 
-   Decided in planning, not yet built:
+   **The moved-bed seam, and the premise that was wrong.** Moving a bed is
+   demolish + place, minting a new anchor key, which would unhouse whoever slept
+   in it. This was designed as a SAME-STROKE inheritance (and 2c was built first
+   to supply the stroke). Driving the real UI showed that can never happen:
+   erase and bed are different **tools**, so a move is always two strokes with a
+   palette tap between them. The unit tests missed it because they call `buildAt`
+   directly, where "one stroke" is whatever the test says — exactly the class of
+   bug the browser house rule exists for.
 
-   - **`qualify()` returns WHY, not a boolean.** `{ ok: true, room, occupant }`
-     or `{ ok: false, why: "no-room" | "no-door" }`. The commission needs to say
-     "it needs a door" in the Office Creature's voice and the assignment panel
-     needs the same fact in the player's; one call site produces both.
-   - **No `too-small` verdict.** `qualify` hands back the `Room` on success, so a
-     commission checks `room.interior.size` against its own threshold at its own
-     call site. A minimum size is a *commission's* requirement, not a housing
-     rule — putting it in `assign.ts` would give housing an opinion DESIGN says
-     it must not have (size beyond the minimum is delight, never a gate).
-   - **The entry point is the dialogue modal, near-gated.** Tap a villager you're
-     standing beside → "There's a room for you" → tap a bed, with the reticle
-     colouring beds by verdict rather than adding a parallel highlight path.
-     Assignment is a conversation, which fits the tone and lets the acceptance
-     carry voice; a build-mode furniture panel can't. Near-gating means rehoming
-     costs a walk, which is the right amount of friction for a social act.
+   So the orphaned claim **waits**: a stroke that takes someone's only bed
+   records them in memory, and the next stroke placing a single unclaimed bed
+   hands it over. That's not a second record of where someone lives — it's a
+   record that someone lives *nowhere*, which the world already says out loud
+   (their claim is null and stays null). Same shape as the undo buffer: WeakMap
+   keyed by world, one level, never serialised. A deliberate offer always beats
+   the inference, and an ambiguous stroke (two orphans, or two new beds) refuses
+   to guess. Losing a bed is announced — silence would mean finding out at 2am.
 
 5. **They comment on it.** Dialogue against the actual room: its size, its
    finish, what's in it. The memory log already carries `built_plank`; this adds
    the house itself as something referenceable.
+
+   Step 4 leaves two hooks for it: `qualify()` hands back the `Room`, so size and
+   contents are readable without new machinery; and a villager whose bed was
+   demolished is genuinely homeless in the plaza at 2am, which is a thing they
+   should have a line about.
 
 Requires: 2a, the friendship system (done), the memory log (done).
 
@@ -404,6 +426,17 @@ Every way of preserving the claim that *doesn't* use a stroke adds a second
 record of where someone lives — which is exactly what the housing model refuses
 ("the bed is the claim"). The stroke buffer is already that memory, for its own
 reasons. Doing 2c first means step 4 spends no new state on the case.
+
+**Postscript — half of that reasoning was wrong.** The stroke turned out to be
+the wrong *unit* for the moved-bed case (see 2b step 4: a move is always two
+strokes, because erase and bed are different tools), so the fix ended up as its
+own WeakMap rather than reading undo's buffer. 2c-first was still the right
+call — it established the begin/capture/end boundary in `ui/app.ts` that the
+rehome hook now uses, and undo is worth having on its own merits — but the
+"costs no new state" argument didn't survive. Worth remembering before trusting
+the same shape of argument again: a sequencing decision justified by a shared
+mechanism should be checked against how the player actually performs the action,
+not against how a test can call the API.
 
 ---
 
