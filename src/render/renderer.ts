@@ -9,7 +9,7 @@
 // day/night tint over everything. See the Raised docblock for why the standing
 // things share a single sorted pass rather than getting one each.
 
-import type { WorldState, Villager, Player, BuildCell } from "../sim/types";
+import type { WorldState, Villager, Player, BuildCell, FurnitureCell } from "../sim/types";
 import { tileAt, playerTile, isRipe } from "../sim/game";
 import { cropDef, ripeStage } from "../content/crops";
 import { tileDef, PLANK, GRASS, TREE, ROCK } from "../content/tiles";
@@ -17,6 +17,7 @@ import { skinDef } from "../content/skins";
 import type { SkinClass } from "../content/skins";
 import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey } from "../sim/world";
 import { wallMask, CONNECT_N, CONNECT_E, CONNECT_S, CONNECT_W } from "../sim/structures";
+import { furnitureDef, footprint } from "../content/furniture";
 import { rooms } from "../sim/rooms";
 import type { Room } from "../sim/rooms";
 import { nodeNear } from "../sim/gather";
@@ -290,6 +291,20 @@ export class Renderer {
           const y = ty;
           this.raised.push({ y, bias: BIAS_TERRAIN, draw: () => this.drawWall(world, x, y, built) });
         }
+        // Furniture is collected at its ANCHOR only, so a 2-tile piece is drawn
+        // once rather than once per cell it covers. Sorted on its SOUTHERN row
+        // so a bed's far end can't sort in front of its own near end.
+        const piece = world.furniture[key];
+        if (piece) {
+          const ax = tx;
+          const ay = ty;
+          const span = footprint(furnitureDef(piece.id), piece.facing);
+          this.raised.push({
+            y: ay + span.h - 1,
+            bias: BIAS_TERRAIN,
+            draw: () => this.drawFurniture(ax, ay, piece),
+          });
+        }
         // Roofs are derived, not stored, so they come from the room index
         // rather than from the build layer.
         const roofRoom = this.roofIndex.get(key);
@@ -541,6 +556,95 @@ export class Renderer {
     if (!has(1, 0)) {
       ctx.fillStyle = skin.color;
       ctx.fillRect(px + TILE - 1, py, 1, TILE);
+    }
+
+    ctx.globalAlpha = prev;
+  }
+
+  /** A piece of furniture, drawn from its anchor across its whole footprint.
+   *
+   *  Low things in a 3/4 view read as a TOP SURFACE plus a FRONT FACE: the
+   *  footprint lifted by the piece's height, with the height itself showing as
+   *  a band along the near edge. Drawing a bed as a flat 16px block instead
+   *  would throw away the fact that it's two tiles deep.
+   *
+   *  Sorted on the footprint's SOUTHERN row by the caller, so a bed's far end
+   *  never sorts in front of something standing beside its near end. */
+  private drawFurniture(ax: number, ay: number, cell: FurnitureCell): void {
+    const ctx = this.ctx;
+    const def = furnitureDef(cell.id);
+    const { w, h } = footprint(def, cell.facing);
+    const skin = skinDef(cell.finish);
+    const px = Math.round(this.sceneX(ax) - TILE / 2);
+    const py = Math.round(this.sceneY(ay) - TILE / 2);
+    const base = Math.round(this.sceneY(ay + h - 1) + TILE / 2);
+    const pw = w * TILE;
+    const H = def.height;
+
+    const prev = ctx.globalAlpha;
+    if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
+
+    ctx.fillStyle = "rgba(0,0,0,0.16)"; // sits ON the floor
+    ctx.fillRect(px + 1, base - 1, pw - 2, 2);
+
+    ctx.fillStyle = skin.shade; // the near face — this is the height you see
+    ctx.fillRect(px, base - H, pw, H);
+    ctx.fillStyle = skin.color; // the top, lifted clear of the floor
+    ctx.fillRect(px, py - H, pw, base - py);
+
+    // Outline the whole silhouette. Furniture wears the same finish as the
+    // walls it stands against, so without a hard edge a furnished room is one
+    // continuous tan mass and you can't tell architecture from objects. The top
+    // surface and the near face meet flush, so the silhouette is a single rect.
+    const oy = py - H;
+    const oh = base - py + H;
+    ctx.fillStyle = "rgba(0,0,0,0.38)";
+    ctx.fillRect(px, oy, pw, 1);
+    ctx.fillRect(px, base - 1, pw, 1);
+    ctx.fillRect(px, oy, 1, oh);
+    ctx.fillRect(px + pw - 1, oy, 1, oh);
+    ctx.fillStyle = "rgba(0,0,0,0.20)"; // the lip where the top meets the face
+    ctx.fillRect(px + 1, base - H, pw - 2, 1);
+    ctx.fillStyle = skin.top; // sunlit far edge, kept inside the outline
+    ctx.fillRect(px + 1, oy + 1, pw - 2, 1);
+
+    // Which edge of the top surface is the FAR one, for the detail that gives
+    // each piece its silhouette. This is the only place facing is visible, and
+    // it's why furniture carries one and walls don't.
+    const top = py - H;
+    const deep = base - py; // depth of the top surface in px
+    switch (cell.id) {
+      case "bed": {
+        ctx.fillStyle = skin.top; // pillow at the head
+        if (cell.facing === "s") ctx.fillRect(px + 2, top + 2, pw - 4, 4);
+        else if (cell.facing === "n") ctx.fillRect(px + 2, top + deep - 6, pw - 4, 4);
+        else if (cell.facing === "e") ctx.fillRect(px + 2, top + 2, 4, deep - 4);
+        else ctx.fillRect(px + pw - 6, top + 2, 4, deep - 4);
+        break;
+      }
+      case "table": {
+        ctx.fillStyle = skin.shade; // an inset grain line, so it isn't a slab
+        ctx.fillRect(px + 2, top + 2, pw - 4, 1);
+        ctx.fillRect(px + 2, top + deep - 3, pw - 4, 1);
+        break;
+      }
+      case "chair": {
+        ctx.fillStyle = skin.shade; // back panel, opposite the way it faces
+        if (cell.facing === "s") ctx.fillRect(px + 2, top + 2, pw - 4, 3);
+        else if (cell.facing === "n") ctx.fillRect(px + 2, top + deep - 4, pw - 4, 3);
+        else if (cell.facing === "e") ctx.fillRect(px + 1, top + 2, 3, deep - 4);
+        else ctx.fillRect(px + pw - 4, top + 2, 3, deep - 4);
+        break;
+      }
+      case "shelf": {
+        ctx.fillStyle = skin.shade; // shelves, read off the front face
+        ctx.fillRect(px + 1, base - H + 5, pw - 2, 1);
+        ctx.fillRect(px + 1, base - H + 11, pw - 2, 1);
+        ctx.fillStyle = skin.top; // and something on them
+        ctx.fillRect(px + 3, base - H + 2, 3, 3);
+        ctx.fillRect(px + 8, base - H + 8, 4, 3);
+        break;
+      }
     }
 
     ctx.globalAlpha = prev;

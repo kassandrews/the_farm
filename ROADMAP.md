@@ -23,12 +23,12 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   changes the world, daily (clock-driven) routines, friendship that reads
   through dialogue, and the audio module.
 - **Phase 1 — Materials & gathering** (see the model below).
-- **Phase 2a steps 1–3** — the raised pass (things stand up and overhang), the
-  structure layer (walls, doors, build mode), and rooms + derived roofs with the
-  cutaway. See below.
-- Menu with New town / sound toggle; PWA shell; 111 tests.
+- **Phase 2a — real structures, complete.** The raised pass (things stand up and
+  overhang), the structure layer (walls, doors, build mode), rooms + derived
+  roofs with the cutaway, and furniture. See below.
+- Menu with New town / sound toggle; PWA shell; 125 tests.
 
-**Save schema is at v5.** Every change ships a tested migration — see
+**Save schema is at v6.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -104,11 +104,11 @@ Recorded in full in DESIGN.md §Structures. The short version and *why*:
 
 ## Phase 2 — Structures, then the flagship
 
-### 2a. Real structures
+### 2a. Real structures — **done**
 
-Right now you can only lay **floors**, so "a house" isn't yet something the game
-understands as an object. The model is settled above; this is the build order,
-smallest risk first:
+You can now lay floors, raise walls, cut a doorway, watch the roof arrive when
+the shell closes, step inside and have it fade away, and furnish the room. The
+model is settled above; this was the build order, smallest risk first:
 
 1. ~~**Raised-object pass — trees and rocks only.**~~ **Done.** Ground stays a
    flat pass; everything that stands up shares one Y-sorted pass drawing upward
@@ -123,12 +123,14 @@ smallest risk first:
    derived roofs, the snap-on beat, per-room cutaway easing. The fill budget
    (MAX_ROOM) doubles as the definition of "not enclosed" — exceeding it IS the
    miss answer, which is what keeps the common case cheap.
-4. **Furniture — next.** Multi-tile with orientation. Wooden pieces only; soft
-   goods await the shop. This is where `orientation` finally belongs: a bed is
-   1x2 and faces a way, where a wall's neighbours decide how it looks.
+4. ~~**Furniture.**~~ **Done.** Bed, table, chair, shelf — multi-tile, with a
+   facing, in their own `world.furniture` layer keyed by ANCHOR (schema v6).
+   Deliberately no second "these cells are occupied" map: the anchor is the only
+   record, and "what's on this cell" searches the four cells an anchor could be
+   in. Wooden only; soft goods await the shop, and that's a rule, not a gap.
 
 Folded into v5 as planned: `finish` lives on the build cell, so per-building
-finishes need no further migration.
+finishes need no further migration. Furniture carries its own finish too.
 
 ### 2b. Commissioned housing — **the flagship**
 
@@ -185,10 +187,11 @@ you trip over them:
   store their own finish (v5), so two houses can differ. Plank floors still read
   the town-wide selection and restyle all at once; worth unifying when floors
   next get touched.
-- **Villagers walk through walls.** Collision was added to the PLAYER's step
-  (per-axis, so you slide along a wall rather than sticking); `tickVillager`
-  still moves freely. Harmless while routines only cross open town, and due for
-  a fix when residents start living in commissioned houses.
+- **Villagers walk through walls and furniture.** Collision was added to the
+  PLAYER's step (per-axis, so you slide along a wall rather than sticking);
+  `tickVillager` still moves freely. Harmless while routines only cross open
+  town, and the first thing to fix in 2b — DESIGN promises residents "path
+  through" the house you built them, which is exactly the case this breaks.
 - **Villager "witness" has no proximity model for memory** — everyone hears about
   everything (friendship *is* proximity-gated). Fine in a town this small.
 - **PWA icon is a single SVG.** Real raster icons before any app-store-ish push.

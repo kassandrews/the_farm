@@ -69,11 +69,15 @@ body {
 }
 
 /* Build tools sit opposite the act tools, so the two ways of touching the world
-   are never confused for one list. */
+   are never confused for one list. Two columns: the list grew past what a single
+   column fits on a phone once furniture arrived. */
 .build-palette {
   left: auto;
   right: 12px;
   bottom: 100px;
+  display: grid;
+  grid-template-columns: repeat(2, 52px);
+  gap: 8px;
 }
 
 /* Build mode dims the act palette and the ACT button — they do nothing while
@@ -300,4 +304,14 @@ textarea.import-box {
   resize: vertical;
   -webkit-user-select: text;
   user-select: text;
+}
+
+/* The rotate control sits just above the build palette, and only exists while a
+   furniture tool is held — walls have no facing, and offering to turn one would
+   imply they do. */
+.rotate-btn {
+  position: absolute;
+  right: 12px;
+  bottom: 352px;
+  font-size: 22px;
 }

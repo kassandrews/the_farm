@@ -13,6 +13,9 @@ import type { MemoryKind } from "./memory";
 import { dig, placePlank, isWalkable, tileAt, setTile, homesteadOrigin } from "./world";
 import { placeStructure, removeStructure } from "./structures";
 import { rooms } from "./rooms";
+import { placeFurniture, removeFurnitureAt } from "./furniture";
+import { FURNITURE, furnitureDef } from "../content/furniture";
+import type { FurnitureId, Facing } from "../content/furniture";
 import { structureDef } from "../content/structures";
 import { GRASS, DIRT, PLANK, FARMLAND, FARMLAND_WET, MUSHROOM } from "../content/tiles";
 import { emptyInventory, add, canAfford, spend, refund, shortfall } from "./inventory";
@@ -85,6 +88,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     homestead: { spot: opts.spot, originX: origin.x, originY: origin.y },
     overrides: {},
     build: {},
+    furniture: {},
     crops: {},
     villagers,
     // A few boards' worth of wood so the very first thing you try to build
@@ -160,6 +164,7 @@ export const BUILD_COSTS: Record<"plank", Cost> = {
 export function buildCost(tool: BuildTool): Cost {
   if (tool === "plank") return BUILD_COSTS.plank;
   if (tool === "erase") return {};
+  if (isFurnitureTool(tool)) return furnitureDef(tool).cost;
   return structureDef(tool).cost;
 }
 
@@ -266,8 +271,29 @@ export interface BuildResult {
 
 /** Apply a build tool to a tile. Spends materials on placement and refunds them
  *  on erase, so a wall you put up and take down again costs nothing net. */
-export function buildAt(world: WorldState, tool: BuildTool, x: number, y: number, now: number): BuildResult {
+export function isFurnitureTool(tool: BuildTool): tool is FurnitureId {
+  return tool in FURNITURE;
+}
+
+export function buildAt(
+  world: WorldState,
+  tool: BuildTool,
+  x: number,
+  y: number,
+  now: number,
+  /** Which way a multi-tile piece is turned. Ignored by walls and floors —
+   *  orientation is a furniture idea (DESIGN §Structures). */
+  facing: Facing = "s",
+): BuildResult {
   if (tool === "erase") {
+    // Furniture comes up FIRST. It sits inside rooms, so if erase preferred the
+    // structure layer you'd take the wall out from behind a shelf you were
+    // aiming at.
+    const piece = removeFurnitureAt(world, x, y);
+    if (piece) {
+      refund(world.inventory, furnitureDef(piece.id).cost);
+      return { changed: true, message: `${furnitureDef(piece.id).name} taken back.`, broke: false };
+    }
     const taken = removeStructure(world, x, y);
     if (taken) {
       refund(world.inventory, structureDef(taken.id).cost);
@@ -295,6 +321,16 @@ export function buildAt(world: WorldState, tool: BuildTool, x: number, y: number
     return { changed: true, message: "A board goes down. The house begins.", broke: false };
   }
 
+  if (isFurnitureTool(tool)) {
+    const def = furnitureDef(tool);
+    if (!placeFurniture(world, x, y, tool, facing, world.skins.selected[def.finish])) {
+      return { changed: false, message: `The ${def.name.toLowerCase()} won't fit there.`, broke: false };
+    }
+    spend(world.inventory, cost);
+    witness(world, "built_plank", undefined, now);
+    return { changed: true, message: furnitureFlavour(tool), broke: false };
+  }
+
   const finish = world.skins.selected[structureDef(tool).finish];
   const roomsBefore = rooms(world).length;
   if (!placeStructure(world, x, y, tool, finish)) {
@@ -313,6 +349,20 @@ export function buildAt(world: WorldState, tool: BuildTool, x: number, y: number
 
 function buildFlavour(tool: "wall" | "door"): string {
   return tool === "wall" ? "A wall goes up. It holds." : "A door. Now it's somewhere you go into.";
+}
+
+/** Deadpan, brief, and about the object rather than about you (§Tone). */
+function furnitureFlavour(id: FurnitureId): string {
+  switch (id) {
+    case "bed":
+      return "A bed. The correct number of beds is now one.";
+    case "table":
+      return "A table. Things can be put on it. That is what it is for.";
+    case "chair":
+      return "A chair, facing the way you left it.";
+    case "shelf":
+      return "A shelf. It waits.";
+  }
 }
 
 /** How close a villager must be to count as having done it *with* you. */

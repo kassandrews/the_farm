@@ -25,6 +25,7 @@ import type { ItemId } from "../content/items";
 import { tileAt, setTile, tileKey } from "./world";
 import { GRASS, DIRT, TREE, ROCK } from "../content/tiles";
 import { add } from "./inventory";
+import { furnitureAt } from "./furniture";
 
 /** Which node (if any) is standing on this tile right now. */
 export function nodeAt(world: WorldState, x: number, y: number): NodeId | null {
@@ -90,6 +91,7 @@ function isClaimed(world: WorldState, x: number, y: number): boolean {
   const key = tileKey(x, y);
   if (world.crops[key]) return true;
   if (world.build[key]) return true;
+  if (furnitureAt(world, x, y)) return true;
   const t = tileAt(world, x, y);
   return t !== DIRT && t !== GRASS;
 }

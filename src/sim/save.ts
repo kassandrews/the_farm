@@ -7,7 +7,7 @@
 import type { WorldState } from "./types";
 import { starterSkins, defaultSkin } from "../content/skins";
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -75,6 +75,14 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
     ...raw,
     schemaVersion: 5,
     build: typeof raw.build === "object" && raw.build ? raw.build : {},
+  }),
+  // v5 → v6: furniture, in its own layer beside the structures. Same shape of
+  // change as v4 → v5 and the same truthful backfill: a v5 town had nothing to
+  // put in a room, so an empty layer loses nothing.
+  5: (raw) => ({
+    ...raw,
+    schemaVersion: 6,
+    furniture: typeof raw.furniture === "object" && raw.furniture ? raw.furniture : {},
   }),
 };
 

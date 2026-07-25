@@ -95,6 +95,26 @@ describe("migrations", () => {
     expect(migrated.build["9,9"]).toEqual({ id: "wall", finish: "pine" });
   });
 
+  it("gives a v5 town an empty furniture layer, keeping its walls", () => {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    delete w.furniture;
+    const built = { "9,9": { id: "wall", finish: "pine" } };
+    const migrated = migrateSave({ ...w, schemaVersion: 5, build: built })!;
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated.furniture).toEqual({});
+    expect(migrated.build["9,9"]).toEqual({ id: "wall", finish: "pine" });
+  });
+
+  it("carries a whole v1 town up the ladder to the current schema", () => {
+    // The ladder is only as good as its longest climb; each new layer has to
+    // keep working for a save that predates every one of them.
+    const migrated = migrateSave(v1Save())!;
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated.build).toEqual({});
+    expect(migrated.furniture).toEqual({});
+    expect(migrated.player.name).toBe("Keeper");
+  });
+
   it("keeps villager identity and memory across the v2 → v3 drop", () => {
     const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
     const villagers = (w.villagers as Record<string, unknown>[]).map((v) => ({

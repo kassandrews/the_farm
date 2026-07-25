@@ -11,6 +11,7 @@ import type { Inventory } from "./inventory";
 import type { NodeId } from "../content/nodes";
 import type { SkinId, SkinClass } from "../content/skins";
 import type { StructureId } from "../content/structures";
+import type { FurnitureId, Facing } from "../content/furniture";
 
 /** Where the player chose to settle (DESIGN §"Town and homestead": 3–4 spots).
  *  Cosmetic-plus-origin: it shifts the homestead plot and its flavour. */
@@ -59,6 +60,19 @@ export interface BuildCell {
   finish: SkinId;
 }
 
+/** One placed piece of furniture, keyed by its ANCHOR cell in
+ *  WorldState.furniture (the north-west cell of its footprint).
+ *
+ *  Stored once, never per covered cell: see sim/furniture.ts for why a second
+ *  occupancy map is a bug waiting to happen. `facing` lives here and not on
+ *  structures because orientation is a furniture idea — a bed faces a way, a
+ *  wall's neighbours decide how it looks (DESIGN §Structures). */
+export interface FurnitureCell {
+  id: FurnitureId;
+  facing: Facing;
+  finish: SkinId;
+}
+
 export interface Villager {
   id: CharId;
   form: AdultForm;
@@ -93,6 +107,11 @@ export interface WorldState {
    *  wall needs both, floor underneath and wall on top. Sparse, so an
    *  untouched world carries an empty object. */
   build: Record<string, BuildCell>;
+
+  /** Furniture, keyed by ANCHOR cell — the things you put in a room, as opposed
+   *  to the things that make one. Separate from `build` because pieces are
+   *  multi-tile, carry a facing, and never seal a room. */
+  furniture: Record<string, FurnitureCell>;
 
   crops: Record<string, Crop>;
   villagers: Villager[];
@@ -130,4 +149,4 @@ export type Tool = "dig" | "gather" | "plant" | "water";
 /** A tool BUILD MODE applies, to a tapped tile. `erase` takes back whatever is
  *  there and refunds it — building and un-building must never quietly drain
  *  you. */
-export type BuildTool = "plank" | "wall" | "door" | "erase";
+export type BuildTool = "plank" | "wall" | "door" | "erase" | FurnitureId;

@@ -6,6 +6,8 @@
 import { el, modal } from "./dom";
 import { Renderer } from "../render/renderer";
 import type { WorldState, Tool, BuildTool, HomesteadSpot } from "../sim/types";
+import { FACINGS, FURNITURE, furnitureDef } from "../content/furniture";
+import type { Facing } from "../content/furniture";
 import {
   newWorld,
   tick,
@@ -62,8 +64,15 @@ const BUILD_TOOLS: { id: BuildTool; icon: string; label: string }[] = [
   { id: "plank", icon: "🪵", label: "Floor" },
   { id: "wall", icon: "🧱", label: "Wall" },
   { id: "door", icon: "🚪", label: "Door" },
+  { id: "bed", icon: "🛏️", label: "Bed" },
+  { id: "table", icon: "🪑", label: "Table" },
+  { id: "chair", icon: "💺", label: "Chair" },
+  { id: "shelf", icon: "🗄️", label: "Shelf" },
   { id: "erase", icon: "↩️", label: "Take back down" },
 ];
+
+/** Arrows for the rotate button, so the facing is legible without a legend. */
+const FACING_ARROW: Record<Facing, string> = { s: "↓", w: "←", n: "↑", e: "→" };
 
 const SPOTS: { id: HomesteadSpot; name: string; blurb: string }[] = [
   { id: "riverside", name: "Riverside", blurb: "Water to the west. The Blob approves of the drama." },
@@ -83,6 +92,9 @@ export class App {
   /** Tiles already painted during the current drag, so dragging back and forth
    *  over one tile doesn't re-charge or re-message for it. */
   private painted = new Set<string>();
+  /** Which way the next multi-tile piece goes down. Sticky between placements —
+   *  you usually put two chairs down the same way round. */
+  private facing: Facing = "s";
   private keys = new Set<string>();
   private acc = 0;
   private last = performance.now();
@@ -104,6 +116,7 @@ export class App {
       root,
       (t) => this.selectTool(t),
       (t) => this.selectBuildTool(t),
+      () => this.rotate(),
       () => this.doAction(),
       () => this.openMenu(),
       () => this.openSatchel(),
@@ -466,6 +479,8 @@ export class App {
         e.preventDefault();
       } else if (k >= "1" && k <= "4") {
         this.selectTool(TOOLS[Number(k) - 1].id);
+      } else if (k === "r") {
+        this.rotate();
       } else if (k === "b") {
         // Desktop shortcut into build mode; the palette is the touch path.
         this.selectBuildTool(this.buildTool ?? "wall");
@@ -518,6 +533,13 @@ export class App {
     this.syncToolUi();
   }
 
+  /** Turn the next piece a quarter turn. Only meaningful for furniture, so the
+   *  control only appears when a furniture tool is held. */
+  private rotate(): void {
+    this.facing = FACINGS[(FACINGS.indexOf(this.facing) + 1) % FACINGS.length];
+    this.syncToolUi();
+  }
+
   private syncToolUi(): void {
     const building = this.buildTool !== null;
     for (const [id, btn] of this.hud.toolButtons) {
@@ -528,6 +550,15 @@ export class App {
     }
     this.renderer.setBuildView(building);
     this.hud.root.classList.toggle("building", building);
+
+    // Rotation is a furniture idea; showing it for walls would imply walls have
+    // a facing, which is exactly the confusion the design avoids.
+    const rotatable = this.buildTool !== null && this.buildTool in FURNITURE;
+    this.hud.rotate.style.display = rotatable ? "" : "none";
+    this.hud.rotate.textContent = FACING_ARROW[this.facing];
+    this.hud.rotate.title = rotatable
+      ? `${furnitureDef(this.buildTool as never).name} facing ${this.facing.toUpperCase()}`
+      : "Rotate";
   }
 
   /** Apply the held build tool to a tapped tile. Silent on a tile already
@@ -541,7 +572,7 @@ export class App {
     if (this.painted.has(key)) return;
     this.painted.add(key);
 
-    const res = buildAt(this.world, this.buildTool, x, y, Date.now());
+    const res = buildAt(this.world, this.buildTool, x, y, Date.now(), this.facing);
     // Only speak up when something happened or the player is actually short of
     // materials. Dragging across ground you can't build on shouldn't natter.
     if (res.changed) {
@@ -663,12 +694,14 @@ interface HudRefs {
   flash: HTMLElement;
   toolButtons: [Tool, HTMLElement][];
   buildButtons: [BuildTool, HTMLElement][];
+  rotate: HTMLElement;
 }
 
 function buildHud(
   root: HTMLElement,
   onTool: (t: Tool) => void,
   onBuildTool: (t: BuildTool) => void,
+  onRotate: () => void,
   onAction: () => void,
   onMenu: () => void,
   onSatchel: () => void,
@@ -705,12 +738,16 @@ function buildHud(
     buildPalette.append(btn);
   }
 
+  const rotate = el("button", { class: "tool rotate-btn", title: "Rotate" }, ["↓"]);
+  rotate.addEventListener("click", onRotate);
+  rotate.style.display = "none";
+
   const action = el("button", { class: "action-btn" }, ["ACT"]);
   action.addEventListener("click", onAction);
 
-  const hud = el("div", { class: "hud" }, [menu, satchel, clock, flash, palette, buildPalette, action]);
+  const hud = el("div", { class: "hud" }, [menu, satchel, clock, flash, palette, buildPalette, rotate, action]);
   root.append(hud);
-  return { root: hud, clock, flash, toolButtons, buildButtons };
+  return { root: hud, clock, flash, toolButtons, buildButtons, rotate };
 }
 
 // --- Panel helpers ------------------------------------------------------------

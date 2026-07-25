@@ -23,6 +23,7 @@ import {
 } from "../content/tiles";
 import { NODES } from "../content/nodes";
 import { structureDef } from "../content/structures";
+import { furnitureDef, covers, MAX_SPAN } from "../content/furniture";
 import type { WorldState, HomesteadSpot } from "./types";
 import { hash2 } from "./rng";
 
@@ -183,7 +184,26 @@ export function setTile(world: WorldState, x: number, y: number, id: TileId): vo
 export function isWalkable(world: WorldState, x: number, y: number): boolean {
   if (tileDef(tileAt(world, x, y)).solid) return false;
   const built = world.build[tileKey(x, y)];
-  return !(built && structureDef(built.id).solid);
+  if (built && structureDef(built.id).solid) return false;
+  return !furnitureBlocksHere(world, x, y);
+}
+
+/** Whether solid furniture covers this cell.
+ *
+ *  The anchor search is repeated here rather than imported from
+ *  sim/furniture.ts, which imports THIS module — the shared geometry lives in
+ *  the content table (`covers`), so the two callers can't disagree about what a
+ *  footprint is even though they each walk it themselves. */
+function furnitureBlocksHere(world: WorldState, x: number, y: number): boolean {
+  for (let ay = y - MAX_SPAN + 1; ay <= y; ay++) {
+    for (let ax = x - MAX_SPAN + 1; ax <= x; ax++) {
+      const cell = world.furniture[tileKey(ax, ay)];
+      if (!cell) continue;
+      const def = furnitureDef(cell.id);
+      if (def.solid && covers(ax, ay, def, cell.facing, x, y)) return true;
+    }
+  }
+  return false;
 }
 
 /** A cheap per-tile decoration hash (0..1) the renderer uses for grass tufts
