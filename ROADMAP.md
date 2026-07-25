@@ -90,6 +90,51 @@ Recorded in full in DESIGN.md §Structures. The short version and *why*:
   structurally kills the "gathering hijacks the build tool" class of bug that
   bit us once already.
 
+### Housing — the model
+
+- **The verb is "give them a home", not "build them a house."** A home is any
+  room that qualifies (enclosed, a door, a bed that's theirs). Building one and
+  assigning an existing one are the same act with different amounts of work in
+  front of them. This is what lets 2b ship housing and Phase 3 ship commissions
+  without the second one rewriting the first.
+- **The bed is the claim.** A villager stores the anchor key of *their* bed;
+  `roomAt(bed)` is their house. No separate "this room belongs to X" record to
+  drift out of sync — same reasoning as furniture keeping only its anchor and
+  no occupancy map. Delete the bed and they go back to a tent and have something
+  to say about it: a legible consequence, not a broken state.
+- **Authored town buildings are seeded into `world.build`, not generated.** The
+  plaza is generated (`baseTile` is a total function of x,y) and that's right for
+  terrain, but a *moveable* generated building would need a "nothing here,
+  deliberately" tombstone in the build layer, which the room flood-fill would
+  then have to understand. Seeding makes a town house an ordinary build cell from
+  birth: demolishable, re-finishable, extendable, for free. A house is a house
+  whether the town authored it or you did.
+- **The town's own buildings are demolishable like everything else.** No
+  protected flag — one fewer concept, and the Office Creature reacting to you
+  dismantling the town hall around him is squarely on-tone. Because the authored
+  layouts live in a content table, "restore to authored layout" stays cheap to
+  offer later as an Office Creature service: you un-demolish a municipal
+  structure by filing a form. Phase 3 flavour, not built yet.
+
+### Build actions are undoable — one stroke, in memory
+
+Erase already refunds materials, so what a demolition actually costs is never
+wood — it's the **arrangement**. Twenty minutes of walls, gone to one drag.
+
+- **The unit is the stroke, not the cell.** Build mode paints on drag; a single
+  gesture can clear thirty cells, and undoing those one at a time is no undo.
+- **It covers placement too.** Dragging walls across the wrong row is the same
+  mistake in the other direction, and it's the same mechanism.
+- **Undo is a rewind, not a transaction.** It restores the cells *and* reverses
+  the stroke's own material delta, clamped at zero, so it can never fail for want
+  of wood. "Undo is unavailable exactly when you need it" is the worst possible
+  version of this feature, and rationing materials is against the pillar anyway.
+- **One level, in memory, never in the save.** It survives until the next stroke
+  replaces it and dies on reload — undoing something from three days ago is worse
+  than having no undo. Keeps it out of the schema entirely.
+- **No expiry timer.** A button that vanishes as you reach for it is its own
+  small betrayal.
+
 ### The reticle is the promise
 
 `actionTarget(world, tool)` in `src/sim/game.ts` is the ONE place that decides
@@ -148,22 +193,79 @@ model is settled above; this was the build order, smallest risk first:
 Folded into v5 as planned: `finish` lives on the build cell, so per-building
 finishes need no further migration. Furniture carries its own finish too.
 
-### 2b. Commissioned housing — **the flagship**
+### 2b. Housing — rooms become homes
 
-DESIGN.md's stated first flagship, and the deepest long-session sink in the
-game. An arriving import pitches a tent; you build their house, tile by tile,
-from materials you gathered, to *their* taste (the Menace has standards; the
-Blob wants drama; the Ghost wants it dark — preferences derive from form +
-imported Meadow history). Then they genuinely live in it: path through it,
-comment on it, tweak a shelf.
+The core verb here is **not "build a house"** — it's **"give them a home."** A
+home is any room that qualifies; building one is just the most interesting way
+to produce a qualifying room. Assigning a villager to a house that already
+exists is the same act.
 
-Requires: 2a, the friendship system (done), the memory log (done), and finish
-unlocks actually being awardable (see Known gaps).
+That reframe is what splits the flagship along the phase line. **2b builds the
+housing machinery** — rooms become homes, villagers path through them, homes are
+assignable. **Phase 3 adds commissions on top** — arrivals, tents, tastes, the
+Office Creature's paperwork. Content and beats, no new machinery.
+
+It's worth it because 2b is then playable on its own: the town stops being a
+stone rectangle with two people standing on bare coordinates, and the Phase 3
+commission gets to *call* an acceptance test that already exists and is already
+exercised, rather than inventing one under deadline.
+
+Build order, smallest risk first:
+
+1. **Villager pathing and collision.** A* over structure + furniture solidity,
+   doors walkable, with a bounded node budget — the same trick as MAX_ROOM,
+   where exceeding the budget IS the answer. Closes the "villagers walk through
+   walls" gap, and no schema change.
+
+   The property to preserve is the one `villagers.ts` documents in its own
+   header: position is *derived* from the clock, never accumulated, so two days
+   away needs no catch-up. A path is stateful and would break that. The fix is
+   that the **target** stays clock-derived and only the **route** is stateful,
+   recomputed when the target or the build revision changes. When no path exists
+   within budget (walled in, door moved), snap to the stop rather than stalling
+   against a wall — off-screen it's invisible, and it keeps "come back and
+   everyone is at their correct post" true.
+
+2. **Authored town buildings + the v7 migration.** Margfrom's house, and a town
+   hall shell around the Office Creature, who has been standing at bare
+   coordinate `(0,-6)` since the slice. A table of stamped rooms in
+   `src/content/town.ts`, seeded at world creation.
+
+3. **Dynamic home resolution.** `cast.ts` hardcodes `home: {x,y}` into schedule
+   stops; a home the player can move, demolish, or build fresh cannot be a
+   literal coordinate. Stops gain a symbolic anchor (`at: "home"`) resolved
+   against world state.
+
+4. **Assignment.** Point a villager at a qualifying room — enclosed, has a door,
+   has a free bed. This is the Sims-like "choose an existing house OR build one"
+   choice, and it is *also* exactly the acceptance test a Phase 3 commission
+   asks. Written once, used twice.
+
+5. **They comment on it.** Dialogue against the actual room: its size, its
+   finish, what's in it. The memory log already carries `built_plank`; this adds
+   the house itself as something referenceable.
+
+Requires: 2a, the friendship system (done), the memory log (done).
 
 ---
 
 ## Phase 3 — The town
 
+- **Commissioned housing — the flagship beat.** Now content on top of 2b's
+  machinery, not a system of its own. An arriving import pitches a tent; the
+  Office Creature files the paperwork (town hall, deadpan, reusing the
+  land-claim beat's shape); you satisfy it by giving them a home that meets the
+  shell requirements, built or existing.
+
+  **Taste is delight, never a gate.** The hard requirements are structural only
+  — enclosed, a door, a bed, a minimum size. Finish, extra furniture, and size
+  beyond the minimum are noticed, commented on, and rewarded, but never block
+  move-in. A full checklist would turn a gift into a chore with a pass/fail on
+  it, which is the wrong feeling and against the no-pressure pillar.
+
+  Preferences derive from form + imported Meadow history (the Menace has
+  standards; the Blob wants drama; the Ghost wants it dark). Completing a
+  commission is the natural award path for finishes — see Known gaps.
 - The other six fixed cast + their institutions: museum (confidently incorrect
   placards), shop, seed stall, errands board, plaza stage, junk economy.
 - Resolve the **money/barter** question — it blocks the shop.
@@ -193,8 +295,9 @@ you trip over them:
 
 - **Non-starter finishes are currently unobtainable.** `walnut`, `whitewash`,
   and `slate` are defined in `src/content/skins.ts` with unlock hints, but
-  nothing ever adds to `world.skins.unlocked`. Needs an award path (friendship
-  milestones, discovery, underground) — most naturally alongside Phase 2b.
+  nothing ever adds to `world.skins.unlocked`. The award path is completing a
+  **commission**, which is Phase 3 — deliberately left open rather than bolted
+  onto 2b's assignment step, where there'd be no reason for it.
 - **Ore is defined but unobtainable** until the underground layer exists. This
   is intentional, not an oversight.
 - **Only one resident and one fixed-cast member** exist. `src/content/cast.ts`
@@ -206,8 +309,8 @@ you trip over them:
 - **Villagers walk through walls and furniture.** Collision was added to the
   PLAYER's step (per-axis, so you slide along a wall rather than sticking);
   `tickVillager` still moves freely. Harmless while routines only cross open
-  town, and the first thing to fix in 2b — DESIGN promises residents "path
-  through" the house you built them, which is exactly the case this breaks.
+  town, and it is **2b step 1** — DESIGN promises residents "path through" the
+  house you built them, which is exactly the case this breaks.
 - **Villager "witness" has no proximity model for memory** — everyone hears about
   everything (friendship *is* proximity-gated). Fine in a town this small.
 - **PWA icon is a single SVG.** Real raster icons before any app-store-ish push.

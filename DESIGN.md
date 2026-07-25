@@ -70,6 +70,20 @@ Beyond the character import, four gaps all three inspirations share:
    genuinely live in it: path through it, comment on it, tweak a shelf.
    Repeatable, fuses all three inspirations at once, and is the deepest
    long-session sink in the game. First flagship after the vertical slice.
+
+   The underlying verb is **give them a home**, not *build them a house*.
+   A home is any room that qualifies — enclosed, a door, a bed that's
+   theirs — so you may equally hand someone an existing town building, or
+   move them somewhere better later. Building is the most interesting way
+   to produce a qualifying room, never the only one. The town therefore
+   ships with real houses in it, and they are ordinary built cells: you
+   can demolish, extend, refinish, or rearrange any of them.
+
+   **Taste is delight, never a gate.** The only hard requirements are
+   structural. Finish, furnishing, and generosity of space get noticed and
+   remembered and rewarded, but a villager will move into a plain box you
+   made them. A checklist with a pass/fail on it would turn a gift into a
+   chore, which is the wrong feeling for the whole game.
 2. **NPCs that remember.** AC villagers repeat themselves within a week;
    SDV heart events are finite scripts; Minecraft villagers say "hrm."
    Farm residents keep a memory log — imported raising history from The
@@ -243,6 +257,21 @@ honest: a house has no TARDIS interior, the footprint you build *is* the
 room you get, which is what makes building it tile by tile mean anything.
 The gain is that a resident genuinely pathing through their own house is a
 thing you can stand in the doorway and watch.
+
+**Any build stroke can be undone, immediately.** Erase already refunds
+materials, so a demolition never costs you wood — it costs you the
+*arrangement*, which is the part you actually spent time on. One level of
+undo, scoped to a whole drag stroke rather than a cell (build mode paints
+on drag; undoing thirty cleared cells one at a time is no undo at all),
+covering placement and erasure alike. It restores the cells and reverses
+the stroke's own material cost, so it can never fail for want of wood —
+an undo that's unavailable exactly when you need it is worse than none.
+
+It lives in memory and never in the save: it survives until your next
+stroke and dies on reload. Undo is for the drag that went wrong five
+seconds ago, not for regretting a house three days later. Building stays
+consequence-free in the direction that matters — you can always try
+something, because you can always take it back.
 
 **Build mode flattens the view.** Holding a structure tool drops raised
 faces to translucent outlines, hides roofs, and shows the ground grid —
