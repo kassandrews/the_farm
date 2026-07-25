@@ -36,15 +36,18 @@ DESIGN.md, if it's a rule about the game rather than about build order).
 - **Phase 2b step 5 — they comment on it, complete.** `sim/home.ts` reads a
   villager's home through `qualify()` and hands the banks a small vocabulary.
   **Phase 2 is done.**
-- Menu with New town / sound toggle; PWA shell; 221 tests.
-
 - **Phase 3a — the two door gaps, complete.** A door in a side wall now reads
   (roof notch + a doorstep on the ground), and build mode says so when a doorway
   has nothing to stand on.
+- **Phase 3b — commissioned housing, complete.** The flagship beat is playable:
+  somebody arrives, pitches a tent, and moves into the house you give them. It
+  is also the award path for finishes — `whitewash` is now obtainable.
+- Menu with New town / sound toggle; PWA shell; 248 tests.
 
-**Next: Phase 3b** — the commission itself, on top of 2b's machinery. See below.
+**Next:** the rest of Phase 3 — the other six fixed cast and their institutions,
+and the money/barter question, which blocks the shop. See below.
 
-**Save schema is at v8.** Every change ships a tested migration — see
+**Save schema is at v9.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -492,21 +495,60 @@ Both were flagged in Known gaps as wanting doing "before commissions, where a
 house you built is judged", and both are now closed — see there for what each
 one turned out to be.
 
-- **Commissioned housing — the flagship beat.** Now content on top of 2b's
-  machinery, not a system of its own. An arriving import pitches a tent; the
-  Office Creature files the paperwork (town hall, deadpan, reusing the
-  land-claim beat's shape); you satisfy it by giving them a home that meets the
-  shell requirements, built or existing.
+### 3b. Commissioned housing — **done**
 
-  **Taste is delight, never a gate.** The hard requirements are structural only
-  — enclosed, a door, a bed, a minimum size. Finish, extra furniture, and size
-  beyond the minimum are noticed, commented on, and rewarded, but never block
-  move-in. A full checklist would turn a gift into a chore with a pass/fail on
-  it, which is the wrong feeling and against the no-pressure pillar.
+Somebody arrives, pitches a tent, and you give them a home. `sim/commission.ts`
+plus `content/arrivals.ts`; schema v9, additive. It is content on top of 2b's
+machinery exactly as planned — **there is no second opinion here about what a
+house is.** `commissionState()` calls `qualify()` and adds one thing at its own
+call site, the minimum size, which is the split `assign.ts` was written for.
 
-  Preferences derive from form + imported Meadow history (the Menace has
-  standards; the Blob wants drama; the Ghost wants it dark). Completing a
-  commission is the natural award path for finishes — see Known gaps.
+**Taste is delight, never a gate.** Requirements are structural only — enclosed,
+a door, a bed, a minimum size — and the minimum is **the same for everyone**.
+Giving the Menace a bigger one was tempting and wrong: a taste expressed as a
+hard gate is precisely what DESIGN rules out. Her standards live in what she
+says. That is why this module has no scoring function in it at all.
+
+What the build settled:
+
+- **`CharId` had to stop being a closed union.** Arrivals happen at run time.
+  Authored ids stay a union (the dialogue banks and `authoredBed` are keyed on
+  it, and a missing row should be a type error); newcomers are `newcomer:N`.
+  `charDef()` is now the ONE place that turns a villager into a routine — it
+  replaced four `CAST[v.id]` lookups, each of which would have returned
+  undefined for a newcomer, and an undefined def means "don't move". They would
+  have stood on their arrival tile forever without a single error.
+- **A newcomer's def is derived, not stored.** They already carry a name, form
+  and friendship; the only missing piece was a shape of day. So an arrival costs
+  no schema beyond the form itself.
+- **Two ways of having no bed, kept apart.** Someone whose bed you demolished
+  stands in the plaza at 2am; someone waiting on a commission camps by their
+  tent. The second is not homelessness, it is camping, and the square would read
+  as the game losing track of a person it knows exactly where to find.
+- **The tent is not a build cell and not furniture.** It lives in the commission
+  record, has no solidity, and the room flood-fill never has to have an opinion
+  about it.
+- **One commission open at a time.** Two people in tents asking simultaneously
+  turns a gift into a queue, and the queue is the part that would feel like work.
+- **`housing.ts` reads `world.commissions` directly** rather than importing
+  `commission.ts`, which imports it back through `assign.ts`. The state in
+  `types.ts` is the shared dependency — the same trick `isWalkable` uses to stay
+  out of `structures.ts`.
+- **It closes where you finish the house, not back at the desk.** The round trip
+  is the on-tone joke and also a chore; when those disagree the pillar wins.
+
+And one bug that only a browser could find: **`.clock` had no
+`pointer-events: none`**, so the flash toast sat over the middle of the map and
+ate taps — during bed picking, the one mode whose whole instruction is "tap the
+map", while displaying the words "Pick a bed for Bissenette". `.hint` beside it
+has carried the fix and a comment explaining it since it was written.
+
+### The rest of Phase 3
+
+- Preferences derived from form + history (the Blob wants drama; the Ghost wants
+  it dark) are only half in: each arrival has their own lines, but nothing reads
+  the finished house's finish or furniture back to them. `sim/home.ts` already
+  produces that vocabulary, so it is wiring and writing, not machinery.
 - The other six fixed cast + their institutions: museum (confidently incorrect
   placards), shop, seed stall, errands board, plaza stage, junk economy.
 - Resolve the **money/barter** question — it blocks the shop.
@@ -534,19 +576,24 @@ one turned out to be.
 Small things that are half-built or deliberately stubbed. Worth knowing before
 you trip over them:
 
-- **Non-starter finishes are currently unobtainable.** `walnut`, `whitewash`,
-  and `slate` are defined in `src/content/skins.ts` with unlock hints, but
-  nothing ever adds to `world.skins.unlocked`. The award path is completing a
-  **commission**, which is Phase 3 — deliberately left open rather than bolted
-  onto 2b's assignment step, where there'd be no reason for it.
+- **Two of the three non-starter finishes are still unobtainable.**
+  `whitewash` now arrives with Bissenette's commission (Phase 3b), which is what
+  its unlock hint always meant. `walnut` belongs to the Quiet Ghost and `slate`
+  is found by digging deep — both Phase 4, and both deliberately NOT bolted onto
+  a commission. A Ghost who simply moves in one afternoon would spoil the one
+  thing about her worth keeping (CLAUDE.md §Tone), so she stays out of the
+  arrivals table until secrets are built.
 - **Only the Scholar has a full home bank.** `RESIDENT_HOME` covers every form,
   but the other five get one or two notes each — a form with no line for its
   richest note falls through to one it can speak to, so nobody goes silent, they
   just repeat sooner. Filling these in is writing, not engineering.
 - **Ore is defined but unobtainable** until the underground layer exists. This
   is intentional, not an oversight.
-- **Only one resident and one fixed-cast member** exist. `src/content/cast.ts`
-  has the intended full mapping recorded as comments.
+- **Only one fixed-cast member** exists. `src/content/cast.ts` has the intended
+  full mapping recorded as comments. Residents are no longer limited to one:
+  `content/arrivals.ts` holds four, and the town takes them in one at a time.
+  Note the queue **runs out** rather than looping — the fourth Rummage would say
+  more about the table than about the town.
 - **Finishes are town-wide for FLOORS, per-cell for structures.** Walls and doors
   store their own finish (v5), so two houses can differ. Plank floors still read
   the town-wide selection and restyle all at once; worth unifying when floors
