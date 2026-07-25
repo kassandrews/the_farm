@@ -905,16 +905,40 @@ export class Renderer {
 
   // --- Action-target affordance ----------------------------------------------
   /** The reticle. It draws `actionTarget` and nothing else: the sim decides what
-   *  ACT will touch, so the square you see is always the square the button acts
+   *  ACT will touch, so the tile you see is always the tile the button acts
    *  on — including its colour, which says which of the three things will
-   *  happen. Never re-derive the target here. */
+   *  happen. Never re-derive the target here.
+   *
+   *  CORNER TICKS, not a closed square. The underfoot tools (dig, plant, water)
+   *  target the tile you are standing on, and a sprite is smaller than a tile —
+   *  so a full stroked rect doesn't overlap the character, it ENCLOSES it, and
+   *  the player reads as being in a cage rather than standing somewhere. Opening
+   *  the middle of each side lets the sprite out while the four corners still
+   *  fix the tile exactly. Drawing it under the raised pass instead does nothing
+   *  for this (the sprite never crossed the line) and hides the gather reticle
+   *  behind the tree it's pointing at — measured, both times. */
   private drawTargetTile(world: WorldState): void {
     const ctx = this.ctx;
     const target = actionTarget(world, this.tool);
     const px = Math.round(this.sceneX(target.x) - TILE / 2);
     const py = Math.round(this.sceneY(target.y) - TILE / 2);
+    const x0 = px + 0.5;
+    const y0 = py + 0.5;
+    const s = TILE - 1;
+    const arm = Math.max(3, Math.round(TILE * 0.3)); // how far each corner runs
     ctx.strokeStyle = TARGET_COLOR[target.kind];
     ctx.lineWidth = 1;
-    ctx.strokeRect(px + 0.5, py + 0.5, TILE - 1, TILE - 1);
+    ctx.beginPath();
+    for (const [cx, cy, sx, sy] of [
+      [x0, y0, 1, 1],
+      [x0 + s, y0, -1, 1],
+      [x0, y0 + s, 1, -1],
+      [x0 + s, y0 + s, -1, -1],
+    ] as [number, number, number, number][]) {
+      ctx.moveTo(cx + sx * arm, cy);
+      ctx.lineTo(cx, cy);
+      ctx.lineTo(cx, cy + sy * arm);
+    }
+    ctx.stroke();
   }
 }
