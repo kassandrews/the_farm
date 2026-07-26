@@ -105,6 +105,36 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
   // Other forms fall back to idle if they have no memory line for an event.
 };
 
+// A Scholar resident's affinity perk (DESIGN §Affinity perks): their own reading
+// of a recent exhibit, disagreeing with the curator's. `t` is the exhibit's
+// title; `r` is the rival card — one of that row's readings Corrigal has not
+// mounted, chosen in sim/museum.ts and fixed per scholar.
+//
+// SHE QUOTES IT, always. Every line here puts the rival card in quotation marks
+// and hands it over as a card, because the placard prose is written in museum
+// voice ("Timber. Cut from the common tree…") and speaking it flat would put
+// Corrigal's register in someone else's mouth — the per-form voice rule going
+// quietly wrong. A scholar reciting her own competing placard is card-voice by
+// construction, and the framing is the funnier half anyway: the disagreement is
+// not that she thinks something different, it is that she has WRITTEN IT UP.
+//
+// Nobody wins. Neither reading is correct, no line hints which, and she is never
+// vindicated — two confidently incorrect authorities is the whole joke, and a
+// version where the resident is secretly right makes the museum a puzzle with
+// an answer key standing next to it.
+// Every line hands the quote over as a DOCUMENT — a card, a draft, a submitted
+// revision — never as a plain assertion. Placards carry her revision markers
+// ("Mushroom. ... Corrected."), so a scholar who says one flat sounds like she
+// is reading aloud from someone else's page mid-sentence. Framed as her own
+// paperwork, the marker becomes part of the thing she is holding up.
+export const SCHOLAR_DISSENT: ((t: string, r: string) => string)[] = [
+  (t, r) => `I have read her card on the ${t}. I have written my own. It reads: "${r}"`,
+  (t, r) => `The ${t} is misattributed. My card would read: "${r}" ... She has been told.`,
+  (t, r) => `. ... The ${t}. Her placard is a guess in a nice font. Mine reads: "${r}"`,
+  (t, r) => `Ask me about the ${t}. I submitted a revision — "${r}" — and heard nothing back.`,
+  (t, r) => `Between us: my draft card for the ${t} reads "${r}" I am not permitted near the cases with a pen.`,
+];
+
 // --- Home --------------------------------------------------------------------
 // What a villager says about the place they live (ROADMAP 2b step 5). Keyed by
 // the note kinds sim/home.ts derives from the actual room — its size, its

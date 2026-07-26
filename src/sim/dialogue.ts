@@ -19,9 +19,11 @@ import {
   OFFICE_IDLE,
   RESIDENT_MEMORY,
   RESIDENT_HOME,
+  SCHOLAR_DISSENT,
   residentIdle,
   warmLines,
 } from "../content/dialogue";
+import { rivalReading } from "./museum";
 
 export interface Speech {
   who: string;
@@ -43,6 +45,13 @@ const HOME_CHANCE = 0.35;
  *  PLAYER caused and the game promises they're legible: a villager who mentions
  *  their missing bed one time in ten is a villager you conclude is fine. */
 const URGENT_HOME_CHANCE = 0.85;
+
+/** Odds a scholar resident brings up their standing quarrel with the curator,
+ *  when the museum holds something to quarrel about. Between the home odds and
+ *  the memory odds: livelier than small talk about a shelf, because it is the
+ *  perk and the player should meet it, but below a memory so she doesn't become
+ *  a single-issue scholar the moment you donate anything. */
+const DISSENT_CHANCE = 0.5;
 
 /** Which memories a form is inclined to bring up, richest first. The selector
  *  walks this list and uses the first kind the villager actually remembers. */
@@ -73,6 +82,13 @@ export function speak(world: WorldState, v: Villager, rng: Rng): Speech {
   if (home && rng.next() < home.chance) {
     v.lastLine = home.text;
     return { who: v.name, text: home.text };
+  }
+
+  // Then the museum quarrel, if this is a scholar and there is anything in it.
+  const dissent = tryDissentLine(world, v, rng);
+  if (dissent && rng.next() < DISSENT_CHANCE) {
+    v.lastLine = dissent;
+    return { who: v.name, text: dissent };
   }
 
   const memoryLine = tryMemoryLine(v, rng);
@@ -139,6 +155,39 @@ export function homeLineFor(form: AdultForm, note: HomeNote, rng: Rng): string |
   const templates = homeBank(form)?.[note.kind];
   if (!templates || templates.length === 0) return null;
   return rng.pick(templates)(note.value);
+}
+
+/** A Scholar resident's own reading of a recent exhibit, which disagrees with
+ *  the curator's (DESIGN §Affinity perks). Null for every other form, for the
+ *  curator herself, and for a museum with nothing in it.
+ *
+ *  Keyed by FORM because it is a perk — personality leaking out, not a stat and
+ *  not a duty. It asks nothing of her, nothing in the game needs a scholar to
+ *  exist, and a town without one simply never hears it. That is the line between
+ *  a perk and a job (Design invariant: form is identity, never a job).
+ *
+ *  The curator is excluded by ID, never by form. Finding her by form is the bug
+ *  the away event already shipped once: `ensureFixedCast` appends institutions
+ *  after the residents, so "the scholar" was Corrigal in a new town and Margfrom
+ *  in an older one, and the same beat landed on different people depending on
+ *  how old your save was. Institutions are found by id. Her conversation is the
+ *  panel, and a curator who disagrees with her own card in the doorway would
+ *  undercut every placard in the building.
+ *
+ *  It reads the live record rather than waiting on an `exhibit` memory, which is
+ *  a deliberate departure from how the other lines here work. The museum is a
+ *  public room she can walk into; a scholar with no opinion about a wing you
+ *  filled this afternoon, because no away roll has fired yet, would be a worse
+ *  falsehood than any the log protects against. RESIDENT_MEMORY.scholar.exhibit
+ *  stays where it is, for a scholar who actually witnesses a remounting.
+ *
+ *  Her POSITION is fixed (see `rivalReading`); only the phrasing rolls, so she
+ *  restates the same quarrel in different words rather than inventing new ones. */
+function tryDissentLine(world: WorldState, v: Villager, rng: Rng): string | null {
+  if (v.form !== "scholar" || v.id === "museum") return null;
+  const reading = rivalReading(world, v.id);
+  if (!reading) return null;
+  return rng.pick(SCHOLAR_DISSENT)(reading.def.title, reading.rival);
 }
 
 /** Find a memory-referencing line the villager could say right now, or null. */

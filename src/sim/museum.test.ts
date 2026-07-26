@@ -17,6 +17,7 @@ import {
   isDonated,
   nextAntiquity,
   remountExhibit,
+  rivalReading,
   wingsWithDonations,
 } from "./museum";
 import { add, count } from "./inventory";
@@ -241,6 +242,78 @@ describe("the museum — the record that isn't a score", () => {
     // Clamped, not wrapped — she does not go back to her first draft.
     expect(placardText(def, 99)).toBe(def.placards[def.placards.length - 1]);
     expect(collection(w)[0].placard).toBe(def.placards[def.placards.length - 1]);
+  });
+
+  it("offers a rival reading that is never the card on the case", () => {
+    // The Scholar resident's perk (ROADMAP 3f step 8). The disagreement has to
+    // BE a disagreement: quoting the mounted card back would be a scholar
+    // loudly agreeing.
+    const w = freshWorld();
+    add(w.inventory, NATURE.cost.item, NATURE.cost.count);
+    donate(w, NATURE);
+
+    for (let i = 0; i < NATURE.placards.length; i++) {
+      w.museum.donated[0].placard = i;
+      const reading = rivalReading(w, "resident1")!;
+      expect(reading.def.id).toBe(NATURE.id);
+      expect(reading.mounted).toBe(placardText(NATURE, i));
+      expect(reading.rival).not.toBe(reading.mounted);
+      expect(NATURE.placards).toContain(reading.rival);
+    }
+  });
+
+  it("has nothing to say about an empty museum, and reads it without touching it", () => {
+    const w = freshWorld();
+    expect(rivalReading(w, "resident1")).toBe(null);
+
+    add(w.inventory, NATURE.cost.item, NATURE.cost.count);
+    donate(w, NATURE);
+    const before = JSON.stringify(w.museum);
+    for (let i = 0; i < 20; i++) rivalReading(w, "resident1");
+    // Unlike remountExhibit, the other function here that names a placard, this
+    // one may not move the record. A scholar's opinion is not a curation.
+    expect(JSON.stringify(w.museum)).toBe(before);
+  });
+
+  it("holds the same position when asked twice, and different scholars differ", () => {
+    // A scholar who draws a fresh theory each time you talk to her is noise
+    // rather than an authority, so the pick is derived from ids and not rolled.
+    const w = freshWorld();
+    for (const def of wingExhibits("nature")) {
+      add(w.inventory, def.cost.item, def.cost.count);
+      donate(w, def);
+    }
+    const first = rivalReading(w, "resident1")!;
+    for (let i = 0; i < 10; i++) {
+      const again = rivalReading(w, "resident1")!;
+      expect(again.def.id).toBe(first.def.id);
+      expect(again.rival).toBe(first.rival);
+    }
+    // Nothing is stored, so the only thing that can shift her is the room.
+    expect(Object.keys(w.museum)).toEqual(["donated"]);
+
+    const others = ["resident2", "resident3", "resident4"].map((id) => rivalReading(w, id)!);
+    expect(others.some((r) => r.def.id !== first.def.id || r.rival !== first.rival)).toBe(true);
+  });
+
+  it("talks about what is recent, not about the whole collection", () => {
+    // "A recent exhibit" (DESIGN) — she remarks on what is new in the room. If
+    // this reached the whole record it would drift towards being an audit, and
+    // an audit of a collection is a walk through a checklist.
+    const w = freshWorld();
+    const nature = wingExhibits("nature");
+    for (const def of nature) {
+      add(w.inventory, def.cost.item, def.cost.count);
+      donate(w, def);
+    }
+    const recent = nature.slice(-3).map((d) => d.id);
+    const oldest = nature.slice(0, -3).map((d) => d.id);
+    expect(oldest.length).toBeGreaterThan(0); // otherwise this test proves nothing
+    for (const id of ["resident1", "resident2", "resident3", "resident4", "office"]) {
+      const reading = rivalReading(w, id)!;
+      expect(recent).toContain(reading.def.id);
+      expect(oldest).not.toContain(reading.def.id);
+    }
   });
 
   it("ships the building AND the curator, or it repeats the shop's near-miss", () => {

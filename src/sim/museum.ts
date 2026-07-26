@@ -21,9 +21,10 @@
 
 import type { WorldState } from "./types";
 import type { ExhibitDef, ExhibitId, WingId } from "../content/museum";
-import { MUSEUM, exhibitDef, wingExhibits } from "../content/museum";
+import { MUSEUM, exhibitDef, mountedIndex, placardText, wingExhibits } from "../content/museum";
 import { TOWN_BUILDINGS } from "../content/town";
 import { count, spend } from "./inventory";
+import { hash2 } from "./rng";
 
 /** One donated exhibit, as stored in the save (see WorldState.museum). */
 export type Donation = WorldState["museum"]["donated"][number];
@@ -91,8 +92,7 @@ export function donate(world: WorldState, def: ExhibitDef): string | null {
 export function collection(world: WorldState): { def: ExhibitDef; placard: string }[] {
   return donations(world).map((d) => {
     const def = exhibitDef(d.id);
-    const i = Math.max(0, Math.min(d.placard, def.placards.length - 1));
-    return { def, placard: def.placards[i] };
+    return { def, placard: placardText(def, d.placard) };
   });
 }
 
@@ -121,6 +121,74 @@ export function remountExhibit(
   chosen.placard += 1;
   const def = exhibitDef(chosen.id);
   return { def, placard: def.placards[chosen.placard] };
+}
+
+// --- The rival reading --------------------------------------------------------
+// A Scholar RESIDENT's affinity perk (DESIGN §Affinity perks): they offer their
+// own reading of a recent exhibit, and it disagrees with the curator's. The
+// dialogue side is sim/dialogue.ts; this is the part that has to be careful.
+//
+// It is the first thing outside the museum panel to read the collection, so it
+// READS AND NOTHING ELSE. No mutation — unlike `remountExhibit`, which is the
+// other function here that names a placard — and no total, no count, nothing a
+// caller could divide. "Nothing may ever gate on the collection" is about the
+// files that can accept, refuse or house you, and museum.test.ts checks those
+// by name; a scholar with an opinion about a plinth cannot stop anybody doing
+// anything.
+//
+// HER RIVAL CARD IS ONE OF THE ROW'S OWN UNMOUNTED READINGS, not new writing.
+// Corrigal's earlier drafts and her not-yet-mounted revisions are exactly the
+// pool a second confidently incorrect authority should be drawing from — and it
+// means adding an exhibit never also means writing a dissent for it, which is
+// the same reason the placards came in threes in the first place.
+
+/** How far back "a recent exhibit" reaches. Small on purpose: she is remarking
+ *  on what is new in the room, not auditing the collection. */
+const RECENT_EXHIBITS = 3;
+
+export interface RivalReading {
+  def: ExhibitDef;
+  /** The card actually under the exhibit, in Corrigal's hand. */
+  mounted: string;
+  /** The reading this scholar holds instead — another placard from the same row. */
+  rival: string;
+}
+
+/** A scholar's standing disagreement about something recently donated, or null
+ *  when the museum holds nothing (or holds only single-reading rows, which the
+ *  table currently has none of and a test keeps that way).
+ *
+ *  Derived from the scholar's ID rather than drawn from an rng: asked twice, she
+ *  says the same thing. A scholar with a fresh theory every time you talk to her
+ *  is noise, not an authority, and the joke needs her to have a POSITION. It
+ *  moves only when the room does — a new donation slides the recent window, and
+ *  if Corrigal eventually mounts the very card this scholar was holding out for,
+ *  she is pushed onto another one. Which reads as her having been right all
+ *  along, and is the best accident in this function. */
+export function rivalReading(world: WorldState, who: string): RivalReading | null {
+  const arguable = donations(world)
+    .slice(-RECENT_EXHIBITS)
+    .filter((d) => exhibitDef(d.id).placards.length > 1);
+  if (arguable.length === 0) return null;
+
+  const chosen = arguable[strHash(who) % arguable.length];
+  const def = exhibitDef(chosen.id);
+  const mounted = mountedIndex(def, chosen.placard);
+  const others = def.placards.filter((_, i) => i !== mounted);
+  return {
+    def,
+    mounted: def.placards[mounted],
+    rival: others[strHash(`${who}:${def.id}`) % others.length],
+  };
+}
+
+/** A deterministic uint32 from a string, so a scholar's position can be derived
+ *  from ids instead of stored in the save. `hash2` takes ints, so the characters
+ *  fold into one first. */
+function strHash(s: string): number {
+  let fold = 0;
+  for (let i = 0; i < s.length; i++) fold = (Math.imul(fold, 31) + s.charCodeAt(i)) | 0;
+  return hash2(fold, s.length, 0x5c40);
 }
 
 /** Which wings have anything in them, for the panel's headings. A wing with

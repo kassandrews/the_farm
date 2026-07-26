@@ -49,18 +49,17 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   soft furniture that costs it.
 - **Phase 3e — the junk economy, complete.** The ground has things in it,
   digging finds them, and the Gremlin's heap turns them into finishes.
-- Menu with New town / sound toggle; PWA shell; 304 tests.
-- **Phase 3f — the museum, steps 1–7 of 8.** The table, the sim, schema v12,
-  the gallery it stands in (v13), Corrigal's panel, and the away event. Two
-  wings, donation is a gift that returns nothing, the record has no total and no
-  denominator, and an exhibit physically appears on a case when you give it.
-  **It is playable:** talk to her, hand something over, read the card she
-  writes, walk out past it — and come back to find she has revised it. Step 8
-  is Margfrom's perk.
+- Menu with New town / sound toggle; PWA shell; 315 tests.
+- **Phase 3f — the museum, complete.** The table, the sim, schema v12, the
+  gallery it stands in (v13), Corrigal's panel, the away event, and Margfrom's
+  perk. Two wings, donation is a gift that returns nothing, the record has no
+  total and no denominator, and an exhibit physically appears on a case when you
+  give it. **It is playable:** talk to her, hand something over, read the card
+  she writes, walk out past it — come back to find she has revised it, and hear
+  the scholar down the road say the card is wrong and she has written her own.
 
-**Next:** Phase 3f step 8 — Margfrom offers her own reading of a recent exhibit
-and disagrees with the curator's. Then the last three institutions (seed stall,
-errands board, plaza stage) and festivals.
+**Next:** the last three institutions (seed stall, errands board, plaza stage)
+and festivals.
 
 **Save schema is at v13.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
@@ -719,9 +718,9 @@ the Fancy Little Menace is the institution. "Forms are species, not singletons"
 (DESIGN §Importing) — the museum curator will be a specific scholar while
 Margfrom is just a scholar who lives here.
 
-### 3f. The museum — **planned, not built**
+### 3f. The museum — **done**
 
-The model is settled above. This is the build order; steps 1–4 are one commit.
+The model is settled above. This was the build order; steps 1–4 were one commit.
 
 1. ~~**The docs.**~~ **Done** — DESIGN §The museum, the settled entry above, and
    the correction to the Scholar affinity perk.
@@ -839,8 +838,39 @@ The model is settled above. This is the build order; steps 1–4 are one commit.
    straight into a scholar's dialogue line, and older saves whose value is prose
    keep speaking rather than resolving to nothing. Corrigal never says that line
    herself — her conversation is the panel — so the log exists for step 8.
-8. **Margfrom's perk** — she offers her own reading of a recent exhibit, and it
-   disagrees with the curator's.
+8. ~~**Margfrom's perk**~~ **Done** — `rivalReading` in `sim/museum.ts`,
+   `SCHOLAR_DISSENT` in `content/dialogue.ts`, offered by `speak()` to any
+   scholar resident. No schema, no migration: the whole step rides on data that
+   already existed. Three calls made in the building:
+
+   - **Her rival card is one of the row's OWN unmounted placards**, not new
+     writing. Corrigal's earlier drafts and her not-yet-mounted revisions are
+     exactly the pool a second confidently incorrect authority should draw from,
+     and it means adding an exhibit never also means writing a dissent for it —
+     the same dividend the placards-in-threes decision paid in step 7. It has
+     one accident in it and the accident is good: if Corrigal eventually mounts
+     the card Margfrom was holding out for, Margfrom is pushed onto another one,
+     which reads as her having been right all along.
+   - **She reads the live record, not the memory log**, which is a deliberate
+     departure from every other line in `sim/dialogue.ts`. Gating her on an
+     `exhibit` memory would mean an away roll has to fire before she notices a
+     wing you filled this afternoon, and the museum is a public room she can
+     walk into. The dormant `RESIDENT_MEMORY.scholar.exhibit` bank stays where
+     it is for a scholar who actually witnesses a remounting. This is the first
+     read of the collection outside the panel; it is a read and nothing else,
+     and the no-gate test still names the files that can accept or refuse.
+   - **Her position is fixed, derived from her id**, not rolled per line. A
+     scholar with a fresh theory every time you ask is noise rather than an
+     authority — the joke needs her to have a position and to keep restating it.
+     Only the phrasing rolls.
+
+   Two things the writing settled: the perk is keyed by **form** (it is a perk,
+   so it asks nothing of her — a town without a scholar simply never hears it)
+   while the curator is excluded by **id**, which is step 7's lesson applied
+   before it could bite again. And every line frames the quote as a *document* —
+   a card, a draft, a submitted revision. Verified on screen: said flat, the
+   placard's own revision marker ("Mushroom. ... Corrected.") made her sound
+   like she was reading aloud from someone else's page mid-sentence.
 
 ~~**Open:** the curator needs a name.~~ **Settled: Corrigal.** A specific
 scholar, not "Little Scholar" — same footing as Bissenette vs. the Fancy Little

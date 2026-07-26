@@ -287,9 +287,19 @@ export function wingExhibits(wing: WingId): ExhibitDef[] {
   return MUSEUM.filter((e) => e.wing === wing);
 }
 
-/** The placard currently mounted. Clamped rather than wrapped: she revises
- *  until she runs out of revisions and then she stands by the last one. */
+/** Which reading is currently mounted, from the stored index. Clamped rather
+ *  than wrapped: she revises until she runs out of revisions and then she
+ *  stands by the last one.
+ *
+ *  Exported alongside the text because a caller that wants to talk about the
+ *  readings she has NOT mounted (sim/museum.ts `rivalReading`) needs the index
+ *  to exclude, and clamping it in a second place is how the two answers
+ *  eventually disagree. */
+export function mountedIndex(def: ExhibitDef, index: number): number {
+  return Math.max(0, Math.min(index, def.placards.length - 1));
+}
+
+/** The placard currently mounted. */
 export function placardText(def: ExhibitDef, index: number): string {
-  const i = Math.max(0, Math.min(index, def.placards.length - 1));
-  return def.placards[i];
+  return def.placards[mountedIndex(def, index)];
 }
