@@ -46,6 +46,7 @@ import {
 import { ITEM_ORDER, itemDef, itemLabel } from "../content/items";
 import { offers, trade } from "../sim/shop";
 import { heapOffers, heapExhausted, redeem } from "../sim/heap";
+import { donatable, donate, collection, collectionEmpty, wingsWithDonations } from "../sim/museum";
 import { availableSkins, skinDef, SKIN_CLASSES } from "../content/skins";
 import { audio } from "./audio";
 import type { Cue } from "./audio";
@@ -409,6 +410,15 @@ export class App {
       this.openHeap();
       return;
     }
+    // And Corrigal: the museum is her desk, the counter and the catalogue at
+    // once, so talking to her is visiting it. Third counter, third panel — a
+    // donation is not a trade and not a redemption, it is the one transaction
+    // in the game with nothing on the other side of it, and a shared panel
+    // would have to invent a column for what you get back.
+    if (villagerId === "museum") {
+      this.openMuseum();
+      return;
+    }
 
     this.openModal(
       (close) =>
@@ -536,6 +546,142 @@ export class App {
         body,
         actionRow([primaryBtn("Right", close)]),
       ]);
+    }, { dismissable: true });
+  }
+
+  /** The museum. Corrigal takes things and gives nothing back, so this panel is
+   *  the one counter in the game with no price column pointing the other way.
+   *
+   *  Three doors, and the middle one is the whole feature: hand something over,
+   *  read what she has decided it was, or leave. The panel swaps between those
+   *  views in place rather than stacking modals — a placard that opens a second
+   *  window over the first would make reading the collection feel like
+   *  navigating a filing system, which is her fantasy and not the player's.
+   *
+   *  WHAT THIS PANEL DOES NOT DRAW, and the reason step 6 was worth being
+   *  careful about (DESIGN §The museum, ROADMAP §The museum):
+   *
+   *    • No total and no denominator. Nothing here counts the collection —
+   *      not "9 given", not "9 of 17", not a bar. `sim/museum.ts` refuses to
+   *      export the number, and this file must not reconstruct it from
+   *      `collection().length`.
+   *    • No empty slots. A wing with nothing in it is not shown as a row of
+   *      blanks, it is not shown at all (`wingsWithDonations`). Eighteen greyed
+   *      placeholders is a completion meter nobody had to write.
+   *    • Antiquities are never named before they are given. The offer says
+   *      "junk", because junk is identified at donation and not at pickup —
+   *      naming the next one on the button would turn the wing into a list of
+   *      twelve pending items with the numbers left off.
+   *
+   *  Nature rows you can't afford ARE listed, disabled, exactly as the Menace
+   *  lists cloth you can't pay for: seeing that the wing wants a mushroom is
+   *  what sends you out after dark to find one. That is not a checklist — it is
+   *  a finite five-row wing that never implies a sixth. */
+  private openMuseum(): void {
+    if (!this.world) return;
+    const world = this.world;
+
+    this.openModal((close) => {
+      const body = el("div", {});
+
+      // The panel itself is the scroller, and a long catalogue leaves it halfway
+      // down. Swapping views without rewinding it puts you at the bottom of the
+      // counter, looking at nothing, with the list you wanted above the fold.
+      const rewind = () => body.parentElement?.scrollTo({ top: 0 });
+
+      // The counter. Rebuilt from scratch after each donation for the same
+      // reason the shop's is: it is a pure function of the inventory and the
+      // record, and re-deriving beats patching a stale count.
+      const counter = () => {
+        body.replaceChildren();
+        rewind();
+        const offers = donatable(world);
+
+        // She has run out of things to be wrong about. Said as her being
+        // current rather than the museum being finished — "complete" is a
+        // denominator wearing a coat.
+        body.append(
+          el("p", {}, [
+            offers.length === 0
+              ? "That is everything I presently know how to be wrong about. ... I am not finished. I am up to date."
+              : "The museum accepts donations. ... It does not return them, and it does not thank you in any material way. I will write a card.",
+          ]),
+        );
+
+        const choices = el("div", { class: "choices" });
+        for (const { def, affordable } of offers) {
+          const label =
+            def.wing === "nature"
+              ? `${def.title} — ${itemLabel(def.cost.item, def.cost.count)}`
+              : `Something you dug up — ${itemLabel(def.cost.item, def.cost.count)}`;
+          const b = choiceBtn(label, () => {
+            const placard = donate(world, def);
+            if (!placard) return;
+            audio.play("place");
+            this.persist();
+            mounted(placard);
+          });
+          if (!affordable) {
+            b.setAttribute("disabled", "true");
+            b.style.opacity = "0.4";
+          }
+          choices.append(b);
+        }
+        if (offers.length > 0) body.append(choices);
+
+        body.append(
+          actionRow([
+            choiceBtn("What's in here?", catalogue),
+            primaryBtn("I'll look around", close),
+          ]),
+        );
+      };
+
+      // The card she has just written, alone on the panel. The placard IS the
+      // payoff (nothing else is returned), so it gets the whole view for a
+      // moment instead of a 1.8-second flash it would outlive.
+      //
+      // No title above it, deliberately: every placard opens by naming the
+      // thing, so a heading here printed "Handle of Office" twice in three
+      // lines. The catalogue keeps its titles — a list needs something to scan,
+      // and a revised card can be as short as "..." — but a single card
+      // introduces itself.
+      const mounted = (placard: string) => {
+        body.replaceChildren(
+          el("div", { class: "who" }, ["Mounted"]),
+          el("p", {}, [placard]),
+          actionRow([primaryBtn("...", counter)]),
+        );
+        rewind();
+      };
+
+      // The record: what you have given, and her current reading of each. No
+      // count, no headings for wings that hold nothing.
+      const catalogue = () => {
+        body.replaceChildren();
+        rewind();
+        if (collectionEmpty(world)) {
+          body.append(
+            el("p", {}, [
+              "Nothing, yet. ... The plinths are prepared to wait. I am prepared to wait beside them, visibly.",
+            ]),
+          );
+        } else {
+          const shown = collection(world);
+          for (const wing of wingsWithDonations(world)) {
+            body.append(
+              el("div", { class: "who" }, [wing === "nature" ? "Nature" : "Antiquities"]),
+            );
+            for (const { def, placard } of shown.filter((e) => e.def.wing === wing)) {
+              body.append(el("h3", {}, [def.title]), el("p", {}, [placard]));
+            }
+          }
+        }
+        body.append(actionRow([primaryBtn("Back to the desk", counter)]));
+      };
+
+      counter();
+      return panel("Corrigal", "The Museum", [body]);
     }, { dismissable: true });
   }
 

@@ -265,6 +265,14 @@ body {
   font-size: 19px;
 }
 
+/* An exhibit's title, above its placard (the museum panel). Quieter than the
+   panel's own h2 on purpose — the speaker is still Corrigal, and a card in her
+   catalogue must not outrank the person reading it to you. */
+.panel h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
 .panel .who {
   font-size: 12px;
   text-transform: uppercase;

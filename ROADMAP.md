@@ -50,17 +50,17 @@ DESIGN.md, if it's a rule about the game rather than about build order).
 - **Phase 3e — the junk economy, complete.** The ground has things in it,
   digging finds them, and the Gremlin's heap turns them into finishes.
 - Menu with New town / sound toggle; PWA shell; 304 tests.
-- **Phase 3f — the museum, steps 1–5 of 8.** The table, the sim, schema v12,
-  and the gallery it stands in (v13). Two wings, donation is a gift that
-  returns nothing, the record has no total and no denominator, and an exhibit
-  physically appears on a case when you give it. Corrigal is at her desk by the
-  door. **Step 6, the panel, is what makes it visitable** — until then there is
-  no way to donate from inside the game, so the room is real but empty. Steps
-  7–8 are the away event and Margfrom's perk.
+- **Phase 3f — the museum, steps 1–6 of 8.** The table, the sim, schema v12,
+  the gallery it stands in (v13), and Corrigal's panel. Two wings, donation is
+  a gift that returns nothing, the record has no total and no denominator, and
+  an exhibit physically appears on a case when you give it. **It is playable:**
+  talk to her, hand something over, read the card she writes, walk out past it.
+  Steps 7–8 are the away event and Margfrom's perk.
 
-**Next:** Phase 3f step 6 — the conversation panel, the same call as the shop
-and the heap. Then 7–8, then the last three institutions (seed stall, errands
-board, plaza stage) and festivals.
+**Next:** Phase 3f steps 7–8 — the Scholar remounts an exhibit while you're
+away (`remountExhibit` already exists), then Margfrom's disagreeing reading.
+Then the last three institutions (seed stall, errands board, plaza stage) and
+festivals.
 
 **Save schema is at v13.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
@@ -790,8 +790,30 @@ The model is settled above. This is the build order; steps 1–4 are one commit.
    pass drew cases a full tile deep and 14 high, which read as three long
    counters in a warehouse, and the second anchored exhibits to the case's far
    edge so they stood up behind it like fence posts.
-6. **UI** — conversation IS the museum, the same call as the shop and the heap.
-   Three doors on the panel (`openModal(..., { dismissable: true })`).
+6. ~~**UI**~~ **Done** — conversation IS the museum, the same call as the shop
+   and the heap. Three doors on the panel: give something, read the catalogue,
+   leave. The three views swap **in place** inside one dismissable modal rather
+   than stacking, so reading the collection never feels like opening drawers.
+
+   What the build settled:
+
+   - **The mounted card gets its own view, not a flash.** The placard is the
+     entire return on a donation, and `flash()` clears after 1.8 seconds — a
+     payoff you can lose by blinking. It shows alone, with no title above it:
+     every placard opens by naming the thing, so a heading printed "Handle of
+     Office" twice in three lines. The catalogue keeps its titles, because a
+     list needs something to scan and a revised card can be as short as `"..."`.
+   - **Donated rows leave the counter**, which is the opposite of the shop and
+     the heap — they keep redeemed rows on the list, marked. Right there and
+     wrong here: a row marked "given" is a tick, and a column of ticks is the
+     checklist the whole wing was designed not to be. The catalogue is where
+     what you gave lives.
+   - **Antiquities are offered as "Something you dug up — 3 junk"**, never by
+     title. `donatable()` already refuses to reveal the row; the label is the
+     other half of that, and it is why the panel can list the next one without
+     listing the twelve.
+   - The panel is the scroller, so every view swap rewinds it. A long catalogue
+     otherwise drops you at the bottom of the counter, below the list.
 7. **Away event** — DESIGN §Time already promises "the Scholar mounts a new
    wrong exhibit". With several placards per row that is: pick a donated
    exhibit, advance its placard index, put it in the postcard. No new content
