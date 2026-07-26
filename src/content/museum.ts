@@ -33,6 +33,8 @@ export type ExhibitId =
   | "ore"
   | "carrot"
   | "mushroom"
+  | "radish"
+  | "potato"
   // Antiquities wing — junk, identified on arrival.
   | "handle"
   | "statement"
@@ -129,6 +131,27 @@ export const MUSEUM: ExhibitDef[] = [
     placards: [
       "Mushroom. Appeared overnight. No stage of its life was witnessed by anybody.",
       "Mushroom. ... Corrected. It did not appear. It had always been there and only lately agreed to be seen.",
+    ],
+  },
+  {
+    id: "radish",
+    wing: "nature",
+    title: "Radish, Hasty",
+    cost: { item: "radish", count: 1 },
+    placards: [
+      "Radish. Completes its entire life in an afternoon and appears to regard this as a personal quality.",
+      "Radish. ... Revised. Not hasty. The rest of the wing is slow, and it has never been said aloud until now.",
+      "Radish. Related to the carrot by colour only, which in this institution is sufficient.",
+    ],
+  },
+  {
+    id: "potato",
+    wing: "nature",
+    title: "Potato, Deliberate",
+    cost: { item: "potato", count: 1 },
+    placards: [
+      "Potato. Spends the better part of a day underground and declines to say what it was doing.",
+      "Potato. ... Amended. It is not a root. It is a stem that went down instead of up, which this museum considers a decision.",
     ],
   },
 

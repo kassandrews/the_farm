@@ -7,7 +7,17 @@
 // every metal). Everything else here is produce — grown or foraged, bound for
 // eating, gifting, and the museum rather than construction.
 
-export type ItemId = "wood" | "stone" | "ore" | "carrot" | "mushroom" | "cloth" | "junk";
+export type ItemId =
+  | "wood"
+  | "stone"
+  | "ore"
+  | "carrot"
+  | "mushroom"
+  | "radish"
+  | "potato"
+  | "cloth"
+  | "junk"
+  | "seed";
 
 /** What an item is for. Drives which UI groups it and, later, what the shop
  *  and museum will accept.
@@ -15,8 +25,14 @@ export type ItemId = "wood" | "stone" | "ore" | "carrot" | "mushroom" | "cloth" 
  *  `junk` is its own category and NOT a material, which is the load-bearing
  *  part (DESIGN §Materials): the three gathered classes are the complete list
  *  of things you build with, and a fourth thing you can hold must not quietly
- *  become a fourth thing you build with. Nothing costs junk to place. */
-export type ItemCategory = "material" | "produce" | "soft" | "junk";
+ *  become a fourth thing you build with. Nothing costs junk to place.
+ *
+ *  `seed` is likewise its own category and not `produce`, for the same kind of
+ *  reason: produce is what you eat, barter and donate, and seed is none of
+ *  those. Filed as produce it would drift into a museum row or a shop price the
+ *  first time somebody iterated the category, and a stall row payable in seed
+ *  is a farming prerequisite for farming (DESIGN §Materials). */
+export type ItemCategory = "material" | "produce" | "soft" | "junk" | "seed";
 
 export interface ItemDef {
   id: ItemId;
@@ -69,6 +85,39 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     category: "produce",
     blurb: "Came up overnight, uninvited, entirely welcome.",
   },
+  // The other two varieties (content/crops.ts). They differ from the carrot in
+  // how long they take and in nothing else — no crop is worth more than another
+  // (DESIGN §Materials), so nowhere in this file may one of them read as a
+  // better haul than its neighbours.
+  radish: {
+    id: "radish",
+    name: "Radish",
+    plural: "Radishes",
+    icon: "🌶️",
+    category: "produce",
+    blurb: "In and out in an afternoon. Behaves as though this were an achievement.",
+  },
+  potato: {
+    id: "potato",
+    name: "Potato",
+    plural: "Potatoes",
+    icon: "🥔",
+    category: "produce",
+    blurb: "Took most of a day about it and would do so again.",
+  },
+  // ONE row for every variety, exactly as one row covers every metal and one
+  // covers every object the ground gives up. What a seed will become is not a
+  // property of the seed: it is the variety you have unlocked and currently have
+  // selected (DESIGN §Materials, "seed is the stuff, the variety is the look").
+  // A `carrot_seed` / `potato_seed` table is how this file stops being short.
+  seed: {
+    id: "seed",
+    name: "Seed",
+    plural: "Seed",
+    icon: "🌱",
+    category: "seed",
+    blurb: "Small, brown, non-committal. Decides what it is on the way into the ground.",
+  },
   // The ONE thing in this table you cannot gather. It is why the Menace's
   // counter exists (DESIGN §Materials): the shop sells what the world won't
   // give you, and cloth is that. Everything soft is made of it.
@@ -106,4 +155,15 @@ export function itemLabel(id: ItemId, count: number): string {
 
 /** Display order in the satchel: materials first (you're usually building),
  *  then produce. Stable, so the list never reshuffles under your thumb. */
-export const ITEM_ORDER: ItemId[] = ["wood", "stone", "ore", "cloth", "carrot", "mushroom", "junk"];
+export const ITEM_ORDER: ItemId[] = [
+  "wood",
+  "stone",
+  "ore",
+  "cloth",
+  "seed",
+  "carrot",
+  "radish",
+  "potato",
+  "mushroom",
+  "junk",
+];

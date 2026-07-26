@@ -47,7 +47,18 @@ import { ITEM_ORDER, itemDef, itemLabel } from "../content/items";
 import { offers, trade } from "../sim/shop";
 import { heapOffers, heapExhausted, redeem } from "../sim/heap";
 import { donatable, donate, collection, collectionEmpty, wingsWithDonations } from "../sim/museum";
-import { availableSkins, skinDef, SKIN_CLASSES } from "../content/skins";
+import { availableSkins, skinDef, SKIN_CLASSES, SKIN_CLASS_NAMES } from "../content/skins";
+import { cropDef } from "../content/crops";
+import { STALL_OPENER, STALL_EXHAUSTED } from "../content/seedstall";
+import {
+  seedOffers,
+  varietyOffers,
+  varietiesExhausted,
+  buySeed,
+  unlockVariety,
+  plantable,
+  selectCrop,
+} from "../sim/seeds";
 import { audio } from "./audio";
 import type { Cue } from "./audio";
 import type { ActionKind } from "../sim/game";
@@ -429,6 +440,14 @@ export class App {
       this.openMuseum();
       return;
     }
+    // And the Blessed Carrot. Fourth counter, fourth panel — his is the only
+    // one selling two different kinds of thing (stuff, and a permanent unlock),
+    // which is exactly why it isn't folded into hers: one panel covering both
+    // would need a column whose meaning changed halfway down it.
+    if (villagerId === "seedstall") {
+      this.openSeedStall();
+      return;
+    }
 
     this.openModal(
       (close) =>
@@ -555,6 +574,85 @@ export class App {
         el("p", {}, [opener]),
         body,
         actionRow([primaryBtn("Right", close)]),
+      ]);
+    }, { dismissable: true });
+  }
+
+  /** The Blessed Carrot's stall. Two sections, because he deals in two axes:
+   *  seed (stuff, repeatable, ordinary) and varieties (a permanent unlock,
+   *  redeemed once). Barter both ways, so each row shows what he'll take
+   *  INSTEAD of each other, exactly like hers.
+   *
+   *  The variety section shows what you already have, marked, the way the heap
+   *  keeps redeemed rows — and for the same reason: a list that empties as you
+   *  use it makes the last visit look broken. What it does NOT show is any
+   *  count of how many you have of the three. That would be the first
+   *  denominator in the game outside the museum's forbidden one.
+   *
+   *  Rebuilt after each trade rather than patched, like every other counter: a
+   *  pure function of the satchel and the unlocked list can't go stale. */
+  private openSeedStall(): void {
+    if (!this.world) return;
+    const world = this.world;
+
+    this.openModal((close) => {
+      const body = el("div", {});
+      const render = () => {
+        body.replaceChildren();
+
+        for (const { row, affordable } of seedOffers(world)) {
+          body.append(el("div", { class: "who" }, [`${itemLabel("seed", row.givesCount)}, for any of:`]));
+          const choices = el("div", { class: "choices" });
+          for (const price of row.accepts) {
+            const b = choiceBtn(itemLabel(price.item, price.count), () => {
+              if (!buySeed(world, row, price)) return;
+              audio.play("place");
+              this.persist();
+              this.flash(row.line);
+              render();
+            });
+            if (!affordable.includes(price)) {
+              b.setAttribute("disabled", "true");
+              b.style.opacity = "0.4";
+            }
+            choices.append(b);
+          }
+          body.append(choices);
+        }
+
+        for (const { row, taken, affordable } of varietyOffers(world)) {
+          const name = cropDef(row.gives).name;
+          if (taken) {
+            // Named, not priced. He is not selling it again and there is
+            // nothing here to tick off.
+            body.append(el("div", { class: "who" }, [`${name} — you have it`]));
+            continue;
+          }
+          body.append(el("div", { class: "who" }, [`${name}, to plant from now on — for any of:`]));
+          const choices = el("div", { class: "choices" });
+          for (const price of row.accepts) {
+            const b = choiceBtn(itemLabel(price.item, price.count), () => {
+              if (!unlockVariety(world, row, price)) return;
+              audio.play("place");
+              this.persist();
+              this.flash(row.line);
+              render();
+            });
+            if (!affordable.includes(price)) {
+              b.setAttribute("disabled", "true");
+              b.style.opacity = "0.4";
+            }
+            choices.append(b);
+          }
+          body.append(choices);
+        }
+      };
+      render();
+
+      return panel("Blessed Carrot", "The Seed Stall", [
+        el("p", {}, [varietiesExhausted(world) ? STALL_EXHAUSTED : STALL_OPENER]),
+        body,
+        actionRow([primaryBtn("Thank you", close)]),
       ]);
     }, { dismissable: true });
   }
@@ -910,7 +1008,33 @@ export class App {
           return b;
         });
         row.append(...buttons);
-        body.append(labeled(`${cls === "wood" ? "Wood" : "Stone"} finish — free`, row));
+        body.append(labeled(`${SKIN_CLASS_NAMES[cls]} finish — free`, row));
+      }
+
+      // What the next seed becomes. It sits with the finishes and not with the
+      // items on purpose: a variety is the same KIND of thing as a finish —
+      // unlocked forever, weightless, free to change — and seed itself is
+      // already up in the carried list as the ordinary stuff it is (DESIGN
+      // §Materials, "seed is the stuff, the variety is the look").
+      //
+      // It is also why planting can stay one tap. Choosing here means ACT never
+      // has to ask, and the reticle can go on promising exactly what the button
+      // will do.
+      const varieties = plantable(world);
+      if (varieties.length > 1) {
+        const row = el("div", { class: "choices" });
+        const buttons = varieties.map((id) => {
+          const b = choiceBtn(cropDef(id).name, () => {
+            selectCrop(world, id);
+            for (const other of buttons) other.classList.remove("primary");
+            b.classList.add("primary");
+            saveWorld(world);
+          });
+          if (world.seeds.selected === id) b.classList.add("primary");
+          return b;
+        });
+        row.append(...buttons);
+        body.append(labeled("Planting — free", row));
       }
 
       // The way out. A panel with nothing to answer still needs a door in it —

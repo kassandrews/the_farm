@@ -243,6 +243,27 @@ your hands. Keeping it out of the material set is what stops "three
 gathered classes, ever" from quietly becoming four; a thing you can hold
 is not automatically a thing you can build with.
 
+**Seed is one item; the variety is a free axis.** You carry *seed* — never
+"carrot seed" and "potato seed" — and which crop goes in the ground comes
+from a variety you have unlocked permanently at the Blessed Carrot's
+stall. This is the appearance rule below, pointed at farming: seed is the
+stuff, the variety is the look, so the item table grows by exactly one row
+and can never grow by one row per crop. Varieties are weightless, cannot
+be lost, and are redeemed once; seed itself is ordinary and unlimited.
+
+**A harvest always returns seed**, and that is load-bearing rather than
+generous. A seed you spend to plant is a ration, and rations are what this
+game refuses; returning seed at the other end means a plot you keep
+sustains itself, and the stall is how you *start* and how you *expand
+quickly* rather than a tollgate you pass through every planting. You can
+be slowed for a minute, never stopped.
+
+**No crop is better than another.** Varieties differ in *time* — a fast
+one, a slow one — never in yield or in what they're worth at the counter.
+The moment one crop out-earns the rest, "farming is fully optional"
+becomes "grow the good one", which is the same failure the barter rule
+below exists to prevent, one axis over.
+
 **The counter is barter, not money** — settled, not open. You hand over
 something you have and she hands over cloth; there is no currency, no
 wallet, and no running total anywhere in the game. The reason is a pillar

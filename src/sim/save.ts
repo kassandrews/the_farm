@@ -6,6 +6,8 @@
 
 import type { WorldState, HomesteadSpot } from "./types";
 import { starterSkins, defaultSkin } from "../content/skins";
+import { STARTING_CROP } from "../content/crops";
+import { STARTING_SEED } from "./seeds";
 import { stampTown, ensureFixedCast } from "./town";
 import type { StampTarget } from "./town";
 import { generatedTile, tileKey } from "./world";
@@ -13,7 +15,7 @@ import { makeVillager } from "./villagers";
 import { authoredBed } from "../content/town";
 import type { CharId } from "../content/cast";
 
-export const SCHEMA_VERSION = 13;
+export const SCHEMA_VERSION = 14;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -295,6 +297,44 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       build: stamped.build,
       furniture: stamped.furniture,
       villagers: withFixedCast(raw, now),
+    };
+  },
+  // v13 → v14: the seed stall. The stamp + ensureFixedCast pair again, plus a
+  // new field and — the part worth being careful about — a HANDOUT.
+  //
+  // `seeds` backfills to the starting variety, which is the only honest answer:
+  // a v13 town has unlocked nothing because there was nothing to unlock, and
+  // crediting it with the radish would be handing out something that didn't
+  // happen (the v11→v12 note, one field over).
+  //
+  // THE STOCK OF SEED IS NOT GENEROSITY, it is the migration refusing to take
+  // something away. Sowing now costs a seed, and a v13 player has none — so
+  // without this, ground they could plant on yesterday would refuse them today,
+  // and the game would have quietly become worse for having been played early.
+  // The same rule the v3→v4 backfill set: never punish someone for having been
+  // here first. It is the same STARTING_SEED `newWorld` uses, because two paths
+  // that furnish a town differently is the bug ensureFixedCast exists to stop.
+  //
+  // It tops up rather than sets. A v13 save cannot have seed, so today the
+  // distinction is theoretical — but a migration that assigned would be one
+  // re-run away from confiscating a satchel, and the cheap version is correct.
+  13: (raw) => {
+    const now = Date.now();
+    const stamped = stampInto(raw);
+    const inventory = (typeof raw.inventory === "object" && raw.inventory ? raw.inventory : {}) as Record<
+      string,
+      number
+    >;
+    const held = typeof inventory.seed === "number" ? inventory.seed : 0;
+    return {
+      ...raw,
+      schemaVersion: 14,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
+      villagers: withFixedCast(raw, now),
+      inventory: { ...inventory, seed: held + STARTING_SEED },
+      seeds: { unlocked: [STARTING_CROP], selected: STARTING_CROP },
     };
   },
 };

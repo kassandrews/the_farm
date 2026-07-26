@@ -49,7 +49,7 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   soft furniture that costs it.
 - **Phase 3e — the junk economy, complete.** The ground has things in it,
   digging finds them, and the Gremlin's heap turns them into finishes.
-- Menu with New town / sound toggle; PWA shell; 315 tests.
+- Menu with New town / sound toggle; PWA shell; 339 tests.
 - **Phase 3f — the museum, complete.** The table, the sim, schema v12, the
   gallery it stands in (v13), Corrigal's panel, the away event, and Margfrom's
   perk. Two wings, donation is a gift that returns nothing, the record has no
@@ -57,11 +57,14 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   give it. **It is playable:** talk to her, hand something over, read the card
   she writes, walk out past it — come back to find she has revised it, and hear
   the scholar down the road say the card is wrong and she has written her own.
+- **Phase 3g — the seed stall, complete.** Farming has choices in it: one
+  fungible seed, three varieties unlocked forever at the Blessed Carrot's
+  counter, and a harvest that hands a seed back so a plot you keep sustains
+  itself. Schema v14.
 
-**Next:** the last three institutions (seed stall, errands board, plaza stage)
-and festivals.
+**Next:** the last two institutions (errands board, plaza stage) and festivals.
 
-**Save schema is at v13.** Every change ships a tested migration — see
+**Save schema is at v14.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -259,6 +262,35 @@ The short version and *why*:
   than a gift. The payoff is the placard and the plinth.
 - **Nothing may ever gate on the collection**, asserted in tests the way
   `heap.test.ts` asserts the Gremlin never hands over a material.
+
+### Seeds — one item, many varieties
+
+**Settled in planning for Phase 3g**, recorded in full in DESIGN §Materials. The
+stall had to answer a question the other three counters didn't: farming shipped
+with one crop and free planting, so "sells seeds" meant either inventing a seed
+item per crop or inventing nothing.
+
+- **Seed is the stuff; the variety is the look.** One fungible `seed` item, and
+  which crop it becomes comes from a permanent unlock — the same two-axis trick
+  as materials-vs-finishes, and as fungible junk vs. the curator's
+  identification. The item table grows by exactly one row, forever. A
+  `carrot_seed` / `potato_seed` table would have made "item count is the number
+  of materials" a suggestion, which is what DESIGN carved junk out by name to
+  avoid.
+- **Varieties are redeemed once; seed is unlimited.** The heap's shape for the
+  unlock rows, the shop's for the seed rows, in one stall. He is not a pile.
+- **A harvest always returns seed.** The one line that keeps a consumable seed
+  from being a ration. Without it the stall becomes a tollgate you pass through
+  every planting, and "slowed for a minute, never stopped" inverts quietly.
+  Asserted in test for that reason.
+- **Every stall row is payable from a material AND from produce**, the same
+  invariant `shop.test.ts` asserts and for the same reason: a row that only takes
+  carrots makes farming a prerequisite for farming.
+- **No crop is better than another** — varieties differ in time, never in value.
+  A best crop is a currency with a hat on.
+- **Choosing a variety is a mode, not a prompt.** The selection lives in world
+  state beside `skins.selected`; ACT stays one tap on the tile at your feet. A
+  modal on ACT would break the reticle's promise (see above).
 
 ### Adding a cast row does not add a person
 
@@ -877,11 +909,70 @@ scholar, not "Little Scholar" — same footing as Bissenette vs. the Fancy Littl
 Menace, and Margfrom is now just a scholar who lives here. The name is one
 string in `cast.ts` and nothing keys on it, so it stays cheap to change.
 
+### 3g. The seed stall — **done**
+
+The Blessed Carrot's stall, and the model above. Schema v14. Build order, all
+shipped:
+
+1. **The docs** — DESIGN §Materials, the settled entry above.
+2. **`content/crops.ts`** — two more varieties beside the carrot, differing in
+   time and in nothing else.
+3. **`content/items.ts`** — one `seed` row, its own category so it can never
+   drift into anywhere that treats produce as food or as donatable.
+4. **`content/seedstall.ts`** — seed rows (unlimited) and variety rows
+   (redeemed once).
+5. **`sim/seeds.ts`** — the swap, reusing the shop's, with `shop.test.ts` +
+   `heap.test.ts`'s assertions.
+6. **Schema v14** — additive `world.seeds`, and the migration grants a starting
+   stock of seed. Backfilling only the unlock list would leave a live save
+   unable to plant on ground it could plant on yesterday.
+7. **Planting and harvest** — plant spends a seed and reads the selection;
+   harvest yields produce *and* seed.
+8. **The stall in the world** — a `TOWN_BUILDINGS` row AND an `ensureFixedCast`
+   row, both, or it repeats 3d's bug.
+9. **Conversation IS the stall**, as with the other three counters.
+10. **The museum's nature wing** grows a row per new crop by definition.
+
+Four things the build settled that the plan hadn't:
+
+- **A best crop can be created by the BARTER TABLE, not just by the growth
+  times.** The Menace took carrots and neither new crop, so a potato was worth
+  nothing at any counter in town — "no crop is better than another" broken from
+  a file that never mentions crops. `seeds.test.ts` now asserts the real rule:
+  any counter that takes one crop takes **all** of them, at the same price.
+  Stated as all-or-none so it holds for the next crop without anybody
+  remembering to come back. Variety rows are exempt and the exemption is forced
+  — a potato payable in radishes would gate a variety behind a variety.
+- **The museum's gallery was sized to its table exactly**, so two crops
+  overflowed a room that cannot grow (river west, town hall east, plaza south).
+  Rather than reshape a building people have walked into — which the v13 note
+  asks the next person not to do — the nature wing spilled into a fourth short
+  case by the entrance, with the door column left empty because a case is not
+  solid and you would walk through it. **A third crop wants the room replanned,
+  not another corner found for it.**
+- **Standing behind your own counter makes you invisible.** The Blessed Carrot
+  was authored on the cell directly north of his table, and the raised art that
+  reads as height everywhere else drew the counter straight over him; a carrot
+  is short enough that all you could see was the leaves. He stands beside it
+  now. Every unit test was green — "is he inside his own walls" is true either
+  way — which is the browser house rule earning its place again.
+- **And the counter sealed its own doorway**, being solid and centred on the
+  door. That one `town.test.ts` did catch, which is the difference between a
+  fact about pathing and a fact about pixels.
+
 ### The rest of Phase 3
 
-- The remaining three fixed cast + their institutions: seed stall (Blessed
-  Carrot), errands board (Loyal Dog Thing), plaza stage (Dramatic Blob).
-- Festivals on the real calendar.
+- The remaining two fixed cast + their institutions: errands board (Loyal Dog
+  Thing), plaza stage (Dramatic Blob).
+- **The errands board is a request board AND a notices column.** One villager
+  request open at a time, no timer, refusable, paying friendship and a line and
+  never an item — the commission's shape generalised, and one at a time for the
+  same reason a commission is (a queue is the part that feels like work). The
+  notices half is what the town is up to. The risk to watch while writing it is
+  the notices column reading as a second to-do list.
+- **A festival is a total function of the date.** That is what lets the stage
+  exist without touching `villagers.ts`'s invariant: schedule stops consult the
+  calendar, positions stay clock-derived, and it costs no schema.
 
 ---
 
@@ -922,7 +1013,7 @@ you trip over them:
   is its own decision and was deliberately not improvised alongside the rest.
 - **Ore is defined but unobtainable** until the underground layer exists. This
   is intentional, not an oversight.
-- **Three of the seven fixed cast exist** — office, shop, heap. The intended
+- **Five of the seven fixed cast exist** — office, shop, heap, museum, seed stall. The intended
   full mapping is recorded as comments at the foot of `src/content/cast.ts`;
   the museum is planned in 3f. Residents are no longer limited to one:
   `content/arrivals.ts` holds four, and the town takes them in one at a time.

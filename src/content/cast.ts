@@ -24,6 +24,7 @@ export type AuthoredId =
   | "shop" // Fancy Little Menace — the counter, and the only source of cloth
   | "heap" // Gremlin — the junk economy, and the only source of his finishes
   | "museum" // Corrigal — the curator, and every placard in the collection
+  | "seedstall" // Blessed Carrot — seed, and the varieties you may plant
   | "resident1"; // the one starter resident
 
 /** Someone the town has since taken in. Newcomers arrive at run time (see
@@ -147,6 +148,28 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // is beside the desk rather than behind it, because the museum is the
     // exhibits and she would rather be standing near them.
     schedule: [{ fromHour: 0, x: -8, y: -9, doing: "beside the desk" }],
+  },
+  seedstall: {
+    id: "seedstall",
+    form: "carrot",
+    name: "Blessed Carrot",
+    fixed: true,
+    // Behind his counter, south-west of the plaza. An INSTITUTION like the
+    // other four: no bed, no ring, no home stop.
+    //
+    // The carrot is a SECRET form in the canon roster (canon/forms.ts) and this
+    // does not spoil it, which is worth stating because the rule is easy to
+    // trip over. What stays secret is how a Meadow sprite BECOMES one; the
+    // Farm's fixed cast are named individuals DESIGN's table has always listed,
+    // in a town you can walk around. The Quiet Ghost is the one who has to stay
+    // out, because with her the individual IS the secret.
+    // BESIDE the counter, not behind it. Standing on the cell directly north of
+    // a table puts him inside its raised art — the overhang that reads as
+    // height for everything else (DESIGN §Structures) drew the counter straight
+    // over him, and a carrot is short enough that all you could see was the
+    // leaves. Found on screen; the unit tests were green, because "is he inside
+    // his own walls" is true either way.
+    schedule: [{ fromHour: 0, x: -6, y: 7, doing: "beside the seeds" }],
   },
   resident1: {
     id: "resident1",

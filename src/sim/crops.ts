@@ -10,9 +10,11 @@
 
 import type { WorldState, Crop } from "./types";
 import type { CropId } from "../content/crops";
-import { cropDef, ripeStage } from "../content/crops";
+import type { CropDef } from "../content/crops";
+import { cropDef, ripeStage, SEED_PER_HARVEST } from "../content/crops";
 import { tileKey, tileAt, setTile, FARMLAND, FARMLAND_WET } from "./world";
 import { GRASS, DIRT } from "../content/tiles";
+import { add } from "./inventory";
 
 const HOUR = 3_600_000;
 /** How long a watering keeps a plot wet — a bit under a day, so a daily
@@ -59,9 +61,17 @@ export function water(world: WorldState, x: number, y: number, now: number): boo
   return true;
 }
 
-/** Harvest a ripe crop: removes it, resets the plot to dry farmland, and
- *  returns the yield name. Returns null if it isn't ripe yet. */
-export function harvest(world: WorldState, x: number, y: number, now: number): string | null {
+/** Harvest a ripe crop: removes it, resets the plot to dry farmland, and pays
+ *  out — the produce, AND a seed. Returns the crop's definition (so the caller
+ *  knows what came up) or null if it isn't ripe yet.
+ *
+ *  THE SEED IS NOT A BONUS, it is the other half of sowing costing one. A seed
+ *  spent with none coming back is a ration on planting, and rationing is what
+ *  DESIGN §Materials refuses: you can be slowed for a minute, never stopped. It
+ *  lives here rather than at the call site for the reason `digWithFind` gives —
+ *  a payout decided somewhere other than where the act happens is a payout that
+ *  can be forgotten by the next call site to arrive. */
+export function harvest(world: WorldState, x: number, y: number, now: number): CropDef | null {
   const key = tileKey(x, y);
   const crop = world.crops[key];
   if (!crop) return null;
@@ -70,7 +80,9 @@ export function harvest(world: WorldState, x: number, y: number, now: number): s
   if (crop.stage < ripeStage(def)) return null;
   delete world.crops[key];
   setTile(world, x, y, FARMLAND);
-  return def.yieldName;
+  add(world.inventory, def.yields, 1);
+  add(world.inventory, "seed", SEED_PER_HARVEST);
+  return def;
 }
 
 /** Integrate a single crop's growth up to `now`. Watered time between the last

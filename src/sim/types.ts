@@ -172,6 +172,20 @@ export interface WorldState {
     selected: Record<SkinClass, SkinId>;
   };
 
+  /** Farming's free axis, and deliberately the same shape as `skins` above.
+   *  `unlocked` is the varieties the Blessed Carrot has let you have — permanent
+   *  and weightless, like a finish — and `selected` is what the next seed
+   *  becomes when it goes in the ground.
+   *
+   *  Note what is NOT here: a count. Seed itself is an ordinary item in the
+   *  satchel, because it is stuff; the variety is a look and looks are free
+   *  (DESIGN §Materials). Storing "how much radish seed" would be the two axes
+   *  collapsing back into one. */
+  seeds: {
+    unlocked: CropId[];
+    selected: CropId;
+  };
+
   /** What you have given the museum, oldest first (sim/museum.ts).
    *
    *  The FIRST accumulating record in the save, and the shape is the argument

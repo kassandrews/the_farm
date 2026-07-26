@@ -3,6 +3,9 @@ import { newWorld } from "./game";
 import { serialize, deserialize, migrateSave, SCHEMA_VERSION } from "./save";
 import { tileKey } from "./world";
 import { TOWN_BUILDINGS, footprintCells } from "../content/town";
+import { count } from "./inventory";
+import { STARTING_SEED } from "./seeds";
+import { STARTING_CROP } from "../content/crops";
 
 function freshWorld() {
   return newWorld({ name: "Keeper", form: "menace", spot: "riverside", seed: 99 });
@@ -367,12 +370,16 @@ describe("migrations", () => {
     // Partial<Record>), and the heap's finishes are non-starters, so its
     // unlocked list is already correct. If this ever has to change, something
     // has been designed that the schema didn't want.
-    const before = v10Save();
-    const migrated = migrateSave(before)! as unknown as Record<string, unknown>;
-    const gained = Object.keys(migrated).filter((k) => !(k in before));
-    expect(gained).toEqual([]);
-    expect(migrated.inventory).toEqual(before.inventory);
-    expect(migrated.skins).toEqual(before.skins);
+    //
+    // Stated as "a v10 save and a v11 save of the same town end up identical",
+    // rather than "nothing changed", because later steps of the ladder DO add
+    // things (v14 hands out seed). Comparing the two paths isolates this one
+    // step no matter how long the ladder gets.
+    const asV10 = migrateSave(v10Save())!;
+    const asV11 = migrateSave({ ...v10Save(), schemaVersion: 11 })!;
+    expect(asV10.inventory).toEqual(asV11.inventory);
+    expect(asV10.skins).toEqual(asV11.skins);
+    expect(Object.keys(asV10).sort()).toEqual(Object.keys(asV11).sort());
   });
 
   it("does not take away a finish redeemed at the heap", () => {
@@ -381,5 +388,46 @@ describe("migrations", () => {
     const save = v10Save();
     (save.skins as { unlocked: string[] }).unlocked.push("salvage");
     expect(migrateSave(save)!.skins.unlocked).toContain("salvage");
+  });
+});
+
+describe("v13 → v14: the seed stall", () => {
+  function v13Save(extra: Record<string, unknown> = {}): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const { seeds, ...rest } = w;
+    void seeds;
+    const inventory = { ...(w.inventory as Record<string, number>) };
+    delete inventory.seed; // nobody had seed before there was seed
+    return { ...rest, schemaVersion: 13, inventory, ...extra };
+  }
+
+  it("hands an existing town enough seed to keep planting", () => {
+    // NOT generosity — the migration refusing to take something away. Sowing
+    // now costs a seed, so without this, ground a returning player could plant
+    // on yesterday would refuse them today.
+    const migrated = migrateSave(v13Save())!;
+    expect(count(migrated.inventory, "seed")).toBe(STARTING_SEED);
+    expect(count(migrated.inventory, "seed")).toBe(count(freshWorld().inventory, "seed"));
+  });
+
+  it("backfills the starting variety and nothing else", () => {
+    // A v13 town unlocked nothing because there was nothing to unlock, and
+    // crediting it with the radish would be a record of something that didn't
+    // happen — the v11→v12 museum rule, one field over.
+    const migrated = migrateSave(v13Save())!;
+    expect(migrated.seeds.unlocked).toEqual([STARTING_CROP]);
+    expect(migrated.seeds.selected).toBe(STARTING_CROP);
+  });
+
+  it("tops up rather than assigns, so a re-run can never confiscate a satchel", () => {
+    const migrated = migrateSave(v13Save({ inventory: { wood: 8, seed: 4 } }))!;
+    expect(count(migrated.inventory, "seed")).toBe(4 + STARTING_SEED);
+  });
+
+  it("brings the stall AND the Blessed Carrot, or it repeats the shop's bug", () => {
+    const migrated = migrateSave(v13Save())!;
+    const stall = TOWN_BUILDINGS.seedstall;
+    expect(migrated.build[tileKey(stall.door.x, stall.door.y)]).toMatchObject({ id: "door" });
+    expect(migrated.villagers.some((v) => v.id === "seedstall")).toBe(true);
   });
 });

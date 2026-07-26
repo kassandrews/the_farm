@@ -458,7 +458,8 @@ export class Renderer {
       const [tx, ty] = key.split(",").map(Number);
       const cx = Math.round(this.sceneX(tx));
       const base = Math.round(this.sceneY(ty) + TILE / 2) - 2; // sits on the soil
-      const ripe = crop.stage >= ripeStage(cropDef(crop.cropId));
+      const def = cropDef(crop.cropId);
+      const ripe = crop.stage >= ripeStage(def);
       const green = "#5fa347";
       const leaf = "#8fd06a";
       if (crop.stage === 0) {
@@ -488,9 +489,12 @@ export class Renderer {
         ctx.fillRect(cx + 2, base - 7, 1, 2);
         ctx.fillStyle = green;
         ctx.fillRect(cx - 1, base - 6, 3, 2);
-        ctx.fillStyle = "#f08c3a";
+        // The shoulder is the ONLY thing that differs between varieties, and it
+        // is read from the crop table rather than branched on here — one plant,
+        // three palettes, so a fourth costs a row and no drawing code.
+        ctx.fillStyle = def.ripeColor;
         ctx.fillRect(cx - 1, base - 4, 3, 4);
-        ctx.fillStyle = "#d06a24";
+        ctx.fillStyle = def.ripeShade;
         ctx.fillRect(cx - 1, base - 1, 3, 1);
         // A gentle "ready" bob marker.
         if (Math.sin(now / 400) > 0.6) {

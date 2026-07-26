@@ -29,6 +29,15 @@ export type SkinClass = "wood" | "stone" | "cloth";
  *  `["wood", "stone"]` and one of them forgetting to grow. */
 export const SKIN_CLASSES: SkinClass[] = ["wood", "stone", "cloth"];
 
+/** Display names for the classes. A table rather than a ternary at the one call
+ *  site that labels them — the ternary said "Wood" or "Stone", so the day cloth
+ *  finishes became reachable the satchel started calling them stone. */
+export const SKIN_CLASS_NAMES: Record<SkinClass, string> = {
+  wood: "Wood",
+  stone: "Stone",
+  cloth: "Cloth",
+};
+
 export type SkinId =
   // Wood
   | "pine"

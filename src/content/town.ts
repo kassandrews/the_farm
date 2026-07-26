@@ -22,7 +22,7 @@ import type { FurnitureId, Facing } from "./furniture";
 import type { CharId } from "./cast";
 import type { WingId } from "./museum";
 
-export type TownBuildingId = "townhall" | "margfrom_house" | "shop" | "heap" | "museum";
+export type TownBuildingId = "townhall" | "margfrom_house" | "shop" | "heap" | "museum" | "seedstall";
 
 /** A piece of furniture that comes with the building, at an absolute anchor. */
 export interface TownFurniture {
@@ -226,22 +226,40 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       { x: -12, y: -15, id: "shelf", facing: "s" },
       { x: -8, y: -15, id: "shelf", facing: "s" },
     ],
-    // Three cases on alternating rows, with a walkway between each — you move
-    // up the gallery and the exhibits are on your left and right. Fill order
-    // within a wing is array order.
+    // Cases on alternating rows, with a walkway between each — you move up the
+    // gallery and the exhibits are on your left and right. Fill order within a
+    // wing is array order.
     //
-    // Rows -10, -12, -14 and never two together: see the note on the field.
-    // The nature run is six cells wide for five exhibits and the antiquities
-    // runs are twelve cells for twelve, but none of that is visible — a case
-    // is only as long as the exhibits standing on it.
+    // Rows -8, -10, -12, -14 and never two together: see the note on the field.
+    // None of the spare length is visible — a case is only as long as the
+    // exhibits standing on it.
+    //
+    // THE GALLERY IS FULL, and the seed stall is what found that out. It was
+    // sized to the table exactly (six cells for five nature rows, twelve for
+    // twelve antiquities), so adding two crops to the world overflowed a room
+    // that cannot grow: the river is at x <= -12, the town hall is east, and
+    // Margfrom and the plaza are south. Rather than reshape a building people
+    // have already walked into and put things in — which the v13 note asks the
+    // next person NOT to read as a precedent — the nature wing spilled into a
+    // fourth short case by the entrance. Which is what happens to small
+    // museums.
+    //
+    // The door column (x -10) stays empty on that row. A case is not solid, so
+    // nothing would stop you, and that is exactly the problem: you would walk
+    // through the display case in the doorway.
     plinths: [
-      // Nature, deepest in. Five rows in the table, six cells of case.
+      // Nature, deepest in.
       { wing: "nature", x: -12, y: -14 },
       { wing: "nature", x: -11, y: -14 },
       { wing: "nature", x: -10, y: -14 },
       { wing: "nature", x: -9, y: -14 },
       { wing: "nature", x: -8, y: -14 },
       { wing: "nature", x: -7, y: -14 },
+      // …and the overflow, west of the doorway. Two cells, which is one more
+      // than the crop table currently needs; a third crop will want the room
+      // reshaped rather than another corner found for it.
+      { wing: "nature", x: -12, y: -8 },
+      { wing: "nature", x: -11, y: -8 },
       // Antiquities, the two runs nearest the door — they are what fills up.
       { wing: "antiquities", x: -12, y: -10 },
       { wing: "antiquities", x: -11, y: -10 },
@@ -255,6 +273,42 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       { wing: "antiquities", x: -9, y: -12 },
       { wing: "antiquities", x: -8, y: -12 },
       { wing: "antiquities", x: -7, y: -12 },
+    ],
+  },
+
+  // The seed stall, south-west of the plaza — the one institution that sits
+  // between the town and the ground you dig, because that is what it is for.
+  // Everywhere else was taken: the shop and the heap are east, the museum and
+  // Margfrom west and north, and the plaza is the plaza. South is also the way
+  // you walk from the square toward open land, which is the right direction to
+  // pass a seed stall in.
+  //
+  // It is called a stall and it is a small building, which is the same
+  // compromise the heap made about being a facility. A genuinely open-fronted
+  // stall would be a room the flood-fill never closes, and every rule about
+  // roofs, doorsteps and cutaways would need an exception for one structure.
+  // He has a door like everybody else and does not appear to have noticed.
+  seedstall: {
+    id: "seedstall",
+    name: "The Seed Stall",
+    x0: -9,
+    y0: 4,
+    x1: -4,
+    y1: 9,
+    // South wall, like every door in the town — see margfrom_house.
+    door: { x: -6, y: 9 },
+    // Pine, unfinished. He has not decorated. It has not come up.
+    finish: "pine",
+    furniture: [
+      // The counter, along the front wall but OFF the doorway, with him behind
+      // it at (-7,7). Same arrangement as the Menace's: you do not walk the
+      // room to buy a thing. It started centred on the door, which walled the
+      // building shut — a table is solid, and town.test.ts caught it before a
+      // browser had to.
+      { x: -8, y: 8, id: "table", facing: "s" },
+      // Stock along the back wall, in no order anybody has explained.
+      { x: -8, y: 5, id: "shelf", facing: "s" },
+      { x: -5, y: 5, id: "shelf", facing: "s" },
     ],
   },
 };

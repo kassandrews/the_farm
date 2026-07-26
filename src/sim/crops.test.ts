@@ -3,6 +3,7 @@ import { newWorld } from "./game";
 import { plant, water, harvest, updateCrop, isRipe, WATER_DURATION_MS } from "./crops";
 import { tileKey, tileAt, FARMLAND, FARMLAND_WET } from "./world";
 import { cropDef, ripeStage } from "../content/crops";
+import { count } from "./inventory";
 
 const HOUR = 3_600_000;
 
@@ -52,9 +53,14 @@ describe("crop growth", () => {
     }
     updateCrop(w, 6, 6, now);
     expect(isRipe(w, 6, 6)).toBe(true);
+    const seedBefore = count(w.inventory, "seed");
     expect(w.crops[tileKey(6, 6)].stage).toBe(ripeStage(def));
+    // harvest pays out itself now — the produce AND a seed, which is the half
+    // that keeps a spent seed from being a ration (see its docblock).
     const yielded = harvest(w, 6, 6, now);
-    expect(yielded).toBe("carrot");
+    expect(yielded!.id).toBe("carrot");
+    expect(count(w.inventory, "carrot")).toBe(1);
+    expect(count(w.inventory, "seed")).toBeGreaterThan(seedBefore);
     expect(w.crops[tileKey(6, 6)]).toBeUndefined();
   });
 

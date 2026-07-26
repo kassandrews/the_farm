@@ -36,7 +36,9 @@ import { itemLabel } from "../content/items";
 import type { ItemId } from "../content/items";
 import { gather, nodeNear, updateRegrowth } from "./gather";
 import { starterSkins, defaultSkin } from "../content/skins";
-import { canPlant, plant, water, canWater, harvest, isRipe, updateAllCrops, updateCrop } from "./crops";
+import { STARTING_CROP } from "../content/crops";
+import { STARTING_SEED, canSow, sow } from "./seeds";
+import { canPlant, water, canWater, harvest, isRipe, updateAllCrops, updateCrop } from "./crops";
 import { cropDef, ripeStage } from "../content/crops";
 import type { MeadowImport } from "./meadow_import";
 import { simulateAway, AWAY_MIN_MS } from "./away";
@@ -108,13 +110,17 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     villagers,
     commissions: [],
     // A few boards' worth of wood so the very first thing you try to build
-    // works — you learn the cost by spending it, not by being refused.
-    inventory: { ...emptyInventory(), wood: 8 },
+    // works — you learn the cost by spending it, not by being refused. Seed for
+    // the same reason: the tent comes with enough to put a row in, and the
+    // Blessed Carrot is where you go when you want more of it or something
+    // other than a carrot to plant.
+    inventory: { ...emptyInventory(), wood: 8, seed: STARTING_SEED },
     regrow: {},
     skins: {
       unlocked: starterSkins(),
       selected: { wood: defaultSkin("wood"), stone: defaultSkin("stone"), cloth: defaultSkin("cloth") },
     },
+    seeds: { unlocked: [STARTING_CROP], selected: STARTING_CROP },
     museum: { donated: [] },
     flags: { landClaimed: false, onboarded: false },
   };
@@ -254,10 +260,15 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
   const target = actionTarget(world, tool);
 
   if (target.kind === "harvest") {
-    const yielded = harvest(world, target.x, target.y, now)!;
-    add(world.inventory, "carrot", 1); // it goes in the satchel, not into thin air
-    witness(world, "harvested_carrot", `a ${yielded}`, now);
-    return { kind: "harvest", changed: true, message: `You pulled a ${yielded}. It's a good one.` };
+    // `harvest` pays out the produce AND a seed itself — the cost of sowing and
+    // the return on pulling are one rule and live together (see its docblock).
+    const def = harvest(world, target.x, target.y, now)!;
+    witness(world, "harvested_carrot", `a ${def.yieldName}`, now);
+    return {
+      kind: "harvest",
+      changed: true,
+      message: `You pulled a ${def.yieldName}. It's a good one.`,
+    };
   }
 
   if (target.kind === "gather") {
@@ -284,7 +295,11 @@ function toolApplies(world: WorldState, tool: Tool, x: number, y: number): boole
     case "gather":
       return tileAt(world, x, y) === MUSHROOM; // the one gatherable that isn't a node
     case "plant":
-      return canPlant(world, x, y);
+      // canSow, not canPlant: the reticle promises exactly what ACT will do
+      // (ROADMAP §"The reticle is the promise"), and with an empty satchel ACT
+      // will do nothing. Lighting up plantable ground you can't sow is the same
+      // lie the reticle rule was written about, wearing farming's clothes.
+      return canSow(world, x, y);
     case "water":
       return canWater(world, x, y);
   }
@@ -315,13 +330,25 @@ function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: num
         return { kind: "gather", changed: true, message: "Picked. It comes away cleanly." };
       }
       return { kind: "gather", changed: false, message: "Nothing to gather here." };
-    case "plant":
-      if (canPlant(world, x, y)) {
-        plant(world, x, y, "carrot", now);
+    case "plant": {
+      const sown = sow(world, x, y, now);
+      if (sown) {
         witness(world, "planted_carrot", undefined, now);
-        return { kind: "plant", changed: true, message: "Carrot seed, planted. Now it needs water." };
+        return {
+          kind: "plant",
+          changed: true,
+          message: `${cropDef(sown).name} seed, planted. Now it needs water.`,
+        };
       }
-      return { kind: "plant", changed: false, message: "Can't plant here." };
+      // Two refusals, because they are two different problems and only one of
+      // them is about where you're standing. "Can't plant here" while holding no
+      // seed sends you looking for better ground, which you already had.
+      return {
+        kind: "plant",
+        changed: false,
+        message: canPlant(world, x, y) ? "No seed in the satchel." : "Can't plant here.",
+      };
+    }
     case "water":
       if (water(world, x, y, now)) {
         return { kind: "water", changed: true, message: "Watered. Growth resumes." };
