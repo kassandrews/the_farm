@@ -195,7 +195,17 @@ export class App {
     this.openModal(
       (close) =>
         panel("A postcard from the Farm", "While you were out", [
-          el("p", {}, [lines.join("\n. ... ")]),
+          // One paragraph per piece of news.
+          //
+          // This used to be a single <p> joining the lines with "\n. ... ". Two
+          // things wrong with that: the house ellipsis is a pause INSIDE a
+          // sentence ("Cloth. ... You can't grow it"), so at the start of a
+          // line it is a full stop with no word in front of it — and a bare
+          // newline in its place left a piece of news that wrapped looking
+          // exactly like two pieces of news. Separate paragraphs give the
+          // spacing that says which is which, and every line is already a
+          // complete sentence.
+          ...lines.map((line) => el("p", {}, [line])),
           actionRow([primaryBtn("Back to it", close)]),
         ]),
       { dismissable: true },
