@@ -49,13 +49,19 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   soft furniture that costs it.
 - **Phase 3e — the junk economy, complete.** The ground has things in it,
   digging finds them, and the Gremlin's heap turns them into finishes.
-- Menu with New town / sound toggle; PWA shell; 286 tests.
+- Menu with New town / sound toggle; PWA shell; 297 tests.
+- **Phase 3f — the museum, steps 1–4 of 8.** The table, the sim, and schema
+  v12: two wings, donation is a gift that returns nothing, and the record has
+  no total and no denominator. Corrigal is standing in a museum north-west of
+  the plaza with nothing in it yet — **plinths (5) and the panel (6) are what
+  make it visitable**, and until step 6 there is no way to donate from the
+  game. Steps 7–8 are the away event and Margfrom's perk.
 
-**Next:** Phase 3f, the museum — planned in full below, docs done, steps 2–8
+**Next:** Phase 3f steps 5–8 — planned in full below, docs done, steps 5–8
 outstanding. Then the last three institutions (seed stall, errands board, plaza
 stage) and festivals.
 
-**Save schema is at v11.** Every change ships a tested migration — see
+**Save schema is at v12.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -718,9 +724,13 @@ The model is settled above. This is the build order; steps 1–4 are one commit.
 
 1. ~~**The docs.**~~ **Done** — DESIGN §The museum, the settled entry above, and
    the correction to the Scholar affinity perk.
-2. **`content/museum.ts`** — the exhibit table, two wings. Each row carries
-   **2–3 placards**, not one; that is what makes step 7 cost nothing.
-3. **`sim/museum.ts`** — `donatable`, `donate`, `collection`. Modelled on
+2. ~~**`content/museum.ts`**~~ **Done** — 17 rows: 5 nature (one per crop and
+   gathered thing; cloth deliberately absent, it is the one thing you cannot
+   gather) and 12 antiquities at a **flat** 3 junk each, drawn from the same
+   objects `JUNK_FINDS` names when the ground gives them up. Every row carries
+   2–3 placards, which is what makes step 7 cost nothing.
+3. ~~**`sim/museum.ts`**~~ **Done** — `donatable`, `donate`, `collection`,
+   `remountExhibit` for step 7. Modelled on
    `sim/heap.ts`: all-or-nothing, and it **refuses what is already held**. That
    refusal is not politeness — without it a second tap spends the junk and the
    record absorbs it silently, which is the exact bug `redeem()` was written to
@@ -728,13 +738,22 @@ The model is settled above. This is the build order; steps 1–4 are one commit.
    finish or furniture; no acceptance test anywhere reads the collection; the
    world never grows a museum score field; each wing is fillable without
    farming and without digging.
-4. **Schema v12** — additive `world.museum: { donated: { id, placard }[] }`,
-   migration backfills empty. Same commit adds the curator to
-   `ensureFixedCast` and the museum to `TOWN_BUILDINGS`. **Both, or it repeats
-   3d's bug**: a `CAST` row alone is a building with nobody behind the counter
-   and an existing save that never gets her. Placement is west/north-west of
-   the plaza, clear of Margfrom's house at (-10,-3); `stampBuilding` already
-   refuses all-or-nothing over anything the player built.
+
+   That last one was written loosely and got tightened in the building: the
+   antiquities wing *is* junk, so it cannot be fillable without digging and was
+   never meant to be. What the test asserts is the real rule from DESIGN — the
+   **museum** is reachable without farming *or* without digging, and the nature
+   wing has rows a pure gatherer can give before they have ever planted or
+   turned a tile. Neither wing owns a verb.
+4. ~~**Schema v12**~~ **Done** — additive
+   `world.museum: { donated: { id, placard }[] }`, migration backfills empty
+   (never inferred: an old save donated nothing because there was nowhere to).
+   Same commit added Corrigal to `ensureFixedCast` and the museum to
+   `TOWN_BUILDINGS` — **both, or it repeats 3d's bug**: a `CAST` row alone is a
+   building with nobody behind the counter. She stands at (-12,-9) inside
+   x -13..-7, y -12..-7, north-west of the plaza and clear of both Margfrom's
+   house (y -4..0) and the town hall (x -3..3); a `museum.test.ts` case asserts
+   her post is inside her own walls.
 5. **Plinths.** Authored plinth cells in the footprint; a donated exhibit fills
    the next one. One generic plinth sprite, not per-exhibit art. A row of
    plinths is a per-cell edges band candidate — read that rule first.
@@ -747,9 +766,10 @@ The model is settled above. This is the build order; steps 1–4 are one commit.
 8. **Margfrom's perk** — she offers her own reading of a recent exhibit, and it
    disagrees with the curator's.
 
-**Open:** the curator needs a name. She is a specific scholar, not "Little
-Scholar" — same footing as Bissenette vs. the Fancy Little Menace. Mine
-`src/content/canon/` for one in voice.
+~~**Open:** the curator needs a name.~~ **Settled: Corrigal.** A specific
+scholar, not "Little Scholar" — same footing as Bissenette vs. the Fancy Little
+Menace, and Margfrom is now just a scholar who lives here. The name is one
+string in `cast.ts` and nothing keys on it, so it stays cheap to change.
 
 ### The rest of Phase 3
 

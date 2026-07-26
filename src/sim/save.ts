@@ -13,7 +13,7 @@ import { makeVillager } from "./villagers";
 import { authoredBed } from "../content/town";
 import type { CharId } from "../content/cast";
 
-export const SCHEMA_VERSION = 11;
+export const SCHEMA_VERSION = 12;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -234,6 +234,34 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       build: heap.build,
       furniture: heap.furniture,
       villagers: withFixedCast(raw, now),
+    };
+  },
+  // v11 → v12: the museum. The same two moves as v10 and v11 — stamp the town
+  // table, re-run ensureFixedCast — plus the first genuinely NEW FIELD since
+  // commissions.
+  //
+  // BOTH THE BUILDING AND THE CURATOR, or this repeats v10's near-miss: a CAST
+  // row on its own is a museum with nobody in it, and a stamp on its own is a
+  // scholar standing in a field. They are one migration because they are one
+  // fact about the town (ROADMAP §"Adding a cast row does not add a person").
+  //
+  // `museum.donated` backfills EMPTY rather than being inferred from anything.
+  // There is nothing to infer it from and that is correct — an existing town
+  // has not donated anything, because there was nowhere to donate it. A
+  // migration that "credited" old saves with exhibits they never gave would be
+  // handing out a record of things that did not happen, which is the one thing
+  // a museum must not contain.
+  11: (raw) => {
+    const now = Date.now();
+    const stamped = stampInto(raw);
+    return {
+      ...raw,
+      schemaVersion: 12,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
+      villagers: withFixedCast(raw, now),
+      museum: { donated: [] },
     };
   },
 };

@@ -23,6 +23,7 @@ export type AuthoredId =
   | "office" // Tired Office Creature — town hall, land claims
   | "shop" // Fancy Little Menace — the counter, and the only source of cloth
   | "heap" // Gremlin — the junk economy, and the only source of his finishes
+  | "museum" // Corrigal — the curator, and every placard in the collection
   | "resident1"; // the one starter resident
 
 /** Someone the town has since taken in. Newcomers arrive at run time (see
@@ -131,6 +132,21 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // the same footing as the two Menaces: forms are species, not singletons
     // (DESIGN §Importing). This one is the facility.
     schedule: [{ fromHour: 0, x: 8, y: -8, doing: "at the facility" }],
+  },
+  museum: {
+    id: "museum",
+    form: "scholar",
+    name: "Corrigal",
+    fixed: true,
+    // A NAMED scholar, where Margfrom is a scholar who happens to live here.
+    // That is the whole shape DESIGN §The museum insists on — forms are species,
+    // not singletons — and it is the same relationship the Menace has with
+    // Bissenette. Two scholars in one town is not a collision; it is the point.
+    //
+    // An INSTITUTION like the other three: no bed, no ring, no home stop. She
+    // is beside the desk rather than behind it, because the museum is the
+    // exhibits and she would rather be standing near them.
+    schedule: [{ fromHour: 0, x: -12, y: -9, doing: "beside the desk" }],
   },
   resident1: {
     id: "resident1",

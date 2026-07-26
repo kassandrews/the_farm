@@ -115,6 +115,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
       unlocked: starterSkins(),
       selected: { wood: defaultSkin("wood"), stone: defaultSkin("stone"), cloth: defaultSkin("cloth") },
     },
+    museum: { donated: [] },
     flags: { landClaimed: false, onboarded: false },
   };
 

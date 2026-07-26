@@ -21,7 +21,7 @@ import type { SkinId } from "./skins";
 import type { FurnitureId, Facing } from "./furniture";
 import type { CharId } from "./cast";
 
-export type TownBuildingId = "townhall" | "margfrom_house" | "shop" | "heap";
+export type TownBuildingId = "townhall" | "margfrom_house" | "shop" | "heap" | "museum";
 
 /** A piece of furniture that comes with the building, at an absolute anchor. */
 export interface TownFurniture {
@@ -168,6 +168,41 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       // town.test.ts's "never lets its own furniture seal the front door" was
       // written for when the shop's counter did exactly that.
       { x: 6, y: -7, id: "table", facing: "s" },
+    ],
+  },
+
+  // The museum, north-west of the plaza. Placement is boxed in on three sides
+  // by things that already exist and must not be touched: Margfrom's house
+  // (x -11..-7, y -4..0) below it, the town hall (x -3..3, y -9..-5) to the
+  // east, and the plaza (x -5..5, y -5..3). y1 of -7 clears her roofline with
+  // room to walk between, and x1 of -7 stops well short of the hall.
+  //
+  // It is the largest building in town and that is deliberate rather than
+  // grand: the interior has to hold a row of plinths per wing without them
+  // touching (plinths land in step 5), and a museum you can cross in two steps
+  // makes the collection feel like a shelf.
+  museum: {
+    id: "museum",
+    name: "The Museum",
+    x0: -13,
+    y0: -12,
+    x1: -7,
+    y1: -7,
+    // South wall, like every door in the town — a wall running away from the
+    // camera has no face to draw a doorway on (see margfrom_house).
+    door: { x: -10, y: -7 },
+    finish: "whitewash",
+    furniture: [
+      // Corrigal's desk, off to the west so the middle of the room stays clear
+      // for exhibits. She stands at (-12,-9), beside it rather than behind it.
+      { x: -12, y: -10, id: "table", facing: "s" },
+      // Reference along the north wall. She has read all of it and drawn her
+      // own conclusions.
+      { x: -10, y: -11, id: "shelf", facing: "s" },
+      { x: -8, y: -11, id: "shelf", facing: "s" },
+      // Nothing within reach of the doorway at x -10: solid furniture in front
+      // of a door seals the building, which is the bug town.test.ts's "never
+      // lets its own furniture seal the front door" was written for.
     ],
   },
 };

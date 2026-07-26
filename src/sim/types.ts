@@ -12,6 +12,7 @@ import type { NodeId } from "../content/nodes";
 import type { SkinId, SkinClass } from "../content/skins";
 import type { StructureId } from "../content/structures";
 import type { FurnitureId, Facing } from "../content/furniture";
+import type { ExhibitId } from "../content/museum";
 
 /** Where the player chose to settle (DESIGN §"Town and homestead": 3–4 spots).
  *  Cosmetic-plus-origin: it shifts the homestead plot and its flavour. */
@@ -170,6 +171,19 @@ export interface WorldState {
     unlocked: SkinId[];
     selected: Record<SkinClass, SkinId>;
   };
+
+  /** What you have given the museum, oldest first (sim/museum.ts).
+   *
+   *  The FIRST accumulating record in the save, and the shape is the argument
+   *  for why that's allowed: a list of what you gave, and nothing else. There
+   *  is no count, no set of what's outstanding, and no "seen" flags — a
+   *  collection is not a score when it has no total and no denominator
+   *  (ROADMAP §The museum). Anything added here that could be divided by
+   *  something has misunderstood the field.
+   *
+   *  `placard` is an index into the exhibit's readings, not the text: the away
+   *  event moves it when the curator revises, and the words stay in content. */
+  museum: { donated: { id: ExhibitId; placard: number }[] };
 
   flags: {
     landClaimed: boolean;
