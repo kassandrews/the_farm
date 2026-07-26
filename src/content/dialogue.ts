@@ -87,8 +87,13 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     planted_carrot: [
       () => "You've planted. I'll monitor the plot. For science, and because I'm nosy.",
     ],
-    // Set by the away simulation when the Scholar mounts an exhibit in your
-    // absence — so the postcard's news is something you can then talk to.
+    // Set by the away simulation when a curator revises a placard in your
+    // absence (sim/away.ts). The value is the exhibit's TITLE, so these read as
+    // a scholar naming a real thing standing on a real case — and older saves
+    // whose value is prose ("a rock") still speak, because nothing looks it up.
+    //
+    // Corrigal owns that memory but never says these: her conversation is the
+    // museum panel. They are here for a scholar who has one and DOES talk.
     exhibit: [
       (v) => `You missed the unveiling. The exhibit is ${v}. The placard is, I'll admit, a first draft.`,
       (v) => `Have you seen my ${v} exhibit? Don't read the placard too closely. Or do. I stand by it.`,

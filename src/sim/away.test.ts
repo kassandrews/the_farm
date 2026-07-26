@@ -4,7 +4,9 @@ import { simulateAway } from "./away";
 import { makeRng } from "./rng";
 import { tileKey } from "./world";
 import { PLANK, MUSHROOM } from "../content/tiles";
-import { hasMemory } from "./memory";
+import { hasMemory, recall } from "./memory";
+import { donate } from "./museum";
+import { exhibitDef } from "../content/museum";
 
 const HOUR = 3_600_000;
 
@@ -71,15 +73,56 @@ describe("away simulation", () => {
     expect(shrooms).toBeLessThanOrEqual(10);
   });
 
-  it("the Scholar's exhibit becomes a memory it can talk about later", () => {
+  it("the curator revises a donated exhibit, and remembers doing it", () => {
     const w = newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 4 });
-    const scholar = w.villagers.find((v) => v.form === "scholar")!;
-    expect(hasMemory(scholar.memory, "exhibit")).toBe(false);
-    // Run absences until the shuffled pool picks the exhibit event.
-    for (let i = 0; i < 20 && !hasMemory(scholar.memory, "exhibit"); i++) {
+    // Give her something to be wrong about, twice over.
+    w.inventory.wood = 5;
+    donate(w, exhibitDef("timber"));
+    const curator = w.villagers.find((v) => v.id === "museum")!;
+    expect(hasMemory(curator.memory, "exhibit")).toBe(false);
+
+    // Run absences until the shuffled pool picks the remount event.
+    for (let i = 0; i < 20 && !hasMemory(curator.memory, "exhibit"); i++) {
       simulateAway(w, 72 * HOUR, Date.now(), makeRng(i));
     }
-    expect(hasMemory(scholar.memory, "exhibit")).toBe(true);
+    expect(hasMemory(curator.memory, "exhibit")).toBe(true);
+    // The card under the exhibit actually moved on — the memory is a record of
+    // a change to the world, not a line about one.
+    expect(w.museum.donated[0].placard).toBeGreaterThan(0);
+    // The TITLE, so a scholar's dialogue line reads as a real thing on a case.
+    expect(recall(curator.memory, "exhibit")?.value).toBe(exhibitDef("timber").title);
+  });
+
+  it("says nothing about the museum when nothing has been donated", () => {
+    const w = newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 4 });
+    const curator = w.villagers.find((v) => v.id === "museum")!;
+    for (let i = 0; i < 20; i++) {
+      const lines = simulateAway(w, 72 * HOUR, Date.now(), makeRng(i));
+      expect(lines.some((l) => l.includes("Corrigal"))).toBe(false);
+    }
+    // An empty museum has no card to revise, so she is skipped entirely rather
+    // than announcing an exhibit standing on no plinth anywhere.
+    expect(hasMemory(curator.memory, "exhibit")).toBe(false);
+  });
+
+  it("finds the curator by id, never by form", () => {
+    // Margfrom is also a scholar, and in a save old enough to predate Corrigal
+    // she comes FIRST in the list. A form-based lookup landed on whichever one
+    // happened to be earlier, so the same event hit different people depending
+    // on how old the town was.
+    const w = newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 4 });
+    w.inventory.wood = 5;
+    donate(w, exhibitDef("timber"));
+    const resident = w.villagers.find((v) => v.id === "resident1")!;
+    const curator = w.villagers.find((v) => v.id === "museum")!;
+    expect(resident.form).toBe("scholar");
+    expect(curator.form).toBe("scholar");
+
+    for (let i = 0; i < 20 && !hasMemory(curator.memory, "exhibit"); i++) {
+      simulateAway(w, 72 * HOUR, Date.now(), makeRng(i));
+    }
+    expect(hasMemory(curator.memory, "exhibit")).toBe(true);
+    expect(hasMemory(resident.memory, "exhibit")).toBe(false);
   });
 
   it("is deterministic for a given seed", () => {

@@ -20,6 +20,7 @@ import type { Rng } from "./rng";
 import { tileAt, setTile, tileKey } from "./world";
 import { GRASS, DIRT, PLANK, MUSHROOM } from "../content/tiles";
 import { remember } from "./memory";
+import { remountExhibit } from "./museum";
 
 const HOUR = 3_600_000;
 
@@ -111,19 +112,47 @@ const gremlinMovesABoard: AwayEvent = (world, rng) => {
   return "One of your boards is one tile to the left of where you left it. The Gremlin denies everything.";
 };
 
-/** The Scholar mounts a new (wrong) exhibit. No museum building yet, so the
- *  state this changes is the Scholar's MEMORY — which means they can bring it
- *  up in conversation later. News you can talk to. */
-const scholarMountsExhibit: AwayEvent = (world, rng, now) => {
-  const scholar = world.villagers.find((v) => v.form === "scholar");
-  if (!scholar) return null;
-  const subject = rng.pick(["a rock", "an interesting stick", "the concept of weather", "a second rock"]);
-  scholar.memory = remember(scholar.memory, { kind: "exhibit", at: now, value: subject });
-  return `The Scholar mounted a new exhibit while you were out. The subject is ${subject}. The placard is confidently wrong.`;
+/** Corrigal revises a placard while you're out (DESIGN §Time: "the Scholar
+ *  mounts a new wrong exhibit"). `remountExhibit` picks something you actually
+ *  donated and advances its reading by one; the room is unchanged, the card
+ *  under it is not.
+ *
+ *  This event USED to invent its own subject from a list — "a rock", "an
+ *  interesting stick" — because it was written before the museum existed. Two
+ *  things were wrong with that once it did: the exhibit it announced was
+ *  standing on no plinth anywhere, and it found its scholar by FORM, which is
+ *  Corrigal in a new town and Margfrom in a save old enough to predate her
+ *  (`ensureFixedCast` appends her after the resident). The same event landed on
+ *  different people depending on how old your town was. Institutions are found
+ *  by id; form is never an identity (DESIGN).
+ *
+ *  Returns null on an empty museum, so a town that has donated nothing simply
+ *  gets no news from her — rather than a line about a card that is not there
+ *  for you to go and read. Every event in this table changes the world; a
+ *  version of this one that only produced a sentence would be the slideshow the
+ *  header warns about.
+ *
+ *  The TITLE goes in the memory, not the id: the value is rendered straight
+ *  into a scholar's dialogue lines ("Have you seen my ... exhibit?"), and it
+ *  keeps the prose values of older saves speaking instead of resolving to
+ *  nothing.
+ *
+ *  Corrigal will not say that line herself — her conversation is the museum
+ *  panel, the same way the Menace's is her counter — and that is fine: the
+ *  revised card is legible in the catalogue, which is where you would go to
+ *  read it anyway. The log is what step 8 hangs off, when Margfrom starts
+ *  disagreeing with a recent one. */
+const curatorRemountsExhibit: AwayEvent = (world, rng, now) => {
+  const curator = world.villagers.find((v) => v.id === "museum");
+  if (!curator) return null;
+  const remounted = remountExhibit(world, (n) => rng.int(n));
+  if (!remounted) return null;
+  curator.memory = remember(curator.memory, { kind: "exhibit", at: now, value: remounted.def.title });
+  return `Corrigal has revised an exhibit while you were out. The card now reads: ${remounted.placard}`;
 };
 
 /** The whole table. Order is irrelevant — the roll shuffles. */
-const AWAY_EVENTS: AwayEvent[] = [mushroomsSpread, gremlinMovesABoard, scholarMountsExhibit];
+const AWAY_EVENTS: AwayEvent[] = [mushroomsSpread, gremlinMovesABoard, curatorRemountsExhibit];
 
 /** Run the town forward across an absence, mutating the world, and return the
  *  lines describing what genuinely changed. Crops are advanced by the caller

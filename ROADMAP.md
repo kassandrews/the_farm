@@ -50,17 +50,17 @@ DESIGN.md, if it's a rule about the game rather than about build order).
 - **Phase 3e — the junk economy, complete.** The ground has things in it,
   digging finds them, and the Gremlin's heap turns them into finishes.
 - Menu with New town / sound toggle; PWA shell; 304 tests.
-- **Phase 3f — the museum, steps 1–6 of 8.** The table, the sim, schema v12,
-  the gallery it stands in (v13), and Corrigal's panel. Two wings, donation is
-  a gift that returns nothing, the record has no total and no denominator, and
-  an exhibit physically appears on a case when you give it. **It is playable:**
-  talk to her, hand something over, read the card she writes, walk out past it.
-  Steps 7–8 are the away event and Margfrom's perk.
+- **Phase 3f — the museum, steps 1–7 of 8.** The table, the sim, schema v12,
+  the gallery it stands in (v13), Corrigal's panel, and the away event. Two
+  wings, donation is a gift that returns nothing, the record has no total and no
+  denominator, and an exhibit physically appears on a case when you give it.
+  **It is playable:** talk to her, hand something over, read the card she
+  writes, walk out past it — and come back to find she has revised it. Step 8
+  is Margfrom's perk.
 
-**Next:** Phase 3f steps 7–8 — the Scholar remounts an exhibit while you're
-away (`remountExhibit` already exists), then Margfrom's disagreeing reading.
-Then the last three institutions (seed stall, errands board, plaza stage) and
-festivals.
+**Next:** Phase 3f step 8 — Margfrom offers her own reading of a recent exhibit
+and disagrees with the curator's. Then the last three institutions (seed stall,
+errands board, plaza stage) and festivals.
 
 **Save schema is at v13.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
@@ -814,10 +814,31 @@ The model is settled above. This is the build order; steps 1–4 are one commit.
      listing the twelve.
    - The panel is the scroller, so every view swap rewinds it. A long catalogue
      otherwise drops you at the bottom of the counter, below the list.
-7. **Away event** — DESIGN §Time already promises "the Scholar mounts a new
-   wrong exhibit". With several placards per row that is: pick a donated
-   exhibit, advance its placard index, put it in the postcard. No new content
-   axis.
+7. ~~**Away event**~~ **Done** — `curatorRemountsExhibit` in `sim/away.ts`
+   calls the `remountExhibit` step 3 built: pick a donated exhibit, advance its
+   placard, quote the new card in the postcard. No new content axis, exactly as
+   planned, and the catalogue shows the revision because it reads the record
+   live.
+
+   It REPLACED an event of the same name written before the museum existed, and
+   that one had two bugs the museum turned up:
+
+   - **It invented its own subject** ("a rock", "an interesting stick"), so the
+     postcard announced an exhibit standing on no plinth anywhere. Now an empty
+     museum produces no news from her at all — the event returns null and is
+     skipped. That is the honest version: every event in this table changes the
+     world, and a line about a card you cannot go and read is the slideshow
+     away.ts's header warns about.
+   - **It found its scholar by FORM**, which is Corrigal in a new town and
+     Margfrom in a save old enough to predate her (`ensureFixedCast` appends
+     institutions after the resident). The same event landed on different
+     people depending on how old your town was. Institutions are found by
+     **id**; form is never an identity. Asserted now in `away.test.ts`.
+
+   The memory stores the exhibit's **title**, not its id: the value renders
+   straight into a scholar's dialogue line, and older saves whose value is prose
+   keep speaking rather than resolving to nothing. Corrigal never says that line
+   herself — her conversation is the panel — so the log exists for step 8.
 8. **Margfrom's perk** — she offers her own reading of a recent exhibit, and it
    disagrees with the curator's.
 
