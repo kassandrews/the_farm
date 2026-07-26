@@ -51,8 +51,9 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   digging finds them, and the Gremlin's heap turns them into finishes.
 - Menu with New town / sound toggle; PWA shell; 286 tests.
 
-**Next:** the rest of Phase 3 — the remaining four fixed cast and their
-institutions (museum, seed stall, errands board, plaza stage).
+**Next:** Phase 3f, the museum — planned in full below, docs done, steps 2–8
+outstanding. Then the last three institutions (seed stall, errands board, plaza
+stage) and festivals.
 
 **Save schema is at v11.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
@@ -220,6 +221,38 @@ Two things the build settled:
   Gremlin's away event moving a plank off a tile that was dug and then paved.
   Capped at one per absence, and it amounts to him having put something back in
   your ground. A `dug` set and a schema field would cost more than the bug.
+
+### The museum — a record that isn't a score
+
+**Settled in planning for Phase 3f**, recorded in full in DESIGN §The museum.
+The short version and *why*:
+
+- **It is the first institution that keeps a record.** The shop and the heap
+  were both built to accumulate nothing, because a running total is a score. A
+  museum's whole point is that it fills up, so the rule had to be stated more
+  precisely rather than repeated: a collection is not a score when it has **no
+  total and no denominator**. The panel lists what you have given and stops.
+- **No empty slots, and that is the load-bearing part.** Show eighteen blanks
+  and the museum becomes a checklist with a completion percentage implied by
+  the layout. You learn what else it holds by donating. Same instinct as
+  secrets never being spoiled by UI, applied to something that isn't secret.
+- **Junk is identified at donation, not at pickup.** The antiquities wing runs
+  on ordinary fungible junk; the curator decides what each one *was*, revealing
+  the next authored exhibit. This is `content/junk.ts`'s trick pointed the
+  other way — variety is free because nothing specific is ever carried — and it
+  is what let the museum have a real collection **without a second carve-out
+  from the three-materials rule**. Junk was allowed to be a fourth thing you
+  hold only because DESIGN carved it out by name; a "specimen" item class would
+  have made that rule a suggestion.
+- **A nature wing takes one of each crop and gathered thing.** Finite, ~6 rows.
+  Without it the museum runs entirely on digging, which would quietly make the
+  shovel the museum-filler's mandatory verb — the same failure the barter table
+  exists to prevent, one axis over.
+- **Donation returns nothing.** Finishes-for-junk belong to the Gremlin and a
+  second source undercuts him; anything else makes donating efficient rather
+  than a gift. The payoff is the placard and the plinth.
+- **Nothing may ever gate on the collection**, asserted in tests the way
+  `heap.test.ts` asserts the Gremlin never hands over a material.
 
 ### Adding a cast row does not add a person
 
@@ -679,13 +712,49 @@ the Fancy Little Menace is the institution. "Forms are species, not singletons"
 (DESIGN §Importing) — the museum curator will be a specific scholar while
 Margfrom is just a scholar who lives here.
 
+### 3f. The museum — **planned, not built**
+
+The model is settled above. This is the build order; steps 1–4 are one commit.
+
+1. ~~**The docs.**~~ **Done** — DESIGN §The museum, the settled entry above, and
+   the correction to the Scholar affinity perk.
+2. **`content/museum.ts`** — the exhibit table, two wings. Each row carries
+   **2–3 placards**, not one; that is what makes step 7 cost nothing.
+3. **`sim/museum.ts`** — `donatable`, `donate`, `collection`. Modelled on
+   `sim/heap.ts`: all-or-nothing, and it **refuses what is already held**. That
+   refusal is not politeness — without it a second tap spends the junk and the
+   record absorbs it silently, which is the exact bug `redeem()` was written to
+   avoid. Tests mirror `heap.test.ts`: the museum never gives back an item,
+   finish or furniture; no acceptance test anywhere reads the collection; the
+   world never grows a museum score field; each wing is fillable without
+   farming and without digging.
+4. **Schema v12** — additive `world.museum: { donated: { id, placard }[] }`,
+   migration backfills empty. Same commit adds the curator to
+   `ensureFixedCast` and the museum to `TOWN_BUILDINGS`. **Both, or it repeats
+   3d's bug**: a `CAST` row alone is a building with nobody behind the counter
+   and an existing save that never gets her. Placement is west/north-west of
+   the plaza, clear of Margfrom's house at (-10,-3); `stampBuilding` already
+   refuses all-or-nothing over anything the player built.
+5. **Plinths.** Authored plinth cells in the footprint; a donated exhibit fills
+   the next one. One generic plinth sprite, not per-exhibit art. A row of
+   plinths is a per-cell edges band candidate — read that rule first.
+6. **UI** — conversation IS the museum, the same call as the shop and the heap.
+   Three doors on the panel (`openModal(..., { dismissable: true })`).
+7. **Away event** — DESIGN §Time already promises "the Scholar mounts a new
+   wrong exhibit". With several placards per row that is: pick a donated
+   exhibit, advance its placard index, put it in the postcard. No new content
+   axis.
+8. **Margfrom's perk** — she offers her own reading of a recent exhibit, and it
+   disagrees with the curator's.
+
+**Open:** the curator needs a name. She is a specific scholar, not "Little
+Scholar" — same footing as Bissenette vs. the Fancy Little Menace. Mine
+`src/content/canon/` for one in voice.
+
 ### The rest of Phase 3
 
-- The remaining five fixed cast + their institutions: museum (confidently
-  incorrect placards), seed stall, errands board, plaza stage, junk economy.
-  Junk is worth doing early — it is the third payment axis the shop table is
-  already shaped for.
-- Museum donation loop (gives produce and finds a purpose).
+- The remaining three fixed cast + their institutions: seed stall (Blessed
+  Carrot), errands board (Loyal Dog Thing), plaza stage (Dramatic Blob).
 - Festivals on the real calendar.
 
 ---
@@ -727,8 +796,9 @@ you trip over them:
   is its own decision and was deliberately not improvised alongside the rest.
 - **Ore is defined but unobtainable** until the underground layer exists. This
   is intentional, not an oversight.
-- **Only one fixed-cast member** exists. `src/content/cast.ts` has the intended
-  full mapping recorded as comments. Residents are no longer limited to one:
+- **Three of the seven fixed cast exist** — office, shop, heap. The intended
+  full mapping is recorded as comments at the foot of `src/content/cast.ts`;
+  the museum is planned in 3f. Residents are no longer limited to one:
   `content/arrivals.ts` holds four, and the town takes them in one at a time.
   Note the queue **runs out** rather than looping — the fourth Rummage would say
   more about the table than about the town.

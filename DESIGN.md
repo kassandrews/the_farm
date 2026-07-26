@@ -166,12 +166,47 @@ Secret forms stay secret in spirit:
 - **Humming Cube** — a *structure*, not a character. A landmark that hums.
 - **Maverick Mole** — found only by digging deep. Undocumented. Ships anyway.
 
+## The museum
+
+The curator is a *specific* scholar — a named institution, where a Scholar
+resident is just someone with that form who lives here (§Importing: forms are
+species, not singletons). Every placard is confidently incorrect.
+
+**Donation is the third thing the town takes off your hands**, alongside the
+Menace's counter and the Gremlin's heap, and it is the one that gives
+museum-filling its own way to play (§Town and homestead).
+
+- **Two wings.** A **nature wing** takes one of each crop and gathered thing —
+  finite, small, and the reason the museum is reachable without farming *or*
+  without digging. An **antiquities wing** runs on junk.
+- **Junk is identified at donation, not at pickup.** You hand over ordinary
+  fungible junk and the curator decides what it was. Junk stays one item that
+  is never carried as a specific object (§Materials), and the variety is free
+  for exactly the same reason the finds' toasts are free — nothing is stored.
+- **Donation returns nothing.** No item, no finish, no material, no unlock.
+  Anything given back would make donating the efficient act rather than a gift,
+  and finishes-for-junk already belong to the Gremlin. The payoff is the
+  placard, and the exhibit standing on a plinth in a room you can walk through.
+- **The museum keeps a record, and the record is not a score.** It has no
+  total, no denominator and no empty slots: the collection shows what you have
+  given and nothing else. You find out what else it could hold by giving
+  something. A completion meter would turn the one part of the game that is
+  purely a gift into a checklist — and it is the same rule as secrets never
+  being spoiled by UI, applied to something that isn't secret.
+- **Nothing may ever gate on the collection.** No commission, no room, no
+  acceptance test reads it. It is a place, not a progression track.
+
 ## Affinity perks (instead of jobs)
 
 Forms grant small, flavorful, passive bonuses — never duties:
 
 - A Carrot villager occasionally blesses a crop overnight.
-- A Scholar resident identifies museum donations faster (occasionally wrong).
+- A Scholar resident offers their own reading of a recent museum exhibit, and
+  it disagrees with the curator's. (This line used to say a Scholar identifies
+  donations *faster*, which assumed donations take time to identify. They don't
+  — a waiting period on the one act the museum asks you to perform is a gate
+  wearing a hat. What survives is the funny half: two confidently incorrect
+  authorities.)
 - A Dog Thing sometimes retrieves things you dropped.
 
 Design rule: a perk should read as *personality leaking out*, not a stat.
