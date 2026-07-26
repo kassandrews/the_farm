@@ -49,19 +49,20 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   soft furniture that costs it.
 - **Phase 3e — the junk economy, complete.** The ground has things in it,
   digging finds them, and the Gremlin's heap turns them into finishes.
-- Menu with New town / sound toggle; PWA shell; 297 tests.
-- **Phase 3f — the museum, steps 1–4 of 8.** The table, the sim, and schema
-  v12: two wings, donation is a gift that returns nothing, and the record has
-  no total and no denominator. Corrigal is standing in a museum north-west of
-  the plaza with nothing in it yet — **plinths (5) and the panel (6) are what
-  make it visitable**, and until step 6 there is no way to donate from the
-  game. Steps 7–8 are the away event and Margfrom's perk.
+- Menu with New town / sound toggle; PWA shell; 304 tests.
+- **Phase 3f — the museum, steps 1–5 of 8.** The table, the sim, schema v12,
+  and the gallery it stands in (v13). Two wings, donation is a gift that
+  returns nothing, the record has no total and no denominator, and an exhibit
+  physically appears on a case when you give it. Corrigal is at her desk by the
+  door. **Step 6, the panel, is what makes it visitable** — until then there is
+  no way to donate from inside the game, so the room is real but empty. Steps
+  7–8 are the away event and Margfrom's perk.
 
-**Next:** Phase 3f steps 5–8 — planned in full below, docs done, steps 5–8
-outstanding. Then the last three institutions (seed stall, errands board, plaza
-stage) and festivals.
+**Next:** Phase 3f step 6 — the conversation panel, the same call as the shop
+and the heap. Then 7–8, then the last three institutions (seed stall, errands
+board, plaza stage) and festivals.
 
-**Save schema is at v12.** Every change ships a tested migration — see
+**Save schema is at v13.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -754,9 +755,41 @@ The model is settled above. This is the build order; steps 1–4 are one commit.
    x -13..-7, y -12..-7, north-west of the plaza and clear of both Margfrom's
    house (y -4..0) and the town hall (x -3..3); a `museum.test.ts` case asserts
    her post is inside her own walls.
-5. **Plinths.** Authored plinth cells in the footprint; a donated exhibit fills
-   the next one. One generic plinth sprite, not per-exhibit art. A row of
-   plinths is a per-cell edges band candidate — read that rule first.
+
+   **Superseded by v13, in step 5.** That room was 5x4 inside — seventeen
+   exhibits in seventeen cells, wall to wall, no circulation. The museum is now
+   a GALLERY running north: x -13..-6, y -16..-7, door at (-10,-7), three cases
+   on rows -10, -12 and -14 with a walkway between each. It could not grow west
+   (`generatedTile` puts the riverside river at x <= -12) or east (the town
+   hall) or south (Margfrom, the plaza), so north is where it went.
+
+   The v13 migration is **the only one so far that removes anything**, and the
+   latitude was specific to the situation: the v12 room shipped the same day,
+   held nothing, and had no UI to donate through, so nobody could have had a
+   collection or furnished it. It still refuses to guess — it clears the old
+   shell only when the old shell is exactly what it stamped, and otherwise
+   leaves everything alone and lets `stampBuilding` refuse on its own. Don't
+   read it as a precedent for bulldozing a building people have lived beside.
+5. ~~**Plinths.**~~ **Done**, and it corrected two things in this plan.
+
+   Authored cells in the footprint, a donated exhibit fills the next one of its
+   wing, one generic form rather than per-exhibit art — all as written. But:
+
+   - **They are CASES, not pedestals.** Neighbouring exhibits on a row draw as
+     one continuous surface with the outline only at the run's ends. That is
+     the per-cell edges band rule taken seriously rather than survived: six
+     pedestals side by side would have striped, and this was the fourth
+     candidate. A gap splits the run, so a half-filled case is a short case.
+   - **They are derived, never stored.** No furniture cell, no schema, nothing
+     to erase — so the room cannot disagree with the record, and a plinth
+     cannot exist without an exhibit on it. That last part is the no-empty-
+     slots rule expressed as geometry instead of as a panel rule.
+   - **The v12 museum was too small and had to grow** — see the v13 note below.
+
+   Verified on screen with `scripts/drive.mjs`, per the house rule: the first
+   pass drew cases a full tile deep and 14 high, which read as three long
+   counters in a warehouse, and the second anchored exhibits to the case's far
+   edge so they stood up behind it like fence posts.
 6. **UI** — conversation IS the museum, the same call as the shop and the heap.
    Three doors on the panel (`openModal(..., { dismissable: true })`).
 7. **Away event** — DESIGN §Time already promises "the Scholar mounts a new

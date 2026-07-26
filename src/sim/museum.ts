@@ -22,6 +22,7 @@
 import type { WorldState } from "./types";
 import type { ExhibitDef, ExhibitId, WingId } from "../content/museum";
 import { MUSEUM, exhibitDef, wingExhibits } from "../content/museum";
+import { TOWN_BUILDINGS } from "../content/town";
 import { count, spend } from "./inventory";
 
 /** One donated exhibit, as stored in the save (see WorldState.museum). */
@@ -127,6 +128,84 @@ export function remountExhibit(
 export function wingsWithDonations(world: WorldState): WingId[] {
   const wings = new Set(donations(world).map((d) => exhibitDef(d.id).wing));
   return (["nature", "antiquities"] as WingId[]).filter((w) => wings.has(w));
+}
+
+// --- Plinths ------------------------------------------------------------------
+// Where the exhibits physically stand. Derived from the collection every time
+// rather than stored, which is not a performance choice — it is what makes the
+// room incapable of disagreeing with the record. There is no plinth object to
+// erase, no furniture cell to desync, and no migration when the layout moves.
+
+/** An exhibit standing on its cell. */
+export interface Plinth {
+  x: number;
+  y: number;
+  def: ExhibitDef;
+}
+
+/** A continuous case: neighbouring exhibits on one row, drawn as ONE surface.
+ *
+ *  This is the per-cell edges band rule applied before it could bite for a
+ *  fourth time. Six pedestals side by side would pair their light and dark
+ *  edges into venetian-blind stripes and stop reading as a case at all, so the
+ *  renderer is handed runs and outlines only where a run actually ends. */
+export interface PlinthRun {
+  y: number;
+  /** Leftmost and rightmost cell of the run, inclusive. */
+  x0: number;
+  x1: number;
+  on: Plinth[];
+}
+
+/** Every exhibit in the museum, placed. The Nth donation into a wing takes the
+ *  Nth authored cell of that wing, so the cases fill in the order you gave
+ *  things — the room is a history rather than a seating plan.
+ *
+ *  Silently drops anything beyond the authored cells. That is the right failure:
+ *  running out of plinths should leave the museum looking slightly under-built,
+ *  never throw in the middle of a frame. `museum.test.ts` asserts there are
+ *  always enough cells, which is where that gets caught instead. */
+export function plinths(world: WorldState): Plinth[] {
+  const cells = TOWN_BUILDINGS.museum.plinths ?? [];
+  const used: Record<string, number> = {};
+  const out: Plinth[] = [];
+  for (const d of donations(world)) {
+    const def = exhibitDef(d.id);
+    const n = used[def.wing] ?? 0;
+    used[def.wing] = n + 1;
+    const cell = cells.filter((c) => c.wing === def.wing)[n];
+    if (cell) out.push({ x: cell.x, y: cell.y, def });
+  }
+  return out;
+}
+
+/** The placed exhibits grouped into contiguous per-row runs, for drawing.
+ *
+ *  A gap in a row splits the run, so a half-filled case is a short case rather
+ *  than a long one with holes in it — which is the no-empty-slots rule showing
+ *  up in geometry instead of in a panel. */
+export function plinthRuns(world: WorldState): PlinthRun[] {
+  const byRow = new Map<number, Plinth[]>();
+  for (const p of plinths(world)) {
+    const row = byRow.get(p.y) ?? [];
+    row.push(p);
+    byRow.set(p.y, row);
+  }
+  const runs: PlinthRun[] = [];
+  for (const [y, row] of byRow) {
+    row.sort((a, b) => a.x - b.x);
+    let run: PlinthRun | null = null;
+    for (const p of row) {
+      if (run && p.x === run.x1 + 1) {
+        run.x1 = p.x;
+        run.on.push(p);
+      } else {
+        run = { y, x0: p.x, x1: p.x, on: [p] };
+        runs.push(run);
+      }
+    }
+  }
+  return runs.sort((a, b) => a.y - b.y);
 }
 
 /** Total number of authored exhibits is deliberately not exported. If you came

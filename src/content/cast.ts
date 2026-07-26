@@ -146,7 +146,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // An INSTITUTION like the other three: no bed, no ring, no home stop. She
     // is beside the desk rather than behind it, because the museum is the
     // exhibits and she would rather be standing near them.
-    schedule: [{ fromHour: 0, x: -12, y: -9, doing: "beside the desk" }],
+    schedule: [{ fromHour: 0, x: -8, y: -9, doing: "beside the desk" }],
   },
   resident1: {
     id: "resident1",

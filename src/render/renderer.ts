@@ -19,6 +19,8 @@ import type { SkinClass } from "../content/skins";
 import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey } from "../sim/world";
 import { wallMask, blockedDoorsteps, CONNECT_N, CONNECT_E, CONNECT_S, CONNECT_W } from "../sim/structures";
 import { furnitureDef, footprint } from "../content/furniture";
+import { plinthRuns } from "../sim/museum";
+import type { PlinthRun } from "../sim/museum";
 import { rooms } from "../sim/rooms";
 import type { Room } from "../sim/rooms";
 import { tintAt, isNight, skyPhaseAt } from "../sim/time";
@@ -62,6 +64,24 @@ const BIAS_MOVER = 1;
 /** Roofs sort above everything sharing their footprint: over the walls holding
  *  them up, and over anyone standing underneath — who is, after all, indoors. */
 const BIAS_ROOF = 2;
+
+// The museum's cases. Warm stone, deliberately NOT the building's whitewash —
+// the first pass matched the walls too closely and the gallery read as three
+// long counters in an empty warehouse.
+//
+// SHORT AND SHALLOW ON PURPOSE. At a full tile deep and 14 high the silhouette
+// was 30px for a 16px tile: taller than it was deep, which is a wall, not a
+// plinth. It's now inset on all four sides so floor shows in front of and
+// behind it, which is what makes it read as an object standing in a room.
+const CASE_HEIGHT = 8;
+const CASE_INSET_X = 2; // at the run's ENDS only — never between cells
+const CASE_INSET_FAR = 5;
+const CASE_INSET_NEAR = 2;
+const CASE_STONE = "#c9bda9";
+const CASE_SHADE = "#9d9080";
+const CASE_LIT = "#e2d8c6";
+const EXHIBIT_DARK = "#6f6152";
+const EXHIBIT_LIT = "#9c8a72";
 
 /** Opacity of a standing thing that would otherwise swallow the player.
  *  Deliberately low: the intuitive ~0.5 is the worst possible value, because a
@@ -261,6 +281,7 @@ export class Renderer {
     if (this.buildView) this.drawBuildGrid();
     this.drawCrops(world, now);
     this.collectTent(world, night);
+    this.collectPlinths(world);
     this.collectMovers(world, t, night);
     this.flushRaised();
     this.drawTargetTile(world);
@@ -977,6 +998,83 @@ export class Renderer {
     // Pole tip.
     ctx.fillStyle = "#6e5138";
     ctx.fillRect(cx, baseY - h - 1, 1, 2);
+  }
+
+  // --- The museum's cases ---------------------------------------------------
+  // Not furniture and not build cells: an exhibit's plinth is derived from the
+  // collection every frame (sim/museum.ts), so there is nothing to place, erase
+  // or migrate, and the room can never disagree with the record.
+  //
+  // Collected once per frame off the whole collection rather than per visible
+  // tile, unlike walls and furniture. The list is at most seventeen long and
+  // only ever grows by donation, so the screen-bounded trick those need would
+  // be more machinery than the thing it bounds.
+  private collectPlinths(world: WorldState): void {
+    for (const run of plinthRuns(world)) {
+      this.raised.push({ y: run.y, bias: BIAS_TERRAIN, draw: () => this.drawCase(run) });
+    }
+  }
+
+  /** One case, however many cells long, drawn as ONE SURFACE.
+   *
+   *  THE WHOLE POINT OF TAKING A RUN RATHER THAN A CELL. Six pedestals drawn
+   *  cell by cell would put a light edge and a dark edge against each other at
+   *  every seam and stripe the case into a venetian blind — the per-cell edges
+   *  band rule, which has now caught us on ground bevels, wall side-runs and
+   *  roof shingles. So the outline goes on the ENDS of the run only, and the
+   *  top surface is one rect across the lot.
+   *
+   *  Pale stone rather than the building's finish: whitewash walls behind
+   *  whitewash cases would leave the exhibits floating on nothing. */
+  private drawCase(run: PlinthRun): void {
+    const ctx = this.ctx;
+    const px = Math.round(this.sceneX(run.x0) - TILE / 2) + CASE_INSET_X;
+    const pw = (run.x1 - run.x0 + 1) * TILE - CASE_INSET_X * 2;
+    const py = Math.round(this.sceneY(run.y) - TILE / 2) + CASE_INSET_FAR;
+    const base = Math.round(this.sceneY(run.y) + TILE / 2) - CASE_INSET_NEAR;
+    const H = CASE_HEIGHT;
+
+    ctx.fillStyle = "rgba(0,0,0,0.16)";
+    ctx.fillRect(px + 1, base - 1, pw - 2, 2);
+    ctx.fillStyle = CASE_SHADE; // the near face, the height you actually see
+    ctx.fillRect(px, base - H, pw, H);
+    ctx.fillStyle = CASE_STONE; // the top
+    ctx.fillRect(px, py - H, pw, base - py);
+
+    // Silhouette: top, bottom, and the two ENDS. Nothing between cells.
+    const oy = py - H;
+    const oh = base - py + H;
+    ctx.fillStyle = "rgba(0,0,0,0.38)";
+    ctx.fillRect(px, oy, pw, 1);
+    ctx.fillRect(px, base - 1, pw, 1);
+    ctx.fillRect(px, oy, 1, oh);
+    ctx.fillRect(px + pw - 1, oy, 1, oh);
+    ctx.fillStyle = "rgba(0,0,0,0.20)"; // the lip where the top meets the face
+    ctx.fillRect(px + 1, base - H, pw - 2, 1);
+    ctx.fillStyle = CASE_LIT; // sunlit far edge, unbroken along the whole run
+    ctx.fillRect(px + 1, oy + 1, pw - 2, 1);
+
+    // And the exhibits themselves. ONE GENERIC FORM, not per-exhibit art: what
+    // makes a doorknob different from a bell here is the placard, which is
+    // words, which is free. Seventeen little sprites would be seventeen things
+    // to draw badly.
+    // Standing ON the top surface, which means the FRONT of it. Anchored to
+    // the far edge instead (the first attempt) they rose clear of the case's
+    // back and read as a row of fence posts behind it rather than objects on
+    // a shelf — in this projection "on top of" is drawn as "further down".
+    const deep = base - py;
+    for (const p of run.on) {
+      const cx = Math.round(this.sceneX(p.x));
+      const foot = oy + deep - 2;
+      const eh = deep - 1;
+      ctx.fillStyle = "rgba(0,0,0,0.18)"; // its own small shadow on the stone
+      ctx.fillRect(cx - 3, foot, 7, 1);
+      ctx.fillStyle = EXHIBIT_DARK;
+      ctx.fillRect(cx - 3, foot - eh, 6, eh);
+      ctx.fillStyle = EXHIBIT_LIT; // lit top and left, so it isn't a flat chip
+      ctx.fillRect(cx - 3, foot - eh, 6, 1);
+      ctx.fillRect(cx - 3, foot - eh, 1, eh);
+    }
   }
 
   // --- Movers -----------------------------------------------------------------

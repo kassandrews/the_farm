@@ -20,6 +20,7 @@
 import type { SkinId } from "./skins";
 import type { FurnitureId, Facing } from "./furniture";
 import type { CharId } from "./cast";
+import type { WingId } from "./museum";
 
 export type TownBuildingId = "townhall" | "margfrom_house" | "shop" | "heap" | "museum";
 
@@ -54,6 +55,22 @@ export interface TownBuilding {
    *  and they are homeless — this table does not drag them back. */
   resident?: CharId;
   furniture: TownFurniture[];
+  /** Where donated exhibits stand, in fill order per wing. Only the museum has
+   *  any, which is why it's optional rather than a required empty array on four
+   *  other buildings.
+   *
+   *  These are AUTHORED POSITIONS, not objects: no plinth exists in the world
+   *  until an exhibit stands on it (sim/museum.ts). Stamping empty plinths at
+   *  world creation would put a grid of blank pedestals in the room, which is
+   *  the completion meter DESIGN spent a whole bullet forbidding — you would
+   *  be able to count what you were missing by looking at the floor.
+   *
+   *  Cells in the same ROW render as one continuous case (see the renderer):
+   *  consecutive entries should therefore be horizontal neighbours, and two
+   *  runs must never be on adjacent rows. A case is a surface, and surfaces on
+   *  adjacent rows pair their light and dark edges into stripes — the per-cell
+   *  edges band rule, which this is the fourth candidate for. */
+  plinths?: { wing: WingId; x: number; y: number }[];
 }
 
 export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
@@ -171,38 +188,73 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     ],
   },
 
-  // The museum, north-west of the plaza. Placement is boxed in on three sides
-  // by things that already exist and must not be touched: Margfrom's house
-  // (x -11..-7, y -4..0) below it, the town hall (x -3..3, y -9..-5) to the
-  // east, and the plaza (x -5..5, y -5..3). y1 of -7 clears her roofline with
-  // room to walk between, and x1 of -7 stops well short of the hall.
+  // The museum, north-west of the plaza. The largest building in town, and a
+  // GALLERY rather than a hall: it runs north away from its door, because the
+  // three things boxing it in are all on other axes.
   //
-  // It is the largest building in town and that is deliberate rather than
-  // grand: the interior has to hold a row of plinths per wing without them
-  // touching (plinths land in step 5), and a museum you can cross in two steps
-  // makes the collection feel like a shelf.
+  // It cannot grow WEST. `generatedTile` puts the riverside spot's river at
+  // x <= -12, and while `stampBuilding` plancks its own floor and would happily
+  // stand a museum in the water, a museum in the water is still a museum in the
+  // water. x0 of -13 keeps that to the two columns the shipped version already
+  // had. It cannot grow EAST past the town hall (x -3..3), so x1 of -6 leaves
+  // two clear cells between them. And it cannot grow SOUTH past Margfrom's
+  // house (y -4..0) or the plaza (y -5..3), so y1 stays at -7.
+  //
+  // North is unclaimed, so north is where the room went. A 6-wide interior
+  // holds a case of six, which is what set the width: the antiquities wing is
+  // twelve exhibits and fits in exactly two runs.
   museum: {
     id: "museum",
     name: "The Museum",
     x0: -13,
-    y0: -12,
-    x1: -7,
+    y0: -16,
+    x1: -6,
     y1: -7,
     // South wall, like every door in the town — a wall running away from the
     // camera has no face to draw a doorway on (see margfrom_house).
     door: { x: -10, y: -7 },
     finish: "whitewash",
     furniture: [
-      // Corrigal's desk, off to the west so the middle of the room stays clear
-      // for exhibits. She stands at (-12,-9), beside it rather than behind it.
-      { x: -12, y: -10, id: "table", facing: "s" },
-      // Reference along the north wall. She has read all of it and drawn her
-      // own conclusions.
-      { x: -10, y: -11, id: "shelf", facing: "s" },
-      { x: -8, y: -11, id: "shelf", facing: "s" },
-      // Nothing within reach of the doorway at x -10: solid furniture in front
-      // of a door seals the building, which is the bug town.test.ts's "never
-      // lets its own furniture seal the front door" was written for.
+      // Corrigal's desk, in the lobby by the door rather than at the far end.
+      // Donating is the one act the museum asks of you and walking the length
+      // of the gallery to do it would be a waiting period wearing a hat — the
+      // same objection DESIGN raised to identification taking time. She stands
+      // at (-8,-9), beside it. Clear of the doorstep at (-10,-8).
+      { x: -8, y: -8, id: "table", facing: "s" },
+      // Reference along the north wall, behind the last case. She has read all
+      // of it and drawn her own conclusions.
+      { x: -12, y: -15, id: "shelf", facing: "s" },
+      { x: -8, y: -15, id: "shelf", facing: "s" },
+    ],
+    // Three cases on alternating rows, with a walkway between each — you move
+    // up the gallery and the exhibits are on your left and right. Fill order
+    // within a wing is array order.
+    //
+    // Rows -10, -12, -14 and never two together: see the note on the field.
+    // The nature run is six cells wide for five exhibits and the antiquities
+    // runs are twelve cells for twelve, but none of that is visible — a case
+    // is only as long as the exhibits standing on it.
+    plinths: [
+      // Nature, deepest in. Five rows in the table, six cells of case.
+      { wing: "nature", x: -12, y: -14 },
+      { wing: "nature", x: -11, y: -14 },
+      { wing: "nature", x: -10, y: -14 },
+      { wing: "nature", x: -9, y: -14 },
+      { wing: "nature", x: -8, y: -14 },
+      { wing: "nature", x: -7, y: -14 },
+      // Antiquities, the two runs nearest the door — they are what fills up.
+      { wing: "antiquities", x: -12, y: -10 },
+      { wing: "antiquities", x: -11, y: -10 },
+      { wing: "antiquities", x: -10, y: -10 },
+      { wing: "antiquities", x: -9, y: -10 },
+      { wing: "antiquities", x: -8, y: -10 },
+      { wing: "antiquities", x: -7, y: -10 },
+      { wing: "antiquities", x: -12, y: -12 },
+      { wing: "antiquities", x: -11, y: -12 },
+      { wing: "antiquities", x: -10, y: -12 },
+      { wing: "antiquities", x: -9, y: -12 },
+      { wing: "antiquities", x: -8, y: -12 },
+      { wing: "antiquities", x: -7, y: -12 },
     ],
   },
 };

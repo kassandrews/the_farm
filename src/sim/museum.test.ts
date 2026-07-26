@@ -9,6 +9,8 @@ import { TOWN_BUILDINGS } from "../content/town";
 import { CAST } from "../content/cast";
 import {
   donate,
+  plinths,
+  plinthRuns,
   donatable,
   collection,
   collectionEmpty,
@@ -33,6 +35,44 @@ const DUG = ["junk", "ore"];
  *  useless as the subject of a "refuses when you can't pay" test — it silently
  *  succeeds and the test passes for the wrong reason. */
 const NATURE = wingExhibits("nature").find((d) => d.cost.item === "mushroom")!;
+
+/** A fresh world wound back into a plausible v12 save: the small museum where
+ *  the gallery now is, with the furniture v12 actually authored.
+ *
+ *  Built by editing a real world rather than by hand so the rest of the town —
+ *  the other four buildings, their furniture, the residents — is genuinely
+ *  what a save looks like. Getting this wrong the first time is what caught
+ *  the bug: leaving the NEW museum's furniture behind made `stampBuilding`
+ *  refuse the footprint, which is exactly what it should do. */
+function asV12Save(): Record<string, unknown> {
+  const raw = JSON.parse(JSON.stringify(freshWorld())) as Record<string, unknown>;
+  raw.schemaVersion = 12;
+  const build = raw.build as Record<string, { id: string; finish: string }>;
+  const furniture = raw.furniture as Record<string, unknown>;
+  const now = TOWN_BUILDINGS.museum;
+
+  // Take the gallery back out.
+  for (let y = now.y0; y <= now.y1; y++) {
+    for (let x = now.x0; x <= now.x1; x++) delete build[`${x},${y}`];
+  }
+  for (const f of now.furniture) delete furniture[`${f.x},${f.y}`];
+
+  // Put the v12 room back: x -13..-7, y -12..-7, door at (-10,-7).
+  for (let y = -12; y <= -7; y++) {
+    for (let x = -13; x <= -7; x++) {
+      if (x !== -13 && x !== -7 && y !== -12 && y !== -7) continue;
+      build[`${x},${y}`] = { id: x === -10 && y === -7 ? "door" : "wall", finish: "whitewash" };
+    }
+  }
+  for (const [x, y] of [
+    [-12, -10],
+    [-10, -11],
+    [-8, -11],
+  ]) {
+    furniture[`${x},${y}`] = { id: x === -12 ? "table" : "shelf", facing: "s", finish: "whitewash" };
+  }
+  return raw;
+}
 
 describe("the museum — the record that isn't a score", () => {
   it("gives nothing back: not an item, not a finish, not a piece of furniture", () => {
@@ -216,6 +256,126 @@ describe("the museum — the record that isn't a score", () => {
     expect(stop.x).toBeLessThan(b.x1);
     expect(stop.y).toBeGreaterThan(b.y0);
     expect(stop.y).toBeLessThan(b.y1);
+  });
+
+  it("has a plinth cell for every exhibit, in both wings", () => {
+    // `plinths()` drops anything past the authored cells rather than throwing
+    // mid-frame, so running out would be SILENT — an exhibit you donated simply
+    // wouldn't be in the room. This is where that gets caught instead.
+    const cells = TOWN_BUILDINGS.museum.plinths ?? [];
+    for (const wing of ["nature", "antiquities"] as const) {
+      const need = wingExhibits(wing).length;
+      const have = cells.filter((c) => c.wing === wing).length;
+      expect(have, `${wing} wing`).toBeGreaterThanOrEqual(need);
+    }
+  });
+
+  it("keeps every plinth inside the room and off everything else in it", () => {
+    const b = TOWN_BUILDINGS.museum;
+    const taken = new Set<string>();
+    for (const f of b.furniture) {
+      const def = FURNITURE[f.id];
+      for (let dy = 0; dy < def.h; dy++) {
+        for (let dx = 0; dx < def.w; dx++) taken.add(`${f.x + dx},${f.y + dy}`);
+      }
+    }
+    taken.add(`${b.door.x},${b.door.y + 1}`); // the doorstep inside
+    taken.add(`${CAST.museum.schedule[0].x},${CAST.museum.schedule[0].y}`); // Corrigal
+
+    for (const c of b.plinths ?? []) {
+      // Strictly interior — a case standing in the wall ring would be inside
+      // the masonry.
+      expect(c.x, `${c.x},${c.y}`).toBeGreaterThan(b.x0);
+      expect(c.x, `${c.x},${c.y}`).toBeLessThan(b.x1);
+      expect(c.y, `${c.x},${c.y}`).toBeGreaterThan(b.y0);
+      expect(c.y, `${c.x},${c.y}`).toBeLessThan(b.y1);
+      expect(taken.has(`${c.x},${c.y}`), `plinth at ${c.x},${c.y} is on something`).toBe(false);
+    }
+  });
+
+  it("never puts two cases on adjacent rows", () => {
+    // The per-cell edges band rule, caught before it bit a fourth time. Two
+    // runs on neighbouring rows pair a light edge against a dark one and the
+    // gallery stripes; a walkway between them is also just how a gallery works.
+    const rows = [...new Set((TOWN_BUILDINGS.museum.plinths ?? []).map((c) => c.y))].sort(
+      (a, b) => a - b,
+    );
+    for (let i = 1; i < rows.length; i++) {
+      expect(rows[i] - rows[i - 1], `rows ${rows[i - 1]} and ${rows[i]}`).toBeGreaterThan(1);
+    }
+  });
+
+  it("fills a case in donation order and draws it as one run, not six", () => {
+    const w = freshWorld();
+    const antiquities = wingExhibits("antiquities");
+    add(w.inventory, "junk", 999);
+
+    donate(w, antiquities[0]);
+    donate(w, antiquities[1]);
+    const runs = plinthRuns(w);
+    // Two neighbouring exhibits are ONE case two cells long, not two cases.
+    expect(runs).toHaveLength(1);
+    expect(runs[0].on).toHaveLength(2);
+    expect(runs[0].x1 - runs[0].x0).toBe(1);
+
+    // The Nth donation into a wing takes the Nth authored cell of that wing.
+    const cells = (TOWN_BUILDINGS.museum.plinths ?? []).filter((c) => c.wing === "antiquities");
+    const placed = plinths(w);
+    expect(placed.map((p) => `${p.x},${p.y}`)).toEqual(
+      cells.slice(0, 2).map((c) => `${c.x},${c.y}`),
+    );
+    // And nothing is drawn for what hasn't been given — no empty slots, in
+    // geometry rather than in a panel.
+    expect(placed).toHaveLength(2);
+  });
+
+  it("splits a case where there is a gap rather than drawing holes in it", () => {
+    // A wing whose run has spilled onto a second row must not join up into one
+    // impossible case spanning both.
+    const w = freshWorld();
+    add(w.inventory, "junk", 999);
+    for (const def of wingExhibits("antiquities")) donate(w, def);
+    for (const run of plinthRuns(w)) {
+      expect(run.on).toHaveLength(run.x1 - run.x0 + 1); // contiguous, no holes
+      expect(new Set(run.on.map((p) => p.y))).toEqual(new Set([run.y])); // one row
+    }
+  });
+
+  it("rebuilds the too-small v12 museum, and keeps its record", () => {
+    // v12 shipped a 5x4 room that could not hold seventeen exhibits with any
+    // circulation. v13 clears that shell and stamps the gallery. A donation
+    // made in between (there is no UI for one yet, but the schema allows it)
+    // must survive: the record is the museum, the building is just the room.
+    const old = asV12Save();
+    old.museum = { donated: [{ id: "timber", placard: 1 }] };
+
+    const migrated = migrateSave(old);
+    expect(migrated).not.toBe(null);
+    expect(migrated!.schemaVersion).toBe(SCHEMA_VERSION);
+    // The record came through untouched, placard index and all.
+    expect(migrated!.museum.donated).toEqual([{ id: "timber", placard: 1 }]);
+    // The old shell is gone: (-7,-12) was its corner and is open floor now.
+    expect(migrated!.build["-7,-12"]).toBeUndefined();
+    // And the gallery is there, corners and door.
+    const b = TOWN_BUILDINGS.museum;
+    expect(migrated!.build[`${b.x0},${b.y0}`]?.id).toBe("wall");
+    expect(migrated!.build[`${b.x1},${b.y1}`]?.id).toBe("wall");
+    expect(migrated!.build[`${b.door.x},${b.door.y}`]?.id).toBe("door");
+  });
+
+  it("refuses to bulldoze a v12 museum somebody has built in", () => {
+    // The one migration that removes anything only removes what it stamped. A
+    // wall the player added inside the old footprint means hands off entirely —
+    // and then stampBuilding refuses the new footprint on its own, which is the
+    // outcome the stamp has always given over player work.
+    const old = asV12Save();
+    const build = old.build as Record<string, { id: string; finish: string }>;
+    build["-10,-10"] = { id: "wall", finish: "pine" }; // somebody's own wall, inside
+
+    const migrated = migrateSave(old);
+    expect(migrated).not.toBe(null);
+    expect(migrated!.build["-10,-10"]).toEqual({ id: "wall", finish: "pine" });
+    expect(migrated!.build["-7,-12"]?.id).toBe("wall"); // old shell left standing
   });
 
   it("backfills an empty record for a town that never had a museum", () => {

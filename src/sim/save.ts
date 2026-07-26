@@ -13,7 +13,7 @@ import { makeVillager } from "./villagers";
 import { authoredBed } from "../content/town";
 import type { CharId } from "../content/cast";
 
-export const SCHEMA_VERSION = 12;
+export const SCHEMA_VERSION = 13;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -264,7 +264,93 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       museum: { donated: [] },
     };
   },
+  // v12 → v13: the museum got bigger, because v12 shipped it too small.
+  //
+  // The v12 room was 5x4 inside. Seventeen exhibits need seventeen cells, which
+  // left no circulation at all — pedestals wall to wall, which is both the
+  // per-cell edges band rule and a floor you can count your missing exhibits
+  // off. So the building grew north into a gallery (x -13..-6, y -16..-7).
+  //
+  // THIS IS THE ONLY MIGRATION SO FAR THAT REMOVES ANYTHING, and it is worth
+  // being precise about why that's allowed here and would not be next time: the
+  // v12 museum shipped hours ago, holds nothing, and cannot hold anything —
+  // there is no UI to donate through until step 6. Nobody can have a collection
+  // in it and nobody can have furnished it. A migration that bulldozed a
+  // building people had lived alongside would not get this latitude.
+  //
+  // Even so it refuses to guess. It clears the old shell ONLY when the old
+  // shell is exactly what it stamped, and leaves everything alone otherwise —
+  // in which case `stampBuilding` refuses the new footprint on its own and the
+  // player keeps whatever they made, which is the same outcome the stamp has
+  // always given. Being conservative is the right bias when the alternative is
+  // destroying something a live player built.
+  12: (raw) => {
+    const now = Date.now();
+    clearV12Museum(raw);
+    const stamped = stampInto(raw);
+    return {
+      ...raw,
+      schemaVersion: 13,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
+      villagers: withFixedCast(raw, now),
+    };
+  },
 };
+
+/** The v12 museum, frozen as literals. Migrations must never read the CURRENT
+ *  content tables to describe the PAST — content/town.ts now holds the new
+ *  gallery, so asking it what the old museum looked like would get the wrong
+ *  answer and this would clear the wrong cells. */
+const V12_MUSEUM = { x0: -13, y0: -12, x1: -7, y1: -7, door: { x: -10, y: -7 } };
+const V12_MUSEUM_FURNITURE = [
+  { x: -12, y: -10 },
+  { x: -10, y: -11 },
+  { x: -8, y: -11 },
+];
+/** A cell that is a wall in the v12 layout and open floor in the new one, so it
+ *  tells the two apart with one lookup. Without it, a save coming up the ladder
+ *  from v11 — whose 11→12 step stamps the NEW museum, because that step reads
+ *  the live table — would have its brand-new south wall mistaken for the old
+ *  one and knocked out. Migrations are read in order and applied in order; the
+ *  ladder does not rewind. */
+const V12_TELL = { x: -7, y: -12 };
+
+function clearV12Museum(raw: Record<string, unknown>): void {
+  const build = (typeof raw.build === "object" && raw.build ? raw.build : {}) as Record<
+    string,
+    { id: string }
+  >;
+  const furniture = (typeof raw.furniture === "object" && raw.furniture ? raw.furniture : {}) as Record<
+    string,
+    unknown
+  >;
+  const b = V12_MUSEUM;
+  if (build[tileKey(V12_TELL.x, V12_TELL.y)]?.id !== "wall") return; // not the old museum
+
+  // Every build cell in the old footprint must be one of ITS OWN walls. Any
+  // other standing thing in there is the player's, and then nothing is touched.
+  const expected = new Map<string, string>();
+  for (let y = b.y0; y <= b.y1; y++) {
+    for (let x = b.x0; x <= b.x1; x++) {
+      if (x !== b.x0 && x !== b.x1 && y !== b.y0 && y !== b.y1) continue;
+      expected.set(tileKey(x, y), x === b.door.x && y === b.door.y ? "door" : "wall");
+    }
+  }
+  for (let y = b.y0; y <= b.y1; y++) {
+    for (let x = b.x0; x <= b.x1; x++) {
+      const key = tileKey(x, y);
+      const cell = build[key];
+      if (!cell) continue;
+      if (expected.get(key) !== cell.id) return; // player work — leave it all
+    }
+  }
+  for (const key of expected.keys()) delete build[key];
+  // Its three pieces of furniture go with it. Anything else in there stays,
+  // because anything else in there was put there by a person.
+  for (const f of V12_MUSEUM_FURNITURE) delete furniture[tileKey(f.x, f.y)];
+}
 
 /** Re-stamp the town's table into a save, adding only what isn't there.
  *
