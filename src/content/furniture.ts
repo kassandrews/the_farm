@@ -22,7 +22,7 @@
 import type { ItemId } from "./items";
 import type { SkinClass } from "./skins";
 
-export type FurnitureId = "bed" | "table" | "chair" | "shelf" | "cushion" | "rug";
+export type FurnitureId = "bed" | "table" | "chair" | "shelf" | "cushion" | "rug" | "noticeboard";
 
 /** Which way a piece is turned. "s" is the default — facing the camera. */
 export type Facing = "n" | "e" | "s" | "w";
@@ -113,6 +113,31 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // Almost flat: a rug is a floor that is nicer, not a thing standing on one.
     height: 1,
     finish: "cloth",
+  },
+  // --- Town furniture, which is not for sale -------------------------------
+  // The errands board. It is a row here because it is a thing standing in a
+  // cell with a footprint, a height and a finish, and that is exactly what this
+  // table is for — inventing a parallel "fixture" layer for one object would
+  // give the renderer, the pathfinder and the room flood-fill a second kind of
+  // thing to have an opinion about, for no gain.
+  //
+  // IT IS NOT IN THE BUILD MENU. That menu is the hand-written BUILD_TOOLS list
+  // in ui/app.ts, not a walk of this table, so a row here is not an offer — and
+  // the empty cost is what it means: nothing prices it, because nothing sells
+  // it. The town put it there.
+  //
+  // SOLID, and tall enough to read as a board rather than a crate. Solid is the
+  // right call outdoors where the chair rule (don't make a small room a maze)
+  // doesn't apply: you walk up to a notice board, you do not walk through it.
+  noticeboard: {
+    id: "noticeboard",
+    name: "The Errands Board",
+    cost: {},
+    w: 1,
+    h: 1,
+    solid: true,
+    height: 22,
+    finish: "wood",
   },
 };
 

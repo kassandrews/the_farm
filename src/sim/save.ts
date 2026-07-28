@@ -8,6 +8,7 @@ import type { WorldState, HomesteadSpot } from "./types";
 import { starterSkins, defaultSkin } from "../content/skins";
 import { STARTING_CROP } from "../content/crops";
 import { STARTING_SEED } from "./seeds";
+import { newErrands } from "./errands";
 import { stampTown, ensureFixedCast } from "./town";
 import type { StampTarget } from "./town";
 import { generatedTile, tileKey } from "./world";
@@ -15,7 +16,7 @@ import { makeVillager } from "./villagers";
 import { authoredBed } from "../content/town";
 import type { CharId } from "../content/cast";
 
-export const SCHEMA_VERSION = 14;
+export const SCHEMA_VERSION = 15;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -335,6 +336,41 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       villagers: withFixedCast(raw, now),
       inventory: { ...inventory, seed: held + STARTING_SEED },
       seeds: { unlocked: [STARTING_CROP], selected: STARTING_CROP },
+    };
+  },
+  // v14 → v15: the errands board. The stamp + ensureFixedCast pair a third
+  // time, and one new field.
+  //
+  // The stamp now also stands the board up: `stampTown` runs the fixtures as
+  // well as the buildings (sim/town.ts), which is deliberately not something
+  // this migration does for itself. Two callers furnishing a town differently
+  // is the bug ensureFixedCast exists to stop, and the cheapest way to never
+  // have it is for there to be one function that knows what a town contains.
+  //
+  // `lastClosedAt` backfills to NOW, not to zero, and that is the whole of the
+  // care this migration needs. Zero would mean the board was last quiet in
+  // 1970, so `errandDue` would be true the instant the save loaded and a
+  // returning player would walk into a request they had no context for — the
+  // town shouting at somebody who just opened the door. Stamping it now gives
+  // an upgraded town the same first-request gap a new one gets, which is the
+  // v3→v4 rule again: never punish someone for having been here first, and
+  // never startle them either.
+  //
+  // NOTHING IS HANDED OUT. Unlike the seed backfill above there is nothing to
+  // restore, because no v14 player could have run an errand — `done` empty is
+  // simply true. Crediting an old save with errands it never ran would be the
+  // v11→v12 mistake (a migration inventing history) with a friendlier face.
+  14: (raw) => {
+    const now = Date.now();
+    const stamped = stampInto(raw);
+    return {
+      ...raw,
+      schemaVersion: 15,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
+      villagers: withFixedCast(raw, now),
+      errands: newErrands(now),
     };
   },
 };

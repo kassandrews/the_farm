@@ -288,6 +288,30 @@ body {
   white-space: pre-wrap;
 }
 
+/* A quieter paragraph inside a panel: the errands board's notices, and the line
+   that says what you're short of. Deliberately NOT `.hint`, which is the fixed
+   hover tooltip and would have positioned these off the panel entirely.
+
+   Smaller and dimmer than .panel p because the notices column must read as
+   background rather than as instructions — the board's one actionable item is
+   the request above the rule, and type size is how a reader knows that at a
+   glance (see ui/app.ts openErrands). */
+.panel .note {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  opacity: 0.72;
+}
+
+/* The rule between the request and the notices. Faint — it separates two kinds
+   of thing, it is not a heading. */
+.panel hr {
+  border: 0;
+  border-top: 1px solid var(--panel-edge);
+  opacity: 0.35;
+  margin: 16px 0 14px;
+}
+
 .panel .row {
   display: flex;
   gap: 10px;

@@ -47,6 +47,7 @@ import { ITEM_ORDER, itemDef, itemLabel } from "../content/items";
 import { offers, trade } from "../sim/shop";
 import { heapOffers, heapExhausted, redeem } from "../sim/heap";
 import { donatable, donate, collection, collectionEmpty, wingsWithDonations } from "../sim/museum";
+import { openErrand, errandState, cardText, deliverErrand, declineErrand, notices } from "../sim/errands";
 import { availableSkins, skinDef, SKIN_CLASSES, SKIN_CLASS_NAMES } from "../content/skins";
 import { cropDef } from "../content/crops";
 import { STALL_OPENER, STALL_EXHAUSTED } from "../content/seedstall";
@@ -71,6 +72,7 @@ const ACTION_CUES: Record<ActionKind, Cue> = {
   plant: "plant",
   water: "water",
   harvest: "harvest",
+  read: "menu", // a panel opens; the menu cue is what a panel opening sounds like
   none: "menu",
 };
 
@@ -448,6 +450,14 @@ export class App {
       this.openSeedStall();
       return;
     }
+    // And the Dog Thing, whose counter is a board he is often not standing at.
+    // Talking to him opens the same panel the board does — he IS the board's
+    // conversation, wherever on his round you catch him, and a version where
+    // you had to walk him back to the plaza would make the round a chore.
+    if (villagerId === "errands") {
+      this.openErrands();
+      return;
+    }
 
     this.openModal(
       (close) =>
@@ -790,6 +800,118 @@ export class App {
 
       counter();
       return panel("Corrigal", "The Museum", [body]);
+    }, { dismissable: true });
+  }
+
+  /** The errands board. Fifth counter, fifth panel — and the only one you can
+   *  open with nobody standing at it, because the Dog Thing walks a round.
+   *
+   *  TWO HALVES, IN THIS ORDER, AND THE ORDER IS THE DESIGN. The request is one
+   *  thing, with two buttons under it and an end. The notices are underneath,
+   *  smaller, and there is nothing to press on them. That layout is what keeps
+   *  the risk ROADMAP flagged at bay — a reader can see at a glance that the
+   *  actionable part of this board is exactly one item long, and everything
+   *  below the rule is the town talking about itself in the past tense.
+   *
+   *  WHAT THIS PANEL DOES NOT DRAW, on the museum's precedent:
+   *
+   *    • No count of errands run, ever. Not "6 done", not a list of past
+   *      requests, not a streak. `sim/errands.ts` keeps `done` so the table can
+   *      cycle without repeating itself; it is a memory, not a tally, and this
+   *      file must not reconstruct a score from its length.
+   *    • No timer on the open request. There is no deadline in the sim and
+   *      there must be none in the UI — no "expires", no clock, no urgency
+   *      that the player has to hold in their head.
+   *    • No shortfall arithmetic dressed as a quest. When you are short the
+   *      card says so plainly and the button is simply disabled, the same way
+   *      an unaffordable row is disabled at every other counter in town.
+   *
+   *  Refusing is a real button and not a hidden one. If "Not today" were only
+   *  reachable by walking away, saying no would be something you do by accident;
+   *  it is offered at the same weight as accepting, because it costs the same
+   *  (nothing) and the whole beat depends on that being true. */
+  private openErrands(): void {
+    if (!this.world) return;
+    const world = this.world;
+
+    this.openModal((close) => {
+      const body = el("div", {});
+
+      const draw = () => {
+        body.replaceChildren();
+        const open = openErrand(world);
+        const state = errandState(world);
+
+        if (!open || !state) {
+          // Quiet, and said as the board being current rather than as you
+          // having cleared it — "nothing left to do" is a completion state, and
+          // this is a board that simply has no card up at the moment.
+          body.append(
+            el("p", {}, [
+              "No requests today. ... The board is up to date, which it considers an achievement in itself.",
+            ]),
+          );
+        } else {
+          body.append(el("div", { class: "who" }, ["Requested"]), el("p", {}, [cardText(world, open)]));
+
+          const ask = state.def.ask;
+          const b = choiceBtn(`Hand over ${itemLabel(ask.item, ask.count)}`, () => {
+            const thanks = deliverErrand(world, Date.now());
+            if (!thanks) return;
+            audio.play("place");
+            this.persist();
+            thanked(thanks);
+          });
+          if (!state.ready) {
+            b.setAttribute("disabled", "true");
+            b.style.opacity = "0.4";
+            body.append(
+              el("p", { class: "note" }, [
+                `You have ${state.have} of the ${state.want} it asks for.`,
+              ]),
+            );
+          }
+          body.append(
+            el("div", { class: "choices" }, [b]),
+            actionRow([
+              choiceBtn("Not today", () => {
+                declineErrand(world, Date.now());
+                audio.play("menu");
+                this.persist();
+                draw();
+              }),
+              primaryBtn("Leave it", close),
+            ]),
+          );
+        }
+
+        // The notices, below the rule and in smaller type. Nothing here is a
+        // control and nothing here is a target.
+        const column = el("div", { class: "notices" });
+        column.append(el("div", { class: "who" }, ["Notices"]));
+        for (const line of notices(world)) column.append(el("p", { class: "note" }, [line]));
+        body.append(el("hr", {}), column);
+
+        if (!open) body.append(actionRow([primaryBtn("Carry on", close)]));
+      };
+
+      // His thanks, alone for a moment — it is, with the friendship and the
+      // memory, the entire payment, so it is not a line that flashes past under
+      // a list of notices.
+      const thanked = (line: string) => {
+        body.replaceChildren(
+          el("div", { class: "who" }, ["Loyal Dog Thing"]),
+          el("p", {}, [line]),
+          actionRow([primaryBtn("...", draw)]),
+        );
+      };
+
+      draw();
+      // Subtitle is the PLACE, matching every other counter's panel ("Corrigal
+      // / The Museum"). It said "Requests and notices", which stacked straight
+      // on top of the REQUESTED heading below it and read as the same word
+      // twice in two type sizes.
+      return panel("The Errands Board", "Pinned in the plaza", [body]);
     }, { dismissable: true });
   }
 
@@ -1328,6 +1450,13 @@ export class App {
   private doAction(): void {
     if (!this.world || this.modalOpen) return;
     const res = contextAction(this.world, this.tool, Date.now());
+    // Reading opens a panel instead of flashing a line. It reports `changed:
+    // false` — nothing in the world moved — so it has to be caught before the
+    // cue below, or standing at the board would play the refusal sound.
+    if (res.kind === "read") {
+      this.openErrands();
+      return;
+    }
     // The cue follows what actually happened, so a refused action sounds
     // different from a successful one without needing to read the message.
     audio.play(res.changed ? ACTION_CUES[res.kind] : "deny");

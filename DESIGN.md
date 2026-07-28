@@ -196,6 +196,48 @@ museum-filling its own way to play (§Town and homestead).
 - **Nothing may ever gate on the collection.** No commission, no room, no
   acceptance test reads it. It is a place, not a progression track.
 
+## The errands board
+
+The Loyal Dog Thing keeps a board in the plaza. It is a **request board and a
+notices column**, and the two halves are held apart on purpose.
+
+**A request is a gift with a name on it.** It is the commission's beat scaled
+down to an afternoon: somebody asks, and you may say no. The commission asks
+once per arrival and is a building project; this is the everyday version, and
+it is the first place friendship is earned by *doing* rather than by talking.
+
+- **It asks for things you can already get**, in ones and twos. Never ore
+  (unobtainable until the underground exists) and never seed (a request payable
+  in seed makes farming a prerequisite for farming — §Materials).
+- **It pays friendship, a line, and a memory. Never an item.** Not a material,
+  not produce, not a finish, not an unlock. The Menace trades, the Gremlin
+  redeems, the Carrot stocks, the Office Creature stamps; a fifth counter that
+  also handed things over would undercut all four, and a request you complete
+  for goods is a job. The payment is that somebody wanted something and now
+  has it.
+- **One at a time, no timer, refusable.** Two open requests turn a favour into a
+  backlog, and the backlog is the part that feels like work. There is no
+  deadline on an open card. **Refusing costs exactly nothing** and is not
+  remembered — the board goes quiet for the same interval either way, because
+  if saying no were faster or slower than saying yes it would become a move.
+- **The card is in the Dog's hand, on behalf of somebody who lives here.** He
+  relays; the friendship goes to the person who asked, and the smaller thanks a
+  postman gets goes to him.
+- **The table cycles; it does not run out.** A deliberate departure from
+  arrivals and antiquities, which both end because both are finite stories. The
+  board is the town's everyday pulse, and a board that ran dry is a board the
+  town stopped using.
+- **He walks a round.** The one institution that moves — deliveries are what he
+  *is*, and a delivery service that never leaves its counter is a word on a
+  card. So the board must be readable with nobody standing at it.
+
+**A notice states something that has already happened, or is simply true.** No
+notice may name a thing for you to do, carry a count, a target, or a completion
+state, or read your satchel. The risk this guards against is the notices column
+quietly becoming a second to-do list; the defence is structural rather than
+editorial, in that a notice is handed a past-tense view of the town with no
+inventory and no open request in it, so it *cannot* set you a task.
+
 ## Affinity perks (instead of jobs)
 
 Forms grant small, flavorful, passive bonuses — never duties:

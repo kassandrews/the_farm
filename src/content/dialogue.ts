@@ -43,6 +43,10 @@ export const OFFICE_MEMORY: Partial<Record<string, ((v: string) => string)[]>> =
   harvested_carrot: [
     (v) => `Word is you pulled ${v} out of the ground. The Carrot will pretend not to care.`,
   ],
+  errand: [
+    (v) => `You brought me the ${v}. It arrived. That is the end of the matter, administratively.`,
+    () => "The Dog delivered. He always delivers. It's unnerving in something so pleased about it.",
+  ],
 };
 
 // --- Resident voices, per form. The slice ships the Scholar's; the rest are
@@ -100,6 +104,54 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
     harvested_carrot: [
       (v) => `You pulled ${v}. The data is conclusive: you are a farmer now. Congratulations, subject.`,
+    ],
+    errand: [
+      (v) => `You answered my card. The ${v} arrived and the study is now correct. Thank you. That was a formal thank you.`,
+      () => "I put a request on the board and it was simply met. I am revising my model of how boards work.",
+    ],
+  },
+  // --- Errand lines for the rest of the cast ---------------------------------
+  // EVERY FORM GETS ONE, which no other memory kind here can say. That is
+  // deliberate rather than thorough: the asker on a card is picked from whoever
+  // is standing in the town (sim/errands.ts), so a form with nothing to say
+  // about it would make running an errand for that person land on silence — and
+  // the line IS the payment. A bank that only the Scholar had would mean the
+  // beat worked properly one time in six.
+  //
+  // The rest of these banks stay thin (ROADMAP §Known gaps: only the Scholar has
+  // a full one). This is the one kind where thin isn't good enough.
+  dog: {
+    errand: [
+      (v) => `The ${v}! I carried it! I carried it the whole way and I did not eat it!`,
+      () => "I delivered. Everyone was pleased. I have thought about it several times since.",
+    ],
+  },
+  blob: {
+    errand: [
+      (v) => `The ${v} arrived at my lowest moment. Well. One of them. I have several a day.`,
+      () => "Someone answered my request. I had prepared a speech about being ignored. It is wasted now.",
+    ],
+  },
+  menace: {
+    errand: [
+      (v) => `You brought the ${v}. Adequate. ... Prompt, even. I shan't make a thing of it.`,
+      () => "I asked, and it was fetched. This is how things ought to go. It is not how they usually go.",
+    ],
+  },
+  gremlin: {
+    errand: [
+      (v) => `The ${v}. Mine now. It was always going to be mine. You just made it faster.`,
+      () => "You did the errand. Straight. No swap, no trick. ... I don't know what to do with that.",
+    ],
+  },
+  carrot: {
+    errand: [
+      (v) => `The ${v}. ... Yes. That's the one I asked for. Thank you. We're not going to discuss it further.`,
+    ],
+  },
+  office: {
+    errand: [
+      (v) => `The ${v} came through. I've filed it. The filing is the important part.`,
     ],
   },
   // Other forms fall back to idle if they have no memory line for an event.

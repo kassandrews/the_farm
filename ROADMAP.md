@@ -49,7 +49,7 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   soft furniture that costs it.
 - **Phase 3e — the junk economy, complete.** The ground has things in it,
   digging finds them, and the Gremlin's heap turns them into finishes.
-- Menu with New town / sound toggle; PWA shell; 339 tests.
+- Menu with New town / sound toggle; PWA shell; 379 tests.
 - **Phase 3f — the museum, complete.** The table, the sim, schema v12, the
   gallery it stands in (v13), Corrigal's panel, the away event, and Margfrom's
   perk. Two wings, donation is a gift that returns nothing, the record has no
@@ -61,10 +61,16 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   fungible seed, three varieties unlocked forever at the Blessed Carrot's
   counter, and a harvest that hands a seed back so a plot you keep sustains
   itself. Schema v14.
+- **Phase 3h — the errands board, complete.** The Loyal Dog Thing keeps a board
+  in the plaza: one request at a time, refusable at no cost, paying friendship
+  and a line and never an item, plus a notices column that only speaks in the
+  past tense. Schema v15. He is the one institution that MOVES — a delivery
+  round, clock-derived like every other schedule — which is why the board is
+  readable with nobody at it (the new `read` context action).
 
-**Next:** the last two institutions (errands board, plaza stage) and festivals.
+**Next:** the last institution (plaza stage) and festivals.
 
-**Save schema is at v14.** Every change ships a tested migration — see
+**Save schema is at v15.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -960,16 +966,50 @@ Four things the build settled that the plan hadn't:
   door. That one `town.test.ts` did catch, which is the difference between a
   fact about pathing and a fact about pixels.
 
+### The errands board
+
+**Settled and built in Phase 3h**, recorded in full in DESIGN §The errands
+board. The parts that took real discussion, so they don't get relitigated:
+
+- **One gap, not two.** The obvious shape — a short first interval and a long
+  one after, the way `arrivalDue` does it — was written and thrown out. The
+  natural way to ask "is this the first?" is `done.length === 0`, and a REFUSAL
+  DOESN'T ADD TO `done`; so refusing the opening request brought the next one
+  back in fifteen minutes while running it cost four hours. Saying no had
+  quietly become the efficient play, which is the one thing it must never be.
+  The fix is that `newErrands` starts the clock part-wound, so the first card
+  still arrives quickly and there is one constant and no branch to hide in. A
+  unit test caught it on the first run, and it is the reason that test exists.
+- **The table CYCLES rather than running out**, unlike arrivals and antiquities,
+  which both end on purpose. Unseen rows are preferred while any remain; after
+  that it repeats, never twice running. A board that ran dry is a board the town
+  stopped using — it is the town's everyday pulse, not a finite story.
+- **The notices column is defended structurally, not editorially.** `NoticeWorld`
+  is a past-tense view with no inventory and no open request in it, so a notice
+  *cannot* say "you need three carrots" — the risk this section used to warn
+  about is now a type error rather than a matter of discipline.
+- **Fixtures are not buildings.** `stampBuilding` writes PLANK under its whole
+  footprint so nothing lands in the river; that is exactly wrong for one object
+  on paving, where it would be a scar. `TOWN_FIXTURES` + `stampFixtures` place
+  a piece and lay no floor. `stampTown` runs both, so there stays ONE answer to
+  "what does a town contain" — two callers furnishing a town differently is the
+  bug `ensureFixedCast` exists to stop.
+- **The Dog's stops needed a test the other five didn't.** He is the one
+  institution that moves, so his round can't be eyeballed once and trusted:
+  `town.test.ts` now checks every stop is outside every building, and that none
+  of them is the cell north of the board (the Blessed Carrot occlusion bug,
+  which the unit tests were green for the first time).
+- **The board's roof is deliberate.** The generic furniture path gives every
+  piece a top the full depth of its footprint, which is right for a table and
+  made a 22px board read as a crate. It is drawn as a little pitched roof — what
+  a parish notice board actually has — which costs nothing and turns the
+  heaviest part of the silhouette into the thing that identifies the object.
+  Paper is hardcoded rather than taking the finish, because paper is not wood
+  and in pine it vanished.
+
 ### The rest of Phase 3
 
-- The remaining two fixed cast + their institutions: errands board (Loyal Dog
-  Thing), plaza stage (Dramatic Blob).
-- **The errands board is a request board AND a notices column.** One villager
-  request open at a time, no timer, refusable, paying friendship and a line and
-  never an item — the commission's shape generalised, and one at a time for the
-  same reason a commission is (a queue is the part that feels like work). The
-  notices half is what the town is up to. The risk to watch while writing it is
-  the notices column reading as a second to-do list.
+- The last fixed cast member + institution: plaza stage (Dramatic Blob).
 - **A festival is a total function of the date.** That is what lets the stage
   exist without touching `villagers.ts`'s invariant: schedule stops consult the
   calendar, positions stay clock-derived, and it costs no schema.
@@ -1013,9 +1053,10 @@ you trip over them:
   is its own decision and was deliberately not improvised alongside the rest.
 - **Ore is defined but unobtainable** until the underground layer exists. This
   is intentional, not an oversight.
-- **Five of the seven fixed cast exist** — office, shop, heap, museum, seed stall. The intended
-  full mapping is recorded as comments at the foot of `src/content/cast.ts`;
-  the museum is planned in 3f. Residents are no longer limited to one:
+- **Six of the seven fixed cast exist** — office, shop, heap, museum, seed stall,
+  errands board. Only the Dramatic Blob's plaza stage is left. The intended
+  full mapping is recorded as comments at the foot of `src/content/cast.ts`.
+  Residents are no longer limited to one:
   `content/arrivals.ts` holds four, and the town takes them in one at a time.
   Note the queue **runs out** rather than looping — the fourth Rummage would say
   more about the table than about the town.

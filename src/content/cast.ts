@@ -25,6 +25,7 @@ export type AuthoredId =
   | "heap" // Gremlin — the junk economy, and the only source of his finishes
   | "museum" // Corrigal — the curator, and every placard in the collection
   | "seedstall" // Blessed Carrot — seed, and the varieties you may plant
+  | "errands" // Loyal Dog Thing — the board, and the round he walks
   | "resident1"; // the one starter resident
 
 /** Someone the town has since taken in. Newcomers arrive at run time (see
@@ -170,6 +171,44 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // leaves. Found on screen; the unit tests were green, because "is he inside
     // his own walls" is true either way.
     schedule: [{ fromHour: 0, x: -6, y: 7, doing: "beside the seeds" }],
+  },
+  errands: {
+    id: "errands",
+    form: "dog",
+    name: "Loyal Dog Thing",
+    fixed: true,
+    // THE ONE INSTITUTION THAT MOVES, and the only reason to break the pattern
+    // the other five keep: his institution is DELIVERIES (DESIGN's cast table),
+    // and a delivery service that never leaves its counter is a word on a card.
+    // The other five are counters you visit; he is a round you keep meeting.
+    //
+    // It costs nothing to do this. Positions are clock-derived (`scheduledStop`
+    // walks the ring and asks what hour it is), so a ring is a table of stops
+    // and not a tick, no schema, no state, no catch-up after an absence — the
+    // same property that lets Margfrom have a day.
+    //
+    // He starts and ends at the board, which is the part that matters for the
+    // board being usable: the two times you are most likely to be in the plaza
+    // are the two times he is standing at it. The rest of the day he is out,
+    // and the board is readable without him (sim/game.ts's "read" action) —
+    // which is why that action exists rather than being a nicety.
+    //
+    // He is BESIDE the board at (3,2), never north of it. A 22px piece drawn
+    // over somebody standing behind it is exactly the Blessed Carrot bug
+    // (ROADMAP), and paying for that lesson twice would be careless.
+    schedule: [
+      { fromHour: 0, x: 3, y: 2, doing: "asleep at the board, technically on duty" },
+      { fromHour: 7, x: 3, y: 2, doing: "at the board, officially" },
+      { fromHour: 10, x: 0, y: -4, doing: "collecting from the town hall" },
+      { fromHour: 12, x: 8, y: 1, doing: "on the round, eastward" },
+      { fromHour: 14, x: 7, y: -5, doing: "delivering to the heap, cautiously" },
+      // Outside the museum door, not inside it. The gallery runs from y -16 to
+      // its south wall at y -7, so a stop at (-7,-8) would have put him in the
+      // antiquities wing, which is both wrong and against the glass.
+      { fromHour: 16, x: -10, y: -6, doing: "at the museum, not touching anything" },
+      { fromHour: 18, x: -6, y: 10, doing: "last call at the stall" },
+      { fromHour: 20, x: 3, y: 2, doing: "back at the board, sorting" },
+    ],
   },
   resident1: {
     id: "resident1",

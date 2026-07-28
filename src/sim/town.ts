@@ -22,7 +22,7 @@ import type { TileId } from "../content/tiles";
 import { PLANK, GRASS } from "../content/tiles";
 import { tileDef } from "../content/tiles";
 import type { TownBuilding } from "../content/town";
-import { allTownBuildings, footprintCells, isPerimeter } from "../content/town";
+import { allTownBuildings, footprintCells, isPerimeter, TOWN_FIXTURES } from "../content/town";
 import { tileKey } from "./world";
 
 /** Answers what generation would put at a tile, before any edits. Both callers
@@ -112,14 +112,43 @@ function clearApron(t: StampTarget, b: TownBuilding, probe?: TerrainProbe): void
   }
 }
 
-/** Stamp every town building. Returns the ids that were actually placed, so a
- *  migration can say what it did rather than claiming success it didn't have. */
+/** Stand the town's loose furniture up — the errands board, and whatever joins
+ *  it. See content/town.ts §Fixtures for why these aren't buildings.
+ *
+ *  NO FLOOR REWRITE, which is the entire difference from `stampBuilding`. A
+ *  building brings its own ground because half of one placed on a generated
+ *  tree is worse than none; a board on the plaza is standing on paving that is
+ *  already there, and a one-cell plank patch under it would just be a scar.
+ *
+ *  Skips a cell the player has claimed, on the same all-or-nothing instinct —
+ *  though for a single cell "all" is one piece, so this is simply "don't
+ *  bulldoze". A town that quietly ate the shed you built on the plaza to put a
+ *  notice board up would be the town taking something. */
+export function stampFixtures(t: StampTarget): string[] {
+  const placed: string[] = [];
+  for (const f of TOWN_FIXTURES) {
+    if (occupied(t, f.x, f.y)) continue;
+    t.furniture[tileKey(f.x, f.y)] = { id: f.id, facing: f.facing, finish: f.finish };
+    placed.push(f.id);
+  }
+  return placed;
+}
+
+/** Stamp every town building AND every fixture. Returns the ids that were
+ *  actually placed, so a migration can say what it did rather than claiming
+ *  success it didn't have.
+ *
+ *  One function rather than two calls at each site, deliberately: `newWorld` and
+ *  the migrations both go through here, and the whole reason this module exists
+ *  is that a returning player's town and a new player's town must not be able to
+ *  differ. A fixture that only one of the two callers remembered to place would
+ *  be that bug in its purest form. */
 export function stampTown(t: StampTarget, probe?: TerrainProbe): string[] {
   const placed: string[] = [];
   for (const b of allTownBuildings()) {
     if (stampBuilding(t, b, probe)) placed.push(b.id);
   }
-  return placed;
+  return [...placed, ...stampFixtures(t)];
 }
 
 // --- The fixed cast ------------------------------------------------------------

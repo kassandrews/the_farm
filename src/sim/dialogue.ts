@@ -57,6 +57,10 @@ const DISSENT_CHANCE = 0.5;
  *  walks this list and uses the first kind the villager actually remembers. */
 const MEMORY_PRIORITY: MemoryKind[] = [
   "exhibit", // freshest: something they did while you were out
+  // Above the farming lines because an errand is something you did FOR THIS
+  // PERSON, where a harvest is something they merely watched. The most specific
+  // true thing between the two of you should be the thing they reach for.
+  "errand",
   "harvested_carrot",
   "built_plank",
   "planted_carrot",

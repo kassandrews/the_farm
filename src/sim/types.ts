@@ -13,6 +13,7 @@ import type { SkinId, SkinClass } from "../content/skins";
 import type { StructureId } from "../content/structures";
 import type { FurnitureId, Facing } from "../content/furniture";
 import type { ExhibitId } from "../content/museum";
+import type { ErrandId } from "../content/errands";
 
 /** Where the player chose to settle (DESIGN §"Town and homestead": 3–4 spots).
  *  Cosmetic-plus-origin: it shifts the homestead plot and its flavour. */
@@ -198,6 +199,24 @@ export interface WorldState {
    *  `placard` is an index into the exhibit's readings, not the text: the away
    *  event moves it when the curator revises, and the words stay in content. */
   museum: { donated: { id: ExhibitId; placard: number }[] };
+
+  /** The errands board (sim/errands.ts). One open request, what has been asked
+   *  before, and when the board last went quiet.
+   *
+   *  `done` is a list of ids and NOT a count, even though nothing reads it as a
+   *  list of anything but "have I seen this row". That is the point: the table
+   *  cycles by preferring unseen rows, so it needs to know which ones it has
+   *  used — and a number would be a score, whereas a set of ids is a memory.
+   *  Nothing may expose its length.
+   *
+   *  `lastClosedAt` is the whole timer. There is no deadline on an open request
+   *  and no countdown anywhere; this stamps when the board is next allowed to
+   *  ask, which is a fact about the town's pace and not about the player's. */
+  errands: {
+    open: { id: ErrandId; askerId: CharId; postedAt: number } | null;
+    done: ErrandId[];
+    lastClosedAt: number;
+  };
 
   flags: {
     landClaimed: boolean;

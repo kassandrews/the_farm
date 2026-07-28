@@ -313,6 +313,45 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
   },
 };
 
+// --- Fixtures: town furniture with no building around it ------------------------
+
+/** Something the town stood in the open, on ground it did not lay.
+ *
+ *  Separate from TOWN_BUILDINGS because a building OWNS ITS GROUND — `stampBuilding`
+ *  writes PLANK under its whole footprint first, so nothing lands in the river or
+ *  inside a generated tree. That is exactly wrong for a lone object on the plaza:
+ *  the paving is already there and already walkable, and a one-cell plank patch
+ *  under the board would be a scar in the middle of the square.
+ *
+ *  So a fixture places the piece and nothing else. It is the same distinction
+ *  `clearApron` already makes for doorsteps — pave only where paving is the fix. */
+export interface TownFixture extends TownFurniture {
+  id: FurnitureId;
+  finish: SkinId;
+}
+
+/** The errands board, in the plaza's south-east corner.
+ *
+ *  SOUTH-EAST because it is the only quadrant left: the town hall is north, the
+ *  museum and Margfrom west, the shop and heap east, the seed stall south-west.
+ *  It is also the corner you cross going from the square toward your own land,
+ *  which is the right direction to pass a notice board in.
+ *
+ *  IN THE OPEN, not in a sixth building. Everything else in town is a counter
+ *  you go inside to reach; a board is a thing you walk past and glance at, and
+ *  putting walls around it would have made the notices a place you visit rather
+ *  than something the town has up. It also keeps the Dog's round honest — he can
+ *  leave, because the board does not need him to be readable.
+ *
+ *  One cell, well clear of the plaza's edges and of every doorway. It is solid,
+ *  so it must never sit on the only approach to a door; the plaza is eleven by
+ *  nine and this is one cell of it, which town.test.ts asserts rather than
+ *  assumes. */
+export const TOWN_FIXTURES: TownFixture[] = [
+  // Weathered, because it has been up a while and nobody has offered to redo it.
+  { x: 4, y: 2, id: "noticeboard", facing: "s", finish: "pine" },
+];
+
 export function townBuilding(id: TownBuildingId): TownBuilding {
   return TOWN_BUILDINGS[id];
 }

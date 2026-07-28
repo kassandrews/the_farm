@@ -23,6 +23,7 @@ import {
 import { placeStructure, removeStructure } from "./structures";
 import { rooms } from "./rooms";
 import { stampTown, ensureFixedCast } from "./town";
+import { newErrands, errandDue, postErrand, boardNear } from "./errands";
 import { settleResidents } from "./housing";
 import { placeFurniture, removeFurnitureAt } from "./furniture";
 import { FURNITURE, furnitureDef } from "../content/furniture";
@@ -45,6 +46,7 @@ import { simulateAway, AWAY_MIN_MS } from "./away";
 import { speak } from "./dialogue";
 import type { Speech } from "./dialogue";
 import type { Rng } from "./rng";
+import { makeRng } from "./rng";
 import { SCHEMA_VERSION } from "./save";
 
 const PLAYER_SPEED = 3.4; // tiles / second — a brisk amble
@@ -122,6 +124,9 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     },
     seeds: { unlocked: [STARTING_CROP], selected: STARTING_CROP },
     museum: { donated: [] },
+    // Same helper the v15 migration uses, so a new town and an upgraded one
+    // open with an identically quiet board.
+    errands: newErrands(now),
     flags: { landClaimed: false, onboarded: false },
   };
 
@@ -190,6 +195,19 @@ export function tick(world: WorldState, dt: number, now: number): void {
   // back to one new neighbour, not to forty-eight.
   if (arrivalDue(world, now)) admitArrival(world, now);
 
+  // And the board may have a card to put up. Same reasoning as the arrival
+  // above and the same safety: due-ness is two timestamps compared, so asking
+  // every tick costs nothing and two days away yields one request, not twelve.
+  //
+  // The stream is seeded from the world and from WHEN THE BOARD LAST WENT
+  // QUIET, rather than from a stream carried in the save. That keeps the sim
+  // deterministic (CLAUDE.md §Architecture) without adding an rng cursor to the
+  // schema, and it means a given board-quiet moment always produces the same
+  // card — replaying a tick can't reroll the request into a better one.
+  if (errandDue(world, now)) {
+    postErrand(world, now, makeRng(world.seed ^ world.errands.lastClosedAt));
+  }
+
   for (const v of world.villagers) tickVillager(world, v, dt, now);
   updateAllCrops(world, now);
   updateRegrowth(world, now); // the woods come back on the real clock
@@ -211,7 +229,7 @@ export function buildCost(tool: BuildTool): Cost {
   return structureDef(tool).cost;
 }
 
-export type ActionKind = "dig" | "gather" | "plank" | "plant" | "water" | "harvest" | "none";
+export type ActionKind = "dig" | "gather" | "plank" | "plant" | "water" | "harvest" | "read" | "none";
 export interface ActionResult {
   kind: ActionKind;
   changed: boolean;
@@ -225,7 +243,7 @@ export interface ActionResult {
 export interface ActionTarget {
   x: number;
   y: number;
-  kind: "harvest" | "gather" | "tool" | "none";
+  kind: "harvest" | "gather" | "tool" | "read" | "none";
 }
 
 /** Where ACT will land, decided in ONE place so the reticle the player sees and
@@ -243,7 +261,15 @@ export interface ActionTarget {
  *      Deliberately ahead of the node: a tree beside you must never hijack a
  *      deliberate act, or you couldn't till the ground at the forest edge.
  *   4. Otherwise a node in reach — the phone-friendly shortcut, which only ever
- *      fires when the held tool had nothing to do anyway. */
+ *      fires when the held tool had nothing to do anyway.
+ *   5. Otherwise the errands board in reach.
+ *
+ *  READING IS LAST, and that placement is the argument for it being safe. The
+ *  board stands on the plaza: there is no crop on paving, no node on paving, and
+ *  no tool that applies to it, so by the time the ladder reaches step 5 every
+ *  other branch has already declined. It therefore cannot hijack a deliberate
+ *  act — which is the exact failure step 3's comment was written about — and the
+ *  reticle still promises precisely what ACT will do. */
 export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
   const { x, y } = playerTile(world);
   if (isRipe(world, x, y)) return { x, y, kind: "harvest" };
@@ -252,6 +278,9 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
   if (near && tool === "gather") return { x: near.x, y: near.y, kind: "gather" };
   if (toolApplies(world, tool, x, y)) return { x, y, kind: "tool" };
   if (near) return { x: near.x, y: near.y, kind: "gather" };
+
+  const board = boardNear(world, x, y);
+  if (board) return { x: board.x, y: board.y, kind: "read" };
   return { x, y, kind: "none" };
 }
 
@@ -279,6 +308,13 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
       changed: true,
       message: `${got.node === "tree" ? "Timber." : "Split it."} ${itemLabel(got.item, got.amount)}.`,
     };
+  }
+
+  if (target.kind === "read") {
+    // The sim's part is over here. Reading changes nothing — it opens a panel,
+    // which is the UI's business (ui/app.ts watches for this kind), and the
+    // message is the fallback for anywhere that only has a line to show.
+    return { kind: "read", changed: false, message: "Notices, and one request." };
   }
 
   // "tool" or "none": the held tool on the tile underfoot. When nothing applies
@@ -468,6 +504,12 @@ function furnitureFlavour(id: FurnitureId): string {
       return "A cushion. The floor has been upgraded to a place you can be.";
     case "rug":
       return "A rug. The room stops echoing and starts being a room.";
+    // The board is town furniture and not for sale (content/furniture.ts), so
+    // this line is unreachable in practice — it exists because the switch is
+    // exhaustive over FurnitureId and an exhaustive switch is how a new row
+    // becomes a compile error instead of a silent blank.
+    case "noticeboard":
+      return "A board, for notices. It is not yours, and it is already up.";
   }
 }
 

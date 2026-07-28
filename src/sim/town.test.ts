@@ -1,13 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { newWorld, tick } from "./game";
-import { tileKey, isWalkable, tileAt } from "./world";
+import { tileKey, isWalkable, tileAt, PLAZA } from "./world";
 import { PLANK, WATER, TREE } from "../content/tiles";
 import { rooms, roomAt } from "./rooms";
 import { findPath } from "./path";
-import { stampBuilding, stampTown } from "./town";
+import { stampBuilding, stampTown, stampFixtures } from "./town";
 import type { StampTarget } from "./town";
-import { TOWN_BUILDINGS, allTownBuildings, footprintCells, isPerimeter } from "../content/town";
+import { TOWN_BUILDINGS, allTownBuildings, footprintCells, isPerimeter, TOWN_FIXTURES } from "../content/town";
 import { stopTarget } from "./housing";
+import { CAST } from "../content/cast";
 
 function world(spot: "riverside" | "forest" | "hilltop" = "hilltop", seed = 7) {
   return newWorld({ name: "Test", form: "blob", spot, seed });
@@ -251,8 +252,71 @@ describe("stamping", () => {
 
   it("won't stamp the same town twice over itself", () => {
     const t = blankTarget();
-    expect(stampTown(t).length).toBe(allTownBuildings().length);
-    // Second pass sees its own walls and declines every one of them.
+    // Buildings AND fixtures — stampTown is the one answer to "what does a town
+    // contain", which is why the errands board is in this number.
+    expect(stampTown(t).length).toBe(allTownBuildings().length + TOWN_FIXTURES.length);
+    // Second pass sees its own walls and its own furniture, and declines all of
+    // them. The fixture half matters as much as the building half: a board that
+    // re-stamped would be harmless today and would silently overwrite a
+    // refinished one the moment fixtures gain any state.
     expect(stampTown(t)).toEqual([]);
+  });
+});
+
+// --- The errands board ----------------------------------------------------------
+// It is one solid cell standing in the open on the plaza, which is a shape
+// nothing else in the town has. These are the facts that shape has to keep.
+describe("the errands board", () => {
+  const board = TOWN_FIXTURES.find((f) => f.id === "noticeboard")!;
+
+  it("stands on the plaza", () => {
+    expect(board.x).toBeGreaterThanOrEqual(PLAZA.x0);
+    expect(board.x).toBeLessThanOrEqual(PLAZA.x1);
+    expect(board.y).toBeGreaterThanOrEqual(PLAZA.y0);
+    expect(board.y).toBeLessThanOrEqual(PLAZA.y1);
+  });
+
+  it("lays no floor under itself", () => {
+    // The whole reason fixtures are not buildings. A plank patch under the
+    // board would be a scar in the middle of the paving.
+    const t = blankTarget();
+    stampFixtures(t);
+    expect(t.overrides[tileKey(board.x, board.y)]).toBeUndefined();
+    expect(t.furniture[tileKey(board.x, board.y)]?.id).toBe("noticeboard");
+  });
+
+  it("is not inside any building, and blocks no doorway", () => {
+    for (const b of allTownBuildings()) {
+      const inside = board.x >= b.x0 && board.x <= b.x1 && board.y >= b.y0 && board.y <= b.y1;
+      expect(inside).toBe(false);
+      // A door's only approach is the cell directly outside it — its diagonals
+      // are sealed by the door's own wall run (see clearApron). A solid board
+      // parked there would shut the building, and it is the kind of bug that
+      // looks fine on screen because a villager who cannot path home snaps home.
+      expect({ x: board.x, y: board.y }).not.toEqual({ x: b.door.x, y: b.door.y + 1 });
+    }
+  });
+
+  it("does not stand where the Dog stands", () => {
+    // He is BESIDE it, never behind it. A 22px piece drawn over somebody
+    // standing north of it is the Blessed Carrot bug, which the unit tests were
+    // green for the first time (ROADMAP) — so this one is a unit test.
+    for (const stop of CAST.errands.schedule) {
+      expect({ x: stop.x, y: stop.y }).not.toEqual({ x: board.x, y: board.y });
+      // Directly north is the occluded cell: the art rises from the base.
+      expect({ x: stop.x, y: stop.y }).not.toEqual({ x: board.x, y: board.y - 1 });
+    }
+  });
+
+  it("keeps the Dog out of everybody's walls", () => {
+    // He is the one institution that MOVES (content/cast.ts), so unlike the
+    // other five his stops can't be eyeballed once and trusted — every stop on
+    // the round has to be somewhere he can actually stand.
+    for (const stop of CAST.errands.schedule) {
+      for (const b of allTownBuildings()) {
+        const inside = stop.x >= b.x0 && stop.x <= b.x1 && stop.y >= b.y0 && stop.y <= b.y1;
+        expect(inside).toBe(false);
+      }
+    }
   });
 });

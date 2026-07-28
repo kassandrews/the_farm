@@ -37,6 +37,7 @@ const TARGET_COLOR: Record<ActionTarget["kind"], string> = {
   harvest: "rgba(255,220,120,0.9)", // something ripe underfoot
   gather: "rgba(160,255,150,0.9)", // a tree or rock in reach
   tool: "rgba(255,255,255,0.85)", // the held tool has work here
+  read: "rgba(190,205,255,0.9)", // the errands board is within reach
   none: "rgba(255,255,255,0.3)",
 };
 
@@ -729,6 +730,60 @@ export class Renderer {
         else if (cell.facing === "n") ctx.fillRect(px + 2, top + deep - 4, pw - 4, 3);
         else if (cell.facing === "e") ctx.fillRect(px + 1, top + 2, 3, deep - 4);
         else ctx.fillRect(px + pw - 4, top + 2, 3, deep - 4);
+        break;
+      }
+      case "noticeboard": {
+        // Read off the FRONT FACE rather than the top: a board is a vertical
+        // surface, and the whole reason it stands 22px is that you see its face.
+        //
+        // PAPER IS NOT WOOD, so it does not take the piece's finish. Every other
+        // detail in this switch draws in `skin.top`/`skin.shade` because a
+        // pillow, a shelf and a tabletop really are made of the thing they sit
+        // on — paper isn't, and drawn in pine it vanished into the board and the
+        // whole object read as a crate. Parchment is hardcoded for the same
+        // reason a crop's leaves are: it is its own material.
+        const face = base - H;
+
+        // THE TOP SURFACE IS A LITTLE ROOF, and it has to become something on
+        // purpose. The generic path gives every piece a top the full depth of
+        // its footprint, which is right for a table and wrong for a board: a
+        // 16px lid over a 22px face read as a crate, and no amount of detail on
+        // the face fixed it, because the lid was half the silhouette.
+        //
+        // A parish notice board has a little pitched roof over it to keep the
+        // rain off the paper, so that is what that surface is. It costs nothing
+        // — the block is already drawn — and it turns the heaviest part of the
+        // shape from a mistake into the thing that identifies the object.
+        //
+        // One ridge and one eave, not a course of shingles. This is a single
+        // object rather than a continuous surface, so the per-cell edges band
+        // rule isn't in play; it's simply that a 16px roof has room for two
+        // lines and looks like corrugation with more.
+        ctx.fillStyle = skin.shade;
+        ctx.fillRect(px, py - H, pw, deep);
+        ctx.fillStyle = skin.top; // sunlit ridge along the far edge
+        ctx.fillRect(px + 1, py - H + 1, pw - 2, 2);
+        ctx.fillStyle = "rgba(0,0,0,0.22)"; // the eave, where the roof overhangs
+        ctx.fillRect(px, py - H + deep - 1, pw, 1);
+
+        ctx.fillStyle = skin.shade; // a recessed panel, so it reads as framed
+        ctx.fillRect(px + 1, face + 1, pw - 2, H - 3);
+        // Three sheets, deliberately misaligned and different sizes. A grid of
+        // identical rectangles would read as panelling; the joke is that this
+        // has been pinned by six people over several months, none of whom were
+        // looking at what was already there.
+        ctx.fillStyle = "#efe6cf";
+        ctx.fillRect(px + 2, face + 3, 5, 6);
+        ctx.fillRect(px + 9, face + 2, 5, 7);
+        ctx.fillRect(px + 4, face + 12, 8, 6);
+        ctx.fillStyle = "#b9ad90"; // a line of writing on each, too small to read
+        ctx.fillRect(px + 3, face + 5, 3, 1);
+        ctx.fillRect(px + 10, face + 4, 3, 1);
+        ctx.fillRect(px + 5, face + 14, 5, 1);
+        ctx.fillStyle = "#8c7a5c"; // pins
+        ctx.fillRect(px + 4, face + 3, 1, 1);
+        ctx.fillRect(px + 11, face + 2, 1, 1);
+        ctx.fillRect(px + 7, face + 12, 1, 1);
         break;
       }
       case "shelf": {

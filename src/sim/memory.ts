@@ -19,7 +19,8 @@ export type MemoryKind =
   | "harvested_carrot"
   | "exhibit" // something the villager did while you were away (see sim/away.ts)
   | "arrived" // the villager's own arrival on the Farm
-  | "housed"; // the day you finished their house (sim/commission.ts)
+  | "housed" // the day you finished their house (sim/commission.ts)
+  | "errand"; // you ran something over for them (sim/errands.ts)
 
 export interface MemoryEvent {
   kind: MemoryKind;
