@@ -15,6 +15,7 @@
 // (Design invariant: "Form is identity, never a job").
 
 import type { AdultForm } from "./canon/forms";
+import { activeFestival, watchCell, FESTIVAL_FROM_HOUR, STAGE_STAND } from "./festivals";
 
 /** The people this table authors: the fixed institutions and the starter
  *  resident. A closed union, because the dialogue banks and the authored-bed
@@ -26,6 +27,7 @@ export type AuthoredId =
   | "museum" // Corrigal — the curator, and every placard in the collection
   | "seedstall" // Blessed Carrot — seed, and the varieties you may plant
   | "errands" // Loyal Dog Thing — the board, and the round he walks
+  | "stage" // Dramatic Blob — the plaza stage, and the twelve festivals
   | "resident1"; // the one starter resident
 
 /** Someone the town has since taken in. Newcomers arrive at run time (see
@@ -210,6 +212,28 @@ export const CAST: Record<AuthoredId, CharDef> = {
       { fromHour: 20, x: 3, y: 2, doing: "back at the board, sorting" },
     ],
   },
+  stage: {
+    id: "stage",
+    form: "blob",
+    name: "Dramatic Blob",
+    fixed: true,
+    // The last institution. He does not leave the platform, which for a
+    // tragedian is not devotion so much as the absence of anywhere better to
+    // be — the festivals are twelve days a year and the other three hundred
+    // and fifty-three are rehearsal (content/festivals.ts).
+    //
+    // BESIDE the stage at (-2,1), never on it and never north of it. The
+    // Blessed Carrot bug for the second time would be careless and for the
+    // third time would be a policy: raised art draws upward from its footprint,
+    // so the cell behind a piece is inside the piece. He is also not ON the
+    // platform, which is a smaller and better joke — he steps up for the
+    // festival and stands next to it the rest of the year.
+    //
+    // He is a blob, and so is any Dramatic Blob who moves in later, and so is
+    // the player if they imported one. Forms are species, not singletons
+    // (DESIGN §Importing); this one is the institution.
+    schedule: [{ fromHour: 0, x: STAGE_STAND.x, y: STAGE_STAND.y, doing: "beside the stage" }],
+  },
   resident1: {
     id: "resident1",
     form: "scholar",
@@ -301,8 +325,28 @@ export function charDef(v: { id: CharId; name: string; form: AdultForm; fixed: b
 
 /** Where a character wants to be at a given wall-clock time. Walks the ring
  *  backwards to the latest stop that has already started; before the first
- *  stop of the day that's the LAST stop (which ran through midnight). */
+ *  stop of the day that's the LAST stop (which ran through midnight).
+ *
+ *  A FESTIVAL OUTRANKS THE RING, and that is the whole of how the town gathers
+ *  (DESIGN §Festivals). It belongs in here rather than in sim because it is the
+ *  same kind of fact as everything else this function knows: what the calendar
+ *  says, and whose day it is. Nothing is moved and nothing is stored — the
+ *  answer to "where should you be at five on the third of March" is simply the
+ *  plaza, which keeps position derived from the clock (sim/villagers.ts) and
+ *  keeps two days away needing no catch-up.
+ *
+ *  The FIXED CAST are exempt, and it is worth being explicit that this is not a
+ *  belt-and-braces guard: `tickVillager` returns early on `def.fixed` so they
+ *  would not walk anywhere regardless, but `currentActivity` reads this too,
+ *  and an Office Creature reported as "at the festival" while sitting at his
+ *  desk with the door shut would be the game saying something untrue about him.
+ *  The counters stay open through the party; a shop that shut so you could
+ *  attend would be a deadline in a party hat. */
 export function scheduledStop(def: CharDef, now: number): ScheduleStop {
+  if (!def.fixed && activeFestival(now)) {
+    const cell = watchCell(def.id);
+    return { fromHour: FESTIVAL_FROM_HOUR, x: cell.x, y: cell.y, doing: "at the festival" };
+  }
   const hour = new Date(now).getHours();
   let current = def.schedule[def.schedule.length - 1];
   for (const stop of def.schedule) {
@@ -311,9 +355,13 @@ export function scheduledStop(def: CharDef, now: number): ScheduleStop {
   return current;
 }
 
-// --- Intended full cast (DESIGN table), recorded for when the town expands ---
-// Kept as data-shaped comments, not code: the museum Scholar, the Menace's
-// shop, the Blessed Carrot's seed stall, the Dog Thing's errands board, the
-// Dramatic Blob's stage, the Gremlin's junk economy. Secrets (Quiet Ghost at
-// real-clock night, Stray Cosmos, Humming Cube landmark, Maverick Mole
-// underground) stay unlisted in any UI — discovery is the signature.
+// --- The full cast, now complete ----------------------------------------------
+// DESIGN's institution table is all seven: the Office Creature's town hall, the
+// Menace's shop, Corrigal's museum, the Blessed Carrot's seed stall, the Dog
+// Thing's errands board, the Gremlin's junk economy, and the Dramatic Blob's
+// plaza stage. This comment used to list the ones that didn't exist yet;
+// nothing is left on it.
+//
+// Secrets (Quiet Ghost at real-clock night, Stray Cosmos, Humming Cube
+// landmark, Maverick Mole underground) stay unlisted in any UI — discovery is
+// the signature, and none of them belongs in this table.

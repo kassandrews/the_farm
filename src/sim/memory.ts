@@ -20,7 +20,14 @@ export type MemoryKind =
   | "exhibit" // something the villager did while you were away (see sim/away.ts)
   | "arrived" // the villager's own arrival on the Farm
   | "housed" // the day you finished their house (sim/commission.ts)
-  | "errand"; // you ran something over for them (sim/errands.ts)
+  | "errand" // you ran something over for them (sim/errands.ts)
+  // A festival, and whether you were at it (sim/festival.ts). Deliberately NOT
+  // in `oneShot` below: the value is the year and the row, so each festival is
+  // its own memory, and de-duplicating by kind would mean the first one you
+  // ever attended was the last one anybody noticed. These logs are also the
+  // only record that you attended anything — there is no counter anywhere, on
+  // purpose (DESIGN §Festivals).
+  | "festival";
 
 export interface MemoryEvent {
   kind: MemoryKind;

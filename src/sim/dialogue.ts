@@ -56,6 +56,11 @@ const DISSENT_CHANCE = 0.5;
 /** Which memories a form is inclined to bring up, richest first. The selector
  *  walks this list and uses the first kind the villager actually remembers. */
 const MEMORY_PRIORITY: MemoryKind[] = [
+  // Above everything, because it is the rarest and the most recent thing that
+  // can be true between you — twelve times a year, and both of you were there.
+  // It also decays on its own: the log is a bounded ring, so a festival stops
+  // being the freshest thing as ordinary life piles up on top of it.
+  "festival",
   "exhibit", // freshest: something they did while you were out
   // Above the farming lines because an errand is something you did FOR THIS
   // PERSON, where a harvest is something they merely watched. The most specific

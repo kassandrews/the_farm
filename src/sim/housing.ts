@@ -78,6 +78,11 @@ export function homeStand(world: WorldState, v: Villager): { x: number; y: numbe
  *  — it knows the shape of a day and nothing about houses — and resolution
  *  happens here, in sim, where the world is. */
 export function stopTarget(world: WorldState, v: Villager, now: number): ScheduleStop {
+  // `scheduledStop` already answered the festival question, if there was one —
+  // the gather is a fact about the clock and about whose day it is, so it lives
+  // in content beside the routine it replaces rather than being resolved here.
+  // Nothing to do in this file: a festival stop is an ordinary stop with
+  // coordinates in it, and falls straight through the check below.
   const stop = scheduledStop(charDef(v), now);
   if (stop.at !== "home") return stop;
   const home = homeStand(world, v);

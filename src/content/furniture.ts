@@ -22,7 +22,7 @@
 import type { ItemId } from "./items";
 import type { SkinClass } from "./skins";
 
-export type FurnitureId = "bed" | "table" | "chair" | "shelf" | "cushion" | "rug" | "noticeboard";
+export type FurnitureId = "bed" | "table" | "chair" | "shelf" | "cushion" | "rug" | "noticeboard" | "stage";
 
 /** Which way a piece is turned. "s" is the default — facing the camera. */
 export type Facing = "n" | "e" | "s" | "w";
@@ -137,6 +137,33 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: true,
     height: 22,
+    finish: "wood",
+  },
+  // The plaza stage. Town furniture like the board — no cost, not in the build
+  // menu, put there by the town.
+  //
+  // 2x2, WHICH IS MAX_SPAN AND NOT A COINCIDENCE. A three-wide platform was the
+  // first instinct and it would have meant widening MAX_SPAN, which is the
+  // bound on "which anchor covers this cell" and on undo's capture window — a
+  // core constant loosened for one decorative object. Two by two is a platform
+  // you can see somebody standing on, which is the whole requirement.
+  //
+  // LOW, and low is the point. Everything else that stands up in this game
+  // reads as height by overhanging the cell behind it; a stage that did that
+  // would hide its own performer, which is the Blessed Carrot bug rebuilt on
+  // purpose. It is a step up, not a structure.
+  //
+  // SOLID, like the board: outdoors, where the chair rule about not making a
+  // small room a maze doesn't apply. You stand in front of a stage. The Blob
+  // stands beside it, which is a fact about content/festivals.ts, not this row.
+  stage: {
+    id: "stage",
+    name: "The Plaza Stage",
+    cost: {},
+    w: 2,
+    h: 2,
+    solid: true,
+    height: 8,
     finish: "wood",
   },
 };

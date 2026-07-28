@@ -157,6 +157,57 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
   // Other forms fall back to idle if they have no memory line for an event.
 };
 
+// --- Festivals -------------------------------------------------------------------
+// Merged into RESIDENT_MEMORY below rather than written into it inline, because
+// these are the one kind that needs EVERY FORM for a structural reason, the way
+// the errand lines do — anyone standing in the plaza when a festival happens
+// gets the memory, so a form with nothing to say would make being at one land
+// on silence for whoever you happened to talk to afterwards.
+//
+// THE VALUE IS THE FESTIVAL'S NAME, and every line uses it. That is what makes
+// the bank cheap: twelve festivals share six voices, and the specificity comes
+// free from the noun. (It is also why the memory stores a name rather than an
+// id — see sim/festival.ts.)
+//
+// NOBODY THANKS YOU FOR COMING and nobody remarks on your having been there.
+// They talk about the festival. A line like "good of you to turn up" would make
+// attendance a thing you are seen to have done, which is one short step from a
+// thing you are expected to do, and the whole design refuses that (DESIGN
+// §Festivals: missing one costs nothing and is recorded nowhere).
+const FESTIVAL_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
+  scholar: [
+    (v) => `${v}. I took field notes. They are mostly about the crowd, which is the more interesting phenomenon.`,
+    (v) => `. ... I have been writing up ${v}. The write-up is longer than the event.`,
+  ],
+  dog: [
+    (v) => `${v}! I was there! Everyone was there! It was the best one, and so was the last one!`,
+    (v) => `I think about ${v} a lot. Several times a day. Is that a lot?`,
+  ],
+  blob: [
+    (v) => `${v} moved me. ... I say that every year and every year it is true again.`,
+    (v) => `Nobody who was not at ${v} will ever really understand it. I have tried explaining. I will keep trying.`,
+  ],
+  menace: [
+    (v) => `${v} was tolerable. ... The standing about was well organised, which is not nothing.`,
+    (v) => `I attended ${v}. Briefly. I was seen there, which was the point.`,
+  ],
+  gremlin: [
+    (v) => `Good crowd at ${v}. Good pockets. ... I didn't. But there were.`,
+    (v) => `${v}. I stayed at the back. Best view, back there. Nobody looks behind them.`,
+  ],
+  carrot: [
+    (v) => `${v} happened. ... Yes. I was present for it. We can leave it there.`,
+  ],
+  office: [
+    (v) => `${v} was held. The paperwork for it is already complete, which is unusual and I intend to enjoy it.`,
+  ],
+};
+
+for (const [form, lines] of Object.entries(FESTIVAL_LINES)) {
+  const bank = (RESIDENT_MEMORY[form as AdultForm] ??= {});
+  bank.festival = lines;
+}
+
 // A Scholar resident's affinity perk (DESIGN §Affinity perks): their own reading
 // of a recent exhibit, disagreeing with the curator's. `t` is the exhibit's
 // title; `r` is the rival card — one of that row's readings Corrigal has not

@@ -48,6 +48,7 @@ import { offers, trade } from "../sim/shop";
 import { heapOffers, heapExhausted, redeem } from "../sim/heap";
 import { donatable, donate, collection, collectionEmpty, wingsWithDonations } from "../sim/museum";
 import { openErrand, errandState, cardText, deliverErrand, declineErrand, notices } from "../sim/errands";
+import { festivalOn, activeFestival, nextFestival, lastFestival, daysUntil, attend } from "../sim/festival";
 import { availableSkins, skinDef, SKIN_CLASSES, SKIN_CLASS_NAMES } from "../content/skins";
 import { cropDef } from "../content/crops";
 import { STALL_OPENER, STALL_EXHAUSTED } from "../content/seedstall";
@@ -456,6 +457,14 @@ export class App {
     // you had to walk him back to the plaza would make the round a chore.
     if (villagerId === "errands") {
       this.openErrands();
+      return;
+    }
+    // And the Dramatic Blob. Sixth counter, sixth panel, and the only one that
+    // is not a transaction — the stage IS the conversation, so talking to him
+    // is being told what is on. A "programme" button inside a dialogue box
+    // would be the menu-in-front-of-a-menu the shop refuses.
+    if (villagerId === "stage") {
+      this.openStage();
       return;
     }
 
@@ -913,6 +922,96 @@ export class App {
       // twice in two type sizes.
       return panel("The Errands Board", "Pinned in the plaza", [body]);
     }, { dismissable: true });
+  }
+
+  /** The Dramatic Blob's programme. Sixth counter, sixth panel, and the last
+   *  institution in town.
+   *
+   *  IT SELLS NOTHING AND TAKES NOTHING, which makes it the only counter here
+   *  with no transaction in it at all — the museum takes and gives nothing back,
+   *  and this one doesn't even take. It is a man telling you what is on.
+   *
+   *  THREE STATES, AND THE MIDDLE ONE IS THE IMPORTANT ONE. A festival is on
+   *  today twelve times a year; the other three hundred and fifty-three days
+   *  he is rehearsing, and if that state were a shrug the whole institution
+   *  would be a prop you walk past. So the rehearsal line is the row's own
+   *  writing, per festival, and the panel leads with it.
+   *
+   *  WHAT THIS PANEL DOES NOT DRAW, on the museum's and the board's precedent:
+   *
+   *    • No attendance record. Not "you have been to 3", not a list of the ones
+   *      you saw, not a mark against the ones you missed. There is no such
+   *      number in the sim and this file must not invent one from the memory
+   *      log, which exists so that PEOPLE can bring it up, not so the UI can
+   *      tally it.
+   *    • No countdown to the hour. Days, said the way he would say them. A
+   *      timer ticking down to a festival would turn the one thing in this game
+   *      that happens without you into an appointment.
+   *    • No calendar of the year ahead. You get the next one. Twelve rows laid
+   *      out in a grid is a completion checklist with months for boxes — the
+   *      museum's no-empty-slots rule, arriving by a side door. */
+  private openStage(): void {
+    if (!this.world) return;
+    const now = Date.now();
+    const today = festivalOn(now);
+    const active = activeFestival(now);
+    const next = nextFestival(now);
+    const last = lastFestival(now);
+
+    this.openModal((close) => {
+      const body = el("div", {});
+
+      if (active) {
+        body.append(el("div", { class: "who" }, [active.name]), el("p", {}, [active.onstage]), el("p", { class: "note" }, [active.blurb]));
+      } else if (today) {
+        // The day of, before the hour. He is at his most alive here and it
+        // would be a waste to make him say the same thing as on a Tuesday.
+        body.append(
+          el("div", { class: "who" }, [today.name]),
+          el("p", {}, ["Tonight. ... Not now. Tonight."]),
+          el("p", { class: "note" }, [today.blurb]),
+        );
+      } else if (next) {
+        const days = daysUntil(now, next.at);
+        body.append(
+          el("div", { class: "who" }, ["In rehearsal"]),
+          el("p", {}, [next.def.rehearsing]),
+          el("p", { class: "note" }, [
+            days === 1 ? `${next.def.name} is tomorrow.` : `${next.def.name}, in ${days} days.`,
+          ]),
+        );
+      }
+
+      // And what the last one was, in the past tense, under the rule. The same
+      // shape as the notices column: the town talking about something that has
+      // already happened, with nothing to press on it.
+      if (last && (!active || last.def.id !== active.id)) {
+        const column = el("div", { class: "notices" });
+        column.append(el("div", { class: "who" }, ["Last time"]), el("p", { class: "note" }, [last.def.afterwards]));
+        body.append(el("hr", {}), column);
+      }
+
+      body.append(actionRow([primaryBtn("...", close)]));
+      return panel("Dramatic Blob", "The Plaza Stage", [body]);
+    }, { dismissable: true });
+  }
+
+  /** Notice that you are at a festival, once, while you are at one.
+   *
+   *  `attend` is idempotent and cheap and does the deciding — it warms whoever
+   *  is standing out here and returns the festival only on the call that
+   *  actually registered it, so this fires exactly once per festival per town.
+   *
+   *  A FLASH, not a modal. The same call the arrival beat makes and for the
+   *  same reason: what makes this discoverable is that the entire town is
+   *  standing in the square, which is a thing you walk into. A panel in front
+   *  of it would be the game explaining a crowd you can see. */
+  private noticeFestival(): void {
+    if (!this.world) return;
+    const def = attend(this.world, Date.now());
+    if (!def) return;
+    this.persist();
+    this.flash(`${def.name}. ... You are here for it, which is most of what it asks.`);
   }
 
   // --- Commissions --------------------------------------------------------------
@@ -1496,6 +1595,7 @@ export class App {
         this.acc -= FIXED_DT;
       }
       this.noticeArrival();
+      this.noticeFestival();
     } else {
       this.acc = 0;
     }

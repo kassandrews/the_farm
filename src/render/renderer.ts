@@ -786,6 +786,35 @@ export class Renderer {
         ctx.fillRect(px + 7, face + 12, 1, 1);
         break;
       }
+      case "stage": {
+        // A LOW PLATFORM, and the restraint is the design. Every other standing
+        // thing in this game sells its height by overhanging the cell behind
+        // it; a stage that did that would hide whoever was standing on it,
+        // which is the Blessed Carrot bug rebuilt deliberately (ROADMAP §3g).
+        // Eight pixels is a step up. You read it as a stage because there is a
+        // Blob beside it, which is the correct way round.
+        //
+        // Boards run ACROSS the whole top in one pass, not per cell. The piece
+        // is 2x2, so per-cell planking would put a seam down the middle of a
+        // surface that is meant to be continuous — the per-cell edges band rule
+        // (CLAUDE.md), which this is the fifth candidate for. Drawn from the
+        // anchor, the courses run unbroken over both cells.
+        // Four courses, not eight. The first pass ruled a line every five
+        // pixels and the whole thing read as a sheet of lined paper lying in
+        // the square — the boards have to be wide enough to be boards.
+        ctx.fillStyle = skin.shade;
+        for (let y = 8; y < deep - 2; y += 8) ctx.fillRect(px + 2, top + y, pw - 4, 1);
+        // The step, at the near-left corner: a lighter tread over a dark riser,
+        // which is the only way 3px of anything reads as a step rather than as
+        // a smudge. Off-centre on purpose — centred it looked like a plinth
+        // for an object, and the fact worth conveying is that somebody gets up
+        // onto this.
+        ctx.fillStyle = "rgba(0,0,0,0.28)";
+        ctx.fillRect(px + 3, base - 4, 11, 4);
+        ctx.fillStyle = skin.top;
+        ctx.fillRect(px + 4, base - 4, 9, 2);
+        break;
+      }
       case "shelf": {
         ctx.fillStyle = skin.shade; // shelves, read off the front face
         ctx.fillRect(px + 1, base - H + 5, pw - 2, 1);

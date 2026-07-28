@@ -7,6 +7,8 @@ import { findPath } from "./path";
 import { stampBuilding, stampTown, stampFixtures } from "./town";
 import type { StampTarget } from "./town";
 import { TOWN_BUILDINGS, allTownBuildings, footprintCells, isPerimeter, TOWN_FIXTURES } from "../content/town";
+import { AUDIENCE } from "../content/festivals";
+import { cellsFor } from "./furniture";
 import { stopTarget } from "./housing";
 import { CAST } from "../content/cast";
 
@@ -317,6 +319,94 @@ describe("the errands board", () => {
         const inside = stop.x >= b.x0 && stop.x <= b.x1 && stop.y >= b.y0 && stop.y <= b.y1;
         expect(inside).toBe(false);
       }
+    }
+  });
+});
+
+// --- The plaza stage --------------------------------------------------------------
+// The second fixture, and the first one that is bigger than a cell. Everything
+// the board's block above checks, plus the two facts a 2x2 solid in the middle
+// of the square adds: it must not stand on the Dog's round, and it must not
+// stand where the town is about to stand.
+describe("the plaza stage", () => {
+  const stage = TOWN_FIXTURES.find((f) => f.id === "stage")!;
+  const cells = cellsFor(stage.x, stage.y, "stage", stage.facing);
+
+  it("stands on the plaza, all of it", () => {
+    for (const [x, y] of cells) {
+      expect(x).toBeGreaterThanOrEqual(PLAZA.x0);
+      expect(x).toBeLessThanOrEqual(PLAZA.x1);
+      expect(y).toBeGreaterThanOrEqual(PLAZA.y0);
+      expect(y).toBeLessThanOrEqual(PLAZA.y1);
+    }
+  });
+
+  it("lays no floor under itself", () => {
+    const t = blankTarget();
+    stampFixtures(t);
+    for (const [x, y] of cells) expect(t.overrides[tileKey(x, y)]).toBeUndefined();
+    expect(t.furniture[tileKey(stage.x, stage.y)]?.id).toBe("stage");
+  });
+
+  it("is not inside any building, and blocks no doorway", () => {
+    for (const b of allTownBuildings()) {
+      for (const [x, y] of cells) {
+        const inside = x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1;
+        expect(inside).toBe(false);
+        expect({ x, y }).not.toEqual({ x: b.door.x, y: b.door.y + 1 });
+      }
+    }
+  });
+
+  it("does not stand on the Dog's round, or on the board", () => {
+    // Two solid fixtures in one square, and he walks between them.
+    const board = TOWN_FIXTURES.find((f) => f.id === "noticeboard")!;
+    for (const [x, y] of cells) {
+      expect({ x, y }).not.toEqual({ x: board.x, y: board.y });
+      for (const stop of CAST.errands.schedule) expect({ x: stop.x, y: stop.y }).not.toEqual({ x, y });
+    }
+  });
+
+  it("does not swallow the Blob, who stands beside it and never behind it", () => {
+    // The Blessed Carrot bug for the third time would be a policy. Raised art
+    // draws upward from its footprint, so a performer on the cell north of the
+    // platform is inside the platform as far as the renderer is concerned.
+    const post = CAST.stage.schedule[0];
+    for (const [x, y] of cells) {
+      expect({ x: post.x, y: post.y }).not.toEqual({ x, y });
+      expect({ x: post.x, y: post.y }).not.toEqual({ x, y: y - 1 });
+    }
+  });
+
+  it("keeps the whole crowd out of every building's shadow", () => {
+    // THE BLESSED CARROT BUG AT THE SCALE OF A BUILDING, and the reason this
+    // test exists is that the first placement had it: the audience sat two
+    // rows north of the seed stall, and everything that stands up is drawn
+    // UPWARD from its footprint, so the crowd was behind the stall's roof.
+    // Margfrom was a purple head over a gable, in exactly the cell the game
+    // meant to put her in — which is why no unit test could have failed, and
+    // why this one asks the question in terms of PIXELS rather than position.
+    //
+    // A storey is 24px and a roof sits on top of it, so two tiles of clearance
+    // north of any wall is the honest margin.
+    const SHADOW = 2;
+    for (const seat of AUDIENCE) {
+      for (const b of allTownBuildings()) {
+        const behind = seat.x >= b.x0 && seat.x <= b.x1 && seat.y >= b.y0 - SHADOW && seat.y <= b.y1;
+        expect(behind, `${b.id} would draw over the watcher at ${seat.x},${seat.y}`).toBe(false);
+      }
+    }
+  });
+
+  it("does not stand where the audience does", () => {
+    // A solid cell under a watch spot is somebody who cannot reach their own
+    // place in the crowd, and the snap rule would hide it (ROADMAP §"A door
+    // needs a south wall": a villager who can't path somewhere teleports and
+    // looks completely normal doing it).
+    for (const seat of AUDIENCE) {
+      for (const [x, y] of cells) expect({ x: seat.x, y: seat.y }).not.toEqual({ x, y });
+      const board = TOWN_FIXTURES.find((f) => f.id === "noticeboard")!;
+      expect({ x: seat.x, y: seat.y }).not.toEqual({ x: board.x, y: board.y });
     }
   });
 });

@@ -6,6 +6,7 @@ import { TOWN_BUILDINGS, footprintCells } from "../content/town";
 import { count } from "./inventory";
 import { STARTING_SEED } from "./seeds";
 import { STARTING_CROP } from "../content/crops";
+import { STAGE } from "../content/festivals";
 
 function freshWorld() {
   return newWorld({ name: "Keeper", form: "menace", spot: "riverside", seed: 99 });
@@ -429,5 +430,45 @@ describe("v13 → v14: the seed stall", () => {
     const stall = TOWN_BUILDINGS.seedstall;
     expect(migrated.build[tileKey(stall.door.x, stall.door.y)]).toMatchObject({ id: "door" });
     expect(migrated.villagers.some((v) => v.id === "seedstall")).toBe(true);
+  });
+});
+
+describe("v15 → v16: the plaza stage", () => {
+  function v15Save(extra: Record<string, unknown> = {}): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    // A town from before the stage existed: no Blob, no platform in the square.
+    const villagers = (w.villagers as { id: string }[]).filter((v) => v.id !== "stage");
+    const furniture = { ...(w.furniture as Record<string, unknown>) };
+    delete furniture[tileKey(STAGE.x, STAGE.y)];
+    return { ...w, schemaVersion: 15, villagers, furniture, ...extra };
+  }
+
+  it("brings the stage AND the Blob, or it repeats the shop's bug", () => {
+    const migrated = migrateSave(v15Save())!;
+    expect(migrated.furniture[tileKey(STAGE.x, STAGE.y)]).toMatchObject({ id: "stage" });
+    expect(migrated.villagers.some((v) => v.id === "stage")).toBe(true);
+  });
+
+  it("adds no fields, because a festival is a date and an attendance is a memory", () => {
+    // The v11 story again, and stated the same way — a v15 save and a v16 save
+    // of the same town end up identical — so that it stays true however long
+    // the ladder gets. What this step exists for is the STAMP: the ladder only
+    // runs below SCHEMA_VERSION, so without a bump a live town would never
+    // hear about a new fixture or a new institution, field or no field.
+    const asV15 = migrateSave(v15Save())!;
+    const asV16 = migrateSave({ ...v15Save(), schemaVersion: 16 })!;
+    expect(Object.keys(asV15).sort()).toEqual(Object.keys(asV16).sort());
+    expect(asV15.inventory).toEqual(asV16.inventory);
+    expect(asV15.skins).toEqual(asV16.skins);
+  });
+
+  it("credits nobody with a festival they didn't attend", () => {
+    // The v11→v12 rule: a migration may furnish a town, never invent its
+    // history. An old save was at no festivals because there were none.
+    const migrated = migrateSave(v15Save())!;
+    for (const v of migrated.villagers) {
+      expect(v.memory.some((m) => m.kind === "festival")).toBe(false);
+    }
+    expect(migrated.player.memory.some((m) => m.kind === "festival")).toBe(false);
   });
 });

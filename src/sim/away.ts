@@ -21,6 +21,7 @@ import { tileAt, setTile, tileKey } from "./world";
 import { GRASS, DIRT, PLANK, MUSHROOM } from "../content/tiles";
 import { remember } from "./memory";
 import { remountExhibit } from "./museum";
+import { festivalsBetween, sawYouAt, gatherers } from "./festival";
 
 const HOUR = 3_600_000;
 
@@ -39,7 +40,7 @@ const MUSHROOM_CAP = 10;
 /** An event that tried to happen. `line` is the postcard sentence; null means
  *  the event found nothing to act on (no boards to move yet) and should be
  *  skipped silently rather than reported as a non-event. */
-type AwayEvent = (world: WorldState, rng: Rng, now: number) => string | null;
+type AwayEvent = (world: WorldState, rng: Rng, now: number, elapsedMs: number) => string | null;
 
 /** Tiles the player has placed or altered, as [x, y, tileId]. The away sim only
  *  ever touches ground near the town/homestead, which is where overrides are. */
@@ -151,8 +152,51 @@ const curatorRemountsExhibit: AwayEvent = (world, rng, now) => {
   return `Corrigal has revised an exhibit while you were out. The card now reads: ${remounted.placard}`;
 };
 
+/** A festival happened without you (DESIGN §Festivals: "a festival you missed
+ *  becomes news, not homework").
+ *
+ *  THE ONLY EVENT IN THIS TABLE THE TOWN WOULD HAVE RUN ANYWAY. The Gremlin
+ *  moves a board because you were out; this one is on the calendar and was
+ *  always going to happen, which is the strongest version of the promise this
+ *  file is built on — the world lives while you're away. It needs no roll to
+ *  decide whether it occurred, only a look at the dates you were gone.
+ *
+ *  What it MUTATES is the town's memory: everyone who was standing in the
+ *  square gets the festival in their log, which is why somebody can bring it up
+ *  when you next talk to them. That is a real change and not a sentence — the
+ *  header's rule — and it is the same record `attend` writes when you ARE there,
+ *  because it is the same fact. The difference is entirely that YOUR log stays
+ *  empty. You weren't there.
+ *
+ *  And nothing else happens. No friendship (nobody warmed to you at a party you
+ *  missed), no penalty, no note anywhere that you were absent. The postcard
+ *  tells you what the town did, in the past tense, the way the notices column
+ *  does.
+ *
+ *  The last one, if several passed: a fortnight away is one piece of news about
+ *  a festival, not a digest of three. `MAX_EVENTS` already keeps the postcard a
+ *  postcard, and it would be an odd absence that spent all three on the Blob. */
+const festivalHappened: AwayEvent = (world, _rng, now, elapsedMs) => {
+  const missed = festivalsBetween(now - elapsedMs, now);
+  if (missed.length === 0) return null;
+  const { def, at } = missed[missed.length - 1];
+
+  // The residents were there — the gather is what their routine says for those
+  // hours (content/cast.ts) — and so was the Blob, who was running it. The same
+  // `gatherers` the live path uses, so "who was at the festival" is one answer
+  // whether or not you were there to see it.
+  let anyone = false;
+  for (const v of gatherers(world)) {
+    if (sawYouAt(v, def, at)) continue; // already logged; an overlapping window
+    v.memory = remember(v.memory, { kind: "festival", at, value: def.name });
+    anyone = true;
+  }
+  if (!anyone) return null;
+  return `${def.name} was held in the plaza while you were out. ${def.afterwards}`;
+};
+
 /** The whole table. Order is irrelevant — the roll shuffles. */
-const AWAY_EVENTS: AwayEvent[] = [mushroomsSpread, gremlinMovesABoard, curatorRemountsExhibit];
+const AWAY_EVENTS: AwayEvent[] = [mushroomsSpread, gremlinMovesABoard, curatorRemountsExhibit, festivalHappened];
 
 /** Run the town forward across an absence, mutating the world, and return the
  *  lines describing what genuinely changed. Crops are advanced by the caller
@@ -172,7 +216,7 @@ export function simulateAway(world: WorldState, elapsedMs: number, now: number, 
   const lines: string[] = [];
   for (const event of pool) {
     if (lines.length >= budget) break;
-    const line = event(world, rng, now);
+    const line = event(world, rng, now, elapsedMs);
     if (line) lines.push(line);
   }
   return lines;

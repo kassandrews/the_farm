@@ -21,6 +21,7 @@ import type { SkinId } from "./skins";
 import type { FurnitureId, Facing } from "./furniture";
 import type { CharId } from "./cast";
 import type { WingId } from "./museum";
+import { STAGE } from "./festivals";
 
 export type TownBuildingId = "townhall" | "margfrom_house" | "shop" | "heap" | "museum" | "seedstall";
 
@@ -350,6 +351,21 @@ export interface TownFixture extends TownFurniture {
 export const TOWN_FIXTURES: TownFixture[] = [
   // Weathered, because it has been up a while and nobody has offered to redo it.
   { x: 4, y: 2, id: "noticeboard", facing: "s", finish: "pine" },
+  // The plaza stage, in the south-west of the square, facing the open paving so
+  // there is room for the town to stand in front of it (the audience cells are
+  // in content/festivals.ts, immediately south of here).
+  //
+  // A FIXTURE AND NOT A SIXTH BUILDING, for the same reason the board is one,
+  // and one more: `stampBuilding` lays plank under its whole footprint so that
+  // nothing lands in the river, which is exactly wrong for a platform standing
+  // on stone — it would arrive with a wooden scar around it. A stage is a thing
+  // in the square, not a room you go into.
+  //
+  // PINE, and it had to be. Ash was the first choice — the one piece of town
+  // furniture anybody has ever bothered to keep up — and on screen a pale
+  // 2x2 slab with board lines on it read as a sheet of paper lying in the
+  // square, which is not the joke. A stage is made of ordinary boards.
+  { x: STAGE.x, y: STAGE.y, id: "stage", facing: "s", finish: "pine" },
 ];
 
 export function townBuilding(id: TownBuildingId): TownBuilding {

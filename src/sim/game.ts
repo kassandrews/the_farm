@@ -498,6 +498,12 @@ function furnitureFlavour(id: FurnitureId): string {
       return "A table. Things can be put on it. That is what it is for.";
     case "chair":
       return "A chair, facing the way you left it.";
+    case "stage":
+      // Unreachable — the stage is town furniture and not in the build menu,
+      // like the board below it. It is here because this switch is exhaustive
+      // over FurnitureId, which is how the compiler tells us about a new row
+      // that nobody thought about.
+      return "A stage. Something will have to happen on it now.";
     case "shelf":
       return "A shelf. It waits.";
     case "cushion":

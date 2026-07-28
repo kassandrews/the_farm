@@ -238,6 +238,41 @@ quietly becoming a second to-do list; the defence is structural rather than
 editorial, in that a notice is handed a past-tense view of the town with no
 inventory and no open request in it, so it *cannot* set you a task.
 
+## Festivals and the plaza stage
+
+The Dramatic Blob keeps a stage in the plaza. **A festival is a total function
+of the date** — one per calendar month, on an authored day, at an authored
+hour. Nothing schedules it, nothing stores it, nothing counts it. Ask the
+calendar and it says whether today is the day.
+
+That is not an implementation note, it is the whole design. Everything below
+follows from it.
+
+- **The town gathers; it does not summon you.** During the festival hours the
+  residents stop walking their rings and stand in front of the stage. That is
+  the entire mechanism: schedule stops consult the calendar, positions stay
+  clock-derived, and the whole thing costs no save data.
+- **The institutions stay open.** The counters do not close for the party. A
+  shop that shuts so you can attend a festival is a deadline in a party hat,
+  and this game has none.
+- **Being there is remembered. Missing it is not.** Stand in the plaza while it
+  is on and everyone present warms a little and remembers that you came. Miss
+  it and nothing is lost, nothing is recorded, and nobody mentions it — there
+  is no attendance record, no streak, no count, and **nothing anywhere may ever
+  gate on having been to a festival**. The reward for going is that people
+  remember you were there.
+- **The stage is not dormant between festivals.** The Blob rehearses daily,
+  which is what makes him worth passing on an ordinary Tuesday. His
+  conversation is the programme: what is on today, or what is next, or — in
+  the past tense — what the last one was.
+- **A festival you missed becomes news, not homework.** If one falls while you
+  are away it turns up in the postcard, and the people who were there can bring
+  it up afterwards. Absence is story (§Time), so a festival is one of the few
+  things in the game that genuinely happens without you.
+- **Real months, so seasons arrive on the same axis.** The calendar the
+  festivals hang on is the one seasons will hang on later; there is no second
+  notion of time to reconcile.
+
 ## Affinity perks (instead of jobs)
 
 Forms grant small, flavorful, passive bonuses — never duties:

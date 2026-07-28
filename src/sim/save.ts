@@ -16,7 +16,7 @@ import { makeVillager } from "./villagers";
 import { authoredBed } from "../content/town";
 import type { CharId } from "../content/cast";
 
-export const SCHEMA_VERSION = 15;
+export const SCHEMA_VERSION = 16;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -371,6 +371,34 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       furniture: stamped.furniture,
       villagers: withFixedCast(raw, now),
       errands: newErrands(now),
+    };
+  },
+  // v15 → v16: the plaza stage and the Dramatic Blob. The stamp +
+  // ensureFixedCast pair a fourth time, and — like v10 → v11 — IT ADDS NO
+  // FIELDS AT ALL.
+  //
+  // That is the whole point and it is worth stating precisely, because the
+  // design note in ROADMAP nearly overclaimed it: festivals need no save data
+  // (a festival is a total function of the date, and who attended one is a
+  // memory on the villagers who were there, which already serialises). What
+  // they DO need is for the stage to be standing in the plaza and for the Blob
+  // to exist, and neither of those reaches a live save on its own — the
+  // migration ladder only runs below SCHEMA_VERSION, so a town that is already
+  // at v15 would never hear about either of them.
+  //
+  // So this exists to run the two idempotent stamps and for no other reason.
+  // A version bump whose entire body is "re-furnish the town" is not ceremony;
+  // it is the only way a deployed save gets the last institution.
+  15: (raw) => {
+    const now = Date.now();
+    const stamped = stampInto(raw);
+    return {
+      ...raw,
+      schemaVersion: 16,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
+      villagers: withFixedCast(raw, now),
     };
   },
 };

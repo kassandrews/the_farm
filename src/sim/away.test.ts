@@ -7,6 +7,7 @@ import { PLANK, MUSHROOM } from "../content/tiles";
 import { hasMemory, recall } from "./memory";
 import { donate } from "./museum";
 import { exhibitDef } from "../content/museum";
+import { FESTIVALS } from "../content/festivals";
 
 const HOUR = 3_600_000;
 
@@ -148,5 +149,53 @@ describe("the postcard", () => {
     w.lastSaved = now - 5 * HOUR;
     const lines = summarizeAway(w, now, makeRng(2));
     expect(lines[0]).toContain("5 hours");
+  });
+});
+
+describe("a festival you missed", () => {
+  const MARCH = FESTIVALS.find((f) => f.id === "the-airing")!;
+  /** Just after that year's Airing finished. */
+  const AFTER = new Date(2026, MARCH.month - 1, MARCH.day, 22, 0, 0).getTime();
+
+  function town() {
+    return newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 11 });
+  }
+
+  it("is news when the window covered it, and nothing when it didn't", () => {
+    const w = town();
+    const lines = simulateAway(w, 3 * 24 * HOUR, AFTER, makeRng(3));
+    expect(lines.some((l) => l.includes(MARCH.name))).toBe(true);
+
+    // A week that contains no festival produces no news from the stage.
+    const quiet = town();
+    const quietAt = new Date(2026, MARCH.month - 1, MARCH.day + 10, 12, 0, 0).getTime();
+    const quietLines = simulateAway(quiet, 3 * 24 * HOUR, quietAt, makeRng(3));
+    expect(quietLines.some((l) => l.includes(MARCH.name))).toBe(false);
+  });
+
+  it("is remembered by the town and NOT by the player", () => {
+    // The whole shape of the beat: it happened, they were there, you weren't.
+    // A player memory here would be the game telling you that you attended
+    // something you missed.
+    const w = town();
+    simulateAway(w, 3 * 24 * HOUR, AFTER, makeRng(3));
+    expect(w.villagers.some((v) => hasMemory(v.memory, "festival"))).toBe(true);
+    expect(hasMemory(w.player.memory, "festival")).toBe(false);
+  });
+
+  it("costs nothing — no friendship moves for a party you weren't at", () => {
+    const w = town();
+    const before = w.villagers.map((v) => v.friendship);
+    simulateAway(w, 3 * 24 * HOUR, AFTER, makeRng(3));
+    expect(w.villagers.map((v) => v.friendship)).toEqual(before);
+  });
+
+  it("leaves the institutions out of it, except the Blob who ran it", () => {
+    const w = town();
+    simulateAway(w, 3 * 24 * HOUR, AFTER, makeRng(3));
+    const shop = w.villagers.find((v) => v.id === "shop")!;
+    const blob = w.villagers.find((v) => v.id === "stage")!;
+    expect(hasMemory(shop.memory, "festival")).toBe(false);
+    expect(hasMemory(blob.memory, "festival")).toBe(true);
   });
 });

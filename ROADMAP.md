@@ -68,9 +68,18 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   round, clock-derived like every other schedule — which is why the board is
   readable with nobody at it (the new `read` context action).
 
-**Next:** the last institution (plaza stage) and festivals.
+- **Phase 3i — the plaza stage, complete.** The last institution. Twelve
+  festivals, one per calendar month, derived entirely from the date; the town
+  gathers in front of a platform in the plaza while the counters stay open; the
+  Dramatic Blob rehearses on the other three hundred and fifty-three days and
+  his conversation is the programme. Being there is remembered by the people who
+  were there; missing one costs nothing and turns up in the postcard instead.
+  Schema v16, which adds **no field** — its whole body is the stamp.
+  **Phase 3's cast is done: all seven institutions exist.**
 
-**Save schema is at v15.** Every change ships a tested migration — see
+**Next:** Phase 4 — the underground layer, company, secrets, seasons.
+
+**Save schema is at v16.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -1007,12 +1016,79 @@ board. The parts that took real discussion, so they don't get relitigated:
   Paper is hardcoded rather than taking the finish, because paper is not wood
   and in pine it vanished.
 
-### The rest of Phase 3
+### Festivals and the plaza stage
 
-- The last fixed cast member + institution: plaza stage (Dramatic Blob).
-- **A festival is a total function of the date.** That is what lets the stage
-  exist without touching `villagers.ts`'s invariant: schedule stops consult the
-  calendar, positions stay clock-derived, and it costs no schema.
+**Settled in planning for Phase 3i**, recorded in full in DESIGN §Festivals.
+The last institution, and the parts that took real discussion:
+
+- **A festival is a total function of the date, and that is load-bearing
+  twice.** It is what lets the stage exist without touching `villagers.ts`'s
+  invariant — schedule stops consult the calendar, positions stay clock-derived,
+  no catch-up after an absence — and it is half of why this ships **with no new
+  save field**, the first institution that adds none.
+- **It still needed a version bump, and that is a lesson not a footnote.**
+  Schema v16 adds nothing; its entire body is the stamp + `ensureFixedCast`
+  pair. The plan said "no schema change at all" and was wrong, because the
+  migration ladder only runs BELOW `SCHEMA_VERSION` — a town already at v15
+  never hears about a new fixture or a new institution, however idempotent the
+  stamp is. Deriving state from the calendar buys you a migration with no
+  field in it; it does not buy you no migration. v10 → v11 is the precedent and
+  says the same thing about the junk economy.
+- **The other half of the no-new-field property: attendance lives in the
+  villagers' memory logs.** Whether
+  you came to a festival is a thing six people remember, not a number the town
+  keeps. That is not a trick to dodge a migration; a `festivalsAttended` field
+  is a score with a denominator implied, which is exactly what the museum panel
+  spends four bullets refusing. The memory log already serialises, already
+  feeds dialogue, and is already the thing DESIGN says dialogue must be written
+  against.
+- **Monthly, one per calendar month.** The alternative — a short cycle so the
+  first one lands in your first week — was the errands board's instinct and is
+  wrong here. A festival that comes round every five days is a routine; the
+  point of a festival is that it is *rare*, and rarity is what makes the
+  postcard version ("you missed it") land as news rather than as a nag. It also
+  puts festivals on the real calendar, which is the axis Phase 4's seasons want
+  anyway.
+- **Which means the stage is empty most days, and the rehearsal is the answer.**
+  An institution you can only use twelve times a year is a prop. The Blob
+  rehearses daily and his conversation is the programme, so passing the stage on
+  an ordinary Tuesday gets you something — most of the writing goes here, not
+  into the twelve festivals.
+- **Institutions do not close for it**, and this needed no rule: `tickVillager`
+  returns early on `def.fixed`, so the fixed cast simply never gather. The
+  counters staying open is a consequence of the existing model rather than an
+  exception carved into it — and a shop that shuts so you can attend is a
+  deadline wearing a party hat.
+- **Missing one costs nothing and is recorded nowhere.** Asserted in test the
+  way `heap.test.ts` asserts the Gremlin never hands over a material: skipping a
+  festival leaves the world unchanged, and no acceptance test in the codebase
+  reads a festival memory.
+- **The stage is a FIXTURE, not a building** — `TOWN_FIXTURES` + `stampFixtures`,
+  the distinction the errands board forced. A building writes plank under its
+  whole footprint, which on plaza paving is a scar.
+
+### The rest of Phase 3 — **nothing**
+
+- ~~The last fixed cast member + institution: plaza stage (Dramatic Blob).~~
+  **Done.** See the settled entry above. Phase 3 is complete.
+
+Two things the build settled that the plan hadn't, both found on screen:
+
+- **A building casts a shadow two tiles north of itself, and a crowd can stand
+  in it.** The audience was first placed south of a stage at (-4,0) — directly
+  in front of the seed stall, whose walls and roof draw upward over the ground
+  behind them. Margfrom was a purple head above a gable, standing in exactly
+  the cell the game intended. It is the Blessed Carrot bug at the scale of a
+  building, and `town.test.ts` now asks the question in the general form: no
+  watch spot may be within two tiles north of any building footprint. **Any
+  future authored standing position wants that check**, not just this one.
+- **"Who is at the festival" is a question about ROLE, not about distance.** A
+  six-tile radius put the Office Creature in the crowd — five tiles from the
+  platform, through a wall, with the door shut — and warmed him for a party he
+  did not attend. `gatherers()` is now the one predicate, shared by `attend`
+  and by the away event, so being at a festival is one fact whether or not you
+  were there to see it. The fixed cast staying at their counters is the whole
+  reason the counters stay open; a radius cannot know that.
 
 ---
 
@@ -1053,9 +1129,10 @@ you trip over them:
   is its own decision and was deliberately not improvised alongside the rest.
 - **Ore is defined but unobtainable** until the underground layer exists. This
   is intentional, not an oversight.
-- **Six of the seven fixed cast exist** — office, shop, heap, museum, seed stall,
-  errands board. Only the Dramatic Blob's plaza stage is left. The intended
-  full mapping is recorded as comments at the foot of `src/content/cast.ts`.
+- ~~**Six of the seven fixed cast exist.**~~ **All seven now do** — office,
+  shop, heap, museum, seed stall, errands board, plaza stage. DESIGN's
+  institution table is complete; the note at the foot of `src/content/cast.ts`
+  that listed what was missing has nothing left on it.
   Residents are no longer limited to one:
   `content/arrivals.ts` holds four, and the town takes them in one at a time.
   Note the queue **runs out** rather than looping — the fourth Rummage would say
