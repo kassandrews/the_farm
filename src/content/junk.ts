@@ -49,3 +49,34 @@ export const JUNK_FINDS: string[] = [
   "A cup with the handle on the inside. It was made this way.",
   "A small brass plaque, worn blank. It commemorates something.",
 ];
+
+/** How much of the deep rock has something in it. Lower than the lawn's 0.15
+ *  and that is not a nerf — a cut face is one tap the same as a dig, but a
+ *  tunnel is a line of them, so the same density would pay out steadily as you
+ *  walked. One face in twelve keeps it an event rather than a conveyor.
+ *
+ *  Note what does NOT scale with distance: this. Depth decides *whether* the
+ *  rock has anything (sim/junk.ts §DEEP_FIND_DEPTH), never how much — a number
+ *  that climbs the further out you go is a payout curve, and a payout curve is
+ *  a score you are meant to beat (ROADMAP §"No 'deepest reached' counter"). */
+export const DEEP_JUNK_DENSITY = 0.085;
+
+/** The same joke, older. These come out of rock rather than out of a lawn, so
+ *  nothing here is a spoon or a boot — it is all things that were down there
+ *  before the town was, described with the same total lack of surprise.
+ *
+ *  A separate table rather than a shared one because the fiction is doing real
+ *  work: finding somebody's bent cutlery thirty tiles into solid stone would
+ *  quietly say the underground is just more lawn. */
+export const DEEP_FINDS: string[] = [
+  "A tooth. Too big. You put it in the satchel and think about something else.",
+  "A coin, from no mint. The face on it is having a lovely time.",
+  "A nail as long as your arm. It was holding something.",
+  "A jar, sealed, empty, and dry inside. That took some doing.",
+  "A hand tool with no handle, for a hand that isn't shaped like yours.",
+  "A tile with a pattern on it. The pattern continues into the rock.",
+  "A ring of iron, and the rock has grown round it politely.",
+  "Rope. It has been down here longer than rope lasts.",
+  "A little carved thing. It is a carving of a little carved thing.",
+  "A lamp, cold, with oil still in it. The oil is fine. You are not asked why.",
+];

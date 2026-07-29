@@ -22,6 +22,7 @@ import { GRASS, DIRT, PLANK, MUSHROOM } from "../content/tiles";
 import { remember } from "./memory";
 import { remountExhibit } from "./museum";
 import { festivalsBetween, sawYouAt, gatherers } from "./festival";
+import { moleMet, moleDigs, moleDigLine } from "./mole";
 
 const HOUR = 3_600_000;
 
@@ -152,6 +153,25 @@ const curatorRemountsExhibit: AwayEvent = (world, rng, now) => {
   return `Corrigal has revised an exhibit while you were out. The card now reads: ${remounted.placard}`;
 };
 
+/** The Mole lengthens your tunnel (DESIGN §"The Mole, specifically").
+ *
+ *  Gated on having MET him, which is the whole of what makes it his: an
+ *  unmet Mole extending your tunnel would be the rock doing you favours, and
+ *  the player would rightly read it as a bug. It is also the only event here
+ *  that happens underground, where the postcard's usual promise — go and look
+ *  at it — costs a walk. That is allowed precisely because it asks nothing:
+ *  the tunnel is longer whether or not you ever go back down.
+ *
+ *  Additive by construction (`carve` only turns rock into floor and refuses
+ *  ore), so it satisfies the header's first two rules without needing to be
+ *  careful about them. */
+const moleExtendsTheTunnel: AwayEvent = (world, rng) => {
+  if (!moleMet(world)) return null;
+  const cut = moleDigs(world);
+  if (cut === 0) return null;
+  return moleDigLine(rng, cut);
+};
+
 /** A festival happened without you (DESIGN §Festivals: "a festival you missed
  *  becomes news, not homework").
  *
@@ -196,7 +216,13 @@ const festivalHappened: AwayEvent = (world, _rng, now, elapsedMs) => {
 };
 
 /** The whole table. Order is irrelevant — the roll shuffles. */
-const AWAY_EVENTS: AwayEvent[] = [mushroomsSpread, gremlinMovesABoard, curatorRemountsExhibit, festivalHappened];
+const AWAY_EVENTS: AwayEvent[] = [
+  mushroomsSpread,
+  gremlinMovesABoard,
+  curatorRemountsExhibit,
+  moleExtendsTheTunnel,
+  festivalHappened,
+];
 
 /** Run the town forward across an absence, mutating the world, and return the
  *  lines describing what genuinely changed. Crops are advanced by the caller

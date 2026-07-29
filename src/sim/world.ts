@@ -211,8 +211,82 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
  *  settled; the rock does not care, and a spot-dependent underground would mean
  *  two towns from one seed disagree about where the ore is. */
 export function generatedUnderTile(seed: number, x: number, y: number): TileId {
+  // The warren first: it is open space, and open space can't also be a vein.
+  if (inWarren(seed, x, y)) return CAVE_FLOOR;
   const roll = hash2(x, y, seed ^ 0x0deb) / 4294967296;
   return roll < NODES.vein.density ? ORE_VEIN : BEDROCK;
+}
+
+// --- The warren ---------------------------------------------------------------
+// The one place the rock is already open when you get there. Somebody else has
+// been digging out here for a long time (DESIGN §"The Mole, specifically"), and
+// you find out because your tunnel breaks into his.
+//
+// Shape matters more than it looks. A lone chamber somewhere in unbounded rock
+// is a lottery — a straight tunnel in a random direction would miss it forever —
+// so what surrounds the town at this distance is his ROUNDS: a wandering
+// corridor that closes on itself, which any tunnel going outward has to cross.
+// Following it is then the exploration, and it needs no marker to be findable.
+//
+// It is a total function of (seed, x, y) like everything else down here, so a
+// town's warren is a stable fact about that town and nothing about it is stored.
+
+/** Roughly how far out his rounds run, in tiles from the origin. Far enough
+ *  that you arrived on purpose — past slate (12), past the first deep finds —
+ *  and near enough that it is a long walk rather than an expedition. */
+const WARREN_RING = 30;
+
+/** How much the corridor wanders in and out. Without this it is a circle, and a
+ *  perfect circle in the rock reads as a game object rather than as somebody's
+ *  habit. */
+const WARREN_WANDER = 5;
+
+/** Corridor half-width. One means a three-wide passage: wide enough to walk and
+ *  to read as cut on purpose, narrow enough that you can tunnel straight across
+ *  it and notice you did. */
+const WARREN_WIDTH = 1;
+
+/** Where he actually lives, on the ring. A wide spot, not a room with a door —
+ *  he is a hermit, not a resident. */
+const CHAMBER_RADIUS = 4;
+
+/** The radius his rounds sit at for this bearing. Two sine terms with
+ *  seed-derived phases: cheap, smooth, and it never repeats around the circle
+ *  the way a single term would. */
+function warrenRadius(seed: number, angle: number): number {
+  const a = (hash2(1, 0, seed ^ 0x3f0e) / 4294967296) * Math.PI * 2;
+  const b = (hash2(2, 0, seed ^ 0x3f0e) / 4294967296) * Math.PI * 2;
+  return WARREN_RING + WARREN_WANDER * (0.6 * Math.sin(angle * 3 + a) + 0.4 * Math.sin(angle * 5 + b));
+}
+
+/** The bearing his chamber sits at — one number per town, and the only thing
+ *  that decides which way you have to dig. */
+function chamberAngle(seed: number): number {
+  return (hash2(3, 0, seed ^ 0x3f0e) / 4294967296) * Math.PI * 2;
+}
+
+/** Where the Mole is, in world tiles. Derived, never stored: the chamber is
+ *  generated rock, so a save can no more disagree about where he lives than it
+ *  can disagree about where the ore is. */
+export function warrenChamber(seed: number): { x: number; y: number } {
+  const angle = chamberAngle(seed);
+  const r = warrenRadius(seed, angle);
+  return { x: Math.round(Math.cos(angle) * r), y: Math.round(Math.sin(angle) * r) };
+}
+
+/** Is this cell part of the warren — his rounds, or the chamber on them? */
+export function inWarren(seed: number, x: number, y: number): boolean {
+  const dist = Math.hypot(x, y);
+  // Cheap rejection first: this runs for every generated underground cell in
+  // every chunk, and the overwhelming majority are nowhere near.
+  if (dist < WARREN_RING - WARREN_WANDER - CHAMBER_RADIUS - 1) return false;
+  if (dist > WARREN_RING + WARREN_WANDER + CHAMBER_RADIUS + 1) return false;
+
+  const chamber = warrenChamber(seed);
+  if (Math.hypot(x - chamber.x, y - chamber.y) <= CHAMBER_RADIUS) return true;
+
+  const angle = Math.atan2(y, x);
+  return Math.abs(dist - warrenRadius(seed, angle)) <= WARREN_WIDTH;
 }
 
 /** The effective tile on a layer: a player/town edit wins, else the generated

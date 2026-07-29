@@ -111,6 +111,18 @@ export interface Villager {
   fixed: boolean;
   x: number;
   y: number;
+  /** Which layer they stand on. Everyone in the town is on the surface and
+   *  always will be; the one villager who isn't is the Mole, who lives in the
+   *  rock and never comes up (DESIGN §"The Mole, specifically").
+   *
+   *  This used to say the player was the only thing that carried a layer, and
+   *  that stopped being true the moment somebody lived down there. It is a
+   *  field rather than a lookup because a coordinate now means two places, and
+   *  everything that compares positions — talking, friendship radius, drawing —
+   *  has to be able to ask which one. Optional, so schema v20 backfills nothing
+   *  and an absent value reads as the surface, which for every villager who
+   *  predates the Mole is exactly right. */
+  layer?: Layer;
   facing: 1 | -1;
   /** Friendship, grown by talking/doing things together (DESIGN §"Company"). */
   friendship: number;

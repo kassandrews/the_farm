@@ -20,10 +20,13 @@ import {
   RESIDENT_MEMORY,
   RESIDENT_HOME,
   SCHOLAR_DISSENT,
+  MOLE_DEEP,
+  MOLE_SHALLOW,
   residentIdle,
   warmLines,
 } from "../content/dialogue";
 import { rivalReading } from "./museum";
+import { moleGroundShallow } from "./mole";
 
 export interface Speech {
   who: string;
@@ -85,6 +88,21 @@ export function officeLandClaimLine(line: number): Speech | null {
  *  line; otherwise an idle line in the form's voice. Avoids immediately
  *  repeating the last line. */
 export function speak(world: WorldState, v: Villager, rng: Rng): Speech {
+  // The Mole answers before any of this, and from his own bank only. He has no
+  // house, no ring, no memories of the town and no opinion about your shelf —
+  // every branch below is about being a resident of a place he does not live
+  // in. His one variable is whether you dug a shortcut to him, and he reads
+  // that off the live world rather than off a memory, for the reason the
+  // scholar's dissent does: it is a fact he can see from where he is standing,
+  // and gating it on an away roll would mean he hadn't noticed the ladder.
+  if (v.id === "mole") {
+    const pool = moleGroundShallow(world) ? MOLE_SHALLOW : MOLE_DEEP;
+    let text = rng.pick(pool);
+    if (text === v.lastLine && pool.length > 1) text = rng.pick(pool);
+    v.lastLine = text;
+    return { who: v.name, text };
+  }
+
   // The house goes first when it has something to say. It's the most specific
   // true thing about them right now, and the only one the player can act on.
   const home = tryHomeLine(world, v, rng);

@@ -1,10 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { tileAt, setTile, tileKey, canDig } from "./world";
-import { GRASS, TREE } from "../content/tiles";
-import { buriedAt, digWithFind, isVirginGround } from "./junk";
+import { tileAt, setTile, tileKey, canDig, canCarve, depthAt, dig, sink } from "./world";
+import { GRASS, TREE, ORE_VEIN } from "../content/tiles";
+import {
+  buriedAt,
+  digWithFind,
+  isVirginGround,
+  embeddedAt,
+  deepFindLine,
+  carveWithFind,
+  DEEP_FIND_DEPTH,
+} from "./junk";
 import { count } from "./inventory";
 import { newWorld, contextAction } from "./game";
-import { JUNK_DENSITY } from "../content/junk";
+import { JUNK_DENSITY, JUNK_FINDS, DEEP_FINDS } from "../content/junk";
 
 function freshWorld() {
   return newWorld({ name: "Sprout", form: "scholar", spot: "hilltop", seed: 99 });
@@ -130,5 +138,100 @@ describe("junk — what the ground turns up", () => {
     // The find replaces the ordinary line rather than queueing behind it.
     expect(res.message).not.toBe("You turn the earth.");
     expect(tileKey(x, y) in w.overrides).toBe(true);
+  });
+});
+
+describe("junk in the deep rock", () => {
+  /** A piece of rock with something in it, out past the depth threshold.
+   *  Searched for the same reason the surface helper searches: the density and
+   *  the threshold are both content and both allowed to move. */
+  function embeddedRock(
+    world: ReturnType<typeof freshWorld>,
+  ): { x: number; y: number } {
+    for (let y = -40; y < 40; y++) {
+      for (let x = -40; x < 40; x++) {
+        if (!canCarve(world, x, y)) continue;
+        if (depthAt(world, x, y) < DEEP_FIND_DEPTH) continue;
+        if (embeddedAt(world, x, y)) return { x, y };
+      }
+    }
+    throw new Error("no embedded rock in range — is DEEP_JUNK_DENSITY zero?");
+  }
+
+  /** A world with one shaft at the origin, which is what makes depth mean
+   *  anything: with no shaft at all every cell is infinitely deep. */
+  function minedWorld() {
+    const w = freshWorld();
+    setTile(w, 0, 0, GRASS); // the plaza is paved; a shaft needs diggable ground
+    dig(w, 0, 0);
+    sink(w, 0, 0);
+    return w;
+  }
+
+  it("pays nothing in the shallow rock beside your own shaft", () => {
+    // The threshold is the fiction: near a shaft you are under ground you have
+    // already turned from above, so there is nothing left down there.
+    const w = minedWorld();
+    let paid = 0;
+    for (let y = -3; y <= 3; y++) {
+      for (let x = -3; x <= 3; x++) {
+        if (!canCarve(w, x, y)) continue;
+        if (carveWithFind(w, x, y).find) paid++;
+      }
+    }
+    expect(paid).toBe(0);
+    expect(count(w.inventory, "junk")).toBe(0);
+  });
+
+  it("pays out once in the deep rock, and that cell is spent", () => {
+    const w = minedWorld();
+    const at = embeddedRock(w);
+    const first = carveWithFind(w, at.x, at.y);
+    expect(first.carved).toBe(true);
+    expect(first.find).not.toBeNull();
+    expect(count(w.inventory, "junk")).toBe(1);
+
+    // Cut rock is cut. There is no second swing at the same face, which is what
+    // makes this un-farmable without a `dug` set to remember it.
+    const again = carveWithFind(w, at.x, at.y);
+    expect(again.carved).toBe(false);
+    expect(again.find).toBeNull();
+    expect(count(w.inventory, "junk")).toBe(1);
+  });
+
+  it("says something the lawn would never say", () => {
+    // A separate table, because finding somebody's bent spoon thirty tiles into
+    // solid stone would quietly say the underground is just more lawn.
+    const w = minedWorld();
+    const at = embeddedRock(w);
+    const line = carveWithFind(w, at.x, at.y).find!;
+    expect(DEEP_FINDS).toContain(line);
+    expect(JUNK_FINDS).not.toContain(line);
+  });
+
+  it("never takes the ore instead", () => {
+    // A vein is a node and goes through gathering; the pick that cuts rock must
+    // not be able to cut it away, with or without a payout attached.
+    const w = minedWorld();
+    for (let y = -40; y < 40; y++) {
+      for (let x = -40; x < 40; x++) {
+        if (tileAt(w, x, y, "under") !== ORE_VEIN) continue;
+        const r = carveWithFind(w, x, y);
+        expect(r.carved).toBe(false);
+        expect(r.find).toBeNull();
+        expect(tileAt(w, x, y, "under")).toBe(ORE_VEIN);
+        return;
+      }
+    }
+    throw new Error("no vein in range");
+  });
+
+  it("is a total function of the seed, like everything else down there", () => {
+    const a = freshWorld();
+    const b = freshWorld();
+    for (let i = 0; i < 50; i++) {
+      expect(embeddedAt(a, i, -i)).toBe(embeddedAt(b, i, -i));
+      expect(deepFindLine(a, i, -i)).toBe(deepFindLine(b, i, -i));
+    }
   });
 });

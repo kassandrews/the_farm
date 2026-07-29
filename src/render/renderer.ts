@@ -1410,11 +1410,14 @@ export class Renderer {
   // No longer sorted among themselves — they go into the one raised pass so a
   // villager sorts against trees and (soon) walls, not only against each other.
   private collectMovers(world: WorldState, t: number, night: boolean, under: boolean): void {
-    // Villagers are surface creatures — they carry no layer at all (types.ts),
-    // which is exactly why they must be skipped rather than filtered: drawing
-    // them from below would put the whole town's daily round in your tunnel,
-    // walking through solid rock. Down there you are on your own until the Mole.
-    for (const v of under ? [] : world.villagers) {
+    // Filtered by LAYER rather than skipped wholesale, which is what this used
+    // to do back when everyone was a surface creature. Drawing the town from
+    // below would put its whole daily round in your tunnel, walking through
+    // solid rock; drawing the Mole from above would stand him in a field. Same
+    // check, both directions.
+    const layer = under ? "under" : "surface";
+    for (const v of world.villagers) {
+      if ((v.layer ?? "surface") !== layer) continue;
       // The Quiet Ghost only shows at real-clock night (DESIGN §secret forms).
       if (v.form === "ghost" && !night) continue;
       this.raised.push({ y: v.y, bias: BIAS_MOVER, draw: () => this.drawVillager(v, t, night) });

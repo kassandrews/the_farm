@@ -25,7 +25,7 @@ import type { ScheduleStop } from "../content/cast";
 import { charDef, scheduledStop } from "../content/cast";
 import { authoredBed } from "../content/town";
 import { cellsFor } from "./furniture";
-import { isWalkable, tileKey, parseTileKey } from "./world";
+import { isWalkable, tileKey, parseTileKey, warrenChamber } from "./world";
 
 /** Which way we look for somewhere to stand beside a bed. Orthogonals only, in
  *  the same order as sim/path.ts steps — north, east, south, west — so the
@@ -84,6 +84,14 @@ export function stopTarget(world: WorldState, v: Villager, now: number): Schedul
   // Nothing to do in this file: a festival stop is an ordinary stop with
   // coordinates in it, and falls straight through the check below.
   const stop = scheduledStop(charDef(v), now);
+  // The warren answers from the seed rather than from the world's furniture, so
+  // it cannot fail and has no fallback path. It is resolved HERE anyway, beside
+  // the other anchor, because "content states the anchor, sim answers it" is the
+  // rule that keeps content free of the world — not a fact about beds.
+  if (stop.at === "warren") {
+    const chamber = warrenChamber(world.seed);
+    return { ...stop, x: chamber.x, y: chamber.y };
+  }
   if (stop.at !== "home") return stop;
   const home = homeStand(world, v);
   if (home) return { ...stop, x: home.x, y: home.y };

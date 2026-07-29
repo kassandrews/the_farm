@@ -415,6 +415,41 @@ export function residentIdle(form: AdultForm): string[] {
   return RESIDENT_IDLE[form] ?? ["...", "*settles in*", "It's nice here. Quietly."];
 }
 
+// --- The Maverick Mole --------------------------------------------------------
+// The only voice in this file that belongs to one specific individual rather
+// than to a form or an institution, because he is one specific individual and
+// there will never be another (DESIGN §"The Mole, specifically").
+//
+// Voice: shortest in the game. He was not expecting company and is not putting
+// any effort into the fact of it. Nothing he says is a hint — no directions, no
+// "have you tried", no mention of anything you haven't already found. A hermit
+// who tells you where things are is a map marker with a face.
+
+/** What he says when his ground is still deep, which is how you met him. */
+export const MOLE_DEEP: string[] = [
+  "...",
+  "You came a long way. On purpose, I assume.",
+  "It's quieter down here. That's the feature.",
+  "Nobody knows about this. Now one person does.",
+  "I don't go up. I went up once.",
+  "The rock is fine. We have an understanding.",
+  "You've got dirt on you. That's correct.",
+  "I heard you coming for two days.",
+];
+
+/** And what he says once you have sunk a shaft next to him and turned his
+ *  remote chamber into somewhere you can pop down to. He does not move, does
+ *  not hide, and is not protected (ROADMAP) — he just has an opinion. */
+export const MOLE_SHALLOW: string[] = [
+  "There's a hole up there now. I've seen daylight twice this week.",
+  "You put a road in. To here. To me.",
+  "The commute is very convenient. For you.",
+  "I moved out here for a reason. The reason has a ladder in it now.",
+  "I'm not going anywhere. That's not the same as being pleased.",
+  "Somebody could just... wander in. Somebody does.",
+  "... It was remote.",
+];
+
 /** Fixed-cast idle banks by character. */
 export function castIdle(id: CharId): string[] {
   if (id === "office") return OFFICE_IDLE;

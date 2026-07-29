@@ -77,10 +77,16 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   Schema v16, which adds **no field** — its whole body is the stamp.
   **Phase 3's cast is done: all seven institutions exist.**
 
-**Next:** Phase 4 — the underground layer (4a steps 1–3 done; step 4 is the
-Mole and depth rewards), then company, secrets, seasons.
+- **Phase 4a — the underground, complete.** The layer axis, descent, ore and
+  slate, and — step 4 — the deep rock having things in it and somebody living
+  in it. You tunnel out until you break into a corridor you didn't cut, follow
+  it round to a chamber, and meet the one person in the game the town has never
+  heard of. He digs a little of your tunnel while you're out, and if you sink a
+  shaft over his head to shorten the walk, he says so.
 
-**Save schema is at v16.** Every change ships a tested migration — see
+**Next:** Phase 4b — company, then secrets, then crops and seasons.
+
+**Save schema is at v19.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -1282,9 +1288,88 @@ What the build settled:
   record. A high-water mark is a score, which is the thing the museum went to
   such lengths not to be.
 
-Still to do in 4a: **step 4** depth rewards and the Mole.
+### 4a step 4 — the deep, and who lives in it, **done**
 
-**Settled for step 4: if you sink a shaft next to something deep, it stops
+`sim/mole.ts`, a warren in `generatedUnderTile`, deep junk on the pick, and his
+two dialogue banks. **No schema change and no migration** — see below; that fell
+out rather than being arranged, for the second step running.
+
+**Depth could not pay out as a curve, and that decided the shape.** More ore
+further down is the grind step 3 refused; a ladder of unlocks at 12/24/36 is the
+high-water mark step 3 refused for slate. So what the deep rock has that the
+shallow rock hasn't is (a) things in it and (b) somebody living in it, and the
+somebody is the reward.
+
+- **Junk in the rock, one threshold, no ramp.** `carveWithFind` mirrors
+  `digWithFind` — same order rule, same reason, and underground it is nearly
+  free: uncut rock is un-edited rock by construction, so there is no "virgin
+  ground" question to get wrong. The threshold (11, one short of slate) is
+  fiction rather than balance: near a shaft you are under ground you already
+  turned from above. Its own salt, so a cell doesn't hold the same answer on
+  both layers, and its own find table, because somebody's bent spoon thirty
+  tiles into solid stone would quietly say the underground is just more lawn.
+  It exists so the antiquities wing stops running entirely on the lawn.
+- **His rounds are what you find, not his chamber.** A lone chamber in unbounded
+  rock is a lottery — a straight tunnel in a random direction misses it forever.
+  So the warren is a wandering corridor at ~30 tiles that closes on itself, and
+  any tunnel going outward crosses it. Asserted in `world.test.ts` by walking
+  six bearings out from the origin. Following it to him is the exploration, and
+  it needs no marker, which is what keeps "secrets are never spoiled by UI"
+  true while still making him findable.
+- **He is generated, so `is solid rock everywhere` stopped being true** — and
+  the test was corrected rather than the generation. That test is now the
+  clearest statement of the rule: solid everywhere *except* the one place
+  somebody else has been digging.
+- **He is not in `CAST`, and `SecretId` exists to keep him out of it.** The
+  table's own closing note says secrets belong in no table; a `Record` keyed on
+  an id that included him would have quietly made that false. His def is
+  derived, the way a newcomer's is.
+- **Nothing conjures him. Standing in his chamber does.** `ensureFixedCast`
+  appends missing institutions to live saves because a counter with nobody
+  behind it is a bug — but a secret a migration hands you is not a secret, it
+  is a fixture you have not visited yet. Asserted: a migrated v16 save has no
+  Mole in it.
+- **His position is an ANCHOR, not a coordinate.** `StopAnchor` grew `"warren"`,
+  resolved in `housing.ts` from the seed. Content states the anchor and sim
+  answers it — the rule that keeps content free of the world, which happens to
+  be about beds everywhere else. The alternative was a coordinate in the table
+  that nothing reads, which is what got `CharDef.home` deleted in 2b step 3.
+- **`Villager.layer`, and NO schema bump.** "The player is the only thing that
+  carries a layer" (types.ts) stopped being true the moment somebody lived down
+  there. The field is optional and its absence means the surface, which is the
+  truth for every villager in every deployed save — so there is nothing to
+  backfill and nothing a migration could honestly do. Every schema *change*
+  still ships a migration; an optional field whose absence is already correct
+  is not a change to any existing save.
+- **Two distance checks had to become layer checks, and one of them was live.**
+  `witness` gated on "is the player on the surface", which was equivalent while
+  everyone lived up here; with a villager under a fixed coordinate, digging a
+  shortcut to him and then working the lawn ABOVE his chamber warmed him
+  through the ceiling. The renderer's villager pass was the same shape — a flat
+  skip underground, now a filter both ways.
+- **He digs while you're away, and it is the only thing he gives.** It obeys
+  the away rules by construction rather than by care: `carve` only turns rock
+  into floor, so it cannot destroy anything, and it refuses ore, so he walks
+  past a vein and leaves the metal for you. It is also the one away event whose
+  change lives underground — allowed precisely because it asks nothing.
+- **He gives no directions**, and that is a rule and not an oversight. A hermit
+  who tells you where things are is a map marker with a face.
+
+Two things the browser found that every test was green on:
+
+- **He was offered a room in the plaza.** The dialogue panel's home offer keys
+  on "there is a bed in town", which was a complete description of who could be
+  housed right up until somebody existed who lives somewhere on purpose. The
+  panel called him a Farm resident, too; he is now labelled by where he is
+  rather than by who he is.
+- **Meeting him is silent, and that had to be checked rather than assumed** —
+  there is no toast, no fanfare, and the discovery is that a sprite is standing
+  in a room you just cut into. Verified with `scripts/drive.mjs`, which can now
+  import the sim's own modules from the dev server (`import("/src/sim/world.ts")`)
+  rather than porting generation maths into the harness and getting it subtly
+  wrong.
+
+**Settled in step 4's planning: if you sink a shaft next to something deep, it stops
 being deep, and nothing tries to stop you.** Depth is distance from your nearest
 entrance, so a hole dug above the Mole makes his ground shallow — he does not
 move, does not hide, and is not protected. You paved a road to the hermit and
@@ -1302,9 +1387,20 @@ Spoiling it by your own convenience is also the funnier and more on-tone
 outcome (CLAUDE.md §Tone), and consistent with the town's other institutions
 being demolishable — nothing here is protected from you.
 
-What step 4 still has to answer is what this means for the Mole's *dialogue*,
-which is where it should live rather than in the map: he is a secret who now
-has a commute, and he should have something to say about that.
+What that meant for his *dialogue* is now built, which is where it belonged
+rather than in the map: `MOLE_SHALLOW` is a whole second bank, entered the
+moment `depthAt(chamber)` drops under twelve, and read off the LIVE world rather
+than off a memory — the same call Margfrom's dissent makes, for the same reason.
+Gating it on an away roll would mean he hadn't noticed the ladder. He does not
+move, does not hide, and is not protected; he just has an opinion.
+
+**Phase 4a is done.** Next: **4b company**, then secrets, then crops/seasons.
+Worth knowing before 4b starts: mining and carving still call no `witness`, so a
+player who only mines earns no memories. Step 3 left that open pending somebody
+being down there to see it — somebody now is, but he is not the town, and
+`witness` writes to every villager regardless of where they are standing. Giving
+him memories of your digging means giving `remember` a proximity model, which is
+a known loose end below and is 4b's business, not 4a's.
 
 - **Company** — invite a villager along (DESIGN §"Company"). Nothing else in the
   three inspirations does this.

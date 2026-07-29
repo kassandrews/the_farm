@@ -39,7 +39,14 @@ export type AuthoredId =
  *  survive that. */
 export type NewcomerId = `newcomer:${number}`;
 
-export type CharId = AuthoredId | NewcomerId;
+/** Somebody the town does not know about. There is one, and the type exists to
+ *  keep him OUT of `CAST` rather than to make room for him in it: this file's
+ *  closing note says secrets belong in no table, and a Record keyed on an id
+ *  that included him would have quietly made that false. His def is derived
+ *  (charDef, below), the way a newcomer's is. */
+export type SecretId = "mole";
+
+export type CharId = AuthoredId | NewcomerId | SecretId;
 
 export function isNewcomer(id: CharId): id is NewcomerId {
   return id.startsWith("newcomer:");
@@ -55,8 +62,15 @@ export function isNewcomer(id: CharId): id is NewcomerId {
  *  "home" is the villager's own bed — and a bed is furniture the player may
  *  drag across the room, move to a house they built, or take apart for the six
  *  wood. So a home stop cannot be a coordinate; it has to be a question, asked
- *  again every time it's read (resolved in sim/housing.ts). */
-export type StopAnchor = "home";
+ *  again every time it's read (resolved in sim/housing.ts).
+ *
+ *  "warren" is the Mole's chamber, and it is a question for a different reason:
+ *  where it is depends on the SEED, and content knows every coordinate in this
+ *  town except the ones the map generates. Nothing moves it — unlike a bed, it
+ *  is a total function of the seed — so its fallback below is genuinely
+ *  unreachable, and it is written as the origin rather than as a plausible
+ *  coordinate so that a bug puts him somewhere obviously wrong. */
+export type StopAnchor = "home" | "warren";
 
 export interface ScheduleStop {
   fromHour: number;
@@ -300,6 +314,25 @@ const NEWCOMER_RINGS: ScheduleStop[][] = [
   ],
 ];
 
+/** The Mole. Not in CAST, deliberately — see SecretId: that table is the town,
+ *  and he is emphatically not in the town.
+ *
+ *  `fixed: true` in the institutional sense and in no other: he does not walk a
+ *  ring, and the same early return that keeps the Office Creature at his desk
+ *  keeps the Mole in his chamber. He is also not protected by it — sink a shaft
+ *  above him and his ground is shallow, and the answer to that is a line, not a
+ *  rule (DESIGN §"The Mole, specifically").
+ *
+ *  One stop, all day, anchored rather than placed: the chamber is generated
+ *  from the seed, which is the one coordinate this file cannot know. */
+export const MOLE: CharDef = {
+  id: "mole",
+  form: "mole",
+  name: "Maverick Mole",
+  fixed: true,
+  schedule: [{ fromHour: 0, at: "warren", x: 0, y: 0, doing: "down here" }],
+};
+
 /** The numeric part of a newcomer id, for picking their ring. */
 function newcomerNumber(id: NewcomerId): number {
   const n = Number(id.slice("newcomer:".length));
@@ -313,6 +346,7 @@ function newcomerNumber(id: NewcomerId): number {
  *  didn't author — and an undefined def means "don't move", so a newcomer would
  *  have stood on their arrival tile forever without a single error. */
 export function charDef(v: { id: CharId; name: string; form: AdultForm; fixed: boolean }): CharDef {
+  if (v.id === "mole") return MOLE;
   if (!isNewcomer(v.id)) return CAST[v.id];
   return {
     id: v.id,

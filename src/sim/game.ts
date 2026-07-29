@@ -17,7 +17,6 @@ import {
   sink,
   fillShaft,
   canCarve,
-  carve,
   placePlank,
   isWalkable,
   tileAt,
@@ -35,7 +34,7 @@ import { FURNITURE, furnitureDef } from "../content/furniture";
 import type { FurnitureId, Facing } from "../content/furniture";
 import { structureDef } from "../content/structures";
 import { GRASS, DIRT, PLANK, FARMLAND, FARMLAND_WET, MUSHROOM, SHAFT } from "../content/tiles";
-import { digWithFind } from "./junk";
+import { digWithFind, carveWithFind } from "./junk";
 import { emptyInventory, add, canAfford, spend, refund, shortfall } from "./inventory";
 import type { Cost } from "./inventory";
 import { itemLabel } from "../content/items";
@@ -43,6 +42,7 @@ import type { ItemId } from "../content/items";
 import { gather, nodeAt, nodeNear, updateRegrowth } from "./gather";
 import { nodeDef } from "../content/nodes";
 import { mineVein } from "./mining";
+import { meetMole } from "./mole";
 import { starterSkins, defaultSkin } from "../content/skins";
 import { STARTING_CROP } from "../content/crops";
 import { STARTING_SEED, canSow, sow } from "./seeds";
@@ -297,6 +297,10 @@ export function tick(world: WorldState, dt: number, now: number): void {
     postErrand(world, now, makeRng(world.seed ^ world.errands.lastClosedAt));
   }
 
+  // And you may have just walked into somebody's front room. Silent by design —
+  // he is undocumented, so meeting him is seeing him (sim/mole.ts).
+  meetMole(world, now);
+
   for (const v of world.villagers) tickVillager(world, v, dt, now);
   updateAllCrops(world, now);
   updateRegrowth(world, now); // the woods come back on the real clock
@@ -530,11 +534,20 @@ function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: num
       // Free, like every other kind of digging (DESIGN §Materials): a tunnel
       // costs time and nothing else.
       if (world.player.layer === "under") {
-        if (carve(world, x, y)) {
-          // No `witness` here, deliberately. Nobody is down there to see it,
-          // and the town hearing about a hole it cannot visit would be the
-          // memory log inventing an audience.
-          return { kind: "carve", changed: true, message: "The rock comes away in pieces." };
+        // Through carveWithFind rather than carve, for the same reason the
+        // surface goes through digWithFind: the deep rock has things in it
+        // (DESIGN §Materials) and the cut is what spends the cell, so the
+        // payout and the cut are one call and cannot be made out of order.
+        const cut = carveWithFind(world, x, y);
+        if (cut.carved) {
+          // No `witness` here, deliberately. The only person down there is the
+          // Mole, and he is not the town; a memory saying the neighbours heard
+          // about a hole they cannot visit would be inventing an audience.
+          return {
+            kind: "carve",
+            changed: true,
+            message: cut.find ?? "The rock comes away in pieces.",
+          };
         }
         return { kind: "carve", changed: false, message: "Nothing to cut here." };
       }
@@ -744,11 +757,18 @@ function witness(world: WorldState, kind: MemoryKind, value: string | undefined,
   const p = world.player;
   for (const v of world.villagers) {
     v.memory = remember(v.memory, { kind, at: now, value });
-    // Standing THERE means standing there. Villagers are surface creatures, so
-    // once the player has a layer, distance alone stops being enough: without
-    // this check, working in a tunnel would warm whoever happened to be walking
-    // across the field above you, through the ground, having seen nothing.
-    if (p.layer !== "surface") continue;
+    // Standing THERE means standing there. A coordinate means two places now,
+    // so distance alone is not enough: without this, working in a tunnel would
+    // warm whoever happened to be walking across the field above you, through
+    // the ground, having seen nothing.
+    //
+    // Asked as "are we on the same layer" rather than "is the player on the
+    // surface", which is what it used to say. That was true while everybody
+    // lived up here, and stopped being true when the Mole moved in — he stands
+    // under a fixed coordinate, so a player digging a shortcut down to him and
+    // then working on the lawn ABOVE his chamber would have warmed him through
+    // the ceiling.
+    if ((v.layer ?? "surface") !== p.layer) continue;
     if (Math.hypot(v.x - p.x, v.y - p.y) <= TOGETHER_RADIUS) befriend(v, 1);
   }
 }

@@ -166,6 +166,33 @@ Secret forms stay secret in spirit:
 - **Humming Cube** — a *structure*, not a character. A landmark that hums.
 - **Maverick Mole** — found only by digging deep. Undocumented. Ships anyway.
 
+### The Mole, specifically
+
+He is the reward for depth, and he is a *person* rather than a payout. That is
+deliberate: the underground already refuses to pay more ore the further you go
+(§Materials — "you are slowed by a walk"), and a ladder of unlocks at increasing
+depths would be a high-water mark with a hat. What the deep rock has that the
+shallow rock doesn't is somebody living in it.
+
+- **You find him by breaking into his diggings.** Far out from town the rock is
+  already hollow — a wandering corridor somebody else cut, running both ways,
+  with a chamber on it. There is no marker, no quest and no direction given;
+  you meet him because you tunnelled far enough that his warren was in the way.
+  A single chamber in unbounded rock would be a lottery, so it is his *rounds*
+  you hit first, and following them is the exploration.
+- **He does not move, does not hide, and is not protected.** Sink a shaft above
+  his chamber and his ground becomes shallow, because depth is distance from
+  your nearest entrance. Nothing intervenes. You paved a road to the hermit and
+  the map agrees he now lives near a road; he has opinions about the road.
+- **He digs while you're away**, which is the only thing he gives you and is
+  not a gift of an item. Your tunnel is a few tiles longer than you left it,
+  going the way you were going. It obeys the away rules like everything else:
+  it only ever opens rock, never fills it, so it cannot destroy anything, and
+  it creates no obligation — nobody asks you to go and look.
+- **He gives no directions.** He is undocumented, and a hermit who tells you
+  where things are is a map marker with a face (§Tone; secrets are never
+  spoiled by UI).
+
 ## The museum
 
 The curator is a *specific* scholar — a named institution, where a Scholar
@@ -324,6 +351,20 @@ the Gremlin's whole economy, and the third thing the town will take off
 your hands. Keeping it out of the material set is what stops "three
 gathered classes, ever" from quietly becoming four; a thing you can hold
 is not automatically a thing you can build with.
+
+**The deep rock has junk in it too, and the shallow rock does not.** Cutting a
+tunnel face turns things up the same way turning a lawn does — same item, same
+un-farmable rule (what a cell holds is fixed by the seed before anyone stands
+there), different toast. The threshold is a *fact about the fiction* and not a
+payout curve: near your own shafts you are under ground you have already turned
+from above, and it is only past that — rock nobody has been near — that
+anything is left. One threshold, no ramp, and nothing anywhere counts how deep
+you have been.
+
+It exists so that the antiquities wing has a second source. Junk rode entirely
+on the surface shovel, which made "dig up the lawn" the museum-filler's one
+verb; a second place to find the same item is the same fix as every counter
+listing alternatives, one axis over.
 
 **Seed is one item; the variety is a free axis.** You carry *seed* — never
 "carrot seed" and "potato seed" — and which crop goes in the ground comes

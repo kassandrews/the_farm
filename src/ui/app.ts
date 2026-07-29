@@ -419,7 +419,11 @@ export class App {
     // step 4). It only appears when there's a bed in town to offer — an option
     // that's always there and usually does nothing is a worse tutorial than no
     // option at all.
-    const offerable = beds(world).length > 0;
+    // Never to the Mole. He is not homeless, he is not waiting on anything, and
+    // he lives where he lives — offering him a bed in town is the panel
+    // mistaking "somebody you can talk to" for "somebody who might move in".
+    // Found on screen: he was politely offered a room in the plaza.
+    const offerable = beds(world).length > 0 && villagerId !== "mole";
 
     // The shopkeeper's conversation IS her counter. A dialogue box that then
     // offers a "shop" button would be a menu in front of a menu, and she is a
@@ -473,7 +477,10 @@ export class App {
 
     this.openModal(
       (close) =>
-        panel(speech.who, "Farm resident", [
+        // The Mole is not a farm resident and the subtitle should not claim he
+        // is. It says where he is rather than who he is — he stays
+        // undocumented, and the player already knows they walked here.
+        panel(speech.who, villagerId === "mole" ? "Underground" : "Farm resident", [
           el("p", {}, [speech.text]),
           actionRow([
             ...(offerable
@@ -1437,21 +1444,31 @@ export class App {
 
   private villagerNear(x: number, y: number): { id: import("../content/cast").CharId; x: number; y: number } | null {
     if (!this.world) return null;
-    // Nobody is down there to tap. Without this you could hold a conversation
-    // with someone standing in a field, through the ceiling, while they walked
-    // over your head.
-    if (this.underground()) return null;
     for (const v of this.world.villagers) {
+      if (!this.sameLayer(v)) continue;
       if (Math.hypot(v.x - x, v.y - y) <= 0.9) return { id: v.id, x: v.x, y: v.y };
     }
     return null;
   }
 
+  /** Is this villager standing on the layer the player is on?
+   *
+   *  This used to be a flat "nobody is down there to tap", which was right
+   *  until somebody was: the Mole lives in the rock, and refusing every
+   *  conversation underground would have made the one person you can only meet
+   *  by digging the one person you cannot talk to. Matching layers keeps the
+   *  original guarantee intact — you still can't talk to a villager walking
+   *  over your head — while letting the exception speak. */
+  private sameLayer(v: { layer?: import("../sim/types").Layer }): boolean {
+    return (v.layer ?? "surface") === (this.world?.player.layer ?? "surface");
+  }
+
   private tryTalkNearest(): void {
-    if (!this.world || this.underground()) return; // same ceiling as villagerNear
+    if (!this.world) return;
     const p = this.world.player;
     let best: { id: import("../content/cast").CharId; d: number } | null = null;
     for (const v of this.world.villagers) {
+      if (!this.sameLayer(v)) continue;
       const d = Math.hypot(v.x - p.x, v.y - p.y);
       if (d <= 2.6 && (!best || d < best.d)) best = { id: v.id, d };
     }

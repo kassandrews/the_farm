@@ -8,13 +8,31 @@
 
 import type { WorldState } from "./types";
 import { hash2 } from "./rng";
-import { tileKey, canDig, dig } from "./world";
-import { JUNK_DENSITY, JUNK_FINDS } from "../content/junk";
+import { tileKey, canDig, dig, canCarve, carve, depthAt } from "./world";
+import { JUNK_DENSITY, JUNK_FINDS, DEEP_JUNK_DENSITY, DEEP_FINDS } from "../content/junk";
 import { add } from "./inventory";
 
 /** Its own salt, so junk doesn't correlate with where the trees and rocks are —
  *  the same reason generation uses two hashes for tree and rock. */
 const JUNK_SALT = 0x5c4a;
+
+/** And its own again for the rock, so a cell doesn't hold the same answer above
+ *  and below. Sharing the salt would put the deep finds directly under the
+ *  shallow ones, which nobody would ever notice and which would nonetheless be
+ *  the two layers secretly being one map. */
+const DEEP_SALT = 0x9b17;
+
+/** How far from your nearest shaft the rock starts having things in it.
+ *
+ *  The threshold is fiction, not balance (DESIGN §Materials): close to a shaft
+ *  you are under ground you have already turned from above, so there is nothing
+ *  left there to find. Past it, nobody has been near.
+ *
+ *  Same measure as slate and one tile short of it, so the first deep find lands
+ *  before the finish does. That ordering is deliberate — slate is the louder
+ *  moment and it should not be the *first* thing that says "you are somewhere
+ *  else now". */
+export const DEEP_FIND_DEPTH = 11;
 
 /** Is there something under this tile, in this town, forever?
  *
@@ -80,4 +98,45 @@ export function digWithFind(
   if (!payout) return { dug: true, find: null };
   add(world.inventory, "junk", 1);
   return { dug: true, find: findLine(world, x, y) };
+}
+
+/** Is there something in this piece of rock, forever? Total function of the
+ *  seed and the coordinate, exactly like `buriedAt` — the depth question is
+ *  asked separately (below) because depth is the one part of this that ISN'T a
+ *  property of the cell: it moves when you sink a shaft. */
+export function embeddedAt(world: WorldState, x: number, y: number): boolean {
+  return hash2(x, y, world.seed ^ DEEP_SALT) / 4294967296 < DEEP_JUNK_DENSITY;
+}
+
+/** Which deep find's flavour this cell produces. */
+export function deepFindLine(world: WorldState, x: number, y: number): string {
+  const h = hash2(x, y, (world.seed ^ DEEP_SALT) + 1);
+  return DEEP_FINDS[h % DEEP_FINDS.length];
+}
+
+/** Cut a rock face and hand over whatever was in it. THE way the pick cuts.
+ *
+ *  One function for the same reason `digWithFind` is one: the payout depends on
+ *  the state of the cell and the cut is what changes that state. Underground
+ *  the hazard is smaller — uncut rock is un-edited rock by construction, so
+ *  there is no "virgin ground" question to get wrong, and carving writes the
+ *  override that spends it — but the shape that made surface junk infinite is
+ *  worth not rebuilding on the other layer.
+ *
+ *  Depth is read BEFORE the cut, and it matters that it can't matter: carving
+ *  doesn't move a shaft, so the depth here is the same either side of the call.
+ *  It is read first anyway, so that the rule is "the rock you swung at" rather
+ *  than "the rock after you hit it" — the day something does move depth, this
+ *  reads correctly without anyone remembering why. */
+export function carveWithFind(
+  world: WorldState,
+  x: number,
+  y: number,
+): { carved: boolean; find: string | null } {
+  if (!canCarve(world, x, y)) return { carved: false, find: null };
+  const payout = depthAt(world, x, y) >= DEEP_FIND_DEPTH && embeddedAt(world, x, y);
+  if (!carve(world, x, y)) return { carved: false, find: null };
+  if (!payout) return { carved: true, find: null };
+  add(world.inventory, "junk", 1);
+  return { carved: true, find: deepFindLine(world, x, y) };
 }

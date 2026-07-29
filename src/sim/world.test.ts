@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
+import { SLATE_DEPTH } from "./mining";
 import { newWorld } from "./game";
 import {
   dig,
+  inWarren,
+  warrenChamber,
   placePlank,
   tileAt,
   setTile,
@@ -145,14 +148,53 @@ describe("the underground layer", () => {
   it("is solid rock everywhere until you cut it", () => {
     // The inverse of the surface, and the reason `under` starts empty: down
     // there generation hands you nothing and every open cell is one you made.
+    //
+    // With ONE exception, and it is the exception that makes the exception
+    // meaningful: the Mole's warren is open before you get there, which is how
+    // you find out somebody else has been digging (DESIGN §"The Mole"). It sits
+    // far enough out that its wander reaches the corners of this box, so the
+    // box excludes it by asking the same predicate generation asks.
     const w = freshWorld();
     let open = 0;
     for (let y = -20; y < 20; y++) {
       for (let x = -20; x < 20; x++) {
+        if (inWarren(w.seed, x, y)) continue;
         if (isWalkable(w, x, y, "under")) open++;
       }
     }
     expect(open).toBe(0);
+  });
+
+  it("has exactly one place that is open before you get there", () => {
+    const w = freshWorld();
+    const chamber = warrenChamber(w.seed);
+    // His front room is walkable without a single swing of the pick.
+    expect(isWalkable(w, chamber.x, chamber.y, "under")).toBe(true);
+
+    // And his rounds run all the way round, so a tunnel going outward in ANY
+    // direction crosses them. That is the whole of how he is findable without a
+    // marker: a lone chamber would be a lottery.
+    for (const [dx, dy] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+      [1, 1],
+      [-1, -1],
+    ] as [number, number][]) {
+      let hit = false;
+      for (let d = 1; d < 60 && !hit; d++) hit = inWarren(w.seed, dx * d, dy * d);
+      expect(hit).toBe(true);
+    }
+  });
+
+  it("puts the warren well past the depth slate is found at", () => {
+    // He is not somewhere you stumble into on your first tunnel. Measured the
+    // way the game measures depth: Chebyshev from the origin, where a first
+    // shaft is sunk.
+    const w = freshWorld();
+    const chamber = warrenChamber(w.seed);
+    expect(Math.max(Math.abs(chamber.x), Math.abs(chamber.y))).toBeGreaterThan(SLATE_DEPTH);
   });
 
   it("keeps the two layers' edits apart at the same coordinate", () => {
