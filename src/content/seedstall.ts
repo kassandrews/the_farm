@@ -57,9 +57,18 @@ export const SEED_ROWS: SeedRow[] = [
     accepts: [
       { item: "wood", count: 4 },
       { item: "stone", count: 3 },
+      // Every variety, at one price. A counter that took one crop and not
+      // another would make that one the good crop from a file that never
+      // mentions growth times — asserted in seeds.test.ts, and found on the
+      // screen once already.
       { item: "carrot", count: 2 },
       { item: "radish", count: 2 },
       { item: "potato", count: 2 },
+      { item: "peas", count: 2 },
+      { item: "tomato", count: 2 },
+      { item: "kale", count: 2 },
+      { item: "pumpkin", count: 2 },
+      { item: "wheat", count: 2 },
       { item: "mushroom", count: 3 },
       { item: "junk", count: 3 },
     ],
@@ -73,6 +82,11 @@ export const SEED_ROWS: SeedRow[] = [
       { item: "carrot", count: 6 },
       { item: "radish", count: 6 },
       { item: "potato", count: 6 },
+      { item: "peas", count: 6 },
+      { item: "tomato", count: 6 },
+      { item: "kale", count: 6 },
+      { item: "pumpkin", count: 6 },
+      { item: "wheat", count: 6 },
       { item: "mushroom", count: 9 },
       { item: "junk", count: 9 },
     ],
@@ -110,13 +124,86 @@ export const VARIETY_ROWS: VarietyRow[] = [
     ],
     line: "Potato. ... Takes its time. Nobody has ever hurried one.",
   },
+  // The 4d varieties. Costs are copied VERBATIM from the two above and must
+  // stay that way — seeds.test.ts compares the serialised `accepts` arrays and
+  // fails if any variety is dearer than another, because a dearer variety reads
+  // as the better crop whatever the growth table says.
+  //
+  // Four of these have a month they are about. HE DOES NOT MENTION IT. The
+  // season is something the world does, not something the stall sells, and a
+  // counter that advertised "plant it in October" would have turned a look into
+  // a schedule.
+  {
+    gives: "peas",
+    accepts: [
+      { item: "wood", count: 10 },
+      { item: "stone", count: 8 },
+      { item: "carrot", count: 5 },
+      { item: "mushroom", count: 8 },
+      { item: "junk", count: 8 },
+    ],
+    line: "Peas. ... Faster than they have any right to be.",
+  },
+  {
+    gives: "tomato",
+    accepts: [
+      { item: "wood", count: 10 },
+      { item: "stone", count: 8 },
+      { item: "carrot", count: 5 },
+      { item: "mushroom", count: 8 },
+      { item: "junk", count: 8 },
+    ],
+    line: "Tomato. ... In at breakfast, done by dark. Don't read anything into that.",
+  },
+  {
+    gives: "kale",
+    accepts: [
+      { item: "wood", count: 10 },
+      { item: "stone", count: 8 },
+      { item: "carrot", count: 5 },
+      { item: "mushroom", count: 8 },
+      { item: "junk", count: 8 },
+    ],
+    line: "Kale. ... Comes back round to the same hour tomorrow. It's punctual.",
+  },
+  {
+    gives: "pumpkin",
+    accepts: [
+      { item: "wood", count: 10 },
+      { item: "stone", count: 8 },
+      { item: "carrot", count: 5 },
+      { item: "mushroom", count: 8 },
+      { item: "junk", count: 8 },
+    ],
+    line: "Pumpkin. ... A day and a bit. You'll be back at an odd hour for it.",
+  },
+  {
+    gives: "wheat",
+    accepts: [
+      { item: "wood", count: 10 },
+      { item: "stone", count: 8 },
+      { item: "carrot", count: 5 },
+      { item: "mushroom", count: 8 },
+      { item: "junk", count: 8 },
+    ],
+    line: "Wheat. ... Two days. You'll want to water it more than twice.",
+  },
 ];
 
 /** What he says when there is nothing left to unlock. He is not restocking —
  *  the same finality as the Gremlin's empty pile, and for the same reason (a
  *  counter that might have something new tomorrow is FOMO in an apron). Seed
  *  itself never runs out, so the stall stays worth visiting. */
-export const STALL_EXHAUSTED = "That's all of them. ... There were only ever three. It's a small world, agriculturally.";
+// It used to end "There were only ever three. It's a small world,
+// agriculturally", which Phase 4d made a lie. The replacement keeps the two
+// things that line was doing and drops the count: the finality has to be REAL
+// (a counter that might restock tomorrow is FOMO in an apron, the same rule as
+// the Gremlin's empty pile), and the stall has to stay worth walking to,
+// because seed itself never runs out.
+//
+// No number in it, deliberately. A count invites a denominator, and the moment
+// he says "all eight" somebody is counting to eight.
+export const STALL_EXHAUSTED = "Done. ... Seed's still seed, and it will be tomorrow. That part doesn't stop.";
 
 /** The opener. He is aware of what he is. */
 export const STALL_OPENER = "Seeds. ... Yes. I'm aware. We're not discussing it.";

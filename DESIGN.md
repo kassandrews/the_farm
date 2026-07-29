@@ -203,9 +203,19 @@ species, not singletons). Every placard is confidently incorrect.
 Menace's counter and the Gremlin's heap, and it is the one that gives
 museum-filling its own way to play (§Town and homestead).
 
-- **Two wings.** A **nature wing** takes one of each crop and gathered thing —
-  finite, small, and the reason the museum is reachable without farming *or*
-  without digging. An **antiquities wing** runs on junk.
+- **Two wings.** A **nature wing** takes gathered things and *some* of what
+  grows — finite, small, and the reason the museum is reachable without farming
+  *or* without digging. An **antiquities wing** runs on junk.
+
+  It used to say "one of each crop", and the seasonal varieties are where that
+  stopped being true. The gallery was sized to the table exactly and the room
+  cannot grow — river west, town hall east, plaza south — so five new crops
+  would have meant moving the walls of a building people have already put
+  things in. The collection stopped being exhaustive instead, which costs
+  nothing: the record has no total and no denominator (below), so there was
+  never a slot for a pumpkin to be missing from. Corrigal has what she has.
+  **Do not read this as licence to skip an exhibit for convenience** — it is a
+  statement that completeness was never the promise.
 - **Junk is identified at donation, not at pickup.** You hand over ordinary
   fungible junk and the curator decides what it was. Junk stays one item that
   is never carried as a specific object (§Materials), and the variety is free
@@ -387,6 +397,12 @@ The moment one crop out-earns the rest, "farming is fully optional"
 becomes "grow the good one", which is the same failure the barter rule
 below exists to prevent, one axis over.
 
+This survives seasons intact, and the survival is deliberate. A crop that is
+prettier in its own month is not a better crop: nothing anywhere may read the
+season to decide a price, a yield, or a growth time. The season reaches exactly
+two things — one draw flourish and one line of dialogue — and neither of them
+is a number.
+
 **The counter is barter, not money** — settled, not open. You hand over
 something you have and she hands over cloth; there is no currency, no
 wallet, and no running total anywhere in the game. The reason is a pillar
@@ -515,6 +531,29 @@ what you do to the tile at your feet (dig, gather, plant, water, harvest),
   Scholar mounts a new wrong exhibit, mushrooms spread, the Gremlin
   relocates a fence. Returning shows a short "while you were out" summary
   in The Meadow's postcard tradition.
+
+### Seasons
+
+- **Four seasons, derived from the month**, on the same axis the festivals
+  already hang on. There is no second notion of time to reconcile, and nothing
+  about a season is stored — it is a total function of the date, exactly as a
+  festival is.
+- **A season is weather and light. It is never agriculture.** It repaints the
+  ground, the trees and the sky, and gives the town something to remark on. It
+  does not touch what you may plant, how fast anything grows, or what anything
+  is worth.
+- **No crop is ever season-gated for planting.** A seasonal variety is unlocked
+  forever at the stall and goes in the ground in any month. Real time gates the
+  living world, never your hands (Pillar 6) — a crop you cannot plant in March
+  is a deadline with a leaf on it.
+- **In its own month the ripe plant draws with a flourish and the town has a
+  line about it, and that is the entire mechanical difference.** Same rule as
+  taste: delight, never a gate. Out of season it grows identically and looks
+  plain.
+- **Nobody ever recommends planting anything.** Villagers remark that it is the
+  month; a line like "you'll want to get the kale in" is a quest marker with a
+  face, and it inverts this whole section.
+- The underground has no season, for the same reason it has no sky.
 
 ## Tone and dialogue
 

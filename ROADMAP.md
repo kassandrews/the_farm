@@ -100,7 +100,8 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   calendar, nothing stored. The spine is `present()` — "is this villager here
   right now", which nobody had needed to ask before.
 
-**Next:** Phase 4d — crops and seasons.
+**Next:** Phase 4d — crops and seasons, the last numbered item. In progress; see
+below for the nine steps and the settled decisions it forced.
 
 **Save schema is at v20.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
@@ -427,6 +428,52 @@ never hijack a deliberate act, or you can't till at the forest edge); the lie
 was that the reticle promised something else. Colour carries the difference now:
 gold = a ripe crop underfoot, green = felling a node, white = the held tool has
 work here, faint = ACT would do nothing.
+
+### Seasons — weather and light, and the museum stopped being exhaustive
+
+Settled when 4d was planned. Four of them, from `getMonth() + 1`, on the axis
+the twelve festivals already hang on.
+
+- **Nothing is stored, so the whole system ships at schema v20.** A season is a
+  total function of the date, like a festival and like the Cosmos's five nights.
+  There is no field, no migration, and no re-stamp — a season needs no fixture
+  standing in the plaza, which is the thing that forced v16.
+- **A season may never appear in an acceptance test.** It repaints terrain and
+  hands the banks a noun. It does not gate planting, change a growth time, alter
+  a yield, or price anything. See DESIGN §Seasons for why: a month that won't let
+  you plant is a daily cap wearing a coat, and the invariant is that real time
+  gates the living world and never the player's hands.
+- **Seasons and finishes are disjoint by construction, not by discipline.** The
+  renderer asks `finishFor` FIRST and a finish wins outright, so a season can
+  only ever reach a tile that had no finish to lose. `finishFor`'s docblock
+  already said "terrain is never re-skinned — a finish is something you chose
+  when you built, not a filter over the world"; that sentence stays true and is
+  now the reason the interception is safe rather than an argument against it.
+- **The palette is an override that preserves `name`.** The renderer branches on
+  `def.name` for the water ripple, the mushroom caps and the grass speckle, so a
+  season is applied as a spread of three colour fields. A repaint that renamed a
+  tile would silently switch those off.
+- **Not seasonal, on purpose:** the underground (a cave has no weather), water,
+  plaza stone, farmland (soil you turned over is a thing you did, not weather),
+  anything built, and the Ghost's grove. The grove is dark wood in every month —
+  a stand of trees that turned gold every October would be a secret joining in.
+- **No snow layer, ever.** Snow would want to sit on every cell, which is the
+  per-cell edges band (CLAUDE.md, learned three times), and snow that melted
+  would be the first weather in the game with state. Winter is a colour
+  temperature.
+- **Summer is the baseline** — its numbers are the ones the game shipped with,
+  so the other three read as departures and a screenshot in July is still the
+  known-good one.
+
+And the thing 4d found rather than decided: **the museum's collection is no
+longer one of each crop.** The nature wing had eight cells and seven exhibits;
+five new crops overflowed a room that cannot grow, and `plinths()` drops the
+overflow SILENTLY — a donated pumpkin simply would not be in the room. The
+options were to move the walls of a building people have already put things in
+(schema v21, against the v13 note's own advice) or to stop being exhaustive.
+**We stopped being exhaustive**, which costs nothing because the record has no
+total and no denominator, so there is no slot for a pumpkin to be missing from.
+Do not read it as licence to skip an exhibit for convenience.
 
 ### Undecided, deliberately
 
@@ -1597,9 +1644,60 @@ flat slab. It is built the way furniture is built now (top surface plus near
 face plus a hard silhouette), a full tile wide, and it reads as something
 somebody put there.
 
-### 4d. Crops and seasons — not started
+### 4d. Crops and seasons — in progress
 
-- More crops, seasons.
+The last numbered item. Seasons are weather and light (see the settled entry
+above and DESIGN §Seasons); the roster doubles from three crops to eight. **No
+schema change anywhere in the phase** — seasons store nothing, `seeds.unlocked`
+is already a `CropId[]` where absence is the truthful state, and `Inventory` is
+partial so new `ItemId`s need no backfill.
+
+Nine steps, each independently shippable:
+
+1. **The docs** — DESIGN §Seasons, the Materials note, the museum correction,
+   and `finishFor`'s docblock. Done first because it is the argument the rest is
+   built on.
+2. **`content/seasons.ts` + `sim/seasons.ts`** — the table and the lookup. Pure,
+   no renderer, no dialogue, no save. `inSeason(cropId, now)` is the ONE place
+   the crop↔month match is decided, so the flourish and the dialogue can never
+   disagree about which month it is.
+3. **The repaint** — a new `render/palette.ts` holding the colour maths, so the
+   1670-line renderer gains a call rather than a third nesting level. Four
+   touch points: the ground fill (one line, after `finishFor`), the sky wash,
+   the grass tuft, and the two non-`dark` arms of `drawTree`'s crown.
+4. **The HUD pill** — a second `.clock` div under the time, the pattern the
+   flash div already uses. The season's name and nothing else: no countdown, no
+   "day 12 of autumn". A number there would be the first clock in the game with
+   a denominator.
+5. **The five crops** — wheat (no season, the multi-day slot) plus peas/spring,
+   tomato/summer, pumpkin/autumn, kale/winter. Totals 3/5/8/11/17/21/30/48h, all
+   distinct, ordered in `CROP_ORDER` by time so the picker reads as the one axis
+   varieties vary on. **No museum rows** (see above). `CropStageDef.needsWater`
+   is deleted rather than wired — it is read in zero places and wiring it would
+   introduce a second growth model that contradicts `updateCrop`.
+6. **The flourish** — in its own month a ripe plant draws a lit shoulder column,
+   one extra leaf pair, and a two-pixel ready marker. Inside the plant's own
+   silhouette and nowhere else: no ring, no glow, no tint over the farmland
+   cell, because a planted row is exactly the continuous surface the per-cell
+   band rule was learned on.
+7. **The town says something** — `RESIDENT_SEASON` in the `FESTIVAL_LINES` merge
+   idiom, and a `trySeasonLine` rung in `speak()` placed after memory and before
+   idle, at a lower chance than home (0.22): a season is true for three months,
+   and somebody who leads with the weather every time is a lift, not a person.
+8. **The postcard** — fixes the real bug at `game.ts:910`, which hardcodes
+   `carrot${s}` and calls a ripened radish a carrot. **No season `AwayEvent`**:
+   the house rule is that an event returning a line must have actually changed
+   the world, and a season changes nothing. The season is an adjective on the
+   ripening line, which reports a change that genuinely happened.
+9. **The errands board stops asking for crops you can't grow** — `eligibleErrands`
+   filters on `done` only, so the radish card can fire on a carrot-only save.
+   Pre-existing since 3h and five crops makes it five times likelier. Until this
+   lands, **add no new crop errand cards.**
+
+Wheat is the first crop that cannot finish on two waterings — 48h of growth
+against a 22h wetness window needs three. That is the check-in loop working as
+designed (a dry plot pauses, never dies), but it is new behaviour and wants
+eyeballing once.
 
 ---
 

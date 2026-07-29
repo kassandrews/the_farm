@@ -482,11 +482,18 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
     // `harvest` pays out the produce AND a seed itself — the cost of sowing and
     // the return on pulling are one rule and live together (see its docblock).
     const def = harvest(world, target.x, target.y, now)!;
-    witness(world, "harvested_carrot", `a ${def.yieldName}`, now);
+    // The memory KIND is still "harvested_carrot" and stays that way: kinds are
+    // stored strings in every villager's log, so renaming one is a migration
+    // that walks every ring buffer in the save to fix a word no player ever
+    // sees. It is named after the crop the slice shipped and covers all eight;
+    // the VALUE is what carries which one.
+    witness(world, "harvested_carrot", def.carried, now);
     return {
       kind: "harvest",
       changed: true,
-      message: `You pulled a ${def.yieldName}. It's a good one.`,
+      // Per variety, because "You pulled a wheat" is not a sentence — see
+      // CropDef.harvestLine.
+      message: def.harvestLine,
     };
   }
 

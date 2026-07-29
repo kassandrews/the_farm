@@ -15,6 +15,11 @@ export type ItemId =
   | "mushroom"
   | "radish"
   | "potato"
+  | "wheat"
+  | "peas"
+  | "tomato"
+  | "pumpkin"
+  | "kale"
   | "cloth"
   | "junk"
   | "seed";
@@ -105,6 +110,53 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     category: "produce",
     blurb: "Took most of a day about it and would do so again.",
   },
+  // The 4d varieties. Four of them have a month they are ABOUT (content/seasons.ts)
+  // and wheat has none, and neither fact may show up here as an advantage: a
+  // pumpkin is not a better haul in October, it is a pumpkin in October. A blurb
+  // may notice a season. It may never recommend one.
+  //
+  // `plural` is omitted where the noun doesn't inflect — `itemLabel` falls back
+  // to `name`, so wheat is "3 wheat" and not "3 wheats". Peas go the other way
+  // and are the reason this is worth a comment: the row is named "Pea" so that
+  // one of them isn't "1 peas".
+  wheat: {
+    id: "wheat",
+    name: "Wheat",
+    icon: "🌾",
+    category: "produce",
+    blurb: "Two days in the ground and no opinion about any of them.",
+  },
+  peas: {
+    id: "peas",
+    name: "Pea",
+    plural: "Peas",
+    icon: "🫛",
+    category: "produce",
+    blurb: "Quick, green, and slightly smug about the first part.",
+  },
+  tomato: {
+    id: "tomato",
+    name: "Tomato",
+    plural: "Tomatoes",
+    icon: "🍅",
+    category: "produce",
+    blurb: "Went in at breakfast and was ready when it got dark.",
+  },
+  pumpkin: {
+    id: "pumpkin",
+    name: "Pumpkin",
+    plural: "Pumpkins",
+    icon: "🎃",
+    category: "produce",
+    blurb: "Takes a day and a bit, so it is never ready at the same hour twice.",
+  },
+  kale: {
+    id: "kale",
+    name: "Kale",
+    icon: "🥬",
+    category: "produce",
+    blurb: "Comes up at roughly the hour you planted it, a day later. Unbothered by the cold.",
+  },
   // ONE row for every variety, exactly as one row covers every metal and one
   // covers every object the ground gives up. What a seed will become is not a
   // property of the seed: it is the variety you have unlocked and currently have
@@ -161,9 +213,18 @@ export const ITEM_ORDER: ItemId[] = [
   "ore",
   "cloth",
   "seed",
-  "carrot",
+  // Produce in CROP_ORDER (content/crops.ts) — by growth time, shortest first —
+  // with the two foraged rows at the end. Ordering the varieties the way the
+  // planting picker orders them means the satchel and the picker never disagree
+  // about which one is "the quick one".
   "radish",
+  "peas",
+  "carrot",
+  "tomato",
   "potato",
+  "kale",
+  "pumpkin",
+  "wheat",
   "mushroom",
   "junk",
 ];

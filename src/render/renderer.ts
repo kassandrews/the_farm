@@ -24,6 +24,8 @@ import type { PlinthRun } from "../sim/museum";
 import { rooms } from "../sim/rooms";
 import type { Room } from "../sim/rooms";
 import { tintAt, isNight, skyPhaseAt } from "../sim/time";
+import { seasonAt } from "../sim/seasons";
+import { scenePalette, seasonSkin, type ScenePalette } from "./palette";
 import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
 import type { Mood, SpriteFrame } from "../content/canon/sprites";
@@ -190,8 +192,16 @@ function groundIdOf(id: number): number {
 }
 
 /** Which material class a built tile is finished in, or null for terrain that
- *  has no finish (grass, water, a tree). Terrain is never re-skinned — a finish
- *  is something you chose when you built, not a filter over the world. */
+ *  has no finish (grass, water, a tree). Terrain is never re-skinned BY A
+ *  FINISH — a finish is something you chose when you built, not a filter over
+ *  the world.
+ *
+ *  A season is the opposite object, and the two never meet. It repaints terrain
+ *  and never touches a built cell, and that disjointness is structural rather
+ *  than editorial: the caller asks `finishFor` FIRST and a finish wins outright,
+ *  so a season can only ever reach a tile that had no finish to lose. The
+ *  sentence above stays true and is now the reason the season interception is
+ *  safe (Phase 4d; ROADMAP §Seasons). */
 function finishClassOf(id: number): SkinClass | null {
   if (id === PLANK) return "wood";
   return null;
@@ -231,6 +241,10 @@ export class Renderer {
    *  in drawDark cost one entry per VISIBLE hole rather than a scan of every
    *  edit the player has ever made. Same trick as blockedSteps above. */
   private litShafts: { x: number; y: number }[] = [];
+  /** The frame's colours — hour and month — set at the top of `draw`. Held on
+   *  the renderer rather than threaded as an eleventh parameter through
+   *  `drawChunkTiles`: the month is a fact about the FRAME, not about a chunk. */
+  private palette: ScenePalette = scenePalette(null, false);
 
   // --- Roof index and cutaway state -------------------------------------------
   // Rebuilt only when the sim hands back a different rooms array — its own cache
@@ -331,9 +345,14 @@ export class Renderer {
     // is the one continuous world with none of that in it.
     const under = world.player.layer === "under";
 
+    // The frame's colours: the hour and the month, resolved once. Null season
+    // underground — a cave has no weather, for the same reason the tint overlay
+    // below skips it.
+    this.palette = scenePalette(under ? null : seasonAt(now), night);
+
     // Sky/base wash — a flat ground tone behind the tiles for any gaps. There
     // is no sky underground, so the gap colour is the dark itself.
-    ctx.fillStyle = under ? "#0b0908" : night ? "#26324a" : "#7fae54";
+    ctx.fillStyle = under ? "#0b0908" : this.palette.sky;
     ctx.fillRect(0, 0, this.sw, this.sh);
 
     if (!under) this.syncRoofs(world);
@@ -489,7 +508,12 @@ export class Renderer {
         const groundId = groundIdOf(id);
         // Built tiles wear the town's selected finish — appearance is a free
         // property of the tile, never a separate item (DESIGN §Materials).
-        const def = finishFor(world, groundId) ?? tileDef(groundId);
+        //
+        // A FINISH IS ASKED FIRST AND WINS OUTRIGHT, which is what makes the two
+        // repaints disjoint by construction rather than by discipline: a season
+        // can only ever reach a tile that had no finish to lose. See finishFor's
+        // docblock for why that matters.
+        const def = finishFor(world, groundId) ?? seasonSkin(tileDef(groundId), groundId, this.palette);
         const px = Math.round(this.sceneX(tx) - TILE / 2);
         const py = Math.round(this.sceneY(ty) - TILE / 2);
         ctx.fillStyle = def.color;
@@ -532,7 +556,10 @@ export class Renderer {
           // Stable tuft speckle so grass reads as texture, not flat paint.
           const h = decoHash(tx, ty, world.seed);
           if (h > 0.72) {
-            ctx.fillStyle = night ? "#5f8a48" : "#79a94c";
+            // Placed by a hash on WORLD coordinates and sparse, so it is texture
+            // and not a per-cell edge — the band rule (CLAUDE.md) does not reach
+            // it, and a seasonal recolour doesn't change that.
+            ctx.fillStyle = this.palette.tuft;
             const gx = px + 2 + Math.floor(h * 9);
             const gy = py + 4 + Math.floor((h * 53) % 9);
             ctx.fillRect(gx, gy, 2, 1);
@@ -1260,8 +1287,13 @@ export class Renderer {
     // Crown as per-row half-widths: an integer-rect blob, no ellipse maths and
     // nothing off the pixel grid (CLAUDE.md §Sprite rendering).
     const rows = [3, 5, 6, 7, 7, 7, 7, 7, 6, 6, 5, 4, 3, 2]; // 14 rows + trunk = TREE_H
-    const crown = dark ? (night ? "#1e2c1f" : "#2c3a2a") : night ? "#2f5233" : "#417a41";
-    const crownLit = dark ? (night ? "#26361f" : "#3a4a34") : night ? "#3a6440" : "#57975a";
+    // THE GROVE IS SEASON-EXEMPT and keeps its own four numbers in every month.
+    // The dark wood is what the grove IS (tiles.ts) — a stand that turned gold
+    // every October would be a secret joining in with the town. An ordinary
+    // tree's crown comes from the frame's palette, which is where autumn and
+    // winter actually land: it is the largest colour mass on screen.
+    const crown = dark ? (night ? "#1e2c1f" : "#2c3a2a") : this.palette.crown;
+    const crownLit = dark ? (night ? "#26361f" : "#3a4a34") : this.palette.crownLit;
     const top = base - TREE_H;
     ctx.fillStyle = crown;
     for (let r = 0; r < rows.length; r++) {
