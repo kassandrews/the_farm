@@ -16,7 +16,7 @@ import { makeVillager } from "./villagers";
 import { authoredBed } from "../content/town";
 import type { CharId } from "../content/cast";
 
-export const SCHEMA_VERSION = 17;
+export const SCHEMA_VERSION = 18;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -418,6 +418,17 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
     schemaVersion: 17,
     under: typeof raw.under === "object" && raw.under ? raw.under : {},
   }),
+  // v17 → v18: the player carries a layer (4a step 2). "surface" is the only
+  // truthful backfill and also the only reachable one — you get underground by
+  // standing on a shaft, and v17 had no shafts in it.
+  17: (raw) => {
+    const player = (raw.player ?? {}) as Record<string, unknown>;
+    return {
+      ...raw,
+      schemaVersion: 18,
+      player: { ...player, layer: player.layer === "under" ? "under" : "surface" },
+    };
+  },
 };
 
 /** The v12 museum, frozen as literals. Migrations must never read the CURRENT

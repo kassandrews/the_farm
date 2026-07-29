@@ -508,3 +508,26 @@ describe("v16 → v17: the underground", () => {
     expect(migrated.overrides).toEqual(before.overrides);
   });
 });
+
+describe("v17 → v18: the player carries a layer", () => {
+  function v17Save(extra: Record<string, unknown> = {}): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const player = { ...(w.player as Record<string, unknown>) };
+    delete player.layer;
+    return { ...w, schemaVersion: 17, player, ...extra };
+  }
+
+  it("backfills the surface — the only layer a v17 town could reach", () => {
+    const migrated = migrateSave(v17Save())!;
+    expect(migrated.player.layer).toBe("surface");
+  });
+
+  it("never strands a returning player underground", () => {
+    // You get out of a cave by standing on the shaft you came down. A save that
+    // came up the ladder has no shaft in it, so anything but "surface" here
+    // would put the player in rock with no way back.
+    const migrated = migrateSave(v17Save())!;
+    expect(shafts(migrated)).toEqual([]);
+    expect(migrated.player.layer).toBe("surface");
+  });
+});

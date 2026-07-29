@@ -14,6 +14,9 @@ import {
   isWalkable,
   carve,
   canCarve,
+  canSink,
+  sink,
+  fillShaft,
   shafts,
   depthAt,
   CHUNK,
@@ -259,5 +262,68 @@ describe("depth is distance from your own shaft", () => {
     expect(depthAt(w, 4, 0)).toBe(4);
     setTile(w, 0, 0, DIRT);
     expect(depthAt(w, 4, 0)).toBe(Infinity);
+  });
+});
+
+describe("sinking a shaft", () => {
+  /** Dig a tile the way the player does, so the second dig has real dirt under
+   *  it rather than a hand-written override. */
+  function dugTile(w: ReturnType<typeof newWorld>) {
+    const g = findGrass(w);
+    dig(w, g.x, g.y);
+    return g;
+  }
+
+  it("takes two digs — grass, then the same tile again", () => {
+    const w = freshWorld();
+    const g = findGrass(w);
+    expect(canSink(w, g.x, g.y)).toBe(false); // grass is a dig, not a shaft
+    dig(w, g.x, g.y);
+    expect(canSink(w, g.x, g.y)).toBe(true);
+    expect(sink(w, g.x, g.y)).toBe(true);
+    expect(tileAt(w, g.x, g.y)).toBe(SHAFT);
+  });
+
+  it("cuts the rock underneath, so there is somewhere to land", () => {
+    const w = freshWorld();
+    const g = dugTile(w);
+    expect(isWalkable(w, g.x, g.y, "under")).toBe(false); // solid before
+    sink(w, g.x, g.y);
+    expect(tileAt(w, g.x, g.y, "under")).toBe(CAVE_FLOOR);
+    expect(isWalkable(w, g.x, g.y, "under")).toBe(true);
+  });
+
+  it("refuses to swallow a crop, a built cell, or furniture", () => {
+    // Unlike a dig, a shaft is not cheap to redo — so it never destroys
+    // something that was placed on purpose.
+    const w = freshWorld();
+    const a = dugTile(w);
+    w.crops[tileKey(a.x, a.y)] = { cropId: "carrot" } as never;
+    expect(canSink(w, a.x, a.y)).toBe(false);
+
+    const b = dugTile(w);
+    w.build[tileKey(b.x, b.y)] = { id: "wall", finish: "pine" };
+    expect(canSink(w, b.x, b.y)).toBe(false);
+  });
+
+  it("can be filled back in, and the tunnel below survives it", () => {
+    // ACT has no undo, so filling in is what makes a mis-tap recoverable. It
+    // closes the lid; it does not collapse what you dug.
+    const w = freshWorld();
+    const g = dugTile(w);
+    sink(w, g.x, g.y);
+    expect(fillShaft(w, g.x, g.y)).toBe(true);
+    expect(tileAt(w, g.x, g.y)).toBe(DIRT);
+    expect(tileAt(w, g.x, g.y, "under")).toBe(CAVE_FLOOR);
+    expect(fillShaft(w, g.x, g.y)).toBe(false); // nothing left to fill
+  });
+
+  it("is a shaft for depth purposes only while it's open", () => {
+    const w = freshWorld();
+    const g = dugTile(w);
+    sink(w, g.x, g.y);
+    expect(depthAt(w, g.x + 3, g.y)).toBe(3);
+    fillShaft(w, g.x, g.y);
+    expect(depthAt(w, g.x + 3, g.y)).toBe(Infinity);
   });
 });

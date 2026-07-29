@@ -45,7 +45,10 @@ export const ROCK: TileId = 9;
 export const BEDROCK: TileId = 10; // uncarved; the default state of the layer
 export const CAVE_FLOOR: TileId = 11; // what carving leaves behind
 export const ORE_VEIN: TileId = 12; // a resource node in the rock, seen only once you tunnel to it
-export const SHAFT: TileId = 13; // the way down and the way up — one tile, present on BOTH layers
+// The way down and the way up. Stored on the SURFACE only: underneath, that
+// same coordinate is ordinary cave floor. One entrance, one record, so a shaft
+// can never half-exist on one layer and not the other.
+export const SHAFT: TileId = 13;
 
 export const TILES: Record<TileId, TileDef> = {
   [GRASS]: {

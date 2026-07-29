@@ -1138,9 +1138,47 @@ What the build settled:
   rather than a parallel list — so undo, migration and the away sim can't leave
   a ghost entrance behind. Asserted by filling one in.
 
-Still to do in 4a: **step 2** descent + the player's layer (walkability, pathing,
-camera), **step 3** rendering the dark, **step 4** ore, `slate`, and depth
-rewards.
+### 4a step 2 — descent, **sim done, not yet wired**
+
+`sink`/`fillShaft` in world.ts, `player.layer` + `canDescend`/`canAscend`/
+`useShaft` in game.ts, schema **v18**. Movement (`moveTo` and the per-axis
+collide in `tick`) now passes the player's layer to `isWalkable`.
+
+**Deliberately not reachable from the ACT button yet.** The game is live on
+Vercel: wiring descent before the renderer can draw the underground would drop a
+player into a cave rendered as grass. The sim is complete and tested; step 2b is
+the renderer plus the wiring, and they ship together.
+
+What the build settled:
+
+- **A shaft is two digs on one tile.** ACT on grass makes dirt (as before); ACT
+  on that same dirt opens the way down. No new tool, no new button, no cost —
+  and digging dirt was already a no-op, so the gesture was free to claim.
+  `canSink` refuses a cell holding a crop, a built cell or furniture: unlike a
+  dig, a shaft is not cheap to redo, so it never eats something placed on
+  purpose.
+- **A shaft is stored ONCE, on the surface.** Underneath, that coordinate is
+  ordinary cave floor. So "is there a way down here" and "is there a way up
+  here" are the same question asked from either end and cannot disagree — and
+  `shafts()` has one place to look.
+- **`fillShaft` is refused while the player is underground, and the check is on
+  the LAYER, not on that hole.** Filling from above is how you'd seal someone
+  into a cave with no exit. The broad check can't be defeated by a second
+  entrance being open and doesn't depend on the caller having the coordinate
+  right. Found by writing the test as a documented trap and deciding that was
+  the wrong answer.
+- **Changing layer keeps your coordinate** and drops your walk target. That is
+  "one continuous world, no interior scenes" (DESIGN §Structures) pointed
+  downward: no transition, no second map, same x/y.
+
+Known and pending for 2b: **`actionTarget` is still surface-only.** It reads
+`tileAt` without a layer, so once descent is wired, ACT underground would aim at
+the ground above. It must take the player's layer in the same commit that wires
+the button — the reticle is the promise (ROADMAP §that rule), and a reticle
+pointing at the wrong layer is the largest possible version of that bug.
+
+Still to do in 4a: **step 2b** rendering the dark + camera + wiring ACT,
+**step 3** ore gathering and `slate`, **step 4** depth rewards and the Mole.
 
 Loose end worth deciding in step 4: **what happens if you sink a shaft next to
 something deep.** The Mole is "found by digging deep", and depth is relative to

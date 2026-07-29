@@ -29,15 +29,10 @@ import {
 import { NODES } from "../content/nodes";
 import { structureDef } from "../content/structures";
 import { furnitureDef, covers, MAX_SPAN } from "../content/furniture";
-import type { WorldState, HomesteadSpot } from "./types";
+import type { WorldState, HomesteadSpot, Layer } from "./types";
 import { hash2 } from "./rng";
 
 export const CHUNK = 16; // tiles per chunk edge — chunks are a render/streaming unit
-
-/** Which layer a coordinate is on. Two, and there will never be a third: the
- *  underground is the second half of one world, not the first rung of a
- *  stack. */
-export type Layer = "surface" | "under";
 
 /** The sparse edit map for a layer. Underground edits live in their own record
  *  rather than under a prefixed key, so a save that predates the underground
@@ -380,6 +375,47 @@ export function till(world: WorldState, x: number, y: number): boolean {
   return false;
 }
 
+/** Can a shaft be sunk here? Dug earth and nothing else — you dig a tile once to
+ *  turn grass into dirt, and digging that same dirt again is what opens the way
+ *  down. No new tool and no new button: the second dig is the whole gesture.
+ *
+ *  Refuses anything the shaft would destroy — a crop, a built cell, furniture —
+ *  because unlike a dig, sinking a shaft is not a cheap thing to redo. */
+export function canSink(world: WorldState, x: number, y: number): boolean {
+  if (tileAt(world, x, y) !== DIRT) return false;
+  const k = tileKey(x, y);
+  if (world.crops[k] || world.build[k]) return false;
+  return !furnitureBlocksHere(world, x, y);
+}
+
+/** Sink a shaft: a hole on the surface, and the rock directly under it cut away
+ *  so there is somewhere to land. Free, like every other kind of digging. */
+export function sink(world: WorldState, x: number, y: number): boolean {
+  if (!canSink(world, x, y)) return false;
+  setTile(world, x, y, SHAFT);
+  setTile(world, x, y, CAVE_FLOOR, "under");
+  return true;
+}
+
+/** Fill a shaft back in, leaving whatever you carved down there intact — you
+ *  are closing the lid, not collapsing the tunnel.
+ *
+ *  It exists because ACT has no undo (that's deliberate, ROADMAP §"Undo covers
+ *  BUILD strokes only"), and a hole in your lawn from a mis-tap is the one dug
+ *  tile that isn't cheap to live with. */
+export function fillShaft(world: WorldState, x: number, y: number): boolean {
+  if (tileAt(world, x, y) !== SHAFT) return false;
+  // Never while you're below. A shaft is stored once, on the surface, and it is
+  // also the way back — so closing one from above with the player underground
+  // seals them in a cave with no exit. Refusing whenever the player is on the
+  // lower layer at all is stricter than checking this particular hole, and
+  // deliberately so: it cannot be defeated by a second entrance being open, and
+  // it does not lean on the caller having got the coordinate right.
+  if (world.player.layer === "under") return false;
+  setTile(world, x, y, DIRT);
+  return true;
+}
+
 /** Is there rock here to cut? The face of a tunnel, in other words. An ore vein
  *  is deliberately NOT carvable — it's a resource node, so it goes through
  *  gathering (sim/gather.ts) the way a tree does, and cutting it away with the
@@ -398,3 +434,4 @@ export function carve(world: WorldState, x: number, y: number): boolean {
 }
 
 export { FARMLAND, FARMLAND_WET };
+export type { Layer };

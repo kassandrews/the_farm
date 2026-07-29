@@ -29,7 +29,7 @@ import { placeFurniture, removeFurnitureAt } from "./furniture";
 import { FURNITURE, furnitureDef } from "../content/furniture";
 import type { FurnitureId, Facing } from "../content/furniture";
 import { structureDef } from "../content/structures";
-import { GRASS, DIRT, PLANK, FARMLAND, FARMLAND_WET, MUSHROOM } from "../content/tiles";
+import { GRASS, DIRT, PLANK, FARMLAND, FARMLAND_WET, MUSHROOM, SHAFT } from "../content/tiles";
 import { digWithFind } from "./junk";
 import { emptyInventory, add, canAfford, spend, refund, shortfall } from "./inventory";
 import type { Cost } from "./inventory";
@@ -82,6 +82,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     facing: -1,
     memory: embodying ? [...embodying.memorySeed] : [],
     imported: embodying !== null,
+    layer: "surface", // you start on top of the world, obviously
   };
 
   // Fixed cast + the one starter resident. An import you did NOT embody moves
@@ -154,8 +155,42 @@ export function playerTile(world: WorldState): { x: number; y: number } {
 /** Set a walk target from a tapped world-tile coordinate. Ignores taps onto
  *  solid tiles (walk to the edge instead is future polish; for now, refuse). */
 export function moveTo(world: WorldState, x: number, y: number): void {
-  if (!isWalkable(world, Math.round(x), Math.round(y))) return;
+  if (!isWalkable(world, Math.round(x), Math.round(y), world.player.layer)) return;
   world.player.target = { x, y };
+}
+
+/** Can you go down from where you're standing? Only on a shaft, and only from
+ *  above. */
+export function canDescend(world: WorldState): boolean {
+  if (world.player.layer !== "surface") return false;
+  const { x, y } = playerTile(world);
+  return tileAt(world, x, y) === SHAFT;
+}
+
+/** And back up. Reads the SURFACE tile deliberately — a shaft is stored once,
+ *  on top, so "is there a way up here" and "is there a way down here" are the
+ *  same question asked from either end and can never disagree. */
+export function canAscend(world: WorldState): boolean {
+  if (world.player.layer !== "under") return false;
+  const { x, y } = playerTile(world);
+  return tileAt(world, x, y) === SHAFT;
+}
+
+/** Change layer. Position doesn't change — it's the same coordinate, one layer
+ *  down, which is what "one continuous world, no interior scenes" (DESIGN
+ *  §Structures) looks like applied downward: no transition, no second map.
+ *
+ *  Snaps to the tile centre and drops any walk target, because the ground you
+ *  were heading for is not the ground you are now on. */
+export function useShaft(world: WorldState): boolean {
+  const down = canDescend(world);
+  if (!down && !canAscend(world)) return false;
+  const { x, y } = playerTile(world);
+  world.player.layer = down ? "under" : "surface";
+  world.player.x = x;
+  world.player.y = y;
+  world.player.target = null;
+  return true;
 }
 
 /** Fixed-timestep advance. `dt` seconds drives smooth movement; `now` (epoch
@@ -179,9 +214,9 @@ export function tick(world: WorldState, dt: number, now: number): void {
       // past a wall walked you straight through it — the walls were scenery.
       const nx = p.x + (dx / dist) * step;
       const ny = p.y + (dy / dist) * step;
-      const movedX = isWalkable(world, Math.round(nx), Math.round(p.y));
+      const movedX = isWalkable(world, Math.round(nx), Math.round(p.y), p.layer);
       if (movedX) p.x = nx;
-      const movedY = isWalkable(world, Math.round(p.x), Math.round(ny));
+      const movedY = isWalkable(world, Math.round(p.x), Math.round(ny), p.layer);
       if (movedY) p.y = ny;
       if (Math.abs(dx) > 0.01) p.facing = dx >= 0 ? 1 : -1;
       // Pressed flat against something with nowhere to go: drop the target so

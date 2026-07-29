@@ -19,6 +19,14 @@ import type { ErrandId } from "../content/errands";
  *  Cosmetic-plus-origin: it shifts the homestead plot and its flavour. */
 export type HomesteadSpot = "riverside" | "forest" | "hilltop";
 
+/** Which layer a coordinate is on. Two, and there will never be a third: the
+ *  underground is the second half of one world, not the first rung of a stack
+ *  (DESIGN §Structures — "Underground is a layer, not a height").
+ *
+ *  Lives here rather than in sim/world.ts because it is now a SAVED shape (the
+ *  player carries one), and world.ts imports this module. */
+export type Layer = "surface" | "under";
+
 export interface Player {
   name: string;
   form: AdultForm;
@@ -33,6 +41,11 @@ export interface Player {
   memory: MemoryLog;
   /** True when this sprite was imported rather than hatched here. */
   imported: boolean;
+  /** Which layer you're standing on. The player is the ONLY thing that carries
+   *  one — villagers are surface creatures and the town is a surface fact — so
+   *  this is the single piece of state that says whether the world you're
+   *  interacting with is the ground or what's under it. */
+  layer: Layer;
 }
 
 /** A planted crop, keyed by "x,y" in WorldState.crops. Growth is wall-clock
