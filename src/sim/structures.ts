@@ -46,7 +46,16 @@ function bump(world: WorldState): void {
  *  replaying place/remove — it has to put back a wall that was painted OVER a
  *  door, which no single call here expresses. Everything that derives from the
  *  build layer keys off this counter, so a restore that skipped it would leave
- *  the town with the roofs of a house that isn't there any more. */
+ *  the town with the roofs of a house that isn't there any more.
+ *
+ *  ALSO CALLED BY sim/furniture.ts, and that is the counter's real definition
+ *  rather than a favour done for a neighbour: what depends on it is villager
+ *  ROUTES, and a route is only valid while `isWalkable` gives the same answers.
+ *  `isWalkable` counts solid furniture, so a table dropped across a corridor
+ *  invalidates a route exactly as a wall does. Read this counter as "the standing
+ *  things moved", not "world.build moved" — it was named before furniture had a
+ *  layer of its own, and the narrower reading is what let a villager walk through
+ *  a table for three phases (ROADMAP §Known gaps). */
 export function touchBuild(world: WorldState): void {
   bump(world);
 }

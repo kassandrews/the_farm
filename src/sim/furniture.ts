@@ -17,12 +17,21 @@
 // than tidy: furniture is a surface idea in every module that reads it except
 // the single tool that isn't one (the lamp), so the default keeps every existing
 // caller both unchanged and correct. See types.ts §underFurniture.
+//
+// Both mutations here call `touchBuild`. That is not a favour to the structure
+// layer: villager routes are memoised against that counter and `isWalkable`
+// counts solid furniture, so a table dropped across a corridor invalidates a
+// route exactly as a wall does. Placement does NOT check whether the piece is
+// solid or which layer it went on before announcing — that would buy a bounded
+// flood fill with a second rule about when invalidation matters, and the wrong
+// version of that rule is invisible until somebody walks through a table.
 
 import type { WorldState, FurnitureCell, Layer } from "./types";
 import type { FurnitureId, Facing } from "../content/furniture";
 import { furnitureDef, footprint, covers, MAX_SPAN } from "../content/furniture";
 import type { SkinId } from "../content/skins";
 import { tileAt, tileKey } from "./world";
+import { touchBuild } from "./structures";
 import { tileDef } from "../content/tiles";
 
 export interface PlacedFurniture {
@@ -111,6 +120,7 @@ export function placeFurniture(
 ): boolean {
   if (!canPlaceFurniture(world, ax, ay, id, facing, layer)) return false;
   furnitureFor(world, layer)[tileKey(ax, ay)] = { id, facing, finish };
+  touchBuild(world); // the standing things moved — see structures.ts
   return true;
 }
 
@@ -125,6 +135,7 @@ export function removeFurnitureAt(
   const found = furnitureAt(world, x, y, layer);
   if (!found) return null;
   delete furnitureFor(world, layer)[tileKey(found.ax, found.ay)];
+  touchBuild(world); // the standing things moved — see structures.ts
   return found.cell;
 }
 

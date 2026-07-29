@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { newWorld, buildAt } from "./game";
 import { setTile, isWalkable, tileKey } from "./world";
 import { GRASS } from "../content/tiles";
-import { placeStructure } from "./structures";
+import { placeStructure, buildRevision } from "./structures";
 import {
   placeFurniture,
   removeFurnitureAt,
@@ -135,5 +135,48 @@ describe("building furniture through the build tool", () => {
     expect(res.changed).toBe(false);
     expect(res.broke).toBe(true);
     expect(w.inventory.wood).toBe(1);
+  });
+});
+
+describe("a placed piece invalidates what depends on walkability", () => {
+  // The bug this block exists for: villager routes are memoised against
+  // `buildRevision`, which only wall and door edits used to bump — so a table
+  // dropped across a corridor left every route already computed "valid", and the
+  // villager walked through it. Pre-existing since routes arrived in 2b step 1
+  // and found while wiring step 3 (ROADMAP §Known gaps).
+  //
+  // The assertion is at the cache key rather than on a walking villager on
+  // purpose: with the corridor sealed, a villager with no route SNAPS to their
+  // stop by design, which looks exactly like walking through the table. The
+  // honest question is whether anything holding a stale route is told.
+  it("bumps the revision routes are keyed on", () => {
+    const w = world();
+    const before = buildRevision(w);
+    expect(placeFurniture(w, 5, 5, "table", "s", "pine")).toBe(true);
+    expect(buildRevision(w)).not.toBe(before);
+
+    const placed = buildRevision(w);
+    expect(removeFurnitureAt(w, 5, 5)).not.toBeNull();
+    expect(buildRevision(w)).not.toBe(placed);
+  });
+
+  it("changes the answer `isWalkable` gives, which is why it must", () => {
+    // The other half of the pair: if solidity did not change, invalidating
+    // nothing would be correct. A table is solid, so it does.
+    const w = world();
+    expect(isWalkable(w, 5, 5)).toBe(true);
+    placeFurniture(w, 5, 5, "table", "s", "pine");
+    expect(isWalkable(w, 5, 5)).toBe(false);
+  });
+
+  it("announces a walk-through piece too, rather than reasoning about solidity", () => {
+    // A cushion blocks nothing, so this bump is redundant — and asking would buy
+    // a bounded flood fill with a second rule about when invalidation matters.
+    // The wrong version of that rule is invisible until somebody walks through
+    // something, so placement does not ask.
+    const w = world();
+    const before = buildRevision(w);
+    expect(placeFurniture(w, 7, 7, "cushion", "s", "undyed")).toBe(true);
+    expect(buildRevision(w)).not.toBe(before);
   });
 });
