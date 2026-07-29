@@ -1138,16 +1138,17 @@ What the build settled:
   rather than a parallel list — so undo, migration and the away sim can't leave
   a ghost entrance behind. Asserted by filling one in.
 
-### 4a step 2 — descent, **sim done, not yet wired**
+### 4a step 2 — descent, **done** (sim in 2, wired and drawn in 2b)
 
 `sink`/`fillShaft` in world.ts, `player.layer` + `canDescend`/`canAscend`/
 `useShaft` in game.ts, schema **v18**. Movement (`moveTo` and the per-axis
 collide in `tick`) now passes the player's layer to `isWalkable`.
 
-**Deliberately not reachable from the ACT button yet.** The game is live on
-Vercel: wiring descent before the renderer can draw the underground would drop a
-player into a cave rendered as grass. The sim is complete and tested; step 2b is
-the renderer plus the wiring, and they ship together.
+Step 2 shipped the sim alone and deliberately left it unreachable: the game is
+live on Vercel, and wiring descent before the renderer could draw the
+underground would have dropped a player into a cave rendered as grass. Step 2b
+is the other half — the renderer, the ACT wiring, and schema **v19** — and it
+ships them together.
 
 What the build settled:
 
@@ -1171,14 +1172,64 @@ What the build settled:
   "one continuous world, no interior scenes" (DESIGN §Structures) pointed
   downward: no transition, no second map, same x/y.
 
-Known and pending for 2b: **`actionTarget` is still surface-only.** It reads
-`tileAt` without a layer, so once descent is wired, ACT underground would aim at
-the ground above. It must take the player's layer in the same commit that wires
-the button — the reticle is the promise (ROADMAP §that rule), and a reticle
-pointing at the wrong layer is the largest possible version of that bug.
+What step 2b settled:
 
-Still to do in 4a: **step 2b** rendering the dark + camera + wiring ACT,
-**step 3** ore gathering and `slate`, **step 4** depth rewards and the Mole.
+- **The player carries a HEADING, and it is not `facing`.** `facing` is ±1 and
+  exists to flip a sprite — a sprite has no back, so left/right is all the art
+  can say. But underground the shovel cuts the cell AHEAD of you (rock is solid,
+  so the tile underfoot can never be rock), and with ±1 there is no way to
+  tunnel north or south. `heading` is the four-point compass of your last
+  movement; the sprite still flips off `facing`. Schema v19, default "s".
+- **The heading is taken from what you ASKED for, not from what moved.** It is
+  set in `moveTo` before the walkability refusal, so walking at a rock face
+  still aims at it. Reading it only off successful movement would mean the one
+  direction you could never point at was the one with a wall in it — and that
+  wall is the entire verb.
+- **The rock is chosen by heading, never by a neighbour search.** `nodeNear`'s
+  answer for trees (try every neighbour, take the first) is wrong here: hemmed
+  in on three sides it would cut a wall you didn't mean, and tunnelling would
+  stop being something you steer.
+- **The landing at the bottom of a shaft is load-bearing.** `sink` now carves
+  the four cells around the ladder as well as under it. Without them you arrive
+  in a one-tile room whose only open cell is the one you are standing on — and
+  since that cell is also the way up, ACT can offer you nothing but to leave
+  again. There is no first swing of the pick. **This passed every unit test and
+  failed on screen**, which is the whole argument for the browser pass.
+- **Darkness is a gradient in scene space, not a per-tile alpha.** Quantised to
+  the grid it would be the per-cell edges band rule (CLAUDE.md) in a new
+  costume, and a circle of light that steps in tile-sized rings reads as a bug.
+- **Uncarved rock is painted as rock, vein or not.** The tile table already
+  keeps the two colours close, but close is not hidden: in a field of one dark
+  tone the eye finds the odd square instantly, and the first build had a town's
+  veins legible through solid stone from across the map. Ore is drawn on the
+  cut FACE only, which is where you meet it.
+- **Rock stands up only where it has been opened.** A face is drawn on cells
+  whose southern neighbour is carved — the same "draw the edge where the surface
+  actually ends" rule as roofs and wall runs. Solid rock stays flat, which is
+  also honest: you cannot see into it.
+- **Building stops at the shaft.** `world.build` and `world.furniture` are
+  surface records with no layer in their keys, so a wall placed from below would
+  silently stand up in the field above. Rather than teach every build path a
+  layer for something the design doesn't ask for, the tunnel simply isn't
+  somewhere you build — and descending puts down whatever you were holding.
+- **Distance stopped being enough the moment a coordinate meant two places.**
+  Talking and `witness`'s friendship radius both measured plain distance;
+  underground that warmed villagers walking over your head, through the ground,
+  having seen nothing. Both now ask the layer first.
+- **Erase fills a shaft in.** ACT has no undo, and a hole in the lawn from a
+  mis-tap is the one dug tile that isn't cheap to live with — so the take-it-
+  back verb takes it back. What you cut underneath stays cut: it closes the lid,
+  not the tunnel.
+
+Still to do in 4a: **step 3** ore gathering and `slate`, **step 4** depth
+rewards and the Mole.
+
+Loose end for step 3, found by playing it: **an ore vein can dead-end a
+tunnel.** `canCarve` refuses ore (it's gathered, not cut), so until gathering
+exists a vein in front of you is simply a wall you cannot pass. It is rare
+enough at 5.5% density to be a curiosity rather than a blocker, and step 3
+removes it by definition — but it is the reason a landing has four exits and not
+one.
 
 Loose end worth deciding in step 4: **what happens if you sink a shaft next to
 something deep.** The Mole is "found by digging deep", and depth is relative to
@@ -1216,10 +1267,11 @@ you trip over them:
   (pillar 3) and give a homecoming a lap of the town, but it needs somewhere to
   put a loose object on the ground — a new tile or a small world layer — which
   is its own decision and was deliberately not improvised alongside the rest.
-- **Ore is defined but unobtainable** until the underground layer exists. This
-  is intentional, not an oversight. As of 4a step 1 the veins are generated and
-  in the ground; nothing can reach them until descent (step 2) and gathering
-  (step 4) exist.
+- **Ore is defined but unobtainable** until gathering exists. This is
+  intentional, not an oversight. As of 4a step 2b you can stand in front of a
+  vein and look at it — the veins are generated, the descent is wired, and the
+  cut face shows the metal — but `canCarve` refuses ore on purpose, so nothing
+  can take it out of the rock until step 3.
 - ~~**Six of the seven fixed cast exist.**~~ **All seven now do** — office,
   shop, heap, museum, seed stall, errands board, plaza stage. DESIGN's
   institution table is complete; the note at the foot of `src/content/cast.ts`

@@ -27,6 +27,18 @@ export type HomesteadSpot = "riverside" | "forest" | "hilltop";
  *  player carries one), and world.ts imports this module. */
 export type Layer = "surface" | "under";
 
+/** Which way the player last walked, to the nearest compass point.
+ *
+ *  Distinct from `facing`, which is ±1 and exists to flip a sprite — a sprite
+ *  has no back, so left/right is all the ART can say. A directional VERB needs
+ *  more than that: underground the shovel cuts the rock ahead of you, and with
+ *  only ±1 there would be no way to tunnel north or south. So the heading is
+ *  what the player MEANT and facing is what they look like.
+ *
+ *  Deliberately quantised to four, not stored as a vector: the world is a grid
+ *  and the thing this picks is one adjacent cell. */
+export type Heading = "n" | "e" | "s" | "w";
+
 export interface Player {
   name: string;
   form: AdultForm;
@@ -35,6 +47,10 @@ export interface Player {
   /** Current move target (tap-to-move); null when standing still. */
   target: { x: number; y: number } | null;
   facing: 1 | -1;
+  /** Which way you last walked, to the nearest compass point — see Heading.
+   *  Saved, because it decides what ACT is aimed at underground and the reticle
+   *  has to promise the same cell after a reload that it did before one. */
+  heading: Heading;
   /** The player's own remembered history. Empty for a freshly hatched sprite;
    *  seeded from The Meadow when you embody an imported pet, so "its name,
    *  form, and history come along" (DESIGN §"Player identity"). */

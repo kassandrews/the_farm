@@ -388,12 +388,34 @@ export function canSink(world: WorldState, x: number, y: number): boolean {
   return !furnitureBlocksHere(world, x, y);
 }
 
-/** Sink a shaft: a hole on the surface, and the rock directly under it cut away
- *  so there is somewhere to land. Free, like every other kind of digging. */
+/** Sink a shaft: a hole on the surface, the rock directly under it cut away so
+ *  there is somewhere to land, and a small landing around that. Free, like every
+ *  other kind of digging.
+ *
+ *  THE LANDING IS NOT DECORATION. Cut only the cell under the hole and you
+ *  arrive in a one-tile room with solid rock on all four sides — and since the
+ *  cell you are standing on is also the way up, the only thing ACT can offer you
+ *  down there is to leave again. There is no first swing of the pick, because
+ *  you are stood on the one tile that isn't a rock face. Found on screen, in a
+ *  browser, having passed every unit test.
+ *
+ *  Four neighbours, not a room: enough to step off the ladder and turn around,
+ *  after which the size of the open space is the size of what you dug. Each one
+ *  goes through `carve`, so a vein beside the ladder survives — the landing
+ *  cannot quietly destroy the ore it lands next to. The centre is forced, ore or
+ *  not: you have to come down somewhere. */
 export function sink(world: WorldState, x: number, y: number): boolean {
   if (!canSink(world, x, y)) return false;
   setTile(world, x, y, SHAFT);
   setTile(world, x, y, CAVE_FLOOR, "under");
+  for (const [dx, dy] of [
+    [0, -1],
+    [1, 0],
+    [0, 1],
+    [-1, 0],
+  ] as [number, number][]) {
+    carve(world, x + dx, y + dy);
+  }
   return true;
 }
 

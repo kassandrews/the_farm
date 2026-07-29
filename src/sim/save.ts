@@ -16,7 +16,7 @@ import { makeVillager } from "./villagers";
 import { authoredBed } from "../content/town";
 import type { CharId } from "../content/cast";
 
-export const SCHEMA_VERSION = 18;
+export const SCHEMA_VERSION = 19;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -427,6 +427,25 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       ...raw,
       schemaVersion: 18,
       player: { ...player, layer: player.layer === "under" ? "under" : "surface" },
+    };
+  },
+  // v18 → v19: the player carries a heading (4a step 2b), because ACT
+  // underground cuts the rock AHEAD of you and `facing` is only ±1.
+  //
+  // "s" for everyone, and that isn't a guess dressed as data: a v18 save has no
+  // heading anywhere in it, and the first walk the player takes overwrites this
+  // before anything can read it. It matches what newWorld starts with, so an
+  // upgraded town and a fresh one are pointed the same way.
+  18: (raw) => {
+    const player = (raw.player ?? {}) as Record<string, unknown>;
+    const h = player.heading;
+    return {
+      ...raw,
+      schemaVersion: 19,
+      player: {
+        ...player,
+        heading: h === "n" || h === "e" || h === "w" ? h : "s",
+      },
     };
   },
 };

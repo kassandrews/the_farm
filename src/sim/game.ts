@@ -3,7 +3,7 @@
 // the context action, talk to a villager, and summarise what happened while the
 // player was away. No DOM, no canvas — still pure logic (CLAUDE.md).
 
-import type { WorldState, Player, Villager, Tool, BuildTool, HomesteadSpot } from "./types";
+import type { WorldState, Player, Villager, Tool, BuildTool, HomesteadSpot, Heading } from "./types";
 import type { AdultForm } from "../content/canon/forms";
 import { CAST } from "../content/cast";
 import type { CharId } from "../content/cast";
@@ -13,6 +13,11 @@ import { remember } from "./memory";
 import type { MemoryKind } from "./memory";
 import {
   canDig,
+  canSink,
+  sink,
+  fillShaft,
+  canCarve,
+  carve,
   placePlank,
   isWalkable,
   tileAt,
@@ -80,6 +85,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     y: origin.y + 1, // stood just below the tent
     target: null,
     facing: -1,
+    heading: "s", // stood below the tent, looking out at the plot
     memory: embodying ? [...embodying.memorySeed] : [],
     imported: embodying !== null,
     layer: "surface", // you start on top of the world, obviously
@@ -152,11 +158,53 @@ export function playerTile(world: WorldState): { x: number; y: number } {
   return { x: Math.round(world.player.x), y: Math.round(world.player.y) };
 }
 
+/** One step along a heading. The one place the compass becomes arithmetic, so
+ *  nothing downstream can disagree about which way "n" is. */
+export function headingStep(h: Heading): { dx: number; dy: number } {
+  switch (h) {
+    case "n":
+      return { dx: 0, dy: -1 };
+    case "s":
+      return { dx: 0, dy: 1 };
+    case "e":
+      return { dx: 1, dy: 0 };
+    case "w":
+      return { dx: -1, dy: 0 };
+  }
+}
+
+/** The compass point a movement reads as: the DOMINANT axis, so a diagonal walk
+ *  commits to the direction it is mostly going rather than flickering between
+ *  two. Ties go to the horizontal, matching `facing` — on a 3/4 view, left and
+ *  right are the directions the art can actually show. */
+function headingOf(dx: number, dy: number): Heading {
+  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? "e" : "w";
+  return dy >= 0 ? "s" : "n";
+}
+
+/** The cell one step ahead of the player. What ACT aims at when the thing it
+ *  acts on cannot be underfoot — which underground is everything, since rock is
+ *  solid and you can only ever stand in the space you already cut. */
+export function aheadOf(world: WorldState): { x: number; y: number } {
+  const { x, y } = playerTile(world);
+  const { dx, dy } = headingStep(world.player.heading);
+  return { x: x + dx, y: y + dy };
+}
+
 /** Set a walk target from a tapped world-tile coordinate. Ignores taps onto
  *  solid tiles (walk to the edge instead is future polish; for now, refuse). */
 export function moveTo(world: WorldState, x: number, y: number): void {
-  if (!isWalkable(world, Math.round(x), Math.round(y), world.player.layer)) return;
-  world.player.target = { x, y };
+  const p = world.player;
+  // The heading is set from what you ASKED for, before the refusal below — a
+  // move into solid rock still says which way you meant to go, and underground
+  // that is the whole gesture: walk at the wall, then cut it. Reading the
+  // heading only from movement that succeeded would mean you could never aim at
+  // the one thing you can't walk into.
+  const dx = x - p.x;
+  const dy = y - p.y;
+  if (Math.hypot(dx, dy) > 0.05) p.heading = headingOf(dx, dy);
+  if (!isWalkable(world, Math.round(x), Math.round(y), p.layer)) return;
+  p.target = { x, y };
 }
 
 /** Can you go down from where you're standing? Only on a shaft, and only from
@@ -219,6 +267,9 @@ export function tick(world: WorldState, dt: number, now: number): void {
       const movedY = isWalkable(world, Math.round(p.x), Math.round(ny), p.layer);
       if (movedY) p.y = ny;
       if (Math.abs(dx) > 0.01) p.facing = dx >= 0 ? 1 : -1;
+      // Heading follows the walk itself, not just the tap that started it, so
+      // rounding a corner re-aims the shovel without a second tap.
+      p.heading = headingOf(dx, dy);
       // Pressed flat against something with nowhere to go: drop the target so
       // we don't grind against it forever.
       if (!movedX && !movedY) p.target = null;
@@ -265,7 +316,18 @@ export function buildCost(tool: BuildTool): Cost {
   return structureDef(tool).cost;
 }
 
-export type ActionKind = "dig" | "gather" | "plank" | "plant" | "water" | "harvest" | "read" | "none";
+export type ActionKind =
+  | "dig"
+  | "gather"
+  | "plank"
+  | "plant"
+  | "water"
+  | "harvest"
+  | "read"
+  | "sink" // the second dig on one tile: a way down
+  | "carve" // cutting the rock face ahead of you
+  | "shaft" // going down, or coming back up
+  | "none";
 export interface ActionResult {
   kind: ActionKind;
   changed: boolean;
@@ -279,7 +341,7 @@ export interface ActionResult {
 export interface ActionTarget {
   x: number;
   y: number;
-  kind: "harvest" | "gather" | "tool" | "read" | "none";
+  kind: "harvest" | "gather" | "tool" | "read" | "shaft" | "none";
 }
 
 /** Where ACT will land, decided in ONE place so the reticle the player sees and
@@ -308,7 +370,16 @@ export interface ActionTarget {
  *  reticle still promises precisely what ACT will do. */
 export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
   const { x, y } = playerTile(world);
+  if (world.player.layer === "under") return undergroundTarget(world, tool, x, y);
+
   if (isRipe(world, x, y)) return { x, y, kind: "harvest" };
+
+  // The way down, and it can sit this high in the ladder safely. A shaft cell
+  // holds nothing else by construction: `canSink` refuses a cell with a crop, a
+  // built piece or furniture on it, and no tool applies to a shaft. So there is
+  // never anything else competing for this tile, and putting it above the node
+  // shortcut means a tree beside the hole can't hijack the step down.
+  if (tileAt(world, x, y) === SHAFT) return { x, y, kind: "shaft" };
 
   const near = nodeNear(world, x, y, world.player.facing);
   if (near && tool === "gather") return { x: near.x, y: near.y, kind: "gather" };
@@ -317,6 +388,41 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
 
   const board = boardNear(world, x, y);
   if (board) return { x: board.x, y: board.y, kind: "read" };
+  return { x, y, kind: "none" };
+}
+
+/** Where ACT lands underground. A short ladder, because the lower layer is a
+ *  short place: there is nothing planted, nothing built and nobody living there
+ *  (yet), so the only two questions are "am I standing on the way up" and "is
+ *  there rock in front of me".
+ *
+ *  Every read of the GROUND here passes "under". That is the whole point of the
+ *  branch: the surface tile at this coordinate is a different tile, and a
+ *  reticle that quietly promised the ground above would be the largest possible
+ *  version of the reticle lying (ROADMAP §"The reticle is the promise").
+ *
+ *  The one exception is the shaft, and it is the same exception `canAscend`
+ *  makes for the same reason: a shaft is stored ONCE, on the surface, so "is
+ *  there a way up here" is asked of the top from either end and cannot disagree
+ *  with itself.
+ *
+ *  The rock is chosen by HEADING and never by a fallback search. Underfoot can
+ *  never be rock — it's solid, so you can only stand in space you already cut —
+ *  which is the same problem trees have, but the tree answer (try every
+ *  neighbour, take the first) is wrong here: surrounded by rock on three sides,
+ *  it would cut a wall you didn't mean and tunnelling would stop being
+ *  something you steer.
+ *
+ *  An ore vein ahead of you reads "none", not "gather". Veins are gathered, not
+ *  carved (world.ts §canCarve), and gathering them is step 3 — so for now the
+ *  honest reticle is an unlit one. Lighting it up would promise a thing the
+ *  button cannot yet do. */
+function undergroundTarget(world: WorldState, tool: Tool, x: number, y: number): ActionTarget {
+  if (tileAt(world, x, y) === SHAFT) return { x, y, kind: "shaft" };
+  // The tool is consulted, not assumed. Lighting the rock face while the
+  // watering can is out would promise a cut that ACT is not going to make.
+  const ahead = aheadOf(world);
+  if (tool === "dig" && canCarve(world, ahead.x, ahead.y)) return { ...ahead, kind: "tool" };
   return { x, y, kind: "none" };
 }
 
@@ -346,6 +452,19 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
     };
   }
 
+  if (target.kind === "shaft") {
+    // Which way you go is not a choice the button offers — you can only leave a
+    // hole the way you didn't come. `useShaft` reads the layer and does the
+    // only available one.
+    const down = world.player.layer === "surface";
+    useShaft(world);
+    return {
+      kind: "shaft",
+      changed: true,
+      message: down ? "Down. The air goes cool and stops moving." : "Up. The sky is where you left it.",
+    };
+  }
+
   if (target.kind === "read") {
     // The sim's part is over here. Reading changes nothing — it opens a panel,
     // which is the UI's business (ui/app.ts watches for this kind), and the
@@ -363,7 +482,11 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
 function toolApplies(world: WorldState, tool: Tool, x: number, y: number): boolean {
   switch (tool) {
     case "dig":
-      return canDig(world, x, y);
+      // Two states of the same tile, in order: grass becomes dirt, and dirt
+      // becomes a way down. They can't both be true (canDig is grass and
+      // mushrooms, canSink is dirt), so this is one shovel with two answers
+      // rather than a precedence question.
+      return canDig(world, x, y) || canSink(world, x, y);
     case "gather":
       return tileAt(world, x, y) === MUSHROOM; // the one gatherable that isn't a node
     case "plant":
@@ -381,6 +504,28 @@ function toolApplies(world: WorldState, tool: Tool, x: number, y: number): boole
 function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: number): ActionResult {
   switch (tool) {
     case "dig": {
+      // Underground the shovel is a pick, and it cuts the face AHEAD rather
+      // than the floor — see undergroundTarget for why x,y is not underfoot.
+      // Free, like every other kind of digging (DESIGN §Materials): a tunnel
+      // costs time and nothing else.
+      if (world.player.layer === "under") {
+        if (carve(world, x, y)) {
+          // No `witness` here, deliberately. Nobody is down there to see it,
+          // and the town hearing about a hole it cannot visit would be the
+          // memory log inventing an audience.
+          return { kind: "carve", changed: true, message: "The rock comes away in pieces." };
+        }
+        return { kind: "carve", changed: false, message: "Nothing to cut here." };
+      }
+      // The second dig on one tile opens the way down (ROADMAP §"A shaft is two
+      // digs on one tile"). Tried before digWithFind because digWithFind would
+      // otherwise decline the dirt and report nothing to dig — which is what
+      // made this gesture free to claim in the first place.
+      if (canSink(world, x, y)) {
+        sink(world, x, y);
+        witness(world, "dug", undefined, now);
+        return { kind: "sink", changed: true, message: "The earth gives, and keeps giving. There's a way down." };
+      }
       // digWithFind, not dig: the shovel and the ground's contents are one
       // operation, because the payout has to be decided before the dig writes
       // its override (sim/junk.ts explains what splitting them cost).
@@ -472,6 +617,17 @@ export function buildAt(
     if (taken) {
       refund(world.inventory, structureDef(taken.id).cost);
       return { changed: true, message: `${structureDef(taken.id).name} taken back down.`, broke: false };
+    }
+    // A shaft comes up like anything else you put down. ACT has no undo
+    // (ROADMAP §"Undo covers BUILD strokes only") and a hole in the lawn from a
+    // mis-tap is the one dug tile that isn't cheap to live with — so the take-it-
+    // back verb is the one that takes it back. What you cut underneath stays
+    // cut: you are closing the lid, not collapsing the tunnel.
+    if (tileAt(world, x, y) === SHAFT) {
+      if (!fillShaft(world, x, y)) {
+        return { changed: false, message: "Not while you're standing under it.", broke: false };
+      }
+      return { changed: true, message: "Filled in. The ground closes over it.", broke: false };
     }
     if (tileAt(world, x, y) === PLANK) {
       setTile(world, x, y, DIRT);
@@ -567,6 +723,11 @@ function witness(world: WorldState, kind: MemoryKind, value: string | undefined,
   const p = world.player;
   for (const v of world.villagers) {
     v.memory = remember(v.memory, { kind, at: now, value });
+    // Standing THERE means standing there. Villagers are surface creatures, so
+    // once the player has a layer, distance alone stops being enough: without
+    // this check, working in a tunnel would warm whoever happened to be walking
+    // across the field above you, through the ground, having seen nothing.
+    if (p.layer !== "surface") continue;
     if (Math.hypot(v.x - p.x, v.y - p.y) <= TOGETHER_RADIUS) befriend(v, 1);
   }
 }

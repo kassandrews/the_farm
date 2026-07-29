@@ -74,6 +74,9 @@ const ACTION_CUES: Record<ActionKind, Cue> = {
   water: "water",
   harvest: "harvest",
   read: "menu", // a panel opens; the menu cue is what a panel opening sounds like
+  sink: "dig", // still the shovel — it's the second dig on the same tile
+  carve: "dig",
+  shaft: "place", // a foot on a rung: the closest thing here to a solid landing
   none: "menu",
 };
 
@@ -1424,8 +1427,20 @@ export class App {
     });
   }
 
+  /** True while the player is on the lower layer. Several of the town's
+   *  affordances measure DISTANCE and nothing else — talking, build placement,
+   *  bed-picking — and distance stopped being enough the moment a coordinate
+   *  could mean two places. Every one of them asks this first. */
+  private underground(): boolean {
+    return this.world?.player.layer === "under";
+  }
+
   private villagerNear(x: number, y: number): { id: import("../content/cast").CharId; x: number; y: number } | null {
     if (!this.world) return null;
+    // Nobody is down there to tap. Without this you could hold a conversation
+    // with someone standing in a field, through the ceiling, while they walked
+    // over your head.
+    if (this.underground()) return null;
     for (const v of this.world.villagers) {
       if (Math.hypot(v.x - x, v.y - y) <= 0.9) return { id: v.id, x: v.x, y: v.y };
     }
@@ -1433,7 +1448,7 @@ export class App {
   }
 
   private tryTalkNearest(): void {
-    if (!this.world) return;
+    if (!this.world || this.underground()) return; // same ceiling as villagerNear
     const p = this.world.player;
     let best: { id: import("../content/cast").CharId; d: number } | null = null;
     for (const v of this.world.villagers) {
@@ -1459,6 +1474,17 @@ export class App {
    *  leaves — the palette doubles as the mode toggle, so there's no separate
    *  button to hunt for. */
   private selectBuildTool(t: BuildTool): void {
+    // Building stops at the shaft, and this is a correctness gate rather than a
+    // taste one: `world.build` and `world.furniture` are SURFACE records with no
+    // layer in their keys, so a wall placed from below would silently stand up
+    // in the field above you. Rather than teach every build path a layer for a
+    // thing the design doesn't ask for yet, the tunnel simply isn't somewhere
+    // you build.
+    if (this.underground()) {
+      audio.play("deny");
+      this.flash("Not down here. There's nothing to put a wall on but rock.");
+      return;
+    }
     this.buildTool = this.buildTool === t ? null : t;
     this.endAssigning(); // same door, from the other palette
     this.syncToolUi();
@@ -1524,7 +1550,7 @@ export class App {
   /** Apply the held build tool to a tapped tile. Silent on a tile already
    *  painted this drag, so sweeping back and forth doesn't charge twice. */
   private buildAtPoint(clientX: number, clientY: number): void {
-    if (!this.world || !this.buildTool) return;
+    if (!this.world || !this.buildTool || this.underground()) return;
     const wpt = this.renderer.screenToWorld(clientX, clientY);
     const x = Math.round(wpt.x);
     const y = Math.round(wpt.y);
@@ -1556,6 +1582,15 @@ export class App {
       this.openErrands();
       return;
     }
+    // Changing layer puts down anything that only makes sense up top. You can
+    // reach a shaft with a wall in hand (ACT works in build mode), and arriving
+    // underground still holding it would leave the palette lit for a mode that
+    // refuses every tap.
+    if (res.kind === "shaft" && this.buildTool) {
+      this.buildTool = null;
+      this.syncToolUi();
+    }
+    if (res.kind === "shaft") this.endAssigning();
     // The cue follows what actually happened, so a refused action sounds
     // different from a successful one without needing to read the message.
     audio.play(res.changed ? ACTION_CUES[res.kind] : "deny");

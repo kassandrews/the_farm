@@ -531,3 +531,33 @@ describe("v17 → v18: the player carries a layer", () => {
     expect(migrated.player.layer).toBe("surface");
   });
 });
+
+describe("v18 → v19: the player carries a heading", () => {
+  function v18Save(extra: Record<string, unknown> = {}): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const player = { ...(w.player as Record<string, unknown>) };
+    delete player.heading;
+    return { ...w, schemaVersion: 18, player, ...extra };
+  }
+
+  it("faces a returning player the way a new one starts", () => {
+    // There is no heading anywhere in a v18 save to recover, and the first step
+    // the player takes overwrites this before anything can read it. What matters
+    // is that an upgraded town and a fresh one are pointed the same way.
+    const migrated = migrateSave(v18Save())!;
+    expect(migrated.player.heading).toBe("s");
+    expect(migrated.player.heading).toBe(freshWorld().player.heading);
+  });
+
+  it("keeps a heading that is already there", () => {
+    const migrated = migrateSave(v18Save({ player: { ...(v18Save().player as object), heading: "n" } }))!;
+    expect(migrated.player.heading).toBe("n");
+  });
+
+  it("refuses a heading that isn't one", () => {
+    // The save is a blob on someone's disk. A garbage heading would aim ACT at
+    // no cell at all, which underground is the button quietly doing nothing.
+    const migrated = migrateSave(v18Save({ player: { ...(v18Save().player as object), heading: "up" } }))!;
+    expect(migrated.player.heading).toBe("s");
+  });
+});

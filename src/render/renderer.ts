@@ -13,7 +13,7 @@ import type { WorldState, Villager, Player, BuildCell, FurnitureCell, Tool } fro
 import { tileAt, playerTile, actionTarget } from "../sim/game";
 import type { ActionTarget } from "../sim/game";
 import { cropDef, ripeStage } from "../content/crops";
-import { tileDef, PLANK, GRASS, TREE, ROCK } from "../content/tiles";
+import { tileDef, PLANK, GRASS, TREE, ROCK, BEDROCK, ORE_VEIN, SHAFT } from "../content/tiles";
 import { skinDef } from "../content/skins";
 import type { SkinClass } from "../content/skins";
 import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey } from "../sim/world";
@@ -38,6 +38,7 @@ const TARGET_COLOR: Record<ActionTarget["kind"], string> = {
   gather: "rgba(160,255,150,0.9)", // a tree or rock in reach
   tool: "rgba(255,255,255,0.85)", // the held tool has work here
   read: "rgba(190,205,255,0.9)", // the errands board is within reach
+  shaft: "rgba(200,230,255,0.95)", // the way down, or the daylight above you
   none: "rgba(255,255,255,0.3)",
 };
 
@@ -120,6 +121,37 @@ const DOOR_NOTCH = 4;
 const TREE_H = 24;
 const ROCK_H = 13;
 
+// --- The underground ----------------------------------------------------------
+// Two ideas do all the work down here: rock STANDS UP where it has been cut
+// open, and you can only see as far as you are lit.
+
+/** How tall a cut rock face stands. Deliberately shorter than a wall's STOREY:
+ *  it still exceeds TILE, so the face overhangs the rock behind it and a tunnel
+ *  reads as a corridor rather than as pale squares in dark ones — but only just,
+ *  so `hides` never fires and the rock you are standing against can never
+ *  swallow you. There is no cutaway underground to save you if it did. */
+const ROCK_STOREY = 20;
+/** The lit top lip of a cut face, where the light in your hand catches it. */
+const ROCK_CAP = 2;
+
+/** The lamp: clear to LAMP_INNER tiles, gone by LAMP_OUTER.
+ *
+ *  A gradient in SCENE space, not a per-tile alpha. Darkness quantised to the
+ *  grid would put a light and a dark edge on every cell of one continuous
+ *  surface, which is the banding rule (CLAUDE.md) arriving in a new costume —
+ *  and a circle of light that steps in tile-sized rings looks like a bug in a
+ *  way that a soft one never does. */
+const LAMP_INNER = 2.4;
+const LAMP_OUTER = 7.5;
+/** Not 1. Rock at the edge of sight is nearly black but never a void — you can
+ *  still tell a tunnel mouth from the end of the world. */
+const DARK_MAX = 0.94;
+/** Daylight falling down a shaft, at noon. Scaled by the hour, so the holes you
+ *  dug go dim at night: down here, night is the light going out of your own
+ *  entrances. */
+const SHAFT_LIGHT = 0.42;
+const SHAFT_LIGHT_R = 3.2; // tiles
+
 /** How much the flattened build view knocks back anything standing up, so the
  *  ground plan underneath is legible while you're editing it. */
 const BUILD_VIEW_FADE = 0.3;
@@ -127,6 +159,15 @@ const BUILD_VIEW_FADE = 0.3;
 /** Per-frame easing of the roof cutaway. Slow enough to read as a reveal rather
  *  than a switch; fast enough that you're not waiting to see your own room. */
 const ROOF_FADE_RATE = 0.16;
+
+/** The same idea one layer down: an ore vein is rock as far as the bevel is
+ *  concerned, so the lip is drawn where the ROCK ends and not around every
+ *  vein. Outlining veins would let you read them off across a dark room, and
+ *  the whole point of their low contrast is that you meet one at the face you
+ *  are digging (content/tiles.ts §Underground). */
+function rockIdOf(id: number): number {
+  return id === ORE_VEIN ? BEDROCK : id;
+}
 
 /** What the FLAT layer actually paints for a tile id. Resource nodes stand up
  *  in the raised pass, so the flat layer shows the ground they're rooted in —
@@ -174,6 +215,10 @@ export class Renderer {
   private blockedSteps: { x: number; y: number }[] = [];
   /** Beds offered while choosing someone a home — see setHomeCandidates. */
   private homeCandidates: { x: number; y: number; ok: boolean }[] = [];
+  /** Shafts collected during the underground flat pass, so the daylight pools
+   *  in drawDark cost one entry per VISIBLE hole rather than a scan of every
+   *  edit the player has ever made. Same trick as blockedSteps above. */
+  private litShafts: { x: number; y: number }[] = [];
 
   // --- Roof index and cutaway state -------------------------------------------
   // Rebuilt only when the sim hands back a different rooms array — its own cache
@@ -268,30 +313,49 @@ export class Renderer {
 
     const phase = skyPhaseAt(now);
     const night = isNight(phase);
+    // Which world we are drawing. Below, nearly every pass in this method is a
+    // SURFACE fact — crops, the tent, the museum's cases, roofs, villagers —
+    // and skipping them is not an optimisation but the point: the underground
+    // is the one continuous world with none of that in it.
+    const under = world.player.layer === "under";
 
-    // Sky/base wash — a flat ground tone behind the tiles for any gaps.
-    ctx.fillStyle = night ? "#26324a" : "#7fae54";
+    // Sky/base wash — a flat ground tone behind the tiles for any gaps. There
+    // is no sky underground, so the gap colour is the dark itself.
+    ctx.fillStyle = under ? "#0b0908" : night ? "#26324a" : "#7fae54";
     ctx.fillRect(0, 0, this.sw, this.sh);
 
-    this.syncRoofs(world);
+    if (!under) this.syncRoofs(world);
 
     // Flat ground first, then everything with height in one depth-sorted pass.
     this.raised.length = 0;
     this.blockedSteps.length = 0;
-    this.drawTiles(world, t, night);
-    if (this.buildView) this.drawBuildGrid();
-    this.drawCrops(world, now);
-    this.collectTent(world, night);
-    this.collectPlinths(world);
-    this.collectMovers(world, t, night);
+    this.litShafts.length = 0;
+    this.drawTiles(world, t, night, under);
+    if (this.buildView && !under) this.drawBuildGrid();
+    if (!under) {
+      this.drawCrops(world, now);
+      this.collectTent(world, night);
+      this.collectPlinths(world);
+    }
+    this.collectMovers(world, t, night, under);
     this.flushRaised();
-    this.drawTargetTile(world);
-    this.drawBlockedSteps(t);
-    this.drawHomeCandidates(t);
 
-    // Real-clock day/night wash over the whole scene.
+    // The dark goes over the scene but UNDER the reticle. The reticle is the
+    // promise (ROADMAP), and a promise you can't read at the far edge of your
+    // own lamp is worse than no promise — it's the button pointing somewhere
+    // you have to guess about.
+    if (under) this.drawDark(world, now);
+    this.drawTargetTile(world);
+    if (!under) {
+      this.drawBlockedSteps(t);
+      this.drawHomeCandidates(t);
+    }
+
+    // Real-clock day/night wash over the whole scene. Not underground: a cave
+    // looks the same at 3am as at noon, and the only dark down there that means
+    // anything is the one your lamp is holding back.
     const tint = tintAt(now);
-    if (tint.overlay) {
+    if (tint.overlay && !under) {
       ctx.fillStyle = tint.overlay;
       ctx.fillRect(0, 0, this.sw, this.sh);
     }
@@ -302,7 +366,7 @@ export class Renderer {
   // each is touched via getChunk, so the camera streams chunks in as it moves
   // and only what's on screen is ever generated. Within a chunk, tiles still go
   // through tileAt so player edits (which live outside the chunk) win.
-  private drawTiles(world: WorldState, t: number, night: boolean): void {
+  private drawTiles(world: WorldState, t: number, night: boolean, under: boolean): void {
     const x0 = Math.floor(this.cam.x - this.sw / (2 * TILE)) - 1;
     const x1 = Math.ceil(this.cam.x + this.sw / (2 * TILE)) + 1;
     const y0 = Math.floor(this.cam.y - this.sh / (2 * TILE)) - 1;
@@ -312,8 +376,11 @@ export class Renderer {
     const c1 = chunkCoordOf(x1, y1);
     for (let cy = c0.cy; cy <= c1.cy; cy++) {
       for (let cx = c0.cx; cx <= c1.cx; cx++) {
-        getChunk(world, cx, cy); // stream it in (and keep it resident)
-        this.drawChunkTiles(world, cx, cy, x0, x1, y0, y1, t, night);
+        // Stream it in (and keep it resident). The lower layer has its own
+        // chunks under their own keys, so the camera streams rock exactly the
+        // way it streams grass and nothing here assumes a bounded world.
+        getChunk(world, cx, cy, under ? "under" : "surface");
+        this.drawChunkTiles(world, cx, cy, x0, x1, y0, y1, t, night, under);
       }
     }
   }
@@ -329,6 +396,7 @@ export class Renderer {
     y1: number,
     t: number,
     night: boolean,
+    under: boolean,
   ): void {
     const ctx = this.ctx;
     const tyStart = Math.max(y0, cy * CHUNK);
@@ -338,6 +406,10 @@ export class Renderer {
 
     for (let ty = tyStart; ty <= tyEnd; ty++) {
       for (let tx = txStart; tx <= txEnd; tx++) {
+        if (under) {
+          this.drawUnderCell(world, tx, ty);
+          continue;
+        }
         const id = tileAt(world, tx, ty);
         // Resource nodes stand up, so the flat pass draws only the ground they
         // stand ON and defers the node itself to the raised pass. Without this
@@ -447,8 +519,177 @@ export class Renderer {
             ctx.fillRect(gx + 1, gy - 1, 1, 1);
           }
         }
+        if (id === SHAFT) this.drawShaftMouth(px, py);
         this.drawDoorstep(world, tx, ty, px, py);
       }
+    }
+  }
+
+  /** A shaft, seen from above: spoil heaped on the far lip, the dark of the hole
+   *  itself, and the top of the ladder going down into it.
+   *
+   *  The tile's own colour is nearly black, which on its own reads as a missing
+   *  texture rather than as a way down — every other thing in this world has a
+   *  lip and a lit edge. The earth on the near side has to be brighter than the
+   *  hole for the hole to look like a hole. */
+  private drawShaftMouth(px: number, py: number): void {
+    const ctx = this.ctx;
+    ctx.fillStyle = "#8f6339"; // dug earth around the mouth
+    ctx.fillRect(px, py, TILE, 3);
+    ctx.fillStyle = "#bd8a58"; // the sunlit crumb along the top of the heap
+    ctx.fillRect(px + 1, py, TILE - 2, 1);
+    ctx.fillStyle = "#6b5333"; // the ladder, in its own shadow
+    ctx.fillRect(px + 5, py + 3, 2, TILE - 4);
+    ctx.fillRect(px + TILE - 7, py + 3, 2, TILE - 4);
+    ctx.fillStyle = "#7d6340";
+    for (let i = 4; i < TILE - 2; i += 4) ctx.fillRect(px + 6, py + i, TILE - 12, 1);
+  }
+
+  // --- The lower layer ---------------------------------------------------------
+  // One cell of rock or cave floor. The surface's flat pass and this one are
+  // deliberately separate methods rather than one method full of `if (under)`:
+  // almost nothing they draw is the same, and the underground's whole character
+  // is that it has none of what the surface has.
+
+  private drawUnderCell(world: WorldState, tx: number, ty: number): void {
+    const ctx = this.ctx;
+    const id = tileAt(world, tx, ty, "under");
+    // Uncarved rock is painted as ROCK, vein or not. The tile table already
+    // keeps the two colours close, but close is not the same as hidden: in a
+    // field of one dark tone the eye finds the odd one instantly, and on screen
+    // a town's veins showed up as pale squares floating in the dark, readable
+    // through solid stone from across the map. A vein is met at the face you
+    // are cutting (content/tiles.ts) — so it is drawn there, in drawRockFace,
+    // and nowhere else.
+    const mat = rockIdOf(id);
+    const def = tileDef(mat);
+    const px = Math.round(this.sceneX(tx) - TILE / 2);
+    const py = Math.round(this.sceneY(ty) - TILE / 2);
+
+    ctx.fillStyle = def.color;
+    ctx.fillRect(px, py, TILE, TILE);
+
+    // Same bevel rule as the surface, and for the same reason: only where the
+    // material actually changes, or a field of rock stripes into blinds.
+    if (def.top && rockIdOf(tileAt(world, tx, ty - 1, "under")) !== mat) {
+      ctx.fillStyle = def.top;
+      ctx.fillRect(px, py, TILE, 1);
+    }
+    if (def.shade && rockIdOf(tileAt(world, tx, ty + 1, "under")) !== mat) {
+      ctx.fillStyle = def.shade;
+      ctx.fillRect(px, py + TILE - 1, TILE, 1);
+    }
+
+    // Rock that has been opened up STANDS. Only on cells whose southern
+    // neighbour is not rock, which is to say only where the rock face is a face
+    // — the "draw the edge where the surface actually ends" rule (CLAUDE.md).
+    // A solid field of stone draws none of this and stays flat and quiet, which
+    // is also what it is: you cannot see into it.
+    if (mat === BEDROCK && !tileDef(tileAt(world, tx, ty + 1, "under")).solid) {
+      const x = tx;
+      const y = ty;
+      this.raised.push({ y, bias: BIAS_TERRAIN, draw: () => this.drawRockFace(world, x, y) });
+    }
+
+    // The way back. A shaft is stored ONCE, on the surface (world.ts), so from
+    // down here it is a surface read at a coordinate whose own tile is ordinary
+    // cave floor — the one place this pass looks up rather than around.
+    if (tileAt(world, tx, ty) === SHAFT) {
+      this.litShafts.push({ x: tx, y: ty });
+      this.drawLadder(px, py);
+    }
+  }
+
+  /** The cut face of the rock, standing out of its cell toward you.
+   *
+   *  This is where ore is actually seen. The flat top of a vein is drawn barely
+   *  different from stone on purpose, but the FACE is the thing you are looking
+   *  at while you dig, so that is where the metal shows — you meet a vein at the
+   *  face you're cutting, never across a room (content/tiles.ts §Underground). */
+  private drawRockFace(world: WorldState, tx: number, ty: number): void {
+    const ctx = this.ctx;
+    const id = tileAt(world, tx, ty, "under");
+    const px = Math.round(this.sceneX(tx) - TILE / 2);
+    const base = Math.round(this.sceneY(ty) + TILE / 2);
+    const top = base - ROCK_STOREY;
+
+    ctx.fillStyle = "#332e28";
+    ctx.fillRect(px, top, TILE, ROCK_STOREY);
+    ctx.fillStyle = "#4d463c"; // the lip your light catches
+    ctx.fillRect(px, top, TILE, ROCK_CAP);
+
+    // Vertical edges only where the run of rock stops — between two faces there
+    // is no edge, because there is no corner there.
+    ctx.fillStyle = "#26221d";
+    if (rockIdOf(tileAt(world, tx - 1, ty, "under")) !== BEDROCK) ctx.fillRect(px, top, 1, ROCK_STOREY);
+    if (rockIdOf(tileAt(world, tx + 1, ty, "under")) !== BEDROCK) ctx.fillRect(px + TILE - 1, top, 1, ROCK_STOREY);
+
+    // A seam of ore in the face, placed by the tile's stable hash so it sits
+    // still once you are looking at it.
+    if (id === ORE_VEIN) {
+      const h = decoHash(tx, ty, world.seed);
+      const ox = px + 3 + Math.floor(h * 7);
+      const oy = top + ROCK_CAP + 2 + Math.floor((h * 41) % 8);
+      ctx.fillStyle = "#7e6a44";
+      ctx.fillRect(ox, oy, 3, 2);
+      ctx.fillRect(ox + 3, oy + 2, 2, 2);
+      ctx.fillStyle = "#a9925c"; // the one bright fleck that says metal
+      ctx.fillRect(ox + 1, oy, 1, 1);
+      ctx.fillRect(ox + 4, oy + 2, 1, 1);
+    }
+  }
+
+  /** The ladder in a shaft, seen from below: two rails and the rungs between
+   *  them, lying in the cell you climb out of. */
+  private drawLadder(px: number, py: number): void {
+    const ctx = this.ctx;
+    ctx.fillStyle = "#8a6a44";
+    ctx.fillRect(px + 4, py + 1, 2, TILE - 2);
+    ctx.fillRect(px + TILE - 6, py + 1, 2, TILE - 2);
+    ctx.fillStyle = "#a8895c";
+    for (let i = 2; i < TILE - 2; i += 4) ctx.fillRect(px + 5, py + i, TILE - 10, 1);
+  }
+
+  /** The dark, and the two things that hold it back.
+   *
+   *  A radial gradient in scene space rather than a per-tile alpha — see the
+   *  LAMP_ constants for why quantising this to the grid would be the banding
+   *  rule wearing a hat. Canvas extends a radial gradient's last stop past its
+   *  outer radius, so one fill over the viewport covers everything: lit near
+   *  you, effectively black far away, with nothing to clip.
+   *
+   *  Then the daylight coming down your own shafts, added back on top. This is
+   *  the one thing down here that knows what time it is: at noon a hole is a
+   *  pool of warm light you can navigate by, and at night it isn't. Nothing is
+   *  gated on it — you can dig at 3am perfectly well — it is just that the way
+   *  out stops advertising itself. */
+  private drawDark(world: WorldState, now: number): void {
+    const ctx = this.ctx;
+    const px = this.sceneX(world.player.x);
+    const py = this.sceneY(world.player.y);
+
+    const lamp = ctx.createRadialGradient(px, py, LAMP_INNER * TILE, px, py, LAMP_OUTER * TILE);
+    lamp.addColorStop(0, "rgba(8,6,5,0)");
+    lamp.addColorStop(0.5, "rgba(8,6,5,0.45)");
+    lamp.addColorStop(1, `rgba(8,6,5,${DARK_MAX})`);
+    ctx.fillStyle = lamp;
+    ctx.fillRect(0, 0, this.sw, this.sh);
+
+    const day = 1 - tintAt(now).darkness;
+    if (day > 0.02) {
+      const prev = ctx.globalCompositeOperation;
+      ctx.globalCompositeOperation = "lighter";
+      const r = SHAFT_LIGHT_R * TILE;
+      for (const s of this.litShafts) {
+        const sx = this.sceneX(s.x);
+        const sy = this.sceneY(s.y);
+        const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, r);
+        g.addColorStop(0, `rgba(255,238,196,${(SHAFT_LIGHT * day).toFixed(3)})`);
+        g.addColorStop(1, "rgba(255,238,196,0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
+      }
+      ctx.globalCompositeOperation = prev;
     }
   }
 
@@ -1168,8 +1409,12 @@ export class Renderer {
   // --- Movers -----------------------------------------------------------------
   // No longer sorted among themselves — they go into the one raised pass so a
   // villager sorts against trees and (soon) walls, not only against each other.
-  private collectMovers(world: WorldState, t: number, night: boolean): void {
-    for (const v of world.villagers) {
+  private collectMovers(world: WorldState, t: number, night: boolean, under: boolean): void {
+    // Villagers are surface creatures — they carry no layer at all (types.ts),
+    // which is exactly why they must be skipped rather than filtered: drawing
+    // them from below would put the whole town's daily round in your tunnel,
+    // walking through solid rock. Down there you are on your own until the Mole.
+    for (const v of under ? [] : world.villagers) {
       // The Quiet Ghost only shows at real-clock night (DESIGN §secret forms).
       if (v.form === "ghost" && !night) continue;
       this.raised.push({ y: v.y, bias: BIAS_MOVER, draw: () => this.drawVillager(v, t, night) });
