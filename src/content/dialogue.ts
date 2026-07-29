@@ -74,6 +74,10 @@ export const RESIDENT_IDLE: Partial<Record<AdultForm, string[]>> = {
 // `v` is the remembered value (a Meadow name, a food, a witnessed thing).
 export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, ((v: string) => string)[]>>>> = {
   scholar: {
+    hum: [
+      () => "The cube. Out past everything. It hums and it does not explain itself, and I have decided that is its right.",
+      () => "I stood in front of it for some time. I took no notes. ... I want that on the record.",
+    ],
     // A day spent with you, and a day spent with you UNDERGROUND (sim/company.ts).
     // Two kinds, because they are two different afternoons.
     company: [
@@ -121,7 +125,12 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
   },
   // --- Errands and company, for the rest of the cast -------------------------
-  // THESE THREE KINDS GET EVERY FORM, which no other memory kind here can say.
+  // THESE FOUR KINDS GET EVERY FORM, which no other memory kind here can say.
+  // (`hum` joined them in 4c for the same argument in its purest form: the walk
+  // out to the Cube pays NOTHING else — no item, no unlock, nothing gates on it
+  // — so the line is not merely the payment, it is the entire payout, and a
+  // bank only the Scholar had would leave five sixths of the town with nothing
+  // to show for the longest walk in the game.)
   // That is deliberate rather than thorough, and it is the same argument twice.
   //
   // The asker on a card is picked from whoever is standing in the town
@@ -135,6 +144,10 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
   // The rest of these banks stay thin (ROADMAP §Known gaps: only the Scholar has
   // a full one). These are the kinds where thin isn't good enough.
   dog: {
+    hum: [
+      () => "The BOX! The humming box! I felt it in my feet! I still feel it in my feet!",
+      () => "We went to the hum. I didn't bark at it. I thought about it and I chose not to.",
+    ],
     company: [
       () => "We went TOGETHER. I think about it constantly. Constantly.",
       () => "You took me with you. Best decision anyone has made. Ever. Including me.",
@@ -149,6 +162,10 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
   },
   blob: {
+    hum: [
+      () => "A cube, alone in a field, holding one note forever. ... I have never been so upstaged.",
+      () => "It hums. That is the entire performance and it has been running for longer than any of us.",
+    ],
     company: [
       () => "We toured. I gave it my all. Nobody applauded. That is also a kind of triumph.",
       () => "I accompanied you once. It was, I think, my subtlest work.",
@@ -163,6 +180,10 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
   },
   menace: {
+    hum: [
+      () => "You walked me all the way out to a box. ... It was worth it. I will deny saying so.",
+      () => "It hums in a key I would not have chosen. It is very sure of itself. I respect that.",
+    ],
     company: [
       () => "We walked out together. I was seen with you. Publicly. Draw your own conclusions.",
       () => "That outing was acceptable. I've said all I intend to say about it.",
@@ -177,6 +198,10 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
   },
   gremlin: {
+    hum: [
+      () => "The humming one! I tried to take a bit of it. There isn't a bit of it. It's all the bit.",
+      () => "Nobody knows it's out there. ... You do. I do. That's a small enough number to be interesting.",
+    ],
     company: [
       () => "We went round together. I found four things. You saw two of them.",
       () => "You brought me along and didn't watch my hands the whole time. That's trust. Sort of.",
@@ -191,6 +216,9 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
   },
   carrot: {
+    hum: [
+      () => "I heard it before I saw it. ... I have not decided what I think. It has been some time."
+    ],
     company: [
       () => "We walked out. The stall kept. Nothing was lost. ... It was a good day.",
     ],
@@ -202,6 +230,9 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
   },
   office: {
+    hum: [
+      () => "There is a cube. It is not on any form. I have chosen not to raise it with anyone."
+    ],
     company: [
       () => "We went out. No agenda, no minutes, no follow-up. I still think about it.",
     ],
@@ -564,6 +595,45 @@ export const MOLE_SHALLOW: string[] = [
   "I'm not going anywhere. That's not the same as being pleased.",
   "Somebody could just... wander in. Somebody does.",
   "... It was remote.",
+];
+
+// --- The Quiet Ghost ----------------------------------------------------------
+// The second individual voice, and it had to be as distinct from the Mole's as
+// his is from the town's, because they are structurally the same character —
+// somebody you find by walking too far — and if they sounded alike, finding the
+// second one would feel like finding the first one again.
+//
+// So: he is terse because he is interrupted. She is unhurried because she has
+// nowhere to be and no particular sense of how long you have been standing
+// there. He never mentions anything you haven't found. She mentions things
+// freely and none of them are directions — she talks about the trees, the dark,
+// and the hour, all of which you can see for yourself.
+//
+// She never says the word walnut and never mentions a finish. The wood is the
+// grove's to give (sim/gather.ts) and she has no idea what you do with it.
+
+/** Before you have taken any of the dark wood. */
+export const GHOST_QUIET: string[] = [
+  "...",
+  "Oh. ... You came all the way out.",
+  "It's dark here in the day, too. That's the trees.",
+  "I don't mind the hour. The hour is the only bit I'm sure of.",
+  "Nobody comes out this far. ... That isn't a complaint.",
+  "You can sit down. It's dry under them.",
+  "I was here before the town. I think. It's a long time to be certain about.",
+  "Listen. ... No, that's it. That's the listening.",
+];
+
+/** And after. She has an opinion and it is not a rule: nothing stops you, the
+ *  trees come back on the ordinary eight hours, and she stays exactly where she
+ *  is. Read off the live world (sim/ghost.ts §groveCut), like the Mole's. */
+export const GHOST_CUT: string[] = [
+  "You took one. ... They come back. Everything out here comes back.",
+  "It's darker at the heart than it looks. People are always surprised.",
+  "I heard it go over. It's a particular sound, that one.",
+  "Take another if you need it. I'd rather you took it from here than somewhere you'd have to explain.",
+  "There's a gap now. ... I like the gap, actually. More sky.",
+  "You'll build with it. ... Good. It ought to be somewhere warm.",
 ];
 
 /** Fixed-cast idle banks by character. */

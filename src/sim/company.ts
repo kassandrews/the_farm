@@ -28,7 +28,7 @@
 
 import type { WorldState, Villager } from "./types";
 import type { CharId, CharDef } from "../content/cast";
-import { charDef, scheduledStop } from "../content/cast";
+import { charDef, scheduledStop, isSecret } from "../content/cast";
 import { remember } from "./memory";
 import { atLeast } from "./friendship";
 
@@ -68,16 +68,21 @@ export function isCompanion(world: WorldState, id: CharId): boolean {
  *  institution that can leave, because he is the one institution that already
  *  does. The other six stay where they are.
  *
- *  The Mole is excluded for his own reason and it is not institutional: he does
- *  not go up. He says so, in his own bank, unprompted. Asking him along would be
- *  the panel forgetting the one fact he has volunteered about himself. */
-const ROOTED: CharId[] = ["office", "shop", "heap", "museum", "seedstall", "stage", "mole"];
+ *  THE SECRETS ARE NOT ON THIS LIST AND ARE STILL REFUSED, one line down, via
+ *  `isSecret`. They were on it, back when there was one of them: the Mole was a
+ *  seventh string here because he does not go up, and he says so in his own bank
+ *  unprompted. But the list is about INSTITUTIONS — about a counter nobody would
+ *  be standing at — and that is not why a Ghost can't come with you. She can't
+ *  come with you because the town has never heard of her and she is only there
+ *  at night. Keeping the two reasons apart is what stopped this array quietly
+ *  becoming "everyone we couldn't think of a home for". */
+const ROOTED: CharId[] = ["office", "shop", "heap", "museum", "seedstall", "stage"];
 
 /** Why somebody won't come. Shaped like sim/assign.ts's `Disqualifier` and for
  *  the same reason: two callers need this fact in different voices, and a
  *  boolean would make each of them re-derive it until they disagreed. */
 export type Refusal =
-  | "rooted" // they are their counter, or they are the Mole
+  | "rooted" // they are their counter, or the town has never heard of them
   | "stranger" // you barely know each other
   | "abed" // their day is over; they are going home, or already there
   | "busy"; // somebody else is already with you
@@ -98,7 +103,13 @@ const INVITE_TIER = "familiar" as const;
  *  used twice — the UI shows the button, `invite` enforces it. */
 export function canInvite(world: WorldState, v: Villager, now: number): Invitation {
   if (world.company && world.company.id !== v.id) return { ok: false, why: "busy" };
-  if (ROOTED.includes(v.id)) return { ok: false, why: "rooted" };
+  // Both before the tier check, so nobody is ever refused for being a stranger
+  // when the real answer is that they were never coming. And both before
+  // `dayOver`, which would refuse the Ghost for a reason that is nearly the
+  // opposite of the truth: her stop is not `at: "home"` and the hour is past
+  // nine, so the one person who only exists after dark would be told she was
+  // going to bed.
+  if (ROOTED.includes(v.id) || isSecret(v.id)) return { ok: false, why: "rooted" };
   if (!atLeast(v, INVITE_TIER)) return { ok: false, why: "stranger" };
   if (dayOver(charDef(v), now)) return { ok: false, why: "abed" };
   return { ok: true };

@@ -34,7 +34,9 @@ import { count } from "../sim/inventory";
 import { beginStroke, captureCell, endStroke, undoStroke, canUndo, undoLabel } from "../sim/undo";
 import { qualify, assign, beds, rehomeAcrossStroke, bedKeys, pendingRehome, DISQUALIFIER_TEXT } from "../sim/assign";
 import type { CharId, NewcomerId } from "../content/cast";
-import { isNewcomer } from "../content/cast";
+import { isNewcomer, isSecret, charDef } from "../content/cast";
+import { present } from "../sim/presence";
+import { humLevel } from "../sim/hum";
 import {
   openCommission,
   commissionFor,
@@ -392,7 +394,7 @@ export class App {
   private openDialogue(villagerId: CharId): void {
     if (!this.world) return;
     const world = this.world;
-    const speech = talk(world, villagerId, this.rng);
+    const speech = talk(world, villagerId, this.rng, Date.now());
     if (!speech) return;
     audio.play("talk");
 
@@ -420,11 +422,12 @@ export class App {
     // step 4). It only appears when there's a bed in town to offer — an option
     // that's always there and usually does nothing is a worse tutorial than no
     // option at all.
-    // Never to the Mole. He is not homeless, he is not waiting on anything, and
-    // he lives where he lives — offering him a bed in town is the panel
+    // Never to a secret. None of them is homeless, none is waiting on anything,
+    // and each lives where they live — offering one a bed in town is the panel
     // mistaking "somebody you can talk to" for "somebody who might move in".
-    // Found on screen: he was politely offered a room in the plaza.
-    const offerable = beds(world).length > 0 && villagerId !== "mole";
+    // Found on screen with the Mole, who was politely offered a room in the
+    // plaza; `isSecret` is what stops it being found again with each new one.
+    const offerable = beds(world).length > 0 && !isSecret(villagerId);
 
     // Company, on the same terms and for the same reason: asking somebody along
     // is a CONVERSATION, not a mode you toggle from a toolbar. The button only
@@ -494,10 +497,12 @@ export class App {
 
     this.openModal(
       (close) =>
-        // The Mole is not a farm resident and the subtitle should not claim he
-        // is. It says where he is rather than who he is — he stays
-        // undocumented, and the player already knows they walked here.
-        panel(speech.who, villagerId === "mole" ? "Underground" : "Farm resident", [
+        // A secret is not a farm resident and the subtitle should not claim one
+        // is. It says where they are rather than who they are — they stay
+        // undocumented, and the player already knows they walked here. The
+        // string is the character's own (`CharDef.subtitle`) rather than a
+        // ternary that grew a branch per secret.
+        panel(speech.who, charDef(them).subtitle ?? "Farm resident", [
           el("p", {}, [speech.text]),
           actionRow([
             ...(offerable
@@ -1519,7 +1524,10 @@ export class App {
   private villagerNear(x: number, y: number): { id: import("../content/cast").CharId; x: number; y: number } | null {
     if (!this.world) return null;
     for (const v of this.world.villagers) {
-      if (!this.sameLayer(v)) continue;
+      // Present as well as on this layer. Without the first check a Ghost you
+      // met last night is still standing in the grove at noon as far as this
+      // function is concerned — invisible, and tappable (sim/presence.ts).
+      if (!this.sameLayer(v) || !present(v, Date.now())) continue;
       if (Math.hypot(v.x - x, v.y - y) <= 0.9) return { id: v.id, x: v.x, y: v.y };
     }
     return null;
@@ -1542,7 +1550,7 @@ export class App {
     const p = this.world.player;
     let best: { id: import("../content/cast").CharId; d: number } | null = null;
     for (const v of this.world.villagers) {
-      if (!this.sameLayer(v)) continue;
+      if (!this.sameLayer(v) || !present(v, Date.now())) continue;
       const d = Math.hypot(v.x - p.x, v.y - p.y);
       if (d <= 2.6 && (!best || d < best.d)) best = { id: v.id, d };
     }
@@ -1729,6 +1737,9 @@ export class App {
 
     if (this.world) {
       this.renderer.draw(this.world, Date.now());
+      // The hum is a fact about distance, so the number comes from sim
+      // (sim/hum.ts) and this line is the whole of the UI's part in it.
+      audio.setHum(humLevel(this.world));
       this.hud.clock.textContent = clockLabel(Date.now());
       if (now - this.lastSaveAt > AUTOSAVE_MS) {
         this.lastSaveAt = now;
@@ -1737,6 +1748,7 @@ export class App {
     }
     this.raf = requestAnimationFrame(this.loop);
   };
+
 
   // --- Modal plumbing ---------------------------------------------------------
   /** Open a panel. `dismissable` adds the two escape hatches a panel you only

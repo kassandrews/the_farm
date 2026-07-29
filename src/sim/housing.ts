@@ -25,7 +25,7 @@ import type { ScheduleStop } from "../content/cast";
 import { charDef, scheduledStop } from "../content/cast";
 import { authoredBed } from "../content/town";
 import { cellsFor } from "./furniture";
-import { isWalkable, tileKey, parseTileKey, warrenChamber } from "./world";
+import { isWalkable, tileKey, parseTileKey, warrenChamber, groveCentre } from "./world";
 
 /** Which way we look for somewhere to stand beside a bed. Orthogonals only, in
  *  the same order as sim/path.ts steps — north, east, south, west — so the
@@ -36,6 +36,23 @@ const AROUND: [number, number][] = [
   [1, 0],
   [0, 1],
   [-1, 0],
+];
+
+/** Where a visitor to the homestead looks for somewhere to stand, in order:
+ *  just south of the plot origin first, because that is the side you approach
+ *  your own tent from and she should be in front of you rather than behind the
+ *  canvas. Then the rest of the ring, then a wider step out. Total, like every
+ *  other resolution in this file — the last resort is the origin itself. */
+const LANDING: [number, number][] = [
+  [0, 1],
+  [1, 0],
+  [-1, 0],
+  [0, -1],
+  [1, 1],
+  [-1, 1],
+  [2, 0],
+  [-2, 0],
+  [0, 2],
 ];
 
 /** The bed this villager has claimed, if it is still a bed and still there.
@@ -91,6 +108,27 @@ export function stopTarget(world: WorldState, v: Villager, now: number): Schedul
   if (stop.at === "warren") {
     const chamber = warrenChamber(world.seed);
     return { ...stop, x: chamber.x, y: chamber.y };
+  }
+  // The grove, same shape: a seed answers it, so it cannot fail. She stands in
+  // the clearing at its heart, which generation keeps free of trees for exactly
+  // this — there has to be somewhere in there to stand.
+  if (stop.at === "grove") {
+    const centre = groveCentre(world.seed, world.homestead.spot);
+    return { ...stop, x: centre.x, y: centre.y };
+  }
+  // The homestead is a question about the PLAYER's plot rather than about the
+  // seed, which is the only reason it's a fourth case and not the same one.
+  // Beside the origin rather than on it, and searched rather than offset: your
+  // tent is there, and by the time she turns up you may have built over the rest
+  // of it. She stands wherever there is room, which is what a visitor does.
+  if (stop.at === "homestead") {
+    const { originX, originY } = world.homestead;
+    for (const [dx, dy] of LANDING) {
+      const x = originX + dx;
+      const y = originY + dy;
+      if (isWalkable(world, x, y)) return { ...stop, x, y };
+    }
+    return { ...stop, x: originX, y: originY };
   }
   if (stop.at !== "home") return stop;
   const home = homeStand(world, v);

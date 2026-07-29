@@ -50,6 +50,13 @@ export const ORE_VEIN: TileId = 12; // a resource node in the rock, seen only on
 // can never half-exist on one layer and not the other.
 export const SHAFT: TileId = 13;
 
+// The secrets (Phase 4c). Both are GENERATED terrain rather than anything the
+// town stamps or a migration hands you — a secret that arrives in your save is
+// a fixture you happen not to have visited yet (see sim/mole.ts). Neither is
+// listed anywhere in the UI; you find them by walking out.
+export const DARK_TREE: TileId = 14; // the Ghost's grove; a tree in four numbers
+export const HUM_CUBE: TileId = 15; // the landmark that hums. Solid, and that's all
+
 export const TILES: Record<TileId, TileDef> = {
   [GRASS]: {
     id: GRASS,
@@ -161,6 +168,36 @@ export const TILES: Record<TileId, TileDef> = {
     // Reads as a hole from above and as daylight from below; the renderer gives
     // it a ladder. Never solid — stepping onto it is how you use it.
     color: "#241f1a",
+  },
+  // --- The secrets -----------------------------------------------------------
+  // A dark tree is a TREE with a different palette: same solidity, same
+  // gathering, same regrowth, and it drops the same `wood`. There is no walnut
+  // wood in the satchel and never will be (DESIGN §Materials — three gathered
+  // classes, ever); what the grove holds is the FINISH, which is a different
+  // axis entirely and weighs nothing.
+  [DARK_TREE]: {
+    id: DARK_TREE,
+    name: "Dark tree",
+    color: "#40503a",
+    top: "#4a5b42",
+    shade: "#334130",
+    solid: true,
+  },
+  // Solid, and solidity is the whole of its protection. You cannot stand on it,
+  // so the shovel and the hoe (which act on the tile underfoot) can never reach
+  // it; it has no NodeDef, so gathering ignores it. It is untouchable without a
+  // single rule saying so — which is better than a rule, because nothing here
+  // is protected from you on purpose (the Mole's road).
+  [HUM_CUBE]: {
+    id: HUM_CUBE,
+    // Named plainly. It is not called "the Humming Cube" anywhere the game can
+    // show you, because nothing in the game ever says its name — you stand next
+    // to it and it hums.
+    name: "Cube",
+    color: "#5a5f72",
+    top: "#6b7085",
+    shade: "#464a5a",
+    solid: true,
   },
   [FARMLAND_WET]: {
     id: FARMLAND_WET,

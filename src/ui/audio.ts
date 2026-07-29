@@ -95,6 +95,10 @@ class Audio {
   /** Flip mute and remember it. Returns the new state. */
   toggleMute(): boolean {
     this.muted = !this.muted;
+    // Cues stop being played because `ensure` refuses; the hum is already
+    // running, so it has to be told (see stopHum). The frame loop starts it
+    // again by itself if you unmute while standing next to the thing.
+    if (this.muted) this.stopHum();
     try {
       localStorage.setItem(MUTE_KEY, this.muted ? "1" : "0");
     } catch {
@@ -155,6 +159,86 @@ class Audio {
     } catch {
       // A cue failing mid-flight must never interrupt gameplay.
     }
+  }
+
+  // --- The hum ------------------------------------------------------------------
+  // The one sustained sound in the game, and the first thing here that is not a
+  // cue. Every other sound is an event — you did a thing, it made a noise — and
+  // this is a PLACE making a noise whether or not you do anything, which is the
+  // whole of what the Humming Cube is (DESIGN §"a landmark that hums").
+  //
+  // Two oscillators a fifth apart, detuned a little, through a lowpass: a drone
+  // rather than a test tone. It is never loud. You should not be able to tell
+  // exactly when it started.
+  //
+  // NOT the only way to find the cube, and that is deliberate — it is a visible
+  // object standing in a field, and muting the game must not hide anything. The
+  // hum confirms; it does not steer (ROADMAP §4c).
+
+  private humOsc: OscillatorNode[] = [];
+  private humGain: GainNode | null = null;
+
+  /** Drive the hum. `level` is 0..1 — silence at 0, and the caller decides the
+   *  curve (see ui/app.ts, which reads it off distance to the cube).
+   *
+   *  Safe to call every frame: it builds the nodes on the first audible call,
+   *  ramps smoothly after that, and tears everything down once it hits zero, so
+   *  a player who has never been near the cube pays nothing for it. */
+  setHum(level: number): void {
+    const wanted = Math.max(0, Math.min(1, level));
+    if (wanted <= 0) {
+      this.stopHum();
+      return;
+    }
+    if (!this.ensure()) return;
+    const ctx = this.ctx!;
+    try {
+      if (!this.humGain) {
+        const gain = ctx.createGain();
+        gain.gain.value = 0.0001;
+        const filter = ctx.createBiquadFilter();
+        filter.type = "lowpass";
+        filter.frequency.value = 500; // takes the edge off; leaves the body
+        gain.connect(filter);
+        filter.connect(this.master!);
+        for (const freq of [55, 82.5]) {
+          const osc = ctx.createOscillator();
+          osc.type = "sine";
+          osc.frequency.value = freq;
+          // A cent or two out, so the two never phase-lock into one flat tone.
+          osc.detune.value = freq === 55 ? -4 : 5;
+          osc.connect(gain);
+          osc.start();
+          this.humOsc.push(osc);
+        }
+        this.humGain = gain;
+      }
+      // Ramped, never set: a step change in gain is a click, and a click is the
+      // sound of a game object rather than of something that was already going.
+      const target = Math.max(0.0001, wanted * 0.06);
+      this.humGain.gain.setTargetAtTime(target, ctx.currentTime, 0.25);
+    } catch {
+      this.stopHum();
+    }
+  }
+
+  /** Silence and dispose. Called when you walk away, and on mute — a retained
+   *  oscillator that survives muting would be the one sound in the game the
+   *  mute button doesn't reach. */
+  stopHum(): void {
+    if (!this.humGain) return;
+    try {
+      for (const osc of this.humOsc) osc.stop();
+    } catch {
+      // Already stopped, or the context went away underneath us.
+    }
+    try {
+      this.humGain.disconnect();
+    } catch {
+      // Same.
+    }
+    this.humOsc = [];
+    this.humGain = null;
   }
 }
 

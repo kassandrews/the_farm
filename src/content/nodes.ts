@@ -12,11 +12,11 @@
 
 import type { ItemId } from "./items";
 import type { TileId } from "./tiles";
-import { TREE, ROCK, ORE_VEIN, DIRT, CAVE_FLOOR } from "./tiles";
+import { TREE, ROCK, ORE_VEIN, DIRT, CAVE_FLOOR, DARK_TREE } from "./tiles";
 
 const HOUR = 3_600_000;
 
-export type NodeId = "tree" | "rock" | "vein";
+export type NodeId = "tree" | "rock" | "vein" | "darktree";
 
 export interface NodeDef {
   id: NodeId;
@@ -98,6 +98,30 @@ export const NODES: Record<NodeId, NodeDef> = {
     // all three densities sit in one table and none of them is a lone constant
     // in the generator.
     density: 0.055,
+  },
+  // The fourth row, and the file's own claim made good: it differs from a tree
+  // in ONE number (its tile) and no logic. Same drop, same yield, same
+  // regrowth — because it is not a better tree, it is a tree that happens to be
+  // standing where the dark wood is.
+  //
+  // `density: 0` and that is not a stub. Every other node is scattered by a
+  // hash against this number; the grove is a PLACE (sim/world.ts §the grove),
+  // so it places its own trees and nothing rolls for one anywhere else. A dark
+  // tree outside the grove would make the grove ordinary.
+  darktree: {
+    id: "darktree",
+    name: "Dark tree",
+    tile: DARK_TREE,
+    felled: DIRT,
+    layer: "surface",
+    drop: "wood",
+    // No mention of walnut, of a finish, or of having found anything. The
+    // unlock speaks for itself in the picker, and a line here that announced it
+    // would be the toast a secret is not allowed to have.
+    line: "Timber. Darker at the heart.",
+    yield: 8,
+    regrowMs: 8 * HOUR,
+    density: 0,
   },
 };
 

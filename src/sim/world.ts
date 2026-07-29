@@ -24,6 +24,8 @@ import {
   ORE_VEIN,
   SHAFT,
   CAVE_FLOOR,
+  DARK_TREE,
+  HUM_CUBE,
   tileDef,
 } from "../content/tiles";
 import { NODES } from "../content/nodes";
@@ -185,7 +187,21 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
   const home = homesteadOrigin(spot);
   const nearHome =
     Math.abs(x - home.x) <= HOMESTEAD_CLEARING && Math.abs(y - home.y) <= HOMESTEAD_CLEARING;
+
+  // The two secrets that are places rather than people (Phase 4c). Both sit far
+  // outside the plaza, the river and the clearing, so they are checked after
+  // those and before the ordinary scatter — a grove that could be overwritten by
+  // a roll of the tree hash would have holes in it.
   if (!nearHome) {
+    if (isCubeSite(seed, spot, x, y)) return HUM_CUBE;
+    if (inGrove(seed, spot, x, y)) return DARK_TREE;
+    // The clearing at the heart of the grove, and this has to come before the
+    // ordinary scatter or it is not a clearing. `inGrove` only declines to put
+    // one of HER trees here; without this line the plain tree hash cheerfully
+    // fills it, and the Ghost stands inside a trunk in the one spot the whole
+    // place was shaped around.
+    if (inGroveClearing(seed, spot, x, y)) return GRASS;
+
     // Two independent hashes so trees and rocks don't correlate into stripes.
     const treeRoll = hash2(x, y, seed ^ 0x7a11) / 4294967296;
     const density = spot === "forest" ? NODES.tree.density * 1.8 : NODES.tree.density;
@@ -287,6 +303,112 @@ export function inWarren(seed: number, x: number, y: number): boolean {
 
   const angle = Math.atan2(y, x);
   return Math.abs(dist - warrenRadius(seed, angle)) <= WARREN_WIDTH;
+}
+
+// --- The surface secrets (Phase 4c) -------------------------------------------
+// The warren's trick, brought up into the daylight: a landmark is a total
+// function of (seed, x, y), so it is a stable fact about a town and NOTHING
+// about it is stored. That is what keeps 4c off the save schema entirely, and
+// it is also what keeps it a secret — a fixture stamped by a migration is
+// something the game gave you, and this is something you walked into.
+//
+// Both sit further out than the Mole (30), for one reason: he is met by
+// tunnelling, which is slow, and these are met on foot, which is not.
+
+/** How far out the grove stands. Past every reason you'd have to be out there —
+ *  the woods near town restock on their own, so nobody walks forty tiles for
+ *  timber. If you are here, you were going somewhere. */
+const GROVE_RING = 44;
+
+/** Its bearing. One number per town, and the only thing that decides which way
+ *  you have to walk. Its own salt, so it never lines up with the warren's — a
+ *  town where the grove is directly above the chamber would read as a puzzle. */
+function groveAngle(seed: number): number {
+  return (hash2(4, 0, seed ^ 0x5eed) / 4294967296) * Math.PI * 2;
+}
+
+/** THE SITES HAVE TO KNOW ABOUT THE SEA, and this was found on screen rather
+ *  than in a test. A riverside town is water from x = -13 westward, without
+ *  limit — the river check in `generatedTile` runs before anything else and
+ *  answers for the entire western half of the world. A bearing picked from the
+ *  seed alone therefore drowned the grove in about half of all riverside towns:
+ *  a stand of trees in open ocean, unreachable, with a Ghost standing in it.
+ *
+ *  The fix is on the SITE, not on the generator's order. Putting the landmark
+ *  branch above the river would have grown trees in the sea, which is the same
+ *  bug with the tiles rearranged; and rejecting-and-rerolling the angle needs a
+ *  loop that can fail. Mirroring is total, keeps the radius exactly, and is a
+ *  true sentence about the town: the land is the other way.
+ *
+ *  Every landmark goes through this, so a third one cannot forget. */
+function onLand(spot: HomesteadSpot, at: { x: number; y: number }): { x: number; y: number } {
+  return spot === "riverside" && at.x <= RIVER_EDGE ? { x: -at.x, y: at.y } : at;
+}
+
+/** West of this, a riverside town is open water (see `generatedTile`). */
+const RIVER_EDGE = -12;
+
+/** Where the dark wood is. */
+export function groveCentre(seed: number, spot: HomesteadSpot): { x: number; y: number } {
+  const a = groveAngle(seed);
+  return onLand(spot, {
+    x: Math.round(Math.cos(a) * GROVE_RING),
+    y: Math.round(Math.sin(a) * GROVE_RING),
+  });
+}
+
+/** How wide the stand is. Big enough to be unmistakably a place and not a
+ *  clump; small enough that you can see across it and spot her in it. */
+const GROVE_RADIUS = 5;
+
+/** How much of the disc actually carries a tree. Not all of it: a solid block
+ *  of trunks is a wall, and you have to be able to walk INTO a grove for it to
+ *  be somewhere she can stand. The gaps are also where the light gets in. */
+const GROVE_DENSITY = 0.55;
+
+/** The clearing at the heart of it, kept free of trees so there is somewhere to
+ *  stand — hers, and yours when you get there. Two tiles: a room, not a lawn. */
+const GROVE_CLEARING = 2;
+
+/** Is this cell one of her trees? A hashed disc — dense in the middle, thinning
+ *  at the edge, so the stand has a soft boundary rather than a circular cut. */
+export function inGrove(seed: number, spot: HomesteadSpot, x: number, y: number): boolean {
+  const c = groveCentre(seed, spot);
+  const d = Math.hypot(x - c.x, y - c.y);
+  if (d > GROVE_RADIUS || d <= GROVE_CLEARING) return false;
+  const falloff = 1 - (d / GROVE_RADIUS) * 0.6;
+  return hash2(x, y, seed ^ 0x0a17) / 4294967296 < GROVE_DENSITY * falloff;
+}
+
+/** Is this the open ground at the middle of the grove? Nothing grows here —
+ *  neither her trees nor ordinary ones — because it is the room she stands in
+ *  and the room you arrive into. */
+export function inGroveClearing(
+  seed: number,
+  spot: HomesteadSpot,
+  x: number,
+  y: number,
+): boolean {
+  const c = groveCentre(seed, spot);
+  return Math.hypot(x - c.x, y - c.y) <= GROVE_CLEARING;
+}
+
+/** How far out the cube is, and on its own bearing. Further than the grove and
+ *  in a different direction, so finding one tells you nothing about the other.
+ *  Two secrets that share a walk are one secret. */
+const CUBE_RING = 58;
+
+export function cubeSite(seed: number, spot: HomesteadSpot): { x: number; y: number } {
+  const a = (hash2(5, 0, seed ^ 0x11b3) / 4294967296) * Math.PI * 2;
+  return onLand(spot, {
+    x: Math.round(Math.cos(a) * CUBE_RING),
+    y: Math.round(Math.sin(a) * CUBE_RING),
+  });
+}
+
+function isCubeSite(seed: number, spot: HomesteadSpot, x: number, y: number): boolean {
+  const c = cubeSite(seed, spot);
+  return x === c.x && y === c.y;
 }
 
 /** The effective tile on a layer: a player/town edit wins, else the generated

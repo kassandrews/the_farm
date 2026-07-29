@@ -24,6 +24,7 @@ import {
   setTile,
   homesteadOrigin,
   generatedTile,
+  cubeSite,
 } from "./world";
 import { placeStructure, removeStructure } from "./structures";
 import { rooms } from "./rooms";
@@ -44,6 +45,9 @@ import { gather, nodeAt, nodeNear, updateRegrowth } from "./gather";
 import { nodeDef } from "../content/nodes";
 import { mineVein } from "./mining";
 import { meetMole } from "./mole";
+import { meetGhost } from "./ghost";
+import { present } from "./presence";
+import { meetCosmos } from "./cosmos";
 import { takeAlong, updateCompany } from "./company";
 import { starterSkins, defaultSkin } from "../content/skins";
 import { STARTING_CROP } from "../content/crops";
@@ -310,6 +314,25 @@ export function tick(world: WorldState, dt: number, now: number): void {
   // he is undocumented, so meeting him is seeing him (sim/mole.ts).
   meetMole(world, now);
 
+  // The same three lines for the two secrets above ground, and they are three
+  // separate calls rather than one `meetSecrets` because each carries its own
+  // condition and they share nothing but the shape: the rock, the dark, and
+  // five nights of the year.
+  meetGhost(world, now);
+  meetCosmos(world, now);
+
+  // And you may be standing in front of the Cube. There is nothing to meet —
+  // it is a landmark and not a person — so the only thing that happens is that
+  // whoever came with you now remembers coming. `onlyPresent`, like the tunnel:
+  // the town does not get told about the cube, because a town that talks about
+  // a secret has been told about it by the game.
+  if (world.player.layer === "surface") {
+    const c = cubeSite(world.seed, world.homestead.spot);
+    if (Math.hypot(world.player.x - c.x, world.player.y - c.y) <= CUBE_EARSHOT) {
+      witness(world, "hum", undefined, now, true);
+    }
+  }
+
   // And whoever is with you may have reached the end of their own day. Derived
   // from the clock like everything else here, so an absence can't leave somebody
   // trailing you for two days: the hour is the hour whether or not you were
@@ -491,7 +514,13 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
     return {
       kind: "gather",
       changed: true,
-      message: `${nodeDef(got.node).line} ${itemLabel(got.item, got.amount)}.`,
+      // The dark wood gets a sentence about the WOOD, not about an unlock —
+      // slate's shape exactly. "You have unlocked Dark walnut" is the toast a
+      // secret is not allowed to have; the picker having a new colour in it is
+      // how you find out, if you look.
+      message: got.foundWalnut
+        ? "The grain runs almost black. It is the same wood. It is not the same wood."
+        : `${nodeDef(got.node).line} ${itemLabel(got.item, got.amount)}.`,
     };
   }
 
@@ -767,6 +796,12 @@ function furnitureFlavour(id: FurnitureId): string {
 /** How close a villager must be to count as having done it *with* you. */
 const TOGETHER_RADIUS = 4;
 
+/** How close YOU have to be to the Cube for it to count as having been there.
+ *  Tighter than the hum carries (ui/app.ts, twelve tiles) on purpose: hearing it
+ *  from across a field is not the same as having stood in front of it, and the
+ *  memory is about the standing. */
+const CUBE_EARSHOT = 3;
+
 /** Broadcast a witnessed event to the town's memory logs. Everyone hears about
  *  it (news travels in a town this small), but anyone who was actually STANDING
  *  THERE also warms to you a little — friendship grows through doing things
@@ -797,6 +832,12 @@ function witness(
 ): void {
   const p = world.player;
   for (const v of world.villagers) {
+    // Somebody who is not HERE cannot have seen anything, and by 4c that is a
+    // real state rather than a philosophical one: the Ghost stands at a fixed
+    // coordinate in the grove all day and is only there after dark
+    // (sim/presence.ts). Without this, felling her trees at noon in an empty
+    // clearing would warm somebody who was not in it.
+    if (!present(v, now)) continue;
     const here = (v.layer ?? "surface") === p.layer && Math.hypot(v.x - p.x, v.y - p.y) <= TOGETHER_RADIUS;
     if (!onlyPresent || here) v.memory = remember(v.memory, { kind, at: now, value });
     // Standing THERE means standing there. A coordinate means two places now,
@@ -814,12 +855,18 @@ function witness(
   }
 }
 
-/** Talk to a villager: a line (memory-aware) plus a nudge of friendship. */
-export function talk(world: WorldState, id: CharId, rng: Rng): Speech | null {
+/** Talk to a villager: a line (memory-aware) plus a nudge of friendship.
+ *
+ *  Takes `now` because one voice in the game depends on the date — the Stray
+ *  Cosmos speaks about the shower that is actually happening (content/showers.ts
+ *  is the real calendar). Threaded rather than read off the clock inside sim,
+ *  which is the rule the whole layer keeps (CLAUDE.md §Architecture) and the
+ *  only reason her five nights are testable without waiting for August. */
+export function talk(world: WorldState, id: CharId, rng: Rng, now: number): Speech | null {
   const v = world.villagers.find((w) => w.id === id);
   if (!v) return null;
   befriend(v, 2);
-  return speak(world, v, rng);
+  return speak(world, v, rng, now);
 }
 
 /** Complete the opening beat: stamp the land claim (DESIGN §"Opening beat"). */

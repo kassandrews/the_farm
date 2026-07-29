@@ -20,7 +20,7 @@ describe("friendship milestones", () => {
     const v = w.villagers.find((x) => x.id === "resident1")!;
     const seen = new Set([friendshipTier(v)]);
     for (let i = 0; i < 60; i++) {
-      talk(w, "resident1", makeRng(i));
+      talk(w, "resident1", makeRng(i), Date.now());
       seen.add(friendshipTier(v));
     }
     expect(friendshipTier(v)).toBe("close");
@@ -67,12 +67,12 @@ describe("friendship milestones", () => {
     const v = w.villagers.find((x) => x.id === "resident1")!;
 
     const strangerLines = new Set<string>();
-    for (let i = 0; i < 200; i++) strangerLines.add(speak(w, v, makeRng(i)).text);
+    for (let i = 0; i < 200; i++) strangerLines.add(speak(w, v, makeRng(i), Date.now()).text);
 
     v.friendship = 100; // close
     const closeOnly = warmLines(v.form, "close").filter((l) => !warmLines(v.form, "friend").includes(l));
     const friendLines = new Set<string>();
-    for (let i = 0; i < 400; i++) friendLines.add(speak(w, v, makeRng(i)).text);
+    for (let i = 0; i < 400; i++) friendLines.add(speak(w, v, makeRng(i), Date.now()).text);
 
     expect(closeOnly.length).toBeGreaterThan(0);
     for (const line of closeOnly) expect(strangerLines.has(line)).toBe(false);

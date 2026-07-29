@@ -13,7 +13,7 @@ import type { WorldState, Villager, Player, BuildCell, FurnitureCell, Tool } fro
 import { tileAt, playerTile, actionTarget } from "../sim/game";
 import type { ActionTarget } from "../sim/game";
 import { cropDef, ripeStage } from "../content/crops";
-import { tileDef, PLANK, GRASS, TREE, ROCK, BEDROCK, ORE_VEIN, SHAFT } from "../content/tiles";
+import { tileDef, PLANK, GRASS, TREE, ROCK, BEDROCK, ORE_VEIN, SHAFT, DARK_TREE, HUM_CUBE } from "../content/tiles";
 import { skinDef } from "../content/skins";
 import type { SkinClass } from "../content/skins";
 import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey } from "../sim/world";
@@ -24,6 +24,7 @@ import type { PlinthRun } from "../sim/museum";
 import { rooms } from "../sim/rooms";
 import type { Room } from "../sim/rooms";
 import { tintAt, isNight, skyPhaseAt } from "../sim/time";
+import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
 import type { Mood, SpriteFrame } from "../content/canon/sprites";
 import { SpriteCache, drawSpriteQuantized } from "./sprites";
@@ -120,6 +121,12 @@ const DOOR_NOTCH = 4;
  *  is what makes them overhang the tile behind and read as standing up. */
 const TREE_H = 24;
 const ROCK_H = 13;
+/** Taller than a rock, shorter than a tree. It should read as built rather than
+ *  grown, and as somebody's, without being tall enough to hide behind. Its width
+ *  is a whole tile: it is a CUBE, and the first draft was eleven pixels wide and
+ *  seventeen tall, which on screen was a headstone. */
+const CUBE_H = 14;
+const CUBE_W = 16;
 
 // --- The underground ----------------------------------------------------------
 // Two ideas do all the work down here: rock STANDS UP where it has been cut
@@ -174,7 +181,12 @@ function rockIdOf(id: number): number {
  *  and neighbour comparisons have to agree, or every tree gets a bevel drawn
  *  around it as if it were a different material. */
 function groundIdOf(id: number): number {
-  return id === TREE || id === ROCK ? GRASS : id;
+  // The two 4c landmarks stand up the same way, and they matter here more than
+  // the others do: a grove is a dozen cells side by side, so a bevel drawn round
+  // each one would ring every trunk and turn the stand into a lattice. Same
+  // rule as always — the edge belongs where the SURFACE ends (CLAUDE.md
+  // §per-cell edges), and grass under a tree has not ended.
+  return id === TREE || id === ROCK || id === DARK_TREE || id === HUM_CUBE ? GRASS : id;
 }
 
 /** Which material class a built tile is finished in, or null for terrain that
@@ -337,7 +349,7 @@ export class Renderer {
       this.collectTent(world, night);
       this.collectPlinths(world);
     }
-    this.collectMovers(world, t, night, under);
+    this.collectMovers(world, t, night, under, now);
     this.flushRaised();
 
     // The dark goes over the scene but UNDER the reticle. The reticle is the
@@ -414,13 +426,21 @@ export class Renderer {
         // Resource nodes stand up, so the flat pass draws only the ground they
         // stand ON and defers the node itself to the raised pass. Without this
         // a tree is trapped inside its own 16px cell and the world reads flat.
-        if (id === TREE || id === ROCK) {
+        if (id === TREE || id === ROCK || id === DARK_TREE || id === HUM_CUBE) {
           const x = tx;
           const y = ty;
           this.raised.push({
             y,
             bias: BIAS_TERRAIN,
-            draw: () => (id === TREE ? this.drawTree(world, x, y, night) : this.drawRock(world, x, y, night)),
+            draw: () => {
+              if (id === ROCK) this.drawRock(world, x, y, night);
+              else if (id === HUM_CUBE) this.drawCube(world, x, y, night);
+              // A dark tree is a tree drawn in the other palette — one flag, not
+              // a second function. It is the same tree in every other way
+              // (content/nodes.ts), and two draw paths would let them drift into
+              // looking like two different plants.
+              else this.drawTree(world, x, y, night, id === DARK_TREE);
+            },
           });
         }
         // Anything STANDING on this tile. Looked up per visible tile rather
@@ -1211,7 +1231,7 @@ export class Renderer {
   /** A tree: trunk, layered crown, contact shadow. Two and a half tiles tall,
    *  so it overhangs the ground behind it and you can walk out of sight behind
    *  one. Jittered by the tile hash so a stand of trees isn't wallpaper. */
-  private drawTree(world: WorldState, tx: number, ty: number, night: boolean): void {
+  private drawTree(world: WorldState, tx: number, ty: number, night: boolean, dark = false): void {
     const ctx = this.ctx;
     const h = decoHash(tx, ty, world.seed);
     const jx = Math.floor(h * 3) - 1;
@@ -1228,16 +1248,20 @@ export class Renderer {
     ctx.fillStyle = "rgba(0,0,0,0.16)";
     ctx.fillRect(cx - 4, base - 2, 9, 2);
 
-    ctx.fillStyle = night ? "#4a3628" : "#6b4a33";
+    // The grove's trunks are the dark wood itself, which is the only place in
+    // the game where the finish and the material are the same object. It reads
+    // nearly black at night, and it is meant to: you find the grove by daylight
+    // and meet her in a stand you can barely make out.
+    ctx.fillStyle = dark ? (night ? "#2b1d16" : "#3f2a1e") : night ? "#4a3628" : "#6b4a33";
     ctx.fillRect(cx - 1, base - 10, 3, 10);
-    ctx.fillStyle = night ? "#3a2a1e" : "#573a28"; // shaded right side of trunk
+    ctx.fillStyle = dark ? (night ? "#1f150f" : "#2f1e15") : night ? "#3a2a1e" : "#573a28";
     ctx.fillRect(cx + 1, base - 10, 1, 10);
 
     // Crown as per-row half-widths: an integer-rect blob, no ellipse maths and
     // nothing off the pixel grid (CLAUDE.md §Sprite rendering).
     const rows = [3, 5, 6, 7, 7, 7, 7, 7, 6, 6, 5, 4, 3, 2]; // 14 rows + trunk = TREE_H
-    const crown = night ? "#2f5233" : "#417a41";
-    const crownLit = night ? "#3a6440" : "#57975a";
+    const crown = dark ? (night ? "#1e2c1f" : "#2c3a2a") : night ? "#2f5233" : "#417a41";
+    const crownLit = dark ? (night ? "#26361f" : "#3a4a34") : night ? "#3a6440" : "#57975a";
     const top = base - TREE_H;
     ctx.fillStyle = crown;
     for (let r = 0; r < rows.length; r++) {
@@ -1281,6 +1305,70 @@ export class Renderer {
     }
     ctx.fillStyle = night ? "#4a4c54" : "#6f6c66";
     ctx.fillRect(cx - 5, base - 2, 11, 1); // it sits ON the ground
+
+    ctx.globalAlpha = prev;
+  }
+
+  /** The Humming Cube. A cube, and the only correct amount of embellishment is
+   *  none — DESIGN calls it a structure and a landmark, and everything about
+   *  finding it is that you walked far enough to see a thing that has no
+   *  business being there.
+   *
+   *  Drawn as a flat-topped box with two shaded faces: one light source, upper
+   *  left, like every other raised thing in this file. It is ONE CELL, so there
+   *  is no banding hazard here — but note that the edges are drawn on the box's
+   *  own silhouette rather than on the tile, which is the same rule stated a
+   *  different way (CLAUDE.md §per-cell edges).
+   *
+   *  It breathes. Very slightly, and on a slow cycle — the hum made visible for
+   *  anybody playing muted, which is most people on a phone. It is a shimmer of
+   *  brightness rather than a change of size: scaling pixel art is how you get
+   *  unequal eyes and vanishing outlines (CLAUDE.md §Sprite rendering), and this
+   *  is drawn at integer rects for exactly that reason. */
+  private drawCube(world: WorldState, tx: number, ty: number, night: boolean): void {
+    const ctx = this.ctx;
+    const cx = Math.round(this.sceneX(tx));
+    const base = Math.round(this.sceneY(ty) + TILE / 2);
+
+    const prev = ctx.globalAlpha;
+    if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
+    else if (this.hides(world, tx, ty, CUBE_H)) ctx.globalAlpha = prev * HIDDEN_FADE;
+
+    // Built the way furniture is built (drawFurniture, above): a TOP SURFACE
+    // lifted clear of the ground plus a NEAR FACE showing the height, which is
+    // what makes a low object read as three-dimensional in a 3/4 view. A single
+    // flat slab was tried first and came back looking like a headstone.
+    const px = cx - CUBE_W / 2;
+    const deep = 6; // how much of the top surface you see from here
+    const topY = base - CUBE_H - deep;
+
+    ctx.fillStyle = "rgba(0,0,0,0.22)";
+    ctx.fillRect(px + 1, base - 1, CUBE_W - 2, 2);
+
+    // The pulse: a 0..1 triangle on a four-second cycle. Brightness only — the
+    // rects stay integer and the sprite never scales (CLAUDE.md §Sprite
+    // rendering), so nothing resamples off the grid.
+    const t = (performance.now() - this.t0) / 1000;
+    const lift = Math.round(Math.abs(((t / 2) % 2) - 1) * 3);
+    const shift = (c: [number, number, number]) => `rgb(${c[0] + lift}, ${c[1] + lift}, ${c[2] + lift * 2})`;
+
+    ctx.fillStyle = night ? shift([44, 47, 62]) : shift([70, 74, 90]); // near face
+    ctx.fillRect(px, base - CUBE_H, CUBE_W, CUBE_H);
+    ctx.fillStyle = night ? shift([60, 64, 84]) : shift([90, 95, 114]); // top
+    ctx.fillRect(px, topY, CUBE_W, deep);
+
+    // The silhouette, hard, for the reason furniture gets one: without it a
+    // grey-blue box on grass at dusk is a smudge. Drawn on the OBJECT's edge and
+    // never per cell — it is one cell, but the rule is the rule (CLAUDE.md).
+    ctx.fillStyle = "rgba(0,0,0,0.40)";
+    ctx.fillRect(px, topY, CUBE_W, 1);
+    ctx.fillRect(px, base - 1, CUBE_W, 1);
+    ctx.fillRect(px, topY, 1, CUBE_H + deep);
+    ctx.fillRect(px + CUBE_W - 1, topY, 1, CUBE_H + deep);
+    ctx.fillStyle = "rgba(0,0,0,0.20)"; // the lip where the top meets the face
+    ctx.fillRect(px + 1, base - CUBE_H, CUBE_W - 2, 1);
+    ctx.fillStyle = night ? shift([76, 81, 104]) : shift([116, 122, 146]); // sunlit far edge
+    ctx.fillRect(px + 1, topY + 1, CUBE_W - 2, 1);
 
     ctx.globalAlpha = prev;
   }
@@ -1409,7 +1497,13 @@ export class Renderer {
   // --- Movers -----------------------------------------------------------------
   // No longer sorted among themselves — they go into the one raised pass so a
   // villager sorts against trees and (soon) walls, not only against each other.
-  private collectMovers(world: WorldState, t: number, night: boolean, under: boolean): void {
+  private collectMovers(
+    world: WorldState,
+    t: number,
+    night: boolean,
+    under: boolean,
+    now: number,
+  ): void {
     // Filtered by LAYER rather than skipped wholesale, which is what this used
     // to do back when everyone was a surface creature. Drawing the town from
     // below would put its whole daily round in your tunnel, walking through
@@ -1418,8 +1512,12 @@ export class Renderer {
     const layer = under ? "under" : "surface";
     for (const v of world.villagers) {
       if ((v.layer ?? "surface") !== layer) continue;
-      // The Quiet Ghost only shows at real-clock night (DESIGN §secret forms).
-      if (v.form === "ghost" && !night) continue;
+      // And by PRESENCE, which used to be a form check right here: the Ghost
+      // only shows at real-clock night (DESIGN §secret forms). It moved to
+      // sim/presence.ts the moment there was a second visitor with hours,
+      // because the renderer was never the only thing asking — tap targeting
+      // and keyboard talk were finding villagers this pass had skipped.
+      if (!present(v, now)) continue;
       this.raised.push({ y: v.y, bias: BIAS_MOVER, draw: () => this.drawVillager(v, t, night) });
     }
     this.raised.push({ y: world.player.y, bias: BIAS_MOVER, draw: () => this.drawPlayer(world.player, t) });

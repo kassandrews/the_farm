@@ -66,6 +66,8 @@ export interface GatherResult {
   node: NodeId;
   item: ItemId;
   amount: number;
+  /** True on the one swing that turned up the dark wood. See below. */
+  foundWalnut?: boolean;
 }
 
 /** Fell the node on this tile: banks its yield and starts its regrow timer.
@@ -90,7 +92,23 @@ export function gather(
   if (def.regrowMs !== null) world.regrow[tileKey(x, y)] = { node, at: now + def.regrowMs };
   add(world.inventory, def.drop, def.yield);
 
-  return { node, item: def.drop, amount: def.yield };
+  // The grove IS the giver, and that is the whole point of where walnut lives.
+  //
+  // It was the last finish in the game you could not obtain, and the easy answer
+  // was to bolt it onto a commission — house the Ghost, get the dark wood. That
+  // would have made her a resident who moves in one afternoon, which spoils the
+  // one thing about her worth keeping (CLAUDE.md §Tone). So it works the way
+  // slate does instead (see mining.ts): a PLACE pays out, nobody hands you
+  // anything, and her hint in content/skins.ts turns out to have been literal
+  // all along — she knows where the dark wood is because she lives in it.
+  //
+  // Note what this does NOT require: meeting her. The wood is there by day and
+  // she is there by night, and neither gates the other. You can walk home with
+  // walnut having never learned there was anyone out there.
+  const foundWalnut = node === "darktree" && !world.skins.unlocked.includes("walnut");
+  if (foundWalnut) world.skins.unlocked.push("walnut");
+
+  return { node, item: def.drop, amount: def.yield, foundWalnut };
 }
 
 /** Has the player claimed this ground? Anything other than the bare dirt or

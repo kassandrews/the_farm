@@ -39,17 +39,33 @@ export type AuthoredId =
  *  survive that. */
 export type NewcomerId = `newcomer:${number}`;
 
-/** Somebody the town does not know about. There is one, and the type exists to
- *  keep him OUT of `CAST` rather than to make room for him in it: this file's
- *  closing note says secrets belong in no table, and a Record keyed on an id
- *  that included him would have quietly made that false. His def is derived
- *  (charDef, below), the way a newcomer's is. */
-export type SecretId = "mole";
+/** Somebody the town does not know about. The type exists to keep them OUT of
+ *  `CAST` rather than to make room for them in it: this file's closing note says
+ *  secrets belong in no table, and a Record keyed on an id that included one
+ *  would have quietly made that false. Their defs are derived (charDef, below),
+ *  the way a newcomer's is. */
+export type SecretId = "mole" | "ghost" | "cosmos";
 
 export type CharId = AuthoredId | NewcomerId | SecretId;
 
 export function isNewcomer(id: CharId): id is NewcomerId {
   return id.startsWith("newcomer:");
+}
+
+/** The secrets, as a list, so `isSecret` is the only thing that has to grow.
+ *
+ *  IT REPLACES TWO PARALLEL BLOCKLISTS. Before 4c there was one secret and the
+ *  code said so twice — `villagerId !== "mole"` gated the offer of a room, and a
+ *  `ROOTED` array gated the invitation to come along. Two lists that mean "this
+ *  person is not part of the town" drift the moment there is a second name to
+ *  put on both, and the drift looks like a Ghost being offered a spare bed. */
+const SECRETS: CharId[] = ["mole", "ghost", "cosmos"];
+
+/** Is this somebody the town has never heard of? True of nobody at the counters
+ *  and nobody who moved in — the fixed cast are institutions, which is the
+ *  opposite thing. */
+export function isSecret(id: CharId): id is SecretId {
+  return SECRETS.includes(id);
 }
 
 /** One entry in a daily routine: from `fromHour` (local wall-clock, 0–23) this
@@ -69,8 +85,13 @@ export function isNewcomer(id: CharId): id is NewcomerId {
  *  town except the ones the map generates. Nothing moves it — unlike a bed, it
  *  is a total function of the seed — so its fallback below is genuinely
  *  unreachable, and it is written as the origin rather than as a plausible
- *  coordinate so that a bug puts him somewhere obviously wrong. */
-export type StopAnchor = "home" | "warren";
+ *  coordinate so that a bug puts him somewhere obviously wrong.
+ *
+ *  "grove" and "homestead" are the same question asked about the surface, for
+ *  4c's two visitors. The grove is generated from the seed like the warren; the
+ *  homestead is where the player's own plot is, which content also cannot know.
+ *  All four are the same rule — content states the anchor, sim answers it. */
+export type StopAnchor = "home" | "warren" | "grove" | "homestead";
 
 export interface ScheduleStop {
   fromHour: number;
@@ -95,6 +116,12 @@ export interface CharDef {
   /** Fixed cast are institutions and don't wander far; residents walk a ring. */
   fixed: boolean;
   schedule: ScheduleStop[];
+  /** What the conversation panel calls them under their name. Absent means
+   *  "Farm resident", which is true of everybody it was written for and of none
+   *  of the secrets — the Mole is not a resident of anywhere and the Cosmos is
+   *  not staying. Present tense and about WHERE, never about who: naming what
+   *  they are would be the UI doing the discovering for you. */
+  subtitle?: string;
 }
 
 /** Where a resident stands when they have no bed to go to: the middle of the
@@ -331,6 +358,39 @@ export const MOLE: CharDef = {
   name: "Maverick Mole",
   fixed: true,
   schedule: [{ fromHour: 0, at: "warren", x: 0, y: 0, doing: "down here" }],
+  subtitle: "Underground",
+};
+
+/** The Quiet Ghost. Out of CAST for the same reason as the Mole, and out of
+ *  `content/arrivals.ts` for a sharper one: a Ghost who moves in one afternoon
+ *  and gets commissioned a house like anybody else would spoil the one thing
+ *  about her worth keeping. She is not housed, she is FOUND.
+ *
+ *  She stands in the grove all day and is only THERE at night — the difference
+ *  between her schedule (one stop, always) and her presence (sim/presence.ts) is
+ *  the whole of her. `fixed: true` for the Mole's reason: she doesn't walk a
+ *  ring, and the early return in `tickVillager` is what keeps her put. */
+export const GHOST: CharDef = {
+  id: "ghost",
+  form: "ghost",
+  name: "Quiet Ghost",
+  fixed: true,
+  schedule: [{ fromHour: 0, at: "grove", x: 0, y: 0, doing: "among the dark trees" }],
+  subtitle: "Out past the woods",
+};
+
+/** The Stray Cosmos. A VISITOR, not a resident and not an institution — she is
+ *  on the calendar rather than in the town, and the calendar is the real one
+ *  (content/showers.ts). Anchored to the homestead because five nights a year
+ *  in unbounded grass is a lottery, and the Mole's ring corridor exists
+ *  precisely because a lottery is not a secret, it is a shrug. */
+export const COSMOS: CharDef = {
+  id: "cosmos",
+  form: "cosmos",
+  name: "Stray Cosmos",
+  fixed: true,
+  schedule: [{ fromHour: 0, at: "homestead", x: 0, y: 0, doing: "passing through" }],
+  subtitle: "Not from here",
 };
 
 /** The numeric part of a newcomer id, for picking their ring. */
@@ -347,6 +407,8 @@ function newcomerNumber(id: NewcomerId): number {
  *  have stood on their arrival tile forever without a single error. */
 export function charDef(v: { id: CharId; name: string; form: AdultForm; fixed: boolean }): CharDef {
   if (v.id === "mole") return MOLE;
+  if (v.id === "ghost") return GHOST;
+  if (v.id === "cosmos") return COSMOS;
   if (!isNewcomer(v.id)) return CAST[v.id];
   return {
     id: v.id,

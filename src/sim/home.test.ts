@@ -158,7 +158,7 @@ describe("saying it out loud", () => {
     const rng = makeRng(7);
     let mentioned = 0;
     for (let i = 0; i < 100; i++) {
-      const text = speak(w, v, rng).text.toLowerCase();
+      const text = speak(w, v, rng, Date.now()).text.toLowerCase();
       if (text.includes("bed") || text.includes("plaza")) mentioned++;
     }
     // URGENT_HOME_CHANCE is 0.85; anything near-never would mean the player
@@ -180,7 +180,7 @@ describe("saying it out loud", () => {
     const v = resident(w);
     const rng = makeRng(11);
     const said = new Set<string>();
-    for (let i = 0; i < 200; i++) said.add(speak(w, v, rng).text);
+    for (let i = 0; i < 200; i++) said.add(speak(w, v, rng, Date.now()).text);
     // The house is always there; leading with it every time would make them a
     // property listing rather than a person.
     expect(said.size).toBeGreaterThan(4);
@@ -188,7 +188,7 @@ describe("saying it out loud", () => {
 
   it("talking still works for a villager with no home lines for their form", () => {
     const w = world();
-    expect(talk(w, "office", makeRng(2))).not.toBeNull();
+    expect(talk(w, "office", makeRng(2), Date.now())).not.toBeNull();
   });
 });
 

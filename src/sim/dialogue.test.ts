@@ -23,7 +23,7 @@ describe("memory-driven dialogue", () => {
     const scholar = w.villagers.find((v) => v.id === "resident1")!;
     const rng = makeRng(1);
     const said = new Set<string>();
-    for (let i = 0; i < 80; i++) said.add(speak(w, scholar, rng).text);
+    for (let i = 0; i < 80; i++) said.add(speak(w, scholar, rng, Date.now()).text);
     // At least one line should be the raised_favorite memory (mentions carrots).
     expect([...said].some((t) => t.includes("carrots"))).toBe(true);
   });
@@ -44,14 +44,14 @@ describe("memory-driven dialogue", () => {
     const scholar = w.villagers.find((v) => v.id === "resident1")!;
     const rng = makeRng(5);
     const said = new Set<string>();
-    for (let i = 0; i < 120; i++) said.add(speak(w, scholar, rng).text);
+    for (let i = 0; i < 120; i++) said.add(speak(w, scholar, rng, Date.now()).text);
     expect([...said].some((t) => t.toLowerCase().includes("built") || t.toLowerCase().includes("boards"))).toBe(true);
   });
 
   it("talking nudges friendship and never throws for a form without banks", () => {
     const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
     const before = w.villagers.find((v) => v.id === "resident1")!.friendship;
-    const speech = talk(w, "resident1", makeRng(2));
+    const speech = talk(w, "resident1", makeRng(2), Date.now());
     expect(speech).not.toBeNull();
     expect(w.villagers.find((v) => v.id === "resident1")!.friendship).toBeGreaterThan(before);
   });
@@ -65,7 +65,7 @@ describe("a scholar resident disagrees with the curator", () => {
   function chatter(w: ReturnType<typeof newWorld>, id: string, turns = 200): string[] {
     const v = w.villagers.find((x) => x.id === id)!;
     const rng = makeRng(11);
-    return Array.from({ length: turns }, () => speak(w, v, rng).text);
+    return Array.from({ length: turns }, () => speak(w, v, rng, Date.now()).text);
   }
 
   function withDonation() {

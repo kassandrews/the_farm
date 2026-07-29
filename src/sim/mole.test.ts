@@ -133,9 +133,9 @@ describe("the shortcut, and that he notices", () => {
     tick(w, 1 / 60, Date.now());
     const m = mole(w)!;
 
-    expect(MOLE_DEEP).toContain(speak(w, m, makeRng(1)).text);
+    expect(MOLE_DEEP).toContain(speak(w, m, makeRng(1), Date.now()).text);
     shortcutTo(w);
-    expect(MOLE_SHALLOW).toContain(speak(w, m, makeRng(1)).text);
+    expect(MOLE_SHALLOW).toContain(speak(w, m, makeRng(1), Date.now()).text);
   });
 
   it("never reaches for anybody else's lines", () => {
@@ -146,7 +146,7 @@ describe("the shortcut, and that he notices", () => {
     tick(w, 1 / 60, Date.now());
     const m = mole(w)!;
     for (let i = 0; i < 60; i++) {
-      const said = speak(w, m, makeRng(i)).text;
+      const said = speak(w, m, makeRng(i), Date.now()).text;
       expect([...MOLE_DEEP, ...MOLE_SHALLOW]).toContain(said);
     }
   });

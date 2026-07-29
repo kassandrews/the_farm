@@ -32,6 +32,7 @@
 
 import type { WorldState } from "./types";
 import type { CharId } from "../content/cast";
+import { isSecret } from "../content/cast";
 import type { ErrandDef, ErrandId, NoticeWorld } from "../content/errands";
 import { ERRANDS, NOTICES, errandDef } from "../content/errands";
 import type { Rng } from "./rng";
@@ -94,9 +95,16 @@ export function openErrand(world: WorldState): OpenErrand | null {
  *  Institutions are eligible, which is deliberate. A Menace who wants cloth and
  *  a Gremlin who wants junk are both funnier and truer than a board that only
  *  ever speaks for residents, and there is no rule anywhere that an institution
- *  is not also a person who needs two potatoes. */
+ *  is not also a person who needs two potatoes.
+ *
+ *  THE SECRETS ARE NOT, and this was already wrong before 4c rather than because
+ *  of it: from the moment you met the Mole, the board in the middle of the plaza
+ *  could post a card reading "Maverick Mole would like two potatoes" — the town
+ *  publishing a notice about somebody the town has never heard of, which is the
+ *  UI spoiling a secret about as loudly as it could manage. The Ghost and the
+ *  Cosmos would each have done it again. `isSecret` is the fix in one place. */
 export function possibleAskers(world: WorldState): WorldState["villagers"] {
-  return world.villagers.filter((v) => v.id !== "errands");
+  return world.villagers.filter((v) => v.id !== "errands" && !isSecret(v.id));
 }
 
 /** Is there a card waiting to go up?

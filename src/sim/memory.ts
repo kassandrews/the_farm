@@ -39,7 +39,20 @@ export type MemoryKind =
   // ever attended was the last one anybody noticed. These logs are also the
   // only record that you attended anything — there is no counter anywhere, on
   // purpose (DESIGN §Festivals).
-  | "festival";
+  | "festival"
+  // Standing next to the Humming Cube with you (sim/game.ts). The only memory
+  // of a PLACE rather than of something you did, and it exists because the Cube
+  // pays out nothing else: it hums, it gives no item, no finish and no unlock,
+  // and nothing in the game ever gates on it (DESIGN §"a landmark that hums").
+  // What you get for the walk is that whoever you brought has now been there —
+  // which is written to them and to nobody else, the same as `delved`. Nobody
+  // in the plaza hears about the cube, because that would be the town knowing
+  // about a secret.
+  //
+  // In `oneShot`: you either have stood in front of it or you haven't, and a
+  // second visit is the same fact. (Contrast `festival`, which is deliberately
+  // out, because each one is its own night.)
+  | "hum";
 
 export interface MemoryEvent {
   kind: MemoryKind;
@@ -57,7 +70,7 @@ const MAX_MEMORIES = 64; // a bounded ring; the town lives at hour forty, not fo
  *  doesn't stack five identical "you built that?" memories. Imports and
  *  repeatable events (harvests) may recur. */
 export function remember(log: MemoryLog, ev: MemoryEvent): MemoryLog {
-  const oneShot: MemoryKind[] = ["built_plank", "dug", "planted_carrot", "arrived", "housed", "raised_by", "raised_favorite"];
+  const oneShot: MemoryKind[] = ["built_plank", "dug", "planted_carrot", "arrived", "housed", "raised_by", "raised_favorite", "hum"];
   if (oneShot.includes(ev.kind) && log.some((m) => m.kind === ev.kind)) return log;
   const next = [...log, ev];
   return next.length > MAX_MEMORIES ? next.slice(next.length - MAX_MEMORIES) : next;

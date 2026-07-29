@@ -91,7 +91,16 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   tunnel when you cut it is the only person who remembers you cutting it — which
   is the proximity model 4a left open. Schema v20.
 
-**Next:** Phase 4c — secrets, then crops and seasons.
+- **Phase 4c — secrets, complete.** All three of the ones that were left. A dark
+  grove forty tiles out, holding the last unobtainable finish and — after dark —
+  the Quiet Ghost, who gives you nothing; a cube in a field that hums and does
+  nothing at all; and the Stray Cosmos, who turns up on your own land on the
+  five real meteor-shower nights of the year and is gone by morning. Schema
+  stays v20: two landmarks derived from the seed, five nights derived from the
+  calendar, nothing stored. The spine is `present()` — "is this villager here
+  right now", which nobody had needed to ask before.
+
+**Next:** Phase 4d — crops and seasons.
 
 **Save schema is at v20.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
@@ -1478,12 +1487,115 @@ Scholar had would mean the beat worked one time in six.
 
 **Next: 4c secrets**, then crops/seasons.
 
-### 4c. Secrets — not started
+### 4c. Secrets — **done**, all three
 
-- The Quiet Ghost exists only in the renderer's night-gating today; no ghost
-  villager exists to see. Stray Cosmos, the Humming Cube landmark. Remember:
-  secrets are never spoiled by UI, no "???" slots. `walnut` is hers, and is
-  deliberately not bolted onto a commission (see the loose ends below).
+The dark grove and the Quiet Ghost, the Humming Cube, and the Stray Cosmos.
+`sim/presence.ts`, `sim/ghost.ts`, `sim/cosmos.ts`, `sim/hum.ts`,
+`content/showers.ts`, two tile rows, one node row, one memory kind.
+**No schema change and no migration** — the third phase running where that fell
+out rather than being arranged. Everything here is either derived from the seed
+(the two landmarks), derived from the real calendar (her five nights), or
+already serialised (a villager in the array).
+
+**PRESENCE IS THE SPINE, and it fixed a bug that was already in the build.**
+"Is this villager here right now" did not exist as a question, because for
+everybody in the town the answer is yes at every hour. The renderer knew half of
+it — it has skipped ghost-form villagers by daylight since before there was a
+ghost — but the renderer is not the only thing that asks: `villagerNear` and
+`tryTalkNearest` filtered on LAYER ALONE, so a Ghost in the villager list would
+have been **tappable at noon, invisible, in an empty clearing**. `present(v,
+now)` is now one predicate with four callers, and the fourth is `witness`:
+somebody who is not here cannot have seen you do anything. Asserted in both
+directions — she takes no memory of a tree felled at noon, and does take one
+from the same swing after dark, which is what makes the first assertion bite.
+
+- **The grove is the giver, not the Ghost.** Walnut was the last unobtainable
+  finish, and the easy answer — an arrivals row, house her, receive the wood —
+  is exactly what DESIGN's "secret forms stay secret in spirit" forbids: a Ghost
+  who moves in one afternoon is a resident with a theme. So it works the way
+  slate does. Felling a dark tree unlocks it, in `gather`, with a line about the
+  WOOD and no mention of an unlock. **The two discoveries are independent**: the
+  wood is there by day and she is there by night, and you can walk home with
+  walnut having never learned there was anyone out there.
+- **A dark tree differs from a tree in ONE number.** `content/nodes.ts` claimed a
+  fourth row would be four numbers and no logic; it turned out to be one (its
+  tile). Same drop, same yield, same regrowth — because it is not a better tree.
+  `density: 0`, which is not a stub: every other node is scattered by a hash, and
+  a dark tree outside the grove would make the grove ordinary.
+- **The clearing needed TWO rules, and the second was found on screen.**
+  `inGrove` declining to place her trees at the centre is not a clearing — the
+  ordinary tree hash cheerfully fills it, and she stands inside a trunk. Hence
+  `inGroveClearing`, checked before the scatter.
+- **THE SEA. Found in the browser, invisible to every test.** A riverside town is
+  open water from x = -13 westward *without limit*, and the river answers before
+  anything else in `generatedTile` — so a bearing picked from the seed alone
+  drowned the grove in about half of all riverside towns: trees in the ocean,
+  unreachable, with a Ghost in them. The fix is on the SITE (`onLand`, which
+  mirrors x), not on the generator's order — putting the landmark branch above
+  the river grows trees in the sea, which is the same bug rearranged. Every
+  landmark goes through it, so a fourth cannot forget.
+- **Two id blocklists became one predicate**, and this too was already broken.
+  `isSecret` replaced `villagerId !== "mole"` (the room offer) and a `"mole"`
+  string in `ROOTED` (the invitation) — and it caught a live 4a bug on the way:
+  `possibleAskers` had no opinion about secrets, so **from the moment you met the
+  Mole the board in the plaza could post "Maverick Mole would like two
+  potatoes"** — the town publishing a notice about somebody the town has never
+  heard of. `ROOTED` also stayed an INSTITUTIONS list rather than absorbing them:
+  a counter nobody is standing at is not why a Ghost can't come with you.
+  Note `dayOver` would have refused her for nearly the opposite of the truth —
+  past nine, no home stop — so `isSecret` gates before it.
+- **The Cube hums and does nothing else**, which is the museum-donation rule
+  applied to a place: no item, no finish, no unlock, and nothing gates on it.
+  Asserted as a negative, the way the heap and the museum are. What the walk
+  produces is a MEMORY in whoever you brought, `onlyPresent` like the tunnel —
+  and it sits at the top of `MEMORY_PRIORITY`, above even `delved`, because it is
+  the only payout there is and an ordinary Tuesday's dig must not crowd it out.
+  Every form has a line, the errands rule at its strongest.
+- **Solidity is the whole of its protection.** You cannot stand on it, so the
+  shovel and the hoe (which act underfoot) can never reach it; it has no
+  `NodeDef`, so gathering ignores it. Untouchable without a single rule saying
+  so — better than a rule, because nothing here is protected from you on purpose
+  (the Mole's road).
+- **The hum is the first sustained sound in the game.** `CUES` is one-shots by
+  construction, so `setHum` is new machinery: a retained oscillator pair through
+  a lowpass, ramped with `setTargetAtTime` (a step is a click, and a click is the
+  sound of a game object rather than of something already going), torn down at
+  zero and on mute. The FALLOFF lives in sim (`sim/hum.ts`) because it is a fact
+  about distance and therefore testable; the UI keeps one line. Twelve tiles and
+  squared, so it **confirms rather than steers** — a drone you could follow from
+  off screen is a map marker with a frequency, which is the shape "he gives no
+  directions" refuses. Muted players lose nothing: the Cube is *visible*.
+- **The Cosmos rides the real meteor showers** — Quadrantids, Lyrids, Perseids,
+  Orionids, Geminids, on their actual peak nights. The festivals took the real
+  calendar as far as a town can; this takes it past the town, and a player who
+  looks up on the twelfth of August finds the sky doing what the game said.
+- **A night belongs to the evening it began in.** Two in the morning on the
+  thirteenth is still the twelfth's shower to anybody standing outside in it, so
+  `showerTonight` rolls back before the lookup — by SUBTRACTING FROM THE
+  TIMESTAMP rather than decrementing the date, which hands month ends, year ends
+  and leap days to the platform. Without it she vanishes at midnight, in front
+  of you.
+- **She is never removed, only absent.** Deleting her between visits would throw
+  away the friendship and memories of every previous year, and the whole payoff
+  of the second August is that she has met you before. `present` is what makes
+  her a visitor rather than a resident.
+- **She lands on the homestead**, because five nights a year in unbounded grass
+  is a lottery — the exact failure the Mole's ring corridor was built to avoid.
+  A lottery is not a secret, it is a shrug.
+- **No away event for her, deliberately.** The festival precedent is that the one
+  you missed turns up in the postcard, but a postcard telling a player who has
+  never met her that something passed over is the UI spoiling a secret. The
+  Mole's guard (`if (!moleMet) return null`) is the shape if it is ever wanted.
+- **`speak` and `talk` now take `now`**, because one voice depends on the date.
+  Threaded rather than read off the clock inside sim (CLAUDE.md §Architecture),
+  which is the only reason her five nights are testable without waiting for
+  August.
+
+Two things the browser found that every test was green on: the sea, above, and
+**the Cube was a headstone** — eleven pixels wide and seventeen tall, drawn as a
+flat slab. It is built the way furniture is built now (top surface plus near
+face plus a hard silhouette), a full tile wide, and it reads as something
+somebody put there.
 
 ### 4d. Crops and seasons — not started
 
@@ -1496,14 +1608,19 @@ Scholar had would mean the beat worked one time in six.
 Small things that are half-built or deliberately stubbed. Worth knowing before
 you trip over them:
 
-- **One of the three non-starter finishes is still unobtainable.**
-  `whitewash` now arrives with Bissenette's commission (Phase 3b), which is what
-  its unlock hint always meant, and `slate` is found in 4a step 3 by mining a
-  vein twelve tiles of tunnel from your nearest shaft. Only `walnut` is left; it
-  belongs to the Quiet Ghost, is Phase 4c, and is deliberately NOT bolted onto
-  a commission. A Ghost who simply moves in one afternoon would spoil the one
-  thing about her worth keeping (CLAUDE.md §Tone), so she stays out of the
-  arrivals table until secrets are built.
+- ~~**One of the three non-starter finishes is still unobtainable.**~~ **Fixed in
+  4c.** `whitewash` arrives with Bissenette's commission (3b), `slate` is mined
+  twelve tiles of tunnel out (4a), and `walnut` is now felled in the Ghost's
+  grove. **Every finish in `content/skins.ts` is reachable**, which makes that
+  table's own promise true for the first time.
+
+  Note *how* walnut arrives, because it is the part that was under discussion
+  for two phases: **she does not give it to you.** The grove does. She is out of
+  the arrivals table permanently — a Ghost who moves in one afternoon and gets
+  commissioned a house like anybody else spoils the one thing about her worth
+  keeping (CLAUDE.md §Tone) — and her hint, which has read "The Quiet Ghost
+  knows where the dark wood is" since before commissions existed, turns out to
+  have been literal all along. She knows because she lives in it.
 - **Only the Scholar has a full home bank.** `RESIDENT_HOME` covers every form,
   but the other five get one or two notes each — a form with no line for its
   richest note falls through to one it can speak to, so nobody goes silent, they

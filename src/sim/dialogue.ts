@@ -22,6 +22,8 @@ import {
   SCHOLAR_DISSENT,
   MOLE_DEEP,
   MOLE_SHALLOW,
+  GHOST_QUIET,
+  GHOST_CUT,
   COMPANY_IDLE,
   COMPANY_YES,
   COMPANY_BYE,
@@ -30,6 +32,8 @@ import {
 } from "../content/dialogue";
 import { rivalReading } from "./museum";
 import { moleGroundShallow } from "./mole";
+import { groveCut } from "./ghost";
+import { showerTonight } from "./cosmos";
 import { isCompanion } from "./company";
 
 export interface Speech {
@@ -69,6 +73,13 @@ const MEMORY_PRIORITY: MemoryKind[] = [
   // between a player and a villager, so it is the first thing they reach for —
   // and it decays the same way everything here does, because the log is a
   // bounded ring and ordinary life piles up on top of it.
+  // Above even the tunnel, and it is the only thing that ever will be. A day
+  // underground is rare; standing in front of the cube is once, ever, in a place
+  // nobody else in the town has been, and the memory is the ONLY thing the walk
+  // out there produces (sim/memory.ts §hum). If it ranked below anything, the
+  // one payout of the game's quietest secret could be crowded out by an ordinary
+  // Tuesday's dig.
+  "hum",
   "delved",
   "company",
   // Above everything else, because it is rare and recent — twelve times a year,
@@ -96,10 +107,31 @@ export function officeLandClaimLine(line: number): Speech | null {
   return { who: "Tired Office Creature", text: OFFICE_LANDCLAIM[line] };
 }
 
+/** The bank a secret speaks from, or null for everybody else.
+ *
+ *  Each of the three has exactly one live variable, and all three read it off
+ *  the world at the moment you speak to them rather than out of a memory log:
+ *  the Mole can see the ladder, she can see the gap in her trees, and the sky is
+ *  doing what the sky is doing. Gating any of it on an away roll would mean they
+ *  hadn't noticed something standing in front of them. */
+function trySecretLine(world: WorldState, v: Villager, now: number): string[] | null {
+  if (v.id === "mole") return moleGroundShallow(world) ? MOLE_SHALLOW : MOLE_DEEP;
+  if (v.id === "ghost") return groveCut(world) ? GHOST_CUT : GHOST_QUIET;
+  if (v.id === "cosmos") {
+    // Her variable is WHICH NIGHT it is, and there are five of them. If you are
+    // somehow talking to her on a night with no shower, she has nothing to say
+    // about it, which is the honest answer — but `present` means the UI cannot
+    // reach her then, so this is a floor and not a sixth bank.
+    const shower = showerTonight(now);
+    return shower ? shower.lines : ["..."];
+  }
+  return null;
+}
+
 /** The next thing a villager says when talked to. Prefers a memory-referencing
  *  line; otherwise an idle line in the form's voice. Avoids immediately
  *  repeating the last line. */
-export function speak(world: WorldState, v: Villager, rng: Rng): Speech {
+export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Speech {
   // The Mole answers before any of this, and from his own bank only. He has no
   // house, no ring, no memories of the town and no opinion about your shelf —
   // every branch below is about being a resident of a place he does not live
@@ -107,10 +139,16 @@ export function speak(world: WorldState, v: Villager, rng: Rng): Speech {
   // that off the live world rather than off a memory, for the reason the
   // scholar's dissent does: it is a fact he can see from where he is standing,
   // and gating it on an away roll would mean he hadn't noticed the ladder.
-  if (v.id === "mole") {
-    const pool = moleGroundShallow(world) ? MOLE_SHALLOW : MOLE_DEEP;
-    let text = rng.pick(pool);
-    if (text === v.lastLine && pool.length > 1) text = rng.pick(pool);
+  //
+  // The other two secrets answer here for the same reason, and the three of them
+  // are one branch rather than three because the reason does not vary: none of
+  // them is a resident of the town, so none of the resident machinery below has
+  // anything true to say about them. Each has its own live variable and reads it
+  // off the world, never off a memory.
+  const secret = trySecretLine(world, v, now);
+  if (secret) {
+    let text = rng.pick(secret);
+    if (text === v.lastLine && secret.length > 1) text = rng.pick(secret);
     v.lastLine = text;
     return { who: v.name, text };
   }
