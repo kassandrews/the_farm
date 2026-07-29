@@ -38,6 +38,15 @@ export const MUSHROOM: TileId = 7; // spread here while you were away — scener
 export const TREE: TileId = 8; // a resource node; solid, gatherable, regrows
 export const ROCK: TileId = 9;
 
+// The underground (Phase 4a). Four rows, and note what they are NOT: a second
+// set of grass/dirt/farmland. Down there the world starts SOLID and you carve
+// space out of it, which is the inverse of the surface — up here you clear
+// what's standing on open ground, down there open ground is the thing you make.
+export const BEDROCK: TileId = 10; // uncarved; the default state of the layer
+export const CAVE_FLOOR: TileId = 11; // what carving leaves behind
+export const ORE_VEIN: TileId = 12; // a resource node in the rock, seen only once you tunnel to it
+export const SHAFT: TileId = 13; // the way down and the way up — one tile, present on BOTH layers
+
 export const TILES: Record<TileId, TileDef> = {
   [GRASS]: {
     id: GRASS,
@@ -115,6 +124,40 @@ export const TILES: Record<TileId, TileDef> = {
     shade: "#83b352",
     diggable: true, // clearable if you'd rather have plain grass — never required
     tillable: true,
+  },
+  // --- Underground -----------------------------------------------------------
+  // Dark, and deliberately low-contrast between the two rock rows: a vein has to
+  // be found by tunnelling to it, not spotted through solid stone from a
+  // distance. The renderer draws the ore specks; the base colours stay close.
+  [BEDROCK]: {
+    id: BEDROCK,
+    name: "Rock face",
+    color: "#3a352e",
+    top: "#443e36",
+    shade: "#2f2b25",
+    solid: true,
+  },
+  [CAVE_FLOOR]: {
+    id: CAVE_FLOOR,
+    name: "Cave floor",
+    color: "#5b544a",
+    top: "#655d52",
+    shade: "#4e483f",
+  },
+  [ORE_VEIN]: {
+    id: ORE_VEIN,
+    name: "Ore vein",
+    color: "#414046",
+    top: "#4b4a51",
+    shade: "#37363b",
+    solid: true,
+  },
+  [SHAFT]: {
+    id: SHAFT,
+    name: "Shaft",
+    // Reads as a hole from above and as daylight from below; the renderer gives
+    // it a ladder. Never solid — stepping onto it is how you use it.
+    color: "#241f1a",
   },
   [FARMLAND_WET]: {
     id: FARMLAND_WET,

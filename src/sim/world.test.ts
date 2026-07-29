@@ -12,9 +12,23 @@ import {
   chunkCoordOf,
   residentChunkCount,
   isWalkable,
+  carve,
+  canCarve,
+  shafts,
+  depthAt,
   CHUNK,
 } from "./world";
-import { GRASS, DIRT, PLANK, STONE, TREE } from "../content/tiles";
+import {
+  GRASS,
+  DIRT,
+  PLANK,
+  STONE,
+  TREE,
+  BEDROCK,
+  CAVE_FLOOR,
+  ORE_VEIN,
+  SHAFT,
+} from "../content/tiles";
 
 function freshWorld() {
   return newWorld({ name: "T", form: "dog", spot: "forest", seed: 7 });
@@ -121,5 +135,129 @@ describe("chunked tilemap edits", () => {
     setTile(w, x, y, GRASS); // back to what generation produces
     expect(w.overrides[tileKey(x, y)]).toBeUndefined();
     expect(tileAt(w, x, y)).toBe(GRASS);
+  });
+});
+
+describe("the underground layer", () => {
+  it("is solid rock everywhere until you cut it", () => {
+    // The inverse of the surface, and the reason `under` starts empty: down
+    // there generation hands you nothing and every open cell is one you made.
+    const w = freshWorld();
+    let open = 0;
+    for (let y = -20; y < 20; y++) {
+      for (let x = -20; x < 20; x++) {
+        if (isWalkable(w, x, y, "under")) open++;
+      }
+    }
+    expect(open).toBe(0);
+  });
+
+  it("keeps the two layers' edits apart at the same coordinate", () => {
+    const w = freshWorld();
+    const g = findGrass(w);
+    carve(w, g.x, g.y);
+    expect(tileAt(w, g.x, g.y, "under")).toBe(CAVE_FLOOR);
+    expect(tileAt(w, g.x, g.y)).toBe(GRASS); // the ground above is untouched
+    dig(w, g.x, g.y);
+    expect(tileAt(w, g.x, g.y)).toBe(DIRT);
+    expect(tileAt(w, g.x, g.y, "under")).toBe(CAVE_FLOOR);
+  });
+
+  it("generates the same rock for a seed regardless of homestead spot", () => {
+    // The surface shapes itself around where you settled; the rock does not, or
+    // two towns from one seed would disagree about where the ore is.
+    const a = newWorld({ name: "A", form: "dog", spot: "forest", seed: 12 });
+    const b = newWorld({ name: "B", form: "dog", spot: "hilltop", seed: 12 });
+    for (let x = 0; x < 40; x++) {
+      expect(tileAt(a, x, 3, "under")).toBe(tileAt(b, x, 3, "under"));
+    }
+  });
+
+  it("has ore veins in the rock, and they are solid until gathered", () => {
+    const w = freshWorld();
+    let veins = 0;
+    for (let y = 0; y < 40; y++) {
+      for (let x = 0; x < 40; x++) if (tileAt(w, x, y, "under") === ORE_VEIN) veins++;
+    }
+    expect(veins).toBeGreaterThan(0);
+    expect(veins).toBeLessThan(1600 / 4); // scattered, never a wall of ore
+  });
+
+  it("won't let the shovel take a vein — that's gathering, not carving", () => {
+    const w = freshWorld();
+    let vein: { x: number; y: number } | null = null;
+    for (let y = 0; y < 40 && !vein; y++) {
+      for (let x = 0; x < 40 && !vein; x++) {
+        if (tileAt(w, x, y, "under") === ORE_VEIN) vein = { x, y };
+      }
+    }
+    expect(vein).not.toBeNull();
+    expect(canCarve(w, vein!.x, vein!.y)).toBe(false);
+    expect(carve(w, vein!.x, vein!.y)).toBe(false);
+    expect(tileAt(w, vein!.x, vein!.y, "under")).toBe(ORE_VEIN);
+  });
+
+  it("carves free, and a carved cell is walkable", () => {
+    const w = freshWorld();
+    const spot = { x: 30, y: 30 };
+    setTile(w, spot.x, spot.y, BEDROCK, "under"); // ensure it's rock, not a vein
+    expect(carve(w, spot.x, spot.y)).toBe(true);
+    expect(isWalkable(w, spot.x, spot.y, "under")).toBe(true);
+    expect(carve(w, spot.x, spot.y)).toBe(false); // already open
+  });
+
+  it("ignores walls and furniture above when walking underground", () => {
+    // A tunnel can't be blocked by someone's bed on the ground overhead.
+    const w = freshWorld();
+    const spot = { x: 31, y: 31 };
+    setTile(w, spot.x, spot.y, BEDROCK, "under");
+    carve(w, spot.x, spot.y);
+    w.build[tileKey(spot.x, spot.y)] = { id: "wall", finish: "pine" };
+    expect(isWalkable(w, spot.x, spot.y)).toBe(false);
+    expect(isWalkable(w, spot.x, spot.y, "under")).toBe(true);
+  });
+});
+
+describe("depth is distance from your own shaft", () => {
+  it("is Infinity in a town that has never dug down", () => {
+    const w = freshWorld();
+    expect(shafts(w)).toEqual([]);
+    expect(depthAt(w, 0, 0)).toBe(Infinity);
+  });
+
+  it("measures from the NEAREST shaft", () => {
+    const w = freshWorld();
+    setTile(w, 0, 0, SHAFT);
+    setTile(w, 40, 0, SHAFT);
+    expect(depthAt(w, 5, 0)).toBe(5);
+    expect(depthAt(w, 38, 0)).toBe(2);
+    expect(depthAt(w, 20, 0)).toBe(20);
+  });
+
+  it("counts a diagonal as one, the way the tunnel reads", () => {
+    const w = freshWorld();
+    setTile(w, 0, 0, SHAFT);
+    expect(depthAt(w, 3, 3)).toBe(3);
+  });
+
+  it("a new shaft makes ground SHALLOWER, never deeper", () => {
+    // The whole reason depth is measured this way: there must be no route to
+    // the deep end that skips the tunnelling. Sinking a hole next to somewhere
+    // remote spoils it rather than unlocking it.
+    const w = freshWorld();
+    setTile(w, 0, 0, SHAFT);
+    const before = depthAt(w, 60, 60);
+    setTile(w, 58, 58, SHAFT);
+    expect(depthAt(w, 60, 60)).toBeLessThan(before);
+  });
+
+  it("forgets a shaft that was filled in", () => {
+    // shafts() derives from the tiles rather than a parallel list, so undo,
+    // migration and the away sim can't leave a ghost entrance behind.
+    const w = freshWorld();
+    setTile(w, 0, 0, SHAFT);
+    expect(depthAt(w, 4, 0)).toBe(4);
+    setTile(w, 0, 0, DIRT);
+    expect(depthAt(w, 4, 0)).toBe(Infinity);
   });
 });

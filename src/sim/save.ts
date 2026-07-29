@@ -16,7 +16,7 @@ import { makeVillager } from "./villagers";
 import { authoredBed } from "../content/town";
 import type { CharId } from "../content/cast";
 
-export const SCHEMA_VERSION = 16;
+export const SCHEMA_VERSION = 17;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -401,6 +401,23 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       villagers: withFixedCast(raw, now),
     };
   },
+  // v16 → v17: the underground layer (Phase 4a). One new field and nothing
+  // else — `under` is the sparse map of rock you have cut away, and a town that
+  // has never been down there has cut away none of it.
+  //
+  // The empty object is the truthful backfill rather than a convenient one:
+  // underground generation is solid everywhere, so "no edits" reads as "solid
+  // rock under the whole town", which is exactly the state a v16 save was in.
+  // Compare v1 → v2's empty memory log; the shape of the argument is the same.
+  //
+  // Note what it does NOT do: sink a shaft. Descending has to be something the
+  // player did, and a migration that dug a hole in your homestead would be the
+  // world editing itself while you weren't looking.
+  16: (raw) => ({
+    ...raw,
+    schemaVersion: 17,
+    under: typeof raw.under === "object" && raw.under ? raw.under : {},
+  }),
 };
 
 /** The v12 museum, frozen as literals. Migrations must never read the CURRENT
@@ -511,6 +528,7 @@ function isWellFormed(obj: Record<string, unknown>): boolean {
     typeof obj.player === "object" &&
     obj.player !== null &&
     typeof obj.overrides === "object" &&
+    typeof obj.under === "object" &&
     typeof obj.crops === "object" &&
     Array.isArray(obj.villagers)
   );

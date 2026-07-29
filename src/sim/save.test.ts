@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { newWorld } from "./game";
 import { serialize, deserialize, migrateSave, SCHEMA_VERSION } from "./save";
-import { tileKey } from "./world";
+import { tileKey, shafts } from "./world";
+import { SHAFT, CAVE_FLOOR } from "../content/tiles";
 import { TOWN_BUILDINGS, footprintCells } from "../content/town";
 import { count } from "./inventory";
 import { STARTING_SEED } from "./seeds";
@@ -470,5 +471,40 @@ describe("v15 → v16: the plaza stage", () => {
       expect(v.memory.some((m) => m.kind === "festival")).toBe(false);
     }
     expect(migrated.player.memory.some((m) => m.kind === "festival")).toBe(false);
+  });
+});
+
+describe("v16 → v17: the underground", () => {
+  function v16Save(extra: Record<string, unknown> = {}): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    delete w.under; // a town from before the layer existed
+    return { ...w, schemaVersion: 16, ...extra };
+  }
+
+  it("adds an empty under map — solid rock is what a v16 town was under", () => {
+    const migrated = migrateSave(v16Save())!;
+    expect(migrated.under).toEqual({});
+  });
+
+  it("does not sink a shaft", () => {
+    // A migration may furnish a town, never dig in it (the v11→v12 rule, one
+    // layer down). Going underground has to be something the player did.
+    const migrated = migrateSave(v16Save())!;
+    expect(shafts(migrated)).toEqual([]);
+    expect(Object.values(migrated.overrides).includes(SHAFT)).toBe(false);
+  });
+
+  it("keeps a tunnel that is already there", () => {
+    // Idempotence in the direction that matters: re-running the step must not
+    // refill someone's cave. Guards against a later edit writing `{}` flat.
+    const dug = { "3,4": CAVE_FLOOR };
+    const migrated = migrateSave(v16Save({ under: dug }))!;
+    expect(migrated.under).toEqual(dug);
+  });
+
+  it("rekeys nothing on the surface", () => {
+    const before = v16Save();
+    const migrated = migrateSave(before)!;
+    expect(migrated.overrides).toEqual(before.overrides);
   });
 });

@@ -1094,9 +1094,60 @@ Two things the build settled that the plan hadn't, both found on screen:
 
 ## Phase 4 — Depth
 
-- **The underground layer.** The last aspirational line in CLAUDE.md ("surface +
-  underground layers"). The chunk API is already shaped to take a `layer` axis.
-  Brings ore into reach, and the Maverick Mole at the bottom.
+Order settled: **4a underground → 4b company → 4c secrets → 4d crops/seasons.**
+The underground goes first because it is the only one anything else waits on —
+ore is defined-but-unobtainable by design, `slate` is "found by digging deep",
+and the Mole lives down there. Company comes second rather than first because
+DESIGN §Company lists "anyone for a dig" as an example: company shipped alone is
+a follow-behind, and company shipped after the underground has somewhere to go
+where being alone reads as being alone.
+
+### 4a. The underground — step 1 of 4: the layer axis, **done**
+
+`Layer = "surface" | "under"` threads through `tileAt`/`setTile`/`baseTileAt`/
+`getChunk`/`isWalkable` as a trailing parameter defaulting to `"surface"`, so no
+existing caller changed. Four new tile rows (`BEDROCK`, `CAVE_FLOOR`,
+`ORE_VEIN`, `SHAFT`), `carve`, and schema **v17**.
+
+What the build settled:
+
+- **The underground starts SOLID, and that inverts the surface.** Up here
+  generation gives you open ground and scatters obstacles onto it; down there
+  generation gives you rock and every open cell is one you cut. So `under` is
+  sparse in a stronger sense than `overrides` — the size of that object is the
+  size of your tunnel, and a town that has never gone down carries `{}`.
+- **`under` is its own record, not a prefixed key in `overrides`.** The game is
+  live: a keying change would have to rewrite every entry in every deployed
+  save, and a migration that rekeys is a migration that can lose a cell. v17
+  adds one empty object and rekeys nothing. Asserted in test.
+- **Depth is horizontal — distance from your nearest shaft** (Chebyshev), which
+  is what "digging deep" has to mean given DESIGN's "underground is a layer, not
+  a height". The load-bearing property is the *direction*: sinking a new shaft
+  makes its surroundings **shallower**, never deeper. There is therefore no way
+  to reach the deep end by walking somewhere remote on the surface and digging
+  down — you can only tunnel there. Both facts are asserted in `world.test.ts`.
+- **Generation ignores the homestead spot down there.** The surface shapes
+  itself around where you settled; the rock doesn't, or two towns from one seed
+  would disagree about where the ore is.
+- **Veins are generated, never placed, and are gathered rather than carved.**
+  `canCarve` refuses an ore vein — it's a resource node like a tree, so it goes
+  through `sim/gather.ts`, and letting the shovel cut it away would drop the ore
+  on the floor. Low contrast against bedrock on purpose: you meet a vein at the
+  face you're digging, not by spotting it through solid stone.
+- **A shaft is a tile on both layers, and `shafts()` derives from the tiles**
+  rather than a parallel list — so undo, migration and the away sim can't leave
+  a ghost entrance behind. Asserted by filling one in.
+
+Still to do in 4a: **step 2** descent + the player's layer (walkability, pathing,
+camera), **step 3** rendering the dark, **step 4** ore, `slate`, and depth
+rewards.
+
+Loose end worth deciding in step 4: **what happens if you sink a shaft next to
+something deep.** The Mole is "found by digging deep", and depth is relative to
+your entrances — so a hole dug beside him makes his ground shallow. Spoiling a
+secret by paving toward it may be exactly right (it is the Blessed Carrot's
+temperament as a map rule), but it should be a decision, not a side effect.
+
 - **Company** — invite a villager along (DESIGN §"Company"). Nothing else in the
   three inspirations does this.
 - **Secrets** — the Quiet Ghost exists only in the renderer's night-gating today;
@@ -1128,7 +1179,9 @@ you trip over them:
   put a loose object on the ground — a new tile or a small world layer — which
   is its own decision and was deliberately not improvised alongside the rest.
 - **Ore is defined but unobtainable** until the underground layer exists. This
-  is intentional, not an oversight.
+  is intentional, not an oversight. As of 4a step 1 the veins are generated and
+  in the ground; nothing can reach them until descent (step 2) and gathering
+  (step 4) exist.
 - ~~**Six of the seven fixed cast exist.**~~ **All seven now do** — office,
   shop, heap, museum, seed stall, errands board, plaza stage. DESIGN's
   institution table is complete; the note at the foot of `src/content/cast.ts`

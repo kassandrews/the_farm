@@ -4,9 +4,10 @@
 // keeps saves tiny and away-sim honest — an unedited tile is always whatever
 // generation says, forever.
 //
-// Layers: this slice ships the surface. The underground layer is future work
-// (DESIGN); the generator is written so a `layer` axis can be added without
-// reshaping callers.
+// Layers: `Layer` is an axis, not a height (DESIGN §Structures — "Underground
+// is a layer, not a height"). Every read and write takes one, defaulting to
+// "surface" so the several hundred existing callers that only ever meant the
+// surface still say what they meant.
 
 import type { TileId } from "../content/tiles";
 import {
@@ -19,6 +20,10 @@ import {
   MUSHROOM,
   TREE,
   ROCK,
+  BEDROCK,
+  ORE_VEIN,
+  SHAFT,
+  CAVE_FLOOR,
   tileDef,
 } from "../content/tiles";
 import { NODES } from "../content/nodes";
@@ -28,6 +33,18 @@ import type { WorldState, HomesteadSpot } from "./types";
 import { hash2 } from "./rng";
 
 export const CHUNK = 16; // tiles per chunk edge — chunks are a render/streaming unit
+
+/** Which layer a coordinate is on. Two, and there will never be a third: the
+ *  underground is the second half of one world, not the first rung of a
+ *  stack. */
+export type Layer = "surface" | "under";
+
+/** The sparse edit map for a layer. Underground edits live in their own record
+ *  rather than under a prefixed key, so a save that predates the underground
+ *  needs no rekeying — only an empty object added (schema v17). */
+function editsFor(world: WorldState, layer: Layer): Record<string, TileId> {
+  return layer === "under" ? world.under : world.overrides;
+}
 
 export function tileKey(x: number, y: number): string {
   return `${x},${y}`;
@@ -55,8 +72,8 @@ export type Chunk = Uint16Array;
 
 const chunkCache = new WeakMap<WorldState, Map<string, Chunk>>();
 
-export function chunkKey(cx: number, cy: number): string {
-  return `${cx},${cy}`;
+export function chunkKey(cx: number, cy: number, layer: Layer = "surface"): string {
+  return layer === "under" ? `u:${cx},${cy}` : `${cx},${cy}`;
 }
 
 /** Chunk coordinate containing a world tile. Floor division so it stays correct
@@ -65,14 +82,23 @@ export function chunkCoordOf(x: number, y: number): { cx: number; cy: number } {
   return { cx: Math.floor(x / CHUNK), cy: Math.floor(y / CHUNK) };
 }
 
-/** Generate one chunk's tiles. Pure given (seed, spot, chunk coord). */
-function generateChunk(seed: number, spot: HomesteadSpot, cx: number, cy: number): Chunk {
+/** Generate one chunk's tiles. Pure given (seed, spot, chunk coord, layer). */
+function generateChunk(
+  seed: number,
+  spot: HomesteadSpot,
+  cx: number,
+  cy: number,
+  layer: Layer,
+): Chunk {
   const tiles = new Uint16Array(CHUNK * CHUNK);
   const ox = cx * CHUNK;
   const oy = cy * CHUNK;
   for (let ty = 0; ty < CHUNK; ty++) {
     for (let tx = 0; tx < CHUNK; tx++) {
-      tiles[ty * CHUNK + tx] = generatedTile(seed, spot, ox + tx, oy + ty);
+      tiles[ty * CHUNK + tx] =
+        layer === "under"
+          ? generatedUnderTile(seed, ox + tx, oy + ty)
+          : generatedTile(seed, spot, ox + tx, oy + ty);
     }
   }
   return tiles;
@@ -80,16 +106,21 @@ function generateChunk(seed: number, spot: HomesteadSpot, cx: number, cy: number
 
 /** The chunk at a chunk coordinate, generating and caching it on first touch.
  *  This is the lazy-load path — nothing anywhere assumes a bounded world. */
-export function getChunk(world: WorldState, cx: number, cy: number): Chunk {
+export function getChunk(
+  world: WorldState,
+  cx: number,
+  cy: number,
+  layer: Layer = "surface",
+): Chunk {
   let chunks = chunkCache.get(world);
   if (!chunks) {
     chunks = new Map();
     chunkCache.set(world, chunks);
   }
-  const key = chunkKey(cx, cy);
+  const key = chunkKey(cx, cy, layer);
   let chunk = chunks.get(key);
   if (!chunk) {
-    chunk = generateChunk(world.seed, world.homestead.spot, cx, cy);
+    chunk = generateChunk(world.seed, world.homestead.spot, cx, cy, layer);
     chunks.set(key, chunk);
   }
   return chunk;
@@ -102,9 +133,14 @@ export function residentChunkCount(world: WorldState): number {
 }
 
 /** The generated (pre-edit) tile, read through the chunk cache. */
-export function baseTileAt(world: WorldState, x: number, y: number): TileId {
+export function baseTileAt(
+  world: WorldState,
+  x: number,
+  y: number,
+  layer: Layer = "surface",
+): TileId {
   const { cx, cy } = chunkCoordOf(x, y);
-  const chunk = getChunk(world, cx, cy);
+  const chunk = getChunk(world, cx, cy, layer);
   // Modulo that stays positive on the negative side of the origin.
   const lx = x - cx * CHUNK;
   const ly = y - cy * CHUNK;
@@ -165,22 +201,97 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
   return GRASS;
 }
 
-/** The effective surface tile: a player/town edit wins, else the generated
- *  chunk underneath. */
-export function tileAt(world: WorldState, x: number, y: number): TileId {
-  const edit = world.overrides[tileKey(x, y)];
-  if (edit !== undefined) return edit;
-  return baseTileAt(world, x, y);
+// --- The underground ----------------------------------------------------------
+// Solid by default: every unedited underground tile is rock, and the open space
+// down there is entirely the space you carved. That inverts the surface (where
+// generation hands you open ground and scatters obstacles onto it), and it is
+// what makes a tunnel a thing you BUILT rather than a corridor you found.
+//
+// Ore veins are generated, not placed — a given town's veins are a stable fact
+// about that town, the way its forest is. They sit inside the rock, so you only
+// ever meet one at the face you are currently digging.
+
+/** Base density of ore veins in the rock. Read against a hash, like trees. */
+const VEIN_DENSITY = 0.055;
+
+/** Deterministic underground tile before any edits. Note what it does NOT take:
+ *  the homestead spot. The surface generator shapes itself around where you
+ *  settled; the rock does not care, and a spot-dependent underground would mean
+ *  two towns from one seed disagree about where the ore is. */
+export function generatedUnderTile(seed: number, x: number, y: number): TileId {
+  const roll = hash2(x, y, seed ^ 0x0deb) / 4294967296;
+  return roll < VEIN_DENSITY ? ORE_VEIN : BEDROCK;
 }
 
-/** Write an edit (dig/place/till). Writing the tile that generation would
+/** The effective tile on a layer: a player/town edit wins, else the generated
+ *  chunk underneath. */
+export function tileAt(
+  world: WorldState,
+  x: number,
+  y: number,
+  layer: Layer = "surface",
+): TileId {
+  const edit = editsFor(world, layer)[tileKey(x, y)];
+  if (edit !== undefined) return edit;
+  return baseTileAt(world, x, y, layer);
+}
+
+/** Write an edit (dig/place/till/carve). Writing the tile that generation would
  *  already produce clears the override instead, so saves don't accumulate
  *  no-op edits. */
-export function setTile(world: WorldState, x: number, y: number, id: TileId): void {
-  const base = baseTileAt(world, x, y);
+export function setTile(
+  world: WorldState,
+  x: number,
+  y: number,
+  id: TileId,
+  layer: Layer = "surface",
+): void {
+  const base = baseTileAt(world, x, y, layer);
   const k = tileKey(x, y);
-  if (id === base) delete world.overrides[k];
-  else world.overrides[k] = id;
+  const edits = editsFor(world, layer);
+  if (id === base) delete edits[k];
+  else edits[k] = id;
+}
+
+/** Every shaft in the world, derived by scanning the surface edits rather than
+ *  kept as its own list. A shaft is a tile, so the tiles are the truth — a
+ *  parallel array would be one more thing undo, migration and the away sim
+ *  could each forget to keep in step.
+ *
+ *  Linear in the number of edits, which is the size of everything you have ever
+ *  dug or placed. Fine at town scale; if it ever isn't, cache it off the same
+ *  counter that invalidates the rooms index rather than storing it. */
+export function shafts(world: WorldState): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = [];
+  for (const [key, id] of Object.entries(world.overrides)) {
+    if (id !== SHAFT) continue;
+    const at = parseTileKey(key);
+    if (at) out.push(at);
+  }
+  return out;
+}
+
+/** How deep a cell is: tiles from the NEAREST shaft, Chebyshev (diagonals cost
+ *  one, matching how the tunnel reads on screen). Infinity when the town has no
+ *  shaft at all.
+ *
+ *  This is what "digging deep" means here, and it is a horizontal measure on
+ *  purpose — DESIGN is explicit that the underground is a layer and not a
+ *  height, so depth cannot be a Z. Distance-from-your-own-entrance gets the
+ *  same thing honestly: what's deep is what you had to tunnel a long way to
+ *  reach.
+ *
+ *  Note the direction it moves in. Sinking a NEW shaft makes its surroundings
+ *  shallower, never deeper, so there is no way to shortcut to the deep end by
+ *  walking somewhere on the surface and digging down — you can only get there
+ *  the long way. */
+export function depthAt(world: WorldState, x: number, y: number): number {
+  let best = Infinity;
+  for (const s of shafts(world)) {
+    const d = Math.max(Math.abs(x - s.x), Math.abs(y - s.y));
+    if (d < best) best = d;
+  }
+  return best;
 }
 
 /** Is this tile walkable? Both layers get a say: a solid tile (water, a tree)
@@ -190,8 +301,18 @@ export function setTile(world: WorldState, x: number, y: number, id: TileId): vo
  *  Reads world.build directly rather than calling into sim/structures.ts, which
  *  imports this module — the content table is the shared dependency, so the two
  *  sim modules don't have to import each other. */
-export function isWalkable(world: WorldState, x: number, y: number): boolean {
-  if (tileDef(tileAt(world, x, y)).solid) return false;
+export function isWalkable(
+  world: WorldState,
+  x: number,
+  y: number,
+  layer: Layer = "surface",
+): boolean {
+  if (tileDef(tileAt(world, x, y, layer)).solid) return false;
+  // Underground there is nothing standing and nothing furnished — the rock is
+  // the only thing that can stop you, and it already had its say above. Walls
+  // and furniture are surface facts, so this doesn't consult them down there
+  // and a tunnel can never be blocked by a bed on the ground above it.
+  if (layer === "under") return true;
   const built = world.build[tileKey(x, y)];
   if (built && structureDef(built.id).solid) return false;
   return !furnitureBlocksHere(world, x, y);
@@ -257,6 +378,23 @@ export function till(world: WorldState, x: number, y: number): boolean {
     return true;
   }
   return false;
+}
+
+/** Is there rock here to cut? The face of a tunnel, in other words. An ore vein
+ *  is deliberately NOT carvable — it's a resource node, so it goes through
+ *  gathering (sim/gather.ts) the way a tree does, and cutting it away with the
+ *  shovel would throw the ore on the floor. */
+export function canCarve(world: WorldState, x: number, y: number): boolean {
+  return tileAt(world, x, y, "under") === BEDROCK;
+}
+
+/** Cut rock away, leaving cave floor. The underground's answer to `dig`, and
+ *  free for the same reason: terraforming is never rationed (DESIGN
+ *  §Materials), so a tunnel costs time and nothing else. */
+export function carve(world: WorldState, x: number, y: number): boolean {
+  if (!canCarve(world, x, y)) return false;
+  setTile(world, x, y, CAVE_FLOOR, "under");
+  return true;
 }
 
 export { FARMLAND, FARMLAND_WET };

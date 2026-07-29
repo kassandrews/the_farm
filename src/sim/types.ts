@@ -140,6 +140,16 @@ export interface WorldState {
    *  Digging and placing write here; generation supplies everything else. */
   overrides: Record<string, TileId>;
 
+  /** The same thing one layer down: sparse edits over the generated rock, keyed
+   *  "x,y". Its own record rather than a prefix on `overrides` so that adding
+   *  the underground rekeyed nothing in a live save — v17 adds an empty object
+   *  and every existing entry keeps meaning exactly what it meant.
+   *
+   *  Sparse here means something stronger than it does above: underground
+   *  generation is SOLID, so an entry is a cell you personally cut out. The
+   *  size of this object is the size of your tunnel. */
+  under: Record<string, TileId>;
+
   /** Things STANDING on the ground, keyed "x,y" — walls and doors now,
    *  furniture later. A separate layer from `overrides` because a tile answers
    *  "what is the ground here" and this answers "what is standing on it"; a
