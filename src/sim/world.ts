@@ -206,16 +206,13 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
 // about that town, the way its forest is. They sit inside the rock, so you only
 // ever meet one at the face you are currently digging.
 
-/** Base density of ore veins in the rock. Read against a hash, like trees. */
-const VEIN_DENSITY = 0.055;
-
 /** Deterministic underground tile before any edits. Note what it does NOT take:
  *  the homestead spot. The surface generator shapes itself around where you
  *  settled; the rock does not care, and a spot-dependent underground would mean
  *  two towns from one seed disagree about where the ore is. */
 export function generatedUnderTile(seed: number, x: number, y: number): TileId {
   const roll = hash2(x, y, seed ^ 0x0deb) / 4294967296;
-  return roll < VEIN_DENSITY ? ORE_VEIN : BEDROCK;
+  return roll < NODES.vein.density ? ORE_VEIN : BEDROCK;
 }
 
 /** The effective tile on a layer: a player/town edit wins, else the generated

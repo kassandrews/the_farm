@@ -17,6 +17,13 @@
 // at least one MATERIAL and at least one PRODUCE. That is the rule above, made
 // mechanical — if someone adds a row that only takes carrots, the test fails
 // and tells them they've just made farming mandatory.
+//
+// ORE IS AN ALTERNATIVE AND NEVER A REQUIREMENT (DESIGN §Materials). It may sit
+// beside the wood and the carrots on any row; no row may take it alone. An
+// extra way to pay gates nothing, so the digger gets the same sentence out of
+// her that the farmer does — but a row payable only in ore would be the
+// underground made compulsory by the back door, which is the exact failure this
+// whole table was built to prevent, one material over.
 
 import type { ItemId } from "./items";
 import type { SkinId } from "./skins";
@@ -53,6 +60,7 @@ export const SHOP: ShopRow[] = [
     accepts: [
       { item: "wood", count: 12 },
       { item: "stone", count: 8 },
+      { item: "ore", count: 6 },
       { item: "carrot", count: 4 },
       { item: "radish", count: 4 },
       { item: "potato", count: 4 },
@@ -67,6 +75,7 @@ export const SHOP: ShopRow[] = [
     accepts: [
       { item: "wood", count: 32 },
       { item: "stone", count: 22 },
+      { item: "ore", count: 16 },
       { item: "carrot", count: 11 },
       { item: "radish", count: 11 },
       { item: "potato", count: 11 },

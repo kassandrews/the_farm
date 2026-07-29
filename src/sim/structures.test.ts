@@ -155,7 +155,7 @@ describe("building claims the ground", () => {
     // only looked at the ground tile would let the tree come back inside the
     // house. Building has to count as claiming.
     placeStructure(w, x, y, "wall", "pine");
-    const wellPast = 1000 + nodeDef("tree").regrowMs + nodeDef("rock").regrowMs + 1;
+    const wellPast = 1000 + nodeDef("tree").regrowMs! + nodeDef("rock").regrowMs! + 1;
     updateRegrowth(w, wellPast);
     expect(w.regrow[tileKey(x, y)]).toBeUndefined();
     expect(structureAt(w, x, y)).not.toBeNull();
@@ -174,7 +174,7 @@ describe("building claims the ground", () => {
     }
     const { x, y } = spot!;
     setTile(w, x, y, GRASS); // bare, unclaimed
-    updateRegrowth(w, 1000 + nodeDef("tree").regrowMs + nodeDef("rock").regrowMs + 1);
+    updateRegrowth(w, 1000 + nodeDef("tree").regrowMs! + nodeDef("rock").regrowMs! + 1);
     expect(w.regrow[tileKey(x, y)]).toBeUndefined();
     expect(structureAt(w, x, y)).toBeNull();
   });

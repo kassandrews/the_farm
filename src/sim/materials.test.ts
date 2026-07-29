@@ -153,9 +153,9 @@ describe("gathering", () => {
     const { x, y } = findNode(w, TREE);
     gather(w, x, y, 1000);
     expect(pendingRegrowth(w)).toBe(1);
-    updateRegrowth(w, 1000 + NODES.tree.regrowMs - 1); // not yet
+    updateRegrowth(w, 1000 + NODES.tree.regrowMs! - 1); // not yet
     expect(tileAt(w, x, y)).toBe(DIRT);
-    updateRegrowth(w, 1000 + NODES.tree.regrowMs + 1); // now
+    updateRegrowth(w, 1000 + NODES.tree.regrowMs! + 1); // now
     expect(tileAt(w, x, y)).toBe(TREE);
     expect(pendingRegrowth(w)).toBe(0);
   });
@@ -165,7 +165,7 @@ describe("gathering", () => {
     const { x, y } = findNode(w, TREE);
     gather(w, x, y, 1000);
     setTile(w, x, y, PLANK); // you built here
-    updateRegrowth(w, 1000 + NODES.tree.regrowMs * 10);
+    updateRegrowth(w, 1000 + NODES.tree.regrowMs! * 10);
     expect(tileAt(w, x, y)).toBe(PLANK); // your floor survived
     expect(pendingRegrowth(w)).toBe(0); // and it stopped nagging
   });
@@ -182,7 +182,7 @@ describe("gathering", () => {
       lastUpdate: 1000,
       wateredUntil: 1000,
     };
-    updateRegrowth(w, 1000 + NODES.tree.regrowMs * 10);
+    updateRegrowth(w, 1000 + NODES.tree.regrowMs! * 10);
     expect(tileAt(w, x, y)).not.toBe(TREE);
   });
 

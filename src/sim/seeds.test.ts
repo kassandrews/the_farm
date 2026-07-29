@@ -39,10 +39,20 @@ describe("what the stall will take", () => {
   it("never asks for something you can't get", () => {
     for (const row of [...SEED_ROWS, ...VARIETY_ROWS]) {
       for (const p of row.accepts) {
-        expect(p.item).not.toBe("ore"); // no underground yet
         expect(p.item).not.toBe("cloth"); // the Menace's to sell
         expect(p.item).not.toBe("seed"); // paying for seed in seed
       }
+    }
+  });
+
+  it("never lets ORE be the only way to pay for a row", () => {
+    // Ore was on the list above while it was unobtainable. It is obtainable
+    // now, so the exclusion is replaced by the rule that always mattered
+    // (DESIGN §Materials): ore is an alternative, never a requirement. The stall
+    // lists no ore today and may; what it may never do is make the underground
+    // the only route to a crop variety, which would be farming gated on mining.
+    for (const row of [...SEED_ROWS, ...VARIETY_ROWS]) {
+      expect(row.accepts.filter((p) => p.item !== "ore").length).toBeGreaterThan(0);
     }
   });
 

@@ -77,7 +77,8 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   Schema v16, which adds **no field** — its whole body is the stamp.
   **Phase 3's cast is done: all seven institutions exist.**
 
-**Next:** Phase 4 — the underground layer, company, secrets, seasons.
+**Next:** Phase 4 — the underground layer (4a steps 1–3 done; step 4 is the
+Mole and depth rewards), then company, secrets, seasons.
 
 **Save schema is at v16.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
@@ -1221,15 +1222,67 @@ What step 2b settled:
   back verb takes it back. What you cut underneath stays cut: it closes the lid,
   not the tunnel.
 
-Still to do in 4a: **step 3** ore gathering and `slate`, **step 4** depth
-rewards and the Mole.
+### 4a step 3 — ore, and slate, **done**
 
-Loose end for step 3, found by playing it: **an ore vein can dead-end a
-tunnel.** `canCarve` refuses ore (it's gathered, not cut), so until gathering
-exists a vein in front of you is simply a wall you cannot pass. It is rare
-enough at 5.5% density to be a curiosity rather than a blocker, and step 3
-removes it by definition — but it is the reason a landing has four exits and not
-one.
+A vein became a row in `content/nodes.ts`, `sim/mining.ts` owns the deep find,
+and ore joined the Menace's counter. **No schema change and no migration** —
+see the regrow note below for why that fell out rather than being arranged.
+
+What the build settled:
+
+- **The pick takes ore; you never change tools at a face.** Underground the
+  shovel already cuts rock, and ore and rock are met at the same face in the
+  same swing — so `undergroundTarget` lights a vein for the shovel as well as
+  for the gather tool. Same argument that let the second dig on a tile become a
+  shaft: no new tool, no new button, for a distinction only the code cares
+  about.
+- **The reticle already said which it was, for free.** It colours by kind, so a
+  vein ahead reads green (gather) where plain rock reads white (tool). That is
+  the whole tell, and it is the right amount: you learn what's in front of you
+  by standing in front of it, never by reading veins across a dark room.
+- **Veins never regrow, and that is the claim rule rather than a hole in it.**
+  Underground there is no unclaimed ground — every open cell is one you cut — so
+  a vein coming back would re-block a corridor you had already paid for in taps,
+  the exact outcome regrow-unless-claimed exists to prevent. What replaces
+  regrowth below is DISTANCE: the rock is unbounded, so ore is never scarce,
+  only further off.
+- **Which is why there was no migration.** `world.regrow` is keyed `"x,y"` with
+  no layer in it, and it stays a surface-only record because the only node that
+  never comes back is the only one that lives underground. That is a coincidence
+  worth naming, so `mining.test.ts` asserts it: the day something underground
+  regrows, that map needs a layer and every deployed save needs rekeying.
+- **A vein yields 4 — less than a rock — and the trek is why.** You reached it
+  through a tunnel you dug, so the walk already did the work a number would
+  otherwise have to. Paying twice is how the underground becomes a grind.
+- **Ore is an alternative at the counters, never a requirement.** DESIGN now
+  says so by name, and two tests assert it (`shop.test.ts`, `seeds.test.ts`): a
+  row may list ore beside the wood and the carrots; no row may list it alone.
+  The old "never ore" exclusions were about ore being *unobtainable*, and that
+  reason expired — the rule that replaced them is the one that always mattered,
+  because a row payable only in ore is the underground made compulsory by the
+  back door.
+- **Errands still never ask for ore, and now for a better reason.** A card names
+  one item and offers nothing instead of it, so an ore card is "go underground
+  or miss this friendship beat" — and it is the first place friendship is earned
+  by doing. The counter may take ore *precisely because* every row there lists
+  alternatives. The distinction is "does this offer a way out", not "is this
+  obtainable".
+- **Slate has no giver, and shouldn't.** Every other locked finish comes from
+  somebody — the Menace has standards, the Gremlin has a facility, the Ghost has
+  her dark wood. Slate is simply what the deep rock is, so it unlocks in
+  `mineVein` at `SLATE_DEPTH` (12, about a screen of tunnel past a landing) and
+  the map pays out rather than a character handing you a reward. Its hint has
+  said exactly this since the table was written.
+- **No `witness` underground**, following carve's precedent: nobody is down
+  there, and the town hearing about it would be the memory log inventing an
+  audience. Consequence accepted — a player who only ever mines earns no
+  "gathered" memories. Worth revisiting when 4b puts company in the tunnel,
+  since then somebody genuinely IS there to see it.
+- **No "deepest reached" counter anywhere.** The unlocked list is the whole
+  record. A high-water mark is a score, which is the thing the museum went to
+  such lengths not to be.
+
+Still to do in 4a: **step 4** depth rewards and the Mole.
 
 Loose end worth deciding in step 4: **what happens if you sink a shaft next to
 something deep.** The Mole is "found by digging deep", and depth is relative to
@@ -1251,10 +1304,11 @@ temperament as a map rule), but it should be a decision, not a side effect.
 Small things that are half-built or deliberately stubbed. Worth knowing before
 you trip over them:
 
-- **Two of the three non-starter finishes are still unobtainable.**
+- **One of the three non-starter finishes is still unobtainable.**
   `whitewash` now arrives with Bissenette's commission (Phase 3b), which is what
-  its unlock hint always meant. `walnut` belongs to the Quiet Ghost and `slate`
-  is found by digging deep — both Phase 4, and both deliberately NOT bolted onto
+  its unlock hint always meant, and `slate` is found in 4a step 3 by mining a
+  vein twelve tiles of tunnel from your nearest shaft. Only `walnut` is left; it
+  belongs to the Quiet Ghost, is Phase 4c, and is deliberately NOT bolted onto
   a commission. A Ghost who simply moves in one afternoon would spoil the one
   thing about her worth keeping (CLAUDE.md §Tone), so she stays out of the
   arrivals table until secrets are built.
@@ -1267,11 +1321,17 @@ you trip over them:
   (pillar 3) and give a homecoming a lap of the town, but it needs somewhere to
   put a loose object on the ground — a new tile or a small world layer — which
   is its own decision and was deliberately not improvised alongside the rest.
-- **Ore is defined but unobtainable** until gathering exists. This is
-  intentional, not an oversight. As of 4a step 2b you can stand in front of a
-  vein and look at it — the veins are generated, the descent is wired, and the
-  cut face shows the metal — but `canCarve` refuses ore on purpose, so nothing
-  can take it out of the rock until step 3.
+- ~~**Ore is defined but unobtainable.**~~ Fixed in 4a step 3. `canCarve` still
+  refuses ore — cutting it away with the shovel would drop the metal on the
+  floor — but a vein is a node now, so the same swing gathers it. All three
+  gathered classes are obtainable, which makes DESIGN's "three gathered classes,
+  ever" true for the first time rather than aspirational.
+
+  **Nothing is BUILT from ore yet**, and that is the deliberate half. Settled
+  when step 3 was planned: ore's sink for now is the Menace's counter (and the
+  museum row that always existed), and ore-costed objects — a lamp, a stove,
+  something metal-framed — come later. They must stay optional when they do: a
+  wall or a bed that cost ore would gate housing behind digging.
 - ~~**Six of the seven fixed cast exist.**~~ **All seven now do** — office,
   shop, heap, museum, seed stall, errands board, plaza stage. DESIGN's
   institution table is complete; the note at the foot of `src/content/cast.ts`

@@ -40,7 +40,9 @@ import { emptyInventory, add, canAfford, spend, refund, shortfall } from "./inve
 import type { Cost } from "./inventory";
 import { itemLabel } from "../content/items";
 import type { ItemId } from "../content/items";
-import { gather, nodeNear, updateRegrowth } from "./gather";
+import { gather, nodeAt, nodeNear, updateRegrowth } from "./gather";
+import { nodeDef } from "../content/nodes";
+import { mineVein } from "./mining";
 import { starterSkins, defaultSkin } from "../content/skins";
 import { STARTING_CROP } from "../content/crops";
 import { STARTING_SEED, canSow, sow } from "./seeds";
@@ -413,15 +415,19 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
  *  it would cut a wall you didn't mean and tunnelling would stop being
  *  something you steer.
  *
- *  An ore vein ahead of you reads "none", not "gather". Veins are gathered, not
- *  carved (world.ts §canCarve), and gathering them is step 3 — so for now the
- *  honest reticle is an unlit one. Lighting it up would promise a thing the
- *  button cannot yet do. */
+ *  A vein ahead of you reads "gather", and it does so for the SHOVEL as well as
+ *  for the gather tool. Down here the shovel is a pick, and rock and ore are
+ *  met at the same face in the same swing — making you stop and switch tools at
+ *  a vein would break the one continuous verb the tunnel has, for a distinction
+ *  only the code cares about. It is the same argument that let the second dig
+ *  on a tile become a shaft: no new tool, no new button. */
 function undergroundTarget(world: WorldState, tool: Tool, x: number, y: number): ActionTarget {
   if (tileAt(world, x, y) === SHAFT) return { x, y, kind: "shaft" };
   // The tool is consulted, not assumed. Lighting the rock face while the
   // watering can is out would promise a cut that ACT is not going to make.
   const ahead = aheadOf(world);
+  if (tool !== "dig" && tool !== "gather") return { x, y, kind: "none" };
+  if (nodeAt(world, ahead.x, ahead.y, "under")) return { ...ahead, kind: "gather" };
   if (tool === "dig" && canCarve(world, ahead.x, ahead.y)) return { ...ahead, kind: "tool" };
   return { x, y, kind: "none" };
 }
@@ -443,12 +449,27 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
   }
 
   if (target.kind === "gather") {
+    // Underground the same reticle means the ore in front of you, and the verb
+    // routes through mineVein because depth pays out as well as the ore does.
+    if (world.player.layer === "under") {
+      const got = mineVein(world, target.x, target.y, now)!;
+      // No `witness`, for the reason carving doesn't have one either: nobody is
+      // down there, and the town hearing about it would be the memory log
+      // inventing an audience. The slate is the record instead.
+      return {
+        kind: "gather",
+        changed: true,
+        message: got.foundSlate
+          ? "Under the metal, rock that splits in flat grey sheets. Slate. Nobody down here to tell."
+          : `${nodeDef(got.node).line} ${itemLabel(got.item, got.amount)}.`,
+      };
+    }
     const got = gather(world, target.x, target.y, now)!;
     witness(world, "gathered", undefined, now);
     return {
       kind: "gather",
       changed: true,
-      message: `${got.node === "tree" ? "Timber." : "Split it."} ${itemLabel(got.item, got.amount)}.`,
+      message: `${nodeDef(got.node).line} ${itemLabel(got.item, got.amount)}.`,
     };
   }
 

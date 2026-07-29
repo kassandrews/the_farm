@@ -18,21 +18,23 @@
 //   • The forest refills while you're away, so absence restocks the world
 //     instead of decaying it (DESIGN §"Absence as story").
 
-import type { WorldState } from "./types";
+import type { WorldState, Layer } from "./types";
 import type { NodeId } from "../content/nodes";
-import { nodeDef } from "../content/nodes";
+import { nodeDef, nodeForTile } from "../content/nodes";
 import type { ItemId } from "../content/items";
 import { tileAt, setTile, tileKey } from "./world";
-import { GRASS, DIRT, TREE, ROCK } from "../content/tiles";
+import { GRASS, DIRT } from "../content/tiles";
 import { add } from "./inventory";
 import { furnitureAt } from "./furniture";
 
 /** Which node (if any) is standing on this tile right now. */
-export function nodeAt(world: WorldState, x: number, y: number): NodeId | null {
-  const t = tileAt(world, x, y);
-  if (t === TREE) return "tree";
-  if (t === ROCK) return "rock";
-  return null;
+export function nodeAt(
+  world: WorldState,
+  x: number,
+  y: number,
+  layer: Layer = "surface",
+): NodeId | null {
+  return nodeForTile(tileAt(world, x, y, layer), layer);
 }
 
 /** The node you'd gather from where you're standing.
@@ -67,14 +69,25 @@ export interface GatherResult {
 }
 
 /** Fell the node on this tile: banks its yield and starts its regrow timer.
- *  Returns null when there's nothing here to gather. */
-export function gather(world: WorldState, x: number, y: number, now: number): GatherResult | null {
-  const node = nodeAt(world, x, y);
+ *  Returns null when there's nothing here to gather.
+ *
+ *  A node with no `regrowMs` books no timer, and `world.regrow` therefore stays
+ *  a SURFACE-only record — which is why mining ore needed no schema change and
+ *  no migration. That falls out of the design rather than being arranged: the
+ *  only node that never comes back is the only one that lives underground. */
+export function gather(
+  world: WorldState,
+  x: number,
+  y: number,
+  now: number,
+  layer: Layer = "surface",
+): GatherResult | null {
+  const node = nodeAt(world, x, y, layer);
   if (!node) return null;
   const def = nodeDef(node);
 
-  setTile(world, x, y, DIRT); // felled ground: bare, workable, and claimable
-  world.regrow[tileKey(x, y)] = { node, at: now + def.regrowMs };
+  setTile(world, x, y, def.felled, layer); // bare, workable, and claimable
+  if (def.regrowMs !== null) world.regrow[tileKey(x, y)] = { node, at: now + def.regrowMs };
   add(world.inventory, def.drop, def.yield);
 
   return { node, item: def.drop, amount: def.yield };
@@ -112,7 +125,7 @@ export function updateRegrowth(world: WorldState, now: number): number {
       continue;
     }
     if (now < entry.at) continue;
-    setTile(world, x, y, entry.node === "tree" ? TREE : ROCK);
+    setTile(world, x, y, nodeDef(entry.node).tile);
     delete world.regrow[key];
     regrew++;
   }

@@ -49,10 +49,15 @@ function stock(w: ReturnType<typeof freshWorld>, def: ReturnType<typeof errandDe
 
 describe("the errand table", () => {
   it("only ever asks for things you can actually get", () => {
-    // A card asking for ore would be the town setting a task that cannot be
-    // done: ore is defined but unobtainable until the underground layer exists
-    // (ROADMAP §Known gaps). Seed is out for the other reason — a request
-    // payable in seed makes farming a prerequisite for farming.
+    // Seed is out because a request payable in seed makes farming a
+    // prerequisite for farming.
+    //
+    // Ore was first excluded for being unobtainable, and stays excluded now
+    // that it isn't, for the sharper reason (DESIGN §Errands): a card names ONE
+    // item and offers nothing instead of it, so an ore card is "go underground
+    // or miss this friendship beat". The Menace's counter may take ore
+    // precisely because every row there lists alternatives; a request lists
+    // none.
     for (const e of ERRANDS) {
       expect(ITEMS[e.ask.item]).toBeDefined();
       expect(e.ask.item).not.toBe("ore");

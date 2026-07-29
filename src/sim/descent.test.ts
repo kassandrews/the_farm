@@ -19,6 +19,8 @@ import {
 import { dig, sink, carve, setTile, fillShaft, tileAt } from "./world";
 import { BEDROCK, CAVE_FLOOR, GRASS, DIRT, SHAFT, TREE, ORE_VEIN } from "../content/tiles";
 import type { WorldState } from "./types";
+import { count } from "./inventory";
+import { NODES } from "../content/nodes";
 
 function freshWorld(): WorldState {
   return newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 21 });
@@ -227,8 +229,9 @@ describe("ACT, on both sides of the ground", () => {
   });
 
   it("promises nothing when the tool can't do it", () => {
-    // The reticle is the promise: the rock face lights up for the shovel and
-    // for nothing else, and an ore vein stays dark until gathering exists.
+    // The reticle is the promise: the rock face lights up for the shovel (and,
+    // at a vein, for the axe) and for nothing else. A watering can underground
+    // aims at nothing whatever is in front of it.
     const w = freshWorld();
     const shaft = onAShaft(w);
     useShaft(w);
@@ -238,9 +241,28 @@ describe("ACT, on both sides of the ground", () => {
     expect(actionTarget(w, "water").kind).toBe("none");
 
     setTile(w, at.x + 1, at.y, ORE_VEIN, "under");
-    expect(actionTarget(w, "dig").kind).toBe("none");
-    expect(contextAction(w, "dig", Date.now()).changed).toBe(false);
-    expect(tileAt(w, at.x + 1, at.y, "under")).toBe(ORE_VEIN); // still there to gather
+    expect(actionTarget(w, "water").kind).toBe("none");
+    expect(contextAction(w, "water", Date.now()).changed).toBe(false);
+    expect(tileAt(w, at.x + 1, at.y, "under")).toBe(ORE_VEIN); // untouched
+  });
+
+  it("aims the SHOVEL at a vein, without making you change tools", () => {
+    // Down here the shovel is a pick, and rock and ore are met at the same face
+    // in the same swing. Stopping to switch tools at a vein would break the one
+    // continuous verb the tunnel has, for a distinction only the code cares
+    // about — so both tools point at it and both take it out.
+    const w = freshWorld();
+    const shaft = onAShaft(w);
+    useShaft(w);
+    const at = inTunnel(w, shaft);
+    w.player.heading = "e";
+    setTile(w, at.x + 1, at.y, ORE_VEIN, "under");
+
+    expect(actionTarget(w, "dig")).toEqual({ x: at.x + 1, y: at.y, kind: "gather" });
+    expect(actionTarget(w, "gather")).toEqual({ x: at.x + 1, y: at.y, kind: "gather" });
+    expect(contextAction(w, "dig", Date.now()).kind).toBe("gather");
+    expect(tileAt(w, at.x + 1, at.y, "under")).toBe(CAVE_FLOOR);
+    expect(count(w.inventory, "ore")).toBe(NODES.vein.yield);
   });
 
   it("does not warm a villager standing on the ground above you", () => {

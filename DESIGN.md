@@ -206,9 +206,14 @@ down to an afternoon: somebody asks, and you may say no. The commission asks
 once per arrival and is a building project; this is the everyday version, and
 it is the first place friendship is earned by *doing* rather than by talking.
 
-- **It asks for things you can already get**, in ones and twos. Never ore
-  (unobtainable until the underground exists) and never seed (a request payable
-  in seed makes farming a prerequisite for farming — §Materials).
+- **It asks for things you can already get**, in ones and twos. Never seed (a
+  request payable in seed makes farming a prerequisite for farming —
+  §Materials), and never ore. Ore was first excluded for being unobtainable;
+  now that it isn't, the reason it stays out is the sharper one. **A card names
+  one item and offers no alternative**, so an ore card is "go underground or
+  miss this friendship beat" — and this is the first place friendship is earned
+  by doing. The counter can take ore precisely because every row there lists
+  things she'll take *instead*; a request lists nothing instead.
 - **It pays friendship, a line, and a memory. Never an item.** Not a material,
   not produce, not a finish, not an unlock. The Menace trades, the Gremlin
   redeems, the Carrot stocks, the Office Creature stamps; a fifth counter that
@@ -351,6 +356,12 @@ you want cushions". So every row at the counter must be payable from
 materials *and* from produce, and later from junk — whatever you actually
 do, the town has a use for what it leaves you holding.
 
+Ore is one of those alternatives and never a requirement. A row may list
+it beside the wood, the stone and the carrots; no row may list it alone.
+That distinction is the whole safety of it — an extra way to pay gates
+nothing, and the digger gets the same sentence from her that the farmer
+does.
+
 **Appearance is a separate, free axis.** Any built tile can wear any
 unlocked finish at no cost: pale pine, dark walnut, whitewash. A finish is
 a property of the tile, never a different item. This is the rule that keeps
@@ -375,6 +386,13 @@ Materials are required but never rationed:
   and pave, till, or build there and it's yours for good. The world heals
   where you aren't invested and stays exactly as you shaped it where you
   are.
+- **Ore veins do not come back, and that is the same rule and not an
+  exception to it.** Underground there is no unclaimed ground: every open
+  cell down there is one you cut, so a vein regrowing would re-block a
+  corridor you already dug — the precise outcome the claim rule exists to
+  prevent. What replaces regrowth below is *distance*. The rock is
+  unbounded, so ore is never scarce, only further off; you are slowed by a
+  walk, which is the one thing this list permits.
 
 You can be slowed for a minute. You can never be stopped, capped, or made
 to grind.

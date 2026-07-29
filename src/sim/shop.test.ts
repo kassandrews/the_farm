@@ -21,13 +21,24 @@ describe("what the counter will take", () => {
   });
 
   it("never asks for something you can't get", () => {
-    // Ore is defined but unobtainable until the underground layer exists, and
-    // cloth is what she's selling. A price in either is a row nobody can pay.
+    // Cloth is what she's selling; a price in cloth is a row nobody can pay.
+    // Ore used to be on this list for being unobtainable, and now that it is
+    // obtainable it has its own rule below rather than a place on this one.
     for (const row of SHOP) {
-      for (const p of row.accepts) {
-        expect(p.item).not.toBe("ore");
-        expect(p.item).not.toBe("cloth");
-      }
+      for (const p of row.accepts) expect(p.item).not.toBe("cloth");
+    }
+  });
+
+  it("never lets ORE be the only way to pay for a row", () => {
+    // Ore is an alternative, never a requirement (DESIGN §Materials). It is the
+    // one material you have to go somewhere for, so a row payable only in ore
+    // is the underground made compulsory by the back door — the same failure
+    // "payable from a material AND from produce" exists to stop, one axis over.
+    // The rule is stated as its own test because the invariant above would pass
+    // happily: ore IS a material.
+    for (const row of SHOP) {
+      const others = row.accepts.filter((p) => p.item !== "ore");
+      expect(others.length).toBeGreaterThan(0);
     }
   });
 
