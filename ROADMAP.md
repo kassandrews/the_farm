@@ -49,7 +49,7 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   soft furniture that costs it.
 - **Phase 3e — the junk economy, complete.** The ground has things in it,
   digging finds them, and the Gremlin's heap turns them into finishes.
-- Menu with New town / sound toggle; PWA shell; 379 tests.
+- Menu with New town / sound toggle; PWA shell; 621 tests.
 - **Phase 3f — the museum, complete.** The table, the sim, schema v12, the
   gallery it stands in (v13), Corrigal's panel, the away event, and Margfrom's
   perk. Two wings, donation is a gift that returns nothing, the record has no
@@ -108,14 +108,20 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   regardless, because a season is a look and never a gate. **Phase 4 is done,
   and so is every numbered item in this file.**
 
+- **Phase 5a — the lamp, complete.** Ore builds something at last, and what it
+  builds is light: a brass-headed post you install in a tunnel or on your own
+  land, throwing a warm pool that does not know what time it is. It is also the
+  first thing that can stand in the rock — `world.underFurniture`, schema v21 —
+  and the Mole has a third bank of lines for finding one burning in his corridor.
+  See below.
+
 **Next: nothing numbered.** What is left is in *Known gaps and loose ends*
 below — the Gremlin not scattering junk while you are away (still wants a place
-to put a loose object on the ground), the five thin home banks, ore having
-nothing built from it, and the PWA icon. DESIGN's own open questions (fishing,
-async postcards between towns) are the only unbuilt *systems*, and both are
-still deliberately open.
+to put a loose object on the ground), the five thin home banks, and the PWA
+icon. DESIGN's own open questions (fishing, async postcards between towns) are
+the only unbuilt *systems*, and both are still deliberately open.
 
-**Save schema is at v20.** Every change ships a tested migration — see
+**Save schema is at v21.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -486,6 +492,72 @@ options were to move the walls of a building people have already put things in
 **We stopped being exhaustive**, which costs nothing because the record has no
 total and no denominator, so there is no slot for a pumpkin to be missing from.
 Do not read it as licence to skip an exhibit for convenience.
+
+### Ore's sink — light, and a layer for the furniture
+
+**Settled and built in Phase 5a**, recorded in DESIGN §Materials. Ore had been
+obtainable since 4a with nothing built from it, and the loose end named three
+candidates: a lamp, a stove, something metal-framed.
+
+- **It is a lamp, because the game already had a lighting model and nothing that
+  could add to it.** `drawDark` composites the light you carry plus the daylight
+  falling down your own shafts; a placed light is a third source in a system that
+  already existed, and the underground's whole texture is that you see as far as
+  you are lit. A stove was the other tempting answer and it smuggles in cooking,
+  which is a system, not a row.
+- **A metal FINISH is the tempting-and-wrong version.** Appearance is the free
+  axis — "the scarce thing is the stuff, never the look" — so a finish that cost
+  ore would break the rule that keeps the item table at three. Ore buys an
+  object. The lamp's post takes your wood finishes; the head is brass in every
+  town, the same carve-out the notice board's paper has.
+- **Nothing may require one, and the test says so.** No structure and no other
+  furniture row may cost ore (`lamp.test.ts`), because a wall or a bed that did
+  would gate housing behind digging. And nothing reads a lamp: two identical
+  rooms, one lit, must be indistinguishable to `qualify()`.
+- **The rock is not somewhere you build a room.** Build mode opens underground
+  for exactly two tools, lamp and erase (`UNDER_TOOLS` in `sim/game.ts`). This
+  replaces a flat refusal that had a *correctness* argument behind it — furniture
+  was one record with no layer in its keys — with a design rule, now in DESIGN:
+  walls down there would want enclosure, roofs and a flood fill through stone.
+- **The palette hides what it can't offer and `buildAt` refuses it anyway.** One
+  list, two readers, neither with its own opinion — the reticle rule applied to
+  build mode.
+
+The layer decision is the part worth not re-deriving:
+
+- **`underFurniture` is its own record, not a `u:` prefix on the keys.** Five
+  modules walk `world.furniture` looking for beds, shelves and notice boards
+  (`assign`, `home`, `housing`, `errands`, `commission`), and a bed in a tunnel is
+  not a home. A separate record means all five keep meaning the surface while
+  changing nothing, and the migration rekeys nothing. Same shape, and the same
+  reasoning, as `under` beside `overrides` in v17.
+- **`layer` is the LAST argument everywhere and defaults to "surface".** That
+  default is what let the underground arrive without touching a single existing
+  caller.
+- **Nothing placeable underground is solid**, which is why `isWalkable` still
+  returns early down there and never consults furniture at all. Held by a test
+  over `UNDER_TOOLS` rather than by discipline — the day somebody adds a metal
+  gate, it fails and points at the line in `world.ts`.
+- **Undo fixes the stroke's layer at `beginStroke`.** You can climb a ladder
+  between hanging a lamp and pressing undo, and a restore that asked where the
+  player is *now* would delete whatever is standing in the field overhead — keys
+  are bare `"x,y"` in both records. Same class of mistake as measuring the
+  material delta late, one axis over, and it has its own test.
+
+Two things the build settled on screen, neither catchable in a unit test:
+
+- **Additive light needs to be much dimmer than it feels like it should.** At the
+  first-guess strength, three lamps in a corridor saturated the rock to flat
+  cream and the tunnel stopped having any texture — you install lamps to *see*
+  the tunnel. Each one is now a suggestion; four in a row are what light the
+  place.
+- **A source must be the brightest thing in its own light.** The day/night wash
+  falls over the lamp's own art, and a soft four-tile gradient adds almost nothing
+  at its centre, so the first pass had a glowing lawn around a dim beige box. The
+  flame is a small hot rect drawn in the same additive pass — and it had to take
+  its position from the same constant the art does, because measured from the
+  cell's centre instead of its southern edge it drew half a tile high and read as
+  a bright square hovering over the lamp.
 
 ### Undecided, deliberately
 
@@ -1759,11 +1831,12 @@ you trip over them:
   gathered classes are obtainable, which makes DESIGN's "three gathered classes,
   ever" true for the first time rather than aspirational.
 
-  **Nothing is BUILT from ore yet**, and that is the deliberate half. Settled
-  when step 3 was planned: ore's sink for now is the Menace's counter (and the
-  museum row that always existed), and ore-costed objects — a lamp, a stove,
-  something metal-framed — come later. They must stay optional when they do: a
-  wall or a bed that cost ore would gate housing behind digging.
+  ~~**Nothing is BUILT from ore yet.**~~ **Fixed in 5a — it builds the lamp**,
+  and it stayed optional exactly as this note required: `lamp.test.ts` asserts no
+  structure and no other furniture row may ever cost ore. Of the three candidates
+  named here, the stove was rejected (cooking is a system, not a row) and
+  "something metal-framed" turned out to be the wrong instinct — see the settled
+  entry above for why light was the one thing ore could add.
 - ~~**Six of the seven fixed cast exist.**~~ **All seven now do** — office,
   shop, heap, museum, seed stall, errands board, plaza stage. DESIGN's
   institution table is complete; the note at the foot of `src/content/cast.ts`

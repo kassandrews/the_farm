@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { newWorld, tick } from "./game";
 import { migrateSave } from "./save";
-import { meetMole, moleMet, mole, moleDigs, moleGroundShallow } from "./mole";
+import { meetMole, moleMet, mole, moleDigs, moleGroundShallow, moleLamplit } from "./mole";
 import { warrenChamber, carve, tileAt, dig, sink, setTile, depthAt } from "./world";
 import { GRASS, CAVE_FLOOR, ORE_VEIN } from "../content/tiles";
 import { speak } from "./dialogue";
 import { makeRng } from "./rng";
-import { MOLE_DEEP, MOLE_SHALLOW } from "../content/dialogue";
+import { MOLE_DEEP, MOLE_SHALLOW, MOLE_LIT } from "../content/dialogue";
 
 function freshWorld() {
   return newWorld({ name: "Sprout", form: "dog", spot: "hilltop", seed: 4242 });
@@ -138,6 +138,31 @@ describe("the shortcut, and that he notices", () => {
     expect(MOLE_SHALLOW).toContain(speak(w, m, makeRng(1), Date.now()).text);
   });
 
+  it("notices a lamp, and the lamp wins over the ladder", () => {
+    // The newer intrusion has to be the one he answers: hanging a light outside
+    // a hermit's chamber and getting the same seven lines about the shaft would
+    // read as the lamp being inert (content/dialogue.ts §MOLE_LIT).
+    const w = freshWorld();
+    const c = standInChamber(w);
+    tick(w, 1 / 60, Date.now());
+    const m = mole(w)!;
+    shortcutTo(w);
+    expect(MOLE_SHALLOW).toContain(speak(w, m, makeRng(1), Date.now()).text);
+
+    w.underFurniture[`${c.x + 2},${c.y}`] = { id: "lamp", facing: "s", finish: "pine" };
+    expect(moleLamplit(w)).toBe(true);
+    expect(MOLE_LIT).toContain(speak(w, m, makeRng(1), Date.now()).text);
+  });
+
+  it("cannot see a lamp on the other side of the rock", () => {
+    // Generous radius, but not the whole world: a light in your own home tunnel
+    // is not a light in his corridor.
+    const w = freshWorld();
+    const c = standInChamber(w);
+    w.underFurniture[`${c.x + 40},${c.y}`] = { id: "lamp", facing: "s", finish: "pine" };
+    expect(moleLamplit(w)).toBe(false);
+  });
+
   it("never reaches for anybody else's lines", () => {
     // He has no house, no ring and no memories of a town he does not live in,
     // so the whole of speak()'s resident machinery has to be skipped for him.
@@ -147,7 +172,7 @@ describe("the shortcut, and that he notices", () => {
     const m = mole(w)!;
     for (let i = 0; i < 60; i++) {
       const said = speak(w, m, makeRng(i), Date.now()).text;
-      expect([...MOLE_DEEP, ...MOLE_SHALLOW]).toContain(said);
+      expect([...MOLE_DEEP, ...MOLE_SHALLOW, ...MOLE_LIT]).toContain(said);
     }
   });
 });

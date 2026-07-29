@@ -15,7 +15,7 @@ import type { ActionTarget } from "../sim/game";
 import { cropDef, ripeStage } from "../content/crops";
 import { tileDef, PLANK, GRASS, TREE, ROCK, BEDROCK, ORE_VEIN, SHAFT, DARK_TREE, HUM_CUBE } from "../content/tiles";
 import { skinDef } from "../content/skins";
-import type { SkinClass } from "../content/skins";
+import type { SkinClass, SkinDef } from "../content/skins";
 import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey } from "../sim/world";
 import { wallMask, blockedDoorsteps, CONNECT_N, CONNECT_E, CONNECT_S, CONNECT_W } from "../sim/structures";
 import { furnitureDef, footprint } from "../content/furniture";
@@ -110,6 +110,15 @@ const WALL_CAP = 3;
  *  as a step laid at the threshold rather than as more of the house. */
 const STEP_STONE = "#9a9187";
 const STEP_LIP = "#7d746b";
+/** Brass, for the one object in the game made of metal. Hardcoded rather than
+ *  taken from the piece's finish, for the same reason the notice board's paper is
+ *  (see drawLamp): it is its own material, and a metal FINISH would have made
+ *  appearance cost ore. */
+const BRASS_DARK = "#5c4419";
+const BRASS = "#9c7a2c";
+const BRASS_LIT = "#c9a24f";
+const FLAME = "#ffcf7a";
+const FLAME_CORE = "#fff3cd";
 const STEP_DEPTH = 5; // how far out from the doorway it reaches
 const STEP_INSET = 3; // margin at each end, so it's a step and not a full edge
 /** Wall left standing either side of a doorway cut into a side run's top
@@ -160,6 +169,31 @@ const DARK_MAX = 0.94;
  *  entrances. */
 const SHAFT_LIGHT = 0.42;
 const SHAFT_LIGHT_R = 3.2; // tiles
+
+/** A placed lamp's pool of light: a little wider than a shaft's and warmer.
+ *
+ *  Deliberately smaller than LAMP_OUTER, the light you carry. A lamp you install
+ *  must never out-light the one in your hand, or the honest thing — that you can
+ *  see because you are there — stops being true, and a tunnel with four lamps in
+ *  it would be a lit room rather than a tunnel somebody has been working.
+ *
+ *  The numbers are low because the compositing is ADDITIVE and lamps are meant
+ *  to be hung in a row: at 0.5 three of them saturated a corridor to flat cream
+ *  and the rock stopped having any texture at all, which is the opposite of the
+ *  point — you install lamps to SEE the tunnel. Each one is a suggestion; four in
+ *  a line are what light the place. */
+const LAMP_GLOW = 0.2;
+const LAMP_GLOW_R = 3.6; // tiles
+/** Where the flame is, in px above the BASE of the lamp's cell — the same datum
+ *  `drawFurniture` measures every standing thing from, which is a raised thing's
+ *  southern edge and NOT the cell's centre.
+ *
+ *  Shared by the art and the glow so the light can never leave from somewhere the
+ *  lamp isn't, and it already caught that once: measured from the centre, the
+ *  flame drew half a tile above the lamp and read as a bright square hovering
+ *  over it. The two uses must agree, so they take the offset from here and the
+ *  arithmetic to reach the datum is written once in each. */
+const LAMP_HEAD_H = 15;
 
 /** How much the flattened build view knocks back anything standing up, so the
  *  ground plan underneath is legible while you're editing it. */
@@ -241,6 +275,10 @@ export class Renderer {
    *  in drawDark cost one entry per VISIBLE hole rather than a scan of every
    *  edit the player has ever made. Same trick as blockedSteps above. */
   private litShafts: { x: number; y: number }[] = [];
+  /** Lamps collected during the flat pass, on whichever layer is being drawn —
+   *  the one thing in the game that makes light where it is put (Phase 5a).
+   *  Bounded by the screen, exactly like litShafts above. */
+  private litLamps: { x: number; y: number }[] = [];
   /** The frame's colours — hour and month — set at the top of `draw`. Held on
    *  the renderer rather than threaded as an eleventh parameter through
    *  `drawChunkTiles`: the month is a fact about the FRAME, not about a chunk. */
@@ -361,6 +399,7 @@ export class Renderer {
     this.raised.length = 0;
     this.blockedSteps.length = 0;
     this.litShafts.length = 0;
+    this.litLamps.length = 0;
     this.drawTiles(world, t, night, under);
     if (this.buildView && !under) this.drawBuildGrid();
     if (!under) {
@@ -389,6 +428,22 @@ export class Renderer {
     if (tint.overlay && !under) {
       ctx.fillStyle = tint.overlay;
       ctx.fillRect(0, 0, this.sw, this.sh);
+      // Lamps glow back through the wash, and ONLY through it. Scaled by how
+      // dark it actually is, so a lamp does nothing at noon and is the reason
+      // you can see your own yard at midnight — the same relationship a shaft
+      // has with daylight underground, pointed the other way.
+      //
+      // Over the tint rather than under it, because the tint is a flat fill over
+      // the whole viewport: a glow drawn first would simply be washed with
+      // everything else, and punching a hole in the overlay per lamp would need
+      // a second lighting model up here for no gain.
+      // Doubled, and not as a fudge. `darkness` is how strong the WASH is, and
+      // night's is 0.5 where the underground's dark runs to 0.94 — so passing it
+      // straight through made a lamp on your own land half as bright as the same
+      // lamp in a tunnel, for no reason a player could ever infer. What the
+      // argument means is "how much light to add", and above ground at midnight
+      // the answer is all of it. Clamped, so dusk and dawn stay hints of warmth.
+      this.drawLampGlow(Math.min(1, tint.darkness * 2));
     }
   }
 
@@ -492,6 +547,7 @@ export class Renderer {
             bias: BIAS_TERRAIN,
             draw: () => this.drawFurniture(ax, ay, piece),
           });
+          if (piece.id === "lamp") this.litLamps.push({ x: tx, y: ty });
         }
         // Roofs are derived, not stored, so they come from the room index
         // rather than from the build layer.
@@ -645,6 +701,22 @@ export class Renderer {
       this.litShafts.push({ x: tx, y: ty });
       this.drawLadder(px, py);
     }
+
+    // Anything installed in the rock — lamps, and by design nothing else
+    // (sim/types.ts §underFurniture). Its own record, so this is a lookup in the
+    // other furniture map and not a special case in the surface pass.
+    const piece = world.underFurniture[tileKey(tx, ty)];
+    if (piece) {
+      const ax = tx;
+      const ay = ty;
+      const span = footprint(furnitureDef(piece.id), piece.facing);
+      this.raised.push({
+        y: ay + span.h - 1,
+        bias: BIAS_TERRAIN,
+        draw: () => this.drawFurniture(ax, ay, piece),
+      });
+      if (piece.id === "lamp") this.litLamps.push({ x: tx, y: ty });
+    }
   }
 
   /** The cut face of the rock, standing out of its cell toward you.
@@ -738,6 +810,57 @@ export class Renderer {
       }
       ctx.globalCompositeOperation = prev;
     }
+
+    // Lamps you installed, at full strength. A lamp is the one light down here
+    // that does NOT know what time it is — the shafts above dim with the hour
+    // because they are borrowing daylight, and a lamp isn't borrowing anything.
+    // That difference is the whole reason to spend ore on one.
+    this.drawLampGlow(1);
+  }
+
+  /** Warm light thrown by placed lamps, added over whatever darkened the scene.
+   *
+   *  `strength` is how much dark there is to push back: the tint's own darkness
+   *  on the surface, and a flat 1 underground where the dark is absolute.
+   *
+   *  Additive, and in SCENE space like the lamp in your hand — a per-tile alpha
+   *  would put a light and a dark edge on every cell of one continuous surface,
+   *  which is the banding rule (CLAUDE.md) in a new costume, and light that steps
+   *  in tile-sized rings reads as a bug in a way a soft falloff never does. */
+  private drawLampGlow(strength: number): void {
+    if (this.litLamps.length === 0 || strength <= 0.02) return;
+    const ctx = this.ctx;
+    const prev = ctx.globalCompositeOperation;
+    ctx.globalCompositeOperation = "lighter";
+    const r = LAMP_GLOW_R * TILE;
+    for (const l of this.litLamps) {
+      const cx = this.sceneX(l.x);
+      // The light leaves the HEAD, not the floor the post stands on. Centred on
+      // the cell it would sit a lamp's height too low, and a pool of light whose
+      // middle is under the object making it reads as a stain. `+ TILE / 2` is
+      // the step from the cell's centre to its southern edge, which is the datum
+      // the art uses (see LAMP_HEAD_H).
+      const cy = this.sceneY(l.y) + TILE / 2 - LAMP_HEAD_H;
+      // ORANGE, not cream. Additive light adds its green channel to grass that is
+      // already saturated green, so a pale warm-white pool came out milky — lit
+      // lawn that read as bleached lawn. Dropping the green and blue makes the
+      // same brightness read as warmth instead.
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, `rgba(255,196,110,${(LAMP_GLOW * strength).toFixed(3)})`);
+      g.addColorStop(0.4, `rgba(255,168,84,${(LAMP_GLOW * strength * 0.3).toFixed(3)})`);
+      g.addColorStop(1, "rgba(255,160,80,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+
+      // The flame itself, hot. Without this the pool was brighter than the thing
+      // making it: the day/night wash falls over the lamp's own art, and a soft
+      // 4-tile gradient adds almost nothing at its centre — so a lit lamp at
+      // midnight had a glowing lawn around a dim beige box. A source has to be
+      // the brightest thing in its own light.
+      ctx.fillStyle = `rgba(255,236,190,${(0.55 * strength).toFixed(3)})`;
+      ctx.fillRect(Math.round(cx) - 2, Math.round(cy) - 2, 4, 4);
+    }
+    ctx.globalCompositeOperation = prev;
   }
 
   // --- Crops ------------------------------------------------------------------
@@ -996,6 +1119,17 @@ export class Renderer {
     const prev = ctx.globalAlpha;
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
 
+    // The lamp leaves the generic path entirely, before the block is drawn.
+    // Every other piece in this table is a box with a top you look down on — a
+    // bed, a table and a shelf really are that — and a lamp is a POST. Given the
+    // generic silhouette it read as a tan pillar filling its whole cell, which is
+    // a column, not a light. So it draws itself and returns.
+    if (cell.id === "lamp") {
+      this.drawLamp(px, base, pw, skin);
+      ctx.globalAlpha = prev;
+      return;
+    }
+
     ctx.fillStyle = "rgba(0,0,0,0.16)"; // sits ON the floor
     ctx.fillRect(px + 1, base - 1, pw - 2, 2);
 
@@ -1143,6 +1277,51 @@ export class Renderer {
     }
 
     ctx.globalAlpha = prev;
+  }
+
+  /** A lamp: a timber post with a brass head, and the only object in the game
+   *  made of metal.
+   *
+   *  THE POST TAKES THE FINISH, THE HEAD NEVER DOES. Same rule as the notice
+   *  board's paper — a thing is drawn in the piece's finish when it is genuinely
+   *  made of that material, and brass isn't pine. It is also the visible half of
+   *  a design rule: a metal FINISH would have made appearance cost ore, and
+   *  appearance is the free axis (DESIGN §Materials).
+   *
+   *  Narrow on purpose. It is standing in a corridor a single tile wide, so the
+   *  cell it occupies has to still read as floor you walk over — which it is,
+   *  since a lamp is never solid (content/furniture.ts). */
+  private drawLamp(px: number, base: number, pw: number, skin: SkinDef): void {
+    const ctx = this.ctx;
+    const cx = px + Math.floor(pw / 2);
+    const headY = base - LAMP_HEAD_H - 4;
+
+    ctx.fillStyle = "rgba(0,0,0,0.18)"; // a small foot's worth of shadow
+    ctx.fillRect(cx - 3, base - 1, 6, 2);
+
+    ctx.fillStyle = skin.shade; // base plate, so it isn't a spike in the ground
+    ctx.fillRect(cx - 3, base - 3, 6, 3);
+    ctx.fillStyle = skin.top;
+    ctx.fillRect(cx - 3, base - 3, 6, 1);
+
+    ctx.fillStyle = skin.shade; // the post
+    ctx.fillRect(cx - 1, headY + 5, 2, base - headY - 7);
+    ctx.fillStyle = skin.color; // one lit edge down it, so it has a round side
+    ctx.fillRect(cx - 1, headY + 5, 1, base - headY - 7);
+
+    // The head. Dark casing, warm glass, and a bright core that IS the flame —
+    // the pool of light in drawLampGlow leaves from this rectangle, which is
+    // what LAMP_HEAD_H keeps in step.
+    ctx.fillStyle = BRASS_DARK;
+    ctx.fillRect(cx - 4, headY, 8, 7);
+    ctx.fillStyle = BRASS;
+    ctx.fillRect(cx - 3, headY + 1, 6, 5);
+    ctx.fillStyle = FLAME;
+    ctx.fillRect(cx - 2, headY + 2, 4, 3);
+    ctx.fillStyle = FLAME_CORE;
+    ctx.fillRect(cx - 1, headY + 3, 2, 1);
+    ctx.fillStyle = BRASS_LIT; // a hood over the top, catching the light
+    ctx.fillRect(cx - 4, headY - 1, 8, 1);
   }
 
   /** The step outside a doorway, laid flat on the ground beside it.

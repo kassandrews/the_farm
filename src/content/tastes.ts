@@ -42,7 +42,13 @@ export const TASTES: Partial<Record<AdultForm, Taste>> = {
   // Wants drama. Dark wood is theatrical, and it costs nothing that the Ghost
   // wants the same thing for an entirely different reason — two forms are
   // allowed to like one finish.
-  blob: { finish: "walnut" },
+  //
+  // The lamp is stage lighting, which is the only thing he could possibly think
+  // a lamp is. It being the one piece that costs ore doesn't make it a
+  // requirement — a taste adds a line and a miss subtracts nothing (above), so
+  // an unlit house pleases him for the walnut and nobody has to go underground
+  // to satisfy a Blob.
+  blob: { finish: "walnut", piece: "lamp" },
   // Wants it dark. Phase 4, when there's a Ghost to house; recorded now so the
   // intent doesn't have to be rediscovered.
   ghost: { finish: "walnut" },

@@ -3,7 +3,7 @@
 // the context action, talk to a villager, and summarise what happened while the
 // player was away. No DOM, no canvas — still pure logic (CLAUDE.md).
 
-import type { WorldState, Player, Villager, Tool, BuildTool, HomesteadSpot, Heading } from "./types";
+import type { WorldState, Player, Villager, Tool, BuildTool, HomesteadSpot, Heading, Layer } from "./types";
 import type { AdultForm } from "../content/canon/forms";
 import { CAST } from "../content/cast";
 import type { CharId } from "../content/cast";
@@ -126,6 +126,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     under: {}, // solid rock until you cut into it
     build: {},
     furniture: {},
+    underFurniture: {},
     crops: {},
     villagers,
     commissions: [],
@@ -685,6 +686,24 @@ export function isFurnitureTool(tool: BuildTool): tool is FurnitureId {
   return tool in FURNITURE;
 }
 
+/** What you may build in the rock: a light, and taking it back.
+ *
+ *  Not a limitation looking for a reason. Walls and floors down here would want
+ *  rooms, and rooms want enclosure, roofs and a flood fill through solid stone —
+ *  which is a building where a tunnel should be. The rock is not somewhere you
+ *  build a room; it is somewhere you install a light (ROADMAP §"Ore's sink").
+ *
+ *  It lives here rather than in the tool palette, and `buildAt` checks it below,
+ *  because the palette and the placement must not each have their own opinion
+ *  about what is possible — that is the reticle rule (ROADMAP §"The reticle is
+ *  the promise") applied to build mode. ui/app.ts hides the buttons using this
+ *  same list; the sim refuses regardless of what the UI shows. */
+export const UNDER_TOOLS: BuildTool[] = ["lamp", "erase"];
+
+export function toolAllowedOn(tool: BuildTool, layer: Layer): boolean {
+  return layer === "under" ? UNDER_TOOLS.includes(tool) : true;
+}
+
 export function buildAt(
   world: WorldState,
   tool: BuildTool,
@@ -694,16 +713,32 @@ export function buildAt(
   /** Which way a multi-tile piece is turned. Ignored by walls and floors —
    *  orientation is a furniture idea (DESIGN §Structures). */
   facing: Facing = "s",
+  /** Which layer the stroke is on. "surface" for everything but the lamp: the
+   *  rock is not somewhere you build a room, and ui/app.ts offers no other tool
+   *  down there. Reaching this function with a wall and "under" would be a bug
+   *  upstream, so the structure paths below simply don't consider it. */
+  layer: Layer = "surface",
 ): BuildResult {
+  // The sim's own refusal, not a duplicate of the palette's. The UI hides what it
+  // can't offer, and this makes the hiding cosmetic rather than load-bearing: a
+  // wall placed underground would key into a record that means the surface.
+  if (!toolAllowedOn(tool, layer)) {
+    return { changed: false, message: "Not down here. There's nothing to put that on but rock.", broke: false };
+  }
   if (tool === "erase") {
     // Furniture comes up FIRST. It sits inside rooms, so if erase preferred the
     // structure layer you'd take the wall out from behind a shelf you were
     // aiming at.
-    const piece = removeFurnitureAt(world, x, y);
+    const piece = removeFurnitureAt(world, x, y, layer);
     if (piece) {
       refund(world.inventory, furnitureDef(piece.id).cost);
       return { changed: true, message: `${furnitureDef(piece.id).name} taken back.`, broke: false };
     }
+    // Underground, furniture is all there is to take back. Everything below this
+    // line — structures, shafts, lifted boards — is a surface fact, and a shaft
+    // filled in from BELOW would be the player closing the lid over their own
+    // head from the wrong side of it.
+    if (layer === "under") return { changed: false, message: "Nothing to take back down here.", broke: false };
     const taken = removeStructure(world, x, y);
     if (taken) {
       refund(world.inventory, structureDef(taken.id).cost);
@@ -744,12 +779,15 @@ export function buildAt(
 
   if (isFurnitureTool(tool)) {
     const def = furnitureDef(tool);
-    if (!placeFurniture(world, x, y, tool, facing, world.skins.selected[def.finish])) {
+    if (!placeFurniture(world, x, y, tool, facing, world.skins.selected[def.finish], layer)) {
       return { changed: false, message: `The ${def.name.toLowerCase()} won't fit there.`, broke: false };
     }
     spend(world.inventory, cost);
-    witness(world, "built_plank", undefined, now);
-    return { changed: true, message: furnitureFlavour(tool), broke: false };
+    // Present-only underground, for the reason mining and carving are (4b): the
+    // town has no business knowing you hung a lamp in a tunnel, but somebody who
+    // was standing there watching you do it does.
+    witness(world, "built_plank", undefined, now, layer === "under");
+    return { changed: true, message: furnitureFlavour(tool, layer), broke: false };
   }
 
   const finish = world.skins.selected[structureDef(tool).finish];
@@ -773,7 +811,7 @@ function buildFlavour(tool: "wall" | "door"): string {
 }
 
 /** Deadpan, brief, and about the object rather than about you (§Tone). */
-function furnitureFlavour(id: FurnitureId): string {
+function furnitureFlavour(id: FurnitureId, layer: Layer): string {
   switch (id) {
     case "bed":
       return "A bed. The correct number of beds is now one.";
@@ -793,6 +831,13 @@ function furnitureFlavour(id: FurnitureId): string {
       return "A cushion. The floor has been upgraded to a place you can be.";
     case "rug":
       return "A rug. The room stops echoing and starts being a room.";
+    // The one line that reads the layer, because it is the one object whose
+    // point changes with where you put it. Above ground a lamp is something you
+    // will appreciate later; in the rock it is the reason you can see.
+    case "lamp":
+      return layer === "under"
+        ? "A lamp, in the rock. The dark gives some ground back."
+        : "A lamp. Nothing yet. Ask it again this evening.";
     // The board is town furniture and not for sale (content/furniture.ts), so
     // this line is unreachable in practice — it exists because the switch is
     // exhaustive over FurnitureId and an exhaustive switch is how a new row

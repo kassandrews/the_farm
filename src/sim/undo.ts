@@ -26,18 +26,21 @@
 // stroke, gone on reload. Undoing something from three days ago would be worse
 // than having no undo at all.
 
-import type { WorldState, BuildCell, FurnitureCell } from "./types";
+import type { WorldState, BuildCell, FurnitureCell, Layer } from "./types";
 import type { TileId } from "../content/tiles";
 import type { Inventory } from "./inventory";
 import type { ItemId } from "../content/items";
 import { MAX_SPAN } from "../content/furniture";
 import { touchBuild } from "./structures";
+import { furnitureFor } from "./furniture";
 import { tileKey } from "./world";
 
 /** Everything one cell can carry across the three layers a build edit touches.
  *  `null` means "nothing here", which is a real prior state and must be
  *  restored as a deletion — not skipped. */
 interface CellSnapshot {
+  /** Surface only, and null for every underground stroke — there are no build
+   *  cells in the rock (ui/app.ts offers no wall down there). */
   build: BuildCell | null;
   /** The ground OVERRIDE, not the resolved tile: chunk generation is a total
    *  function of x,y, so restoring "no override" restores generated ground
@@ -51,6 +54,14 @@ interface CellSnapshot {
 
 interface Stroke {
   cells: Map<string, CellSnapshot>;
+  /** Which layer the stroke happened on, fixed when it opened.
+   *
+   *  It has to be per-stroke rather than read at undo time: you can climb a
+   *  ladder between hanging a lamp and pressing undo, and a restore that asked
+   *  where the player is NOW would delete a surface build cell that shares the
+   *  key with the tunnel cell it meant. Same class of mistake as measuring the
+   *  material delta late, one axis over. */
+  layer: Layer;
   /** Inventory as it stood when the stroke began, and what the stroke did to it.
    *
    *  The delta is computed at endStroke, NOT at undo time. Between the stroke
@@ -85,7 +96,13 @@ export function undoLabel(world: WorldState): string | null {
  *  turns out to change nothing must leave the last real one undoable. The swap
  *  happens on the first captured cell. */
 export function beginStroke(world: WorldState, label: string): void {
-  open.set(world, { cells: new Map(), before: { ...world.inventory }, delta: {}, label });
+  open.set(world, {
+    cells: new Map(),
+    before: { ...world.inventory },
+    delta: {},
+    label,
+    layer: world.player.layer,
+  });
 }
 
 /** Snapshot a cell about to be edited. Call BEFORE the edit.
@@ -102,27 +119,23 @@ export function beginStroke(world: WorldState, label: string): void {
 export function captureCell(world: WorldState, x: number, y: number): void {
   const stroke = open.get(world);
   if (!stroke) return; // not in a stroke — a caller that never called begin
+  const under = stroke.layer === "under";
+  const snap = (key: string): CellSnapshot => ({
+    build: under ? null : (world.build[key] ?? null),
+    ground: (under ? world.under[key] : world.overrides[key]) ?? null,
+    furniture: furnitureFor(world, stroke.layer)[key] ?? null,
+  });
   for (let ay = y - MAX_SPAN + 1; ay <= y; ay++) {
     for (let ax = x - MAX_SPAN + 1; ax <= x; ax++) {
       const key = tileKey(ax, ay);
       if (stroke.cells.has(key)) continue;
-      stroke.cells.set(key, {
-        build: world.build[key] ?? null,
-        ground: world.overrides[key] ?? null,
-        furniture: world.furniture[key] ?? null,
-      });
+      stroke.cells.set(key, snap(key));
     }
   }
   // The target itself may be outside that window when MAX_SPAN is 1; cheap to
   // be certain rather than reason about it.
   const key = tileKey(x, y);
-  if (!stroke.cells.has(key)) {
-    stroke.cells.set(key, {
-      build: world.build[key] ?? null,
-      ground: world.overrides[key] ?? null,
-      furniture: world.furniture[key] ?? null,
-    });
-  }
+  if (!stroke.cells.has(key)) stroke.cells.set(key, snap(key));
 }
 
 /** Close the stroke and make it the one undoable thing. Call at pointerup.
@@ -166,15 +179,24 @@ export function undoStroke(world: WorldState): boolean {
   if (!stroke) return false;
   strokes.delete(world);
 
+  // Every write routes through the stroke's own layer. The `build` line is the
+  // one that would bite: keys are bare "x,y" in both records, so restoring an
+  // underground stroke against world.build would delete whatever the player has
+  // standing in the field directly overhead.
+  const under = stroke.layer === "under";
+  const ground = under ? world.under : world.overrides;
+  const furniture = furnitureFor(world, stroke.layer);
   for (const [key, snap] of stroke.cells) {
-    if (snap.build) world.build[key] = snap.build;
-    else delete world.build[key];
+    if (!under) {
+      if (snap.build) world.build[key] = snap.build;
+      else delete world.build[key];
+    }
 
-    if (snap.ground !== null) world.overrides[key] = snap.ground;
-    else delete world.overrides[key];
+    if (snap.ground !== null) ground[key] = snap.ground;
+    else delete ground[key];
 
-    if (snap.furniture) world.furniture[key] = snap.furniture;
-    else delete world.furniture[key];
+    if (snap.furniture) furniture[key] = snap.furniture;
+    else delete furniture[key];
   }
 
   // Rooms, roofs and villager routes are all memoised against this counter, and

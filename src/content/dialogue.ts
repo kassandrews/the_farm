@@ -597,6 +597,28 @@ export const MOLE_SHALLOW: string[] = [
   "... It was remote.",
 ];
 
+/** And what he says once there is a lamp burning in his corridor.
+ *
+ *  Checked BEFORE the shallow bank (sim/dialogue.ts) although a ladder to his
+ *  door is the larger intrusion, because this one is newer and it has to be
+ *  ANSWERED. A player who hangs a lamp outside a hermit's chamber and gets the
+ *  same seven lines about the ladder concludes the lamp is inert; the whole
+ *  reason to spend ore on light is that the world can tell it is lit.
+ *
+ *  He never thanks you and he never asks for another. This is the form the
+ *  no-dislikes rule takes for somebody who is not a resident and has no house to
+ *  be delighted about (content/tastes.ts): he is not disappointed, he is simply
+ *  unconsulted. */
+export const MOLE_LIT: string[] = [
+  "There's a light in my corridor. I didn't ask for a light.",
+  "I can see the ceiling now. I'd been managing.",
+  "It's warm, near it. ... I don't stand there.",
+  "Very thoughtful. Very bright.",
+  "I knew where everything was in the dark. I still do.",
+  "That'll be up forever, will it.",
+  "... I stood there once.",
+];
+
 // --- The Quiet Ghost ----------------------------------------------------------
 // The second individual voice, and it had to be as distinct from the Mole's as
 // his is from the town's, because they are structurally the same character —

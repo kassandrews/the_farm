@@ -22,7 +22,16 @@
 import type { ItemId } from "./items";
 import type { SkinClass } from "./skins";
 
-export type FurnitureId = "bed" | "table" | "chair" | "shelf" | "cushion" | "rug" | "noticeboard" | "stage";
+export type FurnitureId =
+  | "bed"
+  | "table"
+  | "chair"
+  | "shelf"
+  | "cushion"
+  | "rug"
+  | "lamp"
+  | "noticeboard"
+  | "stage";
 
 /** Which way a piece is turned. "s" is the default — facing the camera. */
 export type Facing = "n" | "e" | "s" | "w";
@@ -113,6 +122,45 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // Almost flat: a rug is a floor that is nicer, not a thing standing on one.
     height: 1,
     finish: "cloth",
+  },
+  // --- The one thing made of metal -----------------------------------------
+  // Ore's sink, and the only row in this table that can be placed underground
+  // (sim/furniture.ts takes a layer; ui/app.ts allows exactly this tool and
+  // erase down there). `items.ts` says ore is "found low down, where the light
+  // gives up" — this is the object that makes that stop being true.
+  //
+  // ORE ALONE, which is allowed here and would not be at the Menace's counter.
+  // "No row may list ore alone" (DESIGN §Materials) is a rule about payment
+  // ALTERNATIVES — a barter row that only took ore would make digging the price
+  // of cloth. A placement cost is the other thing entirely: a bed costs wood
+  // alone and nothing about that gates anything, because you are choosing to
+  // put a lamp down. Nothing in the game requires one, and lamp.test.ts asserts
+  // no structure or bed ever costs ore.
+  //
+  // NOT SOLID, and that is load-bearing rather than taste. `isWalkable` returns
+  // early underground — the rock is the only thing that can stop you down there
+  // — so a solid piece in the tunnel would be invisible to the pathfinder and
+  // to the Mole. It is also the chair rule at its strongest: a one-wide corridor
+  // is the smallest room in the game, and a lamp you had to squeeze past in one
+  // would be miserable.
+  //
+  // 18, not 22. Tall enough to stand up and cast from head height, and short of
+  // the occlusion fade's threshold (half a tile at STOREY 24) — roofs should be
+  // that machinery's first real user, not this.
+  //
+  // `finish: "wood"` because the POST is timber and takes your wood finishes.
+  // The head is brass in every town: a finish that cost ore would break the
+  // free-appearance axis, and a metal finish class is the tempting-and-wrong
+  // version of this whole feature (ROADMAP §"Ore's sink").
+  lamp: {
+    id: "lamp",
+    name: "Lamp",
+    cost: { ore: 2 },
+    w: 1,
+    h: 1,
+    solid: false,
+    height: 18,
+    finish: "wood",
   },
   // --- Town furniture, which is not for sale -------------------------------
   // The errands board. It is a row here because it is a thing standing in a

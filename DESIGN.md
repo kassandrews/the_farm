@@ -419,6 +419,26 @@ That distinction is the whole safety of it — an extra way to pay gates
 nothing, and the digger gets the same sentence from her that the farmer
 does.
 
+**What ore BUILDS is light, and only light.** The lamp is the one object
+made of metal: a post with a brass head that throws a warm pool where you
+put it — in a tunnel, where the dark is real, and on your own land after
+sunset. The reason it is a lamp rather than a fourth kind of chair is that
+the game already had a lighting model and nothing that could add to it; the
+underground's whole texture is that you see as far as you are lit.
+
+The same sentence above is what keeps it safe: **nothing may ever require
+one.** No wall, door, floor or bed may cost ore, or giving somebody a home
+would mean going underground first — the one thing this section forbids ore
+to do. A lamp changes what you can see and nothing you can do: you can dig
+at 3am in the pitch dark perfectly well, and a lit tunnel is a tunnel
+somebody has been working rather than a tunnel that finally functions.
+
+**The rock is not somewhere you build a room.** Walls, floors and doors stop
+at the shaft. This is a rule about what the underground *is* rather than a
+technical limit — a room down there would want enclosure, a roof and a
+flood fill through solid stone, which is a building where a tunnel should
+be. You install a light in the rock; you build a house on the grass.
+
 **Appearance is a separate, free axis.** Any built tile can wear any
 unlocked finish at no cost: pale pine, dark walnut, whitewash. A finish is
 a property of the tile, never a different item. This is the rule that keeps

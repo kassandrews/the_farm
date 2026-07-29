@@ -586,3 +586,35 @@ describe("v19 → v20: somebody can walk with you", () => {
     expect(migrated.villagers).toEqual(before.villagers);
   });
 });
+
+describe("v20 → v21: furniture can stand in the rock", () => {
+  function v20Save(extra: Record<string, unknown> = {}): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    delete w.underFurniture;
+    return { ...w, schemaVersion: 20, ...extra };
+  }
+
+  it("backfills an empty record, which is the only truthful answer", () => {
+    // A v20 town could not put anything down there — build mode refused the
+    // underground outright — so "nothing installed" is not a convenient guess.
+    // Same argument as v16 → v17's empty `under`.
+    const migrated = migrateSave(v20Save())!;
+    expect(migrated.underFurniture).toEqual({});
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+  });
+
+  it("rekeys nothing — every surface entry keeps meaning the surface", () => {
+    // The reason the underground got its own record rather than a `u:` prefix in
+    // `furniture`: five modules read that map as a surface fact, and a migration
+    // that moved keys around would have had to be trusted by all of them.
+    const before = v20Save();
+    const migrated = migrateSave(before)!;
+    expect(migrated.furniture).toEqual(before.furniture);
+  });
+
+  it("keeps what's already down there, if a save somehow has it", () => {
+    const lamp = { "3,4": { id: "lamp", facing: "s", finish: "pine" } };
+    const migrated = migrateSave(v20Save({ underFurniture: lamp }))!;
+    expect(migrated.underFurniture).toEqual(lamp);
+  });
+});

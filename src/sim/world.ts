@@ -496,10 +496,15 @@ export function isWalkable(
   layer: Layer = "surface",
 ): boolean {
   if (tileDef(tileAt(world, x, y, layer)).solid) return false;
-  // Underground there is nothing standing and nothing furnished — the rock is
-  // the only thing that can stop you, and it already had its say above. Walls
-  // and furniture are surface facts, so this doesn't consult them down there
-  // and a tunnel can never be blocked by a bed on the ground above it.
+  // Underground the rock is the only thing that can stop you, and it already had
+  // its say above. Walls are a surface fact, so this doesn't consult them down
+  // there and a tunnel can never be blocked by a bed on the ground overhead.
+  //
+  // There IS furniture in the rock now — the lamp (Phase 5a) — and this still
+  // doesn't ask, because nothing placeable underground is solid. That is held by
+  // the table, not by hope: `lamp.test.ts` asserts every tool offered below
+  // ground has `solid: false`, so the day somebody adds a metal gate down here
+  // the test fails and points at this line.
   if (layer === "under") return true;
   const built = world.build[tileKey(x, y)];
   if (built && structureDef(built.id).solid) return false;

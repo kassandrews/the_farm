@@ -203,6 +203,21 @@ export interface WorldState {
    *  multi-tile, carry a facing, and never seal a room. */
   furniture: Record<string, FurnitureCell>;
 
+  /** Furniture standing in the rock. Its own record rather than a layer prefix
+   *  on the keys above, for the reason `under` is its own record: adding it
+   *  rekeys nothing in a live save (v21 adds an empty object), and — the part
+   *  that decided it — every module that walks `furniture` looking for beds,
+   *  shelves and notice boards keeps meaning the SURFACE by default.
+   *
+   *  `assign.ts`, `home.ts`, `housing.ts`, `errands.ts` and `commission.ts` all
+   *  iterate that record; a bed in a tunnel is not a home and a board in a
+   *  tunnel is not the town's. Five modules that would each have had to learn a
+   *  layer instead learn nothing, which is what makes this the cheap shape.
+   *
+   *  Only lamps ever get here — the rock is not somewhere you build a room, it
+   *  is somewhere you install a light (ROADMAP §"Ore's sink"). */
+  underFurniture: Record<string, FurnitureCell>;
+
   crops: Record<string, Crop>;
   villagers: Villager[];
 

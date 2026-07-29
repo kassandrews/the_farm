@@ -16,7 +16,7 @@ import { makeVillager } from "./villagers";
 import { authoredBed } from "../content/town";
 import type { CharId } from "../content/cast";
 
-export const SCHEMA_VERSION = 20;
+export const SCHEMA_VERSION = 21;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -457,6 +457,21 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
   // `following: false` on every villager would be the same fact written eight
   // times with seven copies free to drift.
   19: (raw) => ({ ...raw, schemaVersion: 20, company: null }),
+  // v20 → v21: furniture can stand in the rock (Phase 5a, the lamp). One new
+  // record, empty, and empty is the truthful backfill for the same reason v17's
+  // was: a v20 save could not put anything down there — build mode refused the
+  // underground outright — so "nothing installed" is not a convenient guess, it
+  // is the only state such a town has ever been in.
+  //
+  // Its own record rather than prefixed keys in `furniture`, which means this
+  // migration rekeys NOTHING and every existing entry keeps meaning the surface.
+  // See types.ts §underFurniture for the five modules that decision protects.
+  20: (raw) => ({
+    ...raw,
+    schemaVersion: 21,
+    underFurniture:
+      typeof raw.underFurniture === "object" && raw.underFurniture ? raw.underFurniture : {},
+  }),
 };
 
 /** The v12 museum, frozen as literals. Migrations must never read the CURRENT

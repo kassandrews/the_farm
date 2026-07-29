@@ -72,6 +72,29 @@ export function moleGroundShallow(world: WorldState): boolean {
  *  the joke is that a road went in, not that you got marginally closer. */
 const SHORTCUT_DEPTH = 12;
 
+/** Is anybody's lamp burning near his chamber?
+ *
+ *  Read off the world at the moment you speak to him, like the shortcut above
+ *  and like the Ghost's cut grove — none of the three secrets keeps a memory of
+ *  being interfered with, because all three can simply look (sim/dialogue.ts).
+ *
+ *  Generous radius, same instinct as SHORTCUT_DEPTH: the joke is that there is
+ *  light where there was none, not that it is a particular number of tiles from
+ *  his chair. Walks `underFurniture`, whose size is the number of lamps you have
+ *  ever installed — there is nothing else in it (types.ts). */
+const LAMPLIGHT_REACH = 8;
+
+export function moleLamplit(world: WorldState): boolean {
+  const [cx, cy] = chamberXY(world);
+  for (const [key, cell] of Object.entries(world.underFurniture)) {
+    if (cell.id !== "lamp") continue;
+    const at = parseTileKey(key);
+    if (!at) continue;
+    if (Math.hypot(at.x - cx, at.y - cy) <= LAMPLIGHT_REACH) return true;
+  }
+  return false;
+}
+
 function chamberXY(world: WorldState): [number, number] {
   const c = warrenChamber(world.seed);
   return [c.x, c.y];

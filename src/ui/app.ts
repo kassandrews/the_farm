@@ -5,7 +5,7 @@
 
 import { el, hoverHint, modal } from "./dom";
 import { Renderer } from "../render/renderer";
-import type { WorldState, Tool, BuildTool, HomesteadSpot } from "../sim/types";
+import type { WorldState, Tool, BuildTool, HomesteadSpot, Layer } from "../sim/types";
 import { FACINGS, FURNITURE, furnitureDef } from "../content/furniture";
 import type { Facing } from "../content/furniture";
 import {
@@ -17,6 +17,7 @@ import {
   moveTo,
   completeLandClaim,
   summarizeAway,
+  toolAllowedOn,
 } from "../sim/game";
 import { officeLandClaimLine, homeLineFor, companyYesLine, companyByeLine } from "../sim/dialogue";
 import { companion, canInvite, invite, partWays } from "../sim/company";
@@ -113,6 +114,7 @@ const BUILD_TOOLS: { id: BuildTool; icon: string; label: string; hint: string }[
   { id: "shelf", icon: "🗄️", label: "Shelf", hint: "Place a shelf. Press R to turn it." },
   { id: "cushion", icon: "🛋️", label: "Cushion", hint: "Costs cloth. The Menace sells cloth." },
   { id: "rug", icon: "🧶", label: "Rug", hint: "Costs cloth. Walk right over it." },
+  { id: "lamp", icon: "🏮", label: "Lamp", hint: "Costs ore. Give the dark something to argue with." },
   { id: "erase", icon: "↩️", label: "Take back down", hint: "Remove what you built here. Materials come back." },
 ];
 
@@ -1410,7 +1412,10 @@ export class App {
         // that stops a sweep charging twice is already the game's definition of
         // "one gesture" (sim/undo.ts).
         beginStroke(this.world, buildToolLabel(this.buildTool));
-        this.strokeBeds = bedKeys(this.world);
+        // Beds are a surface fact, so an underground stroke has none to track —
+        // and a null here is what makes endPaint skip the rehome pass entirely
+        // rather than diffing an untouched record for every lamp.
+        this.strokeBeds = this.underground() ? null : bedKeys(this.world);
         this.canvas.setPointerCapture(e.pointerId);
         this.buildAtPoint(e.clientX, e.clientY);
         return;
@@ -1522,6 +1527,13 @@ export class App {
     return this.world?.player.layer === "under";
   }
 
+  /** The layer the player is standing on, defaulting to the surface before a
+   *  world exists. Every build path now takes one, and a `?? "surface"` at each
+   *  of them is four chances to write it as "under" by accident. */
+  private layer(): Layer {
+    return this.world?.player.layer ?? "surface";
+  }
+
   private villagerNear(x: number, y: number): { id: import("../content/cast").CharId; x: number; y: number } | null {
     if (!this.world) return null;
     for (const v of this.world.villagers) {
@@ -1574,13 +1586,13 @@ export class App {
    *  leaves — the palette doubles as the mode toggle, so there's no separate
    *  button to hunt for. */
   private selectBuildTool(t: BuildTool): void {
-    // Building stops at the shaft, and this is a correctness gate rather than a
-    // taste one: `world.build` and `world.furniture` are SURFACE records with no
-    // layer in their keys, so a wall placed from below would silently stand up
-    // in the field above you. Rather than teach every build path a layer for a
-    // thing the design doesn't ask for yet, the tunnel simply isn't somewhere
-    // you build.
-    if (this.underground()) {
+    // Most of the palette stops at the shaft. This was once a flat refusal, with
+    // a correctness argument behind it — `furniture` was a surface record with no
+    // layer in its keys, so anything placed from below would have stood up in the
+    // field overhead. `underFurniture` (schema v21) is that argument answered, and
+    // what remains is a design rule rather than a limitation: the rock is not
+    // somewhere you build a room.
+    if (!toolAllowedOn(t, this.layer())) {
       audio.play("deny");
       this.flash("Not down here. There's nothing to put a wall on but rock.");
       return;
@@ -1604,6 +1616,11 @@ export class App {
     }
     for (const [id, btn] of this.hud.buildButtons) {
       btn.classList.toggle("selected", id === this.buildTool);
+      // The palette says what is possible here rather than offering nine tools
+      // that refuse. Hidden, not disabled: a row of greyed buttons in a tunnel
+      // reads as the game being broken, where two buttons read as what the rock
+      // is for.
+      btn.style.display = toolAllowedOn(id, this.layer()) ? "" : "none";
     }
     this.renderer.setBuildView(building);
     this.renderer.setTool(this.tool);
@@ -1650,7 +1667,8 @@ export class App {
   /** Apply the held build tool to a tapped tile. Silent on a tile already
    *  painted this drag, so sweeping back and forth doesn't charge twice. */
   private buildAtPoint(clientX: number, clientY: number): void {
-    if (!this.world || !this.buildTool || this.underground()) return;
+    if (!this.world || !this.buildTool) return;
+    if (!toolAllowedOn(this.buildTool, this.layer())) return;
     const wpt = this.renderer.screenToWorld(clientX, clientY);
     const x = Math.round(wpt.x);
     const y = Math.round(wpt.y);
@@ -1659,7 +1677,7 @@ export class App {
     this.painted.add(key);
 
     captureCell(this.world, x, y); // before the edit — it snapshots the old state
-    const res = buildAt(this.world, this.buildTool, x, y, Date.now(), this.facing);
+    const res = buildAt(this.world, this.buildTool, x, y, Date.now(), this.facing, this.layer());
     // Only speak up when something happened or the player is actually short of
     // materials. Dragging across ground you can't build on shouldn't natter.
     if (res.changed) {
@@ -1682,15 +1700,16 @@ export class App {
       this.openErrands();
       return;
     }
-    // Changing layer puts down anything that only makes sense up top. You can
-    // reach a shaft with a wall in hand (ACT works in build mode), and arriving
-    // underground still holding it would leave the palette lit for a mode that
-    // refuses every tap.
-    if (res.kind === "shaft" && this.buildTool) {
-      this.buildTool = null;
-      this.syncToolUi();
+    // Changing layer puts down anything that doesn't make sense on the new one.
+    // You can reach a shaft with a wall in hand (ACT works in build mode), and
+    // arriving underground still holding it would leave the palette lit for a
+    // tool that refuses every tap. A LAMP survives the trip, which is the whole
+    // point of it — carry it down and keep building.
+    if (res.kind === "shaft") {
+      if (this.buildTool && !toolAllowedOn(this.buildTool, this.layer())) this.buildTool = null;
+      this.syncToolUi(); // the palette itself changes shape, held tool or not
+      this.endAssigning();
     }
-    if (res.kind === "shaft") this.endAssigning();
     // The cue follows what actually happened, so a refused action sounds
     // different from a successful one without needing to read the message.
     audio.play(res.changed ? ACTION_CUES[res.kind] : "deny");

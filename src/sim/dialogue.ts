@@ -24,6 +24,7 @@ import {
   SCHOLAR_DISSENT,
   MOLE_DEEP,
   MOLE_SHALLOW,
+  MOLE_LIT,
   GHOST_QUIET,
   GHOST_CUT,
   COMPANY_IDLE,
@@ -33,7 +34,7 @@ import {
   warmLines,
 } from "../content/dialogue";
 import { rivalReading } from "./museum";
-import { moleGroundShallow } from "./mole";
+import { moleGroundShallow, moleLamplit } from "./mole";
 import { groveCut } from "./ghost";
 import { showerTonight } from "./cosmos";
 import { isCompanion } from "./company";
@@ -122,7 +123,12 @@ export function officeLandClaimLine(line: number): Speech | null {
  *  doing what the sky is doing. Gating any of it on an away roll would mean they
  *  hadn't noticed something standing in front of them. */
 function trySecretLine(world: WorldState, v: Villager, now: number): string[] | null {
-  if (v.id === "mole") return moleGroundShallow(world) ? MOLE_SHALLOW : MOLE_DEEP;
+  // Three banks now, and the lamp is checked first — see MOLE_LIT for why the
+  // newer intrusion has to win over the larger one.
+  if (v.id === "mole") {
+    if (moleLamplit(world)) return MOLE_LIT;
+    return moleGroundShallow(world) ? MOLE_SHALLOW : MOLE_DEEP;
+  }
   if (v.id === "ghost") return groveCut(world) ? GHOST_CUT : GHOST_QUIET;
   if (v.id === "cosmos") {
     // Her variable is WHICH NIGHT it is, and there are five of them. If you are
