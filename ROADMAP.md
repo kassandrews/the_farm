@@ -1284,11 +1284,27 @@ What the build settled:
 
 Still to do in 4a: **step 4** depth rewards and the Mole.
 
-Loose end worth deciding in step 4: **what happens if you sink a shaft next to
-something deep.** The Mole is "found by digging deep", and depth is relative to
-your entrances — so a hole dug beside him makes his ground shallow. Spoiling a
-secret by paving toward it may be exactly right (it is the Blessed Carrot's
-temperament as a map rule), but it should be a decision, not a side effect.
+**Settled for step 4: if you sink a shaft next to something deep, it stops
+being deep, and nothing tries to stop you.** Depth is distance from your nearest
+entrance, so a hole dug above the Mole makes his ground shallow — he does not
+move, does not hide, and is not protected. You paved a road to the hermit and
+the map simply agrees that he now lives near a road.
+
+This was on the list because it should be a DECISION rather than a side effect
+of how `depthAt` happens to be written, and the two rejected answers are worth
+recording. Moving him further out when you approach makes the secret chase you,
+which is a game asking to be beaten rather than a place. Freezing his ground
+deep needs a "how deep was this when you found it" record, which is the
+high-water mark that step 3 refused to keep for slate, for the same reason: it
+is a score.
+
+Spoiling it by your own convenience is also the funnier and more on-tone
+outcome (CLAUDE.md §Tone), and consistent with the town's other institutions
+being demolishable — nothing here is protected from you.
+
+What step 4 still has to answer is what this means for the Mole's *dialogue*,
+which is where it should live rather than in the map: he is a secret who now
+has a commute, and he should have something to say about that.
 
 - **Company** — invite a villager along (DESIGN §"Company"). Nothing else in the
   three inspirations does this.
