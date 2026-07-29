@@ -36,7 +36,7 @@ import type { ErrandDef, ErrandId, NoticeWorld } from "../content/errands";
 import { ERRANDS, NOTICES, errandDef } from "../content/errands";
 import type { Rng } from "./rng";
 import { count, spend } from "./inventory";
-import { befriend } from "./villagers";
+import { befriend } from "./friendship";
 import { remember } from "./memory";
 
 /** How long the board stays quiet after a request closes — delivered OR

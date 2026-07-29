@@ -74,6 +74,16 @@ export const RESIDENT_IDLE: Partial<Record<AdultForm, string[]>> = {
 // `v` is the remembered value (a Meadow name, a food, a witnessed thing).
 export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, ((v: string) => string)[]>>>> = {
   scholar: {
+    // A day spent with you, and a day spent with you UNDERGROUND (sim/company.ts).
+    // Two kinds, because they are two different afternoons.
+    company: [
+      () => "We walked the whole town. I have a map now. It is mostly wrong and entirely mine.",
+      () => "You took me along. I got more done than usual, which is suspicious.",
+    ],
+    delved: [
+      () => "I have been underground. With you. There is rock down there and it is extremely rock.",
+      () => ". ... The dark did something to my methodology. I liked it.",
+    ],
     // Imported raising history from The Meadow (see meadow_import.ts).
     raised_favorite: [
       (v) => `They fed me ${v}, back before. I've since disproven ${v}. It remains delicious.`,
@@ -110,46 +120,94 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
       () => "I put a request on the board and it was simply met. I am revising my model of how boards work.",
     ],
   },
-  // --- Errand lines for the rest of the cast ---------------------------------
-  // EVERY FORM GETS ONE, which no other memory kind here can say. That is
-  // deliberate rather than thorough: the asker on a card is picked from whoever
-  // is standing in the town (sim/errands.ts), so a form with nothing to say
-  // about it would make running an errand for that person land on silence — and
-  // the line IS the payment. A bank that only the Scholar had would mean the
-  // beat worked properly one time in six.
+  // --- Errands and company, for the rest of the cast -------------------------
+  // THESE THREE KINDS GET EVERY FORM, which no other memory kind here can say.
+  // That is deliberate rather than thorough, and it is the same argument twice.
+  //
+  // The asker on a card is picked from whoever is standing in the town
+  // (sim/errands.ts), and a companion is picked by the player from the same
+  // pool (sim/company.ts) — so in both cases a form with nothing to say would
+  // make the beat land on silence for that person, and in both cases THE LINE
+  // IS THE PAYMENT. Neither pays an item; what you get back is that they bring
+  // it up afterwards. A bank only the Scholar had would mean each of them
+  // worked properly one time in six.
   //
   // The rest of these banks stay thin (ROADMAP §Known gaps: only the Scholar has
-  // a full one). This is the one kind where thin isn't good enough.
+  // a full one). These are the kinds where thin isn't good enough.
   dog: {
+    company: [
+      () => "We went TOGETHER. I think about it constantly. Constantly.",
+      () => "You took me with you. Best decision anyone has made. Ever. Including me.",
+    ],
+    delved: [
+      () => "We went UNDER. Under the ground! There was no sky and I was fine because you were there.",
+      () => "The tunnel! I remember the tunnel. It smelled like everything.",
+    ],
     errand: [
       (v) => `The ${v}! I carried it! I carried it the whole way and I did not eat it!`,
       () => "I delivered. Everyone was pleased. I have thought about it several times since.",
     ],
   },
   blob: {
+    company: [
+      () => "We toured. I gave it my all. Nobody applauded. That is also a kind of triumph.",
+      () => "I accompanied you once. It was, I think, my subtlest work.",
+    ],
+    delved: [
+      () => "I have performed underground. The acoustics were extraordinary. The audience was you.",
+      () => ". ... A cave. Me, in a cave. I've never been better lit, and there was no light.",
+    ],
     errand: [
       (v) => `The ${v} arrived at my lowest moment. Well. One of them. I have several a day.`,
       () => "Someone answered my request. I had prepared a speech about being ignored. It is wasted now.",
     ],
   },
   menace: {
+    company: [
+      () => "We walked out together. I was seen with you. Publicly. Draw your own conclusions.",
+      () => "That outing was acceptable. I've said all I intend to say about it.",
+    ],
+    delved: [
+      () => "You took me into a hole in the ground. ... I would go again. Don't ask me twice.",
+      () => "I got dirt on me. Underground. With you. It was, and I choose the word carefully, fun.",
+    ],
     errand: [
       (v) => `You brought the ${v}. Adequate. ... Prompt, even. I shan't make a thing of it.`,
       () => "I asked, and it was fetched. This is how things ought to go. It is not how they usually go.",
     ],
   },
   gremlin: {
+    company: [
+      () => "We went round together. I found four things. You saw two of them.",
+      () => "You brought me along and didn't watch my hands the whole time. That's trust. Sort of.",
+    ],
+    delved: [
+      () => "Down there! With you! Everything down there is findable and nobody has found it.",
+      () => "The deep bits. Best bits. Nothing's been moved yet, so anything I move is FIRST.",
+    ],
     errand: [
       (v) => `The ${v}. Mine now. It was always going to be mine. You just made it faster.`,
       () => "You did the errand. Straight. No swap, no trick. ... I don't know what to do with that.",
     ],
   },
   carrot: {
+    company: [
+      () => "We walked out. The stall kept. Nothing was lost. ... It was a good day.",
+    ],
+    delved: [
+      () => "I went below the soil. Voluntarily. I have thoughts I am not ready to share.",
+    ],
     errand: [
       (v) => `The ${v}. ... Yes. That's the one I asked for. Thank you. We're not going to discuss it further.`,
     ],
   },
   office: {
+    company: [
+      () => "We went out. No agenda, no minutes, no follow-up. I still think about it.",
+    ],
+    delved: [
+      () => "I was underground. Unfiled. Unreachable. ... Genuinely the best afternoon of my retirement.",
+    ],
     errand: [
       (v) => `The ${v} came through. I've filed it. The filing is the important part.`,
     ],
@@ -414,6 +472,64 @@ export function warmLines(form: AdultForm, tier: "new" | "familiar" | "friend" |
 export function residentIdle(form: AdultForm): string[] {
   return RESIDENT_IDLE[form] ?? ["...", "*settles in*", "It's nice here. Quietly."];
 }
+
+// --- Company ------------------------------------------------------------------
+// What somebody says when you ask them along, while they are walking with you,
+// and when the day ends and they go home (sim/company.ts).
+//
+// Voice rule, and it is the whole reason these are three banks rather than one
+// pool of "companion lines": NOBODY BECOMES A DIFFERENT CREATURE, which is the
+// same rule RESIDENT_WARM keeps. A Menace who agrees to come along agrees
+// grudgingly and then enjoys herself without admitting it. A Dog says yes before
+// you finish the sentence. The Scholar reclassifies the walk as fieldwork.
+//
+// And nothing in here is a hint. A companion who says "there's ore that way"
+// would turn a person into a HUD, and the underground would stop being a place
+// you learn and become a place you are guided through.
+
+/** Saying yes. Short — this is the beat between asking and walking, not a
+ *  speech. */
+export const COMPANY_YES: Partial<Record<AdultForm, string[]>> = {
+  scholar: [
+    "Fieldwork. Excellent. I'll bring the notebook and most of my objectivity.",
+    "Yes. I've been meaning to see what you actually do all day.",
+  ],
+  dog: ["YES. Where. Doesn't matter. Yes.", "I was already coming. I just hadn't been asked yet."],
+  blob: ["A tour. With me in it. Very well.", "I accept. I'll need no direction. I never do."],
+  menace: ["I shall accompany you. Don't make it strange.", "Fine. But I'm not carrying anything."],
+  gremlin: ["Ooh. Where are we going. Is it somewhere with things in it.", "Yes. I'll be good. Mostly good."],
+  office: ["I'll come. I'm not filing it. That's the treat.", "Out of office. Genuinely, for once."],
+  carrot: ["I shall walk with you. The stall keeps.", "Blessed. Also free until evening."],
+};
+
+/** While they are with you — the idle bank, pooled with their ordinary one so a
+ *  companion is still themselves and not a walking status message. */
+export const COMPANY_IDLE: Partial<Record<AdultForm, string[]>> = {
+  scholar: [
+    "Still with you. Still taking notes. Some of them are about you.",
+    "This counts as a transect. I've decided it counts as a transect.",
+    "Lead on. I'll say something insightful within the hour.",
+  ],
+  dog: ["Are we still going? We're still going. Good.", "Best walk. Ongoing. Best walk.", "I'm right here. I checked."],
+  blob: ["I am accompanying you. It's a supporting role. I'm elevating it.", "The scenery has improved since I entered it."],
+  menace: ["I'm still here. Nobody need know why.", "Carry on. I'm observing. Judgementally, but present."],
+  gremlin: ["I haven't taken anything. Recently.", "Ooh, what's that. No, keep going. But ooh."],
+  office: ["No agenda. No minutes. I'm coping.", "This is the longest I've been away from the desk. It's fine. It's fine."],
+  carrot: ["The soil changes underfoot. I notice these things.", "..."],
+};
+
+/** And the goodbye, when their own day takes them back (sim/company.ts
+ *  `dayOver`). Never an apology and never a request that you do it again —
+ *  they have a life, and the invitation is always open. */
+export const COMPANY_BYE: Partial<Record<AdultForm, string[]>> = {
+  scholar: ["That's the light gone. I'll write it up. ... Good day's work.", "I'm off. The notebook is fuller than it was."],
+  dog: ["Is it over? It's over. It was the best one.", "Going home. I'll be at the board. Come and get me."],
+  blob: ["I must retire. The performance requires rest.", "Exit, mine. ... You were a serviceable co-star."],
+  menace: ["I'm going in. This was tolerable. Extremely tolerable.", "That's enough of that. Same again sometime."],
+  gremlin: ["I'm off. Check your pockets. ... They're fine. Check anyway.", "Home. I found four things. You saw two of them."],
+  office: ["Back to the desk. It missed me. It says nothing, but it missed me.", "That's me clocked off. From nothing. Wonderful."],
+  carrot: ["I return to the stall. Go well.", "Evening. ... Blessings, and so on."],
+};
 
 // --- The Maverick Mole --------------------------------------------------------
 // The only voice in this file that belongs to one specific individual rather

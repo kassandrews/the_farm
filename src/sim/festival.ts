@@ -28,7 +28,7 @@
 import type { WorldState, Villager } from "./types";
 import type { FestivalDef } from "../content/festivals";
 import { STAGE, FESTIVAL_TO_HOUR, FESTIVAL_FROM_HOUR, festivalOn, activeFestival } from "../content/festivals";
-import { befriend } from "./villagers";
+import { befriend } from "./friendship";
 import { remember } from "./memory";
 
 const DAY_MS = 24 * 60 * 60 * 1000;

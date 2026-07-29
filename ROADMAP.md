@@ -84,9 +84,16 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   heard of. He digs a little of your tunnel while you're out, and if you sink a
   shaft over his head to shorten the walk, he says so.
 
-**Next:** Phase 4b — company, then secrets, then crops and seasons.
+- **Phase 4b — company, complete.** You can ask somebody to come with you, and
+  they walk with you until their own day ends. One slot, no party, no payout, no
+  cooldown on a goodbye; the six counters stay at their counters and the Dog
+  Thing doesn't. They follow you down the shaft, and somebody who was in the
+  tunnel when you cut it is the only person who remembers you cutting it — which
+  is the proximity model 4a left open. Schema v20.
 
-**Save schema is at v19.** Every change ships a tested migration — see
+**Next:** Phase 4c — secrets, then crops and seasons.
+
+**Save schema is at v20.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -1279,11 +1286,11 @@ What the build settled:
   `mineVein` at `SLATE_DEPTH` (12, about a screen of tunnel past a landing) and
   the map pays out rather than a character handing you a reward. Its hint has
   said exactly this since the table was written.
-- **No `witness` underground**, following carve's precedent: nobody is down
+- ~~**No `witness` underground**~~, following carve's precedent: nobody was down
   there, and the town hearing about it would be the memory log inventing an
-  audience. Consequence accepted — a player who only ever mines earns no
-  "gathered" memories. Worth revisiting when 4b puts company in the tunnel,
-  since then somebody genuinely IS there to see it.
+  audience. **Revisited in 4b, exactly as predicted here** — company put somebody
+  genuinely in the tunnel, so `witness` gained `onlyPresent` and both the vein
+  and the cut now call it. Whoever came with you remembers; nobody else does.
 - **No "deepest reached" counter anywhere.** The unlocked list is the whole
   record. A high-water mark is a score, which is the thing the museum went to
   such lengths not to be.
@@ -1394,19 +1401,92 @@ than off a memory — the same call Margfrom's dissent makes, for the same reaso
 Gating it on an away roll would mean he hadn't noticed the ladder. He does not
 move, does not hide, and is not protected; he just has an opinion.
 
-**Phase 4a is done.** Next: **4b company**, then secrets, then crops/seasons.
-Worth knowing before 4b starts: mining and carving still call no `witness`, so a
-player who only mines earns no memories. Step 3 left that open pending somebody
-being down there to see it — somebody now is, but he is not the town, and
-`witness` writes to every villager regardless of where they are standing. Giving
-him memories of your digging means giving `remember` a proximity model, which is
-a known loose end below and is 4b's business, not 4a's.
+**Phase 4a is done.** It left one thing open, and 4b closed it: mining and
+carving called no `witness`, so a player who only mined earned no memories. Step
+3 left that pending somebody being down there to see it — somebody now was, but
+he is not the town, and `witness` wrote to every villager regardless of where
+they stood. The proximity model that needed was 4b's business, and 4b has it.
 
-- **Company** — invite a villager along (DESIGN §"Company"). Nothing else in the
-  three inspirations does this.
-- **Secrets** — the Quiet Ghost exists only in the renderer's night-gating today;
-  no ghost villager exists to see. Stray Cosmos, the Humming Cube landmark.
-  Remember: secrets are never spoiled by UI, no "???" slots.
+### 4b. Company — **done**
+
+`sim/company.ts`, `sim/friendship.ts`, schema **v20**. Ask somebody to come
+along; they walk with you until their own day ends. The whole feature is one
+nullable field (`world.company`) and a redirected walk target, which is the
+point rather than an economy: company shipped alone would have been a
+follow-behind, and a follow-behind is a pet.
+
+What the build settled:
+
+- **ONE SLOT, NEVER A PARTY**, for the reason a commission and an errand are one
+  slot. Two followers is a retinue, a retinue is a parade, and a parade is the
+  town coming with you instead of you visiting it.
+- **NOBODY IS PAID.** There is no completion, no trip length, no distance
+  walked, and `company.ts` contains no `add`. Friendship grows because `witness`
+  already warms whoever was standing there and a companion is by definition
+  standing there — doing things together IS the payment (DESIGN §Company). A
+  trip you could bank without doing anything would be a timer you leave running.
+- **A GOODBYE COSTS NOTHING**, and re-inviting costs nothing either. No
+  cooldown, because a cooldown is what turns "not today" into a move — the same
+  argument the errands board's single gap makes.
+- **THE SIX COUNTERS STAY PUT, AND THE DOG DOESN'T.** `ROOTED` is a list rather
+  than `def.fixed`, deliberately: a shop that follows you is a shop that's shut,
+  but the Dog Thing's institution is a ROUND, DESIGN's own example of company is
+  "the Dog Thing on errands", and the board was already made readable with
+  nobody at it. He is the one institution that can leave because he is the one
+  that already does. The Mole is excluded for his own reason — he does not go
+  up, and he says so unprompted.
+- **GATED AT `familiar`.** A stranger saying yes to "come with me" reads as a
+  follow command; one tier up it reads as somebody who knows you. It is also the
+  lowest tier there is, so it's a threshold you cross by playing.
+- **THE CLOCK ENDS IT, NOT A LEASH.** `dayOver` is ONE PREDICATE WITH TWO USES —
+  it refuses the invitation and it sends the companion home. Two rules would
+  drift, and the drift would look like somebody you could re-invite one second
+  after they said goodnight.
+- **THEY COME DOWN THE LADDER.** `takeAlong` fires inside `useShaft`, after the
+  player's own layer flips. Somebody too far from the shaft is left behind on
+  the surface — still your company, on the wrong layer, waiting rather than
+  pathing through a ceiling.
+- **`followTarget` AIMS AT YOUR TILE AND STOPS SHORT.** Picking a neighbour cell
+  means picking a GOOD one — not in a wall, not in the doorway you're about to
+  use — which is a small pathfinding problem solved badly every tick. Aiming at
+  the player lets `sim/path.ts` answer it, and it's why a companion follows you
+  through a door instead of standing outside trying to occupy the wall.
+
+**And it closed 4a's loose end.** `witness` gained an `onlyPresent` flag, and
+mining and carving finally call it. Underground work took no memory at all
+before, because the town remembering a hole it cannot visit would be the log
+inventing an audience — and the fix was blocked on there being somebody down
+there to remember it INSTEAD. Now there can be. Note what it deliberately does
+NOT do: apply proximity on the surface. News genuinely travels in a town this
+small, and a village where nobody hears you laid a floor unless they watched
+would be a quieter, worse place. Proximity is what a tunnel needs, not what the
+town needs.
+
+`sim/friendship.ts` is a split, not a new system: `befriend`, `friendshipTier`
+and `atLeast` moved out of `villagers.ts` — the WALKING file — because leaving
+them there meant `company.ts` importing the module that imports it, and a cycle
+through the middle of the tick loop is a bad thing to own for one two-line
+predicate.
+
+Two new memory kinds, `company` and `delved`, and they are the **first memories
+that are not town-wide**: `partWays` writes to the person who took the trip and
+to nobody else. They sit at the TOP of `MEMORY_PRIORITY`, above even a festival
+— a festival is twelve times a year with the whole town at it, and a day
+underground was the two of you. Every form has lines for both, for the reason
+every form has an errand line: the line IS the payment, and a bank only the
+Scholar had would mean the beat worked one time in six.
+
+**Next: 4c secrets**, then crops/seasons.
+
+### 4c. Secrets — not started
+
+- The Quiet Ghost exists only in the renderer's night-gating today; no ghost
+  villager exists to see. Stray Cosmos, the Humming Cube landmark. Remember:
+  secrets are never spoiled by UI, no "???" slots. `walnut` is hers, and is
+  deliberately not bolted onto a commission (see the loose ends below).
+
+### 4d. Crops and seasons — not started
+
 - More crops, seasons.
 
 ---
@@ -1493,8 +1573,10 @@ you trip over them:
   — it's one tile, one tap, and the ground is cheap to redo. Deliberate: what
   undo exists to protect is the *arrangement*, and a single dug tile isn't one.
   If ACT ever gains a drag, it should gain a stroke with it.
-- **Villager "witness" has no proximity model for memory** — everyone hears about
-  everything (friendship *is* proximity-gated). Fine in a town this small.
+- ~~**Villager "witness" has no proximity model for memory.**~~ Fixed in 4b.
+  `witness` takes `onlyPresent`, and mining and carving use it. The surface is
+  still town-wide **on purpose** — see 4b above; proximity is what a tunnel
+  needs, not what the town needs.
 - **PWA icon is a single SVG.** Real raster icons before any app-store-ish push.
 - **Build mode can't pan on touch.** You build within the visible screen; to
   build elsewhere, leave build mode and walk (or use WASD, which still works in

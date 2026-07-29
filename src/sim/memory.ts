@@ -21,6 +21,18 @@ export type MemoryKind =
   | "arrived" // the villager's own arrival on the Farm
   | "housed" // the day you finished their house (sim/commission.ts)
   | "errand" // you ran something over for them (sim/errands.ts)
+  // A day spent walking around with you, and a day spent underground with you
+  // (sim/company.ts). Two kinds rather than one with a value, because they are
+  // two different afternoons and a form's bank should be able to have a line
+  // for one and not the other.
+  //
+  // These are the FIRST memories that are not town-wide. `witness` broadcasts,
+  // because news travels in a town this small; a walk is not news, it is
+  // something that happened to exactly one other person, and `partWays` writes
+  // it to them alone. That distinction is what the tunnel needed — see the
+  // `present` option on `witness` in sim/game.ts.
+  | "company"
+  | "delved"
   // A festival, and whether you were at it (sim/festival.ts). Deliberately NOT
   // in `oneShot` below: the value is the year and the row, so each festival is
   // its own memory, and de-duplicating by kind would mean the first one you

@@ -8,7 +8,7 @@
 import type { Villager, WorldState } from "./types";
 import type { Rng } from "./rng";
 import { recall } from "./memory";
-import { friendshipTier } from "./villagers";
+import { friendshipTier } from "./friendship";
 import type { MemoryKind } from "./memory";
 import { describeHome, NOTE_PRIORITY, URGENT } from "./home";
 import type { HomeNote } from "./home";
@@ -22,11 +22,15 @@ import {
   SCHOLAR_DISSENT,
   MOLE_DEEP,
   MOLE_SHALLOW,
+  COMPANY_IDLE,
+  COMPANY_YES,
+  COMPANY_BYE,
   residentIdle,
   warmLines,
 } from "../content/dialogue";
 import { rivalReading } from "./museum";
 import { moleGroundShallow } from "./mole";
+import { isCompanion } from "./company";
 
 export interface Speech {
   who: string;
@@ -59,8 +63,16 @@ const DISSENT_CHANCE = 0.5;
 /** Which memories a form is inclined to bring up, richest first. The selector
  *  walks this list and uses the first kind the villager actually remembers. */
 const MEMORY_PRIORITY: MemoryKind[] = [
-  // Above everything, because it is the rarest and the most recent thing that
-  // can be true between you — twelve times a year, and both of you were there.
+  // Above the festival, which is saying something. A festival is twelve times a
+  // year and the whole town was at it; a day underground was the two of you and
+  // nobody else has one. It is the most specific true thing that can exist
+  // between a player and a villager, so it is the first thing they reach for —
+  // and it decays the same way everything here does, because the log is a
+  // bounded ring and ordinary life piles up on top of it.
+  "delved",
+  "company",
+  // Above everything else, because it is rare and recent — twelve times a year,
+  // and both of you were there.
   // It also decays on its own: the log is a bounded ring, so a festival stops
   // being the freshest thing as ordinary life piles up on top of it.
   "festival",
@@ -127,8 +139,17 @@ export function speak(world: WorldState, v: Villager, rng: Rng): Speech {
   // Idle voice, plus whatever warmth this villager has unlocked. Pooling rather
   // than replacing keeps their baseline personality intact — a close friend is
   // still themselves, just occasionally kinder about it.
+  //
+  // A companion's walking bank pools the same way, for the same reason. Somebody
+  // who is with you right now still has their ordinary things to say; replacing
+  // their voice with a "following you" bank would make company a mode the
+  // character enters rather than an afternoon the character is having.
   const idle = v.id === "office" ? OFFICE_IDLE : residentIdle(v.form);
-  const pool = [...idle, ...warmLines(v.form, friendshipTier(v))];
+  const pool = [
+    ...idle,
+    ...warmLines(v.form, friendshipTier(v)),
+    ...(isCompanion(world, v.id) ? (COMPANY_IDLE[v.form] ?? []) : []),
+  ];
   let text = rng.pick(pool);
   if (text === v.lastLine && pool.length > 1) {
     // one re-roll to dodge an immediate repeat
@@ -234,4 +255,24 @@ function tryMemoryLine(v: Villager, rng: Rng): string | null {
     return tmpl(ev.value ?? "");
   }
   return null;
+}
+
+/** What they say when they agree to come along, and what they say when their own
+ *  day takes them home again (sim/company.ts).
+ *
+ *  Two plain pickers rather than a branch inside `speak`, because neither of
+ *  these is a thing a villager might say — they are things that happen at an
+ *  exact moment, and the caller already knows which moment it is. Same reasoning
+ *  as `homeLineFor`: a beat that has already decided to speak is not asking how
+ *  readily something comes up.
+ *
+ *  Both fall back rather than return null. A form with no bank still has to be
+ *  able to say yes, or the invitation would silently do nothing on screen for
+ *  exactly the forms whose lines nobody has written yet. */
+export function companyYesLine(form: AdultForm, rng: Rng): string {
+  return rng.pick(COMPANY_YES[form] ?? ["...", "All right. Lead on."]);
+}
+
+export function companyByeLine(form: AdultForm, rng: Rng): string {
+  return rng.pick(COMPANY_BYE[form] ?? ["...", "That's me for the day. Go well."]);
 }

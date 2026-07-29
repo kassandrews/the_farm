@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { newWorld, talk, buildAt, playerTile } from "./game";
-import { friendshipTier, atLeast } from "./villagers";
+import { friendshipTier, atLeast } from "./friendship";
 import { speak } from "./dialogue";
 import { makeRng } from "./rng";
 import { warmLines } from "../content/dialogue";

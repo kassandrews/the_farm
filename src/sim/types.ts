@@ -269,6 +269,17 @@ export interface WorldState {
     lastClosedAt: number;
   };
 
+  /** Who is walking with you (sim/company.ts), or null. One slot, never a
+   *  party — see that file for why a retinue is a parade.
+   *
+   *  An id and a timestamp, and deliberately nothing else. Where they are is
+   *  the villager's own x/y; which layer they are on is the villager's own
+   *  `layer`; how they feel about it is their friendship. A trip has no
+   *  progress, no distance, and no completion, so there is nothing here for a
+   *  UI to turn into a bar. `sinceAt` exists so a line can say "all afternoon"
+   *  one day, and for nothing else. */
+  company: { id: CharId; sinceAt: number } | null;
+
   flags: {
     landClaimed: boolean;
     /** Whether the intro (homestead choice + land claim) has been completed. */

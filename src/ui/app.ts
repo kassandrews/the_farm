@@ -18,7 +18,8 @@ import {
   completeLandClaim,
   summarizeAway,
 } from "../sim/game";
-import { officeLandClaimLine, homeLineFor } from "../sim/dialogue";
+import { officeLandClaimLine, homeLineFor, companyYesLine, companyByeLine } from "../sim/dialogue";
+import { companion, canInvite, invite, partWays } from "../sim/company";
 import { describeHome } from "../sim/home";
 import { saveWorld, loadWorld, hasSave, clearWorld } from "../sim/save";
 import { makeRng } from "../sim/rng";
@@ -425,6 +426,22 @@ export class App {
     // Found on screen: he was politely offered a room in the plaza.
     const offerable = beds(world).length > 0 && villagerId !== "mole";
 
+    // Company, on the same terms and for the same reason: asking somebody along
+    // is a CONVERSATION, not a mode you toggle from a toolbar. The button only
+    // appears when they'd actually say yes (sim/company.ts `canInvite`) — an
+    // option that is always there and usually refuses would teach the player
+    // that people say no, which is the opposite of what the feature is.
+    //
+    // A companion gets the mirror of it instead, so the way out is always in the
+    // same place as the way in. There is no third state to explain.
+    // Found, not asserted: `talk` above already resolved this id, so a miss here
+    // is impossible — and returning is still cheaper than an assertion that
+    // stops being true the day somebody leaves town mid-conversation.
+    const them = world.villagers.find((v) => v.id === villagerId);
+    if (!them) return;
+    const withMe = companion(world)?.id === villagerId;
+    const askable = !withMe && them !== undefined && canInvite(world, them, Date.now()).ok;
+
     // The shopkeeper's conversation IS her counter. A dialogue box that then
     // offers a "shop" button would be a menu in front of a menu, and she is a
     // person you go and see rather than a UI you open.
@@ -488,6 +505,32 @@ export class App {
                   choiceBtn("There's a room for you", () => {
                     close();
                     this.beginAssigning(villagerId);
+                  }),
+                ]
+              : []),
+            ...(askable
+              ? [
+                  choiceBtn("Come with me?", () => {
+                    close();
+                    if (!invite(world, villagerId, Date.now())) return;
+                    audio.play("talk");
+                    this.flash(`${speech.who}: ${companyYesLine(them.form, this.rng)}`);
+                  }),
+                ]
+              : []),
+            ...(withMe
+              ? [
+                  choiceBtn("Thanks for coming", () => {
+                    close();
+                    // The line comes from the same bank the clock uses when
+                    // their day ends, because it is the same moment: they are
+                    // going home. Sending somebody home early should not sound
+                    // different from them leaving on time — a distinct "you
+                    // dismissed me" line would put a cost on a goodbye, and
+                    // there isn't one.
+                    this.flash(`${speech.who}: ${companyByeLine(them.form, this.rng)}`);
+                    this.partedBy = villagerId;
+                    partWays(world, Date.now());
                   }),
                 ]
               : []),
@@ -1037,6 +1080,10 @@ export class App {
    *  commission, so it stays out of the save: "have I mentioned this" is a fact
    *  about this session's UI, not about the town. */
   private announcedArrival: CharId | null = null;
+  /** Who is walking with you as of the last frame, and who the player just sent
+   *  home — see `noticeParting` for why both live here and not in the world. */
+  private walkingWith: CharId | null = null;
+  private partedBy: CharId | null = null;
   private noticeArrival(): void {
     if (!this.world) return;
     const open = openCommission(this.world);
@@ -1044,6 +1091,33 @@ export class App {
     this.announcedArrival = open.id;
     const who = this.world.villagers.find((v) => v.id === open.id);
     this.flash(`${who?.name ?? "Someone"} has pitched a tent near the plaza.`);
+  }
+
+  /** Say the goodbye when the CLOCK ended the company rather than the player
+   *  (sim/company.ts `updateCompany`).
+   *
+   *  Watched rather than pushed: the sim has no way to talk to the UI and
+   *  shouldn't grow one for this. The slot going from somebody to nobody is the
+   *  whole event, and comparing it each frame costs a string compare — the same
+   *  shape as `noticeArrival` watching for an open commission.
+   *
+   *  It stays quiet when the PLAYER said goodbye, because that path already
+   *  flashed the line from the same bank and two goodbyes for one parting reads
+   *  as a bug. `partedBy` is how the two are told apart, and it is UI state
+   *  rather than world state for exactly that reason: who clicked what is not a
+   *  fact about the town. */
+  private noticeParting(): void {
+    if (!this.world) return;
+    const now = companion(this.world)?.id ?? null;
+    const before = this.walkingWith;
+    this.walkingWith = now;
+    if (before === null || now === before) return;
+    if (this.partedBy === before) {
+      this.partedBy = null;
+      return; // the player said it; the panel already spoke
+    }
+    const who = this.world.villagers.find((v) => v.id === before);
+    if (who) this.flash(`${who.name}: ${companyByeLine(who.form, this.rng)}`);
   }
 
   /** Close a commission the moment its house is real, if it just became real.
@@ -1648,6 +1722,7 @@ export class App {
       }
       this.noticeArrival();
       this.noticeFestival();
+      this.noticeParting();
     } else {
       this.acc = 0;
     }

@@ -561,3 +561,28 @@ describe("v18 → v19: the player carries a heading", () => {
     expect(migrated.player.heading).toBe("s");
   });
 });
+
+describe("v19 → v20: somebody can walk with you", () => {
+  function v19Save(extra: Record<string, unknown> = {}): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    delete w.company;
+    return { ...w, schemaVersion: 19, ...extra };
+  }
+
+  it("brings a returning player back alone", () => {
+    // Null is the only truthful backfill: a v19 save has no company slot, so
+    // nobody was with you when you closed the tab.
+    const migrated = migrateSave(v19Save())!;
+    expect(migrated.company).toBeNull();
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+  });
+
+  it("leaves the villagers alone", () => {
+    // Company is a fact about right now, not a property of a person. A
+    // `following` flag on every villager would be the same fact written eight
+    // times with seven copies free to drift.
+    const before = v19Save();
+    const migrated = migrateSave(before)!;
+    expect(migrated.villagers).toEqual(before.villagers);
+  });
+});

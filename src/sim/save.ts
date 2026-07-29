@@ -16,7 +16,7 @@ import { makeVillager } from "./villagers";
 import { authoredBed } from "../content/town";
 import type { CharId } from "../content/cast";
 
-export const SCHEMA_VERSION = 19;
+export const SCHEMA_VERSION = 20;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -448,6 +448,15 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       },
     };
   },
+  // v19 → v20: somebody can walk with you (Phase 4b). One nullable field, and
+  // null is the only truthful backfill — a v19 save has no company slot, so
+  // nobody was with you, so nobody is.
+  //
+  // Note what it does NOT do: touch the villagers. Company is not a property of
+  // a person, it is a fact about right now, and a migration that put a
+  // `following: false` on every villager would be the same fact written eight
+  // times with seven copies free to drift.
+  19: (raw) => ({ ...raw, schemaVersion: 20, company: null }),
 };
 
 /** The v12 museum, frozen as literals. Migrations must never read the CURRENT

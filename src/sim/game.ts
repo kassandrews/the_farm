@@ -7,7 +7,8 @@ import type { WorldState, Player, Villager, Tool, BuildTool, HomesteadSpot, Head
 import type { AdultForm } from "../content/canon/forms";
 import { CAST } from "../content/cast";
 import type { CharId } from "../content/cast";
-import { makeVillager, tickVillager, befriend } from "./villagers";
+import { makeVillager, tickVillager } from "./villagers";
+import { befriend } from "./friendship";
 import { arrivalDue, admitArrival } from "./commission";
 import { remember } from "./memory";
 import type { MemoryKind } from "./memory";
@@ -43,6 +44,7 @@ import { gather, nodeAt, nodeNear, updateRegrowth } from "./gather";
 import { nodeDef } from "../content/nodes";
 import { mineVein } from "./mining";
 import { meetMole } from "./mole";
+import { takeAlong, updateCompany } from "./company";
 import { starterSkins, defaultSkin } from "../content/skins";
 import { STARTING_CROP } from "../content/crops";
 import { STARTING_SEED, canSow, sow } from "./seeds";
@@ -137,6 +139,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     // Same helper the v15 migration uses, so a new town and an upgraded one
     // open with an identically quiet board.
     errands: newErrands(now),
+    company: null, // you arrive alone; everyone here is a stranger
     flags: { landClaimed: false, onboarded: false },
   };
 
@@ -240,6 +243,12 @@ export function useShaft(world: WorldState): boolean {
   world.player.x = x;
   world.player.y = y;
   world.player.target = null;
+  // Whoever came with you comes with you. AFTER the flip, so `takeAlong` reads
+  // the layer you are now on rather than having to be told which way you went —
+  // DESIGN §Company's own example is "anyone for a dig", and a companion who
+  // waved from the top of the ladder would be the feature declining to happen at
+  // the one place it matters most.
+  takeAlong(world);
   return true;
 }
 
@@ -300,6 +309,12 @@ export function tick(world: WorldState, dt: number, now: number): void {
   // And you may have just walked into somebody's front room. Silent by design —
   // he is undocumented, so meeting him is seeing him (sim/mole.ts).
   meetMole(world, now);
+
+  // And whoever is with you may have reached the end of their own day. Derived
+  // from the clock like everything else here, so an absence can't leave somebody
+  // trailing you for two days: the hour is the hour whether or not you were
+  // watching. The UI notices the slot going empty and says the goodbye.
+  updateCompany(world, now);
 
   for (const v of world.villagers) tickVillager(world, v, dt, now);
   updateAllCrops(world, now);
@@ -457,9 +472,12 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
     // routes through mineVein because depth pays out as well as the ore does.
     if (world.player.layer === "under") {
       const got = mineVein(world, target.x, target.y, now)!;
-      // No `witness`, for the reason carving doesn't have one either: nobody is
-      // down there, and the town hearing about it would be the memory log
-      // inventing an audience. The slate is the record instead.
+      witness(world, "gathered", undefined, now, true);
+      // Witnessed by whoever is actually standing in the tunnel, and by nobody
+      // else. This used to take no memory at all, because there was nobody down
+      // here to take one and the town hearing about it would have been the log
+      // inventing an audience. Company is what made the honest version possible
+      // (see `witness`): if you brought someone, they saw you do this.
       return {
         kind: "gather",
         changed: true,
@@ -540,9 +558,10 @@ function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: num
         // payout and the cut are one call and cannot be made out of order.
         const cut = carveWithFind(world, x, y);
         if (cut.carved) {
-          // No `witness` here, deliberately. The only person down there is the
-          // Mole, and he is not the town; a memory saying the neighbours heard
-          // about a hole they cannot visit would be inventing an audience.
+          // Same rule as the vein above: remembered only by whoever is down here
+          // with you. Left uncalled entirely until 4b, because until then the
+          // only candidate was the Mole, and he is not the town.
+          witness(world, "dug", undefined, now, true);
           return {
             kind: "carve",
             changed: true,
@@ -752,11 +771,34 @@ const TOGETHER_RADIUS = 4;
  *  it (news travels in a town this small), but anyone who was actually STANDING
  *  THERE also warms to you a little — friendship grows through doing things
  *  together, not only through gifts (DESIGN §"Company"). Dialogue only surfaces
- *  a memory if that villager's bank has a line for it. */
-function witness(world: WorldState, kind: MemoryKind, value: string | undefined, now: number): void {
+ *  a memory if that villager's bank has a line for it.
+ *
+ *  `onlyPresent` narrows the MEMORY to the same people the friendship already
+ *  went to, and it is the proximity model 4a left open (ROADMAP: "mining and
+ *  carving still call no `witness`, so a player who only mines earns no
+ *  memories"). Underground work took no memory at all rather than take a false
+ *  one — a town remembering a hole it cannot visit would be the log inventing an
+ *  audience — and the reason that could not be fixed then was that there was
+ *  nobody down there to remember it instead.
+ *
+ *  Now there can be. A companion in the tunnel is somebody who was actually
+ *  there, so the cut is written to them and to nobody else. That is also the
+ *  answer to the general version of the question, and it is deliberately NOT
+ *  applied to the surface: news genuinely does travel in a town this small, and
+ *  a village where nobody hears you built a floor unless they saw it would be a
+ *  quieter, worse place than this one. Proximity is what a tunnel needs, not
+ *  what the town needs. */
+function witness(
+  world: WorldState,
+  kind: MemoryKind,
+  value: string | undefined,
+  now: number,
+  onlyPresent = false,
+): void {
   const p = world.player;
   for (const v of world.villagers) {
-    v.memory = remember(v.memory, { kind, at: now, value });
+    const here = (v.layer ?? "surface") === p.layer && Math.hypot(v.x - p.x, v.y - p.y) <= TOGETHER_RADIUS;
+    if (!onlyPresent || here) v.memory = remember(v.memory, { kind, at: now, value });
     // Standing THERE means standing there. A coordinate means two places now,
     // so distance alone is not enough: without this, working in a tunnel would
     // warm whoever happened to be walking across the field above you, through
@@ -768,8 +810,7 @@ function witness(world: WorldState, kind: MemoryKind, value: string | undefined,
     // under a fixed coordinate, so a player digging a shortcut down to him and
     // then working on the lawn ABOVE his chamber would have warmed him through
     // the ceiling.
-    if ((v.layer ?? "surface") !== p.layer) continue;
-    if (Math.hypot(v.x - p.x, v.y - p.y) <= TOGETHER_RADIUS) befriend(v, 1);
+    if (here) befriend(v, 1);
   }
 }
 

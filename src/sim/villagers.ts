@@ -17,6 +17,7 @@ import { findPath } from "./path";
 import type { Point } from "./path";
 import { buildRevision } from "./structures";
 import { stopTarget } from "./housing";
+import { followTarget, isCompanion } from "./company";
 
 const WALK_SPEED = 2.2; // tiles / second
 
@@ -98,30 +99,58 @@ function setRoute(world: WorldState, id: CharId, route: Route | null): void {
  *  worse lie than one who got home somehow. */
 export function tickVillager(world: WorldState, v: Villager, dt: number, now: number): void {
   const def = charDef(v);
+
+  // Company comes before the routine, and before the `fixed` early return.
+  //
+  // Before the routine, because that is what company IS: for as long as they are
+  // with you their day is you, and the clock takes it back the moment it ends
+  // (sim/company.ts `dayOver`). Nothing is stored about the interruption — drop
+  // the slot and the very next tick walks them to their correct post for this
+  // hour, which is the property this whole file is built around.
+  //
+  // Before the `fixed` check, because the one institution who can be asked is
+  // the Dog Thing, and `fixed` is what keeps the Office Creature at his desk. He
+  // walks a real round already; the flag says "no bed, no ring of their own",
+  // not "cannot move".
+  const follow = followTarget(world, v);
+  if (follow) {
+    walkToward(world, v, follow, dt);
+    return;
+  }
+  if (isCompanion(world, v.id)) return; // with you and close enough: stand here
+
   if (def.fixed || def.schedule.length === 0) return;
 
   // Resolved, not read: a "home" stop is a question about where their bed is
   // right now, and the player may have moved it since the last tick.
-  const stop = stopTarget(world, v, now);
-  if (Math.hypot(stop.x - v.x, stop.y - v.y) <= 0.05) {
-    v.x = stop.x;
-    v.y = stop.y;
+  walkToward(world, v, stopTarget(world, v, now), dt);
+}
+
+/** Route to a goal and walk `dt` seconds of it, snapping there if there is no
+ *  way through. Shared by the routine and by company, which is the point of it
+ *  existing: a companion who pathed differently from a villager on her way home
+ *  would be a second walker to keep in step with the first, and they would drift
+ *  the first time a wall went up. */
+function walkToward(world: WorldState, v: Villager, goal: Point, dt: number): void {
+  if (Math.hypot(goal.x - v.x, goal.y - v.y) <= 0.05) {
+    v.x = goal.x;
+    v.y = goal.y;
     setRoute(world, v.id, null);
     return; // arrived; stand here until the hour rolls over
   }
 
   const rev = buildRevision(world);
   let route = routeFor(world, v.id);
-  if (!route || route.goalX !== stop.x || route.goalY !== stop.y || route.rev !== rev) {
-    const legs = findPath(world, v, stop);
+  if (!route || route.goalX !== goal.x || route.goalY !== goal.y || route.rev !== rev) {
+    const legs = findPath(world, v, goal);
     if (legs === null) {
       // Nowhere to walk. Be where you're supposed to be.
-      v.x = stop.x;
-      v.y = stop.y;
+      v.x = goal.x;
+      v.y = goal.y;
       setRoute(world, v.id, null);
       return;
     }
-    route = { legs, goalX: stop.x, goalY: stop.y, rev };
+    route = { legs, goalX: goal.x, goalY: goal.y, rev };
     setRoute(world, v.id, route);
   }
 
@@ -151,36 +180,4 @@ export function tickVillager(world: WorldState, v: Villager, dt: number, now: nu
 /** What a villager is nominally up to right now — the routine's own label. */
 export function currentActivity(v: Villager, now: number): string | undefined {
   return scheduledStop(charDef(v), now).doing;
-}
-
-/** Friendship grows a little each meaningful interaction — a chat, or a job
- *  done within sight of them (DESIGN §"Company": friendship grows through doing
- *  things together, not only through gifts). */
-export function befriend(v: Villager, amount = 1): void {
-  v.friendship = Math.min(100, v.friendship + amount);
-}
-
-// --- Milestones ---------------------------------------------------------------
-// Stardew's heart milestones, minus the hearts: the ONLY way a tier is ever
-// revealed is by how a villager talks to you (see sim/dialogue.ts). There is no
-// meter, no percentage, no "3/10 hearts" anywhere in the UI — you notice that
-// someone has warmed up, which is the whole feeling we're after.
-
-export type FriendshipTier = "new" | "familiar" | "friend" | "close";
-
-const TIER_THRESHOLDS: [FriendshipTier, number][] = [
-  ["close", 60],
-  ["friend", 30],
-  ["familiar", 10],
-];
-
-export function friendshipTier(v: Villager): FriendshipTier {
-  for (const [tier, min] of TIER_THRESHOLDS) if (v.friendship >= min) return tier;
-  return "new";
-}
-
-/** True once the villager is at least as warm as `tier`. */
-export function atLeast(v: Villager, tier: FriendshipTier): boolean {
-  const order: FriendshipTier[] = ["new", "familiar", "friend", "close"];
-  return order.indexOf(friendshipTier(v)) >= order.indexOf(tier);
 }
