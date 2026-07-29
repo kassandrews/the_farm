@@ -25,6 +25,7 @@ import { saveWorld, loadWorld, hasSave, clearWorld } from "../sim/save";
 import { makeRng } from "../sim/rng";
 import type { Rng } from "../sim/rng";
 import { clockLabel } from "../sim/time";
+import { seasonAt } from "../sim/seasons";
 import { STANDARD_FORMS, FORMS } from "../content/canon/forms";
 import type { AdultForm } from "../content/canon/forms";
 import { importFromMeadow } from "../sim/meadow_import";
@@ -1741,6 +1742,7 @@ export class App {
       // (sim/hum.ts) and this line is the whole of the UI's part in it.
       audio.setHum(humLevel(this.world));
       this.hud.clock.textContent = clockLabel(Date.now());
+      this.hud.season.textContent = seasonAt(Date.now()).name;
       if (now - this.lastSaveAt > AUTOSAVE_MS) {
         this.lastSaveAt = now;
         this.persist();
@@ -1810,6 +1812,7 @@ export class App {
 interface HudRefs {
   root: HTMLElement;
   clock: HTMLElement;
+  season: HTMLElement;
   flash: HTMLElement;
   toolButtons: [Tool, HTMLElement][];
   buildButtons: [BuildTool, HTMLElement][];
@@ -1834,6 +1837,14 @@ function buildHud(
   satchel.addEventListener("click", onSatchel);
   hoverHint(satchel, "Satchel — what you're carrying.");
   const clock = el("div", { class: "clock" }, ["—"]);
+  // The season, under the time. Borrows `.clock` the way the flash below does —
+  // same pill, same pointer-events: none, which a read-only overlay sitting over
+  // the map must have (see the CSS note).
+  //
+  // ITS NAME AND NOTHING ELSE. No countdown to the next season, no "day 12 of
+  // autumn": a number there would be the first clock in the game with a
+  // denominator, and the museum's whole argument is that we don't have those.
+  const season = el("div", { class: "clock season" }, ["—"]);
   const flash = el("div", {
     class: "clock",
   });
@@ -1882,6 +1893,7 @@ function buildHud(
     menu,
     satchel,
     clock,
+    season,
     flash,
     palette,
     buildPalette,
@@ -1890,7 +1902,7 @@ function buildHud(
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, flash, toolButtons, buildButtons, rotate, undo };
+  return { root: hud, clock, season, flash, toolButtons, buildButtons, rotate, undo };
 }
 
 // --- Panel helpers ------------------------------------------------------------

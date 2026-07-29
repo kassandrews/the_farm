@@ -743,6 +743,11 @@ export class Renderer {
   // --- Crops ------------------------------------------------------------------
   private drawCrops(world: WorldState, now: number): void {
     const ctx = this.ctx;
+    // Whose month it is, asked ONCE for the frame. The renderer does not compare
+    // months — `inSeason` in sim/seasons.ts is the single place the crop↔month
+    // match is decided, so this flourish and the line a villager says about the
+    // same plant can never disagree about what month it is.
+    const flourishing = seasonAt(now).crop;
     for (const [key, crop] of Object.entries(world.crops)) {
       const [tx, ty] = key.split(",").map(Number);
       const cx = Math.round(this.sceneX(tx));
@@ -771,11 +776,26 @@ export class Renderer {
         ctx.fillRect(cx + 2, base - 5, 1, 2);
         ctx.fillRect(cx, base - 6, 1, 1);
       } else if (ripe) {
+        // In its own month a ripe plant is PROUD: a lit edge down the shoulder,
+        // one more leaf pair, and a fatter ready marker. Delight, never a gate
+        // (DESIGN §Seasons) — out of season it grows identically and draws
+        // exactly as it did before 4d.
+        //
+        // ENTIRELY INSIDE THE PLANT'S OWN SILHOUETTE. No ring, no glow, no tint
+        // over the farmland cell: a planted row is precisely the continuous
+        // surface the per-cell edges rule was learned on three times
+        // (CLAUDE.md), and a highlight drawn per soil cell would stripe a field
+        // into a grid. A plant is a discrete object and is safe.
+        const proud = crop.cropId === flourishing;
         // Ripe: greens up top, an orange shoulder breaking the soil.
         ctx.fillStyle = leaf;
         ctx.fillRect(cx - 2, base - 7, 1, 2);
         ctx.fillRect(cx, base - 8, 1, 2);
         ctx.fillRect(cx + 2, base - 7, 1, 2);
+        if (proud) {
+          ctx.fillRect(cx - 3, base - 6, 1, 1);
+          ctx.fillRect(cx + 3, base - 6, 1, 1);
+        }
         ctx.fillStyle = green;
         ctx.fillRect(cx - 1, base - 6, 3, 2);
         // The shoulder is the ONLY thing that differs between varieties, and it
@@ -785,10 +805,18 @@ export class Renderer {
         ctx.fillRect(cx - 1, base - 4, 3, 4);
         ctx.fillStyle = def.ripeShade;
         ctx.fillRect(cx - 1, base - 1, 3, 1);
-        // A gentle "ready" bob marker.
+        if (proud) {
+          // Light from the upper left, as everywhere else in this renderer.
+          // Drawn from the crop's own ripeColor lightened by a flat overlay
+          // rather than from a second colour in the table: a `ripeLit` row would
+          // be a fifth number per variety for one pixel column.
+          ctx.fillStyle = "rgba(255,246,214,0.55)";
+          ctx.fillRect(cx - 1, base - 4, 1, 4);
+        }
+        // A gentle "ready" bob marker — two pixels wide in its own month.
         if (Math.sin(now / 400) > 0.6) {
           ctx.fillStyle = "#fff3c8";
-          ctx.fillRect(cx, base - 11, 1, 2);
+          ctx.fillRect(cx, base - 11, proud ? 2 : 1, 2);
         }
       }
     }

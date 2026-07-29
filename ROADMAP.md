@@ -100,8 +100,20 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   calendar, nothing stored. The spine is `present()` — "is this villager here
   right now", which nobody had needed to ask before.
 
-**Next:** Phase 4d — crops and seasons, the last numbered item. In progress; see
-below for the nine steps and the settled decisions it forced.
+- **Phase 4d — crops and seasons, complete.** Four seasons derived from the
+  month, repainting the ground, the trees and the sky, and giving the town
+  something to remark on — storing nothing, at schema v20. Eight crops instead
+  of three: wheat takes the multi-day slot at 48h and belongs to no season;
+  peas, tomato, pumpkin and kale each own one and are plantable in every month
+  regardless, because a season is a look and never a gate. **Phase 4 is done,
+  and so is every numbered item in this file.**
+
+**Next: nothing numbered.** What is left is in *Known gaps and loose ends*
+below — the Gremlin not scattering junk while you are away (still wants a place
+to put a loose object on the ground), the five thin home banks, ore having
+nothing built from it, and the PWA icon. DESIGN's own open questions (fishing,
+async postcards between towns) are the only unbuilt *systems*, and both are
+still deliberately open.
 
 **Save schema is at v20.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
@@ -1644,9 +1656,9 @@ flat slab. It is built the way furniture is built now (top surface plus near
 face plus a hard silhouette), a full tile wide, and it reads as something
 somebody put there.
 
-### 4d. Crops and seasons — in progress
+### 4d. Crops and seasons — **done**
 
-The last numbered item. Seasons are weather and light (see the settled entry
+The last numbered item, and **Phase 4 is complete.** Seasons are weather and light (see the settled entry
 above and DESIGN §Seasons); the roster doubles from three crops to eight. **No
 schema change anywhere in the phase** — seasons store nothing, `seeds.unlocked`
 is already a `CropId[]` where absence is the truthful state, and `Inventory` is
@@ -1690,9 +1702,22 @@ Nine steps, each independently shippable:
    the world, and a season changes nothing. The season is an adjective on the
    ripening line, which reports a change that genuinely happened.
 9. **The errands board stops asking for crops you can't grow** — `eligibleErrands`
-   filters on `done` only, so the radish card can fire on a carrot-only save.
-   Pre-existing since 3h and five crops makes it five times likelier. Until this
-   lands, **add no new crop errand cards.**
+   filtered on `done` only, so the radish card could fire on a carrot-only save.
+   Pre-existing since 3h and five crops made it five times likelier. Fixed:
+   `askable()` drops a card whose asked item is a crop yield you have not
+   unlocked. Only crops are filtered — wood, stone and junk are gatherable from
+   the first minute — and the board can never empty, because the carrot is
+   unlocked from the start.
+
+Two of the phase's tests turned out to be the ones at fault rather than the
+code, which is worth recording. `errands.test.ts`'s "refuses when you are
+short" leaned on the seeded rng happening to pick a card for something the
+starting satchel had none of, so it broke the moment the eligible pool changed
+— it now empties the inventory and actually is short. And a new postcard helper
+banked ten hours of growth, which ripens a radish and silently does not ripen a
+pumpkin; it reads as a bug in the postcard. Both are the same lesson the house
+rules already carry: when the result disagrees with the change, suspect the
+scaffolding first.
 
 Wheat is the first crop that cannot finish on two waterings — 48h of growth
 against a 22h wetness window needs three. That is the check-in loop working as

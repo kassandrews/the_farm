@@ -8,8 +8,23 @@ import { hasMemory, recall } from "./memory";
 import { donate } from "./museum";
 import { exhibitDef } from "../content/museum";
 import { FESTIVALS } from "../content/festivals";
+import { CROPS, type CropId } from "../content/crops";
+import { plant } from "./crops";
 
 const HOUR = 3_600_000;
+
+/** A plot of `id`, already ripe, so summarizeAway sees it cross the line. */
+function ripe(w: ReturnType<typeof newWorld>, x: number, y: number, id: CropId, now: number) {
+  plant(w, x, y, id, now);
+  const c = w.crops[tileKey(x, y)];
+  c.stage = CROPS[id].stages.length - 2; // one boundary short of ripe
+  c.growthMs = 0;
+  // Wide enough for the SLOWEST final stage in the table (wheat's 18h), not
+  // just the fast ones — at 10h this silently failed to ripen a pumpkin and the
+  // test read as a bug in the postcard.
+  c.lastUpdate = now - 60 * HOUR;
+  c.wateredUntil = now + HOUR;
+}
 
 function worldWithBoards(count: number) {
   const w = newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 11 });
@@ -150,7 +165,69 @@ describe("the postcard", () => {
     const lines = summarizeAway(w, now, makeRng(2));
     expect(lines[0]).toContain("5 hours");
   });
+
+  it("calls a ripened radish a radish", () => {
+    // It used to say `${n} carrot${s}` whatever came up, so a save with three
+    // ripe kale reported three carrots. Wrong since the seed stall shipped a
+    // second variety in Phase 3g.
+    const w = worldWithBoards(0);
+    const now = new Date(2026, 6, 15, 12).getTime(); // July: nobody's month but the tomato's
+    w.lastSaved = now - 5 * HOUR;
+    ripe(w, 4, 4, "radish", now);
+    const lines = summarizeAway(w, now, makeRng(2));
+    expect(lines.join(" ")).toContain("radish");
+    expect(lines.join(" ")).not.toContain("carrot");
+  });
+
+  it("names the biggest group rather than listing everything", () => {
+    const w = worldWithBoards(0);
+    const now = new Date(2026, 6, 15, 12).getTime();
+    w.lastSaved = now - 5 * HOUR;
+    ripe(w, 4, 4, "radish", now);
+    ripe(w, 5, 4, "radish", now);
+    ripe(w, 6, 4, "potato", now);
+    const text = summarizeAway(w, now, makeRng(2)).join(" ");
+    expect(text).toContain("2 radishes");
+    expect(text).not.toContain("potato");
+  });
+
+  it("falls back to the plain word when two varieties tie", () => {
+    // Picking a winner between equal groups would be inventing a fact.
+    const w = worldWithBoards(0);
+    const now = new Date(2026, 6, 15, 12).getTime();
+    w.lastSaved = now - 5 * HOUR;
+    ripe(w, 4, 4, "radish", now);
+    ripe(w, 5, 4, "potato", now);
+    const text = summarizeAway(w, now, makeRng(2)).join(" ");
+    expect(text).toContain("2 crops");
+  });
+
+  it("adds the season's note only when the in-season variety is what ripened", () => {
+    const october = new Date(2026, 9, 15, 12).getTime();
+    const w = worldWithBoards(0);
+    w.lastSaved = october - 5 * HOUR;
+    ripe(w, 4, 4, "pumpkin", october);
+    expect(summarizeAway(w, october, makeRng(2)).join(" ")).toContain("own month");
+
+    // …and not for a variety whose month it isn't.
+    const w2 = worldWithBoards(0);
+    w2.lastSaved = october - 5 * HOUR;
+    ripe(w2, 4, 4, "radish", october);
+    expect(summarizeAway(w2, october, makeRng(2)).join(" ")).not.toContain("own month");
+  });
+
+  it("says nothing about the season when nothing ripened", () => {
+    // The guard on the away rule: a season changes nothing, so it may never
+    // produce a sentence of its own (sim/away.ts §the slideshow).
+    const october = new Date(2026, 9, 15, 12).getTime();
+    const w = worldWithBoards(0);
+    w.lastSaved = october - 5 * HOUR;
+    const text = summarizeAway(w, october, makeRng(2)).join(" ");
+    expect(text).not.toContain("own month");
+    expect(text).not.toContain("autumn");
+  });
 });
+
 
 describe("a festival you missed", () => {
   const MARCH = FESTIVALS.find((f) => f.id === "the-airing")!;

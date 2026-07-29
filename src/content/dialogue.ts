@@ -636,6 +636,135 @@ export const GHOST_CUT: string[] = [
   "You'll build with it. ... Good. It ought to be somewhere warm.",
 ];
 
+// --- Seasons ---------------------------------------------------------------------
+// What people say about the month. Two banks per form per season at most: a
+// `season` pool about the weather itself, and an optional `crop` pool about the
+// variety whose month it is, which takes the crop's name as its value the way
+// the festival lines take a festival's.
+//
+// NOBODY EVER RECOMMENDS PLANTING ANYTHING, and this is the rule the whole
+// phase turns on rather than a note about tone. "You'll want to get the kale
+// in" is a quest marker with a face: it turns a look into a schedule and makes
+// four of the eight varieties into things you are late for. They REMARK that it
+// is the month. They never suggest an action, and they never mention that a
+// crop does better now, because it doesn't (DESIGN §Seasons).
+//
+// Coverage is honest rather than complete — the same state RESIDENT_HOME is in.
+// `seasonLines` falls back so a form with nothing written for December still
+// says something in December; filling the gaps is writing, not engineering.
+export interface SeasonBank {
+  season: string[];
+  crop?: ((v: string) => string)[];
+}
+
+const SEASON_FALLBACK: Record<string, string[]> = {
+  spring: ["Everything's coming up at once. ... It does this every year and it still seems like a lot."],
+  summer: ["Long days. ... Too long, some of them. But long."],
+  autumn: ["It's going gold out there. ... That happens before the other thing happens."],
+  winter: ["Cold. ... It'll pass. It always has so far."],
+};
+
+export const RESIDENT_SEASON: Partial<Record<AdultForm, Partial<Record<string, SeasonBank>>>> = {
+  scholar: {
+    spring: {
+      season: [
+        "The growth rate out there is frankly indecent. I have started a log.",
+        "Spring. ... I have four theories about it and no intention of testing any of them.",
+      ],
+      crop: [(v) => `The ${v} are up. It is their month. I have written that down as though it were a finding.`],
+    },
+    summer: {
+      season: [
+        "The light lasts until an hour I consider unprofessional.",
+        "Summer. ... Everything is happening slightly too fast to take notes on.",
+      ],
+      crop: [(v) => `A ${v} in its own month. ... Nothing about it is different. I checked. Twice.`],
+    },
+    autumn: {
+      season: [
+        "The colour change is a withdrawal, not a flourish. Nobody likes hearing that.",
+        "Autumn. ... The most legible season. Everything is labelling itself.",
+      ],
+      crop: [(v) => `The ${v} have come in on schedule, which is the least interesting thing about them.`],
+    },
+    winter: {
+      season: [
+        "The trees are doing nothing. It is a deliberate nothing and I respect it.",
+        "Winter. ... Very little to observe. I observe it anyway.",
+      ],
+      crop: [(v) => `${v}, in this. ... It is the only thing out there with a position on the weather.`],
+    },
+  },
+  dog: {
+    spring: {
+      season: ["It's SPRING! Everything smells like six things at once!", "Green! All of it! Look!"],
+      crop: [(v) => `The ${v}! It's their month! I've been telling everyone! I'll tell you again later!`],
+    },
+    summer: {
+      season: ["It stays light SO LATE. I keep forgetting to stop.", "Warm ground. Best ground. I have opinions about ground."],
+      crop: [(v) => `${v}! In the right month! I don't know why that's better but it IS!`],
+    },
+    autumn: {
+      season: ["Everything's crunchy! The whole outside is crunchy!", "Leaves. ... Sorry. I got distracted by leaves."],
+      crop: [(v) => `The ${v} are in! It's their turn! Everyone gets a turn!`],
+    },
+    winter: {
+      season: ["Cold nose! Doesn't bother me! Mentioning it anyway!", "The trees went bare and I check on them daily."],
+      crop: [(v) => `${v}! In the COLD! It doesn't even mind!`],
+    },
+  },
+  blob: {
+    spring: {
+      season: ["Spring is a rehearsal for something. ... I have never found out what.", "I feel the sap. ... I have no sap. I feel it regardless."],
+      crop: [(v) => `The ${v}. ... In their season. There is a word for that feeling and I refuse to look it up.`],
+    },
+    summer: {
+      season: ["These evenings go on and on. ... I could work with that.", "Summer light is theatrical lighting that nobody had to pay for."],
+      crop: [(v) => `A ${v} in high summer. ... I'm not going to pretend that isn't moving.`],
+    },
+    autumn: {
+      season: ["The whole landscape has gone amber. It's showing off. ... Good.", "Autumn is the season that knows it's being watched."],
+      crop: [(v) => `The ${v} arrive, and the light goes gold, and I have to sit down.`],
+    },
+    winter: {
+      season: ["Bare branches. ... That's staging. Somebody staged that.", "Winter is a long pause and I have never been good at those."],
+      crop: [(v) => `${v}, in the dead of it. ... A performer working an empty house. I understand it completely.`],
+    },
+  },
+  carrot: {
+    spring: { season: ["It's spring. ... Things grow. That's the arrangement."], crop: [(v) => `${v}. ... It's the month for them. That is the whole of what that means.`] },
+    summer: { season: ["Warm. ... Fine."], crop: [(v) => `${v}. ... Right month. Doesn't make them better. Just makes it the month.`] },
+    autumn: { season: ["Going gold. ... It does that."], crop: [(v) => `${v}, now. ... Yes. I'm aware of the timing. We're not discussing it.`] },
+    winter: { season: ["Cold. ... The ground doesn't stop. People think it does."], crop: [(v) => `${v}. In this. ... Sensible of them.`] },
+  },
+  menace: {
+    spring: { season: ["Everything's growing. Prices don't care."] },
+    summer: { season: ["Warm. ... People buy less cloth in the warm. I've adjusted for it."] },
+    autumn: { season: ["The gold looks well. It changes nothing at the counter."] },
+    winter: { season: ["Cold brings people indoors, and indoors is where the counter is."] },
+  },
+  gremlin: {
+    spring: { season: ["Ground's soft. ... Things come up out of it that were meant to stay down."] },
+    summer: { season: ["Dry ground. Hard digging. ... Good finds, though."] },
+    autumn: { season: ["Leaves cover everything. ... Everything. That's not a complaint either."] },
+    winter: { season: ["Frost turns things up. ... Pushes them. I don't know how. I just collect them."] },
+  },
+  office: {
+    spring: { season: ["The season has changed. The paperwork does not acknowledge seasons."] },
+    summer: { season: ["Summer. Filed under weather. There is a drawer."] },
+    autumn: { season: ["Autumn has been noted. No action is required of anyone."] },
+    winter: { season: ["Winter. ... The forms are the same forms. That is the point of forms."] },
+  },
+};
+
+/** This form's bank for this season, falling back rather than going quiet — the
+ *  same rule `tryHomeLine` follows for a note nobody wrote a line for. */
+export function seasonLines(form: AdultForm, id: string): SeasonBank {
+  const bank = RESIDENT_SEASON[form]?.[id];
+  if (bank && bank.season.length > 0) return bank;
+  return { season: SEASON_FALLBACK[id] ?? SEASON_FALLBACK.summer };
+}
+
 /** Fixed-cast idle banks by character. */
 export function castIdle(id: CharId): string[] {
   if (id === "office") return OFFICE_IDLE;

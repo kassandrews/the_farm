@@ -218,6 +218,17 @@ body {
   letter-spacing: 0.02em;
 }
 
+/* The season, sitting under the clock. Smaller and dimmer than the time,
+   because the hour is something you act on and the month is something you
+   notice. Inherits pointer-events: none from .clock, which it must. */
+.clock.season {
+  top: 44px;
+  font-size: 11px;
+  padding: 3px 11px;
+  opacity: 0.82;
+  letter-spacing: 0.06em;
+}
+
 /* Hover descriptor for HUD buttons (ui/dom.ts `hoverHint`). Desktop only —
    there is no hover on a phone, and the JS never shows it for a touch pointer.
    Fixed rather than inside .hud so it can't be clipped by a palette, and

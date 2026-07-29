@@ -31,6 +31,7 @@
 //     friendship change, no flag. The row goes back in the pool.
 
 import type { WorldState } from "./types";
+import { CROPS, CROP_ORDER } from "../content/crops";
 import type { CharId } from "../content/cast";
 import { isSecret } from "../content/cast";
 import type { ErrandDef, ErrandId, NoticeWorld } from "../content/errands";
@@ -129,11 +130,30 @@ export function errandDue(world: WorldState, now: number): boolean {
  *  never asks for the same thing twice running. */
 export function eligibleErrands(world: WorldState): ErrandDef[] {
   const seen = new Set(world.errands.done);
-  const unseen = ERRANDS.filter((e) => !seen.has(e.id));
+  const growable = ERRANDS.filter((e) => askable(world, e));
+  const unseen = growable.filter((e) => !seen.has(e.id));
   if (unseen.length > 0) return unseen;
   const last = world.errands.done[world.errands.done.length - 1];
-  const rest = ERRANDS.filter((e) => e.id !== last);
-  return rest.length > 0 ? rest : ERRANDS;
+  const rest = growable.filter((e) => e.id !== last);
+  return rest.length > 0 ? rest : growable;
+}
+
+/** Can this town actually answer this card?
+ *
+ *  A card that asks for radishes on a save that has only the carrot is the
+ *  "go and unlock a thing or miss this beat" failure DESIGN §The errands board
+ *  excludes ore by name for — one item named, no alternative offered. It has
+ *  been possible since the board shipped and got five times likelier in 4d, so
+ *  it is fixed here rather than worked around by not writing crop cards.
+ *
+ *  ONLY CROPS ARE FILTERED. Wood, stone and junk are gatherable by anyone from
+ *  the first minute; a variety is the one askable thing that can be genuinely
+ *  out of reach. And the board can never empty: the carrot is unlocked from the
+ *  start, so its card always survives this. */
+function askable(world: WorldState, e: ErrandDef): boolean {
+  if (e.ask.kind !== "items") return true;
+  const crop = CROP_ORDER.find((id) => CROPS[id].yields === e.ask.item);
+  return !crop || world.seeds.unlocked.includes(crop);
 }
 
 /** Pin a card up. Returns it, or null if there was nothing to post. */

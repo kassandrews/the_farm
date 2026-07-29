@@ -6,6 +6,9 @@ import { hasMemory } from "./memory";
 import { collection, donate } from "./museum";
 import { add } from "./inventory";
 import { MUSEUM, wingExhibits } from "../content/museum";
+import { RESIDENT_SEASON, seasonLines } from "../content/dialogue";
+import type { AdultForm } from "../content/canon/forms";
+import { plant } from "./crops";
 
 function importedScholarWorld() {
   return newWorld({
@@ -129,6 +132,72 @@ describe("a scholar resident disagrees with the curator", () => {
       if (v.form === "scholar") continue;
       const said = chatter(w, v.id);
       for (const p of def.placards) expect(said.some((t) => t.includes(p))).toBe(false);
+    }
+  });
+});
+
+// --- Seasons ----------------------------------------------------------------------
+
+describe("the town remarks on the month", () => {
+  const at = (m: number) => new Date(2026, m - 1, 15, 12).getTime();
+
+  /** Every line a villager can produce in a month, across many rolls. */
+  function everything(w: ReturnType<typeof importedScholarWorld>, id: string, now: number) {
+    const v = w.villagers.find((x) => x.id === id)!;
+    const said = new Set<string>();
+    for (let i = 0; i < 400; i++) said.add(speak(w, v, makeRng(i), now).text);
+    return said;
+  }
+
+  it("says something about the season, without being asked about a crop", () => {
+    const w = importedScholarWorld();
+    const autumn = [...everything(w, "resident1", at(10))];
+    expect(autumn.some((t) => /gold|autumn|labelling/i.test(t))).toBe(true);
+  });
+
+  it("mentions the in-season crop only when one is in the ground", () => {
+    const w = importedScholarWorld();
+    const october = at(10);
+    const before = [...everything(w, "resident1", october)];
+    expect(before.some((t) => /pumpkin/i.test(t))).toBe(false);
+
+    plant(w, 4, 4, "pumpkin", october);
+    const after = [...everything(w, "resident1", october)];
+    expect(after.some((t) => /pumpkin/i.test(t))).toBe(true);
+  });
+
+  it("does not mention a crop whose month it isn't", () => {
+    const w = importedScholarWorld();
+    const april = at(4);
+    plant(w, 4, 4, "pumpkin", april);
+    expect([...everything(w, "resident1", april)].some((t) => /pumpkin/i.test(t))).toBe(false);
+  });
+
+  it("never tells you to plant anything", () => {
+    // THE rule the phase turns on, in the one place it could quietly break.
+    // "You'll want to get the kale in" is a quest marker with a face: it turns
+    // a look into a schedule (DESIGN §Seasons). Blunt, and cheap.
+    const forbidden = /you should|you'll want|you ought|get the .* in\b|better plant|time to plant|don't forget/i;
+    for (const form of Object.keys(RESIDENT_SEASON) as AdultForm[]) {
+      for (const [id, bank] of Object.entries(RESIDENT_SEASON[form] ?? {})) {
+        for (const line of bank!.season) {
+          expect(forbidden.test(line), `${form}/${id}: ${line}`).toBe(false);
+        }
+        for (const t of bank!.crop ?? []) {
+          const line = t("pumpkins");
+          expect(forbidden.test(line), `${form}/${id}: ${line}`).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("gives every form something to say in every season", () => {
+    // Coverage is honest rather than complete, so the fallback is what stops a
+    // form going silent in a month nobody wrote for it.
+    for (const form of ["scholar", "dog", "blob", "carrot", "menace", "gremlin", "office"] as AdultForm[]) {
+      for (const id of ["spring", "summer", "autumn", "winter"]) {
+        expect(seasonLines(form, id).season.length, `${form}/${id}`).toBeGreaterThan(0);
+      }
     }
   });
 });

@@ -54,6 +54,8 @@ import { STARTING_CROP } from "../content/crops";
 import { STARTING_SEED, canSow, sow } from "./seeds";
 import { canPlant, water, canWater, harvest, isRipe, updateAllCrops, updateCrop } from "./crops";
 import { cropDef, ripeStage } from "../content/crops";
+import type { CropId } from "../content/crops";
+import { seasonAt } from "./seasons";
 import type { MeadowImport } from "./meadow_import";
 import { simulateAway, AWAY_MIN_MS } from "./away";
 import { speak } from "./dialogue";
@@ -903,22 +905,55 @@ export function summarizeAway(world: WorldState, now: number, rng: Rng): string[
 
   let ripened = 0;
   let grew = 0;
+  // …and WHICH varieties ripened. This used to be a bare count reported as
+  // `${n} carrot${s}`, which called a ripened kale a carrot from the moment the
+  // seed stall shipped a second variety.
+  const byCrop: Partial<Record<CropId, number>> = {};
   for (const [k, c] of Object.entries(world.crops)) {
     const wasStage = before[k] ?? c.stage;
     if (c.stage > wasStage) {
       grew++;
-      if (c.stage >= ripeStage(cropDef(c.cropId))) ripened++;
+      if (c.stage >= ripeStage(cropDef(c.cropId))) {
+        ripened++;
+        byCrop[c.cropId] = (byCrop[c.cropId] ?? 0) + 1;
+      }
     }
   }
 
   const lines: string[] = [];
   const hrs = Math.round(elapsed / 3_600_000);
   lines.push(hrs >= 1 ? `You were away about ${hrs} hour${hrs === 1 ? "" : "s"}.` : "You stepped out for a bit.");
-  if (ripened > 0) lines.push(`${ripened} carrot${ripened === 1 ? "" : "s"} came ripe while you were gone.`);
+  if (ripened > 0) lines.push(ripenedLine(byCrop, ripened, now));
   else if (grew > 0) lines.push("Your crops put on some growth.");
   // …and whatever the town got up to on its own.
   lines.push(...simulateAway(world, elapsed, now, rng));
   return lines;
+}
+
+/** What came ripe, in one sentence.
+ *
+ *  Names the LARGEST group rather than listing everything: a postcard reading
+ *  "2 carrots, 1 kale and 3 wheat" is a spreadsheet, and the away summary is
+ *  capped at three sentences for exactly the same reason (see sim/away.ts).
+ *  Ties fall back to the plain word, because picking a winner between two equal
+ *  groups would be inventing a fact.
+ *
+ *  When the variety that came up is the one whose month it is, the season's own
+ *  note is appended. NOT a line of its own and NOT an away event: a season
+ *  changes nothing in the world, and away.ts's rule is that an event returning a
+ *  line must have actually changed something or it is the slideshow. The
+ *  ripening genuinely happened; the season is an adjective on it. */
+function ripenedLine(byCrop: Partial<Record<CropId, number>>, total: number, now: number): string {
+  const entries = Object.entries(byCrop) as [CropId, number][];
+  entries.sort((a, b) => b[1] - a[1]);
+  const tied = entries.length > 1 && entries[0][1] === entries[1][1];
+  const what = tied
+    ? `${total} crop${total === 1 ? "" : "s"}`
+    : itemLabel(cropDef(entries[0][0]).yields, entries[0][1]);
+  const base = `${what} came ripe while you were gone.`;
+  if (tied) return base;
+  const season = seasonAt(now);
+  return season.crop === entries[0][0] ? `${base} ${season.ripenedNote}` : base;
 }
 
 // Re-exports so ui/render import the sim surface from one place.

@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { CROPS, CROP_ORDER } from "../content/crops";
 import { newWorld } from "./game";
 import { migrateSave, SCHEMA_VERSION } from "./save";
 import { ERRANDS, NOTICES, errandDef } from "../content/errands";
@@ -152,10 +153,36 @@ describe("posting a request", () => {
 describe("the table cycles rather than running out", () => {
   it("prefers rows you have not seen", () => {
     const w = freshWorld();
+    // Every variety unlocked, so this tests the CYCLING rule on its own — a
+    // fresh town has only the carrot, and the crop cards it cannot grow are
+    // withheld by a different rule with its own test below.
+    w.seeds.unlocked = [...CROP_ORDER];
     w.errands.done = ERRANDS.slice(0, 3).map((e) => e.id);
     const pool = eligibleErrands(w);
     expect(pool.length).toBe(ERRANDS.length - 3);
     for (const e of pool) expect(w.errands.done).not.toContain(e.id);
+  });
+
+  it("never asks for a crop you have no way to grow", () => {
+    // A card naming one item and offering no alternative is the failure DESIGN
+    // excludes ore by name for. Possible since the board shipped: the radish
+    // card could go up on a save that only had the carrot.
+    const w = freshWorld();
+    expect(w.seeds.unlocked).toEqual(["carrot"]);
+    const yields = new Set(CROP_ORDER.map((id) => CROPS[id].yields as string));
+    for (const e of eligibleErrands(w)) {
+      if (e.ask.kind !== "items") continue;
+      if (!yields.has(e.ask.item)) continue;
+      expect(e.ask.item, e.id).toBe("carrot");
+    }
+  });
+
+  it("still has the carrot card, so the board can never empty", () => {
+    // The escape hatch: the starting variety is always unlocked, so filtering
+    // by what you can grow can never leave nothing to post.
+    const w = freshWorld();
+    w.errands.done = ERRANDS.map((e) => e.id);
+    expect(eligibleErrands(w).length).toBeGreaterThan(0);
   });
 
   it("comes round again once every row has been seen", () => {
@@ -179,6 +206,11 @@ describe("the table cycles rather than running out", () => {
 describe("running an errand", () => {
   it("refuses, and changes nothing, when you are short", () => {
     const { w, def } = withOpenErrand();
+    // Actually be short. This used to lean on the seeded rng happening to pick
+    // a card for something the starting satchel had none of — which stopped
+    // being true the moment the eligible pool changed, and the test then failed
+    // for a reason that had nothing to do with what it was testing.
+    w.inventory = {};
     const before = count(w.inventory, def.ask.item);
     expect(deliverErrand(w, Date.now())).toBeNull();
     expect(count(w.inventory, def.ask.item)).toBe(before);

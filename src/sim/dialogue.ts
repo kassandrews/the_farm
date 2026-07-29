@@ -11,6 +11,7 @@ import { recall } from "./memory";
 import { friendshipTier } from "./friendship";
 import type { MemoryKind } from "./memory";
 import { describeHome, NOTE_PRIORITY, URGENT } from "./home";
+import { describeSeason } from "./seasons";
 import type { HomeNote } from "./home";
 import type { AdultForm } from "../content/canon/forms";
 import {
@@ -19,6 +20,7 @@ import {
   OFFICE_IDLE,
   RESIDENT_MEMORY,
   RESIDENT_HOME,
+  seasonLines,
   SCHOLAR_DISSENT,
   MOLE_DEEP,
   MOLE_SHALLOW,
@@ -63,6 +65,11 @@ const URGENT_HOME_CHANCE = 0.85;
  *  perk and the player should meet it, but below a memory so she doesn't become
  *  a single-issue scholar the moment you donate anything. */
 const DISSENT_CHANCE = 0.5;
+
+// The weather is true for three months at a stretch, so it comes up less often
+// than anything else that has a rung. Below HOME_CHANCE deliberately: somebody
+// who leads with the season every time you meet them is a lift, not a person.
+const SEASON_CHANCE = 0.22;
 
 /** Which memories a form is inclined to bring up, richest first. The selector
  *  walks this list and uses the first kind the villager actually remembers. */
@@ -174,6 +181,15 @@ export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Sp
     return { who: v.name, text: memoryLine };
   }
 
+  // The month, which is the least specific true thing anybody can say and so
+  // goes last before idle. Below memory on purpose: something you and this
+  // person did together is always more specific than the weather.
+  const seasonLine = trySeasonLine(world, v, now, rng);
+  if (seasonLine && rng.next() < SEASON_CHANCE) {
+    v.lastLine = seasonLine;
+    return { who: v.name, text: seasonLine };
+  }
+
   // Idle voice, plus whatever warmth this villager has unlocked. Pooling rather
   // than replacing keeps their baseline personality intact — a close friend is
   // still themselves, just occasionally kinder about it.
@@ -195,6 +211,33 @@ export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Sp
   }
   v.lastLine = text;
   return { who: v.name, text };
+}
+
+/** A line about the month, or null if this villager shouldn't be saying one.
+ *
+ *  Prefers the in-season crop bank when there is actually one of that variety in
+ *  the ground and this form has something written for it, and otherwise talks
+ *  about the weather. Same fall-through shape as `tryHomeLine`: prefer the more
+ *  specific note, but never go quiet because nobody wrote that form's line.
+ *
+ *  THE COMPARISON IS NOT MADE HERE. `describeSeason` decides which month it is
+ *  and whether the crop counts, so this rung and the renderer's flourish can
+ *  never disagree about the same plant. */
+function trySeasonLine(world: WorldState, v: Villager, now: number, rng: Rng): string | null {
+  // The fixed cast at their counters are institutions rather than neighbours,
+  // but they DO have season banks — the Menace on trade in the cold and the
+  // Office Creature filing the weather are exactly the deadpan the tone asks
+  // for. Only the office's scripted land-claim beat is excluded, and that is
+  // handled above this rung.
+  const note = describeSeason(world, now);
+  const bank = seasonLines(v.form, note.season);
+  if (note.kind === "in_season_crop" && bank.crop && bank.crop.length > 0) {
+    return rng.pick(bank.crop)(note.value);
+  }
+  if (bank.season.length === 0) return null;
+  const text = rng.pick(bank.season);
+  // One re-roll to dodge an immediate repeat, as every other rung does.
+  return text === v.lastLine && bank.season.length > 1 ? rng.pick(bank.season) : text;
 }
 
 /** Find a line about where they live, or null. Returns the odds along with it,
