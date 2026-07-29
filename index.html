@@ -8,6 +8,13 @@
     />
     <meta name="theme-color" content="#2b2540" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- The SVG is the tab icon where it's supported, the 32px PNG where it
+         isn't. apple-touch-icon is here rather than in the manifest because iOS
+         does not read the manifest's icons at all — a home-screen install on an
+         iPhone uses this line or it uses a screenshot of the page. -->
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>The Farm</title>
   </head>
   <body>

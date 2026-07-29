@@ -1,21 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <!-- The Blessed Carrot, the patron (DESIGN §"The fixed cast").
+       A 16x16 pixel grid. Every rect is a whole number of grid cells, so this
+       rasterises exactly at any integer multiple — see scripts/icons.mjs, which is
+       why 180 and 512 are reached by PADDING rather than by scaling.
+       The first version was 8 wide and 6 tall and read as a pumpkin at 192px: a
+       carrot is legible only if it TAPERS, so the body loses width the whole way
+       down to a single pixel at the tip. -->
   <rect width="16" height="16" fill="#2b2540"/>
-  <!-- Blessed Carrot, the patron -->
-  <rect x="6" y="1" width="1" height="2" fill="#8fd06a"/>
-  <rect x="9" y="1" width="1" height="2" fill="#8fd06a"/>
-  <rect x="6" y="2" width="1" height="1" fill="#8fd06a"/>
-  <rect x="9" y="2" width="1" height="1" fill="#8fd06a"/>
+
+  <!-- Fronds: two outer, one centre, so the top reads as leaves rather than as a
+       green bar. -->
+  <rect x="6" y="0" width="1" height="1" fill="#8fd06a"/>
+  <rect x="9" y="0" width="1" height="1" fill="#8fd06a"/>
+  <rect x="6" y="1" width="1" height="1" fill="#5fa347"/>
+  <rect x="7" y="1" width="2" height="1" fill="#8fd06a"/>
+  <rect x="9" y="1" width="1" height="1" fill="#5fa347"/>
   <rect x="7" y="2" width="2" height="1" fill="#5fa347"/>
-  <rect x="4" y="3" width="8" height="1" fill="#402e3a"/>
-  <rect x="3" y="4" width="1" height="6" fill="#402e3a"/>
-  <rect x="4" y="4" width="8" height="6" fill="#f08c3a"/>
-  <rect x="4" y="4" width="1" height="6" fill="#d06a24"/>
-  <rect x="12" y="4" width="1" height="5" fill="#402e3a"/>
-  <rect x="5" y="10" width="6" height="1" fill="#f08c3a"/>
-  <rect x="4" y="10" width="1" height="1" fill="#402e3a"/>
-  <rect x="11" y="9" width="1" height="1" fill="#402e3a"/>
-  <rect x="6" y="11" width="4" height="1" fill="#f08c3a"/>
-  <rect x="5" y="11" width="1" height="1" fill="#402e3a"/>
-  <rect x="10" y="11" width="1" height="1" fill="#402e3a"/>
-  <rect x="7" y="12" width="2" height="1" fill="#402e3a"/>
+
+  <!-- Body, tapering 6 → 1 over eleven rows. -->
+  <rect x="5" y="3" width="6" height="4" fill="#f08c3a"/>
+  <rect x="6" y="7" width="5" height="1" fill="#f08c3a"/>
+  <rect x="6" y="8" width="4" height="2" fill="#f08c3a"/>
+  <rect x="7" y="10" width="3" height="1" fill="#f08c3a"/>
+  <rect x="7" y="11" width="2" height="2" fill="#f08c3a"/>
+  <rect x="8" y="13" width="1" height="2" fill="#f08c3a"/>
+
+  <!-- Lit edge down the left, shadow down the right: light from the top left, the
+       direction everything in the game is lit from. -->
+  <rect x="5" y="3" width="1" height="4" fill="#ffb162"/>
+  <rect x="6" y="7" width="1" height="3" fill="#ffb162"/>
+  <rect x="7" y="10" width="1" height="3" fill="#ffb162"/>
+  <rect x="10" y="3" width="1" height="5" fill="#d06a24"/>
+  <rect x="9" y="8" width="1" height="3" fill="#d06a24"/>
+  <rect x="8" y="12" width="1" height="1" fill="#d06a24"/>
+  <rect x="8" y="14" width="1" height="1" fill="#d06a24"/>
+
+  <!-- Three grooves, off-centre and unevenly spaced. Evenly spaced they read as a
+       ladder rather than as a root that grew. -->
+  <rect x="8" y="4" width="2" height="1" fill="#d06a24"/>
+  <rect x="6" y="6" width="2" height="1" fill="#d06a24"/>
+  <rect x="8" y="9" width="1" height="1" fill="#d06a24"/>
 </svg>
