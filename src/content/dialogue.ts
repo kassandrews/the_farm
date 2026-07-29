@@ -382,11 +382,50 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
       (v) => `${v}. A good wall. I've written that down, and I stand by it.`,
     ],
   },
-  // Other forms fall back to memory or idle when they have no line for a note.
-  // Stubbed lightly here so an imported villager of any form still notices where
-  // they live; fill these in as forms get their proper voices.
+  // COVERAGE IS NOW COMPLETE for every note a form can actually reach, which is
+  // not the same as every note. `delight_finish` and `delight_piece` only fire
+  // when content/tastes.ts gives that form a finish or a piece to be pleased by,
+  // so a dog has no delight_finish bank because no finish will ever delight a dog
+  // — writing one would be content nothing can reach. `home.test.ts` asserts the
+  // reachable set exactly, in both directions, so a new taste row fails the test
+  // until somebody writes the line it just made reachable.
+  //
+  // The five secret and institutional forms (ghost, carrot, humcube, cosmos,
+  // mole) are absent on purpose: none of them lives in a house you built. The
+  // Ghost has a taste row against the day that changes, and nothing else.
+  //
+  // Where a form still falls through, `tryHomeLine` walks NOTE_PRIORITY rather
+  // than the notes, so it lands on a note the form CAN speak to instead of going
+  // quiet.
   office: {
     homeless: [() => "My bed has been deaccessioned. No form was filed. I'd have accepted a form."],
+    roofless: [
+      () => "The roof is absent. I have opened a file on it. The file is also open to the sky.",
+      () => "No walls to speak of. ... I am, technically, working from home.",
+    ],
+    sealed: [
+      () => "There is no door. Access denied. To me. By me. On my own behalf.",
+      () => "I cannot get in. The paperwork for this would have been beautiful.",
+    ],
+    bare: [
+      () => "A bed, and nothing else. It is compliant.",
+      () => "Unfurnished. Requisitions were never my department. Nothing was, latterly.",
+    ],
+    grand: [
+      (v) => `${v} tiles. That is well above my grade. I have not reported it.`,
+      (v) => `${v} tiles, for one creature. Somebody has been generous with the allocation.`,
+    ],
+    snug: [
+      (v) => `${v} tiles. Efficient use of floor. I approve, and my approval is worth nothing now.`,
+      () => "Small. Everything within reach of the bed, which is the correct amount of ambition.",
+    ],
+    furnished: [
+      (v) => `There is a ${v}. I have not filed it. I am not going to file it.`,
+      (v) => `A ${v}. I put my hands on it sometimes, in the manner of a desk.`,
+    ],
+    finish: [
+      (v) => `${v}. A reasonable specification. Nobody consulted me, which is the retirement.`,
+    ],
   },
   menace: {
     delight_finish: [
@@ -398,8 +437,24 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
       (v) => `You put a ${v} in it. I know what that means. Don't make me say what it means.`,
     ],
     homeless: [() => "My bed. Gone. I am choosing to find this dramatic rather than upsetting."],
+    roofless: [
+      () => "There is no roof. I am being rained on. Directly. As though I were outdoors.",
+      () => "The sky is in my bedroom. I did not approve the sky.",
+    ],
+    sealed: [
+      () => "There is no door. I am not going to climb. I have never climbed.",
+      () => "Sealed. I am to be admired from outside, then. ... Fine. That works.",
+    ],
     bare: [() => "It is empty. I am the decor. Still — one could add to me."],
+    grand: [
+      (v) => `${v} tiles. Somewhere to make an entrance at last. Not that I will.`,
+      (v) => `${v}. Yes. A room should be slightly more than necessary.`,
+    ],
     snug: [() => "Compact. I have decided that's deliberate, and therefore tasteful."],
+    furnished: [
+      (v) => `There is a ${v}. Fine. It stays.`,
+      (v) => `A ${v}, in my house. I use it when nobody is looking.`,
+    ],
     finish: [(v) => `${v}. Acceptable. I'd have chosen it myself, given the chance.`],
   },
   dog: {
@@ -408,18 +463,58 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
       (v) => `You remembered about the ${v}. You REMEMBERED.`,
     ],
     homeless: [() => "Where's my bed? Where's my BED. Okay. Okay. It's fine. Is it fine?"],
+    roofless: [
+      () => "The roof went! I can see stars. Is that good? ... It's a bit good.",
+      () => "It's open at the top now. I've been looking up. For ages.",
+    ],
+    sealed: [
+      () => "There's no door. I've been sitting outside it. I'm very good at that.",
+      () => "I can't get in! It's fine. I'll wait. I'm SO good at waiting.",
+    ],
     bare: [() => "It's got a bed! That's the important one. That's the main one."],
     grand: [() => "It's SO big. I ran a lap. I'm going to run another one."],
+    snug: [
+      (v) => `${v} tiles. I can see all of it from the bed. ALL of it.`,
+      () => "It's just the right amount of room. I checked by lying down in the middle.",
+    ],
     furnished: [(v) => `There's a ${v}! I sit near it. It's a good ${v}.`],
+    finish: [
+      (v) => `It's ${v}! I don't know what that means. I love it.`,
+      (v) => `${v}, the whole way round. I've smelled all of it.`,
+    ],
   },
   blob: {
     delight_finish: [
       (v) => `${v}. I walk in and the room does a little hush. Every time.`,
       (v) => `You built it in ${v}. You understand the assignment. The assignment is atmosphere.`,
     ],
+    delight_piece: [
+      (v) => `A ${v}. ... The room has a focal point now. So do I.`,
+      (v) => `You put a ${v} in it. Staging. You understand staging.`,
+    ],
     homeless: [() => "I have been made homeless. Tragically. Beautifully. Someone should be watching this."],
+    roofless: [
+      () => "No roof. Open air. ... Ambitious, as a venue.",
+      () => "The walls have gone and left the bed standing in the round.",
+    ],
+    sealed: [
+      () => "There is no door. My entrance has nowhere to happen. THAT is the tragedy.",
+      () => "Sealed. An unenterable room. ... Conceptually, I admire it. I cannot live in it.",
+    ],
+    bare: [
+      () => "An empty stage. ... I have worked with less. I have never liked it.",
+      () => "Bare boards and a bed. The audience will have to imagine the rest.",
+    ],
     grand: [() => "The proportions are theatrical. I enter it. I make an entrance."],
     snug: [() => "Intimate staging. Every seat is a good seat. There is one seat."],
+    furnished: [
+      (v) => `There is a ${v}. I act around it. It has learned to hold still.`,
+      (v) => `The ${v} and I have an arrangement. It is in every scene.`,
+    ],
+    finish: [
+      (v) => `${v}, throughout. The room commits. I respect a room that commits.`,
+      (v) => `Done in ${v}. ... It sets a tone before I have said a word.`,
+    ],
   },
   gremlin: {
     delight_piece: [
@@ -427,8 +522,28 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
       (v) => `The ${v} is perfect. I've already got plans. They're mostly legal.`,
     ],
     homeless: [() => "Someone took my bed. I respect it. I want it back."],
+    roofless: [
+      () => "No roof. Everything in there's going to get rained on. Some of it isn't mine.",
+      () => "It's open. Anyone could reach in. ... I'd reach in.",
+    ],
+    sealed: [
+      () => "No door. I got in anyway. Don't ask how. ... There's no door.",
+      () => "Sealed up. Which is a challenge, and I've accepted it.",
+    ],
     bare: [() => "Nothing in it yet. Give me a week."],
+    grand: [
+      (v) => `${v} tiles. Do you know how much I can fit in ${v} tiles? Neither do I. Yet.`,
+      () => "There's room in there for things I haven't found.",
+    ],
+    snug: [
+      (v) => `${v} tiles. Everything within reach. That's not small, that's tactical.`,
+      () => "Tight. Good. I'll know the moment anything's been moved.",
+    ],
     furnished: [(v) => `I moved the ${v}. Slightly. You won't be able to prove it.`],
+    finish: [
+      (v) => `${v}. Nice. I've been taking little bits off the back, to check.`,
+      (v) => `It's ${v} all over. I could get something for that. I won't.`,
+    ],
   },
 };
 

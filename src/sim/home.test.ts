@@ -6,6 +6,10 @@ import { add } from "./inventory";
 import { assign } from "./assign";
 import { describeHome, SNUG, GRAND } from "./home";
 import { TASTES } from "../content/tastes";
+import { RESIDENT_HOME } from "../content/dialogue";
+import { NOTE_PRIORITY } from "./home";
+import type { HomeNoteKind } from "./home";
+import type { AdultForm } from "../content/canon/forms";
 import { speak } from "./dialogue";
 import { makeRng } from "./rng";
 
@@ -246,5 +250,74 @@ describe("taste", () => {
     // An institution delighted by soft furnishings would be the game mistaking
     // him for a person.
     expect(TASTES.office).toBeUndefined();
+  });
+});
+
+describe("every form says something about every note it can reach", () => {
+  // The five thin banks were a known gap for four phases: `RESIDENT_HOME` covered
+  // every form, but most got one or two notes and fell through the rest. This
+  // pins the coverage so it can't quietly rot — and pins it in BOTH directions,
+  // which is the part that earns its keep.
+  //
+  // The forms that live in houses: the four in content/arrivals.ts plus the two
+  // authored residents. The secrets and institutions are excluded because none of
+  // them lives somewhere you built — a Ghost with an opinion about her walls
+  // would be a Ghost who moved in.
+  const HOUSED: AdultForm[] = ["dog", "blob", "gremlin", "scholar", "office", "menace"];
+
+  /** Which notes this form can actually be handed. The delight notes only exist
+   *  when content/tastes.ts gives the form something to be pleased by, so they
+   *  are reachable per-form rather than universally. */
+  function reachable(form: AdultForm): HomeNoteKind[] {
+    const taste = TASTES[form];
+    return NOTE_PRIORITY.filter((kind) => {
+      if (kind === "delight_finish") return Boolean(taste?.finish);
+      if (kind === "delight_piece") return Boolean(taste?.piece);
+      return true;
+    });
+  }
+
+  it("has a line for it", () => {
+    for (const form of HOUSED) {
+      const bank = RESIDENT_HOME[form];
+      expect(bank, `${form} has no home bank at all`).toBeDefined();
+      for (const kind of reachable(form)) {
+        const lines = bank![kind];
+        expect(lines?.length, `${form} has nothing to say about "${kind}"`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("and has no line it can never say", () => {
+    // The other direction, and the reason this test is worth having rather than a
+    // comment: it fails when a TASTE row is added without the line that row just
+    // made reachable, and it fails when a line is written for a delight that form
+    // cannot feel. Dead content is how a bank stops being trustworthy.
+    for (const form of HOUSED) {
+      const can = new Set<string>(reachable(form));
+      for (const kind of Object.keys(RESIDENT_HOME[form] ?? {})) {
+        expect(can.has(kind), `${form} has lines for "${kind}", which it can never be handed`).toBe(true);
+      }
+    }
+  });
+
+  it("renders every template without leaving a hole in the sentence", () => {
+    // Templates take the note's value and most ignore it. One that interpolated a
+    // value it never receives would print "There's a ." — caught by reading the
+    // modal last time (ROADMAP 3c), which is not a thing tests can do, so this
+    // asserts the weaker property that every line is a non-empty sentence.
+    for (const form of HOUSED) {
+      for (const [kind, templates] of Object.entries(RESIDENT_HOME[form] ?? {})) {
+        for (const t of templates ?? []) {
+          const text = t("shelf");
+          expect(text.length, `${form}/${kind} produced an empty line`).toBeGreaterThan(0);
+          // A lone " ." or " ,", which is what an unfilled `${v}` leaves behind.
+          // The house ellipsis (". ... Capital") is a space before a period too,
+          // so the period must not be followed by another one or every correctly
+          // styled line in the file fails.
+          expect(text, `${form}/${kind} has an empty interpolation`).not.toMatch(/\s(\.(?!\.)|,)/);
+        }
+      }
+    }
   });
 });
