@@ -149,6 +149,11 @@ export class App {
   /** Tiles already painted during the current drag, so dragging back and forth
    *  over one tile doesn't re-charge or re-message for it. */
   private painted = new Set<string>();
+  /** Every finger currently on the canvas in build mode. One paints; two pan. */
+  private pointers = new Map<number, { x: number; y: number }>();
+  /** Where the panning gesture's midpoint was last frame, or null when nobody is
+   *  panning. Non-null IS "a pan is in progress". */
+  private panAnchor: { x: number; y: number } | null = null;
   /** The beds standing when the current stroke opened, so a stroke that moves
    *  one can carry its sleeper across (sim/assign.ts §"The moved-bed seam"). */
   private strokeBeds: Set<string> | null = null;
@@ -1225,6 +1230,72 @@ export class App {
     }
   }
 
+  /** Close whatever stroke is open: the undo buffer, the paint set and the
+   *  rehome offer, in the order they depend on each other.
+   *
+   *  Shared by the pointer-up path and by a second finger arriving, because a
+   *  pan interrupting a paint has to close the stroke exactly as lifting off
+   *  does — a half-closed stroke leaves `endStroke` uncalled, and its material
+   *  delta is only honestly the stroke's at the moment the stroke closes
+   *  (sim/undo.ts). */
+  private finishStroke(): void {
+    this.painted.clear();
+    if (this.world) {
+      endStroke(this.world);
+      // Did this stroke take someone's bed away, or give it back? Runs after the
+      // edits so it compares finished states.
+      if (this.strokeBeds) {
+        const waitingBefore = pendingRehome(this.world);
+        rehomeAcrossStroke(this.world, this.strokeBeds);
+        this.reportRehome(waitingBefore);
+      }
+      this.strokeBeds = null;
+    }
+    this.syncUndoUi();
+  }
+
+  /** Close the stroke a pan just interrupted, taking back the cell the hand
+   *  painted on its way to panning.
+   *
+   *  Two fingers never land on the same millisecond, so EVERY pan begins as a
+   *  one-finger tap — which, in build mode, is a wall. Found on screen: each
+   *  two-finger drag left a stray cell behind at the touch-down point.
+   *
+   *  It undoes rather than debouncing, because the alternative is waiting to see
+   *  whether a second finger arrives before honouring the first tap, and that
+   *  would put latency on every deliberate tap to pay for the accidental one.
+   *  `undoStroke` already restores cells and reverses the stroke's materials, so
+   *  the fix is a call and not a mechanism.
+   *
+   *  ONE CELL ONLY. A drag already several cells long is a run somebody meant,
+   *  and losing twenty walls to a stray thumb would be far worse than the bug
+   *  this fixes. One cell is a hand settling; several are a decision. */
+  private abandonStrokeForPan(): void {
+    if (!this.world) return;
+    const accidental = this.painted.size <= 1;
+    endStroke(this.world); // commits it, which is what makes it undoable
+    if (accidental) undoStroke(this.world);
+    this.painted.clear();
+    // Nothing to offer a rehome about: either the stroke was taken back, or it
+    // stands and the pointer-up that eventually comes will close the books.
+    this.strokeBeds = null;
+    this.syncUndoUi();
+  }
+
+  /** The midpoint of every finger currently down, or null for none. Two fingers
+   *  rotating slightly around a fixed centre should not pan, which a midpoint
+   *  gives for free and tracking one finger would not. */
+  private pointerMidpoint(): { x: number; y: number } | null {
+    if (this.pointers.size === 0) return null;
+    let x = 0;
+    let y = 0;
+    for (const p of this.pointers.values()) {
+      x += p.x;
+      y += p.y;
+    }
+    return { x: x / this.pointers.size, y: y / this.pointers.size };
+  }
+
   /** Resolve a tap while choosing. A miss doesn't leave the mode — the player is
    *  aiming at a small piece of furniture on a phone, and dropping them out on
    *  the first fat-fingered tap would make this feel like it doesn't work. */
@@ -1407,6 +1478,16 @@ export class App {
       // miserable on a phone, and painting is the whole reason the view
       // flattens (DESIGN §Structures).
       if (this.buildTool) {
+        this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        // A SECOND FINGER MEANS PAN. One finger paints; two move the view. They
+        // can't be told apart by where the touch lands — an edge-drag pan (the
+        // obvious first guess) would fight painting along the edge of a wall,
+        // which is exactly where you paint most.
+        if (this.pointers.size === 2) {
+          this.abandonStrokeForPan();
+          this.panAnchor = this.pointerMidpoint();
+          return;
+        }
         this.painted.clear();
         // The stroke boundary for undo is the same span, deliberately: the set
         // that stops a sweep charging twice is already the game's definition of
@@ -1445,28 +1526,50 @@ export class App {
 
     this.canvas.addEventListener("pointermove", (e) => {
       if (!this.buildTool || this.modalOpen) return;
+      if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      // Two fingers: slide the view by how far their midpoint moved. The view
+      // follows the hand — drag left and the world goes left — so the camera
+      // moves the other way, which is what makes it feel like moving paper.
+      if (this.panAnchor && this.pointers.size >= 2) {
+        const mid = this.pointerMidpoint();
+        if (mid) {
+          const per = this.renderer.pxPerTile();
+          this.renderer.panBy((this.panAnchor.x - mid.x) / per, (this.panAnchor.y - mid.y) / per);
+          this.panAnchor = mid;
+        }
+        return;
+      }
+
       if (!this.canvas.hasPointerCapture(e.pointerId)) return; // only while dragging
       this.buildAtPoint(e.clientX, e.clientY);
     });
 
     const endPaint = (e: PointerEvent) => {
       if (this.canvas.hasPointerCapture(e.pointerId)) this.canvas.releasePointerCapture(e.pointerId);
-      this.painted.clear();
-      if (this.world) {
-        endStroke(this.world);
-        // Did this stroke take someone's bed away, or give it back? Runs after
-        // the edits so it compares finished states.
-        if (this.strokeBeds) {
-          const waitingBefore = pendingRehome(this.world);
-          rehomeAcrossStroke(this.world, this.strokeBeds);
-          this.reportRehome(waitingBefore);
-        }
-        this.strokeBeds = null;
-      }
-      this.syncUndoUi();
+      this.pointers.delete(e.pointerId);
+      // Lifting one of two fingers must not resume painting from wherever the
+      // other one happens to be resting. The pan ends when the gesture does.
+      if (this.pointers.size < 2) this.panAnchor = null;
+      this.finishStroke();
     };
     this.canvas.addEventListener("pointerup", endPaint);
     this.canvas.addEventListener("pointercancel", endPaint);
+
+    // Desktop's version of the same room to work in. WASD already walks in build
+    // mode, which moves the player; this moves only the view, so you can lay a
+    // wall along a row you are not standing on. Passive false because a scroll
+    // over the canvas must not also scroll the page behind it.
+    this.canvas.addEventListener(
+      "wheel",
+      (e) => {
+        if (!this.buildTool || this.modalOpen) return;
+        e.preventDefault();
+        const per = this.renderer.pxPerTile();
+        this.renderer.panBy(e.deltaX / per, e.deltaY / per);
+      },
+      { passive: false },
+    );
 
     window.addEventListener("keydown", (e) => {
       const k = e.key.toLowerCase();
@@ -1483,6 +1586,16 @@ export class App {
       if (k === "escape" && this.assigning) {
         this.endAssigning();
         this.flash("Left it for now.");
+        e.preventDefault();
+        return;
+      }
+      // And build mode's, which it had been doing without: the palette tap is the
+      // touch door (a phone has no Escape), but on a keyboard the key that leaves
+      // every other mode should leave this one. Toggling the held tool is the same
+      // exit the palette uses, so the pan resets and the view flattens back
+      // through one path rather than two.
+      if (k === "escape" && this.buildTool) {
+        this.selectBuildTool(this.buildTool);
         e.preventDefault();
         return;
       }
@@ -1623,6 +1736,16 @@ export class App {
       btn.style.display = toolAllowedOn(id, this.layer()) ? "" : "none";
     }
     this.renderer.setBuildView(building);
+    // Leaving build mode puts the camera back on the player, and this is the one
+    // choke point every exit goes through — the palette toggle, Escape, picking
+    // an ACT tool, and climbing a shaft all land here. A pan that outlived its
+    // mode would leave you looking at an empty field with no way to ask where you
+    // were standing.
+    if (!building) {
+      this.renderer.clearPan();
+      this.panAnchor = null;
+      this.pointers.clear();
+    }
     this.renderer.setTool(this.tool);
     this.hud.root.classList.toggle("building", building);
 

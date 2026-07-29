@@ -119,6 +119,17 @@ const BRASS = "#9c7a2c";
 const BRASS_LIT = "#c9a24f";
 const FLAME = "#ffcf7a";
 const FLAME_CORE = "#fff3cd";
+/** How far build mode may slide the view off the player, in tiles — a bit over
+ *  one screen. Bounded rather than free on purpose: build mode exists to arrange
+ *  a building around where you are standing, and a camera that could wander a
+ *  hundred tiles away makes it a level editor you can get lost in. Walking is
+ *  still how you go somewhere. */
+const PAN_LIMIT = 14;
+
+function clamp(v: number, lo: number, hi: number): number {
+  return v < lo ? lo : v > hi ? hi : v;
+}
+
 const STEP_DEPTH = 5; // how far out from the doorway it reaches
 const STEP_INSET = 3; // margin at each end, so it's a step and not a full edge
 /** Wall left standing either side of a doorway cut into a side run's top
@@ -303,6 +314,38 @@ export class Renderer {
     this.buildView = on;
   }
 
+  /** How far the camera is shifted off the player, in tiles. Build mode only.
+   *
+   *  Build mode paints a TAPPED tile, so on a phone you could only ever build
+   *  within the screen you happened to be standing in the middle of — and there
+   *  is no way to walk while every tap places a wall (ROADMAP §Known gaps). This
+   *  is the room to work in: the view slides, the player stays put.
+   *
+   *  An offset on the FOLLOW TARGET rather than a second camera, so the existing
+   *  easing pans smoothly and `screenToWorld`, `sceneX` and the chunk-streaming
+   *  bounds all keep reading `cam` and need no idea this exists. */
+  private pan = { x: 0, y: 0 };
+
+  panBy(dx: number, dy: number): void {
+    this.pan.x = clamp(this.pan.x + dx, -PAN_LIMIT, PAN_LIMIT);
+    this.pan.y = clamp(this.pan.y + dy, -PAN_LIMIT, PAN_LIMIT);
+  }
+
+  /** Back to the player. Called when build mode closes, so the pan can never
+   *  outlive the mode that justified it and leave you looking at a field with no
+   *  way to say "where was I". */
+  clearPan(): void {
+    this.pan.x = 0;
+    this.pan.y = 0;
+  }
+
+  /** CSS px per world tile, for turning a drag in screen space into tiles. The
+   *  scale is picked from the viewport and is NOT fixed (scripts/drive.mjs's
+   *  header has the same warning), so nobody may hardcode it. */
+  pxPerTile(): number {
+    return TILE * this.scale;
+  }
+
   /** Beds to mark while the player is choosing someone a home, with whether
    *  each one qualifies. Empty (the default) draws nothing.
    *
@@ -345,8 +388,8 @@ export class Renderer {
 
   /** Snap the camera to the player (called once on load to avoid a pan-in). */
   snapCamera(world: WorldState): void {
-    this.cam.x = world.player.x;
-    this.cam.y = world.player.y;
+    this.cam.x = world.player.x + this.pan.x;
+    this.cam.y = world.player.y + this.pan.y;
   }
 
   /** Convert a canvas-relative CSS point to a world-tile coordinate (for
@@ -371,9 +414,9 @@ export class Renderer {
   draw(world: WorldState, now: number): void {
     const ctx = this.ctx;
     const t = (performance.now() - this.t0) / 1000;
-    // Smooth camera follow.
-    this.cam.x += (world.player.x - this.cam.x) * 0.12;
-    this.cam.y += (world.player.y - this.cam.y) * 0.12;
+    // Smooth camera follow, of the player plus whatever build mode has panned to.
+    this.cam.x += (world.player.x + this.pan.x - this.cam.x) * 0.12;
+    this.cam.y += (world.player.y + this.pan.y - this.cam.y) * 0.12;
 
     const phase = skyPhaseAt(now);
     const night = isNight(phase);
