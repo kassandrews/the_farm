@@ -1688,7 +1688,12 @@ export class Renderer {
     // wrong height either fades a tree that isn't in the way or leaves you behind
     // one that is.
     const rows = biome ? biome.crownRows : BROADLEAF;
-    const height = TRUNK_H + rows.length;
+    // Empty half-width at the middle of each row (the blossom's dip over the
+    // trunk), and how many rows come down beside the trunk to make that dip
+    // legible. Both default to "solid crown, perched on top".
+    const gaps = biome?.crownGaps;
+    const overlap = biome?.crownOverlap ?? 0;
+    const height = TRUNK_H + rows.length - overlap;
 
     const prev = ctx.globalAlpha;
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
@@ -1734,7 +1739,14 @@ export class Renderer {
     const top = base - height;
     ctx.fillStyle = crown;
     for (let r = 0; r < rows.length; r++) {
-      ctx.fillRect(cx - rows[r], top + r, rows[r] * 2, 1);
+      const g = gaps?.[r] ?? 0;
+      if (g > 0) {
+        // Two lobes, trunk (and whatever is behind it) showing between them.
+        ctx.fillRect(cx - rows[r], top + r, rows[r] - g, 1);
+        ctx.fillRect(cx + g, top + r, rows[r] - g, 1);
+      } else {
+        ctx.fillRect(cx - rows[r], top + r, rows[r] * 2, 1);
+      }
     }
     // Light from the upper left, as everywhere else. Bounded by the crown's own
     // length rather than by a literal 6: the scrub's is nine rows tall, and a lit
@@ -1742,7 +1754,11 @@ export class Renderer {
     ctx.fillStyle = crownLit;
     const litRows = Math.min(6, rows.length - 1);
     for (let r = 1; r <= litRows; r++) {
-      ctx.fillRect(cx - rows[r] + 1, top + r, Math.max(2, rows[r] - 1), 1);
+      // Light lands on the LEFT lobe when a row is split — the lit side is the
+      // upper left of the mass, not the upper left of each piece of it.
+      const g = gaps?.[r] ?? 0;
+      const w = g > 0 ? rows[r] - g - 1 : Math.max(2, rows[r] - 1);
+      if (w > 0) ctx.fillRect(cx - rows[r] + 1, top + r, w, 1);
     }
 
     ctx.globalAlpha = prev;

@@ -87,6 +87,29 @@ export interface BiomeDef {
    *  wide; past 8 the crown starts overhanging its neighbours, which broadleaves
    *  are allowed to do and conifers are not. */
   crownRows: number[];
+
+  /** Optional, per row: how far the foliage stays CLEAR of the trunk, as a
+   *  half-width of empty in the middle of that row. 0 (the default for every
+   *  row of every biome that omits this) is the solid row described above.
+   *
+   *  This is what turns a blob into a bean. A real broad crown doesn't come to
+   *  a point over the trunk — it hangs at the sides and lifts in the middle,
+   *  and the underside is concave where the branches leave the trunk. With
+   *  solid rows only, every tree here tapered to a tip on the way down, which
+   *  is a shrub's outline and not a cherry's.
+   *
+   *  Only meaningful on the LOWER rows: a gap up top would split one crown into
+   *  two, which is a different tree rather than a dip. */
+  crownGaps?: number[];
+
+  /** How many of the bottom crown rows sit ALONGSIDE the trunk instead of above
+   *  it. Default 0 — the crown perches on top and the sprite is trunk + rows.
+   *
+   *  A dip is only a dip if you can see what it dips around, so a notched crown
+   *  has to come down far enough that the trunk shows through the notch. It
+   *  shortens the tree by the same amount it drops, and the renderer takes the
+   *  height from the same sum, so occlusion stays honest. */
+  crownOverlap?: number;
 }
 
 /** The ordinary broadleaf, and the shape the game has always drawn.
@@ -239,9 +262,18 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     tuft: { color: "#cfe0a0", amount: 0.3 },
     crown: { color: "#e8a8c4", amount: 0.8 }, // pink, and unmistakably so
     trunk: { color: "#5a3a30", amount: 0.25 },
-    // Round and overfull, wider than anything else here. Cherry blossom's whole
-    // character is too much of it at once.
-    crownRows: [4, 6, 7, 8, 8, 8, 8, 7, 7, 6, 5, 4, 3, 2],
+    // Wider than anything else here, and BEAN-shaped rather than round: full
+    // width held for most of the crown, then two lobes hanging down either side
+    // of a dip over the trunk. Cherry blossom's character is too much of it at
+    // once, and a real one carries that weight out sideways — the mass sits on
+    // the branches, not on the tip of the trunk. The first draft tapered to a
+    // 2px point at the bottom, which read as a bush.
+    // Also the SHORTEST broadleaf here, which is half of how it reads wide: at
+    // fourteen rows the same 16px of width came out as a tall pink box with a
+    // slot cut in it. Wide is a ratio, not a number.
+    crownRows: [4, 7, 8, 8, 8, 8, 8, 8, 8, 7, 6],
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3],
+    crownOverlap: 2,
   },
 };
 

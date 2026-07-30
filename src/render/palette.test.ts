@@ -214,6 +214,22 @@ describe("crown silhouettes", () => {
     expect(tall("scrub")).toBeLessThan(tall("meadow"));
   });
 
+  it("keeps a notched crown one crown, dipping only at the bottom", () => {
+    // A gap in the top rows would saw a tree in half rather than scoop out its
+    // underside, and a gap as wide as its row is a hole where foliage should be.
+    for (const b of Object.values(BIOMES)) {
+      if (!b.crownGaps) continue;
+      expect(b.crownGaps.length, b.id).toBe(b.crownRows.length);
+      b.crownGaps.forEach((g, r) => {
+        expect(Number.isInteger(g), b.id).toBe(true);
+        expect(g, b.id).toBeLessThan(b.crownRows[r]);
+        if (g > 0) expect(r, b.id).toBeGreaterThan(b.crownRows.length / 2);
+      });
+      // The dip has to reach the trunk to read as a dip around it.
+      expect(b.crownOverlap ?? 0, b.id).toBeGreaterThan(0);
+    }
+  });
+
   it("never overhangs so far that a crown covers its neighbours' trunks", () => {
     // 8 half-widths is 16px, exactly one tile. Past that a tree starts drawing
     // over the tile beside it, and a stand becomes a smear.
