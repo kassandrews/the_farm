@@ -762,6 +762,18 @@ export interface LookPatch {
   shade?: string;
   extra?: Palette;
   overlay?: { rows: string[]; palette: Palette };
+  /** Push the MOUTH down this many pixels, leaving the eyes where they are — a
+   *  long-jawed individual, not a different face.
+   *
+   *  It exists because the mouth is otherwise unreachable: a look may replace
+   *  the overlay, but the face composites last (so mood always reads over an
+   *  accessory), which means no overlay can move or cover the mouth. The split
+   *  it uses is the one the glance frames already needed — `eyeSplit` divides
+   *  the face grid into eye rows and everything below — so this is an offset on
+   *  a seam that was already there, not a new way to cut up a face.
+   *
+   *  Keep it to ±1. Two pixels on a 16px head is a different skull. */
+  mouthDy?: number;
 }
 
 /** Composite a creature into a DOM-free RGBA pixel buffer: body + mood face +
@@ -814,7 +826,14 @@ export function renderPixels(
     rows = [...rows];
     rows[split] = shift < 0 ? MOLE_NOSE_TIP_LEFT : MOLE_NOSE_TIP_RIGHT;
   }
-  if (shift === 0) {
+  // A dropped mouth splits the face at the same seam the glance frames use: eye
+  // rows land where they always did, everything below them slides. Zero keeps
+  // the face a single blit, so the no-look path is byte-for-byte unchanged.
+  const jaw = look?.mouthDy ?? 0;
+  if (shift === 0 && jaw !== 0) {
+    blit(buf, rows.slice(0, split), facePalette, body.faceDx, body.faceDy);
+    blit(buf, rows.slice(split), facePalette, body.faceDx, body.faceDy + split + jaw);
+  } else if (shift === 0) {
     blit(buf, rows, facePalette, body.faceDx, body.faceDy);
   } else {
     const shifted = rows.slice(0, split).map((r, gy) => {
@@ -831,7 +850,7 @@ export function renderPixels(
       return cells.join("");
     });
     blit(buf, shifted, facePalette, 0, body.faceDy);
-    blit(buf, rows.slice(split), facePalette, body.faceDx, body.faceDy + split);
+    blit(buf, rows.slice(split), facePalette, body.faceDx, body.faceDy + split + jaw);
   }
   return buf;
 }

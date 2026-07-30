@@ -60,6 +60,10 @@ export interface LookDef {
    *  rather than patched, because a shape change wants to be readable as a
    *  shape in the source. */
   overlay?: { rows: string[]; palette: Palette };
+  /** Drops the mouth without moving the eyes — see LookPatch in canon/sprites.
+   *  The only field here that reaches into the FACE, which is why it is ±1 and
+   *  why it exists at all: the face composites last, so nothing else can. */
+  mouthDy?: number;
 }
 
 /** No change at all — every form's entry 0, and what the player always gets. */
@@ -119,11 +123,19 @@ const TOOTH_UNDERBITE = [
   "................",
   "................",
   "................",
+  "................",
   "......w.w.......",
 ];
 /** The two mouths that are not canon, as patches to spread into a row. */
 const SNAGGLE = { overlay: { rows: [TOOTH_SNAGGLE], palette: { w: TOOTH } } };
-const UNDERBITE = { overlay: { rows: TOOTH_UNDERBITE, palette: { w: TOOTH } } };
+// The jaw drops with the teeth. Mouth and teeth both sit one row lower than
+// canon, so the whole lower face reads as pushed forward rather than as a canon
+// mouth with something stuck under it — the eyes stay put, which is what keeps
+// it the same gremlin.
+const UNDERBITE = {
+  overlay: { rows: TOOTH_UNDERBITE, palette: { w: TOOTH } },
+  mouthDy: 1,
+};
 
 /** The two gremlin tints that are not canon. Horns travel with the body — see
  *  the gremlin entry — so a tint is always three numbers, never one. */
