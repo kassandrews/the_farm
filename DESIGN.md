@@ -149,22 +149,39 @@ secret forms are allowed — the owner earned them.
 Named individuals, like Nook or Blathers — distinct from resident villagers.
 Initial mapping, all subject to play:
 
-| Character | Role |
-|---|---|
-| Tired Office Creature | Town hall. Land claims, permits, progression paperwork. |
-| Fancy Little Menace | The shop. Judges your purchases silently. |
-| Little Scholar | The museum. Every placard is confidently incorrect. |
-| Blessed Carrot | Patron of farming. Sells seeds. Prefers not to discuss it. |
-| Loyal Dog Thing | Deliveries and errands board. |
-| Dramatic Blob | Festivals and the plaza stage. |
-| Gremlin | The recycling/junk economy. Sometimes moves your fences. |
+| Name | Form | Role |
+|---|---|---|
+| Gary | Tired Office Creature | Town hall. Land claims, permits, progression paperwork. |
+| Arabella | Fancy Little Menace | The shop. Judges your purchases silently. |
+| Winifred | Little Scholar | The museum. Every placard is confidently incorrect. |
+| Derek | Blessed Carrot | Patron of farming. Sells seeds. Prefers not to discuss it. |
+| Pesto | Loyal Dog Thing | Deliveries and errands board. |
+| Aurelio | Dramatic Blob | Festivals and the plaza stage. |
+| Nub | Gremlin | The recycling/junk economy. Sometimes moves your fences. |
+
+**A name is a person; a form is a species.** The two columns are the whole rule,
+and the table used to have only the second one — the villager at the desk was
+*named* "Tired Office Creature", which quietly made §Importing's "forms are
+species, not singletons" false wherever you could actually see it. Everyone in
+the game has a personal name now, institutions included; the form column stays
+canon (it is what The Meadow calls them) and the counters print the *place*
+under the name, not the species. Voices per form live in `content/names.ts`.
+
+**No two of a form look alike either.** Anyone who moves in gets a *look* — one
+variation on their form's canon art, a body colour **or** one accessory, never
+both. The fixed cast above and the player are always the canon art; residents
+never are. It is derived from who they are and stored nowhere.
 
 Secret forms stay secret in spirit:
 
-- **Quiet Ghost** — only appears at real-clock night.
-- **Stray Cosmos** — rare celestial event visitor, not a resident.
+- **Quiet Ghost** — only appears at real-clock night. She is **Eloise**, but the
+  game does not tell you so until you are close to her: a secret's name is the
+  one friendship milestone worth being able to point at, and a name you were
+  told is worth more than a name you were shown.
+- **Stray Cosmos** (Sidra) — rare celestial event visitor, not a resident.
 - **Humming Cube** — a *structure*, not a character. A landmark that hums.
-- **Maverick Mole** — found only by digging deep. Undocumented. Ships anyway.
+- **Maverick Mole** (Malcolm) — found only by digging deep. Undocumented. Ships
+  anyway.
 
 ### The Mole, specifically
 

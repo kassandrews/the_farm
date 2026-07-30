@@ -20,6 +20,7 @@
 import type { SkinId } from "./skins";
 import type { FurnitureId, Facing } from "./furniture";
 import type { CharId } from "./cast";
+import { CAST } from "./cast";
 import type { WingId } from "./museum";
 import { STAGE } from "./festivals";
 
@@ -102,8 +103,15 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
   // been sleeping on open paving at (-4,-2) — inside the plaza rectangle, which
   // nobody noticed because there was nothing to notice it against.
   margfrom_house: {
+    // THE ID STAYS `margfrom_house` though she is Prudence now. It is a key in
+    // every live save's `build` map and in the v6 → v7 stamp, so renaming it
+    // would be a migration bought entirely with her old name — and the id is
+    // not a name, it is an address. The DISPLAY name is hers.
     id: "margfrom_house",
-    name: "Margfrom's House",
+    // Follows her, rather than repeating her. She has been renamed once and the
+    // house did not notice, which is exactly how a building ends up labelled
+    // after somebody who no longer lives there.
+    name: `${CAST.resident1.name}'s House`,
     x0: -11,
     y0: -4,
     x1: -7,

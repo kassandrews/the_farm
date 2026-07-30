@@ -211,7 +211,7 @@ export const FESTIVALS: FestivalDef[] = [
     day: 28,
     name: "The Filing of the Year",
     blurb:
-      "The year is read out, briefly, and then filed. ... The Office Creature attends in a professional capacity and does not speak, which he has described as the best part of his year.",
+      "The year is read out, briefly, and then filed. ... Gary attends in a professional capacity and does not speak, which he has described as the best part of his year.",
     onstage: "The year is being read out. ... Then it goes in the drawer, and next year is a different year, which is the point of the drawer.",
     rehearsing: "I am condensing the year. ... It was a long year and the reading is four minutes, so most of it is not going to be in there. That is the job.",
     afterwards: "The year was read out and filed. ... It took four minutes. Several people said afterwards that it had felt longer at the time.",

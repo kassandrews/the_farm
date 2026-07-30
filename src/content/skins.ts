@@ -108,7 +108,7 @@ export const SKINS: Record<SkinId, SkinDef> = {
     top: "#f4efe6",
     shade: "#c9c2b4",
     starter: false,
-    hint: "The Fancy Little Menace has standards, and will share them.",
+    hint: "Archibald has standards, and will share them.",
   },
   // The Gremlin's two, redeemed at the heap for junk (sim/heap.ts). They are
   // finishes rather than furniture or materials for a reason that is nearly a

@@ -15,9 +15,11 @@ import { generatedTile, tileKey, RECLAIM_MS } from "./world";
 import { DIRT } from "../content/tiles";
 import { makeVillager } from "./villagers";
 import { authoredBed } from "../content/town";
-import type { CharId } from "../content/cast";
+import type { CharId, AuthoredId } from "../content/cast";
+import { CAST, MOLE, GHOST, COSMOS } from "../content/cast";
+import { ARRIVALS } from "../content/arrivals";
 
-export const SCHEMA_VERSION = 22;
+export const SCHEMA_VERSION = 23;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -502,7 +504,50 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
     }
     return { ...raw, schemaVersion: 22, reclaim };
   },
+  // v22 → v23: everybody got a name. The five institutions who were called by
+  // their species are Gary, Arabella, Nub, Pesto and Aurelio; the curator, the
+  // starter resident, the carrot and the three secrets were re-cast alongside
+  // them (content/cast.ts, registers in content/names.ts).
+  //
+  // A migration is needed because `name` is the one thing about a villager that
+  // is COPIED into the save rather than read from the table. That is correct —
+  // a Meadow import brings its own name and there is no row to read it from —
+  // but it means a live town would go on calling him the Tired Office Creature
+  // forever, since the ladder is the only thing that ever reaches a deployed
+  // save.
+  //
+  // AUTHORED IDS ONLY, and the distinction is the whole care of this function:
+  //   • the eight CAST rows and the three secrets — refreshed from the table
+  //   • `newcomer:N` — refreshed from ARRIVALS[N], because the id encodes the
+  //     index that admitted them (sim/commission.ts)
+  //   • anybody else — LEFT ALONE. That is an imported sprite carrying a name
+  //     from The Meadow, and overwriting it would be this game reaching into
+  //     the one save it promised never to write back to.
+  // The player's own name lives on `player`, is chosen by the player, and is
+  // not touched by any of the above.
+  22: (raw) => {
+    const villagers = Array.isArray(raw.villagers) ? (raw.villagers as Record<string, unknown>[]) : [];
+    const renamed = villagers.map((v) => {
+      const id = typeof v.id === "string" ? v.id : "";
+      const authored = authoredName(id);
+      return authored ? { ...v, name: authored } : v;
+    });
+    return { ...raw, schemaVersion: 23, villagers: renamed };
+  },
 };
+
+/** The name the tables now give an authored character, or null for anyone the
+ *  tables never named — an import, or a newcomer past the end of the queue. */
+function authoredName(id: string): string | null {
+  if (id === "mole") return MOLE.name;
+  if (id === "ghost") return GHOST.name;
+  if (id === "cosmos") return COSMOS.name;
+  if (id.startsWith("newcomer:")) {
+    const n = Number(id.slice("newcomer:".length));
+    return Number.isInteger(n) ? (ARRIVALS[n]?.name ?? null) : null;
+  }
+  return CAST[id as AuthoredId]?.name ?? null;
+}
 
 /** The v12 museum, frozen as literals. Migrations must never read the CURRENT
  *  content tables to describe the PAST — content/town.ts now holds the new

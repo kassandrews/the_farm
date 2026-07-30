@@ -8,7 +8,7 @@
 import type { Villager, WorldState } from "./types";
 import type { Rng } from "./rng";
 import { recall } from "./memory";
-import { friendshipTier } from "./friendship";
+import { friendshipTier, displayName } from "./friendship";
 import type { MemoryKind } from "./memory";
 import { describeHome, NOTE_PRIORITY, URGENT } from "./home";
 import { describeSeason } from "./seasons";
@@ -33,6 +33,7 @@ import {
   residentIdle,
   warmLines,
 } from "../content/dialogue";
+import { CAST } from "../content/cast";
 import { rivalReading } from "./museum";
 import { moleGroundShallow, moleLamplit } from "./mole";
 import { groveCut } from "./ghost";
@@ -112,7 +113,12 @@ const MEMORY_PRIORITY: MemoryKind[] = [
  *  caller advances `line` 0..N and shows each; past the end returns null. */
 export function officeLandClaimLine(line: number): Speech | null {
   if (line < 0 || line >= OFFICE_LANDCLAIM.length) return null;
-  return { who: "Tired Office Creature", text: OFFICE_LANDCLAIM[line] };
+  // Read off the table, never a literal. This said "Tired Office Creature" for
+  // as long as that was his name, which meant the naming pass had to find it —
+  // and the only reason it did is that the string was distinctive. A speaker
+  // label written out by hand is a label that drifts the next time somebody is
+  // renamed, silently, in the one beat the whole game opens on.
+  return { who: CAST.office.name, text: OFFICE_LANDCLAIM[line] };
 }
 
 /** The bank a secret speaks from, or null for everybody else.
@@ -163,7 +169,7 @@ export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Sp
     let text = rng.pick(secret);
     if (text === v.lastLine && secret.length > 1) text = rng.pick(secret);
     v.lastLine = text;
-    return { who: v.name, text };
+    return { who: displayName(v), text };
   }
 
   // The house goes first when it has something to say. It's the most specific
@@ -171,20 +177,20 @@ export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Sp
   const home = tryHomeLine(world, v, rng);
   if (home && rng.next() < home.chance) {
     v.lastLine = home.text;
-    return { who: v.name, text: home.text };
+    return { who: displayName(v), text: home.text };
   }
 
   // Then the museum quarrel, if this is a scholar and there is anything in it.
   const dissent = tryDissentLine(world, v, rng);
   if (dissent && rng.next() < DISSENT_CHANCE) {
     v.lastLine = dissent;
-    return { who: v.name, text: dissent };
+    return { who: displayName(v), text: dissent };
   }
 
   const memoryLine = tryMemoryLine(v, rng);
   if (memoryLine && rng.next() < MEMORY_CHANCE) {
     v.lastLine = memoryLine;
-    return { who: v.name, text: memoryLine };
+    return { who: displayName(v), text: memoryLine };
   }
 
   // The month, which is the least specific true thing anybody can say and so
@@ -193,7 +199,7 @@ export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Sp
   const seasonLine = trySeasonLine(world, v, now, rng);
   if (seasonLine && rng.next() < SEASON_CHANCE) {
     v.lastLine = seasonLine;
-    return { who: v.name, text: seasonLine };
+    return { who: displayName(v), text: seasonLine };
   }
 
   // Idle voice, plus whatever warmth this villager has unlocked. Pooling rather
@@ -216,7 +222,7 @@ export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Sp
     text = rng.pick(pool);
   }
   v.lastLine = text;
-  return { who: v.name, text };
+  return { who: displayName(v), text };
 }
 
 /** A line about the month, or null if this villager shouldn't be saying one.

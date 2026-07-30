@@ -82,7 +82,7 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     plural: "Carrots",
     icon: "carrot",
     category: "produce",
-    blurb: "Pulled by your own hand. The Blessed Carrot prefers not to discuss it.",
+    blurb: "Pulled by your own hand. Derek prefers not to discuss it.",
   },
   mushroom: {
     id: "mushroom",

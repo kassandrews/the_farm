@@ -8,6 +8,8 @@ import { count } from "./inventory";
 import { STARTING_SEED } from "./seeds";
 import { STARTING_CROP } from "../content/crops";
 import { STAGE } from "../content/festivals";
+import { CAST } from "../content/cast";
+import { ARRIVALS } from "../content/arrivals";
 
 function freshWorld() {
   return newWorld({ name: "Keeper", form: "menace", spot: "riverside", seed: 99 });
@@ -340,7 +342,14 @@ describe("migrations", () => {
       dwell: 17,
     }));
     const migrated = migrateSave({ ...w, schemaVersion: 2, villagers })!;
-    expect(migrated.villagers.find((v) => v.id === "resident1")?.name).toBe("Margfrom");
+    // Her name comes off the table, not out of this file. It was "Margfrom"
+    // until the naming pass, and v22 → v23 deliberately rewrites the name of
+    // every authored villager in a live save — so a literal here would have
+    // asserted that the migration DIDN'T do its job. What "identity survived"
+    // means is that resident1 is still resident1 and still knows what she knew.
+    expect(migrated.villagers.find((v) => v.id === "resident1")?.name).toBe(
+      CAST.resident1.name,
+    );
     // The count is deliberately not asserted: v10 adds the shopkeeper, and any
     // later institution will add another. What must hold is that the people
     // who were already there are still themselves.
@@ -659,5 +668,68 @@ describe("v21 → v22: dug earth grasses over", () => {
   it("a town that never dug gets an empty record and no phantom lawns", () => {
     const migrated = migrateSave(v21Save({ overrides: {} }))!;
     expect(migrated.reclaim).toEqual({});
+  });
+});
+
+describe("v22 → v23: everybody has a name", () => {
+  function v22Save(villagers: Record<string, unknown>[]): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    return { ...w, schemaVersion: 22, villagers };
+  }
+
+  /** A villager the way a live save holds one: name COPIED in, not referenced. */
+  function saved(id: string, name: string): Record<string, unknown> {
+    return {
+      id,
+      name,
+      form: "scholar",
+      fixed: false,
+      x: 0,
+      y: 0,
+      layer: "surface",
+      facing: 1,
+      friendship: 40,
+      memory: [{ kind: "arrived", at: 1 }],
+      lastLine: "",
+      homeBed: null,
+    };
+  }
+
+  it("renames the institutions a live save was still calling by their species", () => {
+    // The reason this migration exists at all: `name` is the one villager field
+    // COPIED into the save rather than read from the table, so a deployed town
+    // would have gone on calling him the Tired Office Creature forever.
+    const migrated = migrateSave(
+      v22Save([saved("office", "Tired Office Creature"), saved("shop", "Fancy Little Menace")]),
+    )!;
+    const byId = (id: string) => migrated.villagers.find((v) => v.id === id)!;
+    expect(byId("office").name).toBe(CAST.office.name);
+    expect(byId("shop").name).toBe(CAST.shop.name);
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+  });
+
+  it("renames a housed newcomer from the row that admitted them", () => {
+    // The id encodes the arrival index (sim/commission.ts), which is the only
+    // reason a newcomer can be renamed at all — they have no CAST row.
+    const migrated = migrateSave(v22Save([saved("newcomer:0", "Bissenette")]))!;
+    expect(migrated.villagers[0].name).toBe(ARRIVALS[0].name);
+  });
+
+  it("never touches a name that came from The Meadow", () => {
+    // THE CARE OF THE WHOLE FUNCTION. An imported sprite's name is not ours to
+    // rewrite — the import is read-only in both directions (CLAUDE.md §Saves),
+    // and there is no table row to rewrite it from even if it were.
+    const migrated = migrateSave(v22Save([saved("newcomer:99", "Wobblesworth")]))!;
+    expect(migrated.villagers[0].name).toBe("Wobblesworth");
+  });
+
+  it("keeps friendship and memory while the name changes", () => {
+    // A rename is not a new person. If this ever drops the log, somebody loses
+    // every afternoon they spent with a villager to a cosmetic pass.
+    const migrated = migrateSave(v22Save([saved("resident1", "Margfrom")]))!;
+    const her = migrated.villagers[0];
+    expect(her.name).toBe(CAST.resident1.name);
+    expect(her.friendship).toBe(40);
+    expect(her.memory).toHaveLength(1);
   });
 });

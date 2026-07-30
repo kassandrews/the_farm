@@ -11,7 +11,8 @@
 // animation path.
 
 import { CELL, renderPixels } from "../content/canon/sprites";
-import type { Mood, SpriteFrame } from "../content/canon/sprites";
+import type { Mood, SpriteFrame, LookPatch } from "../content/canon/sprites";
+import type { LookDef } from "../content/looks";
 
 /** Bakes and caches creature frame canvases, plus their mirrors, keyed by
  *  identity so repeated draws don't rebuild. */
@@ -19,12 +20,17 @@ export class SpriteCache {
   private frames = new Map<string, HTMLCanvasElement>();
   private mirrors = new WeakMap<HTMLCanvasElement, HTMLCanvasElement>();
 
-  /** A baked frame canvas for (key, mood, frame). */
-  frame(key: string, mood: Mood, frame: SpriteFrame): HTMLCanvasElement {
-    const id = `${key}:${mood}:${frame}`;
+  /** A baked frame canvas for (key, mood, frame, look).
+   *
+   *  The look is part of the CACHE KEY, by its id — that is the whole cost of
+   *  giving every resident their own face. Two Menaces bake two sets of frames
+   *  instead of sharing one, and a set is five 16×16 canvases, so a town of
+   *  thirty people is still a rounding error against one background chunk. */
+  frame(key: string, mood: Mood, frame: SpriteFrame, look?: LookDef): HTMLCanvasElement {
+    const id = `${key}:${mood}:${frame}:${look?.id ?? "canon"}`;
     let c = this.frames.get(id);
     if (!c) {
-      c = bake(key, mood, frame);
+      c = bake(key, mood, frame, look);
       this.frames.set(id, c);
     }
     return c;
@@ -48,12 +54,12 @@ export class SpriteCache {
   }
 }
 
-function bake(key: string, mood: Mood, frame: SpriteFrame): HTMLCanvasElement {
+function bake(key: string, mood: Mood, frame: SpriteFrame, look?: LookPatch): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = CELL;
   canvas.height = CELL;
   const ctx = canvas.getContext("2d")!;
-  const buf = renderPixels(key, mood, frame);
+  const buf = renderPixels(key, mood, frame, look);
   const img = ctx.createImageData(buf.w, buf.h);
   img.data.set(buf.data);
   ctx.putImageData(img, 0, 0);

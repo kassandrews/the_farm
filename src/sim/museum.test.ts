@@ -7,6 +7,7 @@ import { SKINS } from "../content/skins";
 import { FURNITURE } from "../content/furniture";
 import { TOWN_BUILDINGS } from "../content/town";
 import { CAST } from "../content/cast";
+import { FORMS } from "../content/canon/forms";
 import {
   donate,
   plinths,
@@ -322,7 +323,12 @@ describe("the museum — the record that isn't a score", () => {
     // person"). She also has to be standing INSIDE her own museum.
     const w = freshWorld();
     const curator = w.villagers.find((v) => v.id === "museum");
-    expect(curator?.name).toBe("Corrigal");
+    // Named from the table rather than spelled out: the point of the assertion
+    // is that somebody is standing there, and pinning the literal made a naming
+    // pass look like a museum regression. What must NOT be true is that she is
+    // called after her species — that is the state this town started in.
+    expect(curator?.name).toBe(CAST.museum.name);
+    expect(curator?.name).not.toBe(FORMS[curator!.form].name);
     const b = TOWN_BUILDINGS.museum;
     const stop = CAST.museum.schedule[0];
     expect(stop.x).toBeGreaterThan(b.x0);

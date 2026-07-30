@@ -120,7 +120,7 @@ export const MUSEUM: ExhibitDef[] = [
     placards: [
       "Carrot. The root is the part that is eaten. The top is the part that is discussed.",
       "Carrot. ... The only specimen in this wing that was grown on purpose, by a person, who then gave it away. Note the restraint.",
-      "Carrot. The Blessed Carrot has visited this plinth twice and declined to comment. Twice.",
+      "Carrot. Derek has visited this plinth twice and declined to comment. Twice.",
     ],
   },
   {

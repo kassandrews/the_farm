@@ -1214,10 +1214,12 @@ The model is settled above. This was the build order; steps 1–4 were one commi
    placard's own revision marker ("Mushroom. ... Corrected.") made her sound
    like she was reading aloud from someone else's page mid-sentence.
 
-~~**Open:** the curator needs a name.~~ **Settled: Corrigal.** A specific
-scholar, not "Little Scholar" — same footing as Bissenette vs. the Fancy Little
-Menace, and Margfrom is now just a scholar who lives here. The name is one
-string in `cast.ts` and nothing keys on it, so it stays cheap to change.
+~~**Open:** the curator needs a name.~~ ~~**Settled: Corrigal.**~~ **Superseded
+by the naming pass (§7).** She is **Winifred** now, and Corrigal is back in the
+scholar register in `content/names.ts` for whoever moves in next. The last
+sentence of the old entry — "the name is one string in `cast.ts` and nothing
+keys on it, so it stays cheap to change" — turned out to be exactly true, which
+is the only reason re-casting the whole town cost one afternoon.
 
 ### 3g. The seed stall — **done**
 
@@ -2325,6 +2327,87 @@ the screen — the reverse would be an elaborate way to walk the wrong direction
   allowed to spoil a secret (CLAUDE.md §Tone).
 - The reference reads off the TILE, never `player.x`. Off the float it flickers
   between two numbers while you stand still, which reads as broken.
+
+---
+
+## Phase 7 — The naming pass, and looks
+
+Two problems with one root: **the game had a cast of types, not a cast of
+people.** Schema v23.
+
+### Names — form is the species, name is the person
+
+Five of the seven institutions were called by their form. The villager at the
+town-hall desk was *named* "Tired Office Creature", which made the doctrine the
+whole codebase repeats — *forms are species, not singletons* — false in the most
+visible place in the game, and left a second Menace with nothing to be called.
+
+Settled, and not worth relitigating:
+
+- **`canon/forms.ts` is untouched, forever.** Species names are vendored Meadow
+  canon. Gary is a person; the Tired Office Creature is his form. Every museum
+  blurb and collection clue kept working unchanged *because* they were always
+  talking about species — that's the test that the split is the real seam.
+- **The institution moved to the subtitle**, which the UI already had a slot
+  for: `panel("Arabella", "The Counter", …)`. Naming the *place* is a better way
+  to say "institution" than naming the person after their job anyway.
+- **The roster.** Gary (town hall), Arabella (shop), Nub (heap), Winifred
+  (museum), Derek (seed stall), Pesto (errands), Aurelio (stage), Prudence
+  (resident). Secrets too: Malcolm, Eloise, Sidra. Arrivals: Archibald, Biscuit,
+  Thessaly, Snag.
+- **Registers, not a generator** (`content/names.ts`). One voice per form —
+  office names are beige, menace names are Edwardian, gremlin names sound like
+  something that fell off, dog names are food. Arrival rows still carry literal
+  names: *an arrival whose name came out of a hash is an arrival nobody decided
+  to admit.* A test asserts every authored name is in its form's register.
+- **Eloise is the exception that proves the friendship ladder.** She reads as
+  "Quiet Ghost" until you are `close`, then she's Eloise (`unknownAs` in
+  `cast.ts`, `displayName` in `sim/friendship.ts`). It is the only friendship
+  milestone in the game you can point at — and it still isn't a number.
+- **Speaker labels read the table.** `sim/dialogue.ts` had `who: "Tired Office
+  Creature"` written out by hand, and it was found only because the string was
+  distinctive. It's `CAST.office.name` now.
+
+**The migration is the part worth reading** (v22 → v23). `name` is the one
+villager field *copied* into the save rather than read from the table — which is
+correct, because a Meadow import brings its own and has no row to read from —
+so a deployed town would have gone on calling him the Tired Office Creature
+forever. It rewrites authored ids only: the CAST rows, the three secrets, and
+`newcomer:N` from `ARRIVALS[N]` (the id encodes the index). **Anybody else is
+left alone**, because that's an imported sprite and the import is read-only in
+both directions.
+
+### Looks — one axis per person, derived from their id
+
+Sprites were baked per form, so every Menace was the same 16×16 image.
+
+- **A look changes EITHER the body colour OR one accessory, never both.** This
+  is a ceiling, not a half-finished stage: six tints × three crowns is eighteen
+  Menaces nobody can tell apart, which is the original bug with extra steps.
+  What you want on screen is "the pale one" and "the one with the silver crown"
+  — differences you can say out loud.
+- **No new art.** Every accessory swap recolours a letter the canon sprite
+  already draws with (crown `y`, horns `G`, tie `T`, ears `D`, chest patch `W`)
+  or replaces an overlay grid the body already carries (the Scholar's glasses).
+  A look names colours, never cells, so **a look cannot knock a sprite off the
+  pixel grid** — the one bug class unit tests can't see. A test asserts the
+  silhouette's opaque-pixel count is identical across every non-overlay look.
+  The dog's "no patch" variant is the trick worth stealing: it paints the patch
+  the body colour. Removing art by colouring it in costs nothing.
+- **`lookFor(id, form)` is derived, never stored** — same instinct as
+  `charDef`. Zero save schema, zero migration, and a town loaded from an old
+  save gets its residents' faces for free.
+- **Newcomers hash into 1..n-1 and skip canon.** Not a detail: hashing across
+  the whole list gives the first Menace to move in a one-in-six chance of being
+  pixel-identical to the shopkeeper, and a coin flip that sometimes reproduces
+  the bug is not a fix. Institutions and **the player** are always canon — the
+  six buttons on the character screen must show what you actually get.
+- **"Skins" was taken.** `content/skins.ts` is building finishes; people get
+  *looks*. Two appearance systems with one word would have ended up in one
+  picker.
+
+**Open:** more arrival rows to spend the registers and the look lists on. Both
+tables are sized for a crowd that hasn't moved in yet.
 
 ---
 

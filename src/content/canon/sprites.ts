@@ -750,20 +750,53 @@ export function creatureKey(stage: Stage, form: AdultForm | null): string {
   return stage;
 }
 
+/** How one individual differs from the form's canon art.
+ *
+ *  STRUCTURAL ON PURPOSE — this file does not import the table that supplies
+ *  them (src/content/looks.ts). The art here is VENDORED canon and knows nothing
+ *  about the Farm's cast; it applies a patch it is handed. Keeping the arrow
+ *  pointing that way is what lets the whole looks system be data, and what keeps
+ *  this module pure enough to render in a test with no DOM. */
+export interface LookPatch {
+  fill?: string;
+  shade?: string;
+  extra?: Palette;
+  overlay?: { rows: string[]; palette: Palette };
+}
+
 /** Composite a creature into a DOM-free RGBA pixel buffer: body + mood face +
- *  overlay accessory. Pure — renderable off-screen or in tests. */
-export function renderPixels(key: string, mood: Mood, frame: SpriteFrame = "base"): PixelBuffer {
+ *  overlay accessory. Pure — renderable off-screen or in tests.
+ *
+ *  `look` varies ONE thing about an individual — their colour, or one accessory
+ *  — so that two people of a form aren't the same picture. Omit it and the
+ *  output is byte-identical to what this function returned before looks existed;
+ *  that is the property the player's own sprite relies on. */
+export function renderPixels(
+  key: string,
+  mood: Mood,
+  frame: SpriteFrame = "base",
+  look?: LookPatch,
+): PixelBuffer {
   const buf: PixelBuffer = { w: CELL, h: CELL, data: new Uint8ClampedArray(CELL * CELL * 4) };
   if (key === "egg") {
     blit(buf, EGG_SPRITE, EGG_PALETTE);
     return buf;
   }
   const body = BODIES[key] ?? BODIES.baby;
-  blit(buf, body.rows, { k: OUTLINE, B: body.fill, S: body.shade, ...body.extra });
+  // The patch names colours, never CELLS. A look cannot move a pixel, so it
+  // cannot put one off the grid — see the file header in content/looks.ts.
+  blit(buf, body.rows, {
+    k: OUTLINE,
+    B: look?.fill ?? body.fill,
+    S: look?.shade ?? body.shade,
+    ...body.extra,
+    ...look?.extra,
+  });
   if (frame === "alt" && body.alt) blit(buf, body.alt.rows, body.alt.palette);
-  if (body.overlay) {
-    const isSmallOverlay = body.overlay.rows.length <= 2;
-    blit(buf, body.overlay.rows, body.overlay.palette, 0, isSmallOverlay ? body.faceDy + 3 : 0);
+  const overlay = look?.overlay ?? body.overlay;
+  if (overlay) {
+    const isSmallOverlay = overlay.rows.length <= 2;
+    blit(buf, overlay.rows, overlay.palette, 0, isSmallOverlay ? body.faceDy + 3 : 0);
   }
   // Face goes last so mood eyes/mouths always read over accessories.
   const facePalette = {

@@ -42,6 +42,8 @@ import { scenePalette, seasonSkin, biomeSkin, mixHex, type ScenePalette } from "
 import { biomeDef, BROADLEAF } from "../content/biomes";
 import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
+import { lookFor } from "../content/looks";
+import type { LookDef } from "../content/looks";
 import type { Mood, SpriteFrame } from "../content/canon/sprites";
 import { SpriteCache, drawSpriteQuantized } from "./sprites";
 
@@ -2078,13 +2080,14 @@ export class Renderer {
     moving: boolean,
     t: number,
     alpha = 1,
+    look?: LookDef,
   ): void {
     const cx = this.sceneX(wx);
     const feetY = this.sceneY(wy) + TILE / 2 + 1;
     // Walk bob: a small vertical hop + squash while moving; a slow breathe idle.
     const bob = moving ? -Math.abs(Math.sin(t * 9)) * 1.5 : Math.sin(t * 1.6) * 0.3;
     const squash = moving ? Math.max(0, Math.sin(t * 9)) * 0.08 : 0;
-    const sprite = this.cache.frame(key, mood, frame);
+    const sprite = this.cache.frame(key, mood, frame, look);
     drawSpriteQuantized(this.ctx, this.cache, sprite, cx, feetY + bob, SPRITE, SPRITE, facing, squash, alpha);
   }
 
@@ -2092,6 +2095,8 @@ export class Renderer {
     const key = creatureKey("adult", p.form);
     const moving = p.target !== null;
     const frame: SpriteFrame = moving && Math.sin(t * 9) > 0 ? "alt" : "base";
+    // No look: the player is their form's canon art, always. The six buttons on
+    // the character screen have to show what you will actually be.
     this.drawEntity(key, "neutral", frame, p.x, p.y, p.facing, moving, t);
   }
 
@@ -2105,7 +2110,9 @@ export class Renderer {
     const moving = !v.fixed && !!prev && Math.hypot(v.x - prev.x, v.y - prev.y) > 0.001;
     this.lastPos.set(v.id, { x: v.x, y: v.y });
     const alpha = v.form === "ghost" && night ? 0.85 : 1;
-    this.drawEntity(key, "neutral", "base", v.x, v.y, v.facing, moving, t, alpha);
+    // Derived from their id every frame, and that is free — `lookFor` is a hash
+    // and a table read, and the baked frames behind it are cached by look id.
+    this.drawEntity(key, "neutral", "base", v.x, v.y, v.facing, moving, t, alpha, lookFor(v.id, v.form));
   }
 
   // --- Action-target affordance ----------------------------------------------

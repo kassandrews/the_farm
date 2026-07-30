@@ -1,9 +1,14 @@
 // The town's people, as data. Two kinds live here:
 //
 //   • The FIXED CAST — named institutions (like Nook or Blathers). The vertical
-//     slice ships one: the Tired Office Creature at the town hall, who stamps
-//     your land claim (DESIGN §"fixed cast"). The rest of the mapping is
-//     recorded now as commented intent so the town has somewhere to grow.
+//     slice ships one: Gary at the town hall, who stamps your land claim
+//     (DESIGN §"fixed cast"). The rest of the mapping is recorded now as
+//     commented intent so the town has somewhere to grow.
+//
+// EVERYONE HERE HAS A PERSONAL NAME, institutions included. What they ARE is
+// `form`, whose canon title lives in canon/forms.ts — Gary is a person and the
+// Tired Office Creature is his species. Registers per form, and the reasoning,
+// are in content/names.ts.
 //
 //   • STARTER RESIDENTS — imported villagers who walk a daily schedule. The
 //     slice ships one; a real import from The Meadow (src/sim/meadow_import.ts)
@@ -21,13 +26,13 @@ import { activeFestival, watchCell, FESTIVAL_FROM_HOUR, STAGE_STAND } from "./fe
  *  resident. A closed union, because the dialogue banks and the authored-bed
  *  table are keyed on it and a missing row should be a type error. */
 export type AuthoredId =
-  | "office" // Tired Office Creature — town hall, land claims
-  | "shop" // Fancy Little Menace — the counter, and the only source of cloth
-  | "heap" // Gremlin — the junk economy, and the only source of his finishes
-  | "museum" // Corrigal — the curator, and every placard in the collection
-  | "seedstall" // Blessed Carrot — seed, and the varieties you may plant
-  | "errands" // Loyal Dog Thing — the board, and the round he walks
-  | "stage" // Dramatic Blob — the plaza stage, and the twelve festivals
+  | "office" // Gary — town hall, land claims
+  | "shop" // Arabella — the counter, and the only source of cloth
+  | "heap" // Nub — the junk economy, and the only source of his finishes
+  | "museum" // Winifred — the curator, and every placard in the collection
+  | "seedstall" // Derek — seed, and the varieties you may plant
+  | "errands" // Pesto — the board, and the round he walks
+  | "stage" // Aurelio — the plaza stage, and the twelve festivals
   | "resident1"; // the one starter resident
 
 /** Someone the town has since taken in. Newcomers arrive at run time (see
@@ -110,8 +115,16 @@ export interface ScheduleStop {
 export interface CharDef {
   id: CharId;
   form: AdultForm;
-  /** Display name. Fixed cast use their canon title; residents get a personal
-   *  name (a Meadow import brings its own). */
+  /** What they are CALLED — a personal name, for everybody, institutions
+   *  included (registers in content/names.ts). What they ARE is `form`, and its
+   *  canon title lives in canon/forms.ts.
+   *
+   *  These used to be the same string for five of the seven counters: the
+   *  villager at the desk was named "Tired Office Creature". That made the
+   *  town's own doctrine false where it was easiest to notice — "forms are
+   *  species, not singletons" cannot survive the shopkeeper being named after
+   *  her species, because it leaves a second Menace with nothing to be called.
+   *  A Meadow import still brings its own name, unchanged. */
   name: string;
   /** Fixed cast are institutions and don't wander far; residents walk a ring. */
   fixed: boolean;
@@ -122,6 +135,16 @@ export interface CharDef {
    *  not staying. Present tense and about WHERE, never about who: naming what
    *  they are would be the UI doing the discovering for you. */
   subtitle?: string;
+  /** What the town calls somebody whose name it hasn't earned yet — set only on
+   *  the Quiet Ghost, and the whole of how a secret gets named.
+   *
+   *  `name` is Eloise from the first frame; this is what the UI shows until you
+   *  are `close` to her (sim/friendship.ts `displayName`). A secret that
+   *  introduces itself on contact is a label, and a name you were told is worth
+   *  more than a name you were shown (CLAUDE.md §Tone: secrets are never spoiled
+   *  by UI). Nobody else has one, and nobody else should — the institutions
+   *  print their names on the counter, which is what an institution is. */
+  unknownAs?: string;
 }
 
 /** Where a resident stands when they have no bed to go to: the middle of the
@@ -141,7 +164,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
   office: {
     id: "office",
     form: "office",
-    name: "Tired Office Creature",
+    name: "Gary",
     fixed: true,
     // It does not leave the desk. The desk is the whole personality.
     //
@@ -154,39 +177,48 @@ export const CAST: Record<AuthoredId, CharDef> = {
   shop: {
     id: "shop",
     form: "menace",
-    name: "Fancy Little Menace",
+    name: "Arabella",
     fixed: true,
-    // Behind the counter, permanently. Like the Office Creature she is an
+    // Behind the counter, permanently. Like Gary she is an
     // INSTITUTION rather than a resident: no bed, no ring, no home stop.
     //
-    // She is a menace and so is Bissenette, the first arrival, and that is
-    // allowed — "forms are species, not singletons" (DESIGN §Importing). The
-    // museum curator will be a specific scholar while Margfrom is just a
-    // scholar who lives here; this is the same shape.
+    // She is a menace and so is Archibald, the first arrival, and that is
+    // allowed — "forms are species, not singletons" (DESIGN §Importing). Since
+    // the naming pass it is also SAYABLE: Arabella is a person and the Fancy
+    // Little Menace is her form, where before the shopkeeper's name simply was
+    // her species and there was nothing left for Archibald to be called.
+    // Winifred keeps the museum while Prudence is just a scholar who lives
+    // here; same shape, two floors down.
     schedule: [{ fromHour: 0, x: 9, y: -2, doing: "behind the counter" }],
   },
   heap: {
     id: "heap",
     form: "gremlin",
-    name: "Gremlin",
+    name: "Nub",
     fixed: true,
     // At the heap, north-east of the plaza. An INSTITUTION like the other two:
     // no bed, no ring, no home stop — whatever he does at night, he does here.
     //
-    // He is a gremlin and so is the fourth arrival in content/arrivals.ts, on
-    // the same footing as the two Menaces: forms are species, not singletons
-    // (DESIGN §Importing). This one is the facility.
+    // He is a gremlin and so is Snag, the fourth arrival, on the same footing
+    // as the two Menaces: forms are species, not singletons (DESIGN
+    // §Importing). This one is the facility.
     schedule: [{ fromHour: 0, x: 8, y: -8, doing: "at the facility" }],
   },
   museum: {
     id: "museum",
     form: "scholar",
-    name: "Corrigal",
+    name: "Winifred",
     fixed: true,
-    // A NAMED scholar, where Margfrom is a scholar who happens to live here.
-    // That is the whole shape DESIGN §The museum insists on — forms are species,
-    // not singletons — and it is the same relationship the Menace has with
-    // Bissenette. Two scholars in one town is not a collision; it is the point.
+    // The curator, where Prudence is a scholar who happens to live here. That
+    // is the whole shape DESIGN §The museum insists on — forms are species, not
+    // singletons — and it is the same relationship Arabella has with Archibald.
+    // Two scholars in one town is not a collision; it is the point.
+    //
+    // She was Corrigal until the naming pass, which reopened a decision ROADMAP
+    // had recorded as settled. Deliberately: the pass gave every institution a
+    // personal name, and a roster where one scholar is Corrigal and the rest are
+    // Winifred and Prudence has two naming schemes in it. Corrigal is still in
+    // the scholar register (content/names.ts) and can move in later.
     //
     // An INSTITUTION like the other three: no bed, no ring, no home stop. She
     // is beside the desk rather than behind it, because the museum is the
@@ -196,7 +228,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
   seedstall: {
     id: "seedstall",
     form: "carrot",
-    name: "Blessed Carrot",
+    name: "Derek",
     fixed: true,
     // Behind his counter, south-west of the plaza. An INSTITUTION like the
     // other four: no bed, no ring, no home stop.
@@ -218,7 +250,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
   errands: {
     id: "errands",
     form: "dog",
-    name: "Loyal Dog Thing",
+    name: "Pesto",
     fixed: true,
     // THE ONE INSTITUTION THAT MOVES, and the only reason to break the pattern
     // the other five keep: his institution is DELIVERIES (DESIGN's cast table),
@@ -228,7 +260,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // It costs nothing to do this. Positions are clock-derived (`scheduledStop`
     // walks the ring and asks what hour it is), so a ring is a table of stops
     // and not a tick, no schema, no state, no catch-up after an absence — the
-    // same property that lets Margfrom have a day.
+    // same property that lets Prudence have a day.
     //
     // He starts and ends at the board, which is the part that matters for the
     // board being usable: the two times you are most likely to be in the plaza
@@ -256,7 +288,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
   stage: {
     id: "stage",
     form: "blob",
-    name: "Dramatic Blob",
+    name: "Aurelio",
     fixed: true,
     // The last institution. He does not leave the platform, which for a
     // tragedian is not devotion so much as the absence of anywhere better to
@@ -278,7 +310,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
   resident1: {
     id: "resident1",
     form: "scholar",
-    name: "Margfrom",
+    name: "Prudence",
     fixed: false,
     // A real day: fieldwork in the morning, out by your plot after lunch,
     // back to the plaza for the evening, home once it's properly dark.
@@ -345,7 +377,7 @@ const NEWCOMER_RINGS: ScheduleStop[][] = [
  *  and he is emphatically not in the town.
  *
  *  `fixed: true` in the institutional sense and in no other: he does not walk a
- *  ring, and the same early return that keeps the Office Creature at his desk
+ *  ring, and the same early return that keeps Gary at his desk
  *  keeps the Mole in his chamber. He is also not protected by it — sink a shaft
  *  above him and his ground is shallow, and the answer to that is a line, not a
  *  rule (DESIGN §"The Mole, specifically").
@@ -355,7 +387,7 @@ const NEWCOMER_RINGS: ScheduleStop[][] = [
 export const MOLE: CharDef = {
   id: "mole",
   form: "mole",
-  name: "Maverick Mole",
+  name: "Malcolm",
   fixed: true,
   schedule: [{ fromHour: 0, at: "warren", x: 0, y: 0, doing: "down here" }],
   subtitle: "Underground",
@@ -373,7 +405,11 @@ export const MOLE: CharDef = {
 export const GHOST: CharDef = {
   id: "ghost",
   form: "ghost",
-  name: "Quiet Ghost",
+  name: "Eloise",
+  // The only `unknownAs` in the game. She is "Quiet Ghost" in the panel until
+  // you are close to her, and then she is Eloise — the name is the milestone,
+  // and it is the only friendship milestone in the game you can point at.
+  unknownAs: "Quiet Ghost",
   fixed: true,
   schedule: [{ fromHour: 0, at: "grove", x: 0, y: 0, doing: "among the dark trees" }],
   subtitle: "Out past the woods",
@@ -387,7 +423,7 @@ export const GHOST: CharDef = {
 export const COSMOS: CharDef = {
   id: "cosmos",
   form: "cosmos",
-  name: "Stray Cosmos",
+  name: "Sidra",
   fixed: true,
   schedule: [{ fromHour: 0, at: "homestead", x: 0, y: 0, doing: "passing through" }],
   subtitle: "Not from here",
@@ -434,7 +470,7 @@ export function charDef(v: { id: CharId; name: string; form: AdultForm; fixed: b
  *  The FIXED CAST are exempt, and it is worth being explicit that this is not a
  *  belt-and-braces guard: `tickVillager` returns early on `def.fixed` so they
  *  would not walk anywhere regardless, but `currentActivity` reads this too,
- *  and an Office Creature reported as "at the festival" while sitting at his
+ *  and Gary reported as "at the festival" while sitting at his
  *  desk with the door shut would be the game saying something untrue about him.
  *  The counters stay open through the party; a shop that shut so you could
  *  attend would be a deadline in a party hat. */
@@ -452,12 +488,11 @@ export function scheduledStop(def: CharDef, now: number): ScheduleStop {
 }
 
 // --- The full cast, now complete ----------------------------------------------
-// DESIGN's institution table is all seven: the Office Creature's town hall, the
-// Menace's shop, Corrigal's museum, the Blessed Carrot's seed stall, the Dog
-// Thing's errands board, the Gremlin's junk economy, and the Dramatic Blob's
-// plaza stage. This comment used to list the ones that didn't exist yet;
-// nothing is left on it.
+// DESIGN's institution table is all seven: Gary's town hall, Arabella's shop,
+// Winifred's museum, Derek's seed stall, Pesto's errands board, Nub's junk
+// economy, and Aurelio's plaza stage. This comment used to list the ones that
+// didn't exist yet; nothing is left on it.
 //
-// Secrets (Quiet Ghost at real-clock night, Stray Cosmos, Humming Cube
-// landmark, Maverick Mole underground) stay unlisted in any UI — discovery is
+// Secrets (Eloise at real-clock night, Sidra, the Humming Cube landmark,
+// Malcolm underground) stay unlisted in any UI — discovery is
 // the signature, and none of them belongs in this table.

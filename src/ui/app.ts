@@ -39,7 +39,7 @@ import { count } from "../sim/inventory";
 import { beginStroke, captureCell, endStroke, undoStroke, canUndo, undoLabel } from "../sim/undo";
 import { qualify, assign, beds, rehomeAcrossStroke, bedKeys, pendingRehome, DISQUALIFIER_TEXT } from "../sim/assign";
 import type { CharId, NewcomerId } from "../content/cast";
-import { isNewcomer, isSecret, charDef } from "../content/cast";
+import { isNewcomer, isSecret, charDef, CAST } from "../content/cast";
 import { present } from "../sim/presence";
 import { humLevel } from "../sim/hum";
 import {
@@ -615,7 +615,10 @@ export class App {
       };
       render();
 
-      return panel("Fancy Little Menace", "The Counter", [
+      // Name from the table, institution in the subtitle — the counter is what
+      // makes her an institution, so it is the counter that should say so. The
+      // five panels here all used to print a species where a name goes.
+      return panel(CAST.shop.name, "The Counter", [
         el("p", {}, ["Cloth. ... You can't grow it, and you certainly can't chop it down."]),
         body,
         actionRow([primaryBtn("That's all", close)]),
@@ -670,7 +673,7 @@ export class App {
         ? "That's the lot. ... You've had everything worth having. Some of it twice, from my side."
         : "You dug that up. ... Fine. I can do something with it. Probably.";
 
-      return panel("Gremlin", "The Facility", [
+      return panel(CAST.heap.name, "The Facility", [
         el("p", {}, [opener]),
         body,
         actionRow([primaryBtn("Right", close)]),
@@ -749,7 +752,7 @@ export class App {
       };
       render();
 
-      return panel("Blessed Carrot", "The Seed Stall", [
+      return panel(CAST.seedstall.name, "The Seed Stall", [
         el("p", {}, [varietiesExhausted(world) ? STALL_EXHAUSTED : STALL_OPENER]),
         body,
         actionRow([primaryBtn("Thank you", close)]),
@@ -889,7 +892,7 @@ export class App {
       };
 
       counter();
-      return panel("Corrigal", "The Museum", [body]);
+      return panel(CAST.museum.name, "The Museum", [body]);
     }, { dismissable: true });
   }
 
@@ -990,7 +993,7 @@ export class App {
       // a list of notices.
       const thanked = (line: string) => {
         body.replaceChildren(
-          el("div", { class: "who" }, ["Loyal Dog Thing"]),
+          el("div", { class: "who" }, [CAST.errands.name]),
           el("p", {}, [line]),
           actionRow([primaryBtn("...", draw)]),
         );
@@ -1073,7 +1076,7 @@ export class App {
       }
 
       body.append(actionRow([primaryBtn("...", close)]));
-      return panel("Dramatic Blob", "The Plaza Stage", [body]);
+      return panel(CAST.stage.name, "The Plaza Stage", [body]);
     }, { dismissable: true });
   }
 
@@ -1189,7 +1192,7 @@ export class App {
     const theirLine = (delight && homeLineFor(resident!.form, delight, this.rng)) || def.housedLine;
     this.openModal(
       (close) =>
-        panel("Tired Office Creature", "Town hall", [
+        panel(CAST.office.name, "Town hall", [
           el("p", {}, [`Form 9, discharged. ... ${who} lives at an address now.`]),
           el("p", { class: "quote" }, [`"${theirLine}"`]),
           ...(unlocked
