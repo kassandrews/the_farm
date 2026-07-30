@@ -114,6 +114,43 @@ const MONOCLE = { overlay: { rows: GLASSES_MONOCLE, palette: { w: LENS } } };
  *  problem again, and this form has no horns to give it an edge. */
 const OXBLOOD = { fill: "#9c5f66", shade: "#7a4650" };
 
+// --- Ties ---------------------------------------------------------------------
+// The Office Creature's canon `T` is two pixels under the left eye, in a grey a
+// shade off the body. At 16px that is a smudge, not a tie — which is fine when
+// it's the only one in the world and useless as the single thing telling six
+// people apart. A tie look recolours those two pixels AND adds a third below,
+// which is the shortest line that still reads as hanging.
+
+/** The Office Creature's canon eye-bags, which any overlay here must carry —
+ *  a look replaces the body's overlay outright, and the bags are the whole
+ *  reason the form is called Tired. */
+const EYE_BAGS = "....bb....bb....";
+const BAG_GREY = "#6f6a80";
+
+/** One tie: the canon two pixels recoloured, plus a third row of it. */
+function tie(colour: string) {
+  return {
+    extra: { T: colour },
+    overlay: {
+      rows: [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        EYE_BAGS,
+        "................",
+        "................",
+        ".....t..........",
+      ],
+      palette: { b: BAG_GREY, t: colour },
+    },
+  };
+}
+
 // --- Teeth --------------------------------------------------------------------
 // The gremlin's canon overlay is two fangs at cols 6 and 8, hanging under a
 // mouth that runs cols 6–8. These are the same row redrawn: one fang, three
@@ -265,14 +302,25 @@ export const LOOKS: Record<AdultForm, LookDef[]> = {
     { id: "oxblood-monocle", ...OXBLOOD, ...MONOCLE },
   ],
 
+  // ONE BODY. EVERYONE. The tie is the entire difference, and that is the joke
+  // stated precisely rather than gestured at: a form whose individuals can only
+  // be told apart by neckwear. The previous list hedged — three near-identical
+  // greiges AND three ties — which made it merely hard to tell them apart, and
+  // "hard to tell apart" is the clone bug with a punchline written on it. A joke
+  // that relies on you not being able to check isn't landing, it's hiding.
+  //
+  // So the ties had to become legible. Canon paints two pixels of `T` under the
+  // left eye; each look carries them one row further down and in a colour with
+  // some blood in it. The overlay REPLACES the body's, so every row here redraws
+  // the tired eye-bags too — dropping those to gain a tie would trade the form's
+  // one canon joke for this file's.
   office: [
     CANON,
-    { id: "beige", fill: "#cdc3ac", shade: "#a49a84" },
-    { id: "blue-grey", fill: "#aebbc8", shade: "#8794a2" },
-    { id: "taupe", fill: "#bdb0aa", shade: "#948780" },
-    { id: "maroon-tie", extra: { T: "#8a5a5a" } },
-    { id: "navy-tie", extra: { T: "#4a6a8a" } },
-    { id: "olive-tie", extra: { T: "#6a7a5a" } },
+    { id: "maroon-tie", ...tie("#9c4a4a") },
+    { id: "navy-tie", ...tie("#3f5a8a") },
+    { id: "olive-tie", ...tie("#6a7a3a") },
+    { id: "mustard-tie", ...tie("#b08a30") },
+    { id: "teal-tie", ...tie("#3f7a76") },
   ],
 
   menace: [
