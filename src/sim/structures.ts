@@ -15,7 +15,7 @@ import type { WorldState, BuildCell } from "./types";
 import type { StructureId } from "../content/structures";
 import { structureDef, joinsWallRun } from "../content/structures";
 import type { SkinId } from "../content/skins";
-import { tileAt, tileKey, isWalkable } from "./world";
+import { tileAt, tileKey, isWalkable, refusesConstruction } from "./world";
 import { tileDef } from "../content/tiles";
 
 /** What's standing on this tile, or null for open ground. */
@@ -68,6 +68,7 @@ export function touchBuild(world: WorldState): void {
 export function canPlaceStructure(world: WorldState, x: number, y: number): boolean {
   if (tileDef(tileAt(world, x, y)).solid) return false;
   if (world.crops[tileKey(x, y)]) return false;
+  if (refusesConstruction(world, x, y)) return false; // her trees' ground
   return true;
 }
 

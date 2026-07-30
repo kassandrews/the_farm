@@ -19,6 +19,7 @@ import {
   fillShaft,
   canCarve,
   placePlank,
+  refusesConstruction,
   isWalkable,
   tileAt,
   setTile,
@@ -775,6 +776,19 @@ export function buildAt(
       return { changed: true, message: "Board lifted.", broke: false };
     }
     return { changed: false, message: "Nothing built here.", broke: false };
+  }
+
+  // Ground that won't take construction, said BEFORE the price. The three
+  // placement gates all refuse this ground on their own (see
+  // world.refusesConstruction), so this line isn't the rule — it's the rule
+  // being audible. Without it you'd get "Can't put a wall there", which is what
+  // we say about a rock, and a player would keep trying.
+  //
+  // Checked ahead of affordability on purpose: being told what you'd need to
+  // buy, for ground that will never accept it at any price, is a worse answer
+  // than the truth.
+  if (refusesConstruction(world, x, y, layer)) {
+    return { changed: false, message: "Not on this ground. ... The dark trees were here first.", broke: false };
   }
 
   const cost = buildCost(tool);

@@ -1,9 +1,19 @@
 import { describe, it, expect } from "vitest";
-import { newWorld, tick, contextAction } from "./game";
+import { newWorld, tick, contextAction, buildAt } from "./game";
 import { migrateSave } from "./save";
 import { meetGhost, ghostMet, ghost, groveCut } from "./ghost";
-import { groveCentre, cubeSite, inGrove, tileAt, setTile, isWalkable } from "./world";
-import { DARK_TREE, GRASS, WATER, HUM_CUBE } from "../content/tiles";
+import {
+  groveCentre,
+  cubeSite,
+  inGrove,
+  inGroveClearing,
+  refusesConstruction,
+  tileAt,
+  setTile,
+  tileKey,
+  isWalkable,
+} from "./world";
+import { DARK_TREE, DIRT, GRASS, WATER, HUM_CUBE } from "../content/tiles";
 import { nodeAt } from "./gather";
 import { speak } from "./dialogue";
 import { makeRng } from "./rng";
@@ -364,5 +374,125 @@ describe("she does not witness what she cannot see", () => {
 
     expect(g.memory.some((m) => m.kind === "gathered")).toBe(true);
     expect(g.friendship).toBeGreaterThan(0);
+  });
+});
+
+/** The grove has to survive the town REACHING it.
+ *
+ *  Every secret out here is sited by distance from the origin on the assumption
+ *  the town stays put. Once it can grow outward, a successful town eventually
+ *  arrives at its own grove, and a Ghost standing in a finished suburb is not a
+ *  thing we want to have built.
+ *
+ *  What's refused is construction and only construction — see
+ *  world.refusesConstruction for why felling was never the threat. */
+describe("her trees' ground takes no construction", () => {
+  /** A cell carrying one of her trees. Searched rather than hardcoded: the grove's
+   *  bearing is seeded and its disc is hashed, so any fixed offset is a coin
+   *  flip. */
+  function groveTree(w: ReturnType<typeof freshWorld>) {
+    const c = groveCentre(w.seed, w.homestead.spot);
+    for (let dy = -GROVE_SPAN; dy <= GROVE_SPAN; dy++) {
+      for (let dx = -GROVE_SPAN; dx <= GROVE_SPAN; dx++) {
+        const x = c.x + dx;
+        const y = c.y + dy;
+        if (inGrove(w.seed, w.homestead.spot, x, y)) return { x, y };
+      }
+    }
+    throw new Error("no dark tree found — the grove generator has changed");
+  }
+
+  const GROVE_SPAN = 7;
+
+  /** All three placement paths, on FELLED ground.
+   *
+   *  It has to be felled ground or the test proves nothing: a standing dark tree
+   *  is solid, so every gate already refuses it on solidity and the assertions
+   *  pass with this whole feature removed. Checked by disabling the predicate and
+   *  watching them stay green. What's under test is bare grove ground. */
+  it("refuses a wall, a board and a piece of furniture alike", () => {
+    const w = freshWorld();
+    const { x, y } = groveTree(w);
+    setTile(w, x, y, DIRT); // as felling leaves it
+    // Stocked, so a refusal can never be mistaken for an empty satchel.
+    w.inventory.wood = 999;
+    w.inventory.stone = 999;
+
+    for (const tool of ["wall", "plank", "chair"] as const) {
+      const res = buildAt(w, tool, x, y, NOON);
+      expect(res.changed).toBe(false);
+      expect(w.build[tileKey(x, y)]).toBeUndefined();
+      expect(w.furniture[tileKey(x, y)]).toBeUndefined();
+      expect(tileAt(w, x, y)).toBe(DIRT); // no board went down
+    }
+    // And it cost nothing — a refusal that charged you would be worse than a
+    // refusal (DESIGN §Materials: slowed, never ground down).
+    expect(w.inventory.wood).toBe(999);
+  });
+
+  it("says which ground it is, before mentioning a price", () => {
+    const w = freshWorld();
+    const { x, y } = groveTree(w);
+    w.inventory.wood = 0; // broke, deliberately
+    const res = buildAt(w, "wall", x, y, NOON);
+    expect(res.changed).toBe(false);
+    // Not "you'd need wood": the ground will not take it at any price, and
+    // quoting a price for it would send the player off to fetch some.
+    expect(res.broke).toBe(false);
+    expect(res.message?.toLowerCase()).toContain("ground");
+    // And it stays a secret. The line is about trees, not about her.
+    expect(res.message?.toLowerCase()).not.toContain("ghost");
+    expect(res.message?.toLowerCase()).not.toContain("walnut");
+  });
+
+  /** THE CRUX. Felling is allowed and the wood is the payout, so the obvious way
+   *  to pave the grove is to chop it first — and after felling, the cell is
+   *  ordinary dirt. The refusal follows the GENERATOR, not the current tile, so
+   *  clearing her trees buys you bare ground and not a building plot. It grows
+   *  back in eight hours regardless. */
+  it("still refuses after you have felled the tree standing on it", () => {
+    const w = freshWorld();
+    const { x, y } = groveTree(w);
+    setTile(w, x, y, DIRT); // as felling leaves it
+    expect(tileAt(w, x, y)).toBe(DIRT);
+    w.inventory.wood = 999;
+    expect(buildAt(w, "plank", x, y, NOON).changed).toBe(false);
+    expect(tileAt(w, x, y)).toBe(DIRT);
+  });
+
+  /** The clearing is the exception, and on purpose: it is "the room she stands in
+   *  and the room you arrive into". Somebody who walks forty-four tiles and puts
+   *  a house in it has earned her as a neighbour. */
+  it("lets you build in the clearing at the heart of it", () => {
+    const w = freshWorld();
+    const c = groveCentre(w.seed, w.homestead.spot);
+    expect(inGroveClearing(w.seed, w.homestead.spot, c.x, c.y)).toBe(true);
+    w.inventory.wood = 999;
+    const res = buildAt(w, "plank", c.x, c.y, NOON);
+    expect(res.changed).toBe(true);
+  });
+
+  /** The rock under the grove is just rock. Scoping the refusal to the surface is
+   *  what keeps a tunnel that happens to pass beneath her a tunnel. */
+  it("has no opinion about the layer underneath", () => {
+    const w = freshWorld();
+    const { x, y } = groveTree(w);
+    expect(refusesConstruction(w, x, y, "under")).toBe(false);
+    expect(refusesConstruction(w, x, y, "surface")).toBe(true);
+  });
+
+  /** Scoped to her trees' cells, not to a radius. The stand has a soft hashed
+   *  edge; a circular no-build zone would give it a hard one the art doesn't
+   *  have, and players find that seam by dragging a wall across it. */
+  it("refuses exactly the cells that carry her trees", () => {
+    const w = freshWorld();
+    const c = groveCentre(w.seed, w.homestead.spot);
+    for (let dy = -GROVE_SPAN; dy <= GROVE_SPAN; dy++) {
+      for (let dx = -GROVE_SPAN; dx <= GROVE_SPAN; dx++) {
+        const x = c.x + dx;
+        const y = c.y + dy;
+        expect(refusesConstruction(w, x, y)).toBe(inGrove(w.seed, w.homestead.spot, x, y));
+      }
+    }
   });
 });

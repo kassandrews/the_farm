@@ -442,6 +442,44 @@ export function inGrove(seed: number, spot: HomesteadSpot, x: number, y: number)
   return hash2(x, y, seed ^ 0x0a17) / 4294967296 < GROVE_DENSITY * falloff;
 }
 
+/** Ground that will not take construction — a wall, a board, a piece of
+ *  furniture. Her trees' ground, and only that.
+ *
+ *  WHY THIS EXISTS. Every secret out here is sited by distance from the origin
+ *  (Mole 30, grove 44, cube 58) on the assumption that the town stays put. Once
+ *  the town can grow outward, a successful one eventually arrives at its own
+ *  grove, and the Quiet Ghost standing in a finished suburb is not a thing we
+ *  want to have built.
+ *
+ *  WHY IT ISN'T "THE TREES DON'T FELL". Felling was never the threat: a dark
+ *  tree drops wood, pays out `walnut` — "the place pays out, not a person"
+ *  (sim/ghost.test.ts) — and grows back in eight hours like any other tree, so
+ *  the stand heals itself while you're away. Making it unfellable would have
+ *  deleted a finish, and asymmetrically: saves that already had walnut would
+ *  keep it while new towns never could. CONSTRUCTION is the threat, because a
+ *  wall is a stored edit and no edit ever grows back.
+ *
+ *  It follows `inGrove`, which is a hashed disc with a soft edge, rather than a
+ *  radius of its own. A circular no-build zone would give the stand a hard edge
+ *  that the art doesn't have, and the seam is exactly the kind of thing a player
+ *  finds by dragging a wall across it.
+ *
+ *  What it does NOT refuse, deliberately: digging, tilling, planting, sinking a
+ *  shaft, or building in the CLEARING. The clearing is "the room she stands in
+ *  and the room you arrive into" — somebody who walks forty-four tiles and puts
+ *  a house in it has earned the Ghost as a neighbour, and that is a better story
+ *  than anything we'd be protecting them from. What's refused is paving over her
+ *  trees, and only on the surface: the rock under the grove is just rock. */
+export function refusesConstruction(
+  world: WorldState,
+  x: number,
+  y: number,
+  layer: Layer = "surface",
+): boolean {
+  if (layer === "under") return false;
+  return inGrove(world.seed, world.homestead.spot, x, y);
+}
+
 /** Is this the open ground at the middle of the grove? Nothing grows here —
  *  neither her trees nor ordinary ones — because it is the room she stands in
  *  and the room you arrive into. */
@@ -621,6 +659,7 @@ export function placePlank(world: WorldState, x: number, y: number): boolean {
   const t = tileAt(world, x, y);
   if (tileDef(t).solid) return false;
   if (world.crops[tileKey(x, y)]) return false; // don't pave over a plant
+  if (refusesConstruction(world, x, y)) return false; // nor over her trees
   setTile(world, x, y, 2 /* PLANK */);
   return true;
 }
