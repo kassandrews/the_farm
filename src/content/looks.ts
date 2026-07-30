@@ -299,13 +299,25 @@ export const LOOKS: Record<AdultForm, LookDef[]> = {
     { id: "teal-tie", ...tie("#3f7a76") },
   ],
 
+  // AN ENSEMBLE, NOT A TINT. The canon Menace is not "a pink creature" — it is
+  // pink body, gold crown, cream lace (`y` and `w`), and the three of them
+  // together are what reads as fancy. Swapping only the body keeps the crown and
+  // loses the outfit: a mint creature in a gold crown is a pastel blob wearing a
+  // hat. The old `gold-cream` row was the proof — a gold body under a gold crown
+  // deletes the fanciest thing about the form.
+  //
+  // So the crown moves with the body, the way the dog's ears do, and each row is
+  // a body and its METAL chosen together. The lace stays cream throughout: lace
+  // is cream, and one fixed element is what makes the rest read as a choice.
   menace: [
     CANON,
-    { id: "mint", fill: "#9fdcc4", shade: "#71ae98" },
-    { id: "gold-cream", fill: "#f0d79b", shade: "#c2a86f" },
-    { id: "periwinkle", fill: "#aab4ea", shade: "#7f8ac0" },
-    { id: "silver-crown", extra: { y: "#d8dce4" } },
-    { id: "pearl-crown", extra: { y: "#f6efe2" } },
+    { id: "blush-pearl", fill: "#f3cdd6", shade: "#cba3ae", extra: { y: "#efe4cf" } },
+    { id: "mauve-gold", fill: "#b795c4", shade: "#8f6f9c", extra: { y: "#f5d572" } },
+    { id: "wine-silver", fill: "#b06a7d", shade: "#8a4f60", extra: { y: "#d8dce4" } },
+    { id: "cream-rose-gold", fill: "#f0dfd0", shade: "#c9b6a6", extra: { y: "#e0a48a" } },
+    // The one cool body in the list, and it takes gold rather than silver:
+    // metal has to contrast with the body or the crown stops being jewellery.
+    { id: "ice-gold", fill: "#c3cfdd", shade: "#98a5b6", extra: { y: "#f5d572" } },
   ],
 
   // --- One of each ---------------------------------------------------------
