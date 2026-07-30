@@ -32,80 +32,96 @@ import type { HomesteadSpot } from "./types";
 const SPOTS: HomesteadSpot[] = ["riverside", "forest", "hilltop"];
 
 describe("the sea is finite", () => {
-  it("has a far shore due west of a riverside town", () => {
-    // THE HEADLINE. The old sea was `x <= -13 is water, at every y, forever`, so
-    // this walk never ended. Walking straight out of town to the west must reach
-    // water, and then reach land again.
-    // Measured against the SEA's westernmost water, not against the last water
-    // of any kind. The first version counted dry tiles after the last WATER it
-    // saw, which rivers quietly broke: one crossing the line at x = -390 reset
-    // the counter and the test reported eight tiles of far shore for a sea that
-    // ends at -206. The bug was in the ruler, not the world.
-    for (let seed = 1; seed <= 60; seed++) {
-      let farthest = 0;
-      for (let x = 0; x > -400; x--) {
-        if (generatedTile(seed, "riverside", x, 0) === WATER && waterKindAt(seed, "riverside", x, 0) === "sea") {
-          farthest = x;
-        }
+  /** Every run of sea water along a ray, in tiles. The ruler both of the tests
+   *  below want: one asks whether the runs are BOUNDED, the other whether there
+   *  is more than one of them.
+   *
+   *  It counts the sea's own tiles and nothing else, which is the lesson three
+   *  earlier versions of this file paid for — measuring the world AROUND a sea
+   *  keeps being answered by whatever other water happens to be nearby. */
+  function seaRuns(seed: number, spot: HomesteadSpot, dx: number, dy: number, reach: number) {
+    const runs: number[] = [];
+    let run = 0;
+    for (let i = 0; i < reach; i++) {
+      const x = Math.round(dx * i);
+      const y = Math.round(dy * i);
+      // The sea's whole footprint, sand and shallows included, not just its deep
+      // middle. "I reached the ocean" is the event both tests are about, and a
+      // ray that clips a body near its rim never touches the shelf at all.
+      const wet = waterKindAt(seed, spot, x, y) === "sea";
+      if (wet) run++;
+      else if (run > 0) {
+        runs.push(run);
+        run = 0;
       }
-      expect(farthest).toBeLessThan(0); // riverside still has its sea
+    }
+    if (run > 0) runs.push(run); // still wet at the end of the scan: unbounded
+    return runs;
+  }
 
-      // And past it, ground — a real stretch of it, not one lucky tile of coast.
-      // THE SEA'S OWN WIDTH, which is the thing this test is named after and the
-      // only ruler that survived. Three earlier attempts all measured the world
-      // AROUND the sea instead, and the world kept turning out to have other
-      // water in it: first a river far west reset a "dry tiles since water"
-      // counter, then the sea's own shelf was mistaken for not-far-shore, then a
-      // lake happened to sit just past the far beach and ate the dry window.
-      //
-      // None of those were bugs. Counting the sea's own tiles asks the question
-      // directly — is this body bounded — and cannot be answered by anything
-      // else that happens to be nearby.
-      let width = 0;
-      for (let x = 0; x > -400; x--) {
-        if (generatedTile(seed, "riverside", x, 0) === WATER && waterKindAt(seed, "riverside", x, 0) === "sea") {
-          width++;
-        }
+  it("recurs throughout the world, rather than being one ocean on a plain", () => {
+    // THE HEADLINE, and the second time this file has had to move it. The first
+    // sea was `x <= -13 is water, at every y, forever` — a wall through an
+    // infinite world. Making it finite fixed the wall and left the other half of
+    // the same bug: ONE ocean, on an endless dry plain, so walking far enough in
+    // any direction meant water never happening again.
+    //
+    // A world with exactly one of something is a diorama. So: walk far enough
+    // and you must meet several distinct seas.
+    //
+    // THE SCAN IS LONG BECAUSE THE VARIANCE IS HUGE, and every shorter version of
+    // this test was measuring the ray rather than the world. Seas are scattered,
+    // not spaced, so a bearing can thread between them for thousands of tiles by
+    // luck: on six thousand tiles seed 1 meets one sea and seed 9 meets fourteen,
+    // and there is nothing wrong with seed 1. Twenty thousand tiles on two
+    // bearings is where the answer stops depending on which line you walked —
+    // every seed meets at least six, and the floor here has room under it.
+    for (let seed = 1; seed <= 10; seed++) {
+      let met = 0;
+      for (let a = 0; a < 2; a++) {
+        const th = (a / 2) * Math.PI * 2;
+        met += seaRuns(seed, "forest", Math.cos(th), Math.sin(th), 20000).length;
       }
-      // Radius 90, so about 180 across the middle, less on a chord. Bounded well
-      // under the 400 the scan reaches, which is the whole point.
-      expect(width).toBeGreaterThan(80);
-      expect(width).toBeLessThan(230);
-
-      // And there is dry ground past it to stand on.
-      let dry = 0;
-      for (let x = farthest - 1; x >= farthest - 60; x--) {
-        const t = generatedTile(seed, "riverside", x, 0);
-        if (t !== WATER && t !== SHALLOW) dry++;
-      }
-      expect(dry).toBeGreaterThan(10);
+      expect(met).toBeGreaterThan(3);
     }
   });
 
-  it("is bounded in every direction, on every spot", () => {
-    // Not just west. A ring right around the outside of the world, past
-    // anywhere the sea can reach, must not be sea.
+  it("has a far shore on every ray, on every spot", () => {
+    // THE OTHER HALF, and the one that must survive the scatter. Every sea is
+    // still a body you can get round: no single crossing may run on and on.
     //
-    // It asks about the KIND rather than the tile, and it has to: rivers are
-    // deep too, and they run forever, so "no deep water out here" stopped being
-    // true the day rivers arrived and would have made this test a liar about
-    // the thing it is actually guarding.
+    // Stated as a bound on RUN LENGTH rather than as "no sea past radius N",
+    // which is what it used to say and what the scatter makes meaningless —
+    // there is sea past every radius now, and that is the feature. The question
+    // was never "is the water far away", it is "does this body end".
+    //
+    // A chord of the widest sea is at most 2 × (140 + its wobble + its beach),
+    // and a scan can clip two seas that happen to touch, so the ceiling is
+    // doubled again. Measured longest across twenty seeds is 246, so there is a
+    // factor of two under this. What it still catches is the thing it exists
+    // for: a run that never ends.
+    const widest = 2 * (140 * 1.1 + 3 + 5) * 2; // two maximal seas, merged
     for (const spot of SPOTS) {
-      for (let seed = 1; seed <= 40; seed++) {
-        for (let a = 0; a < 64; a++) {
-          const th = (a / 64) * Math.PI * 2;
-          const x = Math.round(Math.cos(th) * 340);
-          const y = Math.round(Math.sin(th) * 340);
-          expect(waterKindAt(seed, spot, x, y)).not.toBe("sea");
+      for (let seed = 1; seed <= 25; seed++) {
+        for (let a = 0; a < 8; a++) {
+          const th = (a / 8) * Math.PI * 2;
+          const runs = seaRuns(seed, spot, Math.cos(th), Math.sin(th), 2500);
+          for (const run of runs) expect(run).toBeLessThan(widest);
         }
       }
     }
   });
 
   it("still puts water off the west of a riverside town, where it always was", () => {
-    // The compatibility half. A riverside player has been looking at water out
-    // of their western window since the day their town was made, and a finite
-    // sea must not have quietly moved it over the horizon.
+    // The compatibility half, and it now means something different than it did.
+    // A riverside player has been looking at water out of their western window
+    // since the day their town was made. That water used to be a pinned sea —
+    // a fossil of the era when the ocean was the whole western half-plane, which
+    // is also the era the spot got its name in. The scatter removed the pin, so
+    // the water is a RIVER now, which is what the name said all along.
+    //
+    // The promise being kept is the view, not the kind: something wet, a short
+    // walk west, on every seed.
     for (let seed = 1; seed <= 60; seed++) {
       let firstWet = 0;
       for (let x = -1; x > -80; x--) {
@@ -117,6 +133,65 @@ describe("the sea is finite", () => {
       }
       expect(firstWet).toBeLessThan(0);
       expect(firstWet).toBeGreaterThan(-45); // still a short walk, not an expedition
+    }
+  });
+
+  it("gives a riverside town an actual river, on every seed", () => {
+    // The spot is named for water it did not have. `RIVERSIDE_ANCHOR` forces one
+    // channel of the river family through the bridge row, west of the plaza, so
+    // the name is now load-bearing rather than aspirational.
+    //
+    // Asked along the bridge row because that is where the anchor sits and where
+    // `isTownBridge` builds the crossing — a river through town that villagers
+    // could not path over would be worse than no river at all.
+    for (let seed = 1; seed <= 200; seed++) {
+      let found = false;
+      for (let x = -1; x > -40 && !found; x--) {
+        if (waterKindAt(seed, "riverside", x, -1) === "river") found = true;
+      }
+      expect(found).toBe(true);
+    }
+  });
+
+  it("does not promise the other spots a river", () => {
+    // The anchor is riverside's alone. If forest and hilltop also always had a
+    // river through town, the spot would be choosing nothing — and a guarantee
+    // that applies everywhere is not a guarantee, it is terrain.
+    let withRiver = 0;
+    for (let seed = 1; seed <= 200; seed++) {
+      for (let x = -1; x > -40; x--) {
+        if (waterKindAt(seed, "forest", x, -1) === "river") {
+          withRiver++;
+          break;
+        }
+      }
+    }
+    expect(withRiver).toBeLessThan(150);
+  });
+
+  it("keeps the big water off the town's own ground entirely", () => {
+    // `TOWN_DRY`, and the bug it was written for. A hand-sited sea sat at a fixed
+    // ring and could not be anywhere else. A LATTICE has a cell over the origin
+    // exactly like it has one everywhere, so once seas were scattered, one landed
+    // on the plaza about as often as it landed anywhere — which is what "never
+    // laps the plaza" caught, on the seed where it happened.
+    //
+    // Wider than that test and about both kinds, because the plaza is not the
+    // whole town: the homestead is off to one side of it, and a lake in the
+    // vegetable patch is the same bug with a nicer view. Sand is allowed — the
+    // shore is meant to be able to come near — but standing water is not.
+    for (const spot of SPOTS) {
+      for (let seed = 1; seed <= 250; seed++) {
+        for (let y = -30; y <= 30; y += 2) {
+          for (let x = -30; x <= 30; x += 2) {
+            const k = waterKindAt(seed, spot, x, y);
+            if (k !== "sea" && k !== "lake") continue;
+            const t = generatedTile(seed, spot, x, y);
+            expect([seed, spot, x, y, t]).not.toContain(WATER);
+            expect([seed, spot, x, y, t]).not.toContain(SHALLOW);
+          }
+        }
+      }
     }
   });
 
@@ -249,10 +324,15 @@ describe("small water is fordable, and nothing had to say so", () => {
 
 describe("the shore", () => {
   it("puts sand between the land and the water", () => {
-    // Walk west out of a riverside town to the open sea and the crossing must
-    // read outward-in as sand → shallow → deep. A beach that generated INSIDE
-    // the water, or water that met grass with no shore at all, would both pass
-    // a "there is sand somewhere" test.
+    // Walk west until you reach open sea and the crossing must read outward-in
+    // as sand → shallow → deep. A beach that generated INSIDE the water, or
+    // water that met grass with no shore at all, would both pass a "there is
+    // sand somewhere" test.
+    //
+    // The scan runs to 3000 tiles because no town is promised a coast any more.
+    // A seed whose western ray never meets salt water is not a failure, it is a
+    // landlocked town, so those are SKIPPED and the count at the bottom is what
+    // keeps the skip honest.
     //
     // The SEA specifically, found by walking to the first deep tile and reading
     // backwards. Walking forwards and taking the first wet thing would keep
@@ -261,19 +341,21 @@ describe("the shore", () => {
     // continuous field often falls between two cell centres. On a stream that
     // is texture. On the sea, whose beach is three, it would be a bug.
     let clean = 0;
-    for (let seed = 1; seed <= 40; seed++) {
+    // More seeds than the 40 this used to need, because landlocked seeds are
+    // skipped now and only about half of them reach salt water going west.
+    for (let seed = 1; seed <= 150; seed++) {
       // The SEA's first deep tile, not the first deep tile of any kind — a
       // river crossing this line gets there first on plenty of seeds, and a
       // river is a different cross-section (it is allowed to arrive without
       // much of a beach, and its shallows are a rim rather than a shelf).
       let deep = 0;
-      for (let x = 0; x > -200; x--) {
+      for (let x = 0; x > -3000; x--) {
         if (generatedTile(seed, "riverside", x, 0) === WATER && waterKindAt(seed, "riverside", x, 0) === "sea") {
           deep = x;
           break;
         }
       }
-      expect(deep).toBeLessThan(0); // found the sea at all
+      if (deep === 0) continue; // landlocked to the west; nothing to say here
 
       let x = deep;
       let shallow = 0;

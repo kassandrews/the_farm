@@ -2079,7 +2079,7 @@ All three passed 838 unit tests and were obvious within a second of looking.
 - **`shafts()` scans every override.** Grows with edits, not area, so outward
   growth doesn't worsen it — but a town with a large frontier eventually will.
 
-### 5c. Water — streams, ponds, lakes, and a sea with a far side
+### 5c. Water — streams, ponds, lakes, and seas throughout the world
 
 The world had water in two forms and neither was a place. The fen's ponds were
 fine. The other was one line in `generatedTile` reading *every tile west of
@@ -2173,6 +2173,67 @@ and beach are), then counting a dry window (a lake sat just past the far beach).
 None of those were bugs in the world. The version that survived counts **the
 sea's own tiles** — it asks whether this body is bounded, which is the actual
 question, and nothing else nearby can answer it for you.
+
+**Then the seas were scattered** — a third pass, and the one that finished the
+thought the first two started.
+
+- **Finite was only half the rule; the other half is NOT SINGULAR.** Bounding the
+  sea fixed the wall through the map and left one ocean on an endless dry plain.
+  Walk far enough in any direction and water stopped happening — which is the
+  same bug (an unbounded world the water doesn't actually inhabit) seen from the
+  other side. Seas and lakes now sit on their own lattices of jittered centres,
+  which is the shape `pondDepth` had all along; one function, `scatteredDepth`,
+  serves all three at three scales.
+- **Radius became a range, and wobble became a FRACTION of it.** With one sea its
+  size was a constant nobody could perceive. With many, variety is the only thing
+  that makes a particular coast memorable. Tying the wobble to the radius settles
+  the argument `coastWarp` was having with itself — the angular harmonics are
+  already scale-free, so a 20-tile lake and a 140-tile sea are now recognisably
+  the same kind of object at different sizes, and neither needs hand-tuning.
+- **No town is promised a coast; every town is promised a lake.** Guaranteeing a
+  sea would mean bending the lattice around the origin, and a world where every
+  town is coastal is one where coastal means nothing.
+- **But the town's own ground is kept dry, and this was a real bug.** A lattice
+  has a cell over the origin exactly like it has one everywhere, so a sea landed
+  on the plaza about as often as it landed anywhere. Caught by "never laps the
+  plaza", which has been guarding that spot since the half-plane days and earned
+  its keep twice now.
+- **Riverside finally has a river.** Its water was the pinned sea — a fossil of
+  the half-plane era, which is also the era the spot got its name in. One channel
+  of the river family is now anchored through the town, in the family's own
+  warped frame so the rest of its meander is still the seed's. The bridges were
+  already generated, so the crossing came for free.
+
+**CACHE THE LANDMARK CENTRES, or the searches nest.** Every landmark centre is a
+total function of (seed, spot) computed by searching sixteen bearings, and each
+bearing asks how deep the water is. Once water became a scatter, one such
+question stopped being one `roundDepth` and became nine — and the searches
+started nesting: `biomeAt` → `blossomCentre` → sixteen bearings → `lakeDepth` →
+the town lake → sixteen more. Per tile. A town-ground test went from under a
+second to over six, which is how it was found. Memoising two scalars → a point
+is safe in the way caching usually isn't, because it is memoising arithmetic.
+
+**MEASURE THE DENSITY; DO NOT REASON ABOUT IT.** Cell size is not the distance
+between coasts. Walking a straight line you only meet a sea whose disc your path
+crosses, which for a ~100-tile body in a cell of C happens far less than once per
+cell. The first cut reasoned from a 700 cell to "a coast every two to five
+minutes" and the measured figure was a **twelve-minute mean**. A 960,000-tile
+transect settled it at 420. The arithmetic is not intuitive; re-measure.
+
+**`hash2(mx, my)` and `hash2(my, mx)` ARE THE SAME NUMBER ON THE DIAGONAL.** The
+obvious way to get a second independent value out of one hash is to swap the
+arguments, and it is wrong wherever `mx === my`: those cells put their body at
+exactly 45°, at the same fraction in both axes. One lattice line in eight had its
+bodies aligned — the grid showing through the jitter whose entire job is to hide
+it. Invisible on a 2-tile pond, which is where the line was inherited from, and
+not on a 140-tile sea. Two salts, never swapped arguments.
+
+**`scripts/shot-map.mts` exists because of this pass.** The diagonal bug, and the
+wallpaper bug before it, are both invisible from inside the game — the camera
+shows forty tiles and these are thousands wide. Far field (3000 tiles, 3/px)
+answers "is there a grain"; near field (250 tiles, 1/px) answers "does a
+coastline read as a coastline". Recolouring by water KIND is the only way to tell
+a sea from a big lake, and "where are the seas" is the first question you'll have.
 
 **Three things only the pictures could say.** Every one of them passed the tests.
 

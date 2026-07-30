@@ -476,7 +476,7 @@ function groveAngle(seed: number): number {
  *
  *  Where the dark wood is. */
 export function groveCentre(seed: number, spot: HomesteadSpot): { x: number; y: number } {
-  return onLand(seed, spot, GROVE_RING, groveAngle(seed));
+  return memoCentre("grove", seed, spot, () => onLand(seed, spot, GROVE_RING, groveAngle(seed)));
 }
 
 /** How wide the stand is. Big enough to be unmistakably a place and not a
@@ -559,7 +559,9 @@ export function inGroveClearing(
 const CUBE_RING = 58;
 
 export function cubeSite(seed: number, spot: HomesteadSpot): { x: number; y: number } {
-  return onLand(seed, spot, CUBE_RING, (hash2(5, 0, seed ^ 0x11b3) / 4294967296) * Math.PI * 2);
+  return memoCentre("cube", seed, spot, () =>
+    onLand(seed, spot, CUBE_RING, (hash2(5, 0, seed ^ 0x11b3) / 4294967296) * Math.PI * 2),
+  );
 }
 
 function isCubeSite(seed: number, spot: HomesteadSpot, x: number, y: number): boolean {
@@ -737,7 +739,9 @@ const BLOSSOM_RADIUS = 9;
  *  through `onLand` like every landmark, because an orchard standing in the sea
  *  is the day that function cost us. */
 export function blossomCentre(seed: number, spot: HomesteadSpot): { x: number; y: number } {
-  return onLand(seed, spot, BLOSSOM_RING, (hash2(6, 0, seed ^ 0x7c1d) / 4294967296) * Math.PI * 2);
+  return memoCentre("blossom", seed, spot, () =>
+    onLand(seed, spot, BLOSSOM_RING, (hash2(6, 0, seed ^ 0x7c1d) / 4294967296) * Math.PI * 2),
+  );
 }
 
 /** Which biome a tile is in.
@@ -771,47 +775,112 @@ export function biomeAt(seed: number, spot: HomesteadSpot, x: number, y: number)
 // including the sea, which is big enough to be an expedition and has a far shore
 // you can stand on (DESIGN §Water).
 //
-// A NOTE ON WHY THAT WAS SAFE TO CHANGE ON A LIVE GAME. Terrain is a pure
-// function of the seed, so editing this file does re-landscape ground nobody has
-// touched — the thing biomes.ts's `meadow` row is a standing warning about. This
-// particular change cannot hurt, and the reason is geometric rather than
-// careful: a bounded sea is a strict SUBSET of the half-plane it replaces, so no
-// existing town can lose a walkable tile. Riverside keeps its waterfront (the
-// centre is pinned so the shore lands about where it always did) and gains coast
-// north and south of it. Streams are the part that adds water where there was
-// grass; they were allowed in knowingly, at a phase where nothing is precious.
+// AND NOTHING SINGULAR ON ONE EITHER, which is the same bug wearing the other
+// hat and took longer to see. Making the sea finite fixed the wall and left one
+// ocean on an endless plain: walk far enough in any direction and the world was
+// dry forever. A body of water you cannot get around is not a place, and a world
+// with exactly one of something is not a world — it is a diorama with a horizon
+// painted on. So the sea and the lake are SCATTERED, on their own coarse grids,
+// the way the Fen's ponds already were. There is always another coast.
 
-/** How big the sea is, in tiles of radius. Walking round it is minutes at 3.4
- *  tiles/sec — a real expedition and a finite one, which is the entire brief. */
-const SEA_RADIUS = 90;
-
-/** How far the coast wanders in and out. Without it the sea is a circle, and a
- *  circle reads as a crater rather than as a coastline. */
-const SEA_WOBBLE = 8;
-
-/** How far out the sea sits for the spots that aren't riverside. Shore lands
- *  about 55 tiles from the plaza: past the blossom rows, so finding the coast is
- *  its own walk rather than something you trip over on the way to the cherries. */
-const SEA_RING = SEA_RADIUS + 55;
-
-/** Where the sea is.
+/** How far inside a scattered round body this tile is, in tiles — the deepest of
+ *  the candidates that reach it, or -Infinity where none do.
  *
- *  RIVERSIDE IS PINNED, and that is a compatibility promise rather than a
- *  flavour choice: due west, at a distance that puts the near shore around
- *  x = -26, so a town that has been looking at water out of its western window
- *  since the day it was made still is.
+ *  THE GRID IS THE POINT. Seas, lakes and ponds are the same idea at three
+ *  scales: centres on a coarse jittered lattice, hashed radius, a 3x3
+ *  neighbourhood because a body near a cell edge reaches into the next one. The
+ *  Fen's ponds got here first and for a different reason (a per-cell roll read as
+ *  lone bright SQUARES) but the shape of the answer is identical, so there is one
+ *  function and the kinds differ only in numbers — the same argument content/
+ *  water.ts makes for a river being a wide stream.
  *
- *  Nominal -26 rather than the old -13, and the 13 tiles of daylight are not
- *  slack: the wobble (8) and the coast warp (5) can both pull the shore inland
- *  at once, so the waterline reaches -13 at its most eager — which is exactly
- *  where the old hard-coded shore stood. Drawn any closer and the shallows lap
- *  the plaza, whose western edge is -5. This was -20 for an afternoon and a
- *  200-seed test found the seed where the sea arrived at the town hall. */
-function seaCentre(seed: number, spot: HomesteadSpot): { x: number; y: number } {
-  if (spot === "riverside") return { x: -(SEA_RADIUS + 26), y: 0 };
-  const a = (hash2(9, 0, seed ^ 0x5ea0) / 4294967296) * Math.PI * 2;
-  return { x: Math.round(Math.cos(a) * SEA_RING), y: Math.round(Math.sin(a) * SEA_RING) };
+ *  WHY THE BOUNDING TEST IS NOT AN OPTIMISATION. `roundDepth` costs an `atan2`, a
+ *  `hypot` and four `sin` calls, and nine candidates per body per tile across two
+ *  bodies is eighteen of those on every tile of every chunk. The cheap reject
+ *  below kills all but one or two before any trigonometry runs, which is the
+ *  difference between this being free and it being visible as a hitch when you
+ *  walk into new ground. */
+function scatteredDepth(
+  seed: number,
+  salt: number,
+  cell: number,
+  rMin: number,
+  rMax: number,
+  chance: number,
+  x: number,
+  y: number,
+  /** Candidates this returns false for are not bodies. Used to keep lakes out of
+   *  the sea and both of them off the town; see `lakeDepth` and `TOWN_DRY`. */
+  allow?: (cx: number, cy: number, r: number) => boolean,
+): number {
+  let best = -Infinity;
+  const gx = Math.floor(x / cell);
+  const gy = Math.floor(y / cell);
+  // Hoisted out of the loop: the warp is a function of the QUERY POINT and the
+  // salt, never of which candidate we are measuring against, so evaluating it
+  // nine times computed the same four sines nine times.
+  const w = coastWarp(seed, salt, x, y);
+  // The furthest a body of this kind can reach past its own centre — radius, plus
+  // the wobble the angle can add, plus the tiles the warp can move the query
+  // point. Anything beyond this cannot possibly be wet.
+  const reach = rMax + rMax * WOBBLE_FRACTION + COAST_WARP;
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const mx = gx + dx;
+      const my = gy + dy;
+      if (hash2(mx, my, seed ^ salt) / 4294967296 >= chance) continue;
+      const centre = scatterCentre(seed, salt, cell, mx, my);
+      if (Math.abs(w.x - centre.x) > reach || Math.abs(w.y - centre.y) > reach) continue;
+      const r = rMin + (hash2(mx, my, seed ^ salt ^ 0x6a3c) / 4294967296) * (rMax - rMin);
+      if (allow && !allow(centre.x, centre.y, r)) continue;
+      best = Math.max(best, roundDepth(seed, salt, centre, r, r * WOBBLE_FRACTION, w));
+    }
+  }
+  return best;
 }
+
+/** Where the body in a lattice cell sits. Jittered across the middle 60% of the
+ *  cell, so centres never land on the lattice lines — a body at an exact multiple
+ *  of `cell` would put the whole scatter on a visible grid, which is the per-cell
+ *  rule (CLAUDE.md) at the scale of an ocean.
+ *
+ *  TWO SALTS, NOT SWAPPED ARGUMENTS, and this is a bug that was found by looking.
+ *  The obvious way to get a second independent number out of one hash is to call
+ *  it with x and y the other way round — which `pondDepth` did, and which this
+ *  copied. It is wrong on the diagonal: `hash2(m, m)` and `hash2(m, m)` are the
+ *  same number, so every cell where mx === my puts its body at exactly 45° within
+ *  the cell, at the same fraction in both axes. One lattice line in eight has its
+ *  bodies aligned, which is the grid showing through the thing that exists to
+ *  hide the grid. Invisible on a 2-tile pond and not on a 140-tile sea. */
+function scatterCentre(
+  seed: number,
+  salt: number,
+  cell: number,
+  mx: number,
+  my: number,
+): { x: number; y: number } {
+  const j = seed ^ salt ^ 0x2b1f;
+  return {
+    x: (mx + 0.2 + (hash2(mx, my, j) / 4294967296) * 0.6) * cell,
+    y: (my + 0.2 + (hash2(mx, my, j ^ 0x51ed) / 4294967296) * 0.6) * cell,
+  };
+}
+
+/** How much of its own radius a body's coastline wanders in and out.
+ *
+ *  ONE FRACTION FOR EVERY BODY, and that is what makes the scatter possible at
+ *  all. The old code carried an absolute wobble per kind — 8 tiles on a sea of
+ *  90, 2 on a lake of 15 — and `coastWarp`'s docblock spends a paragraph on why
+ *  that had to be hand-tuned twice. It doesn't, once the amplitude is a
+ *  fraction: `roundDepth`'s harmonics are angular, so the SHAPE is already
+ *  scale-free (three lobes and seven, on a body of any size), and tying the
+ *  amplitude to the radius makes the whole thing scale-free with it. A 20-tile
+ *  lake and a 140-tile sea now come out recognisably the same kind of object at
+ *  different sizes, which is what they are.
+ *
+ *  Between the two numbers it replaces (8.9% and 13%), nearer the sea's, because
+ *  the sea is the body you spend longest looking at. */
+const WOBBLE_FRACTION = 0.1;
 
 /** How far the coastline frets in and out at TILE scale, and over what distance.
  *
@@ -860,17 +929,19 @@ function coastWarp(seed: number, salt: number, x: number, y: number): { x: numbe
  *  wobble hashed per tile would be a per-cell edge with a boat (CLAUDE.md); a
  *  wobble on x or y alone would flatten one side of the body into a straight
  *  coast. It gives the body its overall SHAPE — the bays and the headlands —
- *  while `coastWarp` frets the edge itself. */
+ *  while `coastWarp` frets the edge itself.
+ *
+ *  Takes the point ALREADY WARPED, because the caller measures one tile against
+ *  several candidate bodies and the warp doesn't depend on which one. */
 function roundDepth(
   seed: number,
   salt: number,
   centre: { x: number; y: number },
   radius: number,
   wobble: number,
-  x0: number,
-  y0: number,
+  at: { x: number; y: number },
 ): number {
-  const { x, y } = coastWarp(seed, salt, x0, y0);
+  const { x, y } = at;
   const dx = x - centre.x;
   const dy = y - centre.y;
   const th = Math.atan2(dy, dx);
@@ -880,25 +951,130 @@ function roundDepth(
   return r - Math.hypot(dx, dy);
 }
 
-function seaDepth(seed: number, spot: HomesteadSpot, x: number, y: number): number {
-  return roundDepth(seed, 0x5ea0, seaCentre(seed, spot), SEA_RADIUS, SEA_WOBBLE, x, y);
+/** The seas.
+ *
+ *  MEASURED, NOT DERIVED, and the difference cost an afternoon. The cell size is
+ *  not the distance between coasts: walking a straight line you only meet a sea
+ *  whose disc your path actually crosses, which for a ~100-tile body in a cell of
+ *  C happens far less than once per cell. The first cut of this was 700, reasoned
+ *  from the cell to "a coast every two to five minutes", and the real figure was
+ *  a twelve-minute mean — three seas in a scan long enough to cross nine cells.
+ *
+ *  So these come from a transect: 960,000 tiles of straight walking across twelve
+ *  seeds, counting the gaps. At 420 the world is 10% salt water and a coast is
+ *  3.5 minutes' walk away at the median, 5.3 at the mean. Anyone retuning this
+ *  should re-measure rather than re-reason; the arithmetic is not intuitive.
+ *
+ *  The radius is a range now rather than the old flat 90, which the scatter makes
+ *  worth having: with one sea its size was a constant nobody could perceive, and
+ *  with many, some are a morning's walk around and some are most of a day, and
+ *  that difference is the only thing that makes a particular coast memorable. */
+const SEA_CELL = 420;
+const SEA_MIN_RADIUS = 60;
+const SEA_MAX_RADIUS = 140;
+const SEA_CHANCE = 0.5;
+
+/** How much dry ground the town keeps around itself, in tiles.
+ *
+ *  THE TOWN WAS HERE FIRST, and the scatter had to be told. A hand-sited sea sat
+ *  at a fixed ring and could not be anywhere else; a lattice has a cell over the
+ *  origin like it has one everywhere, and that cell's body lands on the plaza
+ *  roughly as often as it lands anywhere. Sea water at the town hall steps, found
+ *  by a test that has been guarding this since the half-plane days.
+ *
+ *  Comfortably past the plaza (-5..5) and the homestead, and short of the rings
+ *  the landmarks sit on — those are `onLand`'s problem and it already solves it,
+ *  a bearing at a time. This is only about the ground the town itself stands on.
+ *
+ *  It does make the origin a hole in the distribution, which is a real cost and
+ *  the right one to pay: a town underwater is not a town, and a slightly rarer
+ *  coast is a thing nobody can perceive from inside one world. */
+const TOWN_DRY = 46;
+
+/** Would a body of this radius, centred here, reach the town's dry ground? */
+function clearsTown(cx: number, cy: number, r: number): boolean {
+  return Math.hypot(cx, cy) > r + r * WOBBLE_FRACTION + COAST_WARP + TOWN_DRY;
 }
 
-/** The lake: one per town, sited on its own bearing like the grove and the
- *  blossom rows. Far enough out to be a destination, and the first water in the
- *  game with a genuine middle — you wade the rim and walk around the rest. */
-const LAKE_RING = 104;
-const LAKE_RADIUS = 15;
-const LAKE_WOBBLE = 2;
+function seaDepth(seed: number, _spot: HomesteadSpot, x: number, y: number): number {
+  return scatteredDepth(
+    seed,
+    0x5ea0,
+    SEA_CELL,
+    SEA_MIN_RADIUS,
+    SEA_MAX_RADIUS,
+    SEA_CHANCE,
+    x,
+    y,
+    clearsTown,
+  );
+}
 
-/** Where the lake is — on the first of sixteen bearings that isn't in the sea.
+/** The lakes.
  *
- *  A lake inside the ocean is nonsense, and it can't be fixed by hashing harder:
- *  the sea covers a whole disc of the map, so some bearings simply have no room.
- *  Sixteen candidates at a fixed radius is total (there is always a fallback),
- *  cheap, deterministic, and keeps the ring exactly — see `onLand`, which is the
- *  same idea generalised. */
-function lakeCentre(seed: number, spot: HomesteadSpot): { x: number; y: number } {
+ *  A cell of 130 keeps roughly the cadence the single lake had — it used to sit
+ *  at a ring of 104, so a lake is still about that far off — and simply doesn't
+ *  run out. These are the common big water: something to walk to on an afternoon,
+ *  as against the sea, which is a trip.
+ *
+ *  NO TOWN IS PROMISED A COAST, and that is a deliberate loss. Every town used to
+ *  get a sea at a fixed ring because there was only one and it had to go
+ *  somewhere; now that they are scattered, guaranteeing one would mean bending
+ *  the grid around the origin, and a world where every town is coastal is a world
+ *  where being coastal means nothing. A lake is the guarantee instead — see
+ *  `TOWN_LAKE` — so there is always big water within a walk, and whether you can
+ *  smell the sea from home is a thing worth saying about your particular town. */
+const LAKE_CELL = 130;
+const LAKE_MIN_RADIUS = 10;
+const LAKE_MAX_RADIUS = 22;
+const LAKE_CHANCE = 0.55;
+
+/** How much dry land a lake wants between itself and the sea.
+ *
+ *  A LAKE IN THE OCEAN IS NONSENSE, and the old sixteen-bearing search existed to
+ *  dodge it. The scatter can't search, so it filters: a candidate centre close
+ *  enough to the sea is not a lake. The margin covers the lake's whole width plus
+ *  both beaches, because the failure this prevents is not really a lake in the
+ *  sea (invisible — the sea is deeper and wins the tile) but a lake ON THE BEACH,
+ *  whose sand ring merges with the coast's into one confused smear that reads as
+ *  neither. */
+const LAKE_SEA_MARGIN = LAKE_MAX_RADIUS + 6;
+
+function lakeDepth(seed: number, spot: HomesteadSpot, x: number, y: number): number {
+  const scatter = scatteredDepth(
+    seed,
+    0x1a4e,
+    LAKE_CELL,
+    LAKE_MIN_RADIUS,
+    LAKE_MAX_RADIUS,
+    LAKE_CHANCE,
+    x,
+    y,
+    // Two rules, and a lake has to pass both: off the town, and clear of the
+    // coast. The lake lattice is small enough (130) that its cell over the origin
+    // can put a centre 26 tiles from the plaza, so the town rule is not the sea's
+    // rule with a smaller number — it is load-bearing here too.
+    (cx, cy, r) => clearsTown(cx, cy, r) && seaDepth(seed, spot, cx, cy) < -LAKE_SEA_MARGIN,
+  );
+  return Math.max(scatter, townLakeDepth(seed, spot, x, y));
+}
+
+/** The town's own lake — the one body of big water every homestead is promised.
+ *
+ *  Sited exactly the way the old single lake was, on `onLand`'s bearings at the
+ *  ring it always used, so a town that has had a lake to the north-east since it
+ *  was made still does. It is a body IN ADDITION to the scatter rather than a
+ *  reserved cell in it: forcing a lattice cell to fire would put the lake
+ *  wherever that cell's jitter happened to land, which is a different promise
+ *  ("there is a lake somewhere within 130 tiles") and a much weaker one. */
+const LAKE_RING = 104;
+const TOWN_LAKE = { radius: 16 };
+
+function townLakeCentre(seed: number, spot: HomesteadSpot): { x: number; y: number } {
+  return memoCentre("townLake", seed, spot, () => townLakeSearch(seed, spot));
+}
+
+function townLakeSearch(seed: number, spot: HomesteadSpot): { x: number; y: number } {
   const a0 = (hash2(10, 0, seed ^ 0x1a4e) / 4294967296) * Math.PI * 2;
   let first = { x: 0, y: 0 };
   for (let i = 0; i < BEARINGS; i++) {
@@ -908,15 +1084,21 @@ function lakeCentre(seed: number, spot: HomesteadSpot): { x: number; y: number }
       y: Math.round(Math.sin(a) * LAKE_RING),
     };
     if (i === 0) first = at;
-    // Clear of the coast by the lake's own width, so the two never share a shore
-    // and the beach rings can't overlap into one confused smear of sand.
-    if (seaDepth(seed, spot, at.x, at.y) < -(LAKE_RADIUS + LAKE_WOBBLE + 6)) return at;
+    if (seaDepth(seed, spot, at.x, at.y) < -(TOWN_LAKE.radius + LAKE_SEA_MARGIN)) return at;
   }
   return first; // never reached in practice; a total function needs an answer
 }
 
-function lakeDepth(seed: number, spot: HomesteadSpot, x: number, y: number): number {
-  return roundDepth(seed, 0x1a4e, lakeCentre(seed, spot), LAKE_RADIUS, LAKE_WOBBLE, x, y);
+function townLakeDepth(seed: number, spot: HomesteadSpot, x: number, y: number): number {
+  const salt = 0x1a4e;
+  return roundDepth(
+    seed,
+    salt,
+    townLakeCentre(seed, spot),
+    TOWN_LAKE.radius,
+    TOWN_LAKE.radius * WOBBLE_FRACTION,
+    coastWarp(seed, salt, x, y),
+  );
 }
 
 // --- Channels: streams and rivers ---------------------------------------------
@@ -965,6 +1147,8 @@ function channelDepth(
   family: number,
   x0: number,
   y0: number,
+  /** A point this family must run a channel through, whatever the dice said. */
+  anchor?: { x: number; y: number },
 ): number {
   // Each family gets its own salt, so its bearing, meander and channel rolls are
   // independent — two families sharing a phase would be one family drawn twice.
@@ -994,15 +1178,35 @@ function channelDepth(
   const m2 = ch.amplitude * 2;
   const w1 = ch.warp * 3.2;
   const w2 = ch.warp * 7;
-  // Bend the ground before ruling lines on it (step 2 above).
-  const x = x0 + ch.warp * (0.7 * Math.sin(y0 / w1 + pa) + 0.3 * Math.sin(y0 / w2 + pb));
-  const y = y0 + ch.warp * (0.7 * Math.sin(x0 / w1 + pb) + 0.3 * Math.sin(x0 / w2 + pa));
-  // Along the bearing, and across it. The meander is a function of ALONG only,
-  // so a channel is a curve rather than a blotch.
-  const u = x * cos + y * sin;
-  const v = -x * sin + y * cos;
-  const meander = ch.amplitude * (0.65 * Math.sin(u / m1 + pa) + 0.35 * Math.sin(u / m2 + pb));
-  const across = v - meander;
+  // Where a point falls in the family's own frame: along the bearing, and across
+  // it. Bends the ground before ruling lines on it (step 2 above). The meander is
+  // a function of ALONG only, so a channel is a curve rather than a blotch.
+  const frame = (px: number, py: number) => {
+    const x = px + ch.warp * (0.7 * Math.sin(py / w1 + pa) + 0.3 * Math.sin(py / w2 + pb));
+    const y = py + ch.warp * (0.7 * Math.sin(px / w1 + pb) + 0.3 * Math.sin(px / w2 + pa));
+    const u = x * cos + y * sin;
+    const v = -x * sin + y * cos;
+    const meander = ch.amplitude * (0.65 * Math.sin(u / m1 + pa) + 0.35 * Math.sin(u / m2 + pb));
+    return { u, across: v - meander };
+  };
+  const { u, across } = frame(x0, y0);
+
+  // THE ANCHORED CHANNEL. Run the anchor point through the same frame and the
+  // question "which channel would pass through here" has an exact answer: the
+  // index nearest its `across`, offset by the remainder. Force that one to exist
+  // and the family has a channel through the anchor on every seed, while every
+  // other channel in it is still whatever the dice said.
+  //
+  // Done in the FRAME rather than by moving the whole family, because a family
+  // translated to hit a point is a family that no longer meanders the way its
+  // seed says — you'd get the river you asked for and lose the world's.
+  let anchorK: number | null = null;
+  let anchorOff = 0;
+  if (anchor) {
+    const a = frame(anchor.x, anchor.y);
+    anchorK = Math.round(a.across / ch.spacing);
+    anchorOff = a.across - anchorK * ch.spacing;
+  }
 
   // How wide it is HERE. 1 everywhere for a channel with no pinch; for a river,
   // a slow squeeze along its length whose narrows are its fords (ChannelDef).
@@ -1017,21 +1221,32 @@ function channelDepth(
   const k0 = Math.round(across / ch.spacing);
   let best = -Infinity;
   for (let k = k0 - 1; k <= k0 + 1; k++) {
-    if (hash2(k, 0, fs) / 4294967296 >= ch.chance) continue;
+    const forced = k === anchorK;
+    if (!forced && hash2(k, 0, fs) / 4294967296 >= ch.chance) continue;
     const half = ch.halfMin + (hash2(k, 1, fs) / 4294967296) * (ch.halfMax - ch.halfMin);
-    const off = ((hash2(k, 2, fs) / 4294967296) - 0.5) * ch.spacing * 0.7;
+    const off = forced ? anchorOff : ((hash2(k, 2, fs) / 4294967296) - 0.5) * ch.spacing * 0.7;
     best = Math.max(best, half * squeeze - Math.abs(across - (k * ch.spacing + off)));
   }
   return best;
 }
 
 /** The deepest of a kind's families. */
-function channelKindDepth(seed: number, kind: WaterKindId, salt: number, x: number, y: number): number {
+function channelKindDepth(
+  seed: number,
+  spot: HomesteadSpot,
+  kind: WaterKindId,
+  salt: number,
+  x: number,
+  y: number,
+): number {
   const ch = waterKind(kind).channel;
   if (!ch) return -Infinity;
+  const anchor = kind === "river" && spot === "riverside" ? RIVERSIDE_ANCHOR : undefined;
   let best = -Infinity;
   for (let f = 0; f < ch.families; f++) {
-    best = Math.max(best, channelDepth(seed, salt, ch, f, x, y));
+    // The anchor goes on family 0 only. Anchoring every family would put N rivers
+    // through one point, which is a delta — see `families` in content/water.ts.
+    best = Math.max(best, channelDepth(seed, salt, ch, f, x, y, f === 0 ? anchor : undefined));
   }
   return best;
 }
@@ -1075,8 +1290,8 @@ function waterAt(
   };
   consider(seaDepth(seed, spot, x, y), "sea");
   consider(lakeDepth(seed, spot, x, y), "lake");
-  consider(channelKindDepth(seed, "river", 0x21be, x, y), "river");
-  consider(channelKindDepth(seed, "stream", 0x57e4, x, y), "stream");
+  consider(channelKindDepth(seed, spot, "river", 0x21be, x, y), "river");
+  consider(channelKindDepth(seed, spot, "stream", 0x57e4, x, y), "stream");
   if (wet > 0) consider(pondDepth(seed, x, y, wet), "pond");
   return best;
 }
@@ -1128,6 +1343,23 @@ const BRIDGE_REACH = 22;
 const BRIDGE_ROW = -1; // the plaza's middle, north-south
 const BRIDGE_COL = 0; // and east-west
 
+/** Where a riverside town's river is promised to run.
+ *
+ *  RIVERSIDE FINALLY HAS A RIVER. It never did: the spot's water was a sea pinned
+ *  due west, a fossil of the era when the ocean was the whole western half-plane
+ *  and "riverside" was aspirational. With seas scattered there is no pin to keep,
+ *  and the honest reading of the name is the one to keep instead.
+ *
+ *  On the bridge row, fourteen tiles west — which is very close to where the old
+ *  hard-coded shore stood, so the western window still has water in it and the
+ *  change reads as the sea having been a river all along rather than as the water
+ *  moving. `isTownBridge` covers this row out to 22 tiles, so the crossing is
+ *  already built and no villager is stranded by their own river.
+ *
+ *  Only the anchor is fixed; the bearing, the meander and the pinch are the
+ *  seed's, so no two riverside towns have the same river — it just goes past. */
+const RIVERSIDE_ANCHOR = { x: -14, y: BRIDGE_ROW };
+
 /** Is this one of the town's own crossings? Streams and rivers only: the town
  *  bridges what runs through it, and does not build a pier out into the sea. */
 function isTownBridge(x: number, y: number, kind: WaterKindId): boolean {
@@ -1151,7 +1383,7 @@ function bigWaterDepth(seed: number, spot: HomesteadSpot, x: number, y: number):
   return Math.max(
     seaDepth(seed, spot, x, y),
     lakeDepth(seed, spot, x, y),
-    channelKindDepth(seed, "river", 0x21be, x, y),
+    channelKindDepth(seed, spot, "river", 0x21be, x, y),
   );
 }
 
@@ -1173,6 +1405,45 @@ export function waterKindAt(
 
 /** How many bearings a landmark may try before it settles. */
 const BEARINGS = 16;
+
+/** Remember a point that is a pure function of (seed, spot).
+ *
+ *  NOT AN OPTIMISATION SO MUCH AS A FIX. Every landmark centre is a total
+ *  function of the seed and the spot — that is the whole architecture — but each
+ *  one is computed by SEARCHING sixteen bearings, and each bearing asks how deep
+ *  the water is there. Once seas and lakes became scatters, one such question
+ *  stopped being one `roundDepth` and became nine, and the searches started
+ *  nesting: `biomeAt` asks `blossomCentre`, which searches, and each candidate
+ *  asks `lakeDepth`, which asks the town lake, which searches again. Per tile.
+ *  The first run after the scatter landed took a town-ground test from under a
+ *  second to over six, which is how this was found — a unit test, unusually,
+ *  rather than a frame rate.
+ *
+ *  A cache is safe here in the way it usually isn't because the inputs are two
+ *  scalars and the output is genuinely immutable: this is memoising arithmetic,
+ *  not caching state.
+ *
+ *  SIZED FOR THE TESTS, NOT THE GAME, and that is the honest description. A
+ *  session plays one world, so four entries would do — the cap is large because
+ *  the invariant tests sweep a thousand seeds each, and a cap that evicts turns
+ *  those from memoised into worst-case. Entries are two numbers; ten thousand of
+ *  them is nothing to hold and cheaper than any eviction policy worth writing. */
+const centreMemo = new Map<string, { x: number; y: number }>();
+function memoCentre(
+  tag: string,
+  seed: number,
+  spot: HomesteadSpot,
+  compute: () => { x: number; y: number },
+): { x: number; y: number } {
+  const key = `${tag}:${seed}:${spot}`;
+  let at = centreMemo.get(key);
+  if (at === undefined) {
+    if (centreMemo.size > 16384) centreMemo.clear();
+    at = compute();
+    centreMemo.set(key, at);
+  }
+  return at;
+}
 
 /** A point at exactly `ring` tiles from the origin, on the first bearing from
  *  `a0` whose ground is dry.
@@ -1270,8 +1541,11 @@ function pondDepth(seed: number, x: number, y: number, chance: number): number {
       // which is a wall and not a place.
       const density = Math.min(0.85, chance * PONDS_PER_WATER);
       if (hash2(mx, my, seed ^ 0x0e05) / 4294967296 >= density) continue;
+      // Two salts rather than swapped arguments — see `scatterCentre`, which
+      // inherited this line's bug and is where it is explained. On the diagonal
+      // the swapped version hands back the same number twice.
       const px = (mx + 0.2 + (hash2(mx, my, seed ^ 0x2b1f) / 4294967296) * 0.6) * POND_CELL;
-      const py = (my + 0.2 + (hash2(my, mx, seed ^ 0x2b1f) / 4294967296) * 0.6) * POND_CELL;
+      const py = (my + 0.2 + (hash2(mx, my, seed ^ 0x2b1f ^ 0x51ed) / 4294967296) * 0.6) * POND_CELL;
       const r =
         POND_MIN_RADIUS +
         (hash2(mx, my, seed ^ 0x6a3c) / 4294967296) * (POND_MAX_RADIUS - POND_MIN_RADIUS);

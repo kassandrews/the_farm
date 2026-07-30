@@ -23,9 +23,15 @@
 //   • The seed is whatever onboarding rolled, so the biome layout differs every
 //     run. That is a feature — a shape that only looks right on one seed isn't
 //     right — but it means "the fen looked fine yesterday" proves nothing.
-//   • A riverside town is open water from x = -13 westward WITHOUT LIMIT. The
+//   • Water can be anywhere, so a candidate spot has to be checked for it. The
 //     first version of this script photographed the ocean and reported it as the
 //     scrub. Hence the wetness check below.
+//
+//     (This used to read "a riverside town is open water from x = -13 westward
+//     WITHOUT LIMIT", which stopped being true when the sea became finite and
+//     stopped being nearly true when seas were scattered across the whole world.
+//     The check was always the real defence; the geography note was never load
+//     bearing, and a stale one is worse than none.)
 //   • Photograph the MIDDLE of a region, not the edge, or you learn nothing about
 //     what the place looks like. Hence the margin check.
 //   • The fen is legitimately wet, so it is exempt from the sea check — otherwise

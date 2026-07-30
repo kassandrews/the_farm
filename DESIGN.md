@@ -337,6 +337,13 @@ residents. The player's **homestead** is a plot on the edge of town, chosen
 at the start from 3–4 map spots (riverside, forest edge, hilltop, …) —
 meaningful choice without blank-page paralysis.
 
+**A riverside town has a river.** It did not, for a long time: the spot's water
+was an ocean pinned due west, a fossil of the era when the sea *was* the whole
+western half-plane and the name was aspirational. Now one channel of the river
+family is anchored through the town, and the town's own bridge is generated
+where it crosses. The spot is the one guarantee of running water; the others
+take whatever the world gives them.
+
 You start with a tent. The house is **built from gathered materials**, tile
 by tile, expanded and reshaped freely — this is the Minecraft leg. Farmland
 is part of the homestead: land you own, not a job you have. Farming is
@@ -359,6 +366,23 @@ including the ocean, which is big enough to be an expedition and small enough
 to have a far shore you can stand on and look back from. Villagers may believe
 the water is the end of the world. Nothing in the game ever confirms or denies
 that you got round it.
+
+And **nothing singular on an unbounded map either**, which is the same rule seen
+from the other side and took a second pass to notice. Making the sea finite
+fixed the wall and left one ocean on an endless dry plain — walk far enough in
+any direction and water simply stopped happening. A world with exactly one of
+something is a diorama with a horizon painted on it. So seas and lakes are
+**scattered**, each on its own lattice of jittered centres, the way the Fen's
+ponds already were: about one tile in ten is salt water, a coast is three or
+four minutes' walk at the median, and there is always another one.
+
+The consequence is that **no town is promised a coast**. Every homestead gets a
+lake within a walk, because there should always be big water to go and look at;
+whether you can smell the sea from home is a thing that varies, and therefore a
+thing worth saying about your particular town. The exception is the ground the
+town itself stands on, which is kept dry on purpose — a lattice has a cell over
+the origin exactly like it has one everywhere, and a plaza under two feet of
+water is not a design choice.
 
 ### Depth is one number
 
