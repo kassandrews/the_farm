@@ -102,17 +102,17 @@ const GLASSES_MONOCLE = [
   "........www.....",
 ];
 
-/** Canon's frames, worn in a different glass. The shape is untouched — these
- *  are the same three rows the body already draws — so the whole variation is
- *  one hex value, and it reads across a courtyard where a frame shape doesn't. */
-const GLASSES_CANON_SHAPE = [
-  "................",
-  "................",
-  "................",
-  "....www.www.....",
-  "....www.www.....",
-  "....www.www.....",
-];
+/** The two non-canon lenses as patches to spread into a row. Canon's own full
+ *  three-row frames need no patch at all — leaving `overlay` off is what asks
+ *  for them, which is why the purple scholar in canon glasses is entry 0. */
+const HALF_MOONS = { overlay: { rows: GLASSES_HALFMOON, palette: { w: LENS } } };
+const MONOCLE = { overlay: { rows: GLASSES_MONOCLE, palette: { w: LENS } } };
+
+/** Oxblood: the colour of a bound spine and a doctoral hood, which is as close
+ *  to "academic" as a body gets without becoming a costume. Deliberately NOT
+ *  the obvious ivy green — a green scholar standing on grass is the pine
+ *  problem again, and this form has no horns to give it an edge. */
+const OXBLOOD = { fill: "#9c5f66", shade: "#7a4650" };
 
 // --- Teeth --------------------------------------------------------------------
 // The gremlin's canon overlay is two fangs at cols 6 and 8, hanging under a
@@ -252,18 +252,17 @@ export const LOOKS: Record<AdultForm, LookDef[]> = {
   // canon art is right that the readable move at this size is a solid block.
   // What varies instead is how much lens there is (three rows, two, or one eye's
   // worth) and what colour it is.
+  // Two bodies × three lenses, the gremlin's arrangement for the gremlin's
+  // reason: you read the colour across the plaza and the eyewear up close. Two
+  // tints rather than three because this form has exactly one feature to vary,
+  // and six scholars who differ in eyewear beat nine who differ in mauve.
   scholar: [
     CANON,
-    { id: "sage", fill: "#9dbb92", shade: "#77956c" },
-    { id: "rose", fill: "#dba3b3", shade: "#b47c8d" },
-    { id: "slate-blue", fill: "#96a6c2", shade: "#6f7f9b" },
-    { id: "half-moons", overlay: { rows: GLASSES_HALFMOON, palette: { w: LENS } } },
-    { id: "monocle", overlay: { rows: GLASSES_MONOCLE, palette: { w: LENS } } },
-    // Tinted glass, canon shape. Amber is a warm reading lens; smoke is dark
-    // enough to hide the eye behind it, which on a form whose whole joke is
-    // confidently incorrect research is worth more than another tint.
-    { id: "amber-lenses", overlay: { rows: GLASSES_CANON_SHAPE, palette: { w: "#f0d9a0" } } },
-    { id: "smoked-lenses", overlay: { rows: GLASSES_CANON_SHAPE, palette: { w: "#6f6a86" } } },
+    { id: "half-moons", ...HALF_MOONS },
+    { id: "monocle", ...MONOCLE },
+    { id: "oxblood", ...OXBLOOD },
+    { id: "oxblood-half-moons", ...OXBLOOD, ...HALF_MOONS },
+    { id: "oxblood-monocle", ...OXBLOOD, ...MONOCLE },
   ],
 
   office: [
