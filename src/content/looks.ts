@@ -76,22 +76,42 @@ const CANON: LookDef = { id: "canon" };
 
 const LENS = "#dbe7ff";
 
-const GLASSES_ROUND = [
-  "................",
-  "................",
-  "................",
-  ".....w...w......",
-  "....w.w.w.w.....",
-  ".....w...w......",
-];
-
+// Half-moons are canon's bottom two rows of three, full width. The first draft
+// narrowed the lower row to a single pixel and the lens stopped being a lens —
+// at this size a shape needs to stay at least as wide as it is tall or it reads
+// as a stray highlight. Reading glasses that sit low on the face are a shorter
+// lens, not a thinner one.
 const GLASSES_HALFMOON = [
   "................",
   "................",
   "................",
   "................",
   "....www.www.....",
-  ".....w...w......",
+  "....www.www.....",
+];
+
+// One lens, and the other eye bare. The same trick as the gremlin's snaggle:
+// asymmetry is the thing you can still read when the sprite is 16px on a lawn,
+// where a frame *shape* has long since turned to mush.
+const GLASSES_MONOCLE = [
+  "................",
+  "................",
+  "................",
+  "........www.....",
+  "........www.....",
+  "........www.....",
+];
+
+/** Canon's frames, worn in a different glass. The shape is untouched — these
+ *  are the same three rows the body already draws — so the whole variation is
+ *  one hex value, and it reads across a courtyard where a frame shape doesn't. */
+const GLASSES_CANON_SHAPE = [
+  "................",
+  "................",
+  "................",
+  "....www.www.....",
+  "....www.www.....",
+  "....www.www.....",
 ];
 
 // --- Teeth --------------------------------------------------------------------
@@ -226,13 +246,24 @@ export const LOOKS: Record<AdultForm, LookDef[]> = {
     { id: "plum-underbite", ...PLUM, ...UNDERBITE },
   ],
 
+  // GLASSES ARE THE SCHOLAR'S ONE FEATURE, so they carry most of the variation —
+  // but as GLASS, not as frames. A thin round frame was tried and cut: at 16px a
+  // one-pixel outline reads as a smudge on the face rather than a lens, and the
+  // canon art is right that the readable move at this size is a solid block.
+  // What varies instead is how much lens there is (three rows, two, or one eye's
+  // worth) and what colour it is.
   scholar: [
     CANON,
     { id: "sage", fill: "#9dbb92", shade: "#77956c" },
     { id: "rose", fill: "#dba3b3", shade: "#b47c8d" },
     { id: "slate-blue", fill: "#96a6c2", shade: "#6f7f9b" },
-    { id: "round-glasses", overlay: { rows: GLASSES_ROUND, palette: { w: LENS } } },
     { id: "half-moons", overlay: { rows: GLASSES_HALFMOON, palette: { w: LENS } } },
+    { id: "monocle", overlay: { rows: GLASSES_MONOCLE, palette: { w: LENS } } },
+    // Tinted glass, canon shape. Amber is a warm reading lens; smoke is dark
+    // enough to hide the eye behind it, which on a form whose whole joke is
+    // confidently incorrect research is worth more than another tint.
+    { id: "amber-lenses", overlay: { rows: GLASSES_CANON_SHAPE, palette: { w: "#f0d9a0" } } },
+    { id: "smoked-lenses", overlay: { rows: GLASSES_CANON_SHAPE, palette: { w: "#6f6a86" } } },
   ],
 
   office: [
