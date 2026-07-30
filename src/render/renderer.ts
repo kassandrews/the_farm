@@ -698,11 +698,23 @@ export class Renderer {
           ctx.fillStyle = def.shade;
           ctx.fillRect(px, py + TILE - 1, TILE, 1);
         }
-        // Water gets a couple of drifting ripple pixels.
-        if (def.name === "Water") {
-          ctx.fillStyle = "rgba(255,255,255,0.25)";
+        // Water gets a couple of drifting ripple pixels. The shallows get the
+        // same ripple and a brighter one, because "you can wade here" has to be
+        // legible without the HUD ever saying it — the colour carries the rule,
+        // and the livelier surface is what stops the two blues reading as a
+        // palette accident.
+        if (def.name === "Water" || def.name === "Shallow water") {
+          const shallow = def.name === "Shallow water";
+          ctx.fillStyle = shallow ? "rgba(255,255,255,0.38)" : "rgba(255,255,255,0.25)";
           const rx = px + 3 + ((Math.sin(t * 1.5 + tx * 1.7 + ty) * 0.5 + 0.5) * (TILE - 6)) | 0;
           ctx.fillRect(rx, py + 6, 2, 1);
+          // A second, slower glint in the shallows only — off the WORLD
+          // coordinate and on its own phase, so it's texture rather than a
+          // per-cell mark that would tile the surf into squares (CLAUDE.md).
+          if (shallow) {
+            const sx = px + 2 + ((Math.sin(t * 0.9 + tx * 0.7 - ty * 1.3) * 0.5 + 0.5) * (TILE - 5)) | 0;
+            ctx.fillRect(sx, py + TILE - 7, 1, 1);
+          }
         } else if (def.name === "Grass") {
           // Stable tuft speckle so grass reads as texture, not flat paint.
           const h = decoHash(tx, ty, world.seed);
@@ -721,6 +733,18 @@ export class Renderer {
             const gy = py + 4 + Math.floor((h * 53) % 9);
             ctx.fillRect(gx, gy, 2, 1);
             ctx.fillRect(gx + 1, gy - 1, 1, 1);
+          }
+        } else if (def.name === "Sand") {
+          // Grain, on the same terms as the grass tuft: a hash of the WORLD
+          // coordinate, sparse, single pixels. Sand without it is a flat block
+          // of cream and reads as paving rather than as a beach — but the
+          // temptation to give every cell a speckle is precisely the banding
+          // trap (CLAUDE.md), hence the same sparse threshold grass uses.
+          const h = decoHash(tx, ty, world.seed ^ 0x5a4d);
+          if (h > 0.6) {
+            ctx.fillStyle = "rgba(150,124,80,0.35)";
+            ctx.fillRect(px + 2 + Math.floor(h * 9), py + 3 + Math.floor((h * 71) % 10), 1, 1);
+            if (h > 0.85) ctx.fillRect(px + 4 + Math.floor(h * 6), py + 8 + Math.floor((h * 37) % 6), 1, 1);
           }
         }
         if (id === MUSHROOM) this.drawMushrooms(tx, ty, px, py, world.seed, night);

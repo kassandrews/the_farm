@@ -2079,6 +2079,95 @@ All three passed 838 unit tests and were obvious within a second of looking.
 - **`shafts()` scans every override.** Grows with edits, not area, so outward
   growth doesn't worsen it — but a town with a large frontier eventually will.
 
+### 5c. Water — streams, ponds, lakes, and a sea with a far side
+
+The world had water in two forms and neither was a place. The fen's ponds were
+fine. The other was one line in `generatedTile` reading *every tile west of
+x = −13 is water, at every y, forever* — an infinite half-plane, on an infinite
+map, which is a wall and not an ocean. `onLand()` existed solely to mirror the
+grove, the cube and the blossom rows back east when their bearing dropped them
+in it, because half of all riverside towns were otherwise generating a Ghost
+standing in an unreachable stand of trees in open sea.
+
+**Settled, and why:**
+
+- **Finite, always.** Nothing unbounded on an unbounded map. The sea is a sited
+  landmark like the grove and the blossom rows, just enormous — ~90 tile radius,
+  coastline warped by the existing `biomeWarp` sines so it is a coast and not a
+  circle. Walking round it is minutes, not never.
+- **It costs no live save a single tile,** and this is why the change was safe
+  to make on a deployed game: a bounded sea is a strict *subset* of the
+  half-plane it replaces. Riverside towns keep their waterfront (the centre is
+  pinned so the near shore stays at x ≈ −13) and *gain* shore north and south.
+  Terrain is a pure function of the seed, so changing the generator does rewrite
+  untouched ground — but this particular change can only ever hand land back.
+- **One number, `waterDepth()`** — signed distance to the shore, with four
+  generators feeding it. The cross-section (deep / shallow / sand / land) is
+  four thresholds on it, and `shelf` / `beach` are content table rows.
+- **Fordability is geometry, not a rule.** A stream is 1–2 wide so it never gets
+  far enough from its own bank to pass `shelf`; it is wholly shallow. Nobody has
+  to remember to make the next kind of small water crossable.
+- **Shallow water must refuse construction explicitly.** It is walkable, and
+  `structures.ts` / `furniture.ts` only test `solid` — so without a rule the
+  first arrival's cottage gets sited in the surf and the second thing that
+  happens is nobody can work out why.
+- **Planks on deep water are allowed.** Someone can bridge the ocean. The
+  invariant says real time gates the world and never the player's hands, and the
+  game is open to fantasy; a wall here would buy nothing and cost the best story
+  this game can produce.
+- **The shovel fills any water you can stand next to** — shallow underfoot,
+  deep on the tile you're facing, reusing `gather.ts`'s "you chop what's in
+  front of you". Fills to sand, which is shore for the next tile, so the sea is
+  fillable from the edge inward. **Filled water does not heal** (DESIGN §Water):
+  re-flooding would delete an afternoon offline, on the one activity the doc
+  calls free.
+- **`onLand()` stops being a hack** and becomes an honest "is this water" query.
+  It has to be one anyway — lakes can drown a landmark in any direction, not
+  just west.
+- **No creation, no flow.** Water never spreads, rises or is placed. Terrain
+  stays derivable from (seed, edits); the moment water simulates, it has to be
+  stored.
+**Three things only the pictures could say.** Every one of them passed the tests.
+
+1. **The coastline was three ribbons of flat colour.** The sea's shape comes
+   from a wobble at angular harmonics 3 and 7 — which at radius 90 is a
+   wavelength of about eighty tiles, i.e. invisible from the beach. Cranking the
+   harmonics is the obvious fix and dies on the LAKE: angular frequency is
+   wavelength over radius, so whatever makes a 90-tile sea interesting shreds a
+   15-tile lake into a starfish. The fix is `coastWarp` — bend the QUERY POINT,
+   not the shape, which gives a fixed feature size in *tiles* on every body.
+   Exactly what `biomeWarp` does to Voronoi borders, one phase earlier.
+2. **The streams were wallpaper, and it took a map of the whole world to see
+   it.** From inside the game a stream looks like a stream; from four hundred
+   tiles up, six of them are ruled pencil lines at even spacing. Two fixes, and
+   the second was the one that mattered: `STREAM_WARP` bends the space the
+   channels are ruled on (they curve, converge, drift apart), and a per-channel
+   hashed OFFSET breaks the spacing — because curving a comb gives you a curved
+   comb, and even spacing is the tell. Rendering the generator to a PPM at two
+   tiles per pixel is how all of this was found; it belongs in the toolkit
+   beside `scripts/drive.mjs`.
+3. **Standing on a junk pile and tapping gather chopped a tree instead.** Not a
+   water bug at all — a latent one the moved terrain exposed. `actionTarget`
+   step 2 gives the gather tool the node in reach, justified by "you can never
+   stand on a node"… which is true of trees and false of the two gatherables
+   that are TILES (mushrooms, and what the Gremlin leaves). It was step 3's own
+   hijack, one step early. Now step 2 defers when underfoot is gatherable.
+
+**And one thing the ladder had to give up.** Water ahead of the shovel is chosen
+by HEADING and sits *above* the tile underfoot — the only exception to "the held
+tool on the tile underfoot wins". Both halves are forced: the ground at a
+shoreline is SAND, and sand is diggable, so with underfoot winning the shovel
+would turn the beach over forever and never once reach the sea. Heading is what
+makes that safe, and it is the same answer `undergroundTarget` gives for the
+same reason — face the water and you fill it, turn around and you dig the shore.
+
+- **The `% 7` lattice is deleted.** That clause was meant to ragged the shore.
+  What it actually produced, printed from the real predicate, was a diagonal
+  scatter of *one-tile islands* — and `canStep` refuses a diagonal unless both
+  orthogonal neighbours are open, so they were strictly unreachable, with the
+  tree scatter running on them. Single trees on single squares in open ocean.
+  The per-cell rule (CLAUDE.md) arriving by boat.
+
 ---
 
 ## Known gaps and loose ends

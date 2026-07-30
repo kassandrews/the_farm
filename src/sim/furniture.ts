@@ -30,7 +30,7 @@ import type { WorldState, FurnitureCell, Layer } from "./types";
 import type { FurnitureId, Facing } from "../content/furniture";
 import { furnitureDef, footprint, covers, MAX_SPAN } from "../content/furniture";
 import type { SkinId } from "../content/skins";
-import { tileAt, tileKey, refusesConstruction } from "./world";
+import { tileAt, tileKey, refusesConstruction, refusesFooting } from "./world";
 import { touchBuild } from "./structures";
 import { tileDef } from "../content/tiles";
 
@@ -101,6 +101,7 @@ export function canPlaceFurniture(
     if (tileDef(tileAt(world, x, y, layer)).solid) return false;
     if (furnitureAt(world, x, y, layer)) return false;
     if (layer === "under") continue;
+    if (refusesFooting(world, x, y)) return false; // nothing stands in the shallows
     if (refusesConstruction(world, x, y)) return false; // her trees' ground
     if (world.crops[key]) return false;
     if (world.build[key]) return false; // no furniture inside a wall

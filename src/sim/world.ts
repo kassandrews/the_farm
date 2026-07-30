@@ -26,11 +26,15 @@ import {
   CAVE_FLOOR,
   DARK_TREE,
   HUM_CUBE,
+  SAND,
+  SHALLOW,
   tileDef,
 } from "../content/tiles";
 import { NODES } from "../content/nodes";
 import type { BiomeId } from "../content/biomes";
 import { FIELD_BIOMES, biomeDef } from "../content/biomes";
+import type { WaterKindId } from "../content/water";
+import { waterKind } from "../content/water";
 import { structureDef } from "../content/structures";
 import { furnitureDef, covers, MAX_SPAN } from "../content/furniture";
 import type { WorldState, HomesteadSpot, Layer } from "./types";
@@ -235,15 +239,12 @@ export function homesteadOrigin(spot: HomesteadSpot): { x: number; y: number } {
 const HOMESTEAD_CLEARING = 4;
 
 /** Deterministic base terrain at a surface tile, before any edits: paved plaza,
- *  a river west for the riverside spot, resource nodes scattered by seed, and
- *  grass everywhere else. */
+ *  water and its shore, resource nodes scattered by seed, and grass everywhere
+ *  else. */
 export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: number): TileId {
-  // Plaza paving.
+  // Plaza paving. Still first, so a stream may cross the town without crossing
+  // the paving — the plaza is the one surface in the world nothing overrides.
   if (x >= PLAZA.x0 && x <= PLAZA.x1 && y >= PLAZA.y0 && y <= PLAZA.y1) return STONE;
-  // A river along the far west, so the riverside homestead reads true.
-  if (spot === "riverside" && x <= -12 && (x + ((y * 3) % 2)) % 7 !== 0) {
-    if (x <= -13) return WATER;
-  }
 
   // Resource nodes. Deterministic from the seed, so a given town's forest is a
   // real, stable place rather than scenery that reshuffles. Never generated on
@@ -272,11 +273,16 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     // always generated. See `originSite`.
     const biome = biomeDef(biomeAt(seed, spot, x, y));
 
-    // Standing water, and the Fen is the only region with any. Kept out of the
-    // grove's setting so her trees can't end up ringed by something you can see
-    // across and not walk across (see `nearGrove`).
-    if (biome.water > 0 && !nearGrove(seed, spot, x, y)) {
-      if (inPond(seed, x, y, biome.water)) return WATER;
+    // Water, and the shore it makes. Every kind at once, deepest wins, and the
+    // tile is four thresholds on the depth (see `waterAt` / `waterTile`).
+    //
+    // Kept out of the grove's setting so her trees can't end up ringed by
+    // something you can see across and not walk across (see `nearGrove`) — and
+    // out of the homestead clearing by the `nearHome` guard above, which is what
+    // promises you always arrive somewhere you can stand.
+    if (!nearGrove(seed, spot, x, y)) {
+      const wet = waterTile(waterAt(seed, spot, x, y, biome.water));
+      if (wet !== null) return wet;
     }
 
     // Two independent hashes so trees and rocks don't correlate into stripes.
@@ -455,34 +461,16 @@ function groveAngle(seed: number): number {
   return (hash2(4, 0, seed ^ 0x5eed) / 4294967296) * Math.PI * 2;
 }
 
-/** THE SITES HAVE TO KNOW ABOUT THE SEA, and this was found on screen rather
- *  than in a test. A riverside town is water from x = -13 westward, without
- *  limit — the river check in `generatedTile` runs before anything else and
- *  answers for the entire western half of the world. A bearing picked from the
- *  seed alone therefore drowned the grove in about half of all riverside towns:
- *  a stand of trees in open ocean, unreachable, with a Ghost standing in it.
+/** THE SITES HAVE TO KNOW ABOUT THE WATER, and this was found on screen rather
+ *  than in a test. Back when the sea was the whole western half-plane, a bearing
+ *  picked from the seed alone drowned the grove in about half of all riverside
+ *  towns: a stand of trees in open ocean, unreachable, with a Ghost standing in
+ *  it. See `onLand` (down beside the water field, which it now has to consult)
+ *  for what replaced the mirror that used to fix it.
  *
- *  The fix is on the SITE, not on the generator's order. Putting the landmark
- *  branch above the river would have grown trees in the sea, which is the same
- *  bug with the tiles rearranged; and rejecting-and-rerolling the angle needs a
- *  loop that can fail. Mirroring is total, keeps the radius exactly, and is a
- *  true sentence about the town: the land is the other way.
- *
- *  Every landmark goes through this, so a third one cannot forget. */
-function onLand(spot: HomesteadSpot, at: { x: number; y: number }): { x: number; y: number } {
-  return spot === "riverside" && at.x <= RIVER_EDGE ? { x: -at.x, y: at.y } : at;
-}
-
-/** West of this, a riverside town is open water (see `generatedTile`). */
-const RIVER_EDGE = -12;
-
-/** Where the dark wood is. */
+ *  Where the dark wood is. */
 export function groveCentre(seed: number, spot: HomesteadSpot): { x: number; y: number } {
-  const a = groveAngle(seed);
-  return onLand(spot, {
-    x: Math.round(Math.cos(a) * GROVE_RING),
-    y: Math.round(Math.sin(a) * GROVE_RING),
-  });
+  return onLand(seed, spot, GROVE_RING, groveAngle(seed));
 }
 
 /** How wide the stand is. Big enough to be unmistakably a place and not a
@@ -565,11 +553,7 @@ export function inGroveClearing(
 const CUBE_RING = 58;
 
 export function cubeSite(seed: number, spot: HomesteadSpot): { x: number; y: number } {
-  const a = (hash2(5, 0, seed ^ 0x11b3) / 4294967296) * Math.PI * 2;
-  return onLand(spot, {
-    x: Math.round(Math.cos(a) * CUBE_RING),
-    y: Math.round(Math.sin(a) * CUBE_RING),
-  });
+  return onLand(seed, spot, CUBE_RING, (hash2(5, 0, seed ^ 0x11b3) / 4294967296) * Math.PI * 2);
 }
 
 function isCubeSite(seed: number, spot: HomesteadSpot, x: number, y: number): boolean {
@@ -744,15 +728,10 @@ const BLOSSOM_RING = 72;
 const BLOSSOM_RADIUS = 9;
 
 /** Where the cherry trees are. Sited, not rolled — see BIOMES.blossom. Runs
- *  through `onLand` like every landmark, because a riverside town is open sea
- *  from x = -13 westward and half of them would otherwise put the orchard in the
- *  water (see `onLand` for the day that cost us). */
+ *  through `onLand` like every landmark, because an orchard standing in the sea
+ *  is the day that function cost us. */
 export function blossomCentre(seed: number, spot: HomesteadSpot): { x: number; y: number } {
-  const a = (hash2(6, 0, seed ^ 0x7c1d) / 4294967296) * Math.PI * 2;
-  return onLand(spot, {
-    x: Math.round(Math.cos(a) * BLOSSOM_RING),
-    y: Math.round(Math.sin(a) * BLOSSOM_RING),
-  });
+  return onLand(seed, spot, BLOSSOM_RING, (hash2(6, 0, seed ^ 0x7c1d) / 4294967296) * Math.PI * 2);
 }
 
 /** Which biome a tile is in.
@@ -773,6 +752,331 @@ export function biomeAt(seed: number, spot: HomesteadSpot, x: number, y: number)
   const roll = hash2(site.mx, site.my, seed ^ 0x30de) / 4294967296;
   return FIELD_BIOMES[Math.floor(roll * FIELD_BIOMES.length) % FIELD_BIOMES.length];
 }
+
+// --- Water --------------------------------------------------------------------
+// Four kinds, one number. Every body of water computes a SIGNED DISTANCE to its
+// own shore — positive inside the water, negative on dry land — and the tile
+// falls out of four thresholds on it (content/water.ts holds the two per kind).
+//
+// NOTHING UNBOUNDED ON AN UNBOUNDED MAP. The sea used to be one line in
+// `generatedTile` reading "every tile west of -13 is water, at every y, forever",
+// which is not an ocean; it is a wall through the middle of an infinite world,
+// and half of that world was behind it. Every body here is finite, up to and
+// including the sea, which is big enough to be an expedition and has a far shore
+// you can stand on (DESIGN §Water).
+//
+// A NOTE ON WHY THAT WAS SAFE TO CHANGE ON A LIVE GAME. Terrain is a pure
+// function of the seed, so editing this file does re-landscape ground nobody has
+// touched — the thing biomes.ts's `meadow` row is a standing warning about. This
+// particular change cannot hurt, and the reason is geometric rather than
+// careful: a bounded sea is a strict SUBSET of the half-plane it replaces, so no
+// existing town can lose a walkable tile. Riverside keeps its waterfront (the
+// centre is pinned so the shore lands about where it always did) and gains coast
+// north and south of it. Streams are the part that adds water where there was
+// grass; they were allowed in knowingly, at a phase where nothing is precious.
+
+/** How big the sea is, in tiles of radius. Walking round it is minutes at 3.4
+ *  tiles/sec — a real expedition and a finite one, which is the entire brief. */
+const SEA_RADIUS = 90;
+
+/** How far the coast wanders in and out. Without it the sea is a circle, and a
+ *  circle reads as a crater rather than as a coastline. */
+const SEA_WOBBLE = 8;
+
+/** How far out the sea sits for the spots that aren't riverside. Shore lands
+ *  about 55 tiles from the plaza: past the blossom rows, so finding the coast is
+ *  its own walk rather than something you trip over on the way to the cherries. */
+const SEA_RING = SEA_RADIUS + 55;
+
+/** Where the sea is.
+ *
+ *  RIVERSIDE IS PINNED, and that is a compatibility promise rather than a
+ *  flavour choice: due west, at a distance that puts the near shore around
+ *  x = -20, so a town that has been looking at water out of its western window
+ *  since the day it was made still is. (Nominal -20 rather than the old -13
+ *  because the wobble has to have somewhere to wander without lapping the
+ *  plaza, whose western edge is -5.) */
+function seaCentre(seed: number, spot: HomesteadSpot): { x: number; y: number } {
+  if (spot === "riverside") return { x: -(SEA_RADIUS + 20), y: 0 };
+  const a = (hash2(9, 0, seed ^ 0x5ea0) / 4294967296) * Math.PI * 2;
+  return { x: Math.round(Math.cos(a) * SEA_RING), y: Math.round(Math.sin(a) * SEA_RING) };
+}
+
+/** How far the coastline frets in and out at TILE scale, and over what distance.
+ *
+ *  Separate from the angular wobble because the two are doing different jobs at
+ *  different sizes, and one number cannot do both — see `coastWarp`. */
+const COAST_WARP = 5;
+
+/** Nudge the query point before measuring distance to a body of water. Straight
+ *  coasts come out ragged and the body stays the shape it is.
+ *
+ *  THE ANGULAR WOBBLE ALONE WAS NOT ENOUGH, and this was found on screen. The
+ *  sea has a radius of 90, so up close its edge is very nearly a straight line,
+ *  and a wobble at harmonics 3 and 7 has a wavelength of about eighty tiles —
+ *  which is to say, no visible effect at all from the beach. The coast came out
+ *  as long vertical runs with big rectangular steps between them: three ribbons
+ *  of flat colour rather than a shore.
+ *
+ *  Cranking the harmonics up is the obvious fix and it does not survive contact
+ *  with the LAKE. Angular frequency is wavelength divided by radius, so whatever
+ *  makes a 90-tile sea interesting shreds a 15-tile lake into a starfish. What is
+ *  wanted is a fixed feature size in TILES, on every body, which is a property of
+ *  position rather than of angle.
+ *
+ *  So the query point moves instead of the shape — exactly what `biomeWarp` does
+ *  to Voronoi borders, for exactly the same reason ("Borders are warped, because
+ *  a Voronoi edge is a straight line", ROADMAP §Phase 5), and small enough not to
+ *  be able to move the shore by more than a few tiles. */
+function coastWarp(seed: number, salt: number, x: number, y: number): { x: number; y: number } {
+  const pa = (hash2(3, 0, seed ^ salt) / 4294967296) * Math.PI * 2;
+  const pb = (hash2(4, 0, seed ^ salt) / 4294967296) * Math.PI * 2;
+  return {
+    x: x + COAST_WARP * (0.6 * Math.sin(y / 4.5 + pa) + 0.4 * Math.sin(y / 11 + pb)),
+    y: y + COAST_WARP * (0.6 * Math.sin(x / 3.9 + pb) + 0.4 * Math.sin(x / 9 + pa)),
+  };
+}
+
+/** How far inside a round body of water this tile is, in tiles.
+ *
+ *  The wobble is a function of the ANGLE around the centre, at whole-number
+ *  harmonics, which is what makes it continuous where the angle wraps at ±π. A
+ *  wobble hashed per tile would be a per-cell edge with a boat (CLAUDE.md); a
+ *  wobble on x or y alone would flatten one side of the body into a straight
+ *  coast. It gives the body its overall SHAPE — the bays and the headlands —
+ *  while `coastWarp` frets the edge itself. */
+function roundDepth(
+  seed: number,
+  salt: number,
+  centre: { x: number; y: number },
+  radius: number,
+  wobble: number,
+  x0: number,
+  y0: number,
+): number {
+  const { x, y } = coastWarp(seed, salt, x0, y0);
+  const dx = x - centre.x;
+  const dy = y - centre.y;
+  const th = Math.atan2(dy, dx);
+  const pa = (hash2(1, 0, seed ^ salt) / 4294967296) * Math.PI * 2;
+  const pb = (hash2(2, 0, seed ^ salt) / 4294967296) * Math.PI * 2;
+  const r = radius + wobble * (0.6 * Math.sin(3 * th + pa) + 0.4 * Math.sin(7 * th + pb));
+  return r - Math.hypot(dx, dy);
+}
+
+function seaDepth(seed: number, spot: HomesteadSpot, x: number, y: number): number {
+  return roundDepth(seed, 0x5ea0, seaCentre(seed, spot), SEA_RADIUS, SEA_WOBBLE, x, y);
+}
+
+/** The lake: one per town, sited on its own bearing like the grove and the
+ *  blossom rows. Far enough out to be a destination, and the first water in the
+ *  game with a genuine middle — you wade the rim and walk around the rest. */
+const LAKE_RING = 104;
+const LAKE_RADIUS = 15;
+const LAKE_WOBBLE = 2;
+
+/** Where the lake is — on the first of sixteen bearings that isn't in the sea.
+ *
+ *  A lake inside the ocean is nonsense, and it can't be fixed by hashing harder:
+ *  the sea covers a whole disc of the map, so some bearings simply have no room.
+ *  Sixteen candidates at a fixed radius is total (there is always a fallback),
+ *  cheap, deterministic, and keeps the ring exactly — see `onLand`, which is the
+ *  same idea generalised. */
+function lakeCentre(seed: number, spot: HomesteadSpot): { x: number; y: number } {
+  const a0 = (hash2(10, 0, seed ^ 0x1a4e) / 4294967296) * Math.PI * 2;
+  let first = { x: 0, y: 0 };
+  for (let i = 0; i < BEARINGS; i++) {
+    const a = a0 + (i / BEARINGS) * Math.PI * 2;
+    const at = {
+      x: Math.round(Math.cos(a) * LAKE_RING),
+      y: Math.round(Math.sin(a) * LAKE_RING),
+    };
+    if (i === 0) first = at;
+    // Clear of the coast by the lake's own width, so the two never share a shore
+    // and the beach rings can't overlap into one confused smear of sand.
+    if (seaDepth(seed, spot, at.x, at.y) < -(LAKE_RADIUS + LAKE_WOBBLE + 6)) return at;
+  }
+  return first; // never reached in practice; a total function needs an answer
+}
+
+function lakeDepth(seed: number, spot: HomesteadSpot, x: number, y: number): number {
+  return roundDepth(seed, 0x1a4e, lakeCentre(seed, spot), LAKE_RADIUS, LAKE_WOBBLE, x, y);
+}
+
+// --- Streams ------------------------------------------------------------------
+// The common water, and the one the whole depth system exists to make painless:
+// a stream is narrow enough that no tile in it reaches the shelf, so it is wholly
+// shallow and you cross it by walking into it. No bridge required, and no rule
+// saying so.
+//
+// The channels are a family of roughly parallel meanders on the town's own
+// bearing — a low-frequency field, like everything else in this file that had to
+// stop being a per-cell roll. Each channel index is hashed for whether it exists
+// at all and how wide it runs, which is what keeps a family of sine waves from
+// reading as wallpaper.
+
+/** How far apart channels run. Wide enough that you can spend a long time
+ *  between two of them and forget the last one. */
+const STREAM_SPACING = 46;
+/** How far a channel wanders across its own line. */
+const STREAM_AMP = 19;
+
+/** How far the whole FAMILY of channels is bent, and over what distance.
+ *
+ *  THE FIRST DRAFT WAS WALLPAPER, and it took a map of the whole world to see
+ *  it — from inside the game a stream looks like a stream, and it is only from
+ *  four hundred tiles up that six of them turn out to be ruled pencil lines at
+ *  even spacing. A meander alone could not fix that: every channel shares one
+ *  bearing and one wave, so they wobble in unison and stay exactly as parallel
+ *  as they started.
+ *
+ *  Bending the coordinate space instead breaks the parallelism itself. Channels
+ *  curve, converge, and drift apart, because the field they are level sets OF is
+ *  no longer flat — which is a real thing about drainage and not just noise.
+ *  Big and slow on purpose: this is the shape of a river system, not the
+ *  roughness of a bank, and `coastWarp` is already doing the latter. */
+const STREAM_WARP = 22;
+/** Half-widths, in tiles. The ceiling is what guarantees fordability: it must
+ *  stay under WATER_KINDS.stream.shelf or streams grow a deep middle and the
+ *  crossing promise quietly breaks. */
+const STREAM_HALF_MIN = 0.6;
+const STREAM_HALF_MAX = 1.4;
+/** How many candidate channels are real. Under a half, so the gaps between
+ *  streams are irregular and two can run close together. */
+const STREAM_CHANCE = 0.55;
+
+function streamDepth(seed: number, x0: number, y0: number): number {
+  const a = (hash2(11, 0, seed ^ 0x57e4) / 4294967296) * Math.PI * 2;
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
+  const pa = (hash2(12, 0, seed ^ 0x57e4) / 4294967296) * Math.PI * 2;
+  const pb = (hash2(13, 0, seed ^ 0x57e4) / 4294967296) * Math.PI * 2;
+  // Bend the ground before ruling lines on it (see STREAM_WARP).
+  const x = x0 + STREAM_WARP * Math.sin(y0 / 37 + pa) * 0.7 + STREAM_WARP * Math.sin(y0 / 83 + pb) * 0.3;
+  const y = y0 + STREAM_WARP * Math.sin(x0 / 41 + pb) * 0.7 + STREAM_WARP * Math.sin(x0 / 71 + pa) * 0.3;
+  // Along the bearing, and across it. The meander is a function of ALONG only,
+  // so a channel is a curve rather than a blotch.
+  const u = x * cos + y * sin;
+  const v = -x * sin + y * cos;
+  const meander = STREAM_AMP * (0.65 * Math.sin(u / 23 + pa) + 0.35 * Math.sin(u / 11 + pb));
+  const across = v - meander;
+  // Which channel, and how far off its centreline we are.
+  //
+  // EACH CHANNEL SITS OFF ITS OWN LINE BY A HASHED AMOUNT, which is the last
+  // thing standing between this and wallpaper. Bending the space (STREAM_WARP)
+  // made the channels curve, but curving a comb gives you a curved comb: the
+  // SPACING stayed dead even, and even spacing is the tell. Jittered, two
+  // streams sometimes run close enough to be one valley and sometimes leave a
+  // hundred tiles of dry ground between them.
+  //
+  // Three candidates rather than the nearest one, and the jitter is exactly why:
+  // an offset channel can reach past the midpoint its index owns, so rounding to
+  // the nearest line would clip it — the same mistake `inPond` makes a 3x3
+  // neighbourhood to avoid.
+  const k0 = Math.round(across / STREAM_SPACING);
+  let best = -Infinity;
+  for (let k = k0 - 1; k <= k0 + 1; k++) {
+    if (hash2(k, 0, seed ^ 0x57e4) / 4294967296 >= STREAM_CHANCE) continue;
+    const half =
+      STREAM_HALF_MIN +
+      (hash2(k, 1, seed ^ 0x57e4) / 4294967296) * (STREAM_HALF_MAX - STREAM_HALF_MIN);
+    const off = ((hash2(k, 2, seed ^ 0x57e4) / 4294967296) - 0.5) * STREAM_SPACING * 0.7;
+    best = Math.max(best, half - Math.abs(across - (k * STREAM_SPACING + off)));
+  }
+  return best;
+}
+
+/** The whole water field: the deepest answer any body gives for this tile, and
+ *  which body gave it. Null on ground no water has an opinion about — which is
+ *  most of the world, and the reason this returns null rather than a sentinel
+ *  depth: the caller's next question is always "which kind", and there is no
+ *  kind for dry meadow.
+ *
+ *  `wet` is the region's `water` (content/biomes.ts), passed in rather than
+ *  looked up, because `biomeAt` reaches `blossomCentre` reaches `onLand` — and
+ *  `onLand` needs to ask about water. Taking the number as an argument is what
+ *  breaks that cycle; see `bigWaterDepth`. */
+function waterAt(
+  seed: number,
+  spot: HomesteadSpot,
+  x: number,
+  y: number,
+  wet: number,
+): { d: number; kind: WaterKindId } | null {
+  let best: { d: number; kind: WaterKindId } | null = null;
+  const consider = (d: number, kind: WaterKindId) => {
+    // Deepest wins where two bodies overlap: a stream running into the sea is
+    // the sea at the mouth, which is both correct and what stops a channel
+    // drawing a shallow scar across a bay.
+    if (d > -waterKind(kind).beach && (!best || d > best.d)) best = { d, kind };
+  };
+  consider(seaDepth(seed, spot, x, y), "sea");
+  consider(lakeDepth(seed, spot, x, y), "lake");
+  consider(streamDepth(seed, x, y), "stream");
+  if (wet > 0) consider(pondDepth(seed, x, y, wet), "pond");
+  return best;
+}
+
+/** The tile a depth reading comes out as, or null for dry land. The four
+ *  thresholds of DESIGN §Water, in one place, so nothing can implement three of
+ *  them and forget the beach. */
+function waterTile(at: { d: number; kind: WaterKindId } | null): TileId | null {
+  if (!at) return null;
+  const kind = waterKind(at.kind);
+  if (at.d > kind.shelf) return WATER;
+  if (at.d > 0) return SHALLOW;
+  if (at.d > -kind.beach) return SAND;
+  return null;
+}
+
+/** How deep the two bodies that can actually STRAND something are — the sea and
+ *  the lake. Streams and ponds are excluded on purpose, and for two reasons:
+ *  they're shallow (so nothing is stranded by one), and asking about ponds means
+ *  asking `biomeAt`, which asks `blossomCentre`, which asks `onLand`, which asks
+ *  this. A landmark standing beside a stream is a nice place to stand. */
+function bigWaterDepth(seed: number, spot: HomesteadSpot, x: number, y: number): number {
+  return Math.max(seaDepth(seed, spot, x, y), lakeDepth(seed, spot, x, y));
+}
+
+/** How many bearings a landmark may try before it settles. */
+const BEARINGS = 16;
+
+/** A point at exactly `ring` tiles from the origin, on the first bearing from
+ *  `a0` whose ground is dry.
+ *
+ *  THIS REPLACES A MIRROR, and the mirror was a fossil of the infinite sea. When
+ *  water was the entire western half-plane, "the land is the other way" was a
+ *  true sentence and negating x was a total, radius-preserving fix. With finite
+ *  water it is neither true nor sufficient: a lake can drown a bearing in any
+ *  direction, and reflecting a point out of a disc can land it in the town — a
+ *  grove at ring 44 pushed clear of a sea centred 110 west comes out eight tiles
+ *  from the plaza, which is not a secret, it's a garden feature.
+ *
+ *  Sixteen fixed bearings is the smallest thing that is total, deterministic,
+ *  keeps the ring EXACTLY (the ring is the whole feeling of "you were going
+ *  somewhere"), and cannot loop forever. Every landmark goes through it, so a
+ *  fourth one cannot forget. */
+function onLand(
+  seed: number,
+  spot: HomesteadSpot,
+  ring: number,
+  a0: number,
+): { x: number; y: number } {
+  let first = { x: 0, y: 0 };
+  for (let i = 0; i < BEARINGS; i++) {
+    const a = a0 + (i / BEARINGS) * Math.PI * 2;
+    const at = { x: Math.round(Math.cos(a) * ring), y: Math.round(Math.sin(a) * ring) };
+    if (i === 0) first = at;
+    // A margin, not merely "not wet": a stand of trees whose far edge is in the
+    // surf is the same bug with a smaller radius.
+    if (bigWaterDepth(seed, spot, at.x, at.y) < -LANDMARK_MARGIN) return at;
+  }
+  return first;
+}
+
+/** How much dry ground a landmark wants around its centre. Comfortably past the
+ *  widest of them (the blossom rows, radius 9) plus its beach. */
+const LANDMARK_MARGIN = 14;
 
 // --- The Fen's ponds ----------------------------------------------------------
 // Water in blobs, not in cells. The first version rolled a per-cell hash, and on
@@ -807,11 +1111,18 @@ const POND_MAX_RADIUS = 2.6;
 const PONDS_PER_WATER =
   (POND_CELL * POND_CELL) / (Math.PI * ((POND_MIN_RADIUS + POND_MAX_RADIUS) / 2) ** 2);
 
-/** Is this cell standing water? `chance` is the region's `water`, read as how
- *  many of the candidate centres are actually ponds — so the knob still means
- *  "how wet is it" even though the geometry changed underneath. */
-function inPond(seed: number, x: number, y: number, chance: number): boolean {
-  if (chance <= 0) return false;
+/** How far inside a pond this cell is, in tiles — the deepest of the candidates
+ *  that reach it, or -Infinity where none do. `chance` is the region's `water`,
+ *  read as how many of the candidate centres are actually ponds, so the knob
+ *  still means "how wet is it" even though the geometry changed underneath.
+ *
+ *  Returns a DEPTH rather than the boolean it used to, which is what buys the fen
+ *  a sand rim and lets two or three merged centres grow a middle you can't
+ *  wade. The waterline is unchanged: `d > 0` is the same set of cells `dist <= r`
+ *  named, bar exact equality. */
+function pondDepth(seed: number, x: number, y: number, chance: number): number {
+  if (chance <= 0) return -Infinity;
+  let best = -Infinity;
   const cx = Math.floor(x / POND_CELL);
   const cy = Math.floor(y / POND_CELL);
   // The 3x3 neighbourhood, because a pond near a cell edge reaches into the next
@@ -831,10 +1142,10 @@ function inPond(seed: number, x: number, y: number, chance: number): boolean {
       const r =
         POND_MIN_RADIUS +
         (hash2(mx, my, seed ^ 0x6a3c) / 4294967296) * (POND_MAX_RADIUS - POND_MIN_RADIUS);
-      if ((px - x) * (px - x) + (py - y) * (py - y) <= r * r) return true;
+      best = Math.max(best, r - Math.hypot(px - x, py - y));
     }
   }
-  return false;
+  return best;
 }
 
 /** Whether a cell is close enough to the grove to be part of its setting.
@@ -981,7 +1292,63 @@ export function decoHash(x: number, y: number, seed: number): number {
  *  can promise the dig before it happens (see `actionTarget`). */
 export function canDig(world: WorldState, x: number, y: number): boolean {
   const t = tileAt(world, x, y);
-  return t === GRASS || t === MUSHROOM;
+  return t === GRASS || t === MUSHROOM || t === SAND;
+}
+
+/** What the ground closes back to when a hole heals (sim/gather.ts).
+ *
+ *  GRASS unless the generator says this is shore, in which case sand — the two
+ *  bare grounds a dug tile can have come from. Deliberately not "whatever
+ *  `generatedTile` returns": that could be a tree, a rock, or open water, and
+ *  the reclaim rule is about the grass closing over, not about the world
+ *  re-growing something you cleared on purpose or drowning you where you stand. */
+export function healsTo(world: WorldState, x: number, y: number): TileId {
+  const was = generatedTile(world.seed, world.homestead.spot, x, y);
+  return was === SAND ? SAND : GRASS;
+}
+
+/** Ground that will hold a board but not a building: the shallows.
+ *
+ *  WHY IT ISN'T PART OF `refusesConstruction`. That predicate is also consulted
+ *  by `placePlank`, and a plank over the shallows is a BOARDWALK — a thing you
+ *  should absolutely be able to want, and one that costs the game nothing to
+ *  allow. What has to be refused is footing: a wall, a floor, a bed.
+ *
+ *  It has to be said out loud because shallow water is not `solid` — that is the
+ *  entire point of it — so every existing placement guard, which tests exactly
+ *  that one flag, waves it straight through. Without this the first arrival's
+ *  cottage gets sited in the surf, and the second thing that happens is nobody
+ *  can work out why. */
+export function refusesFooting(world: WorldState, x: number, y: number): boolean {
+  return tileAt(world, x, y) === SHALLOW;
+}
+
+/** Can the shovel fill this water in?
+ *
+ *  Both depths, and the caller decides which one it's allowed to reach: shallow
+ *  is underfoot (you're standing in it), deep is the tile you're facing (you
+ *  can't stand in it), exactly the way a tree is felled. See `actionTarget`.
+ *
+ *  Terraforming is always free (DESIGN §Materials) and that has to include the
+ *  water or it's a slogan — so this costs nothing, needs no material, and is not
+ *  gated on the size of what you're filling. Someone may fill the ocean. It will
+ *  take them a while. */
+export function canFill(world: WorldState, x: number, y: number): boolean {
+  const t = tileAt(world, x, y);
+  return t === WATER || t === SHALLOW;
+}
+
+/** Fill water in. Leaves SAND — you filled it with the shore, and the new shore
+ *  is what you stand on to reach the next tile.
+ *
+ *  BOOKS NO RECLAIM, and that is the one deliberate exception to "the world
+ *  heals where you aren't invested" (DESIGN §Water). Grass closing over an
+ *  abandoned hole is generous; a sea closing over an afternoon's terraforming
+ *  while you were asleep is a tax on the one activity the doc calls free. */
+export function fill(world: WorldState, x: number, y: number): boolean {
+  if (!canFill(world, x, y)) return false;
+  setTile(world, x, y, SAND);
+  return true;
 }
 
 /** How long dug earth lies bare before the grass closes over it.
@@ -1013,20 +1380,29 @@ export function dig(world: WorldState, x: number, y: number, now: number): boole
   return true;
 }
 
-/** Place a wood plank on any non-solid, non-planted ground. */
+/** Place a wood plank on any non-solid, non-planted ground — and on water of
+ *  either depth, which is the one place a plank is allowed to sit on something
+ *  `solid`.
+ *
+ *  A BRIDGE OVER THE OCEAN IS ALLOWED. Deliberately (DESIGN §Water): real time
+ *  gates this world, never the player's hands, and someone who planks ninety
+ *  tiles out to the far shore has built the best story this game can produce.
+ *  Refusing it would buy a wall and sell a legend. */
 export function placePlank(world: WorldState, x: number, y: number): boolean {
   const t = tileAt(world, x, y);
-  if (tileDef(t).solid) return false;
+  if (tileDef(t).solid && t !== WATER) return false;
   if (world.crops[tileKey(x, y)]) return false; // don't pave over a plant
   if (refusesConstruction(world, x, y)) return false; // nor over her trees
   setTile(world, x, y, 2 /* PLANK */);
   return true;
 }
 
-/** Till grass/dirt into farmland (the first half of planting). */
+/** Till grass/dirt/sand into farmland (the first half of planting). Sand is in
+ *  the list because a beach is ground like any other here — you may farm the
+ *  shore, and nothing about sand is a penalty (DESIGN §Water). */
 export function till(world: WorldState, x: number, y: number): boolean {
   const t = tileAt(world, x, y);
-  if (t === GRASS || t === DIRT) {
+  if (t === GRASS || t === DIRT || t === SAND) {
     setTile(world, x, y, FARMLAND);
     return true;
   }

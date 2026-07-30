@@ -16,10 +16,15 @@ import {
   HOME_REGION_REACH,
 } from "./world";
 import { BIOMES, FIELD_BIOMES } from "../content/biomes";
-import { ROCK } from "../content/tiles";
+import { ROCK, WATER, SHALLOW, SAND } from "../content/tiles";
 import type { HomesteadSpot } from "./types";
 
 const SPOTS: HomesteadSpot[] = ["riverside", "forest", "hilltop"];
+
+/** BIOMES.blossom's radius, mirrored here so the orchard-in-the-sea test can
+ *  check its EDGES and not merely its centre — a stand whose far side is in the
+ *  surf is the same bug at a smaller radius. */
+const BLOSSOM_R = 9;
 
 describe("the biome field", () => {
   it("is a stable fact about a town, not a roll", () => {
@@ -159,13 +164,34 @@ describe("the blossom rows", () => {
     }
   });
 
-  it("never lands in the sea of a riverside town", () => {
-    // The onLand bug, third landmark, same test. A riverside town is water from
-    // x = -13 westward without limit, so an orchard on a seeded bearing alone
-    // drowns in about half of them.
-    for (let seed = 1; seed <= 500; seed++) {
-      const c = blossomCentre(seed, "riverside");
-      expect(c.x).toBeGreaterThan(-12);
+  it("never lands in the sea, on any spot", () => {
+    // The onLand bug, third landmark, same test — but asking the question the
+    // right way round now. It used to assert `c.x > -12`, which was never really
+    // the invariant: it was the shape of the *fix* back when the sea was the
+    // whole western half-plane and "not west of here" meant "not wet". With a
+    // finite sea that sentence is false in both directions — there is dry land
+    // far west, and there is water in every other direction too.
+    //
+    // So assert the thing we actually mean: no part of the orchard is water you
+    // cannot walk through.
+    //
+    // SHALLOW IS ALLOWED, and the first draft of this test wrongly forbade it. A
+    // stream running through the cherry trees is a nice thing to walk into, and
+    // `onLand` deliberately only steers landmarks clear of the SEA and the LAKE
+    // — the two bodies that can actually strand one. Forbidding the shallows
+    // here would be asking the siting code to avoid something harmless, which is
+    // how a test starts dictating the design instead of describing it.
+    //
+    // Sampling the edges and not just the centre is deliberate too: the sea's
+    // shelf is 5 tiles, so an orchard sitting in the surf would show open water
+    // at its rim even while its middle looked merely damp.
+    for (const spot of SPOTS) {
+      for (let seed = 1; seed <= 500; seed++) {
+        const c = blossomCentre(seed, spot);
+        for (const [dx, dy] of [[0, 0], [BLOSSOM_R, 0], [-BLOSSOM_R, 0], [0, BLOSSOM_R], [0, -BLOSSOM_R]]) {
+          expect(generatedTile(seed, spot, c.x + dx, c.y + dy)).not.toBe(WATER);
+        }
+      }
     }
   });
 
@@ -205,8 +231,15 @@ describe("rocks never touch", () => {
     for (let y = -220; y <= 220; y += 3) {
       for (let x = -220; x <= 220; x += 3) {
         if (biomeAt(21, "hilltop", x, y) !== "scrub") continue;
+        // Coast doesn't count. A scrub region that runs into the sea is still as
+        // rocky as it ever was on the ground it has — counting the water and the
+        // beach as un-rocky scrub measures the coastline, not the scatter, and
+        // would turn any future change to where the sea sits into a mystifying
+        // failure in a test about rocks.
+        const t = generatedTile(21, "hilltop", x, y);
+        if (t === WATER || t === SHALLOW || t === SAND) continue;
         tiles++;
-        if (generatedTile(21, "hilltop", x, y) === ROCK) rocks++;
+        if (t === ROCK) rocks++;
       }
     }
     expect(tiles).toBeGreaterThan(200); // the sample is worth something

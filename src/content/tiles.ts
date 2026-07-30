@@ -68,6 +68,25 @@ export const HUM_CUBE: TileId = 15; // the landmark that hums. Solid, and that's
  *  about. */
 export const JUNK_PILE: TileId = 16;
 
+/** The shore, and the shallows (Phase 5c). Both are generated terrain, and both
+ *  exist because an unbounded world may not contain unbounded water: the sea is
+ *  finite now, so it has an EDGE, and an edge needs the two tiles an edge is
+ *  made of (DESIGN §Water).
+ *
+ *  SAND is a skin and nothing else — it behaves exactly like the grass it
+ *  replaces, down to being diggable and tillable. You may farm the beach. It
+ *  carries no material and gates nothing; it is what the ground looks like
+ *  where water stops.
+ *
+ *  SHALLOW is the fordable half of water, and it is walkable — which is the
+ *  whole reason streams and small ponds are crossable without a bridge (their
+ *  depth never reaches the shelf, so they have no deep middle). Being walkable
+ *  is also its one danger: `isWalkable`, `structures.ts` and `furniture.ts` all
+ *  test `solid`, so without the explicit refusals beside those calls the first
+ *  arrival's cottage gets sited in the surf. */
+export const SAND: TileId = 17;
+export const SHALLOW: TileId = 18;
+
 export const TILES: Record<TileId, TileDef> = {
   [GRASS]: {
     id: GRASS,
@@ -224,6 +243,30 @@ export const TILES: Record<TileId, TileDef> = {
     top: "#6b7085",
     shade: "#464a5a",
     solid: true,
+  },
+  [SAND]: {
+    id: SAND,
+    name: "Sand",
+    // Warm and pale, and deliberately far enough from DIRT's brown that a beach
+    // never reads as a strip somebody dug. It meets grass constantly, so the
+    // bevel earns its keep here more than anywhere — this is the boundary the
+    // per-cell rule's fix was written for (drawn only where the material ends).
+    color: "#ddca97",
+    top: "#e9d7a6",
+    shade: "#c7b483",
+    diggable: true,
+    tillable: true,
+  },
+  [SHALLOW]: {
+    id: SHALLOW,
+    name: "Shallow water",
+    // Flat, like WATER, and for the same reason: it animates its own ripple and
+    // a bevel on every cell would band the surface (CLAUDE.md). Pale enough
+    // against the deep blue that "I can wade here" is legible at a glance
+    // WITHOUT a HUD ever saying so — the colour is the affordance.
+    color: "#7cc3de",
+    // NOT solid. That is the feature, and the thing every `solid` check nearby
+    // has had to be taught about.
   },
   [FARMLAND_WET]: {
     id: FARMLAND_WET,

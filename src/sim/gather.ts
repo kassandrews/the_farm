@@ -22,7 +22,7 @@ import type { WorldState, Layer } from "./types";
 import type { NodeId } from "../content/nodes";
 import { nodeDef, nodeForTile } from "../content/nodes";
 import type { ItemId } from "../content/items";
-import { tileAt, setTile, tileKey } from "./world";
+import { tileAt, setTile, tileKey, healsTo } from "./world";
 import { GRASS, DIRT } from "../content/tiles";
 import { add } from "./inventory";
 import { furnitureAt } from "./furniture";
@@ -191,7 +191,16 @@ export function updateReclaim(world: WorldState, now: number): number {
       continue;
     }
     if (now < at) continue;
-    setTile(world, x, y, GRASS);
+    // What closes over it is what the GROUND here is, not always grass. On a
+    // beach that difference is the whole of it: a dug shore that healed green
+    // would grow a lawn two tiles from the sea, and it would do it slowly enough
+    // that nobody would connect it to the shovel.
+    //
+    // Asked of the generator rather than remembered on the tile, because that is
+    // where the answer already lives — an unedited tile is whatever generation
+    // says, forever (world.ts's opening note), and a stored "what was here"
+    // would be a second copy of it that can drift.
+    setTile(world, x, y, healsTo(world, x, y));
     delete world.reclaim[key];
     closed++;
   }

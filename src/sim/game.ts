@@ -14,6 +14,8 @@ import { remember } from "./memory";
 import type { MemoryKind } from "./memory";
 import {
   canDig,
+  canFill,
+  fill,
   canSink,
   sink,
   fillShaft,
@@ -402,9 +404,19 @@ export interface ActionTarget {
  *  Precedence, and why:
  *   1. A ripe crop underfoot — the ripe carrot is always one tap away, whatever
  *      tool is held.
- *   2. The gather tool always means the node in reach, since nodes are SOLID and
- *      you can never stand on one (see nodeNear): "the tile underfoot" can never
- *      reach a tree.
+ *   1b. Water ahead of the shovel, chosen by HEADING — the one step that had to
+ *      go above the tile underfoot, because the ground you stand on to fill
+ *      water is sand and sand is diggable. See the comment at the call.
+ *   2. The gather tool means the node in reach, since nodes are SOLID and you
+ *      can never stand on one (see nodeNear): "the tile underfoot" can never
+ *      reach a tree. UNLESS underfoot is itself gatherable — a mushroom, or
+ *      something the Gremlin left — because those two are picked up rather than
+ *      felled, and this step's own justification does not cover them.
+ *
+ *      That exception was missing for a long time and cost nothing until the
+ *      water pass moved the terrain under an away-sim test: standing ON a junk
+ *      pile with the gather tool, with a tree that happened to be beside you,
+ *      chopped the tree. Which is step 3's hijack exactly, one step early.
  *   3. The held tool on the tile underfoot, when it would actually do something.
  *      Deliberately ahead of the node: a tree beside you must never hijack a
  *      deliberate act, or you couldn't till the ground at the forest edge.
@@ -431,9 +443,31 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
   // shortcut means a tree beside the hole can't hijack the step down.
   if (tileAt(world, x, y) === SHAFT) return { x, y, kind: "shaft" };
 
+  // Deep water AHEAD, for the shovel. Two decisions here, and they're the same
+  // two the underground pick made (see undergroundTarget), for the same reasons:
+  //
+  //  IT IS CHOSEN BY HEADING, not by a fallback search over the neighbours. The
+  //  tree answer — try every side, take the first — is wrong at a shoreline for
+  //  exactly the reason it's wrong in a tunnel: standing in a cove with water on
+  //  three sides, it would fill a tile you didn't mean, and terraforming would
+  //  stop being something you steer.
+  //
+  //  IT SITS ABOVE THE TILE UNDERFOOT, which is the one place this ladder's
+  //  usual precedence had to give. The ground at a shoreline is SAND, and sand
+  //  is diggable — so with underfoot winning, the shovel at the water's edge
+  //  would turn the beach over forever and could never once reach the sea. The
+  //  water would be unfillable in precisely the place you'd stand to fill it.
+  //  Heading is what makes that safe: face the water and you fill it, turn
+  //  around and you dig the shore, and the reticle says which before you tap.
+  if (tool === "dig" && world.player.layer === "surface") {
+    const ahead = aheadOf(world);
+    if (canFill(world, ahead.x, ahead.y)) return { ...ahead, kind: "tool" };
+  }
+
   const near = nodeNear(world, x, y, world.player.facing);
-  if (near && tool === "gather") return { x: near.x, y: near.y, kind: "gather" };
-  if (toolApplies(world, tool, x, y)) return { x, y, kind: "tool" };
+  const underfoot = toolApplies(world, tool, x, y);
+  if (near && tool === "gather" && !underfoot) return { x: near.x, y: near.y, kind: "gather" };
+  if (underfoot) return { x, y, kind: "tool" };
   if (near) return { x: near.x, y: near.y, kind: "gather" };
 
   const board = boardNear(world, x, y);
@@ -567,11 +601,12 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
 function toolApplies(world: WorldState, tool: Tool, x: number, y: number): boolean {
   switch (tool) {
     case "dig":
-      // Two states of the same tile, in order: grass becomes dirt, and dirt
-      // becomes a way down. They can't both be true (canDig is grass and
-      // mushrooms, canSink is dirt), so this is one shovel with two answers
-      // rather than a precedence question.
-      return canDig(world, x, y) || canSink(world, x, y);
+      // Three states of the same tile, in order: grass becomes dirt, dirt
+      // becomes a way down, and water becomes shore. No two can be true at once
+      // (canDig is grass, mushrooms and sand; canSink is dirt; canFill is
+      // water), so this is one shovel with three answers rather than a
+      // precedence question.
+      return canDig(world, x, y) || canSink(world, x, y) || canFill(world, x, y);
     case "gather": {
       // The two gatherables that aren't nodes: a mushroom that came up, and
       // something the Gremlin left. Both are picked up rather than felled.
@@ -624,6 +659,21 @@ function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: num
         sink(world, x, y);
         witness(world, "dug", undefined, now);
         return { kind: "sink", changed: true, message: "The earth gives, and keeps giving. There's a way down." };
+      }
+      // Water in, shore out. Before digWithFind for the same reason `canSink`
+      // is: digWithFind would decline the water and report nothing to dig.
+      //
+      // No find, deliberately — junk is what turning over the LAWN turns up
+      // (DESIGN §Materials), and a seabed that paid out would make filling the
+      // ocean a farm rather than a folly.
+      if (canFill(world, x, y)) {
+        fill(world, x, y);
+        witness(world, "dug", undefined, now);
+        return {
+          kind: "dig",
+          changed: true,
+          message: "The water gives way. Sand, and then more sand.",
+        };
       }
       // digWithFind, not dig: the shovel and the ground's contents are one
       // operation, because the payout has to be decided before the dig writes

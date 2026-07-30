@@ -346,6 +346,82 @@ play.
 Opening beat: the Office Creature stamps your land claim. That's the whole
 cutscene.
 
+## Water
+
+The world is unbounded, so **no water may be unbounded with it**. A body of
+water you cannot get around is not a place, it is a wall through the middle of
+an infinite map — and the first version of this game had one: every tile west
+of x = −13 was sea, at every y, forever. Half the world was unreachable and
+the landmark siting had to mirror itself east to avoid drowning the Ghost.
+
+Every body of water is therefore **finite and walk-around-able**, up to and
+including the ocean, which is big enough to be an expedition and small enough
+to have a far shore you can stand on and look back from. Villagers may believe
+the water is the end of the world. Nothing in the game ever confirms or denies
+that you got round it.
+
+### Depth is one number
+
+Water has a **signed distance to its own shore**, and everything else is a
+threshold on it:
+
+    d > shelf   deep      solid; the barrier
+    d > 0       shallow   walkable; you wade
+    d > -beach  sand      shore
+    else        land
+
+`shelf` and `beach` are per water kind — a content table row, not a code path.
+
+The consequence is the design, and it wasn't legislated: a stream is one or two
+tiles wide, so it is never far from its own bank, so it is **wholly shallow and
+fordable**. Small ponds likewise. Water is deep in the middle, and small water
+has no middle. "You can always cross a stream" is geometry rather than a rule,
+which means nobody has to remember it when adding the next kind of water.
+
+Four kinds: **streams** (never deep), **ponds** (deep only if unusually large),
+**lakes** (wadeable rim, real barrier in the middle), and the **sea** (a proper
+shelf, then the deep).
+
+### Sand is a skin
+
+Beach is the shore's own ground: sandy coloured, and behaves exactly like the
+grass and dirt it replaces — diggable, tillable, plantable. It carries no
+material, gates nothing, and grows nothing special. It is what the edge of
+water looks like, and that is the whole of its job.
+
+### You may cross it, and you may fill it
+
+Both follies are open, and both are the existing verbs reaching further:
+
+- **Planks go down on any water, deep included.** Someone sufficiently
+  committed can bridge the ocean and stand on the far shore having built a pier
+  the length of the world. This is allowed on purpose: real time gates the
+  world, never the player's hands (§Pillars), and the game is open to fantasy
+  as a fundamental facet. The villagers have no word for what you did.
+- **The shovel fills any water you can stand next to.** Shallow is underfoot,
+  like turning over a lawn; deep is the tile you're facing, like felling a
+  tree. Filling leaves sand, which is new shore to stand on for the next tile —
+  so the ocean is fillable, from the edge inward, forever. Nothing
+  special-cases the sea; it is the longest instance of the rule that also
+  tidies a puddle. Terraforming is always free (§Materials), and that has to
+  include the water or it is a slogan.
+
+**Filled water does not heal.** This is the one deliberate exception to "the
+world heals where you aren't invested" (§Materials). Grass closing over a hole
+you abandoned is generous; a sea closing over an afternoon's work while you
+were asleep is a tax on the one activity the doc calls free. Water finding its
+level is good physics and bad cozy.
+
+### What water may never do
+
+- **Never spread, never flow, never rise.** Terrain is a total function of the
+  seed plus your stored edits. The moment water simulates, terrain stops being
+  derivable and starts having to be saved.
+- **Never be created.** There is no water-placing tool. The asymmetry is the
+  point: you may unmake the world's water, and the world does not make more.
+- **Never gate a material.** No recipe, yield or unlock is across water — same
+  invariant as biomes. Water changes how far you walk, never what you may have.
+
 ## Materials
 
 Three gathered classes, and no more: **wood**, **stone**, and **ore** (one
@@ -469,13 +545,15 @@ the explicit not-taken list.
 Materials are required but never rationed:
 
 - Terraforming is always free. Digging and shaping land costs nothing,
-  ever — the shovel is never blocked.
+  ever — the shovel is never blocked. That includes **water**: filling a
+  stream, a pond or the sea itself costs no material and needs no tool you
+  don't already hold (§Water).
 - One tree yields many boards. Cost is a rhythm, not an economy.
 - Felled trees and rocks regrow on the real clock — *unless you've claimed
   that ground*. Clear a tree and leave bare dirt and it returns; clear it
   and pave, till, or build there and it's yours for good. The world heals
   where you aren't invested and stays exactly as you shaped it where you
-  are.
+  are. **Filled water is the one exception** and §Water argues it.
 - **Ore veins do not come back, and that is the same rule and not an
   exception to it.** Underground there is no unclaimed ground: every open
   cell down there is one you cut, so a vein regrowing would re-block a
