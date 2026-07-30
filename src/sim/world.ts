@@ -1667,6 +1667,23 @@ export function isWalkable(
   return !furnitureBlocksHere(world, x, y);
 }
 
+/** What this cell does to the speed of anything walking across it — 1 on open
+ *  ground, less in the shallows (see `speed` in content/tiles.ts).
+ *
+ *  Shared by the player and the villagers so that the water applies to everyone.
+ *  A villager striding through the surf at full pace beside a player slogging
+ *  would say the wading is an effect on the camera rather than a fact about the
+ *  world. It reads the GROUND only — built structures and furniture stand on
+ *  tiles you can't walk through anyway. */
+export function tileSpeed(
+  world: WorldState,
+  x: number,
+  y: number,
+  layer: Layer = "surface",
+): number {
+  return tileDef(tileAt(world, x, y, layer)).speed ?? 1;
+}
+
 /** Whether solid furniture covers this cell.
  *
  *  The anchor search is repeated here rather than imported from

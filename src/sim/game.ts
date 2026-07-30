@@ -28,6 +28,7 @@ import {
   homesteadOrigin,
   generatedTile,
   cubeSite,
+  tileSpeed,
 } from "./world";
 import { placeStructure, removeStructure } from "./structures";
 import { rooms } from "./rooms";
@@ -277,7 +278,13 @@ export function tick(world: WorldState, dt: number, now: number): void {
       p.y = p.target.y;
       p.target = null;
     } else {
-      const step = Math.min(dist, PLAYER_SPEED * dt);
+      // Speed is read from the tile you are STANDING on, not the one you are
+      // stepping onto, so the shallows slow you while you're in them and let go
+      // the moment you're out. Reading the destination instead would brake you
+      // on the bank a step before you got wet, which feels like the water
+      // reaching for you.
+      const pace = PLAYER_SPEED * tileSpeed(world, Math.round(p.x), Math.round(p.y), p.layer);
+      const step = Math.min(dist, pace * dt);
       // Collide per axis rather than as a point, so a wall STOPS you and a
       // glancing approach slides along it instead of sticking. Until structures
       // existed only the destination tile was ever checked, which meant tapping

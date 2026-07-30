@@ -407,6 +407,14 @@ Five kinds: **streams** (never deep), **ponds** (deep only if unusually large),
 **lakes** (wadeable rim, real barrier in the middle), and the **sea** (a proper
 shelf, then the deep).
 
+**Wading is slower than walking**, and that is the whole of what crossing water
+costs you. A tile may carry a speed multiplier; shallow water is the only tile
+that does, at 0.6, and it applies to villagers as well as to the player. It is
+not a stamina system and must never grow into one (see the invariants): there is
+no budget, no meter and no recovery — you are slow while you are in the water and
+ordinary the moment you step out. Sand stays at full speed, because a beach is a
+place, not an obstacle.
+
 Streams run in **two families on different bearings**, so they cross and join
 and the world has no grain. That is an approximation of a drainage network and
 openly so: real veins come from flow accumulation on a height field, which is

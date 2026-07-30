@@ -20,7 +20,7 @@ import {
   cubeSite,
   homesteadOrigin,
 } from "./world";
-import { newWorld, contextAction, playerTile } from "./game";
+import { newWorld, contextAction, playerTile, tick } from "./game";
 import { canPlaceStructure } from "./structures";
 import { canPlaceFurniture } from "./furniture";
 import { updateReclaim } from "./gather";
@@ -292,12 +292,45 @@ describe("small water is fordable, and nothing had to say so", () => {
     expect(river.channel!.halfMax).toBeGreaterThan(river.shelf);
   });
 
+  it("keeps every pinching channel's narrows fordable", () => {
+    // The river's half of the promise, and until now it lived only in a comment.
+    // A river is allowed to be deep, so it needs the fords its pinch cuts — and
+    // the arithmetic ties two numbers together that LOOK independent in the
+    // table. Widening `halfMax` without deepening `pinch` leaves a river with no
+    // crossing anywhere along it, which is not a visible bug: it looks like a
+    // river, and you find out by walking a bank for a mile.
+    for (const kind of Object.values(WATER_KINDS)) {
+      const ch = kind.channel;
+      if (!ch?.pinch) continue;
+      expect(ch.halfMax * (1 - ch.pinch)).toBeLessThan(kind.shelf);
+    }
+  });
+
   it("keeps the shallows walkable and the deep not", () => {
     const w = newWorld({ name: "T", form: "dog", spot: "forest", seed: 5 });
     setTile(w, 40, 40, SHALLOW);
     setTile(w, 41, 40, WATER);
     expect(isWalkable(w, 40, 40)).toBe(true);
     expect(isWalkable(w, 41, 40)).toBe(false);
+  });
+
+  it("wades the shallows slower than it walks the grass", () => {
+    // Crossing water should COST something, and the only currency this game
+    // spends is seconds (no stamina — DESIGN invariant). So the test is a race:
+    // the same walk, the same tick, one lap on grass and one in the water.
+    const walk = (tile: number): number => {
+      const w = newWorld({ name: "T", form: "dog", spot: "forest", seed: 5 });
+      const { x, y } = playerTile(w);
+      for (let i = 0; i <= 6; i++) setTile(w, x + i, y, tile);
+      w.player.target = { x: x + 6, y };
+      const from = w.player.x;
+      tick(w, 0.25, Date.now());
+      return w.player.x - from;
+    };
+    const dry = walk(GRASS);
+    const wet = walk(SHALLOW);
+    expect(wet).toBeGreaterThan(0); // wading, not wall
+    expect(wet).toBeLessThan(dry * 0.8);
   });
 
   it("declares a shelf every kind's own water can actually be measured against", () => {

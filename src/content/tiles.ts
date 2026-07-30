@@ -23,6 +23,20 @@ export interface TileDef {
   tillable?: boolean;
   /** Blocks walking (the tent footprint, water). */
   solid?: boolean;
+  /** How fast you cross it, as a multiple of your own walking speed. Omitted
+   *  means 1, and almost every row omits it.
+   *
+   *  A FIELD rather than a check for shallow water in the movement code, for the
+   *  usual reason (CLAUDE.md): how a tile feels underfoot is a property of the
+   *  tile. But shipped with exactly one row setting it, because the moment two
+   *  or three do, plain grass becomes the slow case and the world acquires a
+   *  speed gradient nobody asked for. Sand in particular stays 1 — it is a skin
+   *  and nothing else, as the note on SAND says.
+   *
+   *  It is NOT a stamina meter and must not become one (DESIGN invariant): it
+   *  costs seconds while you're in the water and nothing at all once you're out.
+   *  There is no budget, no recovery, and no state. */
+  speed?: number;
 }
 
 // Stable ids. The vertical slice ships six; the two the player places by hand
@@ -267,6 +281,12 @@ export const TILES: Record<TileId, TileDef> = {
     color: "#7cc3de",
     // NOT solid. That is the feature, and the thing every `solid` check nearby
     // has had to be taught about.
+    //
+    // Slow, though, and it is the only tile in the table that is. Crossing water
+    // should be something you notice doing — the colour already says "you may
+    // wade here", and this makes the wading itself legible without a word of UI.
+    // 0.6 is a drag you feel on a two-tile stream and can't mistake for lag.
+    speed: 0.6,
   },
   [FARMLAND_WET]: {
     id: FARMLAND_WET,

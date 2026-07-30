@@ -2204,6 +2204,35 @@ thought the first two started.
   warped frame so the rest of its meander is still the seed's. The bridges were
   already generated, so the crossing came for free.
 
+**Then the river got wider, and wading got slower** — the two things the feel
+pass wanted from the water once it existed.
+
+- **`halfMin` 2.4 → 3.4, `halfMax` 3.6 → 4.6, `pinch` 0.62 → 0.72.** The river
+  looked thin, and the reason was not the half-width: at a typical point on the
+  pinch cycle only about 1.3 tiles of it were deep, so a river read as a wide
+  stream with a dark line down the middle. **The quantity to tune is
+  `half × squeeze − shelf`, doubled** — the deep band as seen — and the
+  half-width alone will mislead you about it. Measured after: mean deep band
+  2.37 tiles, mean total width 4.8, and exactly one row in 800 where the river
+  briefly has no water at all.
+- **The ford invariant is now a test, not a comment.** `halfMax × (1 − pinch) <
+  shelf` is what guarantees every river pinches to a crossing somewhere, and it
+  ties two table numbers together that look independent. Widening a river without
+  deepening its pinch produces a river with no crossing along its whole length —
+  which is not a visible bug, because it still looks like a river. You find out
+  by walking a bank for a mile. `sim/water.test.ts` fails instead now.
+- **Speed is a TileDef field, and shallow water is the only row that sets it**
+  (0.6, players and villagers alike). A field rather than a check for water in
+  the movement code, for the usual reason. Shipped with one row on purpose: the
+  moment three tiles have opinions, plain grass becomes the slow case and the
+  world has a speed gradient nobody asked for. Sand explicitly stays at 1 — the
+  table already promises sand behaves exactly like the grass it replaces.
+  **It is not a stamina meter and must not become one** (DESIGN invariant): it
+  costs seconds in the water and nothing at all once you're out.
+- **Read the tile you are STANDING on, not the one you are stepping onto.**
+  The destination-tile version brakes you on the bank a step before you get wet,
+  which feels like the water reaching for you.
+
 **CACHE THE LANDMARK CENTRES, or the searches nest.** Every landmark centre is a
 total function of (seed, spot) computed by searching sixteen bearings, and each
 bearing asks how deep the water is. Once water became a scatter, one such

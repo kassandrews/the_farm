@@ -150,17 +150,28 @@ export const WATER_KINDS: Record<WaterKindId, WaterKindDef> = {
       spacing: 170,
       amplitude: 34,
       warp: 30,
-      halfMin: 2.4,
-      halfMax: 3.6,
+      // Wide enough that the deep band survives the pinch. The first pass ran
+      // 2.4/3.6, which is a fine number for the river's OUTLINE and a bad one
+      // for its middle: at a typical point on the pinch cycle it left about a
+      // tile and a third of deep water, so the river read as a wide stream with
+      // a dark line down it. What you see is `half × squeeze − shelf`, doubled,
+      // and it is the quantity to tune — not the half-width on its own.
+      halfMin: 3.4,
+      halfMax: 4.6,
       chance: 0.55,
       // One family: a second bearing of rivers would give a town two of them,
       // and two rivers is a delta, which is a different place than we're making.
       families: 1,
-      // Down to 38% of its width at the narrows. Tuned so that even the WIDEST
-      // river pinches under `shelf` — 3.6 × 0.38 = 1.37, against a shelf of 1.4
+      // Down to 28% of its width at the narrows. Tuned so that even the WIDEST
+      // river pinches under `shelf` — 4.6 × 0.28 = 1.29, against a shelf of 1.4
       // — because a ford that only some rivers have is a ford you cannot rely
       // on, and the whole promise is that you are never blocked, only delayed.
-      pinch: 0.62,
+      //
+      // So this number is not free: it moves with `halfMax`, and widening the
+      // river without deepening the pinch is what silently costs the world its
+      // crossings. `halfMax × (1 − pinch) < shelf` is asserted in
+      // sim/water.test.ts so that edit fails loudly instead.
+      pinch: 0.72,
       pinchPeriod: 37,
     },
   },

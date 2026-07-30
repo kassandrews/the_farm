@@ -18,6 +18,7 @@ import type { Point } from "./path";
 import { buildRevision } from "./structures";
 import { stopTarget } from "./housing";
 import { followTarget, isCompanion } from "./company";
+import { tileSpeed } from "./world";
 
 const WALK_SPEED = 2.2; // tiles / second
 
@@ -156,7 +157,12 @@ function walkToward(world: WorldState, v: Villager, goal: Point, dt: number): vo
 
   // Walk the remaining budget along the route, consuming waypoints as we reach
   // them — a slow tick shouldn't cost a villager a corner and let them clip it.
-  let budget = WALK_SPEED * dt;
+  // Their own base speed, times whatever they're standing on — the same water
+  // that slows the player slows them (`tileSpeed`). Sampled once per tick rather
+  // than per waypoint: a tick is a fraction of a tile, so the difference is
+  // invisible, and re-reading it mid-loop would let a long tick spend a
+  // fast-ground budget in the water.
+  let budget = WALK_SPEED * tileSpeed(world, Math.round(v.x), Math.round(v.y)) * dt;
   while (budget > 0 && route.legs.length > 0) {
     const leg = route.legs[0];
     const dx = leg.x - v.x;
