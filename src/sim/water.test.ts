@@ -31,6 +31,23 @@ import type { HomesteadSpot } from "./types";
 
 const SPOTS: HomesteadSpot[] = ["riverside", "forest", "hilltop"];
 
+/** Vitest's default timeout is 5s, which is tuned for unit tests that call a
+ *  function a few times. The transects below evaluate the terrain generator over
+ *  hundreds of thousands of tiles, on purpose and irreducibly — the comments on
+ *  each one explain why a shorter scan measures the ray rather than the world.
+ *
+ *  They pass in 1.6–5.0s alone, which means the slowest genuinely exceeds the
+ *  default and the rest clear it by too little to survive a loaded machine. Two
+ *  of them timed out the first time this suite was run alongside a typecheck and
+ *  a build in the same command — a green suite that goes red when the laptop is
+ *  busy teaches you to re-run tests instead of believing them, which is worse
+ *  than a slow test.
+ *
+ *  Generous rather than snug: this is a ceiling that catches a HANG, not a
+ *  budget for a scan. If one of these ever approaches it, the fix is to look at
+ *  what got slower, not to raise the number. */
+const TRANSECT = 30_000;
+
 describe("the sea is finite", () => {
   /** Every run of sea water along a ray, in tiles. The ruler both of the tests
    *  below want: one asks whether the runs are BOUNDED, the other whether there
@@ -84,7 +101,7 @@ describe("the sea is finite", () => {
       }
       expect(met).toBeGreaterThan(3);
     }
-  });
+  }, TRANSECT);
 
   it("has a far shore on every ray, on every spot", () => {
     // THE OTHER HALF, and the one that must survive the scatter. Every sea is
@@ -110,7 +127,7 @@ describe("the sea is finite", () => {
         }
       }
     }
-  });
+  }, TRANSECT);
 
   it("still puts water off the west of a riverside town, where it always was", () => {
     // The compatibility half, and it now means something different than it did.
@@ -561,7 +578,7 @@ describe("a river may run through town, because the town has bridges", () => {
         expect(findPath(w, { x: 0, y: 0 }, { x: home.x, y: home.y })).not.toBeNull();
       }
     }
-  }, 30000);
+  }, TRANSECT);
 
   it("decks the water and not the bank", () => {
     // A bridge that planked its own approaches would read as a road that stops
@@ -600,5 +617,5 @@ describe("the homestead is never wet", () => {
         }
       }
     }
-  });
+  }, TRANSECT);
 });
