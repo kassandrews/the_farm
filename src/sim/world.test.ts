@@ -14,6 +14,7 @@ import {
   getChunk,
   chunkCoordOf,
   residentChunkCount,
+  MAX_RESIDENT_CHUNKS,
   isWalkable,
   carve,
   canCarve,
@@ -121,6 +122,57 @@ describe("chunked tilemap edits", () => {
     getChunk(w, 99, -99); // a far-flung chunk is fine: no fixed world size
     expect(residentChunkCount(w)).toBe(2);
     expect(a.length).toBe(CHUNK * CHUNK);
+  });
+
+  /** The cache is bounded, which in an unbounded world is a correctness property
+   *  and not a tuning knob: without it, walking is a memory leak with a step
+   *  counter. Walks a long line of chunks — further than any camera would stream
+   *  in one frame — and asserts residency stops climbing. */
+  it("caps resident chunks however far you walk", () => {
+    const w = freshWorld();
+    for (let cx = 0; cx < MAX_RESIDENT_CHUNKS * 2; cx++) getChunk(w, cx, 0);
+    expect(residentChunkCount(w)).toBe(MAX_RESIDENT_CHUNKS);
+  });
+
+  /** Both layers share the cap. The underground has its own chunks under their
+   *  own keys, so a player who tunnels as far as they walk must not get twice
+   *  the budget by accident. */
+  it("counts both layers against the same cap", () => {
+    const w = freshWorld();
+    for (let cx = 0; cx < MAX_RESIDENT_CHUNKS; cx++) {
+      getChunk(w, cx, 0, "surface");
+      getChunk(w, cx, 0, "under");
+    }
+    expect(residentChunkCount(w)).toBe(MAX_RESIDENT_CHUNKS);
+  });
+
+  /** Eviction is safe because generation is PURE — an evicted chunk is a few
+   *  hundred hashes to redo, not lost data. Walk away far enough to evict the
+   *  first chunk, come back, and the tiles must be identical even though the
+   *  instance is new. If this ever fails, something has started storing state in
+   *  a chunk and the cache stopped being derived. */
+  it("regenerates an evicted chunk identically", () => {
+    const w = freshWorld();
+    const before = Uint16Array.from(getChunk(w, 0, 0));
+    for (let cx = 1; cx <= MAX_RESIDENT_CHUNKS; cx++) getChunk(w, cx, 0);
+    const after = getChunk(w, 0, 0);
+    expect(Array.from(after)).toEqual(Array.from(before));
+  });
+
+  /** Recency, not age: a chunk you keep standing in survives a long walk. The
+   *  camera re-touches what's on screen every frame, so LRU is what stops the
+   *  ground under your feet being the thing that gets dropped. */
+  it("keeps the chunk you keep touching", () => {
+    const w = freshWorld();
+    const home = getChunk(w, 0, 0);
+    for (let cx = 1; cx < MAX_RESIDENT_CHUNKS; cx++) {
+      getChunk(w, cx, 0);
+      getChunk(w, 0, 0); // still looking at it
+    }
+    // One more miss, which must evict the least-recently-touched chunk — and
+    // that is emphatically not home.
+    getChunk(w, MAX_RESIDENT_CHUNKS, 0);
+    expect(getChunk(w, 0, 0)).toBe(home);
   });
 
   it("an edit wins over the generated chunk beneath it", () => {

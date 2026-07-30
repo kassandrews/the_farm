@@ -62,12 +62,51 @@ export function parseTileKey(key: string): { x: number; y: number } | null {
 // live in WorldState and are consulted separately by tileAt), and it is never
 // serialised. Keyed off the world object in a WeakMap so a discarded world —
 // "New town" — drops its chunks for free instead of leaking them.
+//
+// IT IS ALSO BOUNDED, and that is not an optimisation. In an unbounded world an
+// unbounded cache is a leak with a step counter: every chunk you have ever
+// walked past stays resident forever, so the cost of a long walk is paid in
+// memory that is never handed back. A bounded world would have got away with it.
+// This one won't, and we are about to start encouraging long walks.
+//
+// Eviction is always safe BECAUSE generation is pure: an evicted chunk is not
+// lost data, it is a few hundred hashes we will redo if we go back. That is the
+// same property that lets a save store only edits.
 
 /** One generated chunk. Uint16Array because TileIds are small stable ints and a
  *  chunk is hot, per-frame read data. */
 export type Chunk = Uint16Array;
 
-const chunkCache = new WeakMap<WorldState, Map<string, Chunk>>();
+/** How many chunks stay resident per world, across BOTH layers.
+ *
+ *  Sized well above any viewport rather than tuned to one. The renderer widens
+ *  the visible tile span to whole chunks and touches each per frame, so the cap
+ *  has to exceed what a single frame needs or we would evict a chunk we are
+ *  still drawing and regenerate it on the next tile read — thrashing, and it
+ *  would look like a frame-rate bug rather than a cache bug. A 2560px-wide
+ *  window is roughly 6×4 chunks; 256 is an order of magnitude clear of that,
+ *  and still only ~128 KB (CHUNK² × 2 bytes each).
+ *
+ *  The headroom is what makes plain recency good enough: everything on screen,
+ *  everything a villager just pathed through, and everything the away sim
+ *  touched all fit at once, so nothing evicts anything that is still in use. */
+const MAX_RESIDENT_CHUNKS = 256;
+
+/** Per-world cache. `chunks` is insertion-ordered and used as an LRU: the least
+ *  recently touched key is the first one `keys()` yields.
+ *
+ *  `mruKey`/`mruChunk` are a one-entry memo in front of it, and they are here
+ *  for a specific hot path — `baseTileAt` calls this per TILE, so a chunk being
+ *  scanned is asked for 256 times in a row. Without the memo each of those reads
+ *  pays a delete-and-reinsert to record its own recency, which is a lot of Map
+ *  churn to learn something we already knew. */
+interface ChunkCache {
+  chunks: Map<string, Chunk>;
+  mruKey: string | null;
+  mruChunk: Chunk | null;
+}
+
+const chunkCache = new WeakMap<WorldState, ChunkCache>();
 
 export function chunkKey(cx: number, cy: number, layer: Layer = "surface"): string {
   return layer === "under" ? `u:${cx},${cy}` : `${cx},${cy}`;
@@ -102,32 +141,55 @@ function generateChunk(
 }
 
 /** The chunk at a chunk coordinate, generating and caching it on first touch.
- *  This is the lazy-load path — nothing anywhere assumes a bounded world. */
+ *  This is the lazy-load path — nothing anywhere assumes a bounded world — and
+ *  it is also where recency is recorded and the cap enforced. */
 export function getChunk(
   world: WorldState,
   cx: number,
   cy: number,
   layer: Layer = "surface",
 ): Chunk {
-  let chunks = chunkCache.get(world);
-  if (!chunks) {
-    chunks = new Map();
-    chunkCache.set(world, chunks);
+  let cache = chunkCache.get(world);
+  if (!cache) {
+    cache = { chunks: new Map(), mruKey: null, mruChunk: null };
+    chunkCache.set(world, cache);
   }
   const key = chunkKey(cx, cy, layer);
+  if (key === cache.mruKey && cache.mruChunk) return cache.mruChunk;
+
+  const { chunks } = cache;
   let chunk = chunks.get(key);
-  if (!chunk) {
+  if (chunk) {
+    // Touch: delete and reinsert so it moves to the young end of the order.
+    chunks.delete(key);
+    chunks.set(key, chunk);
+  } else {
     chunk = generateChunk(world.seed, world.homestead.spot, cx, cy, layer);
     chunks.set(key, chunk);
+    // Drop the oldest until we're back under the cap. A while loop rather than a
+    // single delete because nothing guarantees we only ever grew by one — a
+    // lowered cap should take effect on the next touch, not gradually.
+    while (chunks.size > MAX_RESIDENT_CHUNKS) {
+      const oldest = chunks.keys().next().value;
+      if (oldest === undefined) break;
+      chunks.delete(oldest);
+    }
   }
+  cache.mruKey = key;
+  cache.mruChunk = chunk;
   return chunk;
 }
 
 /** How many chunks are currently resident — for tests and debugging, so
- *  "generated lazily" is an assertable claim rather than a comment. */
+ *  "generated lazily" and "bounded" are both assertable claims rather than
+ *  comments. */
 export function residentChunkCount(world: WorldState): number {
-  return chunkCache.get(world)?.size ?? 0;
+  return chunkCache.get(world)?.chunks.size ?? 0;
 }
+
+/** The residency cap, exported so the test asserting the bound doesn't hardcode
+ *  a number this file could change out from under it. */
+export { MAX_RESIDENT_CHUNKS };
 
 /** The generated (pre-edit) tile, read through the chunk cache. */
 export function baseTileAt(
