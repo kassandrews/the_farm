@@ -3,7 +3,7 @@ import { newWorld, summarizeAway, contextAction, buildAt } from "./game";
 import { simulateAway } from "./away";
 import { makeRng } from "./rng";
 import { tileKey } from "./world";
-import { PLANK, MUSHROOM } from "../content/tiles";
+import { PLANK, MUSHROOM, JUNK_PILE, GRASS } from "../content/tiles";
 import { hasMemory, recall } from "./memory";
 import { donate } from "./museum";
 import { exhibitDef } from "../content/museum";
@@ -87,6 +87,66 @@ describe("away simulation", () => {
     const shrooms = countTiles(w, MUSHROOM);
     expect(shrooms).toBeGreaterThan(0);
     expect(shrooms).toBeLessThanOrEqual(10);
+  });
+
+  it("the Gremlin leaves junk in the grass, and the pile on the ground is capped", () => {
+    // THE CAP IS THE INVARIANT, not the flavour. Junk's whole safety is that it
+    // cannot be farmed — what is buried is a total function of (seed, x, y) and a
+    // dug tile is spent (sim/junk.ts) — and an away event that scattered without
+    // a ceiling would be a junk faucet fed by simply not playing.
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 11 });
+    for (let i = 0; i < 40; i++) simulateAway(w, 72 * HOUR, Date.now(), makeRng(i));
+    const lying = countTiles(w, JUNK_PILE);
+    expect(lying).toBeGreaterThan(0);
+    expect(lying).toBeLessThanOrEqual(4);
+  });
+
+  it("picking it up is what makes room for more", () => {
+    // The cap counts what is LYING THERE, so the loop is "he leaves things, you
+    // pick them up" rather than "he leaves four things, ever".
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 12 });
+    for (let i = 0; i < 40; i++) simulateAway(w, 72 * HOUR, Date.now(), makeRng(i));
+    expect(countTiles(w, JUNK_PILE)).toBe(4);
+
+    const before = w.inventory.junk ?? 0;
+    // Pick one up with the gather tool, standing on it — the same verb a mushroom
+    // takes, which is the whole reason this is a tile.
+    const at = Object.entries(w.overrides).find(([, id]) => id === JUNK_PILE)![0];
+    const [x, y] = at.split(",").map(Number);
+    w.player.x = x;
+    w.player.y = y;
+    const res = contextAction(w, "gather", Date.now());
+    expect(res.changed).toBe(true);
+    expect(w.inventory.junk).toBe(before + 1);
+    expect(w.overrides[at] ?? GRASS).toBe(GRASS); // and the grass is grass again
+
+    // Which leaves room for exactly one more.
+    for (let i = 0; i < 40; i++) simulateAway(w, 72 * HOUR, Date.now(), makeRng(100 + i));
+    expect(countTiles(w, JUNK_PILE)).toBe(4);
+  });
+
+  it("never leaves anything on top of your work", () => {
+    // The house rule at the top of away.ts. A tile can only replace bare ground,
+    // which is the constraint that makes this true by construction — but it is
+    // asserted because "by construction" is what a later refactor breaks.
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 13 });
+    w.inventory.wood = 400;
+    const ox = w.homestead.originX;
+    const oy = w.homestead.originY;
+    for (let dx = -3; dx <= 3; dx++) buildAt(w, "plank", ox + dx, oy + 3, Date.now());
+    const boards = new Set(
+      Object.entries(w.overrides)
+        .filter(([, id]) => id === PLANK)
+        .map(([k]) => k),
+    );
+    expect(boards.size).toBeGreaterThan(0);
+
+    for (let i = 0; i < 40; i++) simulateAway(w, 72 * HOUR, Date.now(), makeRng(i));
+    for (const key of boards) {
+      // A board may have been MOVED by the other Gremlin event, but it may never
+      // have become junk lying on the ground.
+      expect(w.overrides[key]).not.toBe(JUNK_PILE);
+    }
   });
 
   it("the curator revises a donated exhibit, and remembers doing it", () => {

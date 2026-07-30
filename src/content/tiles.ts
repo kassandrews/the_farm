@@ -57,6 +57,17 @@ export const SHAFT: TileId = 13;
 export const DARK_TREE: TileId = 14; // the Ghost's grove; a tree in four numbers
 export const HUM_CUBE: TileId = 15; // the landmark that hums. Solid, and that's all
 
+/** Something the Gremlin left in your grass while you were out (Phase 5b).
+ *
+ *  A TILE rather than a new "loose objects" layer, and the precedent is directly
+ *  above it: MUSHROOM is already away-placed scenery you may pick up with the
+ *  same verb. A layer would be more general — it could put a thing down on your
+ *  floorboards — and that generality is the argument against it as much as for
+ *  it. He leaves things in the yard, not in your house, and a tile costs no
+ *  schema, no migration and no second thing for the room fill to have an opinion
+ *  about. */
+export const JUNK_PILE: TileId = 16;
+
 export const TILES: Record<TileId, TileDef> = {
   [GRASS]: {
     id: GRASS,
@@ -133,6 +144,21 @@ export const TILES: Record<TileId, TileDef> = {
     top: "#92c561",
     shade: "#83b352",
     diggable: true, // clearable if you'd rather have plain grass — never required
+    tillable: true,
+  },
+  [JUNK_PILE]: {
+    id: JUNK_PILE,
+    name: "Something left in the grass",
+    // Grass, with something on it. Same base as MUSHROOM for the same reason:
+    // what appeared overnight has to read as a gift on your lawn, not as damage
+    // to it. The renderer draws the object.
+    color: "#8bbf5a",
+    top: "#92c561",
+    shade: "#83b352",
+    // Diggable and tillable, so you are never obliged to pick it up — turn the
+    // ground over it and it's gone, which is the mushroom's promise too. Nothing
+    // in this game may become a tidying job (sim/away.ts's house rules).
+    diggable: true,
     tillable: true,
   },
   // --- Underground -----------------------------------------------------------

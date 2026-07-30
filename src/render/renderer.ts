@@ -13,7 +13,19 @@ import type { WorldState, Villager, Player, BuildCell, FurnitureCell, Tool } fro
 import { tileAt, playerTile, actionTarget } from "../sim/game";
 import type { ActionTarget } from "../sim/game";
 import { cropDef, ripeStage } from "../content/crops";
-import { tileDef, PLANK, GRASS, TREE, ROCK, BEDROCK, ORE_VEIN, SHAFT, DARK_TREE, HUM_CUBE } from "../content/tiles";
+import {
+  tileDef,
+  PLANK,
+  GRASS,
+  TREE,
+  ROCK,
+  BEDROCK,
+  ORE_VEIN,
+  SHAFT,
+  DARK_TREE,
+  HUM_CUBE,
+  JUNK_PILE,
+} from "../content/tiles";
 import { skinDef } from "../content/skins";
 import type { SkinClass, SkinDef } from "../content/skins";
 import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey } from "../sim/world";
@@ -233,7 +245,14 @@ function groundIdOf(id: number): number {
   // each one would ring every trunk and turn the stand into a lattice. Same
   // rule as always — the edge belongs where the SURFACE ends (CLAUDE.md
   // §per-cell edges), and grass under a tree has not ended.
-  return id === TREE || id === ROCK || id === DARK_TREE || id === HUM_CUBE ? GRASS : id;
+  //
+  // JUNK_PILE is here for the same reason and it was found the same way: as its
+  // own material it drew a boundary bevel against the grass around it, which read
+  // as faint stray lines lying in the lawn a tile away from the object itself.
+  // Something dropped on the grass has not ended the grass.
+  return id === TREE || id === ROCK || id === DARK_TREE || id === HUM_CUBE || id === JUNK_PILE
+    ? GRASS
+    : id;
 }
 
 /** Which material class a built tile is finished in, or null for terrain that
@@ -651,7 +670,7 @@ export class Renderer {
             ctx.fillStyle = "#f7efe2"; // a speck on the cap
             ctx.fillRect(mx + ox + 1, my + oy, 1, 1);
           }
-        } else if (def.name === "Grass") {
+        } else if (def.name === "Grass") {        } else if (def.name === "Grass") {
           // Stable tuft speckle so grass reads as texture, not flat paint.
           const h = decoHash(tx, ty, world.seed);
           if (h > 0.72) {
@@ -665,10 +684,43 @@ export class Renderer {
             ctx.fillRect(gx + 1, gy - 1, 1, 1);
           }
         }
+        if (id === JUNK_PILE) this.drawLoose(tx, ty, px, py, world.seed, night);
         if (id === SHAFT) this.drawShaftMouth(px, py);
         this.drawDoorstep(world, tx, ty, px, py);
       }
     }
+  }
+
+  /** Whatever the Gremlin dropped in your grass, lying in it.
+   *
+   *  Deliberately NOT a recognisable object. What it turns out to have been is
+   *  decided at PICKUP, from the same total function of (seed, x, y) the buried
+   *  finds use (sim/junk.ts) — so drawing a specific thing here would be a second
+   *  opinion about it, and the one on screen would be the one that's wrong.
+   *
+   *  So: a small dull bundle with one lit edge and a single glint, sitting IN the
+   *  grass. It stays in the flat pass rather than the raised one on purpose — a
+   *  raised object overhangs the cell behind it, which is the game's whole cue for
+   *  "this stands up", and it would read as something planted there rather than
+   *  left there.
+   *
+   *  Drawn from the tile's stable hash, so a thing that appeared while you were
+   *  out sits still once you are looking at it. */
+  private drawLoose(tx: number, ty: number, px: number, py: number, seed: number, night: boolean): void {
+    const ctx = this.ctx;
+    const h = decoHash(tx, ty, seed);
+    const jx = px + 4 + Math.floor(h * 5);
+    const jy = py + 6 + Math.floor((h * 29) % 4);
+    ctx.fillStyle = "rgba(0,0,0,0.18)"; // it sits ON the ground
+    ctx.fillRect(jx - 1, jy + 3, 7, 1);
+    ctx.fillStyle = night ? "#6a5b4a" : "#8a7860";
+    ctx.fillRect(jx, jy, 5, 3);
+    ctx.fillStyle = night ? "#4d4238" : "#6b5c48"; // shaded underside
+    ctx.fillRect(jx, jy + 2, 5, 1);
+    ctx.fillStyle = night ? "#9d9384" : "#cfc3ad"; // lit edge, top left
+    ctx.fillRect(jx, jy, 3, 1);
+    ctx.fillStyle = night ? "#b9ad96" : "#f2e6c8"; // one glint, so it reads as a thing
+    ctx.fillRect(jx + (h > 0.5 ? 4 : 1), jy + 1, 1, 1);
   }
 
   /** A shaft, seen from above: spoil heaped on the far lip, the dark of the hole

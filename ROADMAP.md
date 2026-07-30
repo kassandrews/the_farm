@@ -49,7 +49,7 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   soft furniture that costs it.
 - **Phase 3e — the junk economy, complete.** The ground has things in it,
   digging finds them, and the Gremlin's heap turns them into finishes.
-- Menu with New town / sound toggle; PWA shell; 621 tests.
+- Menu with New town / sound toggle; PWA shell; 630 tests.
 - **Phase 3f — the museum, complete.** The table, the sim, schema v12, the
   gallery it stands in (v13), Corrigal's panel, the away event, and Margfrom's
   perk. Two wings, donation is a gift that returns nothing, the record has no
@@ -115,11 +115,23 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   and the Mole has a third bank of lines for finding one burning in his corridor.
   See below.
 
-**Next: nothing numbered.** What is left is in *Known gaps and loose ends*
-below — the Gremlin not scattering junk while you are away (still wants a place
-to put a loose object on the ground), the five thin home banks, and the PWA
-icon. DESIGN's own open questions (fishing, async postcards between towns) are
-the only unbuilt *systems*, and both are still deliberately open.
+- **Phase 5b — the rest of the list, complete.** The four loose ends that were
+  left, in one pass: the Gremlin scatters junk while you are away (a tile, not a
+  new layer — see below), the five thin home banks are written, build mode can
+  pan on touch, and the PWA has real raster icons. The furniture-route bug went
+  with them.
+
+**Next: nothing on the list.** Every numbered item is done, and so is every loose
+end that was a gap. What is still written down under *Known gaps* is three
+deliberate POSITIONS rather than work owed — floors reading the town-wide finish
+while walls store their own (which wants doing when floors are next touched, since
+per-cell floor finishes need somewhere to store one), undo covering build strokes
+and not ACT, and the occlusion fade waiting for a genuinely tall piece. Each says
+why in place.
+
+DESIGN's own open questions (fishing, async postcards between towns) are the only
+unbuilt *systems*, and both are still deliberately open. What is left is not a
+list of gaps but a pass over the whole game for feel — the fine-tooth comb.
 
 **Save schema is at v21.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
@@ -1816,15 +1828,35 @@ you trip over them:
   keeping (CLAUDE.md §Tone) — and her hint, which has read "The Quiet Ghost
   knows where the dark wood is" since before commissions existed, turns out to
   have been literal all along. She knows because she lives in it.
-- **Only the Scholar has a full home bank.** `RESIDENT_HOME` covers every form,
-  but the other five get one or two notes each — a form with no line for its
-  richest note falls through to one it can speak to, so nobody goes silent, they
-  just repeat sooner. Filling these in is writing, not engineering.
-- **The Gremlin doesn't scatter junk while you're away yet.** His away event
-  still only moves a board. Scattering would tie junk to the check-in loop
-  (pillar 3) and give a homecoming a lap of the town, but it needs somewhere to
-  put a loose object on the ground — a new tile or a small world layer — which
-  is its own decision and was deliberately not improvised alongside the rest.
+- ~~**Only the Scholar has a full home bank.**~~ **Fixed in 5b.** All six housed
+  forms now have lines for every note they can REACH, which is not the same as
+  every note: the delight notes only fire when `content/tastes.ts` gives that form
+  a finish or a piece to be pleased by, so a dog has no `delight_finish` bank
+  because no finish will ever delight a dog. `home.test.ts` pins the set in both
+  directions — a new taste row fails until somebody writes the line it just made
+  reachable, and a line for a delight a form cannot feel fails too. Dead content
+  is how a bank stops being trustworthy.
+- ~~**The Gremlin doesn't scatter junk while you're away yet.**~~ **Fixed in 5b**,
+  and the decision this note was holding open went the cheap way: a **tile**
+  (`JUNK_PILE`), not a loose-object layer.
+
+  The precedent was already one line above it in `content/tiles.ts` — MUSHROOM is
+  away-placed scenery you pick up with the same verb. A layer would have been more
+  general, and that generality is the argument against it as much as for it: it
+  could put an object down on your floorboards, where a tile can only ever land on
+  bare ground. He leaves things in the yard, not in your house. No schema, no
+  migration, and nothing new for the room flood-fill to have an opinion about.
+
+  **The cap is the load-bearing part.** It counts what is LYING THERE, not what he
+  has ever left, so picking things up is what makes room for more — which is what
+  stops absence from being a junk faucet and keeps the un-farmable rule true for a
+  source that isn't dug. Asserted in `away.test.ts`.
+
+  One thing found on screen: as its own material the tile drew a boundary bevel
+  against the grass around it, which read as faint stray lines lying in the lawn a
+  tile from the object. `groundIdOf` in the renderer already existed for this —
+  something dropped on the grass has not ended the grass — and the object now
+  draws off the raw tile id beside the shaft mouth.
 - ~~**Ore is defined but unobtainable.**~~ Fixed in 4a step 3. `canCarve` still
   refuses ore — cutting it away with the shovel would drop the metal on the
   floor — but a vein is a node now, so the same swing gathers it. All three
@@ -1872,15 +1904,15 @@ you trip over them:
   Both approach cells count, not only the outside one. Telling them apart needs
   the room index, and the answer is the same either way — that step has to be
   clear — so `structures.ts` doesn't acquire the dependency.
-- **Furniture doesn't invalidate a walking villager's route.** `bump()` in
-  `sim/structures.ts` fires on wall and door edits only, but `isWalkable`
-  counts solid furniture too — so a route computed before you drop a table
-  across a corridor stays "valid" and the villager walks through it. Found
-  while wiring step 3, pre-existing since step 1, and not what step 3 changed
-  (moving a *bed* alters the goal, which does invalidate). The fix is for
-  furniture placement to bump the same counter; the cost is that the rooms
-  cache recomputes on furniture edits too, which is a bounded flood fill on a
-  user action and almost certainly fine.
+- ~~**Furniture doesn't invalidate a walking villager's route.**~~ **Fixed in 5b**,
+  exactly as this note proposed: placement and removal bump the same counter, and
+  the rooms cache recomputing along with it is a bounded flood fill on a user
+  action. Read `buildRevision` as "the standing things moved" rather than
+  "world.build moved" — the narrower reading is what let a villager walk through a
+  table for three phases. It deliberately does NOT ask whether the piece is solid
+  or which layer it went on: that trades a flood fill for a second rule about when
+  invalidation matters, and the wrong version of that rule is invisible until
+  somebody walks through something.
 - **Undo covers BUILD strokes only, not ACT.** Digging, tilling, planting and
   felling go through `contextAction` on the tile underfoot, which has no stroke
   — it's one tile, one tap, and the ground is cheap to redo. Deliberate: what
@@ -1890,11 +1922,34 @@ you trip over them:
   `witness` takes `onlyPresent`, and mining and carving use it. The surface is
   still town-wide **on purpose** — see 4b above; proximity is what a tunnel
   needs, not what the town needs.
-- **PWA icon is a single SVG.** Real raster icons before any app-store-ish push.
-- **Build mode can't pan on touch.** You build within the visible screen; to
-  build elsewhere, leave build mode and walk (or use WASD, which still works in
-  build mode on desktop). An edge-drag pan is the obvious fix when it starts to
-  bite.
+- ~~**PWA icon is a single SVG.**~~ **Fixed in 5b.** 192/512 PNGs, a maskable 512,
+  an `apple-touch-icon` linked from the HTML (the only place iOS looks — it does
+  not read the manifest's icons at all), and a 32px favicon, all generated by
+  `scripts/icons.mjs`.
+
+  The sizes are the part worth keeping: the art is a 16x16 grid and pixel art may
+  never be drawn at a fractional scale (CLAUDE.md), and 180/16 is 11.25. So the
+  art renders at 176 (11x) and the canvas is PADDED to 180 in the background
+  colour; the maskable one renders at 368 (23x) on 512, which is 72% and inside
+  the safe zone. Padding rather than scaling, both times.
+
+  The icon itself was 8 wide and 6 tall and read as a pumpkin at 192px. A carrot
+  is legible only if it tapers.
+- ~~**Build mode can't pan on touch.**~~ **Fixed in 5b**, and NOT with the
+  edge-drag this note proposed: an edge drag fights painting along the edge of a
+  wall, which is exactly where you paint most. Two fingers pan, one paints; a
+  wheel does it on desktop. The offset rides on the camera's FOLLOW TARGET rather
+  than being a second camera, so `screenToWorld`, the chunk-streaming bounds and
+  every `sceneX` keep reading `cam` and need no idea it exists, and the existing
+  easing does the sliding.
+
+  Found on screen: two fingers never land on the same millisecond, so every pan
+  began as a one-finger tap and left a stray wall behind. The second finger now
+  undoes the stroke it interrupted — but only when that stroke painted ONE cell,
+  because a drag already several cells long is a run somebody meant, and losing
+  twenty walls to a stray thumb would be worse than the bug being fixed.
+
+  Build mode also gained an Escape door, which it had been doing without.
 - **The occlusion fade almost never fires now.** It's keyed to the OVERHANG,
   `(artPx - TILE) / TILE`, which at 24px is half a tile — so a thing one tile in
   front of you covers your legs and is left alone, because that overlap is the

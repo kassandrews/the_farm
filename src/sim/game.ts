@@ -35,8 +35,8 @@ import { placeFurniture, removeFurnitureAt } from "./furniture";
 import { FURNITURE, furnitureDef } from "../content/furniture";
 import type { FurnitureId, Facing } from "../content/furniture";
 import { structureDef } from "../content/structures";
-import { GRASS, DIRT, PLANK, FARMLAND, FARMLAND_WET, MUSHROOM, SHAFT } from "../content/tiles";
-import { digWithFind, carveWithFind } from "./junk";
+import { GRASS, DIRT, PLANK, FARMLAND, FARMLAND_WET, MUSHROOM, SHAFT, JUNK_PILE } from "../content/tiles";
+import { digWithFind, carveWithFind, findLine } from "./junk";
 import { emptyInventory, add, canAfford, spend, refund, shortfall } from "./inventory";
 import type { Cost } from "./inventory";
 import { itemLabel } from "../content/items";
@@ -569,8 +569,12 @@ function toolApplies(world: WorldState, tool: Tool, x: number, y: number): boole
       // mushrooms, canSink is dirt), so this is one shovel with two answers
       // rather than a precedence question.
       return canDig(world, x, y) || canSink(world, x, y);
-    case "gather":
-      return tileAt(world, x, y) === MUSHROOM; // the one gatherable that isn't a node
+    case "gather": {
+      // The two gatherables that aren't nodes: a mushroom that came up, and
+      // something the Gremlin left. Both are picked up rather than felled.
+      const t = tileAt(world, x, y);
+      return t === MUSHROOM || t === JUNK_PILE;
+    }
     case "plant":
       // canSow, not canPlant: the reticle promises exactly what ACT will do
       // (ROADMAP §"The reticle is the promise"), and with an empty satchel ACT
@@ -632,11 +636,21 @@ function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: num
       return { kind: "dig", changed: false, message: "Nothing to dig here." };
     }
     case "gather":
-      // Mushrooms are the one gatherable that isn't a node — pick them up.
+      // Mushrooms — picked up rather than felled.
       if (tileAt(world, x, y) === MUSHROOM) {
         setTile(world, x, y, GRASS);
         add(world.inventory, "mushroom", 1);
         return { kind: "gather", changed: true, message: "Picked. It comes away cleanly." };
+      }
+      // And whatever the Gremlin left in the grass. Flavoured at pickup from the
+      // same total function of (seed, x, y) the buried finds use, so the thing
+      // lying there is a property of WHERE it lies — and then it is simply junk,
+      // like everything else he has ever handled (ROADMAP §"Junk — found, never
+      // gathered").
+      if (tileAt(world, x, y) === JUNK_PILE) {
+        setTile(world, x, y, GRASS);
+        add(world.inventory, "junk", 1);
+        return { kind: "gather", changed: true, message: findLine(world, x, y) };
       }
       return { kind: "gather", changed: false, message: "Nothing to gather here." };
     case "plant": {

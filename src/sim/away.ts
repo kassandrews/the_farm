@@ -18,7 +18,7 @@
 import type { WorldState } from "./types";
 import type { Rng } from "./rng";
 import { tileAt, setTile, tileKey } from "./world";
-import { GRASS, DIRT, PLANK, MUSHROOM } from "../content/tiles";
+import { GRASS, DIRT, PLANK, MUSHROOM, JUNK_PILE } from "../content/tiles";
 import { remember } from "./memory";
 import { remountExhibit } from "./museum";
 import { festivalsBetween, sawYouAt, gatherers } from "./festival";
@@ -37,6 +37,17 @@ const MAX_EVENTS = 3; // a homecoming should be a postcard, not a changelog
 /** Mushrooms stop spreading past this many — the town gets characterful, not
  *  overrun, and the player is never handed a weeding job. */
 const MUSHROOM_CAP = 10;
+
+/** And the same ceiling for what the Gremlin leaves out, lower.
+ *
+ *  It is a cap on what is LYING THERE, not on what he has ever left, so picking
+ *  things up is what makes room for more. That shape matters twice over: it keeps
+ *  the yard from silting up into a field of litter, and it is what stops junk from
+ *  being farmable by simply going away a lot — the ceiling does not move, so the
+ *  reward for a fortnight's absence is the same four objects as for a day's.
+ *
+ *  Four, because it wants to read as "he has been round" and not as a delivery. */
+const SCATTER_CAP = 4;
 
 /** An event that tried to happen. `line` is the postcard sentence; null means
  *  the event found nothing to act on (no boards to move yet) and should be
@@ -112,6 +123,47 @@ const gremlinMovesABoard: AwayEvent = (world, rng) => {
   setTile(world, x, y, GRASS); // reverts to whatever generation says underneath
   setTile(world, nx, ny, PLANK);
   return "One of your boards is one tile to the left of where you left it. The Gremlin denies everything.";
+};
+
+/** The Gremlin leaves some of the heap in your grass.
+ *
+ *  Junk had ridden entirely on the shovel, which tied the whole junk economy to a
+ *  verb you have to go looking for; this ties it to the check-in loop instead
+ *  (DESIGN pillar 3), and gives a homecoming a reason to walk your own plot.
+ *
+ *  It does not break the un-farmable rule that `digWithFind` is built around —
+ *  see SCATTER_CAP. What is on the ground is capped, so absence cannot be turned
+ *  into a junk faucet, and each object is still a total function of where it lies
+ *  (sim/junk.ts §findLine) rather than a roll at pickup.
+ *
+ *  ON BARE GROUND ONLY, which the tile choice decides for us and which is right:
+ *  he leaves things in the yard, never on your floorboards, and nothing he does
+ *  can overwrite a crop, a plank or a building. Preserving that is the house rule
+ *  at the top of this file — never destroy the player's work. */
+const gremlinScattersJunk: AwayEvent = (world, rng) => {
+  const lying = overrideTiles(world).filter(([, , id]) => id === JUNK_PILE).length;
+  if (lying >= SCATTER_CAP) return null;
+
+  const ox = world.homestead.originX;
+  const oy = world.homestead.originY;
+  const spots: [number, number][] = [];
+  for (let dy = -6; dy <= 6; dy++) {
+    for (let dx = -6; dx <= 6; dx++) {
+      const x = ox + dx;
+      const y = oy + dy;
+      if (isBareGround(world, x, y) && tileAt(world, x, y) === GRASS) spots.push([x, y]);
+    }
+  }
+  if (spots.length === 0) return null;
+
+  const want = Math.min(1 + rng.int(2), SCATTER_CAP - lying, spots.length);
+  for (let i = 0; i < want; i++) {
+    const [x, y] = spots[rng.int(spots.length)];
+    setTile(world, x, y, JUNK_PILE);
+  }
+  return want === 1
+    ? "There is a thing in your grass that was not in your grass. The Gremlin calls this a delivery."
+    : `The Gremlin has been round with ${want} things out of the heap and left them in your grass. He describes this as a favour.`;
 };
 
 /** Corrigal revises a placard while you're out (DESIGN §Time: "the Scholar
@@ -219,6 +271,7 @@ const festivalHappened: AwayEvent = (world, _rng, now, elapsedMs) => {
 const AWAY_EVENTS: AwayEvent[] = [
   mushroomsSpread,
   gremlinMovesABoard,
+  gremlinScattersJunk,
   curatorRemountsExhibit,
   moleExtendsTheTunnel,
   festivalHappened,

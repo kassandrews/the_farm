@@ -376,6 +376,19 @@ on the surface shovel, which made "dig up the lawn" the museum-filler's one
 verb; a second place to find the same item is the same fix as every counter
 listing alternatives, one axis over.
 
+**And the Gremlin leaves some in your grass while you are out.** A third source,
+and the only one that arrives rather than being looked for: come back from a
+day away and there may be a thing or two lying on your plot, which he describes
+as a delivery. It is picked up with the same verb as a mushroom, on bare ground
+only — never on your floorboards, never over a crop.
+
+This is junk answering to the check-in pillar rather than to a verb, and it is
+allowed to exist only because **what is lying there is capped**. The ceiling is
+on the objects currently on the ground, not on how many he has ever left, so
+picking things up is what makes room for more. That is what keeps absence from
+being a faucet: a fortnight away leaves the same few objects as a day away, and
+the un-farmable rule that governs digging survives a source that isn't dug.
+
 **Seed is one item; the variety is a free axis.** You carry *seed* — never
 "carrot seed" and "potato seed" — and which crop goes in the ground comes
 from a variety you have unlocked permanently at the Blessed Carrot's
