@@ -2467,6 +2467,17 @@ old tint-vs-crown split, which is the pattern the gremlin work replaced.
 Small things that are half-built or deliberately stubbed. Worth knowing before
 you trip over them:
 
+- **The Farm's Menace is one pixel different from The Meadow's, on purpose, and
+  The Meadow has not been fixed yet.** Its bottom outline ran cols 4–9 under
+  sides sitting at 4 and 10, so the bottom-left corner stacked two dark pixels
+  and the bottom-right stacked none — the body read as leaning. It's cols 5–9
+  now and both corners taper. **This is the first edit to vendored canon art
+  rather than to a Farm-side seam** (`LookPatch`, `mouthDy`), so the rule that
+  `canon/` is a copy still holds, but the copy is no longer byte-identical. The
+  same fix is meant to go into The Meadow later; nothing here writes to that
+  repo (CLAUDE.md), so it has to be done there by hand. Until it is, treat the
+  divergence as intentional and don't "restore" it.
+
 - ~~**The rotate button sits on top of the build palette.**~~ **Fixed by the
   build-mode pass.** It was one symptom of a bigger layout problem, and the fix
   was the bigger one: **build mode is now a mode you enter.**

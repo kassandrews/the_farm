@@ -455,7 +455,15 @@ const MENACE: BodyDef = {
     "..wkBBBBBBBkw...",
     "..wwkSBBBSkww...",
     "...wkSSSSSkw....",
-    "....kkkkkk......",
+    // Was "....kkkkkk......" — six outline pixels at cols 4–9 under sides that
+    // sit at 4 and 10, so the bottom-left corner stacked two dark pixels and the
+    // bottom-right stacked none. The body read as leaning. Five at 5–9 lets both
+    // corners taper diagonally, which is how every other round body here ends.
+    // DIVERGENCE FROM THE MEADOW: this is the first edit to vendored canon art
+    // rather than to a Farm-side seam. The Meadow gets the same fix later; it is
+    // not modified from here (CLAUDE.md), so until then the two repos differ by
+    // this one pixel — see ROADMAP §Known gaps.
+    ".....kkkkk......",
     "................",
     "................",
   ],
