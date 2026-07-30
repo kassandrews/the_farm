@@ -100,7 +100,7 @@ describe("the shortcut, and that he notices", () => {
   function shortcutTo(w: ReturnType<typeof freshWorld>) {
     const c = warrenChamber(w.seed);
     setTile(w, c.x, c.y, GRASS);
-    dig(w, c.x, c.y);
+    dig(w, c.x, c.y, 0);
     sink(w, c.x, c.y);
   }
 
@@ -183,7 +183,7 @@ describe("what he does while you're out", () => {
   function tunnelled() {
     const w = freshWorld();
     setTile(w, 0, 0, GRASS);
-    dig(w, 0, 0);
+    dig(w, 0, 0, 0);
     sink(w, 0, 0);
     for (let x = 1; x <= 6; x++) carve(w, x, 0);
     return w;

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { newWorld } from "./game";
 import { serialize, deserialize, migrateSave, SCHEMA_VERSION } from "./save";
-import { tileKey, shafts } from "./world";
-import { SHAFT, CAVE_FLOOR } from "../content/tiles";
+import { tileKey, shafts, RECLAIM_MS } from "./world";
+import { SHAFT, CAVE_FLOOR, DIRT, PLANK } from "../content/tiles";
 import { TOWN_BUILDINGS, footprintCells } from "../content/town";
 import { count } from "./inventory";
 import { STARTING_SEED } from "./seeds";
@@ -616,5 +616,48 @@ describe("v20 → v21: furniture can stand in the rock", () => {
     const lamp = { "3,4": { id: "lamp", facing: "s", finish: "pine" } };
     const migrated = migrateSave(v20Save({ underFurniture: lamp }))!;
     expect(migrated.underFurniture).toEqual(lamp);
+  });
+});
+
+describe("v21 → v22: dug earth grasses over", () => {
+  function v21Save(extra: Record<string, unknown> = {}): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    delete w.reclaim;
+    return { ...w, schemaVersion: 21, ...extra };
+  }
+
+  it("reconstructs timers from the holes already on the map", () => {
+    // The first migration where EMPTY would have been the wrong backfill. Every
+    // other new record described something an older town couldn't do; this one
+    // describes something every town with a shovel has already been doing, and
+    // its bare patches are sitting there in `overrides`.
+    const before = Date.now();
+    const migrated = migrateSave(
+      v21Save({ overrides: { "4,4": DIRT, "5,4": DIRT, "6,4": PLANK } }),
+    )!;
+    expect(Object.keys(migrated.reclaim).sort()).toEqual(["4,4", "5,4"]);
+    // Dated from THIS LOAD, not from a dig time nobody recorded: an old scar gets
+    // one more day. A save that opened onto a lawn where its dug plot had been
+    // would read as the game having thrown work away.
+    expect(migrated.reclaim["4,4"]).toBeGreaterThanOrEqual(before + RECLAIM_MS);
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+  });
+
+  it("leaves dirt that a felled tree is already coming back to", () => {
+    // Two timers on one tile is the race this record was shaped to avoid, and the
+    // node's timer promises something different: it puts the TREE back.
+    const migrated = migrateSave(
+      v21Save({
+        overrides: { "4,4": DIRT },
+        regrow: { "4,4": { node: "tree", at: 123 } },
+      }),
+    )!;
+    expect(migrated.reclaim).toEqual({});
+    expect(migrated.regrow).toEqual({ "4,4": { node: "tree", at: 123 } });
+  });
+
+  it("a town that never dug gets an empty record and no phantom lawns", () => {
+    const migrated = migrateSave(v21Save({ overrides: {} }))!;
+    expect(migrated.reclaim).toEqual({});
   });
 });

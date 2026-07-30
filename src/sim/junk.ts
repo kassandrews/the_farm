@@ -91,10 +91,11 @@ export function digWithFind(
   world: WorldState,
   x: number,
   y: number,
+  now: number,
 ): { dug: boolean; find: string | null } {
   if (!canDig(world, x, y)) return { dug: false, find: null };
   const payout = isVirginGround(world, x, y) && buriedAt(world, x, y);
-  if (!dig(world, x, y)) return { dug: false, find: null };
+  if (!dig(world, x, y, now)) return { dug: false, find: null };
   if (!payout) return { dug: true, find: null };
   add(world.inventory, "junk", 1);
   return { dug: true, find: findLine(world, x, y) };

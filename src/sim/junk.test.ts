@@ -68,13 +68,13 @@ describe("junk — what the ground turns up", () => {
   it("pays out once, and the same tile never pays again", () => {
     const w = freshWorld();
     const { x, y } = buriedTile(w);
-    expect(digWithFind(w, x, y).find).toBeTruthy();
+    expect(digWithFind(w, x, y, 0).find).toBeTruthy();
     expect(count(w.inventory, "junk")).toBe(1);
 
     // Spent twice over: the dig wrote an override, and `canDig` won't take the
     // dirt it left behind. Digging is one-way, which is what makes the ground
     // un-mineable without storing a list of everywhere anyone has ever dug.
-    expect(digWithFind(w, x, y)).toEqual({ dug: false, find: null });
+    expect(digWithFind(w, x, y, 0)).toEqual({ dug: false, find: null });
     expect(count(w.inventory, "junk")).toBe(1);
 
     // The known seam, asserted rather than pretended away: restore the tile to
@@ -82,7 +82,7 @@ describe("junk — what the ground turns up", () => {
     // fresh again. Only the Gremlin's away event can reach this, and him having
     // put something back is in character. See sim/junk.ts.
     setTile(w, x, y, GRASS);
-    expect(digWithFind(w, x, y).find).toBeTruthy();
+    expect(digWithFind(w, x, y, 0).find).toBeTruthy();
     expect(count(w.inventory, "junk")).toBe(2);
   });
 
@@ -97,8 +97,8 @@ describe("junk — what the ground turns up", () => {
       for (let x = -30; x < 30 && checked < 5; x++) {
         if (tileAt(w, x, y) !== TREE || !buriedAt(w, x, y)) continue;
         checked++;
-        expect(digWithFind(w, x, y)).toEqual({ dug: false, find: null });
-        expect(digWithFind(w, x, y)).toEqual({ dug: false, find: null }); // still, on the retry
+        expect(digWithFind(w, x, y, 0)).toEqual({ dug: false, find: null });
+        expect(digWithFind(w, x, y, 0)).toEqual({ dug: false, find: null }); // still, on the retry
       }
     }
     expect(checked).toBeGreaterThan(0); // the case was actually exercised
@@ -112,7 +112,7 @@ describe("junk — what the ground turns up", () => {
     for (let y = -30; y < 30; y++) {
       for (let x = -30; x < 30; x++) {
         if (canDig(w, x, y) && isVirginGround(w, x, y) && !buriedAt(w, x, y)) {
-          expect(digWithFind(w, x, y).find).toBeNull();
+          expect(digWithFind(w, x, y, 0).find).toBeNull();
           return;
         }
       }
@@ -163,7 +163,7 @@ describe("junk in the deep rock", () => {
   function minedWorld() {
     const w = freshWorld();
     setTile(w, 0, 0, GRASS); // the plaza is paved; a shaft needs diggable ground
-    dig(w, 0, 0);
+    dig(w, 0, 0, 0);
     sink(w, 0, 0);
     return w;
   }

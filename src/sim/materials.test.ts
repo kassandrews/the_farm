@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { newWorld, contextAction, BUILD_COSTS, buildAt } from "./game";
 import { count, add, spend, canAfford, refund, shortfall, emptyInventory } from "./inventory";
-import { gather, nodeAt, nodeNear, updateRegrowth, pendingRegrowth } from "./gather";
-import { tileAt, setTile, tileKey, generatedTile } from "./world";
-import { GRASS, DIRT, TREE, ROCK, PLANK, MUSHROOM } from "../content/tiles";
+import { gather, nodeAt, nodeNear, updateRegrowth, pendingRegrowth, updateReclaim } from "./gather";
+import { tileAt, setTile, tileKey, generatedTile, dig, sink, RECLAIM_MS } from "./world";
+import { GRASS, DIRT, TREE, ROCK, PLANK, MUSHROOM, FARMLAND, SHAFT } from "../content/tiles";
 import { NODES } from "../content/nodes";
 
 const HOUR = 3_600_000;
@@ -193,6 +193,89 @@ describe("gathering", () => {
     // Return a week later: one call restores everything due.
     updateRegrowth(w, 1000 + 7 * 24 * HOUR);
     expect(tileAt(w, first.x, first.y)).toBe(TREE);
+  });
+});
+
+// The other half of the renewable rule. A hole used to be the one thing in the
+// world that never healed, which made the shovel the only verb you had to tidy up
+// after (sim/gather.ts §"Grass closing over").
+describe("grass closes over what you dug", () => {
+  /** A patch of plain grass, so a dig is a dig and not a felling. */
+  function findGrass(w: ReturnType<typeof newWorld>): { x: number; y: number } {
+    for (let r = 1; r < 60; r++) {
+      for (let y = -r; y <= r; y++) {
+        for (let x = -r; x <= r; x++) {
+          if (tileAt(w, x, y) === GRASS && !w.build[tileKey(x, y)]) return { x, y };
+        }
+      }
+    }
+    throw new Error("no grass nearby");
+  }
+
+  it("grasses over on the real clock, and not before", () => {
+    const w = freshWorld();
+    const { x, y } = findGrass(w);
+    dig(w, x, y, 1000);
+    expect(tileAt(w, x, y)).toBe(DIRT);
+    updateReclaim(w, 1000 + RECLAIM_MS - 1); // not yet
+    expect(tileAt(w, x, y)).toBe(DIRT);
+    updateReclaim(w, 1000 + RECLAIM_MS + 1); // now
+    expect(tileAt(w, x, y)).toBe(GRASS);
+  });
+
+  it("takes longer than either node regrows — you never watch it happen", () => {
+    expect(RECLAIM_MS).toBeGreaterThan(NODES.tree.regrowMs!);
+    expect(RECLAIM_MS).toBeGreaterThan(NODES.rock.regrowMs!);
+  });
+
+  it("leaves tilled, paved and built ground alone, and stops tracking it", () => {
+    for (const claim of [FARMLAND, PLANK] as const) {
+      const w = freshWorld();
+      const { x, y } = findGrass(w);
+      dig(w, x, y, 1000);
+      setTile(w, x, y, claim); // you made something of it
+      updateReclaim(w, 1000 + RECLAIM_MS * 10);
+      expect(tileAt(w, x, y)).toBe(claim);
+      expect(Object.keys(w.reclaim)).toHaveLength(0); // and it stopped watching
+    }
+  });
+
+  it("leaves dirt under a wall alone — a floor is not an abandoned hole", () => {
+    const w = freshWorld();
+    const { x, y } = findGrass(w);
+    dig(w, x, y, 1000);
+    w.build[tileKey(x, y)] = { id: "wall", finish: w.skins.selected.wood };
+    updateReclaim(w, 1000 + RECLAIM_MS * 10);
+    expect(tileAt(w, x, y)).toBe(DIRT);
+  });
+
+  it("never closes over a shaft — the second dig is the way down", () => {
+    const w = freshWorld();
+    const { x, y } = findGrass(w);
+    dig(w, x, y, 1000);
+    expect(sink(w, x, y)).toBe(true);
+    updateReclaim(w, 1000 + RECLAIM_MS * 10);
+    expect(tileAt(w, x, y)).toBe(SHAFT);
+  });
+
+  it("closes across a long absence with one call, like the woods", () => {
+    const w = freshWorld();
+    const { x, y } = findGrass(w);
+    dig(w, x, y, 1000);
+    updateReclaim(w, 1000 + 7 * 24 * HOUR);
+    expect(tileAt(w, x, y)).toBe(GRASS);
+  });
+
+  it("a felled tree's dirt is left to the tree, not grassed over under it", () => {
+    // Two timers on one tile is the race `reclaim` was shaped to avoid: gathering
+    // books regrowth and must NOT also book a reclaim.
+    const w = freshWorld();
+    const { x, y } = findNode(w, TREE);
+    gather(w, x, y, 1000);
+    expect(Object.keys(w.reclaim)).toHaveLength(0);
+    updateReclaim(w, 1000 + RECLAIM_MS * 10);
+    updateRegrowth(w, 1000 + RECLAIM_MS * 10);
+    expect(tileAt(w, x, y)).toBe(TREE);
   });
 });
 

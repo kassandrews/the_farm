@@ -168,6 +168,16 @@ Recorded in full in DESIGN.md §Materials. The short version and *why*:
   and the node forfeits its claim. This resolves the tension between "the world
   should renew" and "your land is actually yours": the world heals where you
   aren't invested and stays exactly as you shaped it where you are.
+- **And dug earth grasses over, on the same terms** (12h, longer than either
+  node, so you never watch it happen — you come back and it has closed). This
+  was missing until the biome pass noticed it: a felled tree returned but a hole
+  stayed bare for the life of the save, which made the shovel the only verb in
+  the game you had to tidy up after. Nothing here may become a tidying job, so
+  the rule is symmetric — `world.reclaim`, its own record because a NodeId is a
+  thing you can gather and "grass" must never be one. v22 reconstructs timers
+  from the DIRT already on the map (skipping tiles a node is coming back to),
+  which makes it the first migration where an empty record would have been the
+  *wrong* backfill: every older town has been digging holes all along.
 - **Soft goods (cloth, cushions, curtains) are deliberately NOT gatherable.**
   The shop sells what you can't gather — that's what gives the Menace's counter
   a reason to exist, and it keeps the gathered set at three.

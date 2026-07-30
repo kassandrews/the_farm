@@ -30,7 +30,7 @@ function freshWorld(): WorldState {
 function onAShaft(w: WorldState): { x: number; y: number } {
   const at = playerTile(w);
   setTile(w, at.x, at.y, 0 /* GRASS */);
-  dig(w, at.x, at.y);
+  dig(w, at.x, at.y, 0);
   expect(sink(w, at.x, at.y)).toBe(true);
   return at;
 }
@@ -128,7 +128,7 @@ describe("the landing at the bottom", () => {
     const w = freshWorld();
     const at = playerTile(w);
     setTile(w, at.x, at.y, GRASS);
-    dig(w, at.x, at.y);
+    dig(w, at.x, at.y, 0);
     setTile(w, at.x + 1, at.y, ORE_VEIN, "under");
     sink(w, at.x, at.y);
     expect(tileAt(w, at.x + 1, at.y, "under")).toBe(ORE_VEIN);

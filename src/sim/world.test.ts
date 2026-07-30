@@ -68,10 +68,10 @@ describe("chunked tilemap edits", () => {
   it("digging turns grass to dirt, and only grass", () => {
     const w = freshWorld();
     const { x, y } = findGrass(w);
-    expect(dig(w, x, y)).toBe(true);
+    expect(dig(w, x, y, 0)).toBe(true);
     expect(tileAt(w, x, y)).toBe(DIRT);
     // Digging dirt again is a no-op.
-    expect(dig(w, x, y)).toBe(false);
+    expect(dig(w, x, y, 0)).toBe(false);
   });
 
   it("placing a plank works on non-solid ground", () => {
@@ -179,7 +179,7 @@ describe("chunked tilemap edits", () => {
     const w = freshWorld();
     const { x, y } = findGrass(w);
     const before = baseTileAt(w, x, y);
-    dig(w, x, y);
+    dig(w, x, y, 0);
     expect(tileAt(w, x, y)).toBe(DIRT);
     // The chunk itself is untouched — overrides are a separate layer.
     expect(baseTileAt(w, x, y)).toBe(before);
@@ -188,7 +188,7 @@ describe("chunked tilemap edits", () => {
   it("writing the generated tile clears the override (no bloat)", () => {
     const w = freshWorld();
     const { x, y } = findGrass(w);
-    dig(w, x, y); // creates an override
+    dig(w, x, y, 0); // creates an override
     expect(w.overrides[tileKey(x, y)]).toBe(DIRT);
     setTile(w, x, y, GRASS); // back to what generation produces
     expect(w.overrides[tileKey(x, y)]).toBeUndefined();
@@ -255,7 +255,7 @@ describe("the underground layer", () => {
     carve(w, g.x, g.y);
     expect(tileAt(w, g.x, g.y, "under")).toBe(CAVE_FLOOR);
     expect(tileAt(w, g.x, g.y)).toBe(GRASS); // the ground above is untouched
-    dig(w, g.x, g.y);
+    dig(w, g.x, g.y, 0);
     expect(tileAt(w, g.x, g.y)).toBe(DIRT);
     expect(tileAt(w, g.x, g.y, "under")).toBe(CAVE_FLOOR);
   });
@@ -364,7 +364,7 @@ describe("sinking a shaft", () => {
    *  it rather than a hand-written override. */
   function dugTile(w: ReturnType<typeof newWorld>) {
     const g = findGrass(w);
-    dig(w, g.x, g.y);
+    dig(w, g.x, g.y, 0);
     return g;
   }
 
@@ -372,7 +372,7 @@ describe("sinking a shaft", () => {
     const w = freshWorld();
     const g = findGrass(w);
     expect(canSink(w, g.x, g.y)).toBe(false); // grass is a dig, not a shaft
-    dig(w, g.x, g.y);
+    dig(w, g.x, g.y, 0);
     expect(canSink(w, g.x, g.y)).toBe(true);
     expect(sink(w, g.x, g.y)).toBe(true);
     expect(tileAt(w, g.x, g.y)).toBe(SHAFT);

@@ -154,3 +154,46 @@ export function updateRegrowth(world: WorldState, now: number): number {
 export function pendingRegrowth(world: WorldState): number {
   return Object.keys(world.regrow).length;
 }
+
+// --- Grass closing over -------------------------------------------------------
+// The other half of the same rule, and it was missing for a long time: a felled
+// tree came back, but a hole you dug out of curiosity stayed bare dirt for the
+// life of the save. That is a permanent scar on the one thing this file promises
+// heals itself, and it made the shovel the only verb in the game you had to tidy
+// up after — which nothing here may become (sim/away.ts's house rules).
+//
+// So dug earth grasses over on the real clock, on exactly the terms a node
+// regrows on: a timer, and the timer only fires if the ground is still bare. Till
+// it, pave it, build on it or sink a shaft down it and the entry is dropped —
+// your dirt is as claimable as your clearing.
+
+// The timer is BOOKED next to `dig` in sim/world.ts, not here, and that split is
+// forced by the layering rather than chosen: world.ts imports content, types and
+// rng and nothing else in sim, so it cannot call into this file. See RECLAIM_MS
+// there for why the delay is what it is. What lives here is the half that has to
+// agree with `updateRegrowth` — when a timer is allowed to fire.
+
+/** Close the grass over every dug tile whose time has come — dropping any whose
+ *  ground you've since made something of. Runs beside `updateRegrowth` and on the
+ *  same wall clock, so an absence needs no catch-up.
+ *
+ *  The claim test is "is it still DIRT" rather than `isClaimed`, and it is the
+ *  stronger check of the two here: a shaft, a plank, farmland and a crop's tile
+ *  are all not-dirt, so one lookup covers every way the tile could have stopped
+ *  being a hole — including the ones we haven't invented yet. */
+export function updateReclaim(world: WorldState, now: number): number {
+  let closed = 0;
+  for (const [key, at] of Object.entries(world.reclaim)) {
+    const [x, y] = key.split(",").map(Number);
+    if (tileAt(world, x, y) !== DIRT || isClaimed(world, x, y)) {
+      // Yours now, or already something else. Forgotten quietly either way.
+      delete world.reclaim[key];
+      continue;
+    }
+    if (now < at) continue;
+    setTile(world, x, y, GRASS);
+    delete world.reclaim[key];
+    closed++;
+  }
+  return closed;
+}

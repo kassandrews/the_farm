@@ -42,7 +42,7 @@ import { emptyInventory, add, canAfford, spend, refund, shortfall } from "./inve
 import type { Cost } from "./inventory";
 import { itemLabel } from "../content/items";
 import type { ItemId } from "../content/items";
-import { gather, nodeAt, nodeNear, updateRegrowth } from "./gather";
+import { gather, nodeAt, nodeNear, updateRegrowth, updateReclaim } from "./gather";
 import { nodeDef } from "../content/nodes";
 import { mineVein } from "./mining";
 import { meetMole } from "./mole";
@@ -138,6 +138,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     // other than a carrot to plant.
     inventory: { ...emptyInventory(), wood: 8, seed: STARTING_SEED },
     regrow: {},
+    reclaim: {},
     skins: {
       unlocked: starterSkins(),
       selected: { wood: defaultSkin("wood"), stone: defaultSkin("stone"), cloth: defaultSkin("cloth") },
@@ -346,6 +347,7 @@ export function tick(world: WorldState, dt: number, now: number): void {
   for (const v of world.villagers) tickVillager(world, v, dt, now);
   updateAllCrops(world, now);
   updateRegrowth(world, now); // the woods come back on the real clock
+  updateReclaim(world, now); // and the grass closes over what you dug
 }
 
 /** What building costs. Deliberately tiny — a rhythm, not an economy
@@ -626,7 +628,7 @@ function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: num
       // digWithFind, not dig: the shovel and the ground's contents are one
       // operation, because the payout has to be decided before the dig writes
       // its override (sim/junk.ts explains what splitting them cost).
-      const { dug, find } = digWithFind(world, x, y);
+      const { dug, find } = digWithFind(world, x, y, now);
       if (dug) {
         witness(world, "dug", undefined, now);
         // The find replaces the usual line rather than joining it. Two toasts

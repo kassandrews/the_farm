@@ -231,6 +231,17 @@ export interface WorldState {
    *  dropped (never regrows) if you claim that ground — see sim/gather.ts. */
   regrow: Record<string, { node: NodeId; at: number }>;
 
+  /** Dug earth waiting to grass over, keyed "x,y" → when the grass closes.
+   *
+   *  The other half of the renewable rule, and the same claim check applies: an
+   *  entry is dropped the moment the tile stops being bare dirt, whether you
+   *  tilled it, paved it, built on it or sank a shaft down it. See sim/gather.ts.
+   *
+   *  Its own record rather than a `regrow` entry with a sentinel node, because a
+   *  NodeId is a thing you can gather — inventing "grass" as a node would give it
+   *  a yield, a drop and a line in every gather verb it must never appear in. */
+  reclaim: Record<string, number>;
+
   /** Appearance, the free axis (DESIGN §Materials). Finishes are unlocked
    *  permanently and weightlessly; `selected` is what you're currently
    *  building in, per material class. */

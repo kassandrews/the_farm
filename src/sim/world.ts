@@ -939,11 +939,32 @@ export function canDig(world: WorldState, x: number, y: number): boolean {
   return t === GRASS || t === MUSHROOM;
 }
 
+/** How long dug earth lies bare before the grass closes over it.
+ *
+ *  Longer than either node's regrowMs (8h and 10h, content/nodes.ts), and that
+ *  ordering is the point rather than a tuning accident: you should never watch the
+ *  world undo a hole while you are standing over it deciding what to put there.
+ *  You come back and it has closed. It also leaves bare dirt usable as a working
+ *  surface for a whole build session, which is why it isn't the four hours real
+ *  grass would suggest.
+ *
+ *  The firing rule is in sim/gather.ts beside the one for felled nodes, because
+ *  the two have to agree about what "you've claimed this" means. Only the booking
+ *  is here — this file may not import a sim sibling. */
+export const RECLAIM_MS = 12 * 60 * 60 * 1000;
+
 /** Shovel: grass (or a patch of mushrooms) → dug dirt. Clearing mushrooms is an
- *  option, never an errand — they do nothing but sit there looking pleased. */
-export function dig(world: WorldState, x: number, y: number): boolean {
+ *  option, never an errand — they do nothing but sit there looking pleased.
+ *
+ *  Takes `now` because digging books the tile to grass over (see RECLAIM_MS), and
+ *  it books it HERE rather than at the call site for the reason digWithFind gives
+ *  about order: a dig that forgot to book would leave a scar that nothing in the
+ *  game ever heals, and it would fail silently and permanently. One call, and the
+ *  bookkeeping cannot be left out. */
+export function dig(world: WorldState, x: number, y: number, now: number): boolean {
   if (!canDig(world, x, y)) return false;
   setTile(world, x, y, DIRT);
+  world.reclaim[tileKey(x, y)] = now + RECLAIM_MS;
   return true;
 }
 

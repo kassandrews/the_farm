@@ -11,12 +11,13 @@ import { STARTING_SEED } from "./seeds";
 import { newErrands } from "./errands";
 import { stampTown, ensureFixedCast } from "./town";
 import type { StampTarget } from "./town";
-import { generatedTile, tileKey } from "./world";
+import { generatedTile, tileKey, RECLAIM_MS } from "./world";
+import { DIRT } from "../content/tiles";
 import { makeVillager } from "./villagers";
 import { authoredBed } from "../content/town";
 import type { CharId } from "../content/cast";
 
-export const SCHEMA_VERSION = 21;
+export const SCHEMA_VERSION = 22;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
@@ -472,6 +473,35 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
     underFurniture:
       typeof raw.underFurniture === "object" && raw.underFurniture ? raw.underFurniture : {},
   }),
+  // v21 → v22: dug earth grasses over (sim/world.ts §RECLAIM_MS). Trees came back
+  // and holes did not, which made the shovel the only verb you had to tidy up
+  // after.
+  //
+  // Empty is NOT the truthful backfill here, and this is the first migration
+  // where it isn't. Every other new record described something an older town
+  // could not have done; this one describes something every older town HAS been
+  // doing for as long as it has had a shovel, and its bare patches are already on
+  // the map. So the entries are reconstructed from the ground itself: every DIRT
+  // override books a timer, and from the moment of THIS LOAD rather than from
+  // whenever it was dug — we don't know when that was, and a save that opened to
+  // a lawn where its dug plot used to be would read as the game having thrown
+  // work away. Old scars get one more day, then they close.
+  //
+  // Tiles already waiting on a felled tree or rock are skipped: they have a timer
+  // and it puts the node BACK, which is not the same promise. Two timers on one
+  // tile is the race this record was shaped to avoid (types.ts §reclaim).
+  21: (raw) => {
+    const now = Date.now();
+    const overrides = (typeof raw.overrides === "object" && raw.overrides ? raw.overrides : {}) as
+      Record<string, number>;
+    const regrow = (typeof raw.regrow === "object" && raw.regrow ? raw.regrow : {}) as
+      Record<string, unknown>;
+    const reclaim: Record<string, number> = {};
+    for (const [key, id] of Object.entries(overrides)) {
+      if (id === DIRT && !regrow[key]) reclaim[key] = now + RECLAIM_MS;
+    }
+    return { ...raw, schemaVersion: 22, reclaim };
+  },
 };
 
 /** The v12 museum, frozen as literals. Migrations must never read the CURRENT

@@ -36,7 +36,7 @@ function freshWorld(): WorldState {
 function inTunnel(w: WorldState): { x: number; y: number } {
   const at = playerTile(w);
   setTile(w, at.x, at.y, GRASS);
-  dig(w, at.x, at.y);
+  dig(w, at.x, at.y, 0);
   expect(sink(w, at.x, at.y)).toBe(true);
   w.player.layer = "under";
   expect(tileAt(w, at.x + 1, at.y, "under")).toBe(CAVE_FLOOR);
