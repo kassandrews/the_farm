@@ -115,40 +115,19 @@ const MONOCLE = { overlay: { rows: GLASSES_MONOCLE, palette: { w: LENS } } };
 const OXBLOOD = { fill: "#9c5f66", shade: "#7a4650" };
 
 // --- Ties ---------------------------------------------------------------------
-// The Office Creature's canon `T` is two pixels under the left eye, in a grey a
-// shade off the body. At 16px that is a smudge, not a tie — which is fine when
-// it's the only one in the world and useless as the single thing telling six
-// people apart. A tie look recolours those two pixels AND adds a third below,
-// which is the shortest line that still reads as hanging.
+// COLOUR, NOT LENGTH. The Office Creature's canon `T` is two pixels under the
+// left eye in a grey a shade off the body, and the fix for "you can't tell them
+// apart" turned out to be saturation rather than size: give those same two
+// pixels some blood and they read fine. A draft that also carried the tie a row
+// lower was cut — it needed an overlay, the overlay replaces the body's, and the
+// body's overlay is the tired eye-bags the form is NAMED for. Two pixels of
+// maroon costs nothing and risks nothing.
 
-/** The Office Creature's canon eye-bags, which any overlay here must carry —
- *  a look replaces the body's overlay outright, and the bags are the whole
- *  reason the form is called Tired. */
-const EYE_BAGS = "....bb....bb....";
-const BAG_GREY = "#6f6a80";
-
-/** One tie: the canon two pixels recoloured, plus a third row of it. */
+/** One tie. A recolour of a letter the body already draws with, which is the
+ *  cheapest kind of look there is: no overlay, no new pixels, no way to knock
+ *  anything off the grid. */
 function tie(colour: string) {
-  return {
-    extra: { T: colour },
-    overlay: {
-      rows: [
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        EYE_BAGS,
-        "................",
-        "................",
-        ".....t..........",
-      ],
-      palette: { b: BAG_GREY, t: colour },
-    },
-  };
+  return { extra: { T: colour } };
 }
 
 // --- Teeth --------------------------------------------------------------------
@@ -309,11 +288,8 @@ export const LOOKS: Record<AdultForm, LookDef[]> = {
   // "hard to tell apart" is the clone bug with a punchline written on it. A joke
   // that relies on you not being able to check isn't landing, it's hiding.
   //
-  // So the ties had to become legible. Canon paints two pixels of `T` under the
-  // left eye; each look carries them one row further down and in a colour with
-  // some blood in it. The overlay REPLACES the body's, so every row here redraws
-  // the tired eye-bags too — dropping those to gain a tie would trade the form's
-  // one canon joke for this file's.
+  // The ties still had to become legible, and that turned out to be a question
+  // of saturation rather than size — see the tie helper above.
   office: [
     CANON,
     { id: "maroon-tie", ...tie("#9c4a4a") },
