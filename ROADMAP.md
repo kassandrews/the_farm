@@ -647,6 +647,34 @@ Knock-on: monospace sets wider per character, so `.panel p` went 16px → 15px w
 cream like the tool buttons — they were dark translucent to hold a white ☰ and a
 🎒, and dark ink on a dark chip is a button with nothing on it.
 
+### Every overlay is the same chip — no dark ovals
+
+Third piece of the feel pass. The clock, the season, the activity toast and the
+hover hint were all dark translucent capsules (`rgba(20, 16, 31, 0.55)`, radius
+999px). They are now the same object as a tool button: `--panel` fill, 2px
+`--panel-edge`, ink text, 10px radius, hard offset shadow.
+
+Two things were wrong with the oval, and the second is the more useful one to
+remember. It wore a colour that appears nowhere else in the game, so it read as a
+debug overlay somebody left switched on. And **a 999px pill is a different
+vocabulary from every other edge in this game**, all of which are small radii on
+2px borders — a capsule floating over walls drawn one pixel at a time belongs to
+some other program's design system.
+
+Hierarchy inside the stack goes **by fill, not by opacity**. The season chip is
+`--panel-edge` where the clock is `--panel` — the same chip a shade deeper — and
+drops its shadow so it doesn't compete with the clock above it. The old
+`opacity: 0.82` went muddy over a moving map, which a solid fill never does.
+
+The activity toast got a `.clock.flash` class of its own. It holds a SENTENCE
+rather than a reading, so it needs `max-width` to wrap inside; unconstrained it
+stretched to the length of the line and ran off both edges of a phone. Its
+position and fade moved out of the four inline styles `buildHud` used to set —
+having half its look in `app.ts` meant the CSS half couldn't see it.
+
+Checked over open grass at midday and over the night wash; cream chips stay
+legible in both, which is unsurprising given the tool buttons were always cream.
+
 ### Undecided, deliberately
 
 - ~~**Money vs. barter vs. neither.**~~ **Settled: barter**, with the shop

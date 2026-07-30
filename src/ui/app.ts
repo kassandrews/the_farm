@@ -1989,13 +1989,10 @@ function buildHud(
   // autumn": a number there would be the first clock in the game with a
   // denominator, and the museum's whole argument is that we don't have those.
   const season = el("div", { class: "clock season" }, ["—"]);
-  const flash = el("div", {
-    class: "clock",
-  });
-  flash.style.top = "auto";
-  flash.style.bottom = "120px";
-  flash.style.transition = "opacity 0.3s";
-  flash.style.opacity = "0";
+  // Position, wrapping and the fade all live in `.clock.flash` now — this used to
+  // set four inline styles, which meant the toast's look was split across two
+  // files and the CSS half couldn't see it.
+  const flash = el("div", { class: "clock flash" });
 
   const toolButtons: [Tool, HTMLElement][] = [];
   const palette = el("div", { class: "tool-palette" });
