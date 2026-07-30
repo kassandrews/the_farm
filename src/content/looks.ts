@@ -15,6 +15,9 @@
 // changing EITHER the body colour OR one accessory; the exception is a letter
 // that draws part of the ANIMAL rather than something it is wearing (the dog's
 // ears and tail), which has to move with the coat or the coat is half-painted.
+// Two ideas are allowed to meet only where they land on different parts of the
+// body and the result is still one sayable person — the gremlin's tint × mouth,
+// where you read the colour at distance and the teeth up close. See its entry.
 // The ceiling is on ideas, not on fields, and it is deliberate rather than a
 // stage we are half-way through: the cross product of six tints and three crowns
 // is eighteen Menaces nobody can tell apart, which is the same failure as one
@@ -87,6 +90,46 @@ const GLASSES_HALFMOON = [
   ".....w...w......",
 ];
 
+// --- Teeth --------------------------------------------------------------------
+// The gremlin's canon overlay is two fangs at cols 6 and 8, hanging under a
+// mouth that runs cols 6–8. These are the same row redrawn: one fang, three
+// small ones, or the pair pushed out to the corners. No new colours, no pixels
+// outside the row the art already used.
+
+const TOOTH = "#ffffff";
+
+const TOOTH_SNAGGLE = "......w........";
+
+// The underbite is the one that had to move ROWS, not pixels. Canon's fangs
+// hang down from the upper jaw, so more teeth on that line is just more
+// overbite; an underbite is the lower jaw's teeth jutting UP in front of the
+// lip. That means drawing above the mouth instead of below it.
+//
+// Which is why this one is a GRID and the others are a row: a single-row
+// overlay is auto-placed at faceDy+3, under the mouth, and there is no way to
+// aim it. Three rows or more and `blit` lands the grid at 0,0, so it can put a
+// tooth on any line it likes. The face is composited last either way, so the
+// mouth still reads over the teeth — which is exactly the overlap a jaw makes.
+const TOOTH_UNDERBITE = [
+  "................",
+  "................",
+  "................",
+  "................",
+  "................",
+  "................",
+  "................",
+  "................",
+  "......w.w.......",
+];
+/** The two mouths that are not canon, as patches to spread into a row. */
+const SNAGGLE = { overlay: { rows: [TOOTH_SNAGGLE], palette: { w: TOOTH } } };
+const UNDERBITE = { overlay: { rows: TOOTH_UNDERBITE, palette: { w: TOOTH } } };
+
+/** The two gremlin tints that are not canon. Horns travel with the body — see
+ *  the gremlin entry — so a tint is always three numbers, never one. */
+const STORM = { fill: "#6f8fb8", shade: "#506e94", extra: { G: "#3a5273" } };
+const PLUM = { fill: "#a87fc0", shade: "#815a99", extra: { G: "#5f4076" } };
+
 /** Every form's variations, canon first.
  *
  *  Sizes differ on purpose. The six standard forms are POPULATIONS — anyone can
@@ -147,20 +190,28 @@ export const LOOKS: Record<AdultForm, LookDef[]> = {
   // dimming the fill, for the same reason the file won't hue-rotate a tint pair:
   // the numbers survive the shortcut, the relationship doesn't.
   //
-  // ONE RAMP: green → teal → blue → purple. A gremlin can be any colour along
-  // it and still be a gremlin; the ochre one looked like a different species,
-  // which is the tell that the axis had been left.
+  // THE ONE FORM THAT CROSSES ITS AXES, and the exception is narrow on purpose.
+  // Three tints × three mouths is nine gremlins, and every one of them has a
+  // name you can say: the plum one with the snaggletooth. That works here and
+  // not on the Menace because the two axes land on DIFFERENT PARTS of the face —
+  // a colour you read at distance, a mouth you read up close — where six tints
+  // by three crowns was one silhouette with a different hat on. Three by three
+  // is also the ceiling: this is a wider list, not an open door.
+  //
+  // Deliberately narrow: green, storm and plum are the ends and the middle of
+  // the ramp, so the tints stay far apart when the mouths start repeating. The
+  // teal, cornflower and pine rows were cut for that — good colours, but nine
+  // rows of near-neighbours is the clone problem this file exists to fix.
   gremlin: [
     CANON,
-    // Pine, not moss. The first draft of this row was #6aa463, which is within a
-    // few points of the grass tile (#6f9b58) — a gremlin standing on the lawn
-    // stopped having edges. A green resident has to be a green the ground isn't,
-    // so this one is deeper and cooler, and it steps toward the teal besides.
-    { id: "pine", fill: "#4f8f6e", shade: "#3a6d53", extra: { G: "#27503d" } },
-    { id: "teal", fill: "#6cc0bd", shade: "#449895", extra: { G: "#2b7573" } },
-    { id: "storm", fill: "#6f8fb8", shade: "#506e94", extra: { G: "#3a5273" } },
-    { id: "cornflower", fill: "#9aa6e6", shade: "#7480bd", extra: { G: "#55609c" } },
-    { id: "plum", fill: "#a87fc0", shade: "#815a99", extra: { G: "#5f4076" } },
+    { id: "snaggle", ...SNAGGLE },
+    { id: "underbite", ...UNDERBITE },
+    { id: "storm", ...STORM },
+    { id: "storm-snaggle", ...STORM, ...SNAGGLE },
+    { id: "storm-underbite", ...STORM, ...UNDERBITE },
+    { id: "plum", ...PLUM },
+    { id: "plum-snaggle", ...PLUM, ...SNAGGLE },
+    { id: "plum-underbite", ...PLUM, ...UNDERBITE },
   ],
 
   scholar: [
