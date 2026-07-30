@@ -220,13 +220,17 @@ describe("crown silhouettes", () => {
     for (const b of Object.values(BIOMES)) {
       if (!b.crownGaps) continue;
       expect(b.crownGaps.length, b.id).toBe(b.crownRows.length);
+      // The dip has to reach the trunk to read as a dip around it.
+      const overlap = b.crownOverlap ?? 0;
+      expect(overlap, b.id).toBeGreaterThan(0);
+      const firstTrunkRow = b.crownRows.length - overlap;
       b.crownGaps.forEach((g, r) => {
         expect(Number.isInteger(g), b.id).toBe(true);
         expect(g, b.id).toBeLessThan(b.crownRows[r]);
-        if (g > 0) expect(r, b.id).toBeGreaterThan(b.crownRows.length / 2);
+        // A gap on a row that clears the trunk shows GRASS, not bark — which is
+        // a hole in the foliage rather than the underside of a crown.
+        if (g > 0) expect(r, b.id).toBeGreaterThanOrEqual(firstTrunkRow);
       });
-      // The dip has to reach the trunk to read as a dip around it.
-      expect(b.crownOverlap ?? 0, b.id).toBeGreaterThan(0);
     }
   });
 

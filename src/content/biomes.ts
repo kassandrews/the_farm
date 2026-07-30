@@ -89,8 +89,10 @@ export interface BiomeDef {
   crownRows: number[];
 
   /** Optional, per row: how far the foliage stays CLEAR of the trunk, as a
-   *  half-width of empty in the middle of that row. 0 (the default for every
-   *  row of every biome that omits this) is the solid row described above.
+   *  half-width of empty centred on the trunk's own column. 0 (the default for
+   *  every row of every biome that omits this) is the solid row described above.
+   *  1 is the trunk exactly, and is usually what you want — the foliage should
+   *  MEET the bark, not float a stripe of grass away from it.
    *
    *  This is what turns a blob into a bean. A real broad crown doesn't come to
    *  a point over the trunk — it hangs at the sides and lifts in the middle,
@@ -98,8 +100,9 @@ export interface BiomeDef {
    *  solid rows only, every tree here tapered to a tip on the way down, which
    *  is a shrub's outline and not a cherry's.
    *
-   *  Only meaningful on the LOWER rows: a gap up top would split one crown into
-   *  two, which is a different tree rather than a dip. */
+   *  Only meaningful on the rows that OVERLAP the trunk: a gap up top would
+   *  split one crown into two, which is a different tree rather than a dip, and
+   *  a gap one row above the trunk punches a square of grass into the crown. */
   crownGaps?: number[];
 
   /** How many of the bottom crown rows sit ALONGSIDE the trunk instead of above
@@ -272,8 +275,8 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // fourteen rows the same 16px of width came out as a tall pink box with a
     // slot cut in it. Wide is a ratio, not a number.
     crownRows: [4, 7, 8, 8, 8, 8, 8, 8, 8, 7, 6],
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3],
-    crownOverlap: 2,
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
+    crownOverlap: 3,
   },
 };
 

@@ -1741,9 +1741,11 @@ export class Renderer {
     for (let r = 0; r < rows.length; r++) {
       const g = gaps?.[r] ?? 0;
       if (g > 0) {
-        // Two lobes, trunk (and whatever is behind it) showing between them.
+        // Two lobes with the trunk between them. The gap is centred on the
+        // trunk's own column (cx - g .. cx + g), so foliage sized to it meets
+        // the bark rather than leaving a stripe of grass either side.
         ctx.fillRect(cx - rows[r], top + r, rows[r] - g, 1);
-        ctx.fillRect(cx + g, top + r, rows[r] - g, 1);
+        ctx.fillRect(cx + g + 1, top + r, rows[r] - g - 1, 1);
       } else {
         ctx.fillRect(cx - rows[r], top + r, rows[r] * 2, 1);
       }
