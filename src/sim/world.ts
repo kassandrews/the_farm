@@ -283,8 +283,9 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     const treeRoll = hash2(x, y, seed ^ 0x7a11) / 4294967296;
     const density = (spot === "forest" ? NODES.tree.density * 1.8 : NODES.tree.density) * biome.trees;
     if (treeRoll < density) return TREE;
-    const rockRoll = hash2(x, y, seed ^ 0x20c4) / 4294967296;
-    if (rockRoll < NODES.rock.density * biome.rocks) return ROCK;
+    if (rockRoll(seed, x, y) < NODES.rock.density * biome.rocks && rockIsLoneliest(seed, x, y)) {
+      return ROCK;
+    }
 
     // Ground clutter, on its own hashes so turning it up somewhere doesn't
     // reshuffle where that region's trees stand.
@@ -293,6 +294,50 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     }
   }
   return GRASS;
+}
+
+/** One tile's roll for a rock. Its own function now because the adjacency rule
+ *  below has to ask the same question about the neighbours. */
+function rockRoll(seed: number, x: number, y: number): number {
+  return hash2(x, y, seed ^ 0x20c4) / 4294967296;
+}
+
+/** Do no rocks touch this one edge-on?
+ *
+ *  ROCKS NEVER SIT SIDE BY SIDE. Two of them sharing an edge read as one lumpy
+ *  object with a seam down it rather than as two rocks — the same failure the
+ *  per-cell edges rule is about (CLAUDE.md), arriving through the scatter instead
+ *  of through a draw call. Now that they have three silhouettes it is worse, not
+ *  better: a boulder welded to a crag looks like a rendering bug.
+ *
+ *  HOW, given that generation is a total function of (seed, x, y) with no order
+ *  and no memory. You cannot "place a rock and then check", and in an unbounded
+ *  world there is no pass over the map to make. So the tile asks whether it wins
+ *  a comparison it can compute alone: it is a rock only if its own roll is LOWER
+ *  than its four neighbours' rolls. Two adjacent tiles can never both satisfy
+ *  that — it would need rollA < rollB and rollB < rollA — so the property is
+ *  guaranteed by arithmetic rather than by a check that might be forgotten.
+ *
+ *  Strictly lower, so the (vanishingly rare) hash tie drops both rocks rather
+ *  than keeping both. Failing safe here means a missing rock, never a pair.
+ *
+ *  DIAGONALS ARE LEFT ALONE, deliberately: "adjacent" here means sharing an edge.
+ *  Two rocks corner to corner have a tile's worth of grass between their
+ *  silhouettes and read as a pair of rocks, which is scenery, not a seam.
+ *
+ *  It costs a little density — a rock is also suppressed when a NEIGHBOUR rolled
+ *  lower but was already taken by a tree, which is a false block we accept
+ *  because unpicking it means asking each neighbour the whole question
+ *  recursively. See content/biomes.ts §scrub for the one region where that loss
+ *  was big enough to be worth compensating for. */
+function rockIsLoneliest(seed: number, x: number, y: number): boolean {
+  const r = rockRoll(seed, x, y);
+  return (
+    r < rockRoll(seed, x + 1, y) &&
+    r < rockRoll(seed, x - 1, y) &&
+    r < rockRoll(seed, x, y + 1) &&
+    r < rockRoll(seed, x, y - 1)
+  );
 }
 
 // --- The underground ----------------------------------------------------------

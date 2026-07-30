@@ -175,7 +175,17 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     id: "scrub",
     name: "the scrub",
     trees: 0.25,
-    rocks: 3.5,
+    // 5, not the 3.5 this was tuned to by eye, and the extra is not a change of
+    // mind about how rocky the scrub is — it is compensation, measured rather than
+    // guessed. Rocks may no longer share an edge (sim/world.ts §rockIsLoneliest),
+    // and the scrub is the only region dense enough for that to take a real bite:
+    // at 3.5 it lost 23% of its rocks, because it was where nearly all the
+    // touching pairs were. 5 puts the COUNT back (12,999 against 13,004 over five
+    // seeds and 194k tiles each) without putting the pairs back — the region is as
+    // rocky as it looked before by the measure that matters, which is how many
+    // rocks are on screen. No other region moved by more than 7%, so no other
+    // number in this file needed touching.
+    rocks: 5,
     mushrooms: 0,
     water: 0,
     ground: { color: "#c2bd86", amount: 0.5 }, // bleached

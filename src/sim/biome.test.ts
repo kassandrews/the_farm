@@ -16,6 +16,7 @@ import {
   HOME_REGION_REACH,
 } from "./world";
 import { BIOMES, FIELD_BIOMES } from "../content/biomes";
+import { ROCK } from "../content/tiles";
 import type { HomesteadSpot } from "./types";
 
 const SPOTS: HomesteadSpot[] = ["riverside", "forest", "hilltop"];
@@ -172,5 +173,57 @@ describe("the blossom rows", () => {
     // It has to be found. A copy turning up in a random band would cost it the
     // only thing that makes it worth the walk.
     expect(FIELD_BIOMES).not.toContain("blossom");
+  });
+});
+
+describe("rocks never touch", () => {
+  // Two rocks sharing an edge read as one lumpy object with a seam down it, and
+  // three silhouettes made that worse rather than better. The rule is arithmetic
+  // (a rock must roll lower than all four neighbours — see rockIsLoneliest), so
+  // this test is really asking whether the arithmetic still holds after anyone
+  // touches the scatter.
+  it("never generates two edge-on, anywhere, on any seed or spot", () => {
+    for (const seed of [21, 99, 4242]) {
+      for (const spot of SPOTS) {
+        for (let y = -70; y <= 70; y++) {
+          for (let x = -70; x <= 70; x++) {
+            if (generatedTile(seed, spot, x, y) !== ROCK) continue;
+            expect(generatedTile(seed, spot, x + 1, y)).not.toBe(ROCK);
+            expect(generatedTile(seed, spot, x, y + 1)).not.toBe(ROCK);
+          }
+        }
+      }
+    }
+  });
+
+  it("still puts plenty of rock in the scrub — the rule is not a thinning", () => {
+    // The compensation in content/biomes.ts §scrub. If a future edit reverts the
+    // multiplier without reverting the rule, the scrub quietly stops being the
+    // rocky one, and nothing else would notice.
+    let rocks = 0;
+    let tiles = 0;
+    for (let y = -220; y <= 220; y += 3) {
+      for (let x = -220; x <= 220; x += 3) {
+        if (biomeAt(21, "hilltop", x, y) !== "scrub") continue;
+        tiles++;
+        if (generatedTile(21, "hilltop", x, y) === ROCK) rocks++;
+      }
+    }
+    expect(tiles).toBeGreaterThan(200); // the sample is worth something
+    expect(rocks / tiles).toBeGreaterThan(0.1); // and it is still strewn with them
+  });
+
+  it("leaves diagonals alone — corner to corner is a pair of rocks, not a seam", () => {
+    // Deliberately NOT forbidden, so this is a decision under test rather than an
+    // accident: with a tile of grass between the silhouettes, two rocks touching
+    // at the corner read as scenery.
+    let diagonals = 0;
+    for (let y = -120; y <= 120; y++) {
+      for (let x = -120; x <= 120; x++) {
+        if (generatedTile(21, "hilltop", x, y) !== ROCK) continue;
+        if (generatedTile(21, "hilltop", x + 1, y + 1) === ROCK) diagonals++;
+      }
+    }
+    expect(diagonals).toBeGreaterThan(0);
   });
 });
