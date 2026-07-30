@@ -2378,15 +2378,36 @@ forever. It rewrites authored ids only: the CAST rows, the three secrets, and
 left alone**, because that's an imported sprite and the import is read-only in
 both directions.
 
-### Looks — one axis per person, derived from their id
+### Looks — one idea per person, derived from their id
 
 Sprites were baked per form, so every Menace was the same 16×16 image.
 
-- **A look changes EITHER the body colour OR one accessory, never both.** This
-  is a ceiling, not a half-finished stage: six tints × three crowns is eighteen
-  Menaces nobody can tell apart, which is the original bug with extra steps.
-  What you want on screen is "the pale one" and "the one with the silver crown"
-  — differences you can say out loud.
+- **A look is ONE IDEA: something you can say out loud.** "The pale one", "the
+  one with the silver crown", "the golden retriever", "the plum one with the
+  snaggletooth". This started life as "one *axis* — colour or accessory, never
+  both", and the ceiling is real (six tints × three crowns is eighteen Menaces
+  nobody can tell apart, the original bug with extra steps) but it was the wrong
+  measurement. Two corrections, both made on screen:
+  - **Some letters draw the ANIMAL, not something it wears.** The dog's ears and
+    tail (`D`) and the gremlin's horns (`G`) move with the body, because a gold
+    dog wearing the grey dog's ears isn't a second look, it's the first one done
+    badly. Canon sets the relationship to copy — gremlin horns are darker than
+    even the shade, so they read as denser material — and each pair is authored
+    by hand, never derived by dimming the fill. Same reason the file won't
+    hue-rotate a tint pair: the numbers survive the shortcut, the relationship
+    doesn't.
+  - **The gremlin crosses its axes, 3 tints × 3 mouths, and nothing else does.**
+    It works there because the two axes land on *different parts of the face* —
+    colour reads at distance, teeth read up close — where tints × crowns was one
+    silhouette in a different hat. 3×3 is the ceiling, not an open door. The
+    tints are the ends and middle of the ramp (green, storm, plum) so they stay
+    far apart as the mouths repeat; teal, cornflower and pine were good colours
+    cut for spacing.
+- **One ramp per form beats a spread.** The gremlin's is green → blue → purple.
+  The ochre one read as a different species, which is the tell that the axis had
+  been left. And **a green resident has to be a green the ground isn't**: the
+  first pine draft was within a few points of the grass tile and stopped having
+  edges on the lawn.
 - **No new art.** Every accessory swap recolours a letter the canon sprite
   already draws with (crown `y`, horns `G`, tie `T`, ears `D`, chest patch `W`)
   or replaces an overlay grid the body already carries (the Scholar's glasses).
@@ -2406,9 +2427,25 @@ Sprites were baked per form, so every Menace was the same 16×16 image.
 - **"Skins" was taken.** `content/skins.ts` is building finishes; people get
   *looks*. Two appearance systems with one word would have ended up in one
   picker.
+- **`mouthDy` is the one field that reaches into the FACE**, and it is capped at
+  ±1. The face composites last so mood always reads over an accessory — which
+  also means no overlay can move or cover the mouth, so the underbite gremlin
+  was impossible until `LookPatch` gained an offset. It slides at the seam the
+  glance frames already split on (eye rows vs. everything below); zero keeps the
+  face a single blit, so every sprite that doesn't ask for a jaw is byte-for-byte
+  unchanged. Two pixels on a 16px head stops being a long jaw and becomes a
+  different skull.
+- **`/looks.html` is the contact sheet** (`src/tools/looks-preview.ts`, dev
+  only — `npm run build` still bundles just `index.html`). Every form, every
+  variant, baked through the game's own `SpriteCache` so it can't drift from
+  what the map draws; switchable mood, frame, integer scale and backdrop. Every
+  correction in this section was found by looking at it, and three of them
+  (the bandage-teeth underbite, the invisible-on-grass green, the chest patch
+  that was still faintly there) passed the unit suite first.
 
 **Open:** more arrival rows to spend the registers and the look lists on. Both
-tables are sized for a crowd that hasn't moved in yet.
+tables are sized for a crowd that hasn't moved in yet. The Menace still has the
+old tint-vs-crown split, which is the pattern the gremlin work replaced.
 
 ---
 
