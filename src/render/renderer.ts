@@ -153,12 +153,35 @@ const DOOR_JAMB = 3;
 /** How far the roof is pulled back over a side doorway. */
 const DOOR_NOTCH = 4;
 
-/** Art heights in scene px for the two scenery pieces. Both exceed TILE, which
- *  is what makes them overhang the tile behind and read as standing up. */
+// Art heights in scene px. A tree exceeds TILE, which is what makes it overhang
+// the tile behind and read as standing up; a rock deliberately doesn't (see
+// ROCK_SHAPES) — it is scenery you step around rather than get behind.
 /** The trunk, in pixels. A tree's full height is this plus its crown's row count,
  *  which now varies per biome (content/biomes.ts) — so nothing may assume 24. */
 const TRUNK_H = 10;
-const ROCK_H = 13;
+
+/** The rocks. Half-widths per row, read exactly like a tree's crown — one
+ *  fillRect per row, `rows[r]` either side of centre, nothing off the pixel grid.
+ *
+ *  WHY THREE. One silhouette repeated across a field of them read as a texture
+ *  the ground was wearing rather than as objects lying on it: every rock the same
+ *  outline is the per-cell problem in a different costume. Three is enough that
+ *  no two neighbours reliably match and few enough that a rock still reads as
+ *  "rock" at a glance.
+ *
+ *  WHY SMALLER. The old one was 14px across and 11 rows tall on a 16px tile — a
+ *  boulder the size of the house's front door, which made the ground look like a
+ *  quarry and left nowhere to walk in the scrub. These sit UNDER the eyeline: a
+ *  thing you step around, not a thing you shelter behind.
+ *
+ *  A rock's height above its base is `rows.length + 2`, which is what `hides`
+ *  is asked about — the same rule as a tree's TRUNK_H + crown, so nothing here
+ *  assumes a constant. */
+const ROCK_SHAPES: readonly { readonly rows: readonly number[]; readonly chip?: number }[] = [
+  { rows: [2, 4, 5, 5, 4] }, // a boulder, sat down in the grass
+  { rows: [1, 3, 4, 4, 4, 3] }, // a crag: narrower, and it stands up
+  { rows: [3, 4, 4, 3], chip: 5 }, // a flat stone that broke, with the piece beside it
+];
 /** Taller than a rock, shorter than a tree. It should read as built rather than
  *  grown, and as somebody's, without being tall enough to hide behind. Its width
  *  is a whole tile: it is a CUBE, and the first draft was eleven pixels wide and
@@ -1726,35 +1749,65 @@ export class Renderer {
   }
 
   /** A rock: low enough to see over, tall enough to sit in the world rather
-   *  than on the floor plan. */
+   *  than on the floor plan.
+   *
+   *  Which of the three (see ROCK_SHAPES) comes off a fraction of the tile hash
+   *  that isn't the one nudging it sideways — the same reason the mushrooms use a
+   *  second fraction. Sharing one would tie shape to position and every crag in
+   *  the world would stand a pixel left of centre. */
   private drawRock(world: WorldState, tx: number, ty: number, night: boolean): void {
     const ctx = this.ctx;
     const h = decoHash(tx, ty, world.seed);
+    const shape = ROCK_SHAPES[Math.floor(((h * 43) % 1) * ROCK_SHAPES.length) % ROCK_SHAPES.length];
+    const rows = shape.rows;
     const jx = Math.floor(h * 3) - 1;
     const cx = Math.round(this.sceneX(tx)) + jx;
     const base = Math.round(this.sceneY(ty) + TILE / 2);
+    const height = rows.length + 2;
+    // The contact shadow and the dark foot go on the BOTTOM row's width, not the
+    // widest — a foot sized to the widest row stuck out from under a shape that
+    // narrows towards the ground, and every rock read as standing on its own
+    // little dark plinth. The soft shadow gets one pixel of spill either side,
+    // which is all a contact shadow is.
+    const low = rows[rows.length - 1];
 
     const prev = ctx.globalAlpha;
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
-    else if (this.hides(world, tx, ty, ROCK_H)) ctx.globalAlpha = prev * HIDDEN_FADE;
+    else if (this.hides(world, tx, ty, height)) ctx.globalAlpha = prev * HIDDEN_FADE;
 
     ctx.fillStyle = "rgba(0,0,0,0.16)";
-    ctx.fillRect(cx - 5, base - 2, 11, 2);
+    ctx.fillRect(cx - low - 1, base - 2, (low + 1) * 2, 2);
 
-    const rows = [3, 5, 6, 6, 7, 7, 7, 7, 7, 6, 5];
     const body = night ? "#5e6068" : "#8d8a84";
     const lit = night ? "#74767e" : "#a8a49c";
-    const top = base - ROCK_H;
+    const foot = night ? "#4a4c54" : "#6f6c66";
+    const top = base - height;
     ctx.fillStyle = body;
     for (let r = 0; r < rows.length; r++) {
       ctx.fillRect(cx - rows[r], top + r, rows[r] * 2, 1);
     }
+    // Light from the upper left as everywhere else, and bounded by the shape's own
+    // length — the crag is six rows and the flat stone four, so a literal 4 here
+    // would read off the end of the shorter array.
     ctx.fillStyle = lit;
-    for (let r = 1; r <= 4; r++) {
+    for (let r = 1; r <= Math.min(3, rows.length - 2); r++) {
       ctx.fillRect(cx - rows[r] + 1, top + r, Math.max(2, rows[r] - 2), 1);
     }
-    ctx.fillStyle = night ? "#4a4c54" : "#6f6c66";
-    ctx.fillRect(cx - 5, base - 2, 11, 1); // it sits ON the ground
+    ctx.fillStyle = foot;
+    ctx.fillRect(cx - low, base - 2, low * 2, 1); // it sits ON the ground
+
+    // The piece that came off it: body and one lit row, and NO dark foot of its
+    // own. At two rows tall a foot line is half the object, and the first version
+    // read as a grey dash lying in the grass a couple of pixels from the stone
+    // rather than as a piece of it.
+    if (shape.chip !== undefined) {
+      ctx.fillStyle = "rgba(0,0,0,0.16)";
+      ctx.fillRect(cx + shape.chip, base - 2, 3, 1);
+      ctx.fillStyle = body;
+      ctx.fillRect(cx + shape.chip, base - 4, 3, 2);
+      ctx.fillStyle = lit;
+      ctx.fillRect(cx + shape.chip, base - 4, 2, 1);
+    }
 
     ctx.globalAlpha = prev;
   }
