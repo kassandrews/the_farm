@@ -358,6 +358,21 @@ select {
   box-shadow: 0 2px 0 rgba(43, 37, 64, 0.22);
 }
 
+/* The survey reference — the clock's chip exactly, in the opposite corner. It
+   inherits everything from `.clock` and overrides only the placement, because
+   the two are the same kind of thing: a small standing reading you consult and
+   act on. Making this one quieter (it was, stacked under the clock at 11px with
+   no border) said it was a lesser instrument, and it isn't — the hour tells you
+   when you are, this tells you where.
+
+   Top RIGHT, so it shares the top strip with the menu and satchel buttons
+   without crowding the clock's centre, and stays clear of BUILD/ACT below. */
+.clock.survey {
+  left: auto;
+  right: 14px;
+  transform: none;
+}
+
 /* The activity toast — harvest lines, who just said what, why a bed won't take.
    Same chip as the clock, but it holds a SENTENCE rather than a reading, so it
    needs a width to wrap inside; unconstrained it stretched to whatever the line

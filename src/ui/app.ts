@@ -20,6 +20,7 @@ import {
   completeLandClaim,
   summarizeAway,
   toolAllowedOn,
+  playerTile,
 } from "../sim/game";
 import { officeLandClaimLine, homeLineFor, companyYesLine, companyByeLine } from "../sim/dialogue";
 import { companion, canInvite, invite, partWays } from "../sim/company";
@@ -28,6 +29,7 @@ import { saveWorld, loadWorld, hasSave, clearWorld } from "../sim/save";
 import { makeRng } from "../sim/rng";
 import type { Rng } from "../sim/rng";
 import { clockLabel } from "../sim/time";
+import { surveyLabel } from "../sim/survey";
 import { STANDARD_FORMS, FORMS } from "../content/canon/forms";
 import type { AdultForm } from "../content/canon/forms";
 import { importFromMeadow } from "../sim/meadow_import";
@@ -1930,6 +1932,11 @@ export class App {
       // (sim/hum.ts) and this line is the whole of the UI's part in it.
       audio.setHum(humLevel(this.world));
       this.hud.clock.textContent = clockLabel(Date.now());
+      // From the TILE, not from `player.x`: the player is a point moving
+      // continuously across cells, and a reference reading off the float would
+      // flicker between two numbers while you stand still.
+      const at = playerTile(this.world);
+      this.hud.survey.textContent = surveyLabel(at.x, at.y);
       if (now - this.lastSaveAt > AUTOSAVE_MS) {
         this.lastSaveAt = now;
         this.persist();
@@ -1999,6 +2006,7 @@ export class App {
 interface HudRefs {
   root: HTMLElement;
   clock: HTMLElement;
+  survey: HTMLElement;
   flash: HTMLElement;
   toolButtons: [Tool, HTMLElement][];
   buildButtons: [BuildTool, HTMLElement][];
@@ -2035,6 +2043,13 @@ function buildHud(
   // a whole phase refusing — it turns something you notice into something you
   // read. The hour earns its chip because you act on the hour; the month is
   // weather, and weather doesn't need a caption.
+  // The survey reference, in the top-right corner (sim/survey.ts for why it's
+  // allowed to exist at all when the season chip wasn't). Its own chip rather
+  // than a second line inside the clock's: the hour and the grid reference change
+  // on completely different rhythms, and sharing a box would make the whole thing
+  // twitch every time you take a step.
+  const survey = el("div", { class: "clock survey" }, ["—"]);
+  hoverHint(survey, "Where you are on the Bureau's survey grid. The plaza is zero.");
   // Position, wrapping and the fade all live in `.clock.flash` now — this used to
   // set four inline styles, which meant the toast's look was split across two
   // files and the CSS half couldn't see it.
@@ -2100,6 +2115,7 @@ function buildHud(
     menu,
     satchel,
     clock,
+    survey,
     flash,
     palette,
     buildBar,
@@ -2107,7 +2123,7 @@ function buildHud(
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, flash, toolButtons, buildButtons, build, rotate, undo };
+  return { root: hud, clock, survey, flash, toolButtons, buildButtons, build, rotate, undo };
 }
 
 // --- Panel helpers ------------------------------------------------------------

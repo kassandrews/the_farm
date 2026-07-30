@@ -2305,6 +2305,27 @@ same reason — face the water and you fill it, turn around and you dig the shor
   tree scatter running on them. Single trees on single squares in open ocean.
   The per-cell rule (CLAUDE.md) arriving by boat.
 
+**And the world got a survey grid** (`sim/survey.ts`), because a world you can
+walk out of forever is a world you can get lost in. The plaza already sat on the
+origin, so this is a readout and not a re-origin: a chip in the top-right corner
+reading `W 42 · S 118`, and `0 · 0` at home. East and south positive, matching
+the screen — the reverse would be an elaborate way to walk the wrong direction.
+
+- **It is the clock's chip exactly, in the opposite corner.** The first cut made
+  it smaller and paler, stacked under the clock, which said it was a lesser
+  instrument. It isn't: the hour tells you when you are, this tells you where.
+- **It had to clear the same bar the season chip failed** (the note beside the
+  clock in `ui/app.ts`). A label naming what you can already see turns noticing
+  into reading. The hour earns its chip because you act on the hour; this earns
+  its chip because you steer by it. The season was weather.
+- **Not a compass, and not a minimap — settled, not pending.** Walking toward
+  zero on both legs is something you work out, not something you follow, and the
+  world stays explored rather than routed. A minimap is worse than redundant
+  here: it would show you the grove and the humming cube, and the UI is never
+  allowed to spoil a secret (CLAUDE.md §Tone).
+- The reference reads off the TILE, never `player.x`. Off the float it flickers
+  between two numbers while you stand still, which reads as broken.
+
 ---
 
 ## Known gaps and loose ends

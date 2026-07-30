@@ -353,6 +353,25 @@ play.
 Opening beat: the Office Creature stamps your land claim. That's the whole
 cutscene.
 
+### The plaza is the datum
+
+The meadow was **surveyed** — of course it was — and the peg went into the town
+plaza, so the plaza reads zero and nowhere else does. The HUD carries the grid
+reference in the top-right corner, in the clock's own chip: `W 42 · S 118`, and
+`0 · 0` when you're home. East and south are positive, matching the screen.
+
+That is the whole of the navigation system, and it is deliberately not a compass.
+Walking toward zero on both legs is a thing you work out rather than a thing you
+follow, and the world stays explored rather than routed. There is **no minimap**
+and there will not be one: a map that shows you the grove or the humming cube has
+spoiled a secret the UI was never allowed to mention.
+
+It is worth being clear why numbers on screen are allowed here when a season
+label was not (that chip existed and was cut). A label naming what you can
+already see turns noticing into reading. The hour earns its chip because you act
+on the hour; the reference earns its chip because you steer by it. The season was
+weather, and weather needs no caption.
+
 ## Water
 
 The world is unbounded, so **no water may be unbounded with it**. A body of
