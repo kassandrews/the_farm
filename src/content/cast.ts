@@ -214,11 +214,12 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // singletons — and it is the same relationship Arabella has with Archibald.
     // Two scholars in one town is not a collision; it is the point.
     //
-    // She was Corrigal until the naming pass, which reopened a decision ROADMAP
-    // had recorded as settled. Deliberately: the pass gave every institution a
-    // personal name, and a roster where one scholar is Corrigal and the rest are
-    // Winifred and Prudence has two naming schemes in it. Corrigal is still in
-    // the scholar register (content/names.ts) and can move in later.
+    // She had a different name until the naming pass, which reopened a decision
+    // ROADMAP had recorded as settled. Deliberately: the pass gave every
+    // institution a personal name, and a roster with one scholar in the old
+    // invented-sounding register and the rest in the fusty one had two naming
+    // schemes in it. The old names are gone rather than retired into
+    // content/names.ts — a register is the names you would actually use.
     //
     // An INSTITUTION like the other three: no bed, no ring, no home stop. She
     // is beside the desk rather than behind it, because the museum is the

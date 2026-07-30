@@ -1215,11 +1215,12 @@ The model is settled above. This was the build order; steps 1–4 were one commi
    like she was reading aloud from someone else's page mid-sentence.
 
 ~~**Open:** the curator needs a name.~~ ~~**Settled: Corrigal.**~~ **Superseded
-by the naming pass (§7).** She is **Winifred** now, and Corrigal is back in the
-scholar register in `content/names.ts` for whoever moves in next. The last
-sentence of the old entry — "the name is one string in `cast.ts` and nothing
-keys on it, so it stays cheap to change" — turned out to be exactly true, which
-is the only reason re-casting the whole town cost one afternoon.
+by the naming pass (§7).** She is **Winifred**, and the old name is gone rather
+than retired into a register — a register is the names you would actually reach
+for, and keeping the ones you re-cast away just refills the town with them. The
+last sentence of the old entry — "the name is one string in `cast.ts` and
+nothing keys on it, so it stays cheap to change" — turned out to be exactly
+true, which is the only reason re-casting the whole town cost one afternoon.
 
 ### 3g. The seed stall — **done**
 
