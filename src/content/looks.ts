@@ -139,13 +139,28 @@ export const LOOKS: Record<AdultForm, LookDef[]> = {
     { id: "ash-rose", fill: "#d3a2a8", shade: "#a97e83" },
   ],
 
+  // HORNS ARE GROWN, NOT WORN. `G` is the same kind of letter as the dog's ears:
+  // part of the animal, so it moves with the body. The canon gremlin sets the
+  // relationship to copy — #4c8f3c horns under a #8fce76 body, i.e. darker than
+  // even the shade, so the horns read as a denser material than the skin. Every
+  // row below is authored to that relationship BY HAND rather than derived by
+  // dimming the fill, for the same reason the file won't hue-rotate a tint pair:
+  // the numbers survive the shortcut, the relationship doesn't.
+  //
+  // ONE RAMP: green → teal → blue → purple. A gremlin can be any colour along
+  // it and still be a gremlin; the ochre one looked like a different species,
+  // which is the tell that the axis had been left.
   gremlin: [
     CANON,
-    { id: "teal", fill: "#6cc0bd", shade: "#449895" },
-    { id: "ochre", fill: "#c9a94f", shade: "#9c8034" },
-    { id: "plum", fill: "#a87fc0", shade: "#815a99" },
-    { id: "ember-horns", extra: { G: "#c07a3a" } },
-    { id: "bruise-horns", extra: { G: "#7a5aa0" } },
+    // Pine, not moss. The first draft of this row was #6aa463, which is within a
+    // few points of the grass tile (#6f9b58) — a gremlin standing on the lawn
+    // stopped having edges. A green resident has to be a green the ground isn't,
+    // so this one is deeper and cooler, and it steps toward the teal besides.
+    { id: "pine", fill: "#4f8f6e", shade: "#3a6d53", extra: { G: "#27503d" } },
+    { id: "teal", fill: "#6cc0bd", shade: "#449895", extra: { G: "#2b7573" } },
+    { id: "storm", fill: "#6f8fb8", shade: "#506e94", extra: { G: "#3a5273" } },
+    { id: "cornflower", fill: "#9aa6e6", shade: "#7480bd", extra: { G: "#55609c" } },
+    { id: "plum", fill: "#a87fc0", shade: "#815a99", extra: { G: "#5f4076" } },
   ],
 
   scholar: [
