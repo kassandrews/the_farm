@@ -29,6 +29,8 @@ import {
   tileDef,
 } from "../content/tiles";
 import { NODES } from "../content/nodes";
+import type { BiomeId } from "../content/biomes";
+import { FIELD_BIOMES, biomeDef } from "../content/biomes";
 import { structureDef } from "../content/structures";
 import { furnitureDef, covers, MAX_SPAN } from "../content/furniture";
 import type { WorldState, HomesteadSpot, Layer } from "./types";
@@ -264,12 +266,31 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     // place was shaped around.
     if (inGroveClearing(seed, spot, x, y)) return GRASS;
 
+    // What the region does to the scatter. Every multiplier is 1 and every
+    // clutter chance 0 in the meadow, so the town's own region — and therefore
+    // every town that existed before biomes did — generates precisely what it
+    // always generated. See `originSite`.
+    const biome = biomeDef(biomeAt(seed, spot, x, y));
+
+    // Standing water, and the Fen is the only region with any. Kept out of the
+    // grove's setting so her trees can't end up ringed by something you can see
+    // across and not walk across (see `nearGrove`).
+    if (biome.water > 0 && !nearGrove(seed, spot, x, y)) {
+      if (inPond(seed, x, y, biome.water)) return WATER;
+    }
+
     // Two independent hashes so trees and rocks don't correlate into stripes.
     const treeRoll = hash2(x, y, seed ^ 0x7a11) / 4294967296;
-    const density = spot === "forest" ? NODES.tree.density * 1.8 : NODES.tree.density;
+    const density = (spot === "forest" ? NODES.tree.density * 1.8 : NODES.tree.density) * biome.trees;
     if (treeRoll < density) return TREE;
     const rockRoll = hash2(x, y, seed ^ 0x20c4) / 4294967296;
-    if (rockRoll < NODES.rock.density) return ROCK;
+    if (rockRoll < NODES.rock.density * biome.rocks) return ROCK;
+
+    // Ground clutter, on its own hashes so turning it up somewhere doesn't
+    // reshuffle where that region's trees stand.
+    if (biome.mushrooms > 0 && hash2(x, y, seed ^ 0x3f07) / 4294967296 < biome.mushrooms) {
+      return MUSHROOM;
+    }
   }
   return GRASS;
 }
@@ -509,6 +530,232 @@ export function cubeSite(seed: number, spot: HomesteadSpot): { x: number; y: num
 function isCubeSite(seed: number, spot: HomesteadSpot, x: number, y: number): boolean {
   const c = cubeSite(seed, spot);
   return x === c.x && y === c.y;
+}
+
+// --- Biomes -------------------------------------------------------------------
+// Which region a tile belongs to. A total function of (seed, x, y) like
+// everything else out here, so a town's layout is a stable fact about it and not
+// one byte of this reaches the save.
+//
+// JITTERED VORONOI, NOT A GRID. The obvious implementation — hash the macro cell
+// and take its biome — draws every boundary on a straight line 64 tiles long,
+// and the world would read as tiled. That is the per-cell edges rule (CLAUDE.md)
+// at a hundred times the scale: an edge that follows the grid stops the surface
+// reading as a surface, whether the grid is one tile or sixty-four. So each macro
+// cell gets ONE jittered site and a tile joins whichever site is nearest, which
+// gives irregular regions with organic borders for nine distance checks.
+//
+// Nine is the whole neighbourhood: a site can wander anywhere inside its own
+// cell, so the nearest one is always in the 3×3 around you and never further.
+
+/** How coarse the field is, in tiles. Chosen so a walk crosses two or three
+ *  regions rather than one — a region you cannot leave is a world, and a region
+ *  you cross in ten steps is a flowerbed. It also has to be wide enough that the
+ *  town's own region comfortably contains the town (see `originSite`). */
+const BIOME_CELL = 64;
+
+/** How far a site may wander inside its cell, as a fraction. Not the full cell:
+ *  sites that can reach their own borders occasionally land almost on top of
+ *  each other across one, which pinches a region into a sliver you cross without
+ *  noticing it was there. */
+const BIOME_JITTER = 0.72;
+
+/** The site owning one macro cell, in world tiles.
+ *
+ *  Cells are CENTRED on the origin, not cornered at it — `biomeCell` shifts by
+ *  half a cell — and cell (0,0)'s site is pinned to the origin exactly. Those two
+ *  facts together are what make the town's region big enough to hold the town;
+ *  see `originSite`. Cornered at the origin, the plaza would sit where four
+ *  regions meet and be quartered between them. */
+function biomeSite(seed: number, mx: number, my: number): { x: number; y: number } {
+  if (mx === 0 && my === 0) return { x: 0, y: 0 };
+  const jx = hash2(mx, my, seed ^ 0x0b10) / 4294967296;
+  const jy = hash2(mx, my, seed ^ 0x51e) / 4294967296;
+  const pad = (1 - BIOME_JITTER) / 2;
+  return {
+    x: (mx - 0.5 + pad + jx * BIOME_JITTER) * BIOME_CELL,
+    y: (my - 0.5 + pad + jy * BIOME_JITTER) * BIOME_CELL,
+  };
+}
+
+/** Which macro cell a tile falls in, offset so the origin is a cell CENTRE. */
+function biomeCell(v: number): number {
+  return Math.floor(v / BIOME_CELL + 0.5);
+}
+
+/** Which macro cell's site is nearest to a tile. The site's CELL is the answer
+ *  rather than its position, because the cell is what a biome is chosen from. */
+function nearestSite(seed: number, x: number, y: number): { mx: number; my: number } {
+  const cx = biomeCell(x);
+  const cy = biomeCell(y);
+  let best = { mx: cx, my: cy };
+  let bestD = Infinity;
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const mx = cx + dx;
+      const my = cy + dy;
+      const s = biomeSite(seed, mx, my);
+      const d = (s.x - x) * (s.x - x) + (s.y - y) * (s.y - y); // squared; no sqrt needed
+      if (d < bestD) {
+        bestD = d;
+        best = { mx, my };
+      }
+    }
+  }
+  return best;
+}
+
+/** How far from the origin the town's own region is GUARANTEED to reach.
+ *
+ *  Not a tuning number — a proof obligation, and `biomeSite` is built to meet it.
+ *  Cell (0,0)'s site is pinned to the origin, and every other cell is centred a
+ *  full BIOME_CELL away with only BIOME_JITTER of that to wander in, so the
+ *  nearest foreign site is at least (1 - BIOME_JITTER/2) × BIOME_CELL ≈ 41 tiles
+ *  out. A tile within half of that distance is therefore always nearer to the
+ *  origin than to anything else. 20 is that half, rounded down.
+ *
+ *  The town needs about 14 of it: the plaza reaches (5,5) and the homestead
+ *  clearing reaches (10,9). There is a test that walks the whole town footprint
+ *  on a thousand seeds, because this is the assertion that a live save depends
+ *  on. */
+export const HOME_REGION_REACH = 20;
+
+/** THE MIGRATION, and it is a property of the GENERATOR rather than of the save.
+ *
+ *  The Farm has live saves and base terrain is not stored, so a generator that
+ *  answers differently re-landscapes towns that already exist — "an unedited tile
+ *  is always whatever generation says, forever" (top of this file) quietly stops
+ *  being true. That is not a cosmetic risk: an unedited cell inside a house
+ *  somebody already built could come back a TREE, which is solid, which breaks
+ *  the room and the roof derived from it.
+ *
+ *  So the town's own region is always `meadow`, whose every number in
+ *  content/biomes.ts is an identity — 1× densities, zero clutter, zero tint. The
+ *  ground people have actually built on generates byte-for-byte what it did
+ *  before this feature existed.
+ *
+ *  It forces the REGION and not a radius, and that distinction is the whole
+ *  reason for the pinned site above. A circle of ordinary grass stamped around
+ *  the plaza would draw a hard rim across open country wherever a different
+ *  region came near — the per-cell edges rule at the largest scale in the game.
+ *  A region's borders are irregular, so there is no seam to find. */
+function originSite(seed: number): { mx: number; my: number } {
+  return nearestSite(seed, 0, 0);
+}
+
+/** How far out the cherry stands are, and on their own bearing. Past the cube
+ *  (58), because this is the one region you are TOLD about — an arrival can ask
+ *  to live here — and a destination somebody names should be further than the
+ *  secrets nobody does. */
+const BLOSSOM_RING = 72;
+
+/** How wide. Big enough to be a place you live in rather than a photograph:
+ *  several houses' worth of pink, with room for a garden. */
+const BLOSSOM_RADIUS = 9;
+
+/** Where the cherry trees are. Sited, not rolled — see BIOMES.blossom. Runs
+ *  through `onLand` like every landmark, because a riverside town is open sea
+ *  from x = -13 westward and half of them would otherwise put the orchard in the
+ *  water (see `onLand` for the day that cost us). */
+export function blossomCentre(seed: number, spot: HomesteadSpot): { x: number; y: number } {
+  const a = (hash2(6, 0, seed ^ 0x7c1d) / 4294967296) * Math.PI * 2;
+  return onLand(spot, {
+    x: Math.round(Math.cos(a) * BLOSSOM_RING),
+    y: Math.round(Math.sin(a) * BLOSSOM_RING),
+  });
+}
+
+/** Which biome a tile is in.
+ *
+ *  Cheap enough to ask per visible tile per frame — nine squared distances and
+ *  two hashes each — because the renderer needs it for every patch of ground and
+ *  every crown on screen, and a cached answer would be one more thing that can
+ *  disagree with the generator. */
+export function biomeAt(seed: number, spot: HomesteadSpot, x: number, y: number): BiomeId {
+  const b = blossomCentre(seed, spot);
+  if (Math.hypot(x - b.x, y - b.y) <= BLOSSOM_RADIUS) return "blossom";
+
+  const site = nearestSite(seed, x, y);
+  const home = originSite(seed);
+  if (site.mx === home.mx && site.my === home.my) return "meadow";
+
+  const roll = hash2(site.mx, site.my, seed ^ 0x30de) / 4294967296;
+  return FIELD_BIOMES[Math.floor(roll * FIELD_BIOMES.length) % FIELD_BIOMES.length];
+}
+
+// --- The Fen's ponds ----------------------------------------------------------
+// Water in blobs, not in cells. The first version rolled a per-cell hash, and on
+// screen every pond was a lone bright SQUARE — the same failure the Scrub's dry
+// patches died of an hour earlier, and the same rule underneath: a feature that
+// occupies exactly one cell of an otherwise continuous surface reads as a tile,
+// so the surface stops reading as a surface (CLAUDE.md §per-cell edges).
+//
+// The fix is the one this file keeps reaching for — put the feature on a
+// low-frequency field instead of on the cell. Pond centres sit on their own
+// coarse grid, jittered, with a hashed radius; a cell is wet if it falls inside
+// one. Ponds are then contiguous, edged where the water actually ends, and a few
+// of them run together into something with a shape.
+
+/** How far apart pond centres sit. Small enough to read as marsh rather than as
+ *  lakes, wide enough that a pond has dry ground around it to be a pond IN. */
+const POND_CELL = 11;
+
+/** How big a pond gets, in tiles of radius. Past the top of this range it stops
+ *  being something you walk around and starts being something you can't cross. */
+const POND_MIN_RADIUS = 1.2;
+const POND_MAX_RADIUS = 2.6;
+
+/** Candidate centres per unit of `water`, so the region's number keeps meaning
+ *  "roughly what fraction of the ground is wet" now that one centre covers many
+ *  cells. Derived rather than tuned: a pond of the average radius covers about
+ *  πr² of the POND_CELL² a centre is responsible for.
+ *
+ *  It was a hand-guessed 3.2 first, which produced a fen 1.3% under water when it
+ *  claimed 10% — measured, not eyeballed, because "there is no water on screen"
+ *  and "the water is off screen" look identical from one screenshot. */
+const PONDS_PER_WATER =
+  (POND_CELL * POND_CELL) / (Math.PI * ((POND_MIN_RADIUS + POND_MAX_RADIUS) / 2) ** 2);
+
+/** Is this cell standing water? `chance` is the region's `water`, read as how
+ *  many of the candidate centres are actually ponds — so the knob still means
+ *  "how wet is it" even though the geometry changed underneath. */
+function inPond(seed: number, x: number, y: number, chance: number): boolean {
+  if (chance <= 0) return false;
+  const cx = Math.floor(x / POND_CELL);
+  const cy = Math.floor(y / POND_CELL);
+  // The 3x3 neighbourhood, because a pond near a cell edge reaches into the next
+  // one — checking only our own cell would clip ponds along straight lines, which
+  // is the bug we are here to fix wearing a smaller hat.
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const mx = cx + dx;
+      const my = cy + dy;
+      // Capped below 1 so a fen always keeps dry ground to walk on: at every
+      // candidate being a pond the ponds merge and the region becomes a lake,
+      // which is a wall and not a place.
+      const density = Math.min(0.85, chance * PONDS_PER_WATER);
+      if (hash2(mx, my, seed ^ 0x0e05) / 4294967296 >= density) continue;
+      const px = (mx + 0.2 + (hash2(mx, my, seed ^ 0x2b1f) / 4294967296) * 0.6) * POND_CELL;
+      const py = (my + 0.2 + (hash2(my, mx, seed ^ 0x2b1f) / 4294967296) * 0.6) * POND_CELL;
+      const r =
+        POND_MIN_RADIUS +
+        (hash2(mx, my, seed ^ 0x6a3c) / 4294967296) * (POND_MAX_RADIUS - POND_MIN_RADIUS);
+      if ((px - x) * (px - x) + (py - y) * (py - y) <= r * r) return true;
+    }
+  }
+  return false;
+}
+
+/** Whether a cell is close enough to the grove to be part of its setting.
+ *
+ *  Used to keep the Fen's water out of it. The grove's own cells win over the
+ *  scatter anyway (they are checked first in `generatedTile`), but a stand of
+ *  dark trees ringed by standing water is a stand you can see and not reach, and
+ *  that is the `onLand` bug again in a different costume — this time the sea
+ *  arrives after the landmark instead of before it. */
+function nearGrove(seed: number, spot: HomesteadSpot, x: number, y: number): boolean {
+  const c = groveCentre(seed, spot);
+  return Math.hypot(x - c.x, y - c.y) <= GROVE_RADIUS + 2;
 }
 
 /** The effective tile on a layer: a player/town edit wins, else the generated

@@ -28,7 +28,7 @@ import {
 } from "../content/tiles";
 import { skinDef } from "../content/skins";
 import type { SkinClass, SkinDef } from "../content/skins";
-import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey } from "../sim/world";
+import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey, biomeAt } from "../sim/world";
 import { wallMask, blockedDoorsteps, CONNECT_N, CONNECT_E, CONNECT_S, CONNECT_W } from "../sim/structures";
 import { furnitureDef, footprint } from "../content/furniture";
 import { plinthRuns } from "../sim/museum";
@@ -37,7 +37,8 @@ import { rooms } from "../sim/rooms";
 import type { Room } from "../sim/rooms";
 import { tintAt, isNight, skyPhaseAt } from "../sim/time";
 import { seasonAt } from "../sim/seasons";
-import { scenePalette, seasonSkin, type ScenePalette } from "./palette";
+import { scenePalette, seasonSkin, biomeSkin, mixHex, type ScenePalette } from "./palette";
+import { biomeDef } from "../content/biomes";
 import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
 import type { Mood, SpriteFrame } from "../content/canon/sprites";
@@ -631,7 +632,16 @@ export class Renderer {
         // repaints disjoint by construction rather than by discipline: a season
         // can only ever reach a tile that had no finish to lose. See finishFor's
         // docblock for why that matters.
-        const def = finishFor(world, groundId) ?? seasonSkin(tileDef(groundId), groundId, this.palette);
+        // A FINISH IS ASKED FIRST AND WINS OUTRIGHT — and that now settles the
+        // biome too, on the same argument: a whitewashed floor is whitewashed in
+        // the fen. Only untouched natural ground gets the region's colour.
+        const def =
+          finishFor(world, groundId) ??
+          biomeSkin(
+            seasonSkin(tileDef(groundId), groundId, this.palette),
+            groundId,
+            biomeDef(biomeAt(world.seed, world.homestead.spot, tx, ty)),
+          );
         const px = Math.round(this.sceneX(tx) - TILE / 2);
         const py = Math.round(this.sceneY(ty) - TILE / 2);
         ctx.fillStyle = def.color;
@@ -677,7 +687,13 @@ export class Renderer {
             // Placed by a hash on WORLD coordinates and sparse, so it is texture
             // and not a per-cell edge — the band rule (CLAUDE.md) does not reach
             // it, and a seasonal recolour doesn't change that.
-            ctx.fillStyle = this.palette.tuft;
+            // Tinted with the region, because the speckle is texture ON the
+            // ground and a tuft that stayed meadow-green over bleached scrub
+            // detaches from the surface it belongs to.
+            ctx.fillStyle = mixHex(
+              this.palette.tuft,
+              biomeDef(biomeAt(world.seed, world.homestead.spot, tx, ty)).tuft,
+            );
             const gx = px + 2 + Math.floor(h * 9);
             const gy = py + 4 + Math.floor((h * 53) % 9);
             ctx.fillRect(gx, gy, 2, 1);
@@ -1577,13 +1593,23 @@ export class Renderer {
     ctx.fillStyle = "rgba(0,0,0,0.16)";
     ctx.fillRect(cx - 4, base - 2, 9, 2);
 
+    // The region this tree grows in, and the grove is EXEMPT from it exactly as
+    // it is exempt from the seasons: the dark wood is what the grove IS, and a
+    // stand that turned pink because it happened to fall inside the blossom rows
+    // would be a secret joining in with the scenery.
+    const biome = dark
+      ? null
+      : biomeDef(biomeAt(world.seed, world.homestead.spot, tx, ty));
+
     // The grove's trunks are the dark wood itself, which is the only place in
     // the game where the finish and the material are the same object. It reads
     // nearly black at night, and it is meant to: you find the grove by daylight
     // and meet her in a stand you can barely make out.
-    ctx.fillStyle = dark ? (night ? "#2b1d16" : "#3f2a1e") : night ? "#4a3628" : "#6b4a33";
+    const bark = dark ? (night ? "#2b1d16" : "#3f2a1e") : night ? "#4a3628" : "#6b4a33";
+    const barkDark = dark ? (night ? "#1f150f" : "#2f1e15") : night ? "#3a2a1e" : "#573a28";
+    ctx.fillStyle = biome ? mixHex(bark, biome.trunk) : bark;
     ctx.fillRect(cx - 1, base - 10, 3, 10);
-    ctx.fillStyle = dark ? (night ? "#1f150f" : "#2f1e15") : night ? "#3a2a1e" : "#573a28";
+    ctx.fillStyle = biome ? mixHex(barkDark, biome.trunk) : barkDark;
     ctx.fillRect(cx + 1, base - 10, 1, 10);
 
     // Crown as per-row half-widths: an integer-rect blob, no ellipse maths and
@@ -1594,8 +1620,20 @@ export class Renderer {
     // every October would be a secret joining in with the town. An ordinary
     // tree's crown comes from the frame's palette, which is where autumn and
     // winter actually land: it is the largest colour mass on screen.
-    const crown = dark ? (night ? "#1e2c1f" : "#2c3a2a") : this.palette.crown;
-    const crownLit = dark ? (night ? "#26361f" : "#3a4a34") : this.palette.crownLit;
+    //
+    // The BIOME then pulls the season's answer somewhere (content/biomes.ts), so
+    // the two compose rather than one winning: October still lands here, hard in
+    // the birches and barely at all in the pines, which is what conifers do.
+    const crown = dark
+      ? night
+        ? "#1e2c1f"
+        : "#2c3a2a"
+      : mixHex(this.palette.crown, biome!.crown);
+    const crownLit = dark
+      ? night
+        ? "#26361f"
+        : "#3a4a34"
+      : mixHex(this.palette.crownLit, biome!.crown);
     const top = base - TREE_H;
     ctx.fillStyle = crown;
     for (let r = 0; r < rows.length; r++) {

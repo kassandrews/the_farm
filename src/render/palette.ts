@@ -13,7 +13,9 @@
 // flag it was given, so a test can stand in October at midnight without either.
 
 import type { TileDef, TileId } from "../content/tiles";
+import { GRASS, MUSHROOM } from "../content/tiles";
 import type { SeasonDef } from "../content/seasons";
+import type { BiomeDef, Tint } from "../content/biomes";
 
 /** Everything that varies by hour and by month, for one frame. */
 export interface ScenePalette {
@@ -54,6 +56,74 @@ export function scenePalette(season: SeasonDef | null, night: boolean): ScenePal
     crown: night ? crown.night : crown.day,
     crownLit: night ? crown.nightLit : crown.dayLit,
   };
+}
+
+// --- Biome tinting ------------------------------------------------------------
+// A biome states a DIRECTION and a distance, never a colour (content/biomes.ts).
+// Everything below is that idea applied: the season decides what the world is
+// coloured, and the biome pulls it somewhere. Season and biome therefore compose
+// instead of overriding each other — autumn still turns the world, and the Fen is
+// a murkier autumn.
+//
+// Applied AFTER the season and never to a FINISH. A finish is a thing the player
+// chose (a whitewashed floor is whitewashed in the fen), and the renderer already
+// asks for it first and lets it win outright; biome tinting sits on the other
+// branch, with the season, where the untouched natural ground is.
+
+/** Parse `#rrggbb`. Returns null for anything else, including the shorthand —
+ *  every colour in this game is written long, and a silent half-parse would be
+ *  worse than a visible refusal to tint. */
+function parseHex(hex: string): [number, number, number] | null {
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return null;
+  return [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ];
+}
+
+function toHex(n: number): string {
+  return Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
+}
+
+/** Pull `base` a fraction of the way toward `tint`.
+ *
+ *  Linear in sRGB, which is not physically correct and is right anyway: these are
+ *  hand-picked pixel-art colours, and the whole job is "a bit more like that one".
+ *  A gamma-correct mix moved the mid-tones somewhere the artist hadn't chosen.
+ *
+ *  Returns `base` untouched at amount 0, which is what makes the meadow row's
+ *  zeroes a guarantee rather than a rounding accident. */
+export function mixHex(base: string, tint: Tint): string {
+  if (tint.amount <= 0) return base;
+  const a = parseHex(base);
+  const b = parseHex(tint.color);
+  if (!a || !b) return base;
+  const t = Math.min(1, tint.amount);
+  return `#${a.map((c, i) => toHex(c + (b[i] - c) * t)).join("")}`;
+}
+
+/** The only tiles a region is allowed to recolour: the living ground it grew.
+ *
+ *  THE SAME LIST THE SEASON USES, and that is the point rather than a
+ *  coincidence. Found on screen, in the sea west of a riverside town: tinting
+ *  every tile pulled the WATER halfway to dry sand, and the plaza, the farmland
+ *  and laid boards with it. A region is turf and what grows on it; it has no
+ *  opinion about water, about paving, or about anything a player made. */
+const BIOME_GROUND: TileId[] = [GRASS, MUSHROOM];
+
+/** A tile's appearance in a biome: the season's answer, pulled toward the
+ *  region's ground colour. `top` and `shade` travel with it or the bevel at a
+ *  material boundary stops matching the material it edges. */
+export function biomeSkin(def: TileDef, id: TileId, biome: BiomeDef): TileDef {
+  if (biome.ground.amount <= 0) return def;
+  if (!BIOME_GROUND.includes(id)) return def;
+  // Spread, never construct — `name` is what the renderer branches on for the
+  // ripple, the mushroom caps and the grass speckle (see seasonSkin).
+  const out: TileDef = { ...def, color: mixHex(def.color, biome.ground) };
+  if (def.top) out.top = mixHex(def.top, biome.ground);
+  if (def.shade) out.shade = mixHex(def.shade, biome.ground);
+  return out;
 }
 
 /** A terrain tile's appearance under the month.

@@ -42,6 +42,10 @@ DESIGN.md, if it's a rule about the game rather than about build order).
 - **Phase 3b — commissioned housing, complete.** The flagship beat is playable:
   somebody arrives, pitches a tent, and moves into the house you give them. It
   is also the award path for finishes — `whitewash` is now obtainable.
+- **Phase 5 — biomes, step 1 of 4, complete.** The world is navigable: six
+  regions, colour and density only, nothing gated. The chunk cache is bounded now
+  too. Still to come — cosmetic wood variants, more arrival rows, contiguous
+  outward growth. See below.
 - **Phase 3c — taste, complete.** Forms are quietly pleased by particular
   finishes and furniture, and say so. Delight only; there is no way to express
   the opposite.
@@ -1922,6 +1926,109 @@ Wheat is the first crop that cannot finish on two waterings — 48h of growth
 against a 22h wetness window needs three. That is the check-in loop working as
 designed (a dry plot pauses, never dies), but it is new behaviour and wants
 eyeballing once.
+
+---
+
+## Phase 5 — Biomes, and the world becoming navigable
+
+The world was unbounded and also uniform: grass, trees, rocks, forever, in one
+palette. That left a player no way to say where they were and no reason to go
+anywhere but gathering. Biomes are the fix, and they are **the wayfinding
+system** — you navigate by "out past the birches", which is how anybody
+navigates anywhere.
+
+### What shipped
+
+`src/content/biomes.ts` (the table), the field in `src/sim/world.ts` beside the
+grove and the warren, tinting in `src/render/palette.ts`.
+
+Five regions the field can roll — **meadow, pinewood, birch, scrub, fen** — plus
+**blossom rows**, which is sited like a landmark instead. Every one is colour and
+growth density; **not one number touches a yield, a recipe or an unlock.**
+
+### Settled, and why
+
+- **No coordinate readout and no minimap.** Both were considered and refused.
+  The house position is already written in three places (the warren "needs no
+  marker to be findable"; the grove is a secret because you *walked into* it),
+  and a HUD location label is the debug-overlay instinct in a clean shirt.
+  Legible regions ARE a coordinate system. Biome names live in dialogue, so the
+  people who live somewhere are the ones who name it.
+
+- **A biome states a TINT, never a colour.** A direction and an `amount`. This is
+  what lets biome and season compose rather than override: October still turns
+  the world, and the fen is a murkier October. The alternative was losing seasons
+  out here or writing every biome four times. `amount` is where the argument
+  lives — pinewood resists autumn hard, because conifers do.
+
+- **The town's own region is always `meadow`, whose every number is identity.**
+  THIS IS THE MIGRATION, and it is a property of the generator rather than of the
+  save. Base terrain isn't stored, so a generator that answers differently
+  re-landscapes towns that already exist — and not cosmetically: an unedited cell
+  inside a house somebody built could come back a TREE, which is solid, which
+  breaks the room and the roof derived from it. Cell (0,0)'s Voronoi site is
+  pinned to the origin so the region provably reaches 20 tiles (`HOME_REGION_REACH`);
+  the town needs 14. Tested on a thousand seeds, because this is the assertion a
+  live save depends on.
+
+- **Forced by REGION, never by radius.** A circle of ordinary grass stamped
+  around the plaza would draw a hard rim across open country wherever another
+  region came near.
+
+- **Jittered Voronoi, not a hashed grid.** A hashed macro-cell draws every border
+  on a straight line 64 tiles long and the world reads as tiled. That is the
+  per-cell edges rule at 64× scale: an edge that follows the grid stops the
+  surface reading as a surface, whatever the grid's size.
+
+- **Blossom rows are sited, not rolled** — own ring (72), own bearing, through
+  `onLand` like every landmark. A region you happen into is scenery; a stand you
+  went looking for is a destination. It is also what an authored arrival can ask
+  for by name.
+
+### Three bugs the screenshots caught that the tests could not
+
+All three passed 838 unit tests and were obvious within a second of looking.
+
+1. **Biome tint reached every tile.** Found in the sea west of a riverside town:
+   the WATER was pulled halfway to dry sand, and the plaza, the farmland and laid
+   boards with it. A region is turf and what grows on it, so tinting is now
+   restricted to the same tiles the SEASON recolours — grass and mushrooms — and
+   a finish still wins outright over both.
+
+2. **Single-cell features are squares, not scenery.** The scrub had scattered dry
+   patches and the fen had per-cell water. Both came out as hard-edged coloured
+   SQUARES scattered on open turf, tiling the ground into a checkerboard. This is
+   the per-cell edges rule arriving by a new door, and it has now caught us five
+   times. The dry patches were deleted; the ponds moved onto a low-frequency
+   field of jittered centres with hashed radii, so water is a contiguous blob
+   edged where the water actually ends.
+
+3. **The fen was 1.3% under water while declaring 10%.** A hand-guessed scaling
+   constant between "fraction of ground wet" and "how many pond centres".
+   Derived from the geometry now (πr² per cell²) and measured, because "there is
+   no water on screen" and "the water is off screen" look identical in a
+   screenshot.
+
+### Not built yet — the rest of the plan
+
+- **Cosmetic wood variants.** Cherry chops into `wood`; the variant would ride
+  the slot `whitewash` already occupies, so a house framed in cherry looks unlike
+  one framed in pine and `TASTES` has something to have opinions about. This is
+  what stops biomes going stale after you've seen the pink trees once.
+- **More arrival rows, and arrivals that name a biome they want to live in.**
+  `ARRIVALS` is six hand-written rows and `nextArrival` returns null past the
+  last, so the town currently stops growing. Settled: MORE ROWS, no generator —
+  the map being unbounded doesn't oblige the town to be, and per-form banks would
+  turn "somebody is asking" into "a task appeared". An arrival who wants to live
+  in the blossom rows is what makes outward growth pulled by people.
+- **Contiguous outward growth, and branch offices.** `MAX_PATH_NODES = 2000` is
+  ~25 tiles and exceeding it means "unreachable", so a neighbour housed 150 tiles
+  out doesn't walk slowly — they fail to be a walking creature. Growth therefore
+  has to move a plot at a time. Institutions stay singletons (there is one
+  Corrigal); a far neighbourhood gets a BRANCH — same person, second premises, on
+  the schedule ring. `StopAnchor` is already the precedent.
+- **`shafts()` scans every override.** Grows with edits, not area, so outward
+  growth doesn't worsen it — but a town with a large frontier eventually will.
 
 ---
 

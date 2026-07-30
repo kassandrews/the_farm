@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { scenePalette, seasonSkin } from "./palette";
+import { scenePalette, seasonSkin, biomeSkin, mixHex } from "./palette";
+import { BIOMES } from "../content/biomes";
 import { SEASONS, seasonOn } from "../content/seasons";
 import { TILES, tileDef, GRASS, MUSHROOM, WATER, FARMLAND, FARMLAND_WET, PLANK, STONE, BEDROCK, CAVE_FLOOR, ORE_VEIN, SHAFT, DARK_TREE } from "../content/tiles";
 
@@ -96,3 +97,85 @@ describe("scenePalette", () => {
     }
   });
 });
+
+describe("biome tinting", () => {
+  it("leaves a colour exactly alone at amount 0", () => {
+    // The meadow row is all zeroes, and every live save's terrain depends on that
+    // meaning "identical" rather than "very close". A rounding drift here is a
+    // recolour of everybody's lawn.
+    for (const def of Object.values(TILES)) {
+      expect(biomeSkin(def, def.id, BIOMES.meadow)).toBe(def); // same object, not a copy
+    }
+    expect(mixHex("#8bbf5a", { color: "#ff0000", amount: 0 })).toBe("#8bbf5a");
+  });
+
+  it("becomes the tint at amount 1, and meets it halfway at 0.5", () => {
+    expect(mixHex("#000000", { color: "#ffffff", amount: 1 })).toBe("#ffffff");
+    expect(mixHex("#000000", { color: "#ffffff", amount: 0.5 })).toBe("#808080");
+    expect(mixHex("#204060", { color: "#204060", amount: 1 })).toBe("#204060");
+  });
+
+  it("refuses to half-parse a colour it doesn't understand", () => {
+    // Better a visibly untinted world than a silently wrong one.
+    expect(mixHex("#abc", { color: "#ffffff", amount: 1 })).toBe("#abc");
+    expect(mixHex("#8bbf5a", { color: "rgb(1,2,3)", amount: 1 })).toBe("#8bbf5a");
+  });
+
+  it("carries top and shade with the base, so a bevel still matches", () => {
+    const skinned = biomeSkin(tileDef(GRASS), GRASS, BIOMES.scrub);
+    expect(skinned.color).not.toBe(tileDef(GRASS).color);
+    expect(skinned.top).not.toBe(tileDef(GRASS).top);
+    expect(skinned.shade).not.toBe(tileDef(GRASS).shade);
+    expect(skinned.name).toBe(tileDef(GRASS).name); // the renderer branches on it
+  });
+
+  it("composes with the season instead of replacing it", () => {
+    // The whole reason a biome states a direction and not a colour. October has
+    // to still be October in the fen — and the fen still has to be the fen.
+    const autumn = scenePalette(seasonOn(at(10)), false);
+    const summer = scenePalette(seasonOn(at(7)), false);
+    const fenAutumn = biomeSkin(seasonSkin(tileDef(GRASS), GRASS, autumn), GRASS, BIOMES.fen).color;
+    const fenSummer = biomeSkin(seasonSkin(tileDef(GRASS), GRASS, summer), GRASS, BIOMES.fen).color;
+    const meadowAutumn = seasonSkin(tileDef(GRASS), GRASS, autumn).color;
+    expect(fenAutumn).not.toBe(fenSummer); // the season still lands
+    expect(fenAutumn).not.toBe(meadowAutumn); // the region still reads
+  });
+
+  it("keeps the pines evergreen through autumn and lets the birches turn", () => {
+    // The argument `amount` exists to have. Distance from summer's crown says how
+    // much October moved each canopy.
+    const autumn = scenePalette(seasonOn(at(10)), false);
+    const summer = scenePalette(seasonOn(at(7)), false);
+    const shift = (id: "pinewood" | "birch" | "meadow") =>
+      dist(
+        mixHex(summer.crown, BIOMES[id].crown),
+        mixHex(autumn.crown, BIOMES[id].crown),
+      );
+    expect(shift("pinewood")).toBeLessThan(shift("birch"));
+    expect(shift("birch")).toBeLessThan(shift("meadow"));
+  });
+
+  it("makes blossom crowns unmistakably pink and birch trunks pale", () => {
+    const summer = scenePalette(seasonOn(at(7)), false);
+    const [r, g, b] = rgb(mixHex(summer.crown, BIOMES.blossom.crown));
+    expect(r).toBeGreaterThan(g); // no green canopy is redder than it is green
+    expect(r).toBeGreaterThan(b);
+    // Birch bark against the ordinary trunk brown it starts from.
+    const bark = mixHex("#6b4a33", BIOMES.birch.trunk);
+    expect(rgb(bark)[0]).toBeGreaterThan(rgb("#6b4a33")[0] + 60);
+  });
+});
+
+function rgb(hex: string): [number, number, number] {
+  return [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ];
+}
+
+function dist(a: string, b: string): number {
+  const [ar, ag, ab] = rgb(a);
+  const [br, bg, bb] = rgb(b);
+  return Math.hypot(ar - br, ag - bg, ab - bb);
+}
