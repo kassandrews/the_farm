@@ -2086,16 +2086,37 @@ All three passed 838 unit tests and were obvious within a second of looking.
 Small things that are half-built or deliberately stubbed. Worth knowing before
 you trip over them:
 
-- **The rotate button sits on top of the build palette.** `.rotate-btn` is
-  `position: absolute; bottom: 352px`, and `.build-palette` is `bottom: 100px`
-  with six rows of 52px plus 8px gaps — 352px tall, so it spans 100→452 and the
-  rotate control lands inside it, covering the right-hand button of the
-  second-from-top row (the Bed). Only visible while a furniture tool is held,
-  which is why it went unnoticed: pick Table and the Bed button disappears under
-  it. Predates the icon pass — spotted in a screenshot during it, left alone
-  because moving either control is a HUD layout decision, not a swap of glyph for
-  icon. Fixing it properly probably means the modifier column (rotate, undo)
-  living *above* the palette rather than at a hardcoded offset into it.
+- ~~**The rotate button sits on top of the build palette.**~~ **Fixed by the
+  build-mode pass.** It was one symptom of a bigger layout problem, and the fix
+  was the bigger one: **build mode is now a mode you enter.**
+
+  The old HUD had both palettes on screen at all times, facing each other across
+  the field, with the build one landing on the ACT button and the rotate/undo
+  column landing on the build one. That layout was asserting that both ways of
+  touching the world are live at the same instant, which was never true — holding
+  a build tool already suppressed acting. So:
+
+  - **A BUILD button, above ACT in the same corner.** Press to enter, press again
+    (or Escape, or B) to leave. The act palette and ACT are `display: none` in
+    build mode, not dimmed to 0.35 — a greyed control reads as "temporarily
+    unavailable" for something that is simply not part of this mode, and dimming
+    left ACT sitting under the build palette collecting taps.
+  - **The build tools moved to a bar across the bottom**, tray-styled and hugging
+    its contents, which is where every building game has taught people to look
+    for them. The list can grow without climbing the screen; it wraps rather than
+    scrolls, because a scrolling toolbar hides tools behind an untold gesture.
+  - **Rotate and undo ride at the end of that bar**, past a rule, in a slot held
+    open at two buttons wide even when empty. That reserved width is load-bearing:
+    both come and go with what you're holding, and a collapsing slot would slide
+    the whole tool row sideways under the cursor mid-build.
+  - `buildTool !== null` still IS the mode, so the renderer, undo and placement
+    paths are untouched. `toggleBuild()` re-enters on the tool you had last —
+    except underground, where it opens on the first tool the rock allows rather
+    than opening onto a refusal.
+
+  The one thing that changed behaviourally: **tapping the held build tool no
+  longer exits.** With a real BUILD button on screen, a palette tap that quietly
+  closed the whole bar would be the same gesture meaning two different things.
 
 - ~~**One of the three non-starter finishes is still unobtainable.**~~ **Fixed in
   4c.** `whitewash` arrives with Bissenette's commission (3b), `slate` is mined

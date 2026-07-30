@@ -17,10 +17,12 @@
 //     viewport, so CSS px per tile changes with window size. Never hardcode it;
 //     read it off the canvas (`tilePx` below), or your clicks land on the wrong
 //     tiles and you "discover" bugs that are really your own arithmetic.
-//   • The HUD overlaps the world. Clicks that land on the build palette (right)
-//     or the act palette (left) SELECT A TOOL instead of hitting the map — which
-//     looks exactly like placement going haywire. Keep interaction inside
-//     `safeArea`, or widen the viewport.
+//   • The HUD overlaps the world. Clicks that land on the act palette (left),
+//     the BUILD/ACT column (bottom right) or — in build mode — the build bar
+//     along the bottom SELECT A TOOL instead of hitting the map, which looks
+//     exactly like placement going haywire. Keep interaction inside `safeArea`,
+//     or widen the viewport. The bar is the tall one: it takes the bottom ~110px
+//     whenever build mode is on.
 //   • `beforeunload` persists the in-memory world. Writing localStorage and then
 //     reloading gets your write clobbered by the old page saving over it. Seed
 //     through `addInitScript`, which runs on the NEW document, after unload.
@@ -99,8 +101,16 @@ export async function drive({
     ...geom,
     /** Screen point for a tile offset from the player (who is at screen centre). */
     at: (gx, gy) => [geom.cx + gx * geom.tilePx, geom.cy + gy * geom.tilePx],
-    /** True when a point is clear of the HUD palettes. */
-    safeArea: (x, y) => x > 90 && x < viewport.width - 150 && y > 60 && y < viewport.height - 40,
+    /** True when a point is clear of the HUD. The bottom margin clears the build
+     *  bar, which is the tallest thing in the way and only there in build mode —
+     *  one margin that's always safe beats a mode-dependent one. */
+    safeArea: (x, y) => x > 90 && x < viewport.width - 150 && y > 60 && y < viewport.height - 120,
+    /** Enter or leave build mode. The build tools only exist inside it now, so
+     *  `tool("Wall")` fails until this has been called. */
+    build: async () => {
+      await page.click("button.mode-btn");
+      await page.waitForTimeout(200);
+    },
     /** Select a tool/build tool by its accessible name, e.g. "Wall", "Bed".
      *  It's `aria-label`, not `title`: the HUD draws its own hover hints now, and
      *  a `title` alongside them would give every button two tooltips. */

@@ -93,6 +93,13 @@ const AUTOSAVE_MS = 15_000;
 // §Structures). ACT tools apply to the tile at your feet via the action button.
 // BUILD tools put you in build mode: the view flattens and you tap the map.
 //
+// The two used to be on screen at once, facing each other across the field, and
+// the right-hand one landed on top of the ACT button. That layout was arguing
+// that both ways of touching the world are available at the same instant, which
+// they never were — holding a build tool already suppressed acting. Build mode
+// is now a mode you enter with a button and leave the same way, and its tools
+// only exist while you're in it.
+//
 // `hint` is the hover descriptor (desktop only — see `hoverHint`). It says what
 // the button DOES, not what it is: the icon and label already carry the noun,
 // so a hint that repeats it is worth nothing to the person hovering. `key` is
@@ -147,6 +154,10 @@ export class App {
   /** Non-null means BUILD MODE: the view flattens and canvas taps place instead
    *  of walking. Null means the normal 3/4 living view. */
   private buildTool: BuildTool | null = null;
+  /** What re-entering build mode hands you. Coming back to a wall you were
+   *  halfway through and having to say "wall" again is the kind of small tax
+   *  that makes a mode feel like a detour rather than a place. */
+  private lastBuildTool: BuildTool = "wall";
   /** Tiles already painted during the current drag, so dragging back and forth
    *  over one tile doesn't re-charge or re-message for it. */
   private painted = new Set<string>();
@@ -185,6 +196,7 @@ export class App {
       root,
       (t) => this.selectTool(t),
       (t) => this.selectBuildTool(t),
+      () => this.toggleBuild(),
       () => this.rotate(),
       () => this.doUndo(),
       () => this.doAction(),
@@ -1590,13 +1602,11 @@ export class App {
         e.preventDefault();
         return;
       }
-      // And build mode's, which it had been doing without: the palette tap is the
-      // touch door (a phone has no Escape), but on a keyboard the key that leaves
-      // every other mode should leave this one. Toggling the held tool is the same
-      // exit the palette uses, so the pan resets and the view flattens back
-      // through one path rather than two.
+      // And build mode's. The BUILD button is the pointer door; Escape is the
+      // keyboard one, and both go through `toggleBuild` so the pan resets and the
+      // view flattens back through one path rather than two.
       if (k === "escape" && this.buildTool) {
-        this.selectBuildTool(this.buildTool);
+        this.toggleBuild();
         e.preventDefault();
         return;
       }
@@ -1611,8 +1621,8 @@ export class App {
       } else if (k === "r") {
         this.rotate();
       } else if (k === "b") {
-        // Desktop shortcut into build mode; the palette is the touch path.
-        this.selectBuildTool(this.buildTool ?? "wall");
+        // Desktop shortcut for the BUILD button, in and out.
+        this.toggleBuild();
       } else if (k === "e") {
         this.tryTalkNearest();
       } else if (k === "z") {
@@ -1690,15 +1700,39 @@ export class App {
     this.tool = t;
     this.buildTool = null;
     // Picking up a tool leaves bed-picking. This is the mode's door on TOUCH,
-    // where there is no Escape key — the palettes are always on screen, so
-    // there's always a way out (house rule: every panel needs a door).
+    // where there is no Escape key — the act palette is on screen whenever build
+    // mode isn't, so there's always a way out (house rule: every panel needs a
+    // door).
     this.endAssigning();
     this.syncToolUi();
   }
 
-  /** Pick a BUILD tool, entering build mode. Tapping the selected one again
-   *  leaves — the palette doubles as the mode toggle, so there's no separate
-   *  button to hunt for. */
+  /** Enter or leave build mode. The one door: the BUILD button, Escape, and the
+   *  B key all come through here, so the view, the camera pan and the palette
+   *  can never disagree about which mode you're in.
+   *
+   *  Entering hands you the tool you had last, unless this layer refuses it —
+   *  underground the palette is two tools long, and opening the mode with a
+   *  wall selected would be opening it onto a refusal. */
+  private toggleBuild(): void {
+    if (this.buildTool) {
+      this.buildTool = null;
+      this.syncToolUi();
+      return;
+    }
+    const allowed = BUILD_TOOLS.map((b) => b.id).filter((id) => toolAllowedOn(id, this.layer()));
+    if (allowed.length === 0) {
+      audio.play("deny");
+      this.flash("Nothing to build on down here but rock.");
+      return;
+    }
+    this.selectBuildTool(allowed.includes(this.lastBuildTool) ? this.lastBuildTool : allowed[0]);
+  }
+
+  /** Pick a BUILD tool, entering build mode if you weren't in it. This no longer
+   *  toggles the mode off when you tap the held tool: with a real BUILD button
+   *  on screen, a palette tap that quietly closed the whole bar would be the
+   *  same gesture meaning two different things. */
   private selectBuildTool(t: BuildTool): void {
     // Most of the palette stops at the shaft. This was once a flat refusal, with
     // a correctness argument behind it — `furniture` was a surface record with no
@@ -1711,7 +1745,8 @@ export class App {
       this.flash("Not down here. There's nothing to put a wall on but rock.");
       return;
     }
-    this.buildTool = this.buildTool === t ? null : t;
+    this.buildTool = t;
+    this.lastBuildTool = t;
     this.endAssigning(); // same door, from the other palette
     this.syncToolUi();
   }
@@ -1749,6 +1784,8 @@ export class App {
     }
     this.renderer.setTool(this.tool);
     this.hud.root.classList.toggle("building", building);
+    this.hud.build.classList.toggle("selected", building);
+    this.hud.build.setAttribute("aria-pressed", String(building));
 
     // Rotation is a furniture idea; showing it for walls would imply walls have
     // a facing, which is exactly the confusion the design avoids.
@@ -1773,6 +1810,14 @@ export class App {
     const show = this.buildTool !== null && this.world !== null && canUndo(this.world);
     this.hud.undo.style.display = show ? "" : "none";
     if (show) this.hud.undo.title = `Undo ${undoLabel(this.world!)}.  (Z)`;
+
+    // Whether the bar's modifier slot has anything in it, which is what draws
+    // its separator rule. Read off the rotate button rather than recomputed:
+    // this runs at the tail of `syncToolUi`, which has just set that display,
+    // and also on its own from `doUndo`, which hasn't touched it — one source
+    // that's right in both cases beats two that agree by coincidence.
+    const rotating = this.hud.rotate.style.display !== "none";
+    this.hud.root.classList.toggle("has-mods", show || rotating);
   }
 
   private doUndo(): void {
@@ -1957,6 +2002,7 @@ interface HudRefs {
   flash: HTMLElement;
   toolButtons: [Tool, HTMLElement][];
   buildButtons: [BuildTool, HTMLElement][];
+  build: HTMLElement;
   rotate: HTMLElement;
   undo: HTMLElement;
 }
@@ -1965,6 +2011,7 @@ function buildHud(
   root: HTMLElement,
   onTool: (t: Tool) => void,
   onBuildTool: (t: BuildTool) => void,
+  onBuild: () => void,
   onRotate: () => void,
   onUndo: () => void,
   onAction: () => void,
@@ -2004,14 +2051,19 @@ function buildHud(
     palette.append(btn);
   }
 
+  // The build bar: one strip across the foot of the screen, present only while
+  // build mode is on. A strip rather than a column because the list is eleven
+  // long and growing, and because a bar along the bottom is what every building
+  // game has taught people to look for — the tools you're choosing between sit
+  // in a row under the thing you're building, not beside it.
   const buildButtons: [BuildTool, HTMLElement][] = [];
-  const buildPalette = el("div", { class: "tool-palette build-palette" });
+  const buildTools = el("div", { class: "build-tools" });
   for (const t of BUILD_TOOLS) {
     const btn = el("button", { class: "tool", ariaLabel: t.label }, [iconEl(t.icon, SCALE.button)]);
     btn.addEventListener("click", () => onBuildTool(t.id));
     hoverHint(btn, `${t.label} — ${t.hint}`);
     buildButtons.push([t.id, btn]);
-    buildPalette.append(btn);
+    buildTools.append(btn);
   }
 
   const rotate = el("button", { class: "tool rotate-btn", ariaLabel: "Rotate" }, [iconEl("arrow_s", SCALE.button)]);
@@ -2025,6 +2077,21 @@ function buildHud(
   undo.addEventListener("click", onUndo);
   undo.style.display = "none";
 
+  // Rotate and undo ride at the end of the same strip, past a gap. They modify
+  // what you're about to do rather than choosing it, so they want to be in
+  // reach of the tools without reading as one of them.
+  const buildBar = el("div", { class: "build-bar" }, [
+    buildTools,
+    el("div", { class: "build-mods" }, [rotate, undo]),
+  ]);
+
+  // BUILD sits directly above ACT, in the one corner the hands already live in,
+  // and the two never appear together: entering build mode is the game putting
+  // your hands down and picking up the plans. Same button leaves.
+  const build = el("button", { class: "mode-btn", ariaLabel: "Build mode" }, ["BUILD"]);
+  build.addEventListener("click", onBuild);
+  hoverHint(build, "Build mode — floors, walls, and furniture. Press it again to leave.  (B)");
+
   const action = el("button", { class: "action-btn" }, ["ACT"]);
   action.addEventListener("click", onAction);
   hoverHint(action, "Use the held tool on the tile you're standing on.  (Space)");
@@ -2035,13 +2102,12 @@ function buildHud(
     clock,
     flash,
     palette,
-    buildPalette,
-    rotate,
-    undo,
+    buildBar,
+    build,
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, flash, toolButtons, buildButtons, rotate, undo };
+  return { root: hud, clock, flash, toolButtons, buildButtons, build, rotate, undo };
 }
 
 // --- Panel helpers ------------------------------------------------------------

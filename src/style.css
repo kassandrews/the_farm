@@ -103,23 +103,75 @@ select {
   gap: 8px;
 }
 
-/* Build tools sit opposite the act tools, so the two ways of touching the world
-   are never confused for one list. Two columns: the list grew past what a single
-   column fits on a phone once furniture arrived. */
-.build-palette {
-  left: auto;
-  right: 12px;
-  bottom: 100px;
-  display: grid;
-  grid-template-columns: repeat(2, 52px);
+/* The build bar: a strip along the foot of the screen, like every building game
+   since the first one. It exists only inside build mode (the BUILD button is the
+   door), which is why nothing here has to share space with the act palette — the
+   two are never on screen together.
+
+   It hugs its contents and centres in the space LEFT of the BUILD/ACT column
+   (`right: 132px`, `margin: auto`) rather than spanning the window. A bar
+   stretched to 1400px is mostly empty cream with eleven buttons huddled at one
+   end — the tray should be the size of what's in it. */
+.build-bar {
+  position: absolute;
+  left: 12px;
+  right: 132px;
+  bottom: 16px;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+  display: none;
+  align-items: center;
+  gap: 14px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 2px solid var(--panel-edge);
+  background: var(--panel);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25);
+}
+
+.hud.building .build-bar {
+  display: flex;
+}
+
+/* Wrapping, not scrolling. A scrolling toolbar hides tools behind a gesture
+   nobody is told about; a second row is just a slightly taller bar. */
+.build-tools {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-/* Build mode dims the act palette and the ACT button — they do nothing while
-   you're editing, and leaving them lit invites taps that go nowhere. */
-.hud.building .tool-palette:not(.build-palette),
+/* The modifier slot at the end of the bar, held open at two buttons wide even
+   when it's empty. Rotate comes and goes with furniture and undo with there
+   being a stroke to take back, and if the slot collapsed with them the whole
+   tool row would slide sideways under the cursor mid-build — the tools must not
+   move because you picked up a chair.
+
+   The separator is a rule rather than a gap: these modify what you're about to
+   do rather than choosing it, and without a line they read as two more things
+   you can place. It appears only when the slot has something in it (`has-mods`)
+   — a rule with nothing behind it is a bar that looks broken. */
+.build-mods {
+  flex: 0 0 auto;
+  width: 112px;
+  display: flex;
+  gap: 8px;
+  min-height: 52px;
+}
+
+.hud.has-mods .build-mods {
+  padding-left: 14px;
+  border-left: 2px solid var(--panel-edge);
+}
+
+/* Build mode puts your hands down: the act tools and ACT go away entirely rather
+   than sitting there greyed. They used to dim to 0.35 and stay, which reads as
+   "temporarily unavailable" for controls that are simply not part of this mode —
+   and it left the ACT button underneath the build palette, collecting taps. */
+.hud.building .tool-palette,
 .hud.building .action-btn {
-  opacity: 0.35;
+  display: none;
 }
 
 .tool {
@@ -169,6 +221,42 @@ select {
 .action-btn:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/* BUILD, directly above ACT and the same width, so the corner reads as one
+   column of "what my hands are doing" rather than two unrelated buttons. Cream
+   rather than the accent, because it is not the verb — it opens the bar that
+   holds the verbs, and only ACT should look like the thing that commits.
+
+   It stays put when you enter the mode: a toggle that moves is a toggle you
+   have to find twice. `.selected` (shared with the tool buttons) is what says
+   you're in. */
+.mode-btn {
+  position: absolute;
+  right: 20px;
+  bottom: 124px;
+  width: 84px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid var(--panel-edge);
+  background: var(--panel);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+}
+
+.mode-btn.selected {
+  border-color: var(--accent);
+  background: #fff6e2;
+}
+
+.mode-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
 }
 
 /* Cream, like the tool buttons, and NOT the dark translucent chip these were.
@@ -473,21 +561,14 @@ textarea.import-box {
   user-select: text;
 }
 
-/* The rotate control sits just above the build palette, and only exists while a
-   furniture tool is held — walls have no facing, and offering to turn one would
-   imply they do. */
-.rotate-btn {
-  position: absolute;
-  right: 12px;
-  bottom: 352px;
-}
+/* Rotate and undo now ride at the far end of the build bar (`.build-gap` pushes
+   them there), so they need no position of their own — only the shrink guard,
+   because they're flex children next to a wrapping row of tools and would
+   otherwise be the first things squeezed.
 
-/* Stacked above rotate, in the same right-hand column: both are modifiers on
-   what you're about to do rather than tools, so they read as a group. Undo sits
-   higher because it's reached for less often than turning a piece. */
+   Rotate exists only while a furniture tool is held: walls have no facing, and
+   offering to turn one would imply they do. */
+.rotate-btn,
 .undo-btn {
-  position: absolute;
-  right: 12px;
-  bottom: 404px;
-  font-size: 22px;
+  flex: 0 0 auto;
 }
