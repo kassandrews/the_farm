@@ -2127,6 +2127,53 @@ standing in an unreachable stand of trees in open sea.
 - **No creation, no flow.** Water never spreads, rises or is placed. Terrain
   stays derivable from (seed, edits); the moment water simulates, it has to be
   stored.
+**Then rivers, two stream families, and sand only on the big water** — a second
+pass, and it settled three more things:
+
+- **Streams run in TWO families on different bearings.** One family is a comb;
+  no amount of meandering fixes that, because every channel shares the bearing
+  and they wobble in unison. Two cross, join and separate, and the world stops
+  having a grain. True dendritic branching is deliberately not attempted: it
+  needs flow accumulation on a height field, which is iterative, and terrain here
+  has to stay a total function of (seed, x, y) with nothing stored.
+- **Rivers are a table row, not a code path** — `ChannelDef` in
+  content/water.ts, shared with streams. Wider, rarer, deep down the middle, and
+  the first water that can genuinely stop you. They PINCH along their length, so
+  the narrows are fordable: the stream's emergent crossing rule, applied to a
+  channel big enough to need it. You are never blocked, only delayed.
+- **Sand means big water.** Streams and ponds got `beach: 0`. Half taste (you can
+  tell what you're looking at before you reach it) and half repair: a one-tile
+  band on a two-tile channel falls between cell centres as often as on one, and
+  came out as chunky patches on alternating banks.
+- **`waterAt` compares WETTEST, not deepest.** Fine while every kind had a beach
+  and wrong the moment they didn't — a stream crossing the sea's sand has the
+  greater depth out there, so it won the tile and contributed nothing, punching
+  green fingers through the beach wherever a brook ran down to the shore.
+- **The town's bridges are GENERATED**, like the plaza's paving, and that is what
+  buys "rivers may run through town". Stamped, they'd be stored edits needing a
+  migration to reach towns that already exist — and those towns are getting
+  rivers today, because terrain is a function of the seed.
+
+**THE ARITHMETIC BUG WORTH REMEMBERING.** A sine of amplitude A and period P
+moves a channel sideways by up to A/P tiles per tile walked. Past 1 it slides
+faster than you walk, and the depth field ALIASES — adjacent cells land in
+different bands and the banks come out as a CHECKERBOARD. The per-cell edges rule
+(CLAUDE.md) arriving by a fourth door, and every channel in the world had it: the
+periods were hard-coded (23, 11) while the amplitude varied per kind, so a
+river's amplitude of 34 gave a slope of 2.0. **Every wavelength is now derived
+from its own amplitude**, which fixes it for all kinds at once and says something
+true besides: a bigger meander is a longer one. Real rivers don't switchback.
+The same error was in `coastWarp` at 0.85, which is why the sand along the sea
+was chunkier than it should have been and nobody could say why.
+
+**A test can have the wrong ruler four times in a row.** "The sea has a far
+shore" went through: counting dry tiles after the last water (a river far west
+reset the counter), then asserting the tiles past it weren't sea (its own shelf
+and beach are), then counting a dry window (a lake sat just past the far beach).
+None of those were bugs in the world. The version that survived counts **the
+sea's own tiles** — it asks whether this body is bounded, which is the actual
+question, and nothing else nearby can answer it for you.
+
 **Three things only the pictures could say.** Every one of them passed the tests.
 
 1. **The coastline was three ribbons of flat colour.** The sea's shape comes

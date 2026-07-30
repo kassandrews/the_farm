@@ -378,16 +378,50 @@ fordable**. Small ponds likewise. Water is deep in the middle, and small water
 has no middle. "You can always cross a stream" is geometry rather than a rule,
 which means nobody has to remember it when adding the next kind of water.
 
-Four kinds: **streams** (never deep), **ponds** (deep only if unusually large),
+Five kinds: **streams** (never deep), **ponds** (deep only if unusually large),
+**rivers** (deep down the middle — the first water that can actually stop you),
 **lakes** (wadeable rim, real barrier in the middle), and the **sea** (a proper
 shelf, then the deep).
 
-### Sand is a skin
+Streams run in **two families on different bearings**, so they cross and join
+and the world has no grain. That is an approximation of a drainage network and
+openly so: real veins come from flow accumulation on a height field, which is
+iterative, and terrain here is a total function of (seed, x, y) with nothing
+stored. Two bearings buy most of the look and cost none of the foundation.
+
+**A river narrows here and there, and where it narrows it is fordable** — the
+same emergent rule as the stream, applied to a channel big enough to need it.
+So you are never *blocked* by water, only asked to walk the bank a while, or to
+put planks down because you are tired of looking.
+
+### Sand is a skin, and it means big water
 
 Beach is the shore's own ground: sandy coloured, and behaves exactly like the
 grass and dirt it replaces — diggable, tillable, plantable. It carries no
 material, gates nothing, and grows nothing special. It is what the edge of
 water looks like, and that is the whole of its job.
+
+**Only the big water has it.** Seas, lakes and rivers get beaches; streams and
+ponds meet the grass directly. That is a free piece of legibility — you can tell
+what kind of water you are looking at before you reach it — and it is also the
+honest answer to a rendering problem: a one-tile sand band on a two-tile channel
+lands between cell centres as often as on one, so it came out as chunky patches
+on alternating banks rather than as a shore. A beach needs a body big enough to
+have one.
+
+### The town has bridges
+
+Rivers may run through town, because a river is a good thing for a town to have.
+What pays for that is a crossing: where a channel meets the town's two centre
+lines, the water is decked. It is **generated**, like the plaza's paving — the
+town pre-exists, so its bridges pre-exist, and a town that needs one has always
+had one.
+
+This is a promise to the RESIDENTS more than to the player. A villager who
+cannot reach their stop does not walk slowly; they arrive anyway, instantly,
+because the alternative is a neighbour who walks into a river forever. A town
+cut in half therefore doesn't look like a town cut in half — it looks like
+everyone teleporting.
 
 ### You may cross it, and you may fill it
 

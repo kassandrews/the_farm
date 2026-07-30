@@ -13,6 +13,7 @@ import type { TileId } from "../content/tiles";
 import {
   GRASS,
   STONE,
+  PLANK,
   WATER,
   DIRT,
   FARMLAND,
@@ -33,7 +34,7 @@ import {
 import { NODES } from "../content/nodes";
 import type { BiomeId } from "../content/biomes";
 import { FIELD_BIOMES, biomeDef } from "../content/biomes";
-import type { WaterKindId } from "../content/water";
+import type { WaterKindId, ChannelDef } from "../content/water";
 import { waterKind } from "../content/water";
 import { structureDef } from "../content/structures";
 import { furnitureDef, covers, MAX_SPAN } from "../content/furniture";
@@ -281,7 +282,12 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     // out of the homestead clearing by the `nearHome` guard above, which is what
     // promises you always arrive somewhere you can stand.
     if (!nearGrove(seed, spot, x, y)) {
-      const wet = waterTile(waterAt(seed, spot, x, y, biome.water));
+      const at = waterAt(seed, spot, x, y, biome.water);
+      const wet = waterTile(at);
+      // The town's own crossing, where it has one. Only the water itself is
+      // decked — the shore either side is left as shore, so a bridge reads as a
+      // bridge and not as a road that stops at the bank.
+      if (at && (wet === WATER || wet === SHALLOW) && isTownBridge(x, y, at.kind)) return PLANK;
       if (wet !== null) return wet;
     }
 
@@ -792,12 +798,17 @@ const SEA_RING = SEA_RADIUS + 55;
  *
  *  RIVERSIDE IS PINNED, and that is a compatibility promise rather than a
  *  flavour choice: due west, at a distance that puts the near shore around
- *  x = -20, so a town that has been looking at water out of its western window
- *  since the day it was made still is. (Nominal -20 rather than the old -13
- *  because the wobble has to have somewhere to wander without lapping the
- *  plaza, whose western edge is -5.) */
+ *  x = -26, so a town that has been looking at water out of its western window
+ *  since the day it was made still is.
+ *
+ *  Nominal -26 rather than the old -13, and the 13 tiles of daylight are not
+ *  slack: the wobble (8) and the coast warp (5) can both pull the shore inland
+ *  at once, so the waterline reaches -13 at its most eager — which is exactly
+ *  where the old hard-coded shore stood. Drawn any closer and the shallows lap
+ *  the plaza, whose western edge is -5. This was -20 for an afternoon and a
+ *  200-seed test found the seed where the sea arrived at the town hall. */
 function seaCentre(seed: number, spot: HomesteadSpot): { x: number; y: number } {
-  if (spot === "riverside") return { x: -(SEA_RADIUS + 20), y: 0 };
+  if (spot === "riverside") return { x: -(SEA_RADIUS + 26), y: 0 };
   const a = (hash2(9, 0, seed ^ 0x5ea0) / 4294967296) * Math.PI * 2;
   return { x: Math.round(Math.cos(a) * SEA_RING), y: Math.round(Math.sin(a) * SEA_RING) };
 }
@@ -831,9 +842,14 @@ const COAST_WARP = 5;
 function coastWarp(seed: number, salt: number, x: number, y: number): { x: number; y: number } {
   const pa = (hash2(3, 0, seed ^ salt) / 4294967296) * Math.PI * 2;
   const pb = (hash2(4, 0, seed ^ salt) / 4294967296) * Math.PI * 2;
+  // Periods tied to the amplitude, for the reason `channelDepth` spells out at
+  // length: displacement per tile is amplitude over period, and past 1 the depth
+  // bands alias into a checkerboard. These were 4.5 and 3.9 — a slope of 0.85,
+  // close enough to the edge that the sand along the sea was chunkier than it
+  // should have been and nobody could say why.
   return {
-    x: x + COAST_WARP * (0.6 * Math.sin(y / 4.5 + pa) + 0.4 * Math.sin(y / 11 + pb)),
-    y: y + COAST_WARP * (0.6 * Math.sin(x / 3.9 + pb) + 0.4 * Math.sin(x / 9 + pa)),
+    x: x + COAST_WARP * (0.6 * Math.sin(y / (COAST_WARP * 1.5) + pa) + 0.4 * Math.sin(y / (COAST_WARP * 3.4) + pb)),
+    y: y + COAST_WARP * (0.6 * Math.sin(x / (COAST_WARP * 1.5) + pb) + 0.4 * Math.sin(x / (COAST_WARP * 3.4) + pa)),
   };
 }
 
@@ -903,7 +919,7 @@ function lakeDepth(seed: number, spot: HomesteadSpot, x: number, y: number): num
   return roundDepth(seed, 0x1a4e, lakeCentre(seed, spot), LAKE_RADIUS, LAKE_WOBBLE, x, y);
 }
 
-// --- Streams ------------------------------------------------------------------
+// --- Channels: streams and rivers ---------------------------------------------
 // The common water, and the one the whole depth system exists to make painless:
 // a stream is narrow enough that no tile in it reaches the shelf, so it is wholly
 // shallow and you cross it by walking into it. No bridge required, and no rule
@@ -915,73 +931,107 @@ function lakeDepth(seed: number, spot: HomesteadSpot, x: number, y: number): num
 // at all and how wide it runs, which is what keeps a family of sine waves from
 // reading as wallpaper.
 
-/** How far apart channels run. Wide enough that you can spend a long time
- *  between two of them and forget the last one. */
-const STREAM_SPACING = 46;
-/** How far a channel wanders across its own line. */
-const STREAM_AMP = 19;
-
-/** How far the whole FAMILY of channels is bent, and over what distance.
+/** One channel family's depth at a tile, in tiles inside its own banks.
  *
- *  THE FIRST DRAFT WAS WALLPAPER, and it took a map of the whole world to see
- *  it — from inside the game a stream looks like a stream, and it is only from
- *  four hundred tiles up that six of them turn out to be ruled pencil lines at
- *  even spacing. A meander alone could not fix that: every channel shares one
- *  bearing and one wave, so they wobble in unison and stay exactly as parallel
- *  as they started.
+ *  ONE FUNCTION FOR STREAMS AND RIVERS, because a river is not a different idea
+ *  — it is a wider channel whose middle is deeper than its shelf, and every
+ *  number that makes it one lives in content/water.ts. The alternative was a
+ *  second near-identical generator, and the day someone fixed the wallpaper bug
+ *  in one of them and not the other is easy to picture.
  *
- *  Bending the coordinate space instead breaks the parallelism itself. Channels
- *  curve, converge, and drift apart, because the field they are level sets OF is
- *  no longer flat — which is a real thing about drainage and not just noise.
- *  Big and slow on purpose: this is the shape of a river system, not the
- *  roughness of a bank, and `coastWarp` is already doing the latter. */
-const STREAM_WARP = 22;
-/** Half-widths, in tiles. The ceiling is what guarantees fordability: it must
- *  stay under WATER_KINDS.stream.shelf or streams grow a deep middle and the
- *  crossing promise quietly breaks. */
-const STREAM_HALF_MIN = 0.6;
-const STREAM_HALF_MAX = 1.4;
-/** How many candidate channels are real. Under a half, so the gaps between
- *  streams are irregular and two can run close together. */
-const STREAM_CHANCE = 0.55;
-
-function streamDepth(seed: number, x0: number, y0: number): number {
-  const a = (hash2(11, 0, seed ^ 0x57e4) / 4294967296) * Math.PI * 2;
+ *  `family` picks the bearing. Everything else is salted off the kind, so
+ *  streams and rivers never line up.
+ *
+ *  THE HISTORY, because these numbers look arbitrary and are not:
+ *
+ *  1. A plain family of sine curves was WALLPAPER, and it took a map of the
+ *     whole world at two tiles per pixel to see it. From inside the game a
+ *     stream looks like a stream; from four hundred tiles up, six of them are
+ *     ruled pencil lines at even spacing. Meandering does not help — every
+ *     channel shares the bearing and the wave, so they wobble in unison and stay
+ *     exactly as parallel as they started.
+ *  2. `warp` bends the space the lines are ruled ON, so channels curve,
+ *     converge and drift apart. Necessary and not sufficient: curving a comb
+ *     gives you a curved comb.
+ *  3. The per-channel OFFSET is what finally broke it. Even spacing was the
+ *     tell; jittered, two channels sometimes run close enough to share a valley
+ *     and sometimes leave a hundred tiles of dry ground between them.
+ *  4. `families` — more than one bearing. The last thing standing between this
+ *     and a world with a grain, and the reason the map now has confluences. */
+function channelDepth(
+  seed: number,
+  salt: number,
+  ch: ChannelDef,
+  family: number,
+  x0: number,
+  y0: number,
+): number {
+  // Each family gets its own salt, so its bearing, meander and channel rolls are
+  // independent — two families sharing a phase would be one family drawn twice.
+  const fs = seed ^ salt ^ (family * 0x9e37);
+  const a = (hash2(11, family, fs) / 4294967296) * Math.PI * 2;
   const cos = Math.cos(a);
   const sin = Math.sin(a);
-  const pa = (hash2(12, 0, seed ^ 0x57e4) / 4294967296) * Math.PI * 2;
-  const pb = (hash2(13, 0, seed ^ 0x57e4) / 4294967296) * Math.PI * 2;
-  // Bend the ground before ruling lines on it (see STREAM_WARP).
-  const x = x0 + STREAM_WARP * Math.sin(y0 / 37 + pa) * 0.7 + STREAM_WARP * Math.sin(y0 / 83 + pb) * 0.3;
-  const y = y0 + STREAM_WARP * Math.sin(x0 / 41 + pb) * 0.7 + STREAM_WARP * Math.sin(x0 / 71 + pa) * 0.3;
+  const pa = (hash2(12, family, fs) / 4294967296) * Math.PI * 2;
+  const pb = (hash2(13, family, fs) / 4294967296) * Math.PI * 2;
+  // EVERY WAVELENGTH HERE IS DERIVED FROM ITS OWN AMPLITUDE, and that is a bug
+  // fix rather than a flourish.
+  //
+  // A sine of amplitude A and period P moves the channel by up to A/P tiles per
+  // tile walked. Past 1 the channel is sliding sideways faster than you are
+  // walking along it, and the depth field ALIASES: adjacent cells land in
+  // different bands and the banks come out as a CHECKERBOARD of sand and water.
+  // Which is the per-cell edges rule (CLAUDE.md) arriving by yet another door —
+  // found on screen, in a river through town, after the arithmetic had been
+  // wrong in every channel in the world for an hour. The rivers made it obvious
+  // because they are the only channel wide enough to HAVE bands to alias.
+  //
+  // The first draft hard-coded the periods (23 and 11) and let the amplitude
+  // vary per kind, which meant a river's amplitude of 34 gave a slope of 2.0.
+  // Tying period to amplitude fixes it for every kind at once and says something
+  // true besides: a bigger meander is a longer one. Real rivers do not switchback.
+  const m1 = ch.amplitude * 4;
+  const m2 = ch.amplitude * 2;
+  const w1 = ch.warp * 3.2;
+  const w2 = ch.warp * 7;
+  // Bend the ground before ruling lines on it (step 2 above).
+  const x = x0 + ch.warp * (0.7 * Math.sin(y0 / w1 + pa) + 0.3 * Math.sin(y0 / w2 + pb));
+  const y = y0 + ch.warp * (0.7 * Math.sin(x0 / w1 + pb) + 0.3 * Math.sin(x0 / w2 + pa));
   // Along the bearing, and across it. The meander is a function of ALONG only,
   // so a channel is a curve rather than a blotch.
   const u = x * cos + y * sin;
   const v = -x * sin + y * cos;
-  const meander = STREAM_AMP * (0.65 * Math.sin(u / 23 + pa) + 0.35 * Math.sin(u / 11 + pb));
+  const meander = ch.amplitude * (0.65 * Math.sin(u / m1 + pa) + 0.35 * Math.sin(u / m2 + pb));
   const across = v - meander;
-  // Which channel, and how far off its centreline we are.
-  //
-  // EACH CHANNEL SITS OFF ITS OWN LINE BY A HASHED AMOUNT, which is the last
-  // thing standing between this and wallpaper. Bending the space (STREAM_WARP)
-  // made the channels curve, but curving a comb gives you a curved comb: the
-  // SPACING stayed dead even, and even spacing is the tell. Jittered, two
-  // streams sometimes run close enough to be one valley and sometimes leave a
-  // hundred tiles of dry ground between them.
-  //
-  // Three candidates rather than the nearest one, and the jitter is exactly why:
-  // an offset channel can reach past the midpoint its index owns, so rounding to
-  // the nearest line would clip it — the same mistake `inPond` makes a 3x3
+
+  // How wide it is HERE. 1 everywhere for a channel with no pinch; for a river,
+  // a slow squeeze along its length whose narrows are its fords (ChannelDef).
+  const squeeze = ch.pinch
+    ? 1 - ch.pinch * (0.5 + 0.5 * Math.sin(u / (ch.pinchPeriod ?? 37) + pb))
+    : 1;
+
+  // Three candidates rather than the nearest one, and the offset is exactly why:
+  // a jittered channel can reach past the midpoint its index owns, so rounding
+  // to the nearest line would clip it — the same mistake `pondDepth` keeps a 3x3
   // neighbourhood to avoid.
-  const k0 = Math.round(across / STREAM_SPACING);
+  const k0 = Math.round(across / ch.spacing);
   let best = -Infinity;
   for (let k = k0 - 1; k <= k0 + 1; k++) {
-    if (hash2(k, 0, seed ^ 0x57e4) / 4294967296 >= STREAM_CHANCE) continue;
-    const half =
-      STREAM_HALF_MIN +
-      (hash2(k, 1, seed ^ 0x57e4) / 4294967296) * (STREAM_HALF_MAX - STREAM_HALF_MIN);
-    const off = ((hash2(k, 2, seed ^ 0x57e4) / 4294967296) - 0.5) * STREAM_SPACING * 0.7;
-    best = Math.max(best, half - Math.abs(across - (k * STREAM_SPACING + off)));
+    if (hash2(k, 0, fs) / 4294967296 >= ch.chance) continue;
+    const half = ch.halfMin + (hash2(k, 1, fs) / 4294967296) * (ch.halfMax - ch.halfMin);
+    const off = ((hash2(k, 2, fs) / 4294967296) - 0.5) * ch.spacing * 0.7;
+    best = Math.max(best, half * squeeze - Math.abs(across - (k * ch.spacing + off)));
+  }
+  return best;
+}
+
+/** The deepest of a kind's families. */
+function channelKindDepth(seed: number, kind: WaterKindId, salt: number, x: number, y: number): number {
+  const ch = waterKind(kind).channel;
+  if (!ch) return -Infinity;
+  let best = -Infinity;
+  for (let f = 0; f < ch.families; f++) {
+    best = Math.max(best, channelDepth(seed, salt, ch, f, x, y));
   }
   return best;
 }
@@ -1004,17 +1054,42 @@ function waterAt(
   wet: number,
 ): { d: number; kind: WaterKindId } | null {
   let best: { d: number; kind: WaterKindId } | null = null;
+  let bestRank = 0;
   const consider = (d: number, kind: WaterKindId) => {
-    // Deepest wins where two bodies overlap: a stream running into the sea is
-    // the sea at the mouth, which is both correct and what stops a channel
-    // drawing a shallow scar across a bay.
-    if (d > -waterKind(kind).beach && (!best || d > best.d)) best = { d, kind };
+    // WETTEST WINS, not deepest — and the difference is a real artefact rather
+    // than a nicety. The first version compared raw depth, which is fine while
+    // every kind has a beach and wrong the moment they don't: a stream (beach 0)
+    // crossing the sea's sand has a *greater* depth than the sea does out
+    // there, so it won the tile and contributed nothing, punching green fingers
+    // through the beach wherever a brook ran down to the shore.
+    //
+    // Ranking by what each kind would actually PUT here fixes it in the right
+    // direction both ways: the sea's sand beats the stream's nothing, and the
+    // stream's water still beats the sea's sand, so a stream mouth is wet.
+    const rank = waterRank(d, kind);
+    if (rank === 0) return;
+    if (rank > bestRank || (rank === bestRank && best !== null && d > best.d)) {
+      bestRank = rank;
+      best = { d, kind };
+    }
   };
   consider(seaDepth(seed, spot, x, y), "sea");
   consider(lakeDepth(seed, spot, x, y), "lake");
-  consider(streamDepth(seed, x, y), "stream");
+  consider(channelKindDepth(seed, "river", 0x21be, x, y), "river");
+  consider(channelKindDepth(seed, "stream", 0x57e4, x, y), "stream");
   if (wet > 0) consider(pondDepth(seed, x, y, wet), "pond");
   return best;
+}
+
+/** How wet a kind would make this tile: 3 deep, 2 shallow, 1 shore, 0 nothing.
+ *  The ordering `waterAt` compares by — see the note there about beaches with
+ *  green fingers through them. */
+function waterRank(d: number, kind: WaterKindId): number {
+  const k = waterKind(kind);
+  if (d > k.shelf) return 3;
+  if (d > 0) return 2;
+  if (d > -k.beach) return 1;
+  return 0;
 }
 
 /** The tile a depth reading comes out as, or null for dry land. The four
@@ -1029,13 +1104,71 @@ function waterTile(at: { d: number; kind: WaterKindId } | null): TileId | null {
   return null;
 }
 
-/** How deep the two bodies that can actually STRAND something are — the sea and
- *  the lake. Streams and ponds are excluded on purpose, and for two reasons:
- *  they're shallow (so nothing is stranded by one), and asking about ponds means
- *  asking `biomeAt`, which asks `blossomCentre`, which asks `onLand`, which asks
- *  this. A landmark standing beside a stream is a nice place to stand. */
+/** How far the town's own crossings reach, and which two lines they run on.
+ *
+ *  THE TOWN HAS BRIDGES BECAUSE THE TOWN PRE-EXISTS. Rivers are allowed to run
+ *  through it (a river is a good thing for a town to have), and a river is the
+ *  first water that can actually stop somebody — which matters more for the
+ *  RESIDENTS than for the player. A villager who cannot path to their stop does
+ *  not walk slowly; it snaps there (sim/villagers.ts), so a stranded neighbour
+ *  reads as teleporting rather than as a broken town, and would be miserable to
+ *  diagnose from a bug report.
+ *
+ *  Two lines, one north-south and one east-west, so the crossing works whichever
+ *  way the channel happens to run. Only WATER is replaced, so on the (usual)
+ *  seeds where nothing crosses town this generates nothing at all — it isn't a
+ *  road, it's a bridge that appears exactly where a bridge is needed.
+ *
+ *  GENERATED, not stamped, and that is the whole reason it's here rather than in
+ *  sim/town.ts. A stamped bridge is a stored edit, so it would need a migration
+ *  to reach the towns that already exist — and those towns are getting rivers
+ *  today, because terrain is a function of the seed. Generated, every save has
+ *  its bridge the moment it loads, including saves nobody opens for a year. */
+const BRIDGE_REACH = 22;
+const BRIDGE_ROW = -1; // the plaza's middle, north-south
+const BRIDGE_COL = 0; // and east-west
+
+/** Is this one of the town's own crossings? Streams and rivers only: the town
+ *  bridges what runs through it, and does not build a pier out into the sea. */
+function isTownBridge(x: number, y: number, kind: WaterKindId): boolean {
+  if (kind !== "river" && kind !== "stream") return false;
+  return (
+    (y === BRIDGE_ROW && Math.abs(x) <= BRIDGE_REACH) ||
+    (x === BRIDGE_COL && Math.abs(y) <= BRIDGE_REACH)
+  );
+}
+
+/** How deep the water that can actually STRAND something is — the sea, the lake
+ *  and the river. Everything with a deep middle, in other words, which is the
+ *  same list and not a coincidence.
+ *
+ *  Streams and ponds are excluded on purpose, for two reasons: they're shallow,
+ *  so nothing is stranded by one, and asking about ponds means asking `biomeAt`,
+ *  which asks `blossomCentre`, which asks `onLand`, which asks this. A landmark
+ *  standing beside a stream is a nice place to stand; a grove with a river
+ *  through the middle of it is a grove in two halves with the Ghost in one. */
 function bigWaterDepth(seed: number, spot: HomesteadSpot, x: number, y: number): number {
-  return Math.max(seaDepth(seed, spot, x, y), lakeDepth(seed, spot, x, y));
+  return Math.max(
+    seaDepth(seed, spot, x, y),
+    lakeDepth(seed, spot, x, y),
+    channelKindDepth(seed, "river", 0x21be, x, y),
+  );
+}
+
+/** Which kind of water is at a tile, or null for dry ground.
+ *
+ *  Exported for tests, which otherwise cannot tell a river's deep middle from
+ *  the sea's — they look identical as tile ids, and several invariants here are
+ *  about one and not the other. Also the natural hook for the day a villager
+ *  wants to say "down by the river" rather than "down by the water". */
+export function waterKindAt(
+  seed: number,
+  spot: HomesteadSpot,
+  x: number,
+  y: number,
+): WaterKindId | null {
+  const at = waterAt(seed, spot, x, y, biomeDef(biomeAt(seed, spot, x, y)).water);
+  return at && waterTile(at) !== null ? at.kind : null;
 }
 
 /** How many bearings a landmark may try before it settles. */

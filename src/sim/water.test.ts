@@ -16,6 +16,7 @@ import {
   tileAt,
   setTile,
   groveCentre,
+  waterKindAt,
   cubeSite,
   homesteadOrigin,
 } from "./world";
@@ -23,6 +24,7 @@ import { newWorld, contextAction, playerTile } from "./game";
 import { canPlaceStructure } from "./structures";
 import { canPlaceFurniture } from "./furniture";
 import { updateReclaim } from "./gather";
+import { findPath } from "./path";
 import { WATER, SHALLOW, SAND, GRASS, PLANK, TREE } from "../content/tiles";
 import { WATER_KINDS } from "../content/water";
 import type { HomesteadSpot } from "./types";
@@ -34,43 +36,68 @@ describe("the sea is finite", () => {
     // THE HEADLINE. The old sea was `x <= -13 is water, at every y, forever`, so
     // this walk never ended. Walking straight out of town to the west must reach
     // water, and then reach land again.
+    // Measured against the SEA's westernmost water, not against the last water
+    // of any kind. The first version counted dry tiles after the last WATER it
+    // saw, which rivers quietly broke: one crossing the line at x = -390 reset
+    // the counter and the test reported eight tiles of far shore for a sea that
+    // ends at -206. The bug was in the ruler, not the world.
     for (let seed = 1; seed <= 60; seed++) {
-      let sawWater = false;
-      let landAfterWater = 0;
+      let farthest = 0;
       for (let x = 0; x > -400; x--) {
-        const t = generatedTile(seed, "riverside", x, 0);
-        if (t === WATER) {
-          sawWater = true;
-          landAfterWater = 0;
-        } else if (sawWater && t !== SHALLOW) {
-          landAfterWater++;
+        if (generatedTile(seed, "riverside", x, 0) === WATER && waterKindAt(seed, "riverside", x, 0) === "sea") {
+          farthest = x;
         }
       }
-      expect(sawWater).toBe(true); // riverside still has its sea
-      // Land, and a decent stretch of it, not one lucky tile of coast.
-      expect(landAfterWater).toBeGreaterThan(20);
+      expect(farthest).toBeLessThan(0); // riverside still has its sea
+
+      // And past it, ground — a real stretch of it, not one lucky tile of coast.
+      // THE SEA'S OWN WIDTH, which is the thing this test is named after and the
+      // only ruler that survived. Three earlier attempts all measured the world
+      // AROUND the sea instead, and the world kept turning out to have other
+      // water in it: first a river far west reset a "dry tiles since water"
+      // counter, then the sea's own shelf was mistaken for not-far-shore, then a
+      // lake happened to sit just past the far beach and ate the dry window.
+      //
+      // None of those were bugs. Counting the sea's own tiles asks the question
+      // directly — is this body bounded — and cannot be answered by anything
+      // else that happens to be nearby.
+      let width = 0;
+      for (let x = 0; x > -400; x--) {
+        if (generatedTile(seed, "riverside", x, 0) === WATER && waterKindAt(seed, "riverside", x, 0) === "sea") {
+          width++;
+        }
+      }
+      // Radius 90, so about 180 across the middle, less on a chord. Bounded well
+      // under the 400 the scan reaches, which is the whole point.
+      expect(width).toBeGreaterThan(80);
+      expect(width).toBeLessThan(230);
+
+      // And there is dry ground past it to stand on.
+      let dry = 0;
+      for (let x = farthest - 1; x >= farthest - 60; x--) {
+        const t = generatedTile(seed, "riverside", x, 0);
+        if (t !== WATER && t !== SHALLOW) dry++;
+      }
+      expect(dry).toBeGreaterThan(10);
     }
   });
 
   it("is bounded in every direction, on every spot", () => {
-    // Not just west. A ring right around the outside of the world at a radius
-    // past the sea's own reach must be dry somewhere on every bearing... and
-    // more to the point, must not be water everywhere.
+    // Not just west. A ring right around the outside of the world, past
+    // anywhere the sea can reach, must not be sea.
+    //
+    // It asks about the KIND rather than the tile, and it has to: rivers are
+    // deep too, and they run forever, so "no deep water out here" stopped being
+    // true the day rivers arrived and would have made this test a liar about
+    // the thing it is actually guarding.
     for (const spot of SPOTS) {
       for (let seed = 1; seed <= 40; seed++) {
-        let wet = 0;
-        let total = 0;
         for (let a = 0; a < 64; a++) {
           const th = (a / 64) * Math.PI * 2;
           const x = Math.round(Math.cos(th) * 340);
           const y = Math.round(Math.sin(th) * 340);
-          total++;
-          if (generatedTile(seed, spot, x, y) === WATER) wet++;
+          expect(waterKindAt(seed, spot, x, y)).not.toBe("sea");
         }
-        // At 340 out, past the sea (radius 90 centred at most 145 out), nothing
-        // should be open ocean at all.
-        expect(wet).toBe(0);
-        expect(total).toBe(64);
       }
     }
   });
@@ -94,16 +121,25 @@ describe("the sea is finite", () => {
   });
 
   it("never laps the plaza", () => {
-    // The old shore sat at x = -13 and the plaza's western edge is -5, so the
-    // wobble has eight tiles to wander in and it must not spend them all. The
-    // plaza is stone regardless (generatedTile answers paving first), so what
-    // this really guards is the ring of ground immediately around the town.
+    // The sea specifically, and its WATER specifically. Three distinctions, all
+    // of which this test got wrong once:
+    //
+    //  • Rivers are allowed through town. That is a deliberate choice and the
+    //    town's bridges are what pays for it.
+    //  • So is the sea's BEACH. On a riverside town the shore is meant to be a
+    //    short walk west — sand four tiles off the plaza is the feature, not the
+    //    bug, and forbidding it here would quietly push the ocean over the
+    //    horizon and undo the compatibility promise two tests up.
+    //  • What must not happen is standing sea water at the town hall steps. The
+    //    wobble has eight tiles to wander in and must not spend them all.
     for (const spot of SPOTS) {
       for (let seed = 1; seed <= 200; seed++) {
         for (let y = -9; y <= 7; y++) {
           for (let x = -9; x <= 9; x++) {
+            if (waterKindAt(seed, spot, x, y) !== "sea") continue;
             const t = generatedTile(seed, spot, x, y);
             expect(t).not.toBe(WATER);
+            expect(t).not.toBe(SHALLOW);
           }
         }
       }
@@ -150,22 +186,35 @@ describe("small water is fordable, and nothing had to say so", () => {
     // someone widens STREAM_HALF_MAX past WATER_KINDS.stream.shelf this fails,
     // which is the day the crossing promise would otherwise break silently.
     //
-    // Sampled beyond anywhere the sea or the lake can reach, so any deep water
-    // found out here came from a stream or a pond — the two kinds that must
-    // never have any. The sea is radius ~98 at worst centred at most 145 out;
-    // the lake is 18 at 104. 300 clears both with room to spare.
+    // Asked of the KIND, which is the only way to ask it now that rivers exist:
+    // a river's middle is deep on purpose, and it is deep in the same tile id.
     let streams = 0;
-    for (let seed = 1; seed <= 20; seed++) {
-      for (let y = -300; y <= 300; y += 2) {
-        for (let x = -300; x <= 300; x += 2) {
-          if (Math.hypot(x, y) < 300) continue;
-          const t = generatedTile(seed, "hilltop", x, y);
-          if (t === SHALLOW) streams++;
-          expect(t).not.toBe(WATER);
+    for (let seed = 1; seed <= 12; seed++) {
+      for (let y = -300; y <= 300; y += 3) {
+        for (let x = -300; x <= 300; x += 3) {
+          const kind = waterKindAt(seed, "hilltop", x, y);
+          if (kind !== "stream" && kind !== "pond") continue;
+          streams++;
+          expect(generatedTile(seed, "hilltop", x, y)).not.toBe(WATER);
         }
       }
     }
     expect(streams).toBeGreaterThan(200); // and there really are streams out there
+  });
+
+  it("keeps every fordable kind narrower than its own shelf", () => {
+    // The claim above, stated exactly rather than sampled. A stream is crossable
+    // BECAUSE it is too narrow to be deep, so this is the arithmetic the whole
+    // promise rests on — and it fails the moment somebody widens a stream,
+    // which is the edit most likely to break it by accident.
+    for (const id of ["stream"] as const) {
+      const kind = WATER_KINDS[id];
+      expect(kind.channel!.halfMax).toBeLessThan(kind.shelf);
+    }
+    // And the inverse for the river: wide enough that its middle IS deep, or it
+    // is just an expensive stream.
+    const river = WATER_KINDS.river;
+    expect(river.channel!.halfMax).toBeGreaterThan(river.shelf);
   });
 
   it("keeps the shallows walkable and the deep not", () => {
@@ -180,7 +229,20 @@ describe("small water is fordable, and nothing had to say so", () => {
     // A stray zero here would make every stream in the world a wall.
     for (const kind of Object.values(WATER_KINDS)) {
       expect(kind.shelf).toBeGreaterThan(0);
-      expect(kind.beach).toBeGreaterThan(0);
+      expect(kind.beach).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("gives sand to the big water and to nothing else", () => {
+    // "Sand means big water" is a rule a player can read off the screen, so it
+    // has to hold in the table or the screen starts lying. It is also load
+    // bearing for a duller reason: a one-tile beach on a two-tile channel lands
+    // between cell centres as often as on one, and came out as chunky patches
+    // on alternating banks rather than as a shore.
+    expect(WATER_KINDS.stream.beach).toBe(0);
+    expect(WATER_KINDS.pond.beach).toBe(0);
+    for (const id of ["river", "lake", "sea"] as const) {
+      expect(WATER_KINDS[id].beach).toBeGreaterThan(0);
     }
   });
 });
@@ -198,10 +260,15 @@ describe("the shore", () => {
     // arrive without a bank: their beach is one tile, and a one-tile band on a
     // continuous field often falls between two cell centres. On a stream that
     // is texture. On the sea, whose beach is three, it would be a bug.
+    let clean = 0;
     for (let seed = 1; seed <= 40; seed++) {
+      // The SEA's first deep tile, not the first deep tile of any kind — a
+      // river crossing this line gets there first on plenty of seeds, and a
+      // river is a different cross-section (it is allowed to arrive without
+      // much of a beach, and its shallows are a rim rather than a shelf).
       let deep = 0;
       for (let x = 0; x > -200; x--) {
-        if (generatedTile(seed, "riverside", x, 0) === WATER) {
+        if (generatedTile(seed, "riverside", x, 0) === WATER && waterKindAt(seed, "riverside", x, 0) === "sea") {
           deep = x;
           break;
         }
@@ -210,19 +277,38 @@ describe("the shore", () => {
 
       let x = deep;
       let shallow = 0;
+      let sand = 0;
       while (generatedTile(seed, "riverside", x, 0) === WATER) x++;
       while (generatedTile(seed, "riverside", x, 0) === SHALLOW) {
         shallow++;
         x++;
       }
-      let sand = 0;
       while (generatedTile(seed, "riverside", x, 0) === SAND) {
         sand++;
         x++;
       }
       expect(shallow).toBeGreaterThan(0);
-      expect(sand).toBeGreaterThan(0);
+
+      // The beach, UNLESS something else owns the ground it would have been on.
+      // A stream or river running along the back of a beach into the sea is a
+      // backwater, and it is allowed to exist: its own water outranks the sea's
+      // sand (wettest wins, see `waterAt`), and streams have no banks by design.
+      // Seed 18 riverside is one, and it is a nicer thing to have found than a
+      // rule saying it can't happen.
+      //
+      // So the question is asked of the FIRST TILE THAT ISN'T SAND: either the
+      // sea gave it a beach, or somebody else owns it. What is forbidden is the
+      // sea's own water meeting grass with no shore in between.
+      if (sand > 0) {
+        clean++;
+      } else {
+        expect(waterKindAt(seed, "riverside", x, 0)).not.toBe("sea");
+      }
     }
+    // With teeth: the interesting case is rare, and if a change ever made it the
+    // common one the assertion above would be skipping most of its work
+    // silently — which is how a test quietly stops testing anything.
+    expect(clean).toBeGreaterThan(30);
   });
 
   it("behaves exactly like the ground it replaces", () => {
@@ -328,6 +414,57 @@ describe("what water will and will not take", () => {
     const w = newWorld({ name: "T", form: "dog", spot: "forest", seed: 7 });
     setTile(w, 32, 32, SHALLOW);
     expect(canPlaceFurniture(w, 32, 32, "bed", "s")).toBe(false);
+  });
+});
+
+describe("a river may run through town, because the town has bridges", () => {
+  it("keeps the homestead walkable from the plaza, on hundreds of seeds", () => {
+    // THE PRICE OF LETTING RIVERS THROUGH TOWN, and the reason the bridges are
+    // generated rather than stamped.
+    //
+    // A river is the first water that can genuinely stop somebody, and it
+    // matters more for the RESIDENTS than for the player: a villager who cannot
+    // path to their stop does not walk slowly, it snaps there (villagers.ts).
+    // So a town cut in half by a river doesn't look like a town cut in half by a
+    // river — it looks like the neighbours teleporting, which is a bug report
+    // nobody could write usefully.
+    //
+    // Pathing, not tile-reading, because that is the actual question. A test
+    // that asserted "no deep water near town" would forbid the feature we just
+    // agreed to.
+    for (const spot of SPOTS) {
+      // 250 rather than the 1000 the tile-level tests use: this one builds a
+      // whole world and runs A* per seed, and at 1000 it was 28 seconds of a
+      // 10-second suite. The first failure it ever found showed up in the first
+      // fifty (the sea, drawn too close on riverside, cutting the plot off).
+      for (let seed = 1; seed <= 250; seed++) {
+        const w = newWorld({ name: "T", form: "dog", spot, seed });
+        const home = homesteadOrigin(spot);
+        // From the plaza to the plot. MAX_PATH_NODES is ~25 tiles of reach, and
+        // these are inside that, so a null here means genuinely blocked rather
+        // than merely far.
+        expect(findPath(w, { x: 0, y: 0 }, { x: home.x, y: home.y })).not.toBeNull();
+      }
+    }
+  }, 30000);
+
+  it("decks the water and not the bank", () => {
+    // A bridge that planked its own approaches would read as a road that stops
+    // at the water's edge for no reason. Find a town whose crossing exists, and
+    // check the deck sits only where the water is.
+    let found = 0;
+    for (let seed = 1; seed <= 400 && found < 12; seed++) {
+      for (let x = -22; x <= 22; x++) {
+        if (generatedTile(seed, "hilltop", x, -1) !== PLANK) continue;
+        found++;
+        // Planked, so there was water here — and the kind is one the town
+        // bridges rather than the sea.
+        const kind = waterKindAt(seed, "hilltop", x, -1);
+        expect(kind === "river" || kind === "stream").toBe(true);
+        break;
+      }
+    }
+    expect(found).toBeGreaterThan(0); // some town, somewhere, has a bridge
   });
 });
 

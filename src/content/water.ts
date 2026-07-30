@@ -28,7 +28,52 @@
 // is wrong the first time a fen pond grows big: it would be a wadeable puddle
 // the size of a lake. A threshold gets that right without being asked.
 
-export type WaterKindId = "stream" | "pond" | "lake" | "sea";
+export type WaterKindId = "stream" | "river" | "pond" | "lake" | "sea";
+
+/** The geometry of the kinds that are CHANNELS — a family of meandering lines
+ *  ruled across the world — as opposed to the ones that are bodies. Streams and
+ *  rivers differ in these numbers and in nothing else, which is the argument for
+ *  the block existing: a river is not a code path, it is a wider stream that
+ *  happens to be deep enough in the middle to stop you. */
+export interface ChannelDef {
+  /** How far apart candidate channels run, in tiles. */
+  spacing: number;
+  /** How far a channel wanders across its own line. */
+  amplitude: number;
+  /** How far the whole family is bent — see `STREAM_WARP` in sim/world.ts. */
+  warp: number;
+  /** Half-widths, in tiles. Compare against `shelf` to know whether the kind can
+   *  ever be deep: a channel narrower than its shelf has no middle to be deep
+   *  in, which is the whole of why a stream is fordable. */
+  halfMin: number;
+  halfMax: number;
+  /** How many candidate channels are real. */
+  chance: number;
+  /** How many INDEPENDENT families, each on its own bearing.
+   *
+   *  One family is a comb, and no amount of meandering fixes that — every
+   *  channel shares the bearing, so they wobble in unison and stay parallel
+   *  forever. Two bearings cross, run together for a stretch and separate, and
+   *  the world stops having a grain.
+   *
+   *  This is an APPROXIMATION of a drainage network and openly so. Real veins
+   *  come from flow accumulation on a height field, which is iterative — you
+   *  cannot know whether a tile is a stream without computing its whole
+   *  catchment — and that is incompatible with terrain being a total function of
+   *  (seed, x, y) evaluated per tile with nothing stored. Two families buys most
+   *  of the look for none of the foundation. */
+  families: number;
+  /** How much the channel PINCHES along its length, 0 (never) to 1 (to nothing),
+   *  and over what distance.
+   *
+   *  This is what gives a river fords. Where it narrows, its depth stops
+   *  reaching the shelf, so the crossing is shallow — the same emergent rule
+   *  that makes a stream fordable, applied to a channel big enough to need it.
+   *  You are never blocked by a river, only asked to walk the bank a while or to
+   *  put down planks. */
+  pinch?: number;
+  pinchPeriod?: number;
+}
 
 export interface WaterKindDef {
   id: WaterKindId;
@@ -38,10 +83,19 @@ export interface WaterKindDef {
   /** Tiles of depth past which the water turns DEEP and stops you. Set it above
    *  the body's own maximum depth and the kind is fordable everywhere. */
   shelf: number;
-  /** Tiles of sand outside the waterline. Scales with the body: a sea gets a
-   *  beach, a stream gets a bank, and a stream with a beach would be a sandy
-   *  corridor five tiles wide cut through every forest in the world. */
+  /** Tiles of sand outside the waterline.
+   *
+   *  SAND MEANS BIG WATER. Streams and ponds get none, and that is a rule with a
+   *  reason on both sides. On the taste side it is a free distinction: green
+   *  banks on a brook, beaches on the sea, and you can tell at a glance which
+   *  kind of water you are looking at. On the mechanical side, a one-tile sand
+   *  band on a two-tile channel lands badly on the grid — the band falls between
+   *  cell centres as often as on one, so it came out as chunky patches on
+   *  alternating sides rather than as banks. A beach needs a body big enough to
+   *  have one. */
   beach: number;
+  /** Present on the kinds that are channels rather than bodies. */
+  channel?: ChannelDef;
 }
 
 export const WATER_KINDS: Record<WaterKindId, WaterKindDef> = {
@@ -53,7 +107,62 @@ export const WATER_KINDS: Record<WaterKindId, WaterKindDef> = {
     id: "stream",
     name: "the stream",
     shelf: 3,
-    beach: 1,
+    beach: 0,
+    channel: {
+      spacing: 46,
+      amplitude: 19,
+      warp: 22,
+      // Both under `shelf`, which is not a coincidence but the invariant: a
+      // stream is fordable because it is too narrow to be deep, and if anyone
+      // raises `halfMax` past 3 the crossing promise breaks silently. There is a
+      // test in sim/water.test.ts that fails the day it does.
+      halfMin: 0.6,
+      halfMax: 1.4,
+      chance: 0.55,
+      families: 2,
+    },
+  },
+
+  /** Rarer, wider, and the first water that can actually stop you — which makes
+   *  it the first real reason to put planks down. Deep down the middle, and
+   *  pinching to a fordable shallows here and there, so a river is a thing you
+   *  walk the bank of looking for a crossing, or bridge because you're tired of
+   *  looking. */
+  river: {
+    id: "river",
+    name: "the river",
+    // Well under the channel's own half-width, so the middle IS deep — the
+    // inverse of the stream's arrangement, and the one number that separates
+    // "wade it" from "bridge it".
+    //
+    // And well under it by a MARGIN, so the deep band is at least two tiles
+    // across even where the river runs narrowest. The first draft paired 1.6
+    // with a half-width of 1.8, leaving a deep ribbon under a tile wide, which
+    // on the grid came out as a dashed line of dark rectangles rather than as a
+    // channel — it hit some cell centres and missed others. A band has to be
+    // wider than a cell to read as a band, which is the same lesson the beaches
+    // taught one field over.
+    shelf: 1.4,
+    beach: 2,
+    channel: {
+      // About one every three hundred tiles. You can live a long time without
+      // meeting one, and a town that has one has a landmark.
+      spacing: 170,
+      amplitude: 34,
+      warp: 30,
+      halfMin: 2.4,
+      halfMax: 3.6,
+      chance: 0.55,
+      // One family: a second bearing of rivers would give a town two of them,
+      // and two rivers is a delta, which is a different place than we're making.
+      families: 1,
+      // Down to 38% of its width at the narrows. Tuned so that even the WIDEST
+      // river pinches under `shelf` — 3.6 × 0.38 = 1.37, against a shelf of 1.4
+      // — because a ford that only some rivers have is a ford you cannot rely
+      // on, and the whole promise is that you are never blocked, only delayed.
+      pinch: 0.62,
+      pinchPeriod: 37,
+    },
   },
 
   /** The fen's, and effectively never deep either — POND_MAX_RADIUS is 2.6, so
@@ -64,7 +173,7 @@ export const WATER_KINDS: Record<WaterKindId, WaterKindDef> = {
     id: "pond",
     name: "the pond",
     shelf: 3,
-    beach: 1,
+    beach: 0,
   },
 
   /** The first water with a real middle. A wadeable rim you can paddle along and
