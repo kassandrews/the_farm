@@ -25,6 +25,7 @@ import {
   DARK_TREE,
   HUM_CUBE,
   JUNK_PILE,
+  MUSHROOM,
 } from "../content/tiles";
 import { skinDef } from "../content/skins";
 import type { SkinClass, SkinDef } from "../content/skins";
@@ -253,7 +254,19 @@ function groundIdOf(id: number): number {
   // own material it drew a boundary bevel against the grass around it, which read
   // as faint stray lines lying in the lawn a tile away from the object itself.
   // Something dropped on the grass has not ended the grass.
-  return id === TREE || id === ROCK || id === DARK_TREE || id === HUM_CUBE || id === JUNK_PILE
+  //
+  // MUSHROOM was the same bug a third time, and the loudest of the three: in the
+  // Hollow they come up thickly, so a lit top row and a dark bottom row on every
+  // cap cell paired into horizontal rungs across a slope that is all one lawn.
+  // Its tile colours are grass's colours on purpose (content/tiles.ts) — the
+  // mushrooms are drawn ON the grass, and grass that has something growing in it
+  // has not ended either.
+  return id === TREE ||
+    id === ROCK ||
+    id === DARK_TREE ||
+    id === HUM_CUBE ||
+    id === JUNK_PILE ||
+    id === MUSHROOM
     ? GRASS
     : id;
 }
@@ -667,22 +680,7 @@ export class Renderer {
           ctx.fillStyle = "rgba(255,255,255,0.25)";
           const rx = px + 3 + ((Math.sin(t * 1.5 + tx * 1.7 + ty) * 0.5 + 0.5) * (TILE - 6)) | 0;
           ctx.fillRect(rx, py + 6, 2, 1);
-        } else if (def.name === "Mushrooms") {
-          // A couple of caps on the grass, placed by the tile's stable hash so
-          // a patch that appeared overnight sits still once you're looking.
-          const h = decoHash(tx, ty, world.seed);
-          const mx = px + 4 + Math.floor(h * 6);
-          const my = py + 6 + Math.floor((h * 37) % 5);
-          const cap = night ? "#9c5348" : "#d16a56";
-          for (const [ox, oy, w] of [[0, 0, 3] as const, [4, 3, 2] as const]) {
-            ctx.fillStyle = "#f0e3d0"; // stalk
-            ctx.fillRect(mx + ox + 1, my + oy + 1, 1, 2);
-            ctx.fillStyle = cap;
-            ctx.fillRect(mx + ox, my + oy, w, 1);
-            ctx.fillStyle = "#f7efe2"; // a speck on the cap
-            ctx.fillRect(mx + ox + 1, my + oy, 1, 1);
-          }
-        } else if (def.name === "Grass") {        } else if (def.name === "Grass") {
+        } else if (def.name === "Grass") {
           // Stable tuft speckle so grass reads as texture, not flat paint.
           const h = decoHash(tx, ty, world.seed);
           if (h > 0.72) {
@@ -702,11 +700,77 @@ export class Renderer {
             ctx.fillRect(gx + 1, gy - 1, 1, 1);
           }
         }
+        if (id === MUSHROOM) this.drawMushrooms(tx, ty, px, py, world.seed, night);
         if (id === JUNK_PILE) this.drawLoose(tx, ty, px, py, world.seed, night);
         if (id === SHAFT) this.drawShaftMouth(px, py);
         this.drawDoorstep(world, tx, ty, px, py);
       }
     }
+  }
+
+  /** What came up in the grass overnight.
+   *
+   *  Draws over a cell the flat pass has already painted as GRASS — the tile is
+   *  grass with something growing in it, not a material of its own (see
+   *  `groundIdOf`), which is what keeps the caps out of the bevel's business.
+   *
+   *  Three rows of cap on the big one: a single lit row read as a berry, and at
+   *  this size the thing that says "mushroom" is the overhang — a cap wider than
+   *  its stalk with its own shade underneath it. The dark row is the gills, and
+   *  it is INSIDE the sprite rather than along the cell, so it isn't the banding
+   *  we just took out.
+   *
+   *  Everything comes off the tile's stable hash: how many, which way up they
+   *  lean, and where in the cell they stand. A patch that arrived while you were
+   *  out has to sit still once you are looking at it. */
+  private drawMushrooms(tx: number, ty: number, px: number, py: number, seed: number, night: boolean): void {
+    const ctx = this.ctx;
+    const h = decoHash(tx, ty, seed);
+    const cap = night ? "#9c5348" : "#d16a56";
+    const lit = night ? "#b3695c" : "#e58a72";
+    const gills = night ? "#71392f" : "#a34c3c";
+    const stalk = night ? "#bdb0a0" : "#f0e3d0";
+
+    // One mushroom. `big` gets the full overhang; the companion is a button that
+    // hasn't opened yet, so a two-mushroom cell reads as a patch of one kind
+    // rather than as two objects that happen to share a tile.
+    const one = (x: number, y: number, big: boolean): void => {
+      ctx.fillStyle = "rgba(0,0,0,0.14)"; // it stands ON the grass
+      ctx.fillRect(x, y + (big ? 5 : 3), big ? 5 : 3, 1);
+      if (big) {
+        ctx.fillStyle = lit;
+        ctx.fillRect(x + 1, y, 3, 1);
+        ctx.fillStyle = cap;
+        ctx.fillRect(x, y + 1, 5, 1);
+        ctx.fillStyle = gills;
+        ctx.fillRect(x, y + 2, 5, 1);
+        ctx.fillStyle = stalk;
+        ctx.fillRect(x + 2, y + 3, 1, 2);
+        ctx.fillStyle = "#f7efe2"; // one speck, so the cap has a highlight
+        ctx.fillRect(x + 1, y + 1, 1, 1);
+      } else {
+        ctx.fillStyle = lit;
+        ctx.fillRect(x + 1, y, 1, 1);
+        ctx.fillStyle = cap;
+        ctx.fillRect(x, y, 1, 1);
+        ctx.fillRect(x + 2, y, 1, 1);
+        ctx.fillStyle = gills;
+        ctx.fillRect(x, y + 1, 3, 1);
+        ctx.fillStyle = stalk;
+        ctx.fillRect(x + 1, y + 2, 1, 1);
+      }
+    };
+
+    // Kept inside the cell on purpose: the flat pass paints in row order, so a
+    // cap that overhung would be half painted over by the tile drawn next.
+    const mx = px + 3 + Math.floor(h * 4);
+    const my = py + 5 + Math.floor((h * 29) % 4);
+    one(mx, my, true);
+    // Whether there are two, on a fraction of the hash that isn't the one
+    // placing the first — otherwise the crowded cells would all be the ones
+    // where the big cap sits high and left.
+    const second = (h * 61) % 1;
+    if (second > 0.42) one(mx + 6, my + (second > 0.7 ? 3 : 2), false);
   }
 
   /** Whatever the Gremlin dropped in your grass, lying in it.
