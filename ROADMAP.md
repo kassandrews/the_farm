@@ -661,10 +661,21 @@ vocabulary from every other edge in this game**, all of which are small radii on
 2px borders — a capsule floating over walls drawn one pixel at a time belongs to
 some other program's design system.
 
-Hierarchy inside the stack goes **by fill, not by opacity**. The season chip is
-`--panel-edge` where the clock is `--panel` — the same chip a shade deeper — and
-drops its shadow so it doesn't compete with the clock above it. The old
-`opacity: 0.82` went muddy over a moving map, which a solid fill never does.
+**And then the season chip went entirely.** It briefly got a quieter treatment —
+`--panel-edge` fill where the clock is `--panel`, the same chip a shade deeper,
+since the old `opacity: 0.82` went muddy over a moving map. Then it was deleted,
+which was the right answer and should have been obvious first: **the game already
+says the season twice, in better places.** The whole scene palette is keyed to it
+(`renderer.ts` `scenePalette`), so autumn arrives as the ground changing colour;
+and `describeSeason` hands villagers a line about it, so the town mentions it out
+loud. A chip reading "autumn" over an autumn-coloured field is a caption on a
+picture.
+
+That is the same instinct the museum spent a phase refusing — it turns something
+you notice into something you read. The rule worth keeping: **the hour earns a
+chip because you act on the hour; the month is weather, and weather doesn't need a
+caption.** If a HUD label names something already visible in the world, the label
+is the thing to cut.
 
 The activity toast got a `.clock.flash` class of its own. It holds a SENTENCE
 rather than a reading, so it needs `max-width` to wrap inside; unconstrained it

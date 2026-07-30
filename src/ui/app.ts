@@ -28,7 +28,6 @@ import { saveWorld, loadWorld, hasSave, clearWorld } from "../sim/save";
 import { makeRng } from "../sim/rng";
 import type { Rng } from "../sim/rng";
 import { clockLabel } from "../sim/time";
-import { seasonAt } from "../sim/seasons";
 import { STANDARD_FORMS, FORMS } from "../content/canon/forms";
 import type { AdultForm } from "../content/canon/forms";
 import { importFromMeadow } from "../sim/meadow_import";
@@ -1886,7 +1885,6 @@ export class App {
       // (sim/hum.ts) and this line is the whole of the UI's part in it.
       audio.setHum(humLevel(this.world));
       this.hud.clock.textContent = clockLabel(Date.now());
-      this.hud.season.textContent = seasonAt(Date.now()).name;
       if (now - this.lastSaveAt > AUTOSAVE_MS) {
         this.lastSaveAt = now;
         this.persist();
@@ -1956,7 +1954,6 @@ export class App {
 interface HudRefs {
   root: HTMLElement;
   clock: HTMLElement;
-  season: HTMLElement;
   flash: HTMLElement;
   toolButtons: [Tool, HTMLElement][];
   buildButtons: [BuildTool, HTMLElement][];
@@ -1981,14 +1978,16 @@ function buildHud(
   satchel.addEventListener("click", onSatchel);
   hoverHint(satchel, "Satchel — what you're carrying.");
   const clock = el("div", { class: "clock" }, ["—"]);
-  // The season, under the time. Borrows `.clock` the way the flash below does —
-  // same pill, same pointer-events: none, which a read-only overlay sitting over
-  // the map must have (see the CSS note).
+  // NO SEASON CHIP. There was one, reading "autumn" under the clock, and it went
+  // because the game already says the season twice in better places: the whole
+  // scene palette is keyed to it (render/renderer.ts scenePalette), so autumn
+  // arrives as the ground changing colour, and `describeSeason` (sim/seasons.ts)
+  // hands villagers a line about it, so the town mentions it out loud.
   //
-  // ITS NAME AND NOTHING ELSE. No countdown to the next season, no "day 12 of
-  // autumn": a number there would be the first clock in the game with a
-  // denominator, and the museum's whole argument is that we don't have those.
-  const season = el("div", { class: "clock season" }, ["—"]);
+  // A label naming what you can already see is the same instinct the museum spent
+  // a whole phase refusing — it turns something you notice into something you
+  // read. The hour earns its chip because you act on the hour; the month is
+  // weather, and weather doesn't need a caption.
   // Position, wrapping and the fade all live in `.clock.flash` now — this used to
   // set four inline styles, which meant the toast's look was split across two
   // files and the CSS half couldn't see it.
@@ -2034,7 +2033,6 @@ function buildHud(
     menu,
     satchel,
     clock,
-    season,
     flash,
     palette,
     buildPalette,
@@ -2043,7 +2041,7 @@ function buildHud(
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, season, flash, toolButtons, buildButtons, rotate, undo };
+  return { root: hud, clock, flash, toolButtons, buildButtons, rotate, undo };
 }
 
 // --- Panel helpers ------------------------------------------------------------

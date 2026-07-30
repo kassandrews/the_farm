@@ -270,25 +270,6 @@ select {
   box-shadow: 0 2px 0 rgba(43, 37, 64, 0.22);
 }
 
-/* The season, tucked under the clock. Smaller than the time, because the hour is
-   something you act on and the month is something you notice.
-
-   It goes QUIETER BY FILL, not by opacity: it's the panel edge colour instead of
-   the panel, which reads as the same chip pressed in a shade — and a fading
-   translucent chip over a moving map goes muddy in a way a solid one never does.
-   No shadow either, so it doesn't compete with the clock sitting on top of it.
-   Inherits pointer-events: none from .clock, which it must. */
-.clock.season {
-  top: 46px;
-  background: var(--panel-edge);
-  border-color: var(--panel-edge);
-  color: var(--accent-ink);
-  font-size: 11px;
-  padding: 2px 10px;
-  letter-spacing: 0.06em;
-  box-shadow: none;
-}
-
 /* The activity toast — harvest lines, who just said what, why a bed won't take.
    Same chip as the clock, but it holds a SENTENCE rather than a reading, so it
    needs a width to wrap inside; unconstrained it stretched to whatever the line
