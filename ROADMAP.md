@@ -571,6 +571,82 @@ Two things the build settled on screen, neither catchable in a unit test:
   cell's centre instead of its southern edge it drew half a tile high and read as
   a bright square hovering over the lamp.
 
+### The interface draws its own icons — no emoji, ever
+
+Settled at the start of the feel pass. Every emoji in the UI is gone, replaced by
+pixel-art icons in `src/content/icons.ts` — 12×12 char grids with tiny palettes,
+rasterized and cached by `src/render/icons.ts`.
+
+Why, beyond taste: an emoji is somebody else's art direction. It ships in the
+system font, so it is a different drawing on iOS, Android and Windows; it is
+glossy 3D on a phone, sitting on top of a game drawn at 12 pixels; and several of
+the ones we had were simply wrong — the radish was 🌶️ and ore was a pickaxe,
+because no emoji for either exists.
+
+The format is vendored from The Meadow (`src/content/canon/icons.ts`, which also
+holds the two grids copied outright: `rock` and `carrot`). Its roster of ~48 is
+mostly pet-care UI and stays there; copy a grid across when a screen needs it.
+
+Rules that are now load-bearing, all in the file's header:
+
+- **Outline every icon in the one shared ink** (`INK`, the Farm's `--ink`, not The
+  Meadow's warmer `#402e3a`). One icon with its own outline colour reads as pasted
+  in from another game, which is exactly what it would be.
+- **Produce takes its colours from `crops.ts`** (`ripeColor` / `ripeShade`), never
+  a fresh hex, so the satchel and the field never disagree about a tomato.
+- **Render at an INTEGER multiple of 12** — this is where we depart from The
+  Meadow, which rasterizes one 12×12 canvas and lets CSS stretch it to 20px. 20/12
+  is 1.667, `image-rendering: pixelated` turns that into a nearest-neighbour
+  resample, and two thirds of the columns come out a pixel wider than the rest.
+  That is the sprite rule in CLAUDE.md, in the UI layer. `SCALE.inline` (24px) and
+  `SCALE.button` (36px) are the only two sizes, and the cost — icon sizes step by
+  12, so a 52px button gets a 36px icon — is nothing.
+- **`content/icons.test.ts` counts the grids.** Hand-counted character art has one
+  failure mode: an 11- or 13-wide row. The rasterizer is forgiving about it, so it
+  never throws — it silently shifts a highlight a pixel or drops one row's
+  outline, and you are left spotting it by eye at 12 pixels. The test also catches
+  stale palette entries and glyphs shoved against one edge of the cell.
+
+**A passing grid test does not mean the icon reads.** All 32 passed on the first
+run and eight of them were unrecognisable — the spade was a plunger, then a vase;
+wheat was a bare stick; the plank's grain dots read as drawer knobs; the seedling
+went from floating leaves to a tree to a sprout over three attempts; junk was two
+grey squares, then a pipe, and is now a cog. The thing that found all of it was a
+**contact sheet** — every icon at 3× on one page — which is worth rebuilding any
+time the set grows. Three redraw rounds is normal, not a sign something is wrong.
+
+Two icons carry decisions rather than pictures. `spade` is not the pickaxe the dig
+emoji used: digging soil and mining ore are different jobs, and the pick belongs
+to ore. The rotate button shows **the facing of the next piece** (`arrow_n/s/e/w`),
+not a "rotate" glyph — the facing is the information the player lacks, and the
+button's existence already says it turns things. It also sets its icon through
+`replaceChildren`, because the `textContent` assignment it used to do wiped the
+`<img>` on every refresh.
+
+### The text screens borrow The Meadow's font and finishing, not its palette
+
+Also settled at the start of the feel pass, and the split is the decision: the
+Farm keeps its own cooler `--ink` and panel colours, and takes the two things that
+made The Meadow's dialogue boxes read as a made object.
+
+1. **A monospace stack** (`ui-monospace, "SF Mono", Menlo, …`), copied from
+   cozy_sprites. Even advance makes a dialogue box look typed out, which is what a
+   villager talking to you should look like; `system-ui` is the font of a settings
+   screen. Buttons need `font-family: inherit` explicitly or they fall back to the
+   OS font, which is the whole problem again.
+2. **Hard offset shadows — no blur radius** — on `.panel`, `.btn`, `.tool`. This
+   does more work than the font. A blurred drop shadow is a depth cue: it says the
+   panel floats above the scene, the way an OS dialog does. An unblurred one is a
+   drawn edge, the same trick as the outline on a sprite, and it says the panel is
+   a solid thing somebody cut out and laid down. Buttons press INTO their own
+   shadow (`translateY(2px)` against a shadow that loses 2px), so the top edge
+   travels and the bottom edge stays put.
+
+Knock-on: monospace sets wider per character, so `.panel p` went 16px → 15px with
+`line-height` 1.6. And the two HUD chips (`.menu-btn`, `.satchel-btn`) are now
+cream like the tool buttons — they were dark translucent to hold a white ☰ and a
+🎒, and dark ink on a dark chip is a button with nothing on it.
+
 ### Undecided, deliberately
 
 - ~~**Money vs. barter vs. neither.**~~ **Settled: barter**, with the shop
@@ -1814,6 +1890,17 @@ eyeballing once.
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
 you trip over them:
+
+- **The rotate button sits on top of the build palette.** `.rotate-btn` is
+  `position: absolute; bottom: 352px`, and `.build-palette` is `bottom: 100px`
+  with six rows of 52px plus 8px gaps — 352px tall, so it spans 100→452 and the
+  rotate control lands inside it, covering the right-hand button of the
+  second-from-top row (the Bed). Only visible while a furniture tool is held,
+  which is why it went unnoticed: pick Table and the Bed button disappears under
+  it. Predates the icon pass — spotted in a screenshot during it, left alone
+  because moving either control is a HUD layout decision, not a swap of glyph for
+  icon. Fixing it properly probably means the modifier column (rotate, undo)
+  living *above* the palette rather than at a hardcoded offset into it.
 
 - ~~**One of the three non-starter finishes is still unobtainable.**~~ **Fixed in
   4c.** `whitewash` arrives with Bissenette's commission (3b), `slate` is mined

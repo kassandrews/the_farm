@@ -24,8 +24,30 @@ body {
   overflow: hidden;
   overscroll-behavior: none;
   background: #14101f;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* The Meadow's stack, brought over wholesale (cozy_sprites src/style.css). A
+     monospace face is most of why that game's text screens read as a made object
+     rather than as an app: even advance makes a dialogue box look typed out, which
+     is what a villager talking to you should look like, and the sans-serif
+     system-ui this replaced is the font of a settings screen.
+
+     `ui-monospace` first so each platform gets its own good one — SF Mono on
+     Apple, Cascadia on Windows — with the named faces as the fallback chain for
+     browsers that don't know the generic. Courier New last because it is
+     everywhere, and never chosen when anything else exists. */
+  font-family: ui-monospace, "SF Mono", Menlo, Monaco, "Cascadia Mono",
+    "Courier New", monospace;
   color: var(--ink);
+}
+
+/* Form controls don't inherit font-family from the body — without this every
+   button in the game falls back to the OS system font, which is the one thing all
+   of the above was meant to get rid of. Inherited from The Meadow, which learned
+   it the obvious way. */
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
 }
 
 #app,
@@ -44,6 +66,19 @@ body {
   height: 100%;
   image-rendering: pixelated;
   touch-action: none;
+}
+
+/* Pixel-art UI icons (render/icons.ts). They are already rasterized at an integer
+   multiple of the 12×12 grid, so the browser has no resampling to do and nothing
+   here should ever give it any — no width/height overrides, no transforms that
+   scale. `pixelated` is belt and braces for the day someone zooms the page.
+
+   `display: block` because an inline <img> sits on the text baseline and leaves a
+   few pixels of descender gap under it, which knocks every icon in a flex row
+   very slightly high. */
+.pxicon {
+  display: block;
+  image-rendering: pixelated;
 }
 
 /* --- HUD: tool palette + action button ------------------------------------ */
@@ -93,8 +128,6 @@ body {
   border-radius: 12px;
   border: 2px solid var(--panel-edge);
   background: var(--panel);
-  font-size: 24px;
-  line-height: 1;
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -138,6 +171,11 @@ body {
   cursor: default;
 }
 
+/* Cream, like the tool buttons, and NOT the dark translucent chip these were.
+   The chip existed to hold a white ☰ and a 🎒 legibly over open grass; the icons
+   that replaced them are outlined in the game's ink, and dark ink on a dark chip
+   is a button with nothing on it. Matching the palette below also means every
+   control in the HUD is now the same object at two sizes. */
 .menu-btn {
   position: absolute;
   top: 14px;
@@ -146,13 +184,11 @@ body {
   height: 42px;
   border-radius: 11px;
   border: 2px solid var(--panel-edge);
-  background: rgba(20, 16, 31, 0.55);
-  color: #f4ecdd;
-  font-size: 20px;
-  line-height: 1;
+  background: var(--panel);
   display: grid;
   place-items: center;
   cursor: pointer;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
 }
 
 .menu-btn:active {
@@ -181,8 +217,13 @@ body {
   background: #fff6e2;
 }
 
+/* Fixed to the icon's own width so the names line up in a column. Without it the
+   row packs to the image and a one-pixel difference in icon bounds staggers every
+   label down the list. */
 .satchel-icon {
-  font-size: 20px;
+  display: grid;
+  place-items: center;
+  width: 24px;
 }
 
 .satchel-name {
@@ -268,12 +309,27 @@ body {
   border: 3px solid var(--panel-edge);
   border-radius: 16px;
   padding: 22px 22px 18px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  /* A HARD offset shadow — no blur radius — which is the other half of The
+     Meadow's look and does more work than the font does. A blurred drop shadow is
+     a depth cue: it says the panel is floating some distance above the scene, the
+     way a dialog in an operating system does. An unblurred one is a drawn edge,
+     the same trick as the outline on a sprite, and it says the panel is a solid
+     object somebody cut out and laid down. Cuter, and consistent with a game
+     whose every other edge is one pixel of ink.
+
+     Kept in the Farm's own cool ink rather than The Meadow's warm brown, per the
+     decision to take the finishing and not the palette. */
+  box-shadow: 0 6px 0 rgba(43, 37, 64, 0.3);
 }
 
+/* Bolder than it was. A monospace face at the same weight as its body text makes
+   a weak heading — the letterforms are already even, so size alone barely
+   separates a title from the paragraph under it. */
 .panel h2 {
-  margin: 0 0 4px;
+  margin: 0 0 6px;
   font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 /* An exhibit's title, above its placard (the museum panel). Quieter than the
@@ -292,10 +348,14 @@ body {
   margin-bottom: 10px;
 }
 
+/* A point smaller and a little looser than the sans-serif this replaced.
+   Monospace sets wider per character — the same 16px filled the panel to a much
+   shorter line — and its even rhythm needs more room between lines before a
+   paragraph stops looking like a block. */
 .panel p {
   margin: 0 0 14px;
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.6;
   white-space: pre-wrap;
 }
 
@@ -340,10 +400,14 @@ body {
   background: #fff6e2;
   border-radius: 10px;
   padding: 10px 16px;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--ink);
   cursor: pointer;
+  /* The same hard edge as the panel and the tool buttons, at button scale, so a
+     button reads as a thing sitting on the panel rather than a tinted rectangle
+     printed on it. */
+  box-shadow: 0 3px 0 rgba(43, 37, 64, 0.22);
 }
 
 .btn.primary {
@@ -352,8 +416,12 @@ body {
   color: #fff;
 }
 
+/* Press it INTO its own shadow — move down by exactly what the shadow loses, so
+   the button's top edge travels and its bottom edge stays put. That reads as a
+   physical key going down; translate alone reads as the whole thing sliding. */
 .btn:active {
-  transform: translateY(1px);
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(43, 37, 64, 0.22);
 }
 
 .choices {
@@ -386,7 +454,6 @@ textarea.import-box {
   position: absolute;
   right: 12px;
   bottom: 352px;
-  font-size: 22px;
 }
 
 /* Stacked above rotate, in the same right-hand column: both are modifiers on

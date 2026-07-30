@@ -5,6 +5,8 @@
 
 import { el, hoverHint, modal } from "./dom";
 import { Renderer } from "../render/renderer";
+import { iconEl, SCALE } from "../render/icons";
+import type { IconName } from "../content/icons";
 import type { WorldState, Tool, BuildTool, HomesteadSpot, Layer } from "../sim/types";
 import { FACINGS, FURNITURE, furnitureDef } from "../content/furniture";
 import type { Facing } from "../content/furniture";
@@ -97,25 +99,25 @@ const AUTOSAVE_MS = 15_000;
 // so a hint that repeats it is worth nothing to the person hovering. `key` is
 // the desktop shortcut where one exists; the hint is the only place they're
 // written down, since a keyboard legend would be HUD clutter on a phone.
-const TOOLS: { id: Tool; icon: string; label: string; hint: string; key?: string }[] = [
-  { id: "dig", icon: "⛏️", label: "Dig", hint: "Turn the ground into soil you can plant in.", key: "1" },
-  { id: "gather", icon: "🧺", label: "Gather", hint: "Pick what's ripe, or fell a tree or rock beside you.", key: "2" },
-  { id: "plant", icon: "🌱", label: "Plant", hint: "Sow a seed in tilled soil.", key: "3" },
-  { id: "water", icon: "💧", label: "Water", hint: "Water what's planted. Growth resumes.", key: "4" },
+const TOOLS: { id: Tool; icon: IconName; label: string; hint: string; key?: string }[] = [
+  { id: "dig", icon: "spade", label: "Dig", hint: "Turn the ground into soil you can plant in.", key: "1" },
+  { id: "gather", icon: "basket", label: "Gather", hint: "Pick what's ripe, or fell a tree or rock beside you.", key: "2" },
+  { id: "plant", icon: "seedling", label: "Plant", hint: "Sow a seed in tilled soil.", key: "3" },
+  { id: "water", icon: "droplet", label: "Water", hint: "Water what's planted. Growth resumes.", key: "4" },
 ];
 
-const BUILD_TOOLS: { id: BuildTool; icon: string; label: string; hint: string }[] = [
-  { id: "plank", icon: "🪵", label: "Floor", hint: "Lay floorboards. Costs wood." },
-  { id: "wall", icon: "🧱", label: "Wall", hint: "Raise a wall. Close a shape and it gets a roof." },
-  { id: "door", icon: "🚪", label: "Door", hint: "Cut a doorway. Put it on a south wall so it shows." },
-  { id: "bed", icon: "🛏️", label: "Bed", hint: "A bed makes a room somewhere to live." },
-  { id: "table", icon: "🪑", label: "Table", hint: "Place a table. Press R to turn it." },
-  { id: "chair", icon: "💺", label: "Chair", hint: "Place a chair. Press R to turn it." },
-  { id: "shelf", icon: "🗄️", label: "Shelf", hint: "Place a shelf. Press R to turn it." },
-  { id: "cushion", icon: "🛋️", label: "Cushion", hint: "Costs cloth. The Menace sells cloth." },
-  { id: "rug", icon: "🧶", label: "Rug", hint: "Costs cloth. Walk right over it." },
-  { id: "lamp", icon: "🏮", label: "Lamp", hint: "Costs ore. Give the dark something to argue with." },
-  { id: "erase", icon: "↩️", label: "Take back down", hint: "Remove what you built here. Materials come back." },
+const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string }[] = [
+  { id: "plank", icon: "plank", label: "Floor", hint: "Lay floorboards. Costs wood." },
+  { id: "wall", icon: "wall", label: "Wall", hint: "Raise a wall. Close a shape and it gets a roof." },
+  { id: "door", icon: "door", label: "Door", hint: "Cut a doorway. Put it on a south wall so it shows." },
+  { id: "bed", icon: "bed", label: "Bed", hint: "A bed makes a room somewhere to live." },
+  { id: "table", icon: "table", label: "Table", hint: "Place a table. Press R to turn it." },
+  { id: "chair", icon: "chair", label: "Chair", hint: "Place a chair. Press R to turn it." },
+  { id: "shelf", icon: "shelf", label: "Shelf", hint: "Place a shelf. Press R to turn it." },
+  { id: "cushion", icon: "cushion", label: "Cushion", hint: "Costs cloth. The Menace sells cloth." },
+  { id: "rug", icon: "rug", label: "Rug", hint: "Costs cloth. Walk right over it." },
+  { id: "lamp", icon: "lamp", label: "Lamp", hint: "Costs ore. Give the dark something to argue with." },
+  { id: "erase", icon: "takedown", label: "Take back down", hint: "Remove what you built here. Materials come back." },
 ];
 
 /** What the undo control calls the last stroke. A phrase, not a tool name, so it
@@ -129,7 +131,7 @@ function buildToolLabel(t: BuildTool): string {
 }
 
 /** Arrows for the rotate button, so the facing is legible without a legend. */
-const FACING_ARROW: Record<Facing, string> = { s: "↓", w: "←", n: "↑", e: "→" };
+const FACING_ARROW: Record<Facing, IconName> = { s: "arrow_s", w: "arrow_w", n: "arrow_n", e: "arrow_e" };
 
 const SPOTS: { id: HomesteadSpot; name: string; blurb: string }[] = [
   { id: "riverside", name: "Riverside", blurb: "Water to the west. The Blob approves of the drama." },
@@ -1367,7 +1369,7 @@ export class App {
           const def = itemDef(id);
           list.append(
             el("div", { class: "satchel-row" }, [
-              el("span", { class: "satchel-icon" }, [def.icon]),
+              el("span", { class: "satchel-icon" }, [iconEl(def.icon)]),
               el("span", { class: "satchel-name" }, [def.name]),
               el("span", { class: "satchel-count" }, [String(count(world.inventory, id))]),
             ]),
@@ -1753,7 +1755,7 @@ export class App {
     // a facing, which is exactly the confusion the design avoids.
     const rotatable = this.buildTool !== null && this.buildTool in FURNITURE;
     this.hud.rotate.style.display = rotatable ? "" : "none";
-    this.hud.rotate.textContent = FACING_ARROW[this.facing];
+    this.hud.rotate.replaceChildren(iconEl(FACING_ARROW[this.facing], SCALE.button));
     this.hud.rotate.title = rotatable
       ? `${furnitureDef(this.buildTool as never).name} facing ${this.facing.toUpperCase()}`
       : "Rotate";
@@ -1972,10 +1974,10 @@ function buildHud(
   onMenu: () => void,
   onSatchel: () => void,
 ): HudRefs {
-  const menu = el("button", { class: "menu-btn", ariaLabel: "Menu" }, ["☰"]);
+  const menu = el("button", { class: "menu-btn", ariaLabel: "Menu" }, [iconEl("menu")]);
   menu.addEventListener("click", onMenu);
   hoverHint(menu, "Menu — sound, and starting a new town.");
-  const satchel = el("button", { class: "menu-btn satchel-btn", ariaLabel: "Satchel" }, ["🎒"]);
+  const satchel = el("button", { class: "menu-btn satchel-btn", ariaLabel: "Satchel" }, [iconEl("satchel")]);
   satchel.addEventListener("click", onSatchel);
   hoverHint(satchel, "Satchel — what you're carrying.");
   const clock = el("div", { class: "clock" }, ["—"]);
@@ -1998,7 +2000,7 @@ function buildHud(
   const toolButtons: [Tool, HTMLElement][] = [];
   const palette = el("div", { class: "tool-palette" });
   for (const t of TOOLS) {
-    const btn = el("button", { class: "tool", ariaLabel: t.label }, [t.icon]);
+    const btn = el("button", { class: "tool", ariaLabel: t.label }, [iconEl(t.icon, SCALE.button)]);
     btn.addEventListener("click", () => onTool(t.id));
     hoverHint(btn, `${t.label} — ${t.hint}${t.key ? `  (${t.key})` : ""}`);
     if (t.id === "dig") btn.classList.add("selected");
@@ -2009,21 +2011,21 @@ function buildHud(
   const buildButtons: [BuildTool, HTMLElement][] = [];
   const buildPalette = el("div", { class: "tool-palette build-palette" });
   for (const t of BUILD_TOOLS) {
-    const btn = el("button", { class: "tool", ariaLabel: t.label }, [t.icon]);
+    const btn = el("button", { class: "tool", ariaLabel: t.label }, [iconEl(t.icon, SCALE.button)]);
     btn.addEventListener("click", () => onBuildTool(t.id));
     hoverHint(btn, `${t.label} — ${t.hint}`);
     buildButtons.push([t.id, btn]);
     buildPalette.append(btn);
   }
 
-  const rotate = el("button", { class: "tool rotate-btn", ariaLabel: "Rotate" }, ["↓"]);
+  const rotate = el("button", { class: "tool rotate-btn", ariaLabel: "Rotate" }, [iconEl("arrow_s", SCALE.button)]);
   rotate.addEventListener("click", onRotate);
   hoverHint(rotate, "Turn the next piece you place.  (R)");
   rotate.style.display = "none";
 
-  // Not ↩ — that's the erase tool's icon, and two buttons in the same palette
-  // with the same glyph is a trap.
-  const undo = el("button", { class: "tool undo-btn", ariaLabel: "Undo" }, ["⟲"]);
+  // A return arrow, and the erase tool is a plank with an arrow lifting off it —
+  // the two used to be ↩ and ⟲ in the same palette, which is a trap.
+  const undo = el("button", { class: "tool undo-btn", ariaLabel: "Undo" }, [iconEl("undo", SCALE.button)]);
   undo.addEventListener("click", onUndo);
   undo.style.display = "none";
 

@@ -7,6 +7,8 @@
 // every metal). Everything else here is produce — grown or foraged, bound for
 // eating, gifting, and the museum rather than construction.
 
+import type { IconName } from "./icons";
+
 export type ItemId =
   | "wood"
   | "stone"
@@ -44,7 +46,7 @@ export interface ItemDef {
   name: string;
   /** Plural for counts ("3 carrots"). Omit when the name doesn't inflect. */
   plural?: string;
-  icon: string;
+  icon: IconName;
   category: ItemCategory;
   /** One line, in the house voice, for the satchel. Flat and unbothered. */
   blurb: string;
@@ -54,14 +56,14 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   wood: {
     id: "wood",
     name: "Wood",
-    icon: "🪵",
+    icon: "plank",
     category: "material",
     blurb: "Boards, mostly. It was a tree about an hour ago and is being very brave.",
   },
   stone: {
     id: "stone",
     name: "Stone",
-    icon: "🪨",
+    icon: "rock",
     category: "material",
     blurb: "Heavy. Reliable. Has opinions about being carried.",
   },
@@ -70,7 +72,7 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   ore: {
     id: "ore",
     name: "Ore",
-    icon: "⛏️",
+    icon: "pickaxe",
     category: "material",
     blurb: "Metal, still mostly rock about it. Found low down, where the light gives up.",
   },
@@ -78,7 +80,7 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     id: "carrot",
     name: "Carrot",
     plural: "Carrots",
-    icon: "🥕",
+    icon: "carrot",
     category: "produce",
     blurb: "Pulled by your own hand. The Blessed Carrot prefers not to discuss it.",
   },
@@ -86,7 +88,7 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     id: "mushroom",
     name: "Mushroom",
     plural: "Mushrooms",
-    icon: "🍄",
+    icon: "mushroom",
     category: "produce",
     blurb: "Came up overnight, uninvited, entirely welcome.",
   },
@@ -98,7 +100,7 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     id: "radish",
     name: "Radish",
     plural: "Radishes",
-    icon: "🌶️",
+    icon: "radish",
     category: "produce",
     blurb: "In and out in an afternoon. Behaves as though this were an achievement.",
   },
@@ -106,7 +108,7 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     id: "potato",
     name: "Potato",
     plural: "Potatoes",
-    icon: "🥔",
+    icon: "potato",
     category: "produce",
     blurb: "Took most of a day about it and would do so again.",
   },
@@ -122,7 +124,7 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   wheat: {
     id: "wheat",
     name: "Wheat",
-    icon: "🌾",
+    icon: "wheat",
     category: "produce",
     blurb: "Two days in the ground and no opinion about any of them.",
   },
@@ -130,7 +132,7 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     id: "peas",
     name: "Pea",
     plural: "Peas",
-    icon: "🫛",
+    icon: "peas",
     category: "produce",
     blurb: "Quick, green, and slightly smug about the first part.",
   },
@@ -138,7 +140,7 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     id: "tomato",
     name: "Tomato",
     plural: "Tomatoes",
-    icon: "🍅",
+    icon: "tomato",
     category: "produce",
     blurb: "Went in at breakfast and was ready when it got dark.",
   },
@@ -146,14 +148,14 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     id: "pumpkin",
     name: "Pumpkin",
     plural: "Pumpkins",
-    icon: "🎃",
+    icon: "pumpkin",
     category: "produce",
     blurb: "Takes a day and a bit, so it is never ready at the same hour twice.",
   },
   kale: {
     id: "kale",
     name: "Kale",
-    icon: "🥬",
+    icon: "kale",
     category: "produce",
     blurb: "Comes up at roughly the hour you planted it, a day later. Unbothered by the cold.",
   },
@@ -166,7 +168,10 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     id: "seed",
     name: "Seed",
     plural: "Seed",
-    icon: "🌱",
+    // The pips, NOT the sprout the Plant tool wears. What a seed will become is
+    // not a property of the seed (see the note above), and a seedling in the
+    // satchel is a picture of a decision that hasn't been made yet.
+    icon: "seed",
     category: "seed",
     blurb: "Small, brown, non-committal. Decides what it is on the way into the ground.",
   },
@@ -176,7 +181,7 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   cloth: {
     id: "cloth",
     name: "Cloth",
-    icon: "🧵",
+    icon: "cloth",
     category: "soft",
     blurb: "Bartered for, not found. Nothing out there grows in bolts.",
   },
@@ -188,7 +193,7 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   junk: {
     id: "junk",
     name: "Junk",
-    icon: "🔩",
+    icon: "junk",
     category: "junk",
     blurb: "It was under there. It is out here now. The Gremlin calls this a supply chain.",
   },
