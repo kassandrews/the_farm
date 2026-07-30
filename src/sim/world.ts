@@ -552,13 +552,17 @@ function isCubeSite(seed: number, spot: HomesteadSpot, x: number, y: number): bo
  *  regions rather than one — a region you cannot leave is a world, and a region
  *  you cross in ten steps is a flowerbed. It also has to be wide enough that the
  *  town's own region comfortably contains the town (see `originSite`). */
-const BIOME_CELL = 64;
+const BIOME_CELL = 68;
 
-/** How far a site may wander inside its cell, as a fraction. Not the full cell:
- *  sites that can reach their own borders occasionally land almost on top of
- *  each other across one, which pinches a region into a sliver you cross without
- *  noticing it was there. */
-const BIOME_JITTER = 0.72;
+/** How far a site may wander inside its cell, as a fraction.
+ *
+ *  Deliberately modest, and it was 0.72 until the warp arrived. Two jobs were
+ *  competing in this number: making regions look irregular, and keeping foreign
+ *  sites far enough from the origin that the town's region provably contains the
+ *  town. `BIOME_WARP` does the first job better than jitter ever did — it bends the
+ *  borders themselves rather than just moving the middles — so this can go back to
+ *  buying clearance, which is the thing a live save depends on. */
+const BIOME_JITTER = 0.5;
 
 /** The site owning one macro cell, in world tiles.
  *
@@ -581,6 +585,37 @@ function biomeSite(seed: number, mx: number, my: number): { x: number; y: number
 /** Which macro cell a tile falls in, offset so the origin is a cell CENTRE. */
 function biomeCell(v: number): number {
   return Math.floor(v / BIOME_CELL + 0.5);
+}
+
+/** How far the field is warped before it is sampled, in tiles.
+ *
+ *  A VORONOI BORDER IS A STRAIGHT LINE — the perpendicular bisector of two sites —
+ *  and over thirty tiles that reads as a polygon rather than as country. Found on
+ *  screen at the edge of the blossom rows, a clean vertical seam the full height of
+ *  the window. Nothing was grid-aligned, so the band rule was satisfied and it
+ *  still looked wrong.
+ *
+ *  So the QUERY POINT is nudged before the lookup, by a smooth function of where
+ *  it is. Straight bisectors come out as wandering edges and the regions stay
+ *  regions. Small on purpose: the town's own region has 41 tiles of clearance and
+ *  needs to reach 20 (`HOME_REGION_REACH`), so the warp has to be much smaller
+ *  than that margin or it could push a town cell into the next region. */
+const BIOME_WARP = 4;
+
+/** The warp offsets. Two sine terms with seed-derived phases — the same trick
+ *  `warrenRadius` uses to stop the Mole's rounds being a circle, and for the same
+ *  reason: cheap, smooth, and it never repeats over a distance you can walk.
+ *
+ *  Each axis is driven by the OTHER one's coordinate, so the field shears rather
+ *  than merely sliding — a warp of x driven by x would leave vertical borders
+ *  vertical, which is the case this exists to fix. */
+function biomeWarp(seed: number, x: number, y: number): { x: number; y: number } {
+  const pa = (hash2(7, 0, seed ^ 0x4d17) / 4294967296) * Math.PI * 2;
+  const pb = (hash2(8, 0, seed ^ 0x4d17) / 4294967296) * Math.PI * 2;
+  return {
+    x: x + BIOME_WARP * (0.6 * Math.sin(y / 19 + pa) + 0.4 * Math.sin(y / 7 + pb)),
+    y: y + BIOME_WARP * (0.6 * Math.sin(x / 23 + pb) + 0.4 * Math.sin(x / 9 + pa)),
+  };
 }
 
 /** Which macro cell's site is nearest to a tile. The site's CELL is the answer
@@ -607,18 +642,24 @@ function nearestSite(seed: number, x: number, y: number): { mx: number; my: numb
 
 /** How far from the origin the town's own region is GUARANTEED to reach.
  *
- *  Not a tuning number — a proof obligation, and `biomeSite` is built to meet it.
- *  Cell (0,0)'s site is pinned to the origin, and every other cell is centred a
- *  full BIOME_CELL away with only BIOME_JITTER of that to wander in, so the
- *  nearest foreign site is at least (1 - BIOME_JITTER/2) × BIOME_CELL ≈ 41 tiles
- *  out. A tile within half of that distance is therefore always nearer to the
- *  origin than to anything else. 20 is that half, rounded down.
+ *  Not a tuning number — a proof obligation, and `biomeSite` and `BIOME_JITTER` are
+ *  built to meet it. Cell (0,0)'s site is pinned to the origin, and every other
+ *  cell is centred a full BIOME_CELL away with only BIOME_JITTER of that to wander
+ *  in, so the nearest foreign site is at least (1 - BIOME_JITTER/2) × BIOME_CELL =
+ *  51 tiles out. A tile within half of that is always nearer to the origin than to
+ *  anything else — less `BIOME_WARP`, which moves the query point before any of it
+ *  is asked. 25 minus 4 is the 21 below.
+ *
+ *  IT WAS 20, AND THE THOUSAND-SEED TEST BELOW CAUGHT IT. Adding the warp quietly
+ *  spent the margin this depended on, and seed 93's forest homestead landed its
+ *  corner (15,13) — 19.8 tiles out — in the next region along. That is exactly the
+ *  failure that grows a tree inside somebody's finished house.
  *
  *  The town needs about 14 of it: the plaza reaches (5,5) and the homestead
  *  clearing reaches (10,9). There is a test that walks the whole town footprint
  *  on a thousand seeds, because this is the assertion that a live save depends
  *  on. */
-export const HOME_REGION_REACH = 20;
+export const HOME_REGION_REACH = 21;
 
 /** THE MIGRATION, and it is a property of the GENERATOR rather than of the save.
  *
@@ -639,8 +680,12 @@ export const HOME_REGION_REACH = 20;
  *  the plaza would draw a hard rim across open country wherever a different
  *  region came near — the per-cell edges rule at the largest scale in the game.
  *  A region's borders are irregular, so there is no seam to find. */
-function originSite(seed: number): { mx: number; my: number } {
-  return nearestSite(seed, 0, 0);
+function originSite(): { mx: number; my: number } {
+  // Cell (0,0), by construction: its site is pinned to the origin and every other
+  // site is a full cell away, so nothing else can be nearer to it. Stated rather
+  // than searched so the warp above cannot move the answer — the town's region has
+  // to be a fixed fact, not something a sine wave votes on.
+  return { mx: 0, my: 0 };
 }
 
 /** How far out the cherry stands are, and on their own bearing. Past the cube
@@ -675,8 +720,9 @@ export function biomeAt(seed: number, spot: HomesteadSpot, x: number, y: number)
   const b = blossomCentre(seed, spot);
   if (Math.hypot(x - b.x, y - b.y) <= BLOSSOM_RADIUS) return "blossom";
 
-  const site = nearestSite(seed, x, y);
-  const home = originSite(seed);
+  const w = biomeWarp(seed, x, y);
+  const site = nearestSite(seed, w.x, w.y);
+  const home = originSite();
   if (site.mx === home.mx && site.my === home.my) return "meadow";
 
   const roll = hash2(site.mx, site.my, seed ^ 0x30de) / 4294967296;

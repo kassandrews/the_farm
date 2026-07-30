@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { scenePalette, seasonSkin, biomeSkin, mixHex } from "./palette";
-import { BIOMES } from "../content/biomes";
+import { BIOMES, BROADLEAF } from "../content/biomes";
 import { SEASONS, seasonOn } from "../content/seasons";
 import { TILES, tileDef, GRASS, MUSHROOM, WATER, FARMLAND, FARMLAND_WET, PLANK, STONE, BEDROCK, CAVE_FLOOR, ORE_VEIN, SHAFT, DARK_TREE } from "../content/tiles";
 
@@ -179,3 +179,46 @@ function dist(a: string, b: string): number {
   const [br, bg, bb] = rgb(b);
   return Math.hypot(ar - br, ag - bg, ab - bb);
 }
+
+describe("crown silhouettes", () => {
+  it("gives every biome a shape, and the meadow the one the game always drew", () => {
+    // The meadow's tree is the town's tree. If this changes, the view from the
+    // plaza changes, which is the one thing biomes promised not to do.
+    expect(BIOMES.meadow.crownRows).toBe(BROADLEAF);
+    for (const b of Object.values(BIOMES)) {
+      expect(b.crownRows.length, b.id).toBeGreaterThan(4);
+      for (const w of b.crownRows) {
+        expect(Number.isInteger(w), b.id).toBe(true); // integer rects only
+        expect(w, b.id).toBeGreaterThan(0); // a zero-width row is a gap in the trunk
+      }
+    }
+  });
+
+  it("makes the shapes actually distinguishable from each other", () => {
+    // Colour alone left the pines reading as a dark meadow. Two biomes with the
+    // same outline AND a similar hue would be the same failure again.
+    const shapes = Object.values(BIOMES).map((b) => b.crownRows.join(","));
+    expect(new Set(shapes).size).toBe(shapes.length);
+  });
+
+  it("keeps conifers narrow and broadleaves broad", () => {
+    const widest = (id: keyof typeof BIOMES) => Math.max(...BIOMES[id].crownRows);
+    const tall = (id: keyof typeof BIOMES) => BIOMES[id].crownRows.length;
+    // A pine is taller than a meadow tree and no wider — that combination IS the
+    // conifer read, and either half alone doesn't do it.
+    expect(tall("pinewood")).toBeGreaterThan(tall("meadow"));
+    expect(widest("pinewood")).toBeLessThanOrEqual(widest("meadow"));
+    // The blossom rows are the overfull ones.
+    expect(widest("blossom")).toBeGreaterThan(widest("meadow"));
+    // The scrub is the squat one.
+    expect(tall("scrub")).toBeLessThan(tall("meadow"));
+  });
+
+  it("never overhangs so far that a crown covers its neighbours' trunks", () => {
+    // 8 half-widths is 16px, exactly one tile. Past that a tree starts drawing
+    // over the tile beside it, and a stand becomes a smear.
+    for (const b of Object.values(BIOMES)) {
+      expect(Math.max(...b.crownRows), b.id).toBeLessThanOrEqual(8);
+    }
+  });
+});

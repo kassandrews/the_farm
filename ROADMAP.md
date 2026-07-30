@@ -1985,6 +1985,45 @@ growth density; **not one number touches a yield, a recipe or an unlock.**
   went looking for is a destination. It is also what an authored arrival can ask
   for by name.
 
+### Silhouettes, not just colour
+
+Colour alone was not enough and the first screenshots said so: with one crown
+shape everywhere, the pines were **a dark meadow** rather than a pine wood. The
+eye reads outline before hue, and at 16px the outline is most of what a tree is.
+
+So `crownRows` is per biome — half-widths in pixels, one per row, top first, drawn
+as integer rects with no `scale()` anywhere near it. A conifer is narrow, tall and
+TIERED (a clean triangle reads as an arrowhead; the step-backs are what say
+"branches" at 1px). Birch is a short crown on the same trunk, so more pale bark
+shows and it reads slender. Scrub is squat, fen weeps, blossom is overfull. The
+meadow keeps `BROADLEAF`, which the grove also uses — her trees are the dark wood
+in the ordinary silhouette, so they read as trees that are *wrong* rather than as
+a different plant.
+
+**Length is height.** The renderer derives the sprite's height from the row count,
+including how far up it reaches to occlude the player, so a taller tree stays
+correct without a second constant to forget. `TREE_H` is gone.
+
+### Borders are warped, because a Voronoi edge is a straight line
+
+Found at the edge of the blossom rows: a clean vertical seam the full height of
+the window. Nothing was grid-aligned so the band rule was satisfied, and it still
+read as a polygon rather than as country — a Voronoi border IS the perpendicular
+bisector of two sites.
+
+The query point is now nudged before the lookup by a smooth function of where it
+is (`BIOME_WARP`, two sine terms with seeded phases — the same trick
+`warrenRadius` uses so the Mole's rounds aren't a circle). Each axis is driven by
+the *other* coordinate, so the field shears; warping x by x would leave vertical
+borders vertical, which is the case it exists to fix.
+
+**That change spent the margin the town guarantee depended on, and the
+thousand-seed test caught it** — seed 93's forest homestead put its corner (15,13)
+in the next region along. `BIOME_JITTER` came down from 0.72 to 0.5 to buy the
+clearance back, which it can afford because the warp now does the irregularity
+better than jitter ever did: it bends the borders instead of just moving the
+middles.
+
 ### Three bugs the screenshots caught that the tests could not
 
 All three passed 838 unit tests and were obvious within a second of looking.

@@ -38,7 +38,7 @@ import type { Room } from "../sim/rooms";
 import { tintAt, isNight, skyPhaseAt } from "../sim/time";
 import { seasonAt } from "../sim/seasons";
 import { scenePalette, seasonSkin, biomeSkin, mixHex, type ScenePalette } from "./palette";
-import { biomeDef } from "../content/biomes";
+import { biomeDef, BROADLEAF } from "../content/biomes";
 import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
 import type { Mood, SpriteFrame } from "../content/canon/sprites";
@@ -154,7 +154,9 @@ const DOOR_NOTCH = 4;
 
 /** Art heights in scene px for the two scenery pieces. Both exceed TILE, which
  *  is what makes them overhang the tile behind and read as standing up. */
-const TREE_H = 24;
+/** The trunk, in pixels. A tree's full height is this plus its crown's row count,
+ *  which now varies per biome (content/biomes.ts) — so nothing may assume 24. */
+const TRUNK_H = 10;
 const ROCK_H = 13;
 /** Taller than a rock, shorter than a tree. It should read as built rather than
  *  grown, and as somebody's, without being tall enough to hide behind. Its width
@@ -1585,14 +1587,6 @@ export class Renderer {
 
     // Fade rather than vanish when it would otherwise swallow the player —
     // you should always be able to see where you are (no lost-behind-scenery).
-    const prev = ctx.globalAlpha;
-    if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
-    else if (this.hides(world, tx, ty, TREE_H)) ctx.globalAlpha = prev * HIDDEN_FADE;
-
-    // Contact shadow — without it a tall sprite floats instead of standing.
-    ctx.fillStyle = "rgba(0,0,0,0.16)";
-    ctx.fillRect(cx - 4, base - 2, 9, 2);
-
     // The region this tree grows in, and the grove is EXEMPT from it exactly as
     // it is exempt from the seasons: the dark wood is what the grove IS, and a
     // stand that turned pink because it happened to fall inside the blossom rows
@@ -1601,6 +1595,22 @@ export class Renderer {
       ? null
       : biomeDef(biomeAt(world.seed, world.homestead.spot, tx, ty));
 
+    // Silhouette and therefore HEIGHT, both from the region. Read before the fade
+    // because how far a tree reaches up is what decides whether it's hiding you:
+    // a fen willow is six pixels taller than a scrub bush, and asking about the
+    // wrong height either fades a tree that isn't in the way or leaves you behind
+    // one that is.
+    const rows = biome ? biome.crownRows : BROADLEAF;
+    const height = TRUNK_H + rows.length;
+
+    const prev = ctx.globalAlpha;
+    if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
+    else if (this.hides(world, tx, ty, height)) ctx.globalAlpha = prev * HIDDEN_FADE;
+
+    // Contact shadow — without it a tall sprite floats instead of standing.
+    ctx.fillStyle = "rgba(0,0,0,0.16)";
+    ctx.fillRect(cx - 4, base - 2, 9, 2);
+
     // The grove's trunks are the dark wood itself, which is the only place in
     // the game where the finish and the material are the same object. It reads
     // nearly black at night, and it is meant to: you find the grove by daylight
@@ -1608,13 +1618,13 @@ export class Renderer {
     const bark = dark ? (night ? "#2b1d16" : "#3f2a1e") : night ? "#4a3628" : "#6b4a33";
     const barkDark = dark ? (night ? "#1f150f" : "#2f1e15") : night ? "#3a2a1e" : "#573a28";
     ctx.fillStyle = biome ? mixHex(bark, biome.trunk) : bark;
-    ctx.fillRect(cx - 1, base - 10, 3, 10);
+    ctx.fillRect(cx - 1, base - TRUNK_H, 3, TRUNK_H);
     ctx.fillStyle = biome ? mixHex(barkDark, biome.trunk) : barkDark;
-    ctx.fillRect(cx + 1, base - 10, 1, 10);
+    ctx.fillRect(cx + 1, base - TRUNK_H, 1, TRUNK_H);
 
-    // Crown as per-row half-widths: an integer-rect blob, no ellipse maths and
-    // nothing off the pixel grid (CLAUDE.md §Sprite rendering).
-    const rows = [3, 5, 6, 7, 7, 7, 7, 7, 6, 6, 5, 4, 3, 2]; // 14 rows + trunk = TREE_H
+    // Crown as per-row half-widths from the region's own silhouette: an
+    // integer-rect blob, no ellipse maths and nothing off the pixel grid
+    // (CLAUDE.md §Sprite rendering).
     // THE GROVE IS SEASON-EXEMPT and keeps its own four numbers in every month.
     // The dark wood is what the grove IS (tiles.ts) — a stand that turned gold
     // every October would be a secret joining in with the town. An ordinary
@@ -1634,13 +1644,17 @@ export class Renderer {
         ? "#26361f"
         : "#3a4a34"
       : mixHex(this.palette.crownLit, biome!.crown);
-    const top = base - TREE_H;
+    const top = base - height;
     ctx.fillStyle = crown;
     for (let r = 0; r < rows.length; r++) {
       ctx.fillRect(cx - rows[r], top + r, rows[r] * 2, 1);
     }
-    ctx.fillStyle = crownLit; // light from the upper left, as everywhere else
-    for (let r = 1; r <= 6; r++) {
+    // Light from the upper left, as everywhere else. Bounded by the crown's own
+    // length rather than by a literal 6: the scrub's is nine rows tall, and a lit
+    // side that ran past the end read off the end of the array.
+    ctx.fillStyle = crownLit;
+    const litRows = Math.min(6, rows.length - 1);
+    for (let r = 1; r <= litRows; r++) {
       ctx.fillRect(cx - rows[r] + 1, top + r, Math.max(2, rows[r] - 1), 1);
     }
 

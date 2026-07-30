@@ -70,7 +70,32 @@ export interface BiomeDef {
   crown: Tint;
   /** Trunks. Mostly left alone — except birch, which is nothing without it. */
   trunk: Tint;
+  /** The crown's SILHOUETTE: half-widths in pixels, one per row, top row first.
+   *
+   *  Colour alone wasn't enough. With one shape everywhere, the pines were "a
+   *  dark meadow" rather than a pine wood — the eye reads outline before it reads
+   *  hue, and at this size the outline is most of what a tree IS.
+   *
+   *  Half-widths because the crown is drawn symmetrically as integer rects: row
+   *  `r` becomes one fillRect `rows[r]` wide either side of the trunk. That keeps
+   *  every tree on the pixel grid without a single scale() (CLAUDE.md §Sprite
+   *  rendering) and makes a new shape a row of numbers instead of a draw path.
+   *
+   *  LENGTH IS HEIGHT. The renderer derives the sprite's height from this array,
+   *  so a taller tree is a longer list — which is also how far it reaches to
+   *  occlude the player, and it stays correct automatically. 7 is about a tile
+   *  wide; past 8 the crown starts overhanging its neighbours, which broadleaves
+   *  are allowed to do and conifers are not. */
+  crownRows: number[];
 }
+
+/** The ordinary broadleaf, and the shape the game has always drawn.
+ *
+ *  Exported because the GROVE uses it too: her trees are the dark wood in this
+ *  same silhouette, so a stand of them reads as trees that are wrong rather than
+ *  as a different plant. It is also the meadow's, which is what keeps the town
+ *  looking exactly as it did. */
+export const BROADLEAF = [3, 5, 6, 7, 7, 7, 7, 7, 6, 6, 5, 4, 3, 2];
 
 export const BIOMES: Record<BiomeId, BiomeDef> = {
   /** The ordinary, and the town's own. Every number here is identity — a 1× or a
@@ -89,6 +114,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     tuft: { color: "#000000", amount: 0 },
     crown: { color: "#000000", amount: 0 },
     trunk: { color: "#000000", amount: 0 },
+    crownRows: BROADLEAF,
   },
 
   /** Cold, close, and quiet. Densest trees in the game, which is most of the
@@ -107,6 +133,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // enough that the season is a whisper here and a shout everywhere else.
     crown: { color: "#23402c", amount: 0.75 },
     trunk: { color: "#4a3324", amount: 0.3 },
+    // A conifer: narrow, tall, and TIERED rather than smoothly tapered. The
+    // step-backs every third row are the whole trick — a clean triangle reads as
+    // an arrowhead, and the little shelves are what say "branches" at 1px.
+    crownRows: [1, 2, 3, 2, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6],
   },
 
   /** Bright, thin, airy — the opposite of the pines, and deliberately adjacent
@@ -124,6 +154,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // best thing they do.
     crown: { color: "#cfe08a", amount: 0.3 },
     trunk: { color: "#e6e2d8", amount: 0.85 }, // the whole point of a birch
+    // Small and high. A short crown on the same 10px trunk leaves more pale bark
+    // showing, which is what makes a birch read as slender — the shape does the
+    // work the trunk tint can only half do.
+    crownRows: [2, 4, 5, 6, 6, 6, 5, 5, 4, 3, 2],
   },
 
   /** Dry and open. Where the stone is, so it earns a walk without a single
@@ -148,6 +182,9 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     tuft: { color: "#b3ad76", amount: 0.5 },
     crown: { color: "#8a9152", amount: 0.35 },
     trunk: { color: "#7a6248", amount: 0.3 },
+    // Squat and wind-flattened: wide, low, and wider at the shoulders than at the
+    // crown. Barely taller than the rocks it stands among, which is the point.
+    crownRows: [2, 4, 5, 5, 6, 5, 5, 4, 3],
   },
 
   /** Low and murky. The only common biome that generates WATER, which is why its
@@ -167,6 +204,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     tuft: { color: "#4e6440", amount: 0.5 },
     crown: { color: "#2f4a34", amount: 0.45 },
     trunk: { color: "#3d3226", amount: 0.35 },
+    // Weeping: broad at the top and narrowing all the way down, so the mass hangs
+    // rather than sits. The tallest crown in the table — a fen tree leans over
+    // the water it grew out of.
+    crownRows: [4, 6, 7, 7, 7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2],
   },
 
   /** The one you go and find. Not rolled from the field like the others — it is
@@ -188,6 +229,9 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     tuft: { color: "#cfe0a0", amount: 0.3 },
     crown: { color: "#e8a8c4", amount: 0.8 }, // pink, and unmistakably so
     trunk: { color: "#5a3a30", amount: 0.25 },
+    // Round and overfull, wider than anything else here. Cherry blossom's whole
+    // character is too much of it at once.
+    crownRows: [4, 6, 7, 8, 8, 8, 8, 7, 7, 6, 5, 4, 3, 2],
   },
 };
 
