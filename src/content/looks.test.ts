@@ -93,23 +93,44 @@ describe("looks — nobody is a clone", () => {
 });
 
 describe("lookFor — who gets which", () => {
-  it("keeps the institutions on canon", () => {
+  it("reserves canon for the player — NOBODY in the town wears it", () => {
+    // The player's sprite is the art as drawn (the renderer passes no look at
+    // all), so canon on any villager is the player meeting their own double.
+    // Institutions included: a scholar walking out of character select used to
+    // be pixel-identical to Winifred at the museum.
     for (const def of Object.values(CAST)) {
-      if (!def.fixed) continue;
-      expect(lookFor(def.id, def.form).id, def.name).toBe("canon");
+      if (LOOKS[def.form].length <= 1) continue;
+      expect(lookFor(def.id, def.form).id, def.name).not.toBe("canon");
     }
     for (const def of [MOLE, GHOST, COSMOS]) {
-      expect(lookFor(def.id, def.form).id, def.name).toBe("canon");
+      if (LOOKS[def.form].length <= 1) continue;
+      expect(lookFor(def.id, def.form).id, def.name).not.toBe("canon");
+    }
+  });
+
+  it("keeps the residents out of the institutions' faces", () => {
+    // Reserving canon for the player put institutions into the same pool as
+    // everyone else, and the first run of that produced Arabella and Archibald
+    // in identical periwinkle. Residents are dealt from what's left.
+    const taken = new Set(
+      Object.values(CAST)
+        .filter((d) => d.fixed && LOOKS[d.form].length > 2)
+        .map((d) => `${d.form}/${lookFor(d.id, d.form).id}`),
+    );
+    for (const form of STANDARD_FORMS) {
+      for (let n = 0; n < 200; n++) {
+        expect(taken, `${form}/newcomer:${n}`).not.toContain(
+          `${form}/${lookFor(`newcomer:${n}`, form).id}`,
+        );
+      }
     }
   });
 
   it("does NOT give the starter resident the curator's face", () => {
-    // Caught on screen, not here. Prudence has a CAST row like the institutions
-    // do, so keying on "is this a newcomer id" handed her canon — and the
-    // starter town then shipped two scholars four tiles apart wearing identical
-    // pixels. What earns canon is `fixed`, not seniority.
-    expect(CAST.resident1.fixed).toBe(false);
-    expect(lookFor("resident1", CAST.resident1.form).id).not.toBe("canon");
+    // Caught on screen, not here: the starter town shipped two scholars four
+    // tiles apart wearing identical pixels. It survives the rule change because
+    // it was never really about canon — two people of one form standing in the
+    // same place must not be the same picture, whoever they are.
     expect(lookFor("resident1", "scholar").id).not.toBe(
       lookFor(CAST.museum.id, CAST.museum.form).id,
     );

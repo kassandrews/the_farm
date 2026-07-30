@@ -36,7 +36,7 @@
 import type { AdultForm } from "./canon/forms";
 import type { Palette } from "./canon/sprites";
 import type { CharId } from "./cast";
-import { CAST, isNewcomer, isSecret } from "./cast";
+import { CAST } from "./cast";
 
 /** One variation on a form's canon art.
  *
@@ -312,31 +312,67 @@ function hash(s: string): number {
  *  save schema: there is no `look` field to migrate, no field to corrupt, and a
  *  town loaded from a save two versions old gets its residents' faces for free.
  *
- *  TWO RULES, AND THE SECOND IS THE INTERESTING ONE:
+ *  ONE RULE NOW: CANON BELONGS TO THE PLAYER, AND TO NOBODY ELSE.
  *
- *  • The FIXED CAST are canon. Gary is the Tired Office Creature the art was
- *    drawn for. An institution is the reference picture of its form, which is
- *    also why the player is canon (the renderer passes look 0 directly): the
- *    six buttons on the character screen must show what they will actually get.
+ *  Everyone in the town hashes into 1..n-1, never 0 — institutions included.
+ *  The player gets canon because the renderer passes no look at all, so their
+ *  sprite is the art as drawn, and the six buttons on the character screen show
+ *  exactly what they will get. Nobody they meet is wearing it.
  *
- *  • EVERYONE ELSE SKIPS CANON — they hash into 1..n-1, never 0. So no resident
- *    ever turns up wearing the institution's exact face. Without it, the first
- *    Menace to move in has a one-in-six chance of being pixel-identical to the
- *    shopkeeper, and a coin flip that occasionally reproduces the bug this file
- *    exists to fix is not a fix.
+ *  That is a REVERSAL, and the old rule is worth knowing because it sounded
+ *  right: institutions were canon on the grounds that an institution is the
+ *  reference picture of its form — Gary is the Tired Office Creature the art was
+ *  drawn for. But it meant a player who picked scholar walked out of character
+ *  select wearing Winifred's exact face, and being pixel-identical to the museum
+ *  curator is a worse first impression than any amount of reference purity. The
+ *  player is the one person in the world with no double.
  *
- *  IT IS `fixed`, NOT "has a CAST row", and that distinction is a bug that was
- *  caught on screen. Prudence is authored in CAST like the institutions are, but
- *  she is a RESIDENT — `fixed: false` — and the first version of this function
- *  keyed on "is this a newcomer id", which handed her canon. The starter town
- *  shipped with two scholars standing four tiles apart, Winifred at the museum
- *  and Prudence on her round, wearing exactly the same pixels: the clone bug
- *  this file exists to fix, in the one place a new player is guaranteed to see
- *  it. What earns canon is being an institution, not being old. */
+ *  It also deletes a bug class rather than dodging one. The old rule keyed on
+ *  `fixed`, and getting that predicate subtly wrong shipped the starter town
+ *  with two scholars four tiles apart in identical pixels (Prudence has a CAST
+ *  row like the institutions do, so an earlier version keyed on "is this a
+ *  newcomer id" and handed her canon). With canon reserved for the player there
+ *  is no predicate left to get wrong: if you are in the town, you hash. */
+function deal(id: string, pool: LookDef[]): LookDef {
+  return pool[hash(id) % pool.length];
+}
+
+/** Institutions are exactly the `fixed` CAST rows. Secrets and newcomers aren't
+ *  in that table at all, which is why this asks the table rather than indexing
+ *  it — `CAST[id]` for a newcomer is the undefined that `charDef` exists to
+ *  stop happening a second time. */
+function isInstitution(id: CharId): boolean {
+  return Object.hasOwn(CAST, id) && CAST[id as keyof typeof CAST].fixed;
+}
+
+
+/** What the institutions ended up wearing, per form, computed once from CAST.
+ *
+ *  It exists because reserving canon for the player put the institutions into
+ *  the same pool as everybody else, and the very first run of that produced two
+ *  clone pairs in the starter town: Arabella and Archibald both periwinkle,
+ *  Aurelio and Thessaly both coral. A shopkeeper and a newcomer in identical
+ *  pixels is the bug this file was written to kill, so residents are dealt out
+ *  of what the institutions did NOT take. */
+const INSTITUTION_LOOKS: Partial<Record<AdultForm, Set<string>>> = (() => {
+  const taken: Partial<Record<AdultForm, Set<string>>> = {};
+  for (const def of Object.values(CAST)) {
+    if (!def.fixed) continue;
+    const list = LOOKS[def.form];
+    if (list.length <= 1) continue;
+    (taken[def.form] ??= new Set()).add(deal(def.id, list.slice(1)).id);
+  }
+  return taken;
+})();
+
 export function lookFor(id: CharId, form: AdultForm): LookDef {
   const list = LOOKS[form];
   if (list.length <= 1) return CANON;
-  if (isSecret(id)) return list[0];
-  if (!isNewcomer(id) && CAST[id]?.fixed) return list[0];
-  return list[1 + (hash(id) % (list.length - 1))];
+  const others = list.slice(1);
+  if (isInstitution(id)) return deal(id, others);
+  // Residents skip the institutions' faces as well as canon. If a form ever runs
+  // so short that skipping empties the pool, fall back rather than throw — a
+  // repeated face is a content problem to fix by adding rows, not a crash.
+  const free = others.filter((l) => !INSTITUTION_LOOKS[form]?.has(l.id));
+  return deal(id, free.length ? free : others);
 }

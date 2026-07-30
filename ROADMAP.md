@@ -2419,11 +2419,24 @@ Sprites were baked per form, so every Menace was the same 16×16 image.
 - **`lookFor(id, form)` is derived, never stored** — same instinct as
   `charDef`. Zero save schema, zero migration, and a town loaded from an old
   save gets its residents' faces for free.
-- **Newcomers hash into 1..n-1 and skip canon.** Not a detail: hashing across
-  the whole list gives the first Menace to move in a one-in-six chance of being
-  pixel-identical to the shopkeeper, and a coin flip that sometimes reproduces
-  the bug is not a fix. Institutions and **the player** are always canon — the
-  six buttons on the character screen must show what you actually get.
+- **Canon belongs to the player, and to nobody else.** Everybody in the town
+  hashes into 1..n-1 — institutions included. The player gets the art as drawn
+  because the renderer passes no look at all, so the six buttons on the
+  character screen still show exactly what you get, and nobody you meet is
+  wearing it. This **reversed** the original rule (institutions were canon, as
+  the reference picture of their form) because that rule handed a player who
+  picked scholar Winifred's exact face: being pixel-identical to the museum
+  curator is a worse first impression than any amount of reference purity. It
+  also deletes a bug class — the old rule keyed on `fixed`, and getting that
+  predicate subtly wrong is what shipped two identical scholars four tiles
+  apart. Now there is no predicate: if you are in the town, you hash.
+- **Residents are dealt out of what the institutions did not take.** Reserving
+  canon put institutions into the same pool as everyone else, and the first run
+  of that produced two clone pairs in the starter town (Arabella + Archibald in
+  periwinkle, Aurelio + Thessaly in coral). `INSTITUTION_LOOKS` is computed once
+  from CAST and subtracted from the residents' pool. Institution-vs-resident
+  collisions are now impossible; resident-vs-resident ones are still a matter of
+  list length, which is the "add rows" problem and not a code one.
 - **"Skins" was taken.** `content/skins.ts` is building finishes; people get
   *looks*. Two appearance systems with one word would have ended up in one
   picker.
