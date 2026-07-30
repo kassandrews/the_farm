@@ -309,15 +309,22 @@ export const LOOKS: Record<AdultForm, LookDef[]> = {
   // So the crown moves with the body, the way the dog's ears do, and each row is
   // a body and its METAL chosen together. The lace stays cream throughout: lace
   // is cream, and one fixed element is what makes the rest read as a choice.
+  // ONE FAMILY EACH: bodies run pink → purple, metals run gold → orange, and
+  // nothing leaves those two ramps. Silver and pearl are gone with the cream and
+  // ice bodies — a cool metal on a warm body is a second colour scheme, and the
+  // form only has room for one.
+  //
+  // The metal is picked AGAINST the body's lightness, not to match it: pale
+  // bodies take a deep gold, deep bodies take a bright one. Coordinating by
+  // matching is how you get a gold crown on a gold body, which is where this
+  // list started and what it lost the crown to.
   menace: [
     CANON,
-    { id: "blush-pearl", fill: "#f3cdd6", shade: "#cba3ae", extra: { y: "#efe4cf" } },
-    { id: "mauve-gold", fill: "#b795c4", shade: "#8f6f9c", extra: { y: "#f5d572" } },
-    { id: "wine-silver", fill: "#b06a7d", shade: "#8a4f60", extra: { y: "#d8dce4" } },
-    { id: "cream-rose-gold", fill: "#f0dfd0", shade: "#c9b6a6", extra: { y: "#e0a48a" } },
-    // The one cool body in the list, and it takes gold rather than silver:
-    // metal has to contrast with the body or the crown stops being jewellery.
-    { id: "ice-gold", fill: "#c3cfdd", shade: "#98a5b6", extra: { y: "#f5d572" } },
+    { id: "blush", fill: "#f3cdd6", shade: "#cba3ae", extra: { y: "#d99b32" } },
+    { id: "lilac", fill: "#d3b8ea", shade: "#a992c0", extra: { y: "#e08a3c" } },
+    { id: "mauve", fill: "#b795c4", shade: "#8f6f9c", extra: { y: "#f5d572" } },
+    { id: "plum", fill: "#9873b8", shade: "#74558f", extra: { y: "#eaa64a" } },
+    { id: "wine", fill: "#b06a7d", shade: "#8a4f60", extra: { y: "#f2d98a" } },
   ],
 
   // --- One of each ---------------------------------------------------------
