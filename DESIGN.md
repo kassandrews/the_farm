@@ -144,6 +144,22 @@ Forms are species, not singletons. Importing a second Scholar is fine; the
 museum curator is a specific scholar, yours just lives here. Imports of
 secret forms are allowed — the owner earned them.
 
+**And the twin is allowed to be a twin.** The player and the fixed cast are
+always canon art, and secret forms have no looks to deal from (they are one
+person each, so `content/looks.ts` gives them the canon entry and nothing
+else). So an imported Scholar is Winifred's double, an imported Carrot is
+Derek's, and an imported Ghost is Eloise's. That is accepted, not a bug to
+dedupe. The character picker offers only the six standard forms, so this is
+reachable by import alone — and the fix would cost more than it buys:
+authoring look rows for forms whose whole premise is that there is exactly
+one of them, and breaking "the player is always the canon art", which exists
+so the sprite you chose is the sprite you get. The one real price is that an
+imported Ghost is abroad in daylight before you have ever met Eloise, which
+takes some air out of her night-only arrival — but her *name* is the secret,
+not her silhouette (see the fixed cast), and the only person who can import a
+Ghost already earned one in The Meadow and knows the shape by heart. They are
+spending something they had already spent.
+
 ## The fixed cast (institutions)
 
 Named individuals, like Nook or Blathers — distinct from resident villagers.
