@@ -10,13 +10,16 @@
 // contradicts the rule the rest of the codebase is built on, that a form is a
 // species and the people in it are individuals.
 //
-// ONE AXIS PER LOOK. A look changes EITHER the body colour OR one accessory,
-// never both. That is a deliberate ceiling, not a stage we are half-way
-// through: the cross product of six tints and three crowns is eighteen Menaces
-// nobody can tell apart, which is the same failure as one Menace with extra
-// steps. What you want on screen is "the pale one" and "the one with the silver
-// crown" — differences you can say out loud. When the cast gets big enough that
-// the list runs out, add rows; the shape holds.
+// ONE IDEA PER LOOK. A look is one thing you can say out loud — "the pale one",
+// "the one with the silver crown", "the golden retriever". Usually that means
+// changing EITHER the body colour OR one accessory; the exception is a letter
+// that draws part of the ANIMAL rather than something it is wearing (the dog's
+// ears and tail), which has to move with the coat or the coat is half-painted.
+// The ceiling is on ideas, not on fields, and it is deliberate rather than a
+// stage we are half-way through: the cross product of six tints and three crowns
+// is eighteen Menaces nobody can tell apart, which is the same failure as one
+// Menace with extra steps. When the cast gets big enough that the list runs out,
+// add rows; the shape holds.
 //
 // WHERE THE ACCESSORIES COME FROM. Nothing here invents art. Every accessory
 // swap recolours a letter the canon sprite already draws with — the Menace's
@@ -93,16 +96,36 @@ const GLASSES_HALFMOON = [
  *  be a way of saying she is a type of thing. */
 export const LOOKS: Record<AdultForm, LookDef[]> = {
   // Canon is grey with dark ears and a white chest patch.
+  //
+  // COAT, NOT TINT. A dog is the one form where the letters aren't accessories:
+  // `D` is ears and tail, `W` is the chest patch. They are parts of the animal,
+  // so a colour that stops at the body leaves a golden dog wearing the grey
+  // dog's ears — which is not a second look, it is the first one done badly.
+  // These rows move the coat as a unit and read as breeds, which is the ceiling
+  // the one-axis rule was protecting: differences you can say out loud.
   dog: [
     CANON,
-    { id: "tan", fill: "#a8896b", shade: "#836a52" },
-    { id: "cream", fill: "#d8c9ae", shade: "#b3a487" },
-    { id: "rust", fill: "#a5705a", shade: "#7f5544" },
-    { id: "brown-ears", extra: { D: "#6b4a3a" } },
-    { id: "black-ears", extra: { D: "#2e2e36" } },
-    // No chest patch: the patch letter simply painted the body colour. Removing
-    // art by colouring it in costs no pixels and cannot misalign anything.
-    { id: "no-patch", extra: { W: "#7a7a8a" } },
+    // Ears a shade deeper than the coat so they still read as ears, and NO
+    // chest patch: `W` is painted the coat colour, which removes art without
+    // moving a pixel — the only kind of removal that cannot misalign anything.
+    // It is `fill` exactly, not a mid-tone: the patch overlaps the body's shade
+    // row, and anything short of the coat colour leaves a faint block sitting on
+    // the chest, which is the patch again with the volume turned down.
+    { id: "golden", fill: "#e5be74", shade: "#bd9550", extra: { D: "#c79c55", W: "#e5be74" } },
+    // Kept off pure white: the outline is doing all the silhouette work here,
+    // and #fff against the paper backdrop loses the shade rows entirely.
+    { id: "snow", fill: "#ecebf1", shade: "#c3c0cf", extra: { D: "#dcd8e6", W: "#ecebf1" } },
+    // Setter red. Solid, so the chest goes to coat like the two above; the ears
+    // carry the only variation, a half-step darker.
+    { id: "red-setter", fill: "#b25a33", shade: "#8c4326", extra: { D: "#8f4526", W: "#b25a33" } },
+    // The collie is the one dog that KEEPS the canon chest patch — a white bib
+    // on a light brown coat is the whole breed, so `W` is left alone and the
+    // ears go dark instead. It is also why the patch was worth removing rather
+    // than deleting: the same two letters make a collie and a golden.
+    { id: "collie", fill: "#c39a68", shade: "#9d7a50", extra: { D: "#7f5a3c" } },
+    // Plain chocolate: one colour, nothing else going on. Stays lighter than the
+    // outline (#402e3a) — a dog darker than its own outline goes flat.
+    { id: "chocolate", fill: "#7a5137", shade: "#5e3d29", extra: { D: "#674430", W: "#7a5137" } },
   ],
 
   // A blob is a colour. There is no accessory to swap and inventing one would
