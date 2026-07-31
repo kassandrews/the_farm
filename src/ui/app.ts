@@ -299,24 +299,30 @@ export class App {
     let spot: HomesteadSpot = "riverside";
 
     const nameInput = el("input", {
-      class: "import-box",
+      class: "text-field",
       placeholder: "Your name",
-      // A single-line text field reusing the styled box.
       value: "",
     }) as HTMLInputElement;
-    nameInput.style.minHeight = "auto";
-    nameInput.style.fontFamily = "inherit";
-    nameInput.style.fontSize = "16px";
     nameInput.addEventListener("input", () => (name = nameInput.value));
 
-    const formRow = el("div", { class: "choices" });
+    // Faces, not a list of words: you are choosing which sprite you are, and
+    // until you have seen one "Gremlin" is a noun. The tile shows the same
+    // portrait the dialogue box will show, so the choice and its consequence
+    // are literally the same picture.
+    const formRow = el("div", { class: "form-tiles" });
     const formButtons = STANDARD_FORMS.map((f) => {
-      const b = choiceBtn(FORMS[f].name, () => {
+      const face = portrait(f);
+      face.classList.add("tile");
+      const b = el("button", { class: "form-tile" }, [
+        face,
+        el("span", {}, [FORMS[f].name]),
+      ]);
+      b.addEventListener("click", () => {
         form = f;
-        for (const other of formButtons) other.classList.remove("primary");
-        b.classList.add("primary");
+        for (const other of formButtons) other.classList.remove("selected");
+        b.classList.add("selected");
       });
-      if (f === form) b.classList.add("primary");
+      if (f === form) b.classList.add("selected");
       return b;
     });
     formRow.append(...formButtons);

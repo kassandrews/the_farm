@@ -769,12 +769,115 @@ select {
   text-align: left;
 }
 
+/* The one single-line text field in the game: your name, in Settle in. It used
+   to borrow `.import-box`, whose only rule is `textarea.import-box` — so it
+   matched nothing and the field was a bare browser input sitting on the panel's
+   paper, the one control on that screen that didn't look made.
+
+   Same paper, edge and radius as `.btn`, because it IS the same material: the
+   difference between a button and a field is which way the light falls, so this
+   takes an inset shadow where the button takes a dropped one. */
+input.text-field {
+  width: 100%;
+  border: 2px solid var(--panel-edge);
+  border-radius: 10px;
+  background: #fff6e2;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  box-shadow: inset 0 2px 0 rgba(43, 37, 64, 0.1);
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+input.text-field::placeholder {
+  color: var(--ink);
+  opacity: 0.38;
+  font-weight: 400;
+}
+
+/* The focus ring is the accent edge itself rather than an added outline — an
+   outline would draw a second rectangle a pixel outside the first. */
+input.text-field:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+input.text-field:disabled {
+  opacity: 0.45;
+}
+
+/* The form picker: six faces, pick one. Buttons reading "Dog / Blob / Gremlin"
+   asked you to choose a sprite you had never seen, on a screen whose whole job
+   is meeting them — so the tiles show the actual world sprite (render/
+   portrait.ts, the same face the dialogue box will use).
+
+   auto-fit rather than a fixed three columns: on a narrow phone six tiles
+   become two across without a media query. */
+.form-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.form-tile {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px 8px;
+  border: 2px solid var(--panel-edge);
+  border-radius: 12px;
+  background: #fff6e2;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(43, 37, 64, 0.22);
+}
+
+.form-tile:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(43, 37, 64, 0.22);
+}
+
+/* Selected is an accent EDGE, not an accent fill: `.btn.primary` floods the
+   background, and behind a pixel sprite that recolours the picture you are
+   choosing — the pale forms lose their outline against it exactly the way they
+   did on the old portrait plate. */
+.form-tile.selected {
+  border-color: var(--accent);
+  background: #fffaf0;
+  box-shadow: 0 3px 0 rgba(43, 37, 64, 0.22), inset 0 0 0 2px var(--accent);
+}
+
+/* Half of `.portrait`'s 128px. Still an exact multiple of the 16px sprite (four
+   screen pixels per source pixel), which is the whole hard rule — 100px or
+   "60%" would hand some rows four and others three. */
+.portrait.tile {
+  width: 64px;
+  height: 64px;
+  filter: drop-shadow(0 3px 0 rgba(43, 37, 64, 0.2));
+}
+
 textarea.import-box {
   width: 100%;
   min-height: 84px;
   border: 2px solid var(--panel-edge);
   border-radius: 10px;
   padding: 10px;
+  /* Same paper and inset as `.text-field` — the two boxes sit one above the
+     other on the Settle in card, and a default-white textarea next to a warm
+     field read as an unstyled leftover. Monospace stays: this one holds a pasted
+     machine string, not a name. */
+  background: #fff6e2;
+  box-shadow: inset 0 2px 0 rgba(43, 37, 64, 0.1);
+  color: var(--ink);
   font-family: ui-monospace, monospace;
   font-size: 12px;
   resize: vertical;
