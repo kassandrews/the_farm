@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { newWorld, tick } from "./game";
 import { migrateSave } from "./save";
-import { meetCosmos, cosmosMet, cosmos, showerTonight } from "./cosmos";
+import { meetCosmos, cosmosMet, cosmos, showerTonight, updateCosmos } from "./cosmos";
+import { cosmosHome } from "./world";
+import { COSMOS_HOME } from "../content/dialogue";
 import { SHOWERS } from "../content/showers";
 import { present } from "./presence";
 import { speak } from "./dialogue";
@@ -196,5 +198,82 @@ describe("she is a visitor, not a resident", () => {
       expect(l).not.toContain("shower");
       expect(l).not.toContain("meteor");
     }
+  });
+
+  // --- At home in the sky (Phase 7c) ---------------------------------------
+
+  it("is at home in the sky on every day that is not a shower night", () => {
+    // The rule the whole phase turns on: ONE Sidra, in ONE place, decided by the
+    // calendar. Her home being findable is what stops the sky being a room with
+    // nobody in it; her being ELSEWHERE on the five nights is what stops her
+    // becoming a visitor with an address.
+    const w = metWorld();
+    const home = cosmosHome(w.seed, w.homestead.spot);
+
+    updateCosmos(w, NIGHT_AFTER); // an ordinary August evening
+    expect(cosmos(w)!.layer).toBe("sky");
+    expect({ x: cosmos(w)!.x, y: cosmos(w)!.y }).toEqual(home);
+
+    updateCosmos(w, PEAK); // the Perseids
+    expect(cosmos(w)!.layer).toBe("surface");
+    expect(Math.hypot(cosmos(w)!.x - w.homestead.originX, cosmos(w)!.y - w.homestead.originY)).toBeLessThan(4);
+
+    // And back, at dawn. Her house is not left empty for the rest of the year
+    // because she came down once.
+    updateCosmos(w, NIGHT_AFTER);
+    expect(cosmos(w)!.layer).toBe("sky");
+  });
+
+  it("is home at noon, which the old rule could not say", () => {
+    // Presence used to mean "night, and a shower", so on any afternoon she was
+    // nowhere at all. She is now somewhere at every instant — she just is not
+    // somewhere you can walk to without climbing.
+    const w = metWorld();
+    updateCosmos(w, PEAK_NOON);
+    const c = cosmos(w)!;
+    expect(c.layer).toBe("sky");
+    expect(present(c, PEAK_NOON)).toBe(true);
+  });
+
+  it("lives a short walk from the first staircase, not a search away", () => {
+    // The sky has no bearings: every direction looks the same forever. A home
+    // sited independently of the way up would be a person you find by luck.
+    const w = freshWorld();
+    const home = cosmosHome(w.seed, w.homestead.spot);
+    // Far enough to be off the screen you arrive on, near enough that walking a
+    // small circle from the steps finds her.
+    const r = Math.hypot(home.x, home.y);
+    expect(r).toBeGreaterThan(200); // out where the staircase is, not over the town
+  });
+
+  it("speaks from her own bank at home, and from the shower's when she is down here", () => {
+    const w = metWorld();
+    const c = cosmos(w)!;
+    updateCosmos(w, NIGHT_AFTER);
+    for (let i = 0; i < 40; i++) {
+      // Her home lines, on a night with no shower — which used to be the one
+      // conversation in the game that could only answer "...".
+      expect(COSMOS_HOME).toContain(speak(w, c, makeRng(i), NIGHT_AFTER).text);
+    }
+    updateCosmos(w, PEAK);
+    const perseids = SHOWERS.find((s) => s.id === "perseids")!;
+    for (let i = 0; i < 40; i++) {
+      expect(perseids.lines).toContain(speak(w, c, makeRng(i), PEAK).text);
+    }
+  });
+
+  it("can be met at home, by somebody who has never seen a shower", () => {
+    // The second door, and it is the right way round: you walked two hundred
+    // tiles, found the staircase that goes somewhere and knocked. The five
+    // nights are then a person you know, visiting.
+    const w = freshWorld();
+    const home = cosmosHome(w.seed, w.homestead.spot);
+    w.player.layer = "sky";
+    w.player.x = home.x;
+    w.player.y = home.y + 1;
+    expect(cosmosMet(w)).toBe(false);
+    meetCosmos(w, PEAK_NOON); // an ordinary afternoon, no shower anywhere near
+    expect(cosmosMet(w)).toBe(true);
+    expect(cosmos(w)!.layer).toBe("sky");
   });
 });

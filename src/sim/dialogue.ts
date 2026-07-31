@@ -27,6 +27,7 @@ import {
   MOLE_LIT,
   GHOST_QUIET,
   GHOST_CUT,
+  COSMOS_HOME,
   COMPANY_IDLE,
   COMPANY_YES,
   COMPANY_BYE,
@@ -37,7 +38,7 @@ import { CAST } from "../content/cast";
 import { rivalReading } from "./museum";
 import { moleGroundShallow, moleLamplit } from "./mole";
 import { groveCut } from "./ghost";
-import { showerTonight } from "./cosmos";
+import { showerTonight } from "../content/showers";
 import { isCompanion } from "./company";
 
 export interface Speech {
@@ -89,6 +90,13 @@ const MEMORY_PRIORITY: MemoryKind[] = [
   // one payout of the game's quietest secret could be crowded out by an ordinary
   // Tuesday's dig.
   "hum",
+  // ABOVE the tunnel, and it is the last thing that ever gets to be. The
+  // staircase is rarer than a shaft by an order of magnitude — you dig your own
+  // hole whenever you like, and there is exactly one flight of steps in a
+  // hundred that goes anywhere — so the day somebody went up with you is the
+  // rarest afternoon in their log. It ranks under the cube because the cube is
+  // once, ever, and this is not.
+  "climbed",
   "delved",
   "company",
   // Above everything else, because it is rare and recent — twelve times a year,
@@ -137,10 +145,17 @@ function trySecretLine(world: WorldState, v: Villager, now: number): string[] | 
   }
   if (v.id === "ghost") return groveCut(world) ? GHOST_CUT : GHOST_QUIET;
   if (v.id === "cosmos") {
-    // Her variable is WHICH NIGHT it is, and there are five of them. If you are
-    // somehow talking to her on a night with no shower, she has nothing to say
-    // about it, which is the honest answer — but `present` means the UI cannot
-    // reach her then, so this is a floor and not a sixth bank.
+    // Her variable is WHICH NIGHT it is, and there are five of them — plus, since
+    // Phase 7c, WHERE SHE IS. At home in the sky she speaks from her own bank,
+    // because a woman standing in her own front room has different things to say
+    // than the same woman passing through your garden at two in the morning.
+    //
+    // The old floor line ("...") is gone and its comment was wrong by the end:
+    // it said `present` meant the UI could never reach her on a showerless
+    // night, and now it can, three hundred and sixty days a year. Which is
+    // exactly the kind of "unreachable" branch that turns out to be the main
+    // path once a phase moves under it.
+    if ((v.layer ?? "surface") === "sky") return COSMOS_HOME;
     const shower = showerTonight(now);
     return shower ? shower.lines : ["..."];
   }

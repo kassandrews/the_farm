@@ -33,6 +33,13 @@ export type MemoryKind =
   // `present` option on `witness` in sim/game.ts.
   | "company"
   | "delved"
+  // And a day spent with you in the SKY (Phase 7c). A third kind rather than a
+  // value on `delved`, on that pair's own argument: they are three different
+  // afternoons and a form's bank should be able to have a line for one and not
+  // the others. It is written to the one person who came, like the other two —
+  // the town does not hear about the staircase, because a town that talks about
+  // a secret has been told about it by the game.
+  | "climbed"
   // A festival, and whether you were at it (sim/festival.ts). Deliberately NOT
   // in `oneShot` below: the value is the year and the row, so each festival is
   // its own memory, and de-duplicating by kind would mean the first one you

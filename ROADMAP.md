@@ -137,12 +137,15 @@ DESIGN's own open questions (fishing, async postcards between towns) are the onl
 unbuilt *systems*, and both are still deliberately open. What is left is not a
 list of gaps but a pass over the whole game for feel — the fine-tooth comb.
 
-**Proposed next: Phase 7 — the world out there**, written up below: biomes that
-get stranger with radius (7a), found places as a standing category (7b), and the
-sky as a layer rather than a height (7c). Not started, and it is an expansion
-outward, so it waits on the feel pass being where you want it.
+**Phase 7 — the world out there — is DONE**, all three steps: biomes that get
+stranger with radius (7a), found places as a standing category (7b), and the sky
+as a layer rather than a height (7c). What is next is the feel pass, which this
+phase has now interrupted three times.
 
-**Save schema is at v21.** Every change ships a tested migration — see
+**Save schema is at v23**, and Phase 7c deliberately did not move it: the sky
+stores nothing, so there was nothing to migrate, and bumping the number would
+make a stale cached build reject a live save (see §7c). Every change that DOES
+alter the shape ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
 ---
@@ -2863,7 +2866,98 @@ holds a **person** — a resident who left town, a hermit like the Mole — or
 whether people stay in town and the wild holds only moods. That's the hinge
 between "cozy oddities" and "the world has characters hiding in it".
 
-### 7c. The sky, as a layer
+### 7c. The sky, as a layer — **done**
+
+Shipped as planned. `DESIGN.md §Structures` was extended and **§The sky written
+first**, then the layer, then the staircase, then Sidra. Three tiles (`CLOUD`,
+`CLOUD_THIN`, `SKY_STAIR`), a fifth found-place row, and a third `Layer`.
+
+**It cost NO schema change, and that is a decision rather than an omission.**
+Nothing up there can be edited, so there is no `world.sky` record to backfill;
+the layer is generated from the seed on every read, the way the underground's
+rock would be if you had never cut any. The only save-visible change is that
+`player.layer` may hold a third value, and a value is not a shape.
+`SCHEMA_VERSION` is deliberately **still 23** — bumping it would make a
+stale cached PWA build refuse a real save and throw a town away, where leaving it
+alone makes that build read `"sky"`, fall through every switch to the surface
+arm, and put the player on the ground at the coordinate they climbed from. Wrong,
+briefly, harmless. The argument is written out at the top of `sim/save.ts`.
+
+**Settled, and why:**
+
+- **Sidra lives up there, and is in exactly ONE place at a time.** The roadmap's
+  lean, with the cost paid rather than ignored: a visitor who is findable
+  whenever you like has become a resident with an address. So on a shower night
+  she is on your homestead exactly as before and her home is empty, and on the
+  other three hundred and sixty days she is at home. One predicate
+  (`cosmosVisiting`, sim/housing.ts) answers both where she stands and which
+  layer she is on, so the two facts cannot drift apart.
+- **You meet her at home as readily as at a shower** — and the sky can be where
+  you meet her FIRST, having never seen a meteor. That is the right way round:
+  you walked two hundred tiles, found the staircase that goes somewhere and
+  knocked. The five nights afterwards are a person you know, visiting.
+- **The way up is the 7b decoy, exactly.** Same three steps, same stone, drawn by
+  the same line of code. The only difference is that ACT climbs it, and you find
+  that out by standing at the foot of one and trying. `foundTile` falls through
+  `case "stair": case "skystair":` on purpose, so anyone tempted to mark it has to
+  type the difference in.
+- **No tool in the sky at all**, and `toolAllowedOn` was inverted from a special
+  case to an allowlist (`TOOLS_ON`) to say so. The old form was
+  `layer === "under" ? UNDER_TOOLS.includes(tool) : true` — one special case and
+  an *otherwise, yes*, which hands any new layer the entire build palette by
+  default. `world.build` has no layer in its keys, so a wall painted in the sky
+  would have appeared on the ground under it.
+- **`takeAlong` takes an explicit `from` layer.** It used to infer the
+  companion's previous layer by inversion, which is exact with two layers and a
+  guess with three. Whoever comes up with you gets a `climbed` memory — its own
+  kind beside `delved`, with lines for all seven forms, and ranked directly under
+  the cube in `MEMORY_PRIORITY`.
+
+**What the screen forced, and none of it was catchable by a test:**
+
+- **The parting had to be nearly twice as wide.** The sky is unbounded, plain,
+  and identical in every direction, and its exits are three tiles across and
+  hundreds apart — "lost in a white room" is a soft lock in a game with no map.
+  The fix is the underground's own (a shaft pools daylight; you find your way out
+  by finding one), so the cloud thins in a disc around every way down. Drafted at
+  radius 8, which *sounds* generous: the viewport is about 22×11 tiles, so a
+  radius-8 disc is smaller than one screen, and the photograph taken seven tiles
+  from the steps was an unbroken white field. At 14 the parting is wider than the
+  view, so walking into its edge says a way down is over there before you can see
+  it.
+- **And the parting's colour had to drop a long way.** Drafted at `#dfe6f2`, a
+  hair off the cloud, it photographed as nothing at all — the renderer's own
+  drift texture varied the plane by MORE than its one feature did. The texture
+  now sits at 0.35/0.06 alpha and the thin cloud at `#c6d2e8`. The rule that came
+  out of it: **a layer's texture must stay quieter than its landmarks.**
+- **ACT in the sky dug the field two hundred tiles below.** `applyTool`'s shovel
+  knows about the tunnel and assumes everything else is the ground, so with the
+  reticle correctly saying "none", the button reached straight past the layer and
+  put a hole in a meadow nobody was standing in. Caught by the new sky test, not
+  by eye — but it is the same family as the screen bugs, an assumption from when
+  there were two layers surviving into a world with three.
+- **She was on the ground at NOON on the twelfth of August.** `showerTonight`
+  answers about a DATE and `present` wants night as well; using only the first put
+  her on the homestead all day, invisible, with her house empty — so the one day a
+  year she is technically visiting was the one day climbing the stairs found
+  nobody in.
+
+Verified with `scripts/shot-sky.mts`: the approach (does it look like any other
+flight of steps?), the climb through a real ACT, the head of the steps, the
+parting from its far edge, the open plane, Sidra at home with her own bank, and
+the whole layer after dark — because the sky is outdoors and the clock has to
+reach it.
+
+**Loose ends, both deliberate:**
+
+- **`sim/path.ts` still never passes a layer to `isWalkable`.** A *walking*
+  non-surface villager would route against surface terrain. Nobody does: the Mole
+  stands still and so does Sidra. It is a real latent bug and the day somebody up
+  there gets a routine is the day it has to be fixed.
+- **`world.regrow` keys carry no layer either** — safe only because nothing
+  gatherable exists off the surface, and nothing in the sky ever will.
+
+### 7c. The plan as written
 
 The one that has to earn its place against the no-height rule. It earns it by
 **not being a height.** The underground taught the pattern: a *layer*, not a

@@ -92,6 +92,7 @@ const ACTION_CUES: Record<ActionKind, Cue> = {
   sink: "dig", // still the shovel — it's the second dig on the same tile
   carve: "dig",
   shaft: "place", // a foot on a rung: the closest thing here to a solid landing
+  stair: "place", // and a foot on a step, which is the same sound and the same idea
   none: "menu",
 };
 
@@ -1623,7 +1624,12 @@ export class App {
         // Beds are a surface fact, so an underground stroke has none to track —
         // and a null here is what makes endPaint skip the rehome pass entirely
         // rather than diffing an untouched record for every lamp.
-        this.strokeBeds = this.underground() ? null : bedKeys(this.world);
+        // Asked as "not the surface" rather than "underground": beds are a
+        // surface fact, and that is a statement about the surface, not about the
+        // rock. The sky can never reach this line — nothing is buildable up
+        // there — and the day something else can, the honest answer is already
+        // written here.
+        this.strokeBeds = this.layer() === "surface" ? bedKeys(this.world) : null;
         this.canvas.setPointerCapture(e.pointerId);
         this.buildAtPoint(e.clientX, e.clientY);
         return;
@@ -1757,14 +1763,6 @@ export class App {
     });
   }
 
-  /** True while the player is on the lower layer. Several of the town's
-   *  affordances measure DISTANCE and nothing else — talking, build placement,
-   *  bed-picking — and distance stopped being enough the moment a coordinate
-   *  could mean two places. Every one of them asks this first. */
-  private underground(): boolean {
-    return this.world?.player.layer === "under";
-  }
-
   /** The layer the player is standing on, defaulting to the surface before a
    *  world exists. Every build path now takes one, and a `?? "surface"` at each
    *  of them is four chances to write it as "under" by accident. */
@@ -1837,7 +1835,15 @@ export class App {
     const allowed = BUILD_TOOLS.map((b) => b.id).filter((id) => toolAllowedOn(id, this.layer()));
     if (allowed.length === 0) {
       audio.play("deny");
-      this.flash("Nothing to build on down here but rock.");
+      // The sky's palette is empty rather than short, so this is the one layer
+      // where the mode cannot be opened at all — and it says why in the sky's own
+      // terms. "Down here but rock" in the clouds would be the message the
+      // underground wrote, read out somewhere it is nonsense.
+      this.flash(
+        this.layer() === "sky"
+          ? "Nothing to build on up here. Nothing to build on at all."
+          : "Nothing to build on down here but rock.",
+      );
       return;
     }
     this.selectBuildTool(allowed.includes(this.lastBuildTool) ? this.lastBuildTool : allowed[0]);
@@ -1856,7 +1862,11 @@ export class App {
     // somewhere you build a room.
     if (!toolAllowedOn(t, this.layer())) {
       audio.play("deny");
-      this.flash("Not down here. There's nothing to put a wall on but rock.");
+      this.flash(
+        this.layer() === "sky"
+          ? "Not up here. There's nothing to put a wall on."
+          : "Not down here. There's nothing to put a wall on but rock.",
+      );
       return;
     }
     this.buildTool = t;
@@ -1988,7 +1998,10 @@ export class App {
     // arriving underground still holding it would leave the palette lit for a
     // tool that refuses every tap. A LAMP survives the trip, which is the whole
     // point of it — carry it down and keep building.
-    if (res.kind === "shaft") {
+    // The staircase changes layer for the same reasons and needs the same three
+    // lines. Up there NOTHING survives the trip — the sky's palette is empty —
+    // so this is also what puts the wall down at the top of the steps.
+    if (res.kind === "shaft" || res.kind === "stair") {
       if (this.buildTool && !toolAllowedOn(this.buildTool, this.layer())) this.buildTool = null;
       this.syncToolUi(); // the palette itself changes shape, held tool or not
       this.endAssigning();

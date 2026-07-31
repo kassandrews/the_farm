@@ -20,6 +20,25 @@ import { CAST, MOLE, GHOST, COSMOS } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 
 export const SCHEMA_VERSION = 23;
+
+// STILL 23 AFTER THE SKY (Phase 7c), and the absence of a v24 is a decision.
+//
+// The sky adds no stored field. Nothing up there can be edited — no digging, no
+// building, no planting (DESIGN §The sky) — so there is no `sky` edit map to
+// backfill; the layer is generated from the seed on every read, the way the
+// underground's rock would be if you had never cut any. The only save-visible
+// change is that `player.layer` may now hold a third value, and a value is not
+// a shape: nothing about an existing save becomes wrong.
+//
+// BUMPING IT ANYWAY WOULD HAVE COST A TOWN. This game ships as a PWA, so a
+// player can hold a cached older build for a while after a deploy. `migrateSave`
+// refuses a save from a FUTURE version outright — which is right when the shape
+// has moved on, and would be a disaster here: the stale build would throw away a
+// real town rather than admit it doesn't know a word. What it does instead, with
+// the version left alone, is read `layer: "sky"` and fall through every switch
+// to the surface arm, putting the player on the ground at the coordinate they
+// climbed from. Wrong, briefly, and harmless — which is the correct way to lose
+// this particular argument.
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw

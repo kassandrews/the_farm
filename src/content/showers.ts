@@ -96,3 +96,34 @@ export const SHOWERS: ShowerDef[] = [
     ],
   },
 ];
+
+/** Before this hour, you are still in yesterday's night.
+ *
+ *  A shower's peak is a NIGHT, not a date, and a night crosses midnight. Two in
+ *  the morning on the thirteenth of August is the twelfth's shower to everyone
+ *  standing outside in it, and a calendar lookup that disagreed would make her
+ *  vanish at midnight in front of you. Set to the hour `isNight` stops being
+ *  true (sim/time.ts, dawn ends at 7), so "the night is over" means one thing. */
+const NIGHT_ROLLOVER_HOUR = 7;
+
+/** Which shower is on tonight, or null. A total function of the instant —
+ *  nothing stored, nothing scheduled, the festivals' own trick.
+ *
+ *  IT LIVES IN CONTENT, beside the table it reads, and it moved here from
+ *  sim/cosmos.ts when the sky arrived (Phase 7c). The reason is a dependency
+ *  rather than a tidy-up: sim/housing.ts now has to ask whether a shower is on —
+ *  it is what decides whether Sidra is on your homestead or at home in the sky —
+ *  and sim/cosmos.ts asks housing.ts where she would stand. One of the two had
+ *  to stop importing the other, and "which night is it" is a question about this
+ *  table, which knows nothing about anybody. */
+export function showerTonight(now: number): ShowerDef | null {
+  const d = new Date(now);
+  // Roll back into the evening this night began in. Done by subtracting from the
+  // timestamp rather than by decrementing the date, so month ends, year ends and
+  // leap days are the platform's problem and not ours — the third of January at
+  // 01:00 is the second's night, and the Quadrantids are not on.
+  if (d.getHours() < NIGHT_ROLLOVER_HOUR) d.setTime(d.getTime() - NIGHT_ROLLOVER_HOUR * 3600_000);
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  return SHOWERS.find((s) => s.month === month && s.day === day) ?? null;
+}

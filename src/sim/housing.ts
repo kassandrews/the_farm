@@ -25,7 +25,11 @@ import type { ScheduleStop } from "../content/cast";
 import { charDef, scheduledStop } from "../content/cast";
 import { authoredBed } from "../content/town";
 import { cellsFor } from "./furniture";
-import { isWalkable, tileKey, parseTileKey, warrenChamber, groveCentre } from "./world";
+import { isWalkable, tileKey, parseTileKey, warrenChamber, groveCentre, cosmosHome } from "./world";
+// From CONTENT, not from sim/cosmos.ts: that module asks this one where she would
+// stand, so importing it back would close a cycle. See content/showers.ts.
+import { showerTonight } from "../content/showers";
+import { isNight, skyPhaseAt } from "./time";
 
 /** Which way we look for somewhere to stand beside a bed. Orthogonals only, in
  *  the same order as sim/path.ts steps — north, east, south, west — so the
@@ -121,20 +125,56 @@ export function stopTarget(world: WorldState, v: Villager, now: number): Schedul
   // Beside the origin rather than on it, and searched rather than offset: your
   // tent is there, and by the time she turns up you may have built over the rest
   // of it. She stands wherever there is room, which is what a visitor does.
-  if (stop.at === "homestead") {
-    const { originX, originY } = world.homestead;
-    for (const [dx, dy] of LANDING) {
-      const x = originX + dx;
-      const y = originY + dy;
-      if (isWalkable(world, x, y)) return { ...stop, x, y };
+  // "skyhome" is the one anchor whose answer depends on the CALENDAR rather than
+  // on the world, and it is the whole of "one Sidra, in one place" (DESIGN §The
+  // sky). On a shower night she is on your homestead exactly as she always was;
+  // on every other day of the year she is at home, up there. Resolved in one
+  // place so the two facts cannot drift into her being in both.
+  if (stop.at === "skyhome") {
+    if (!cosmosVisiting(now)) {
+      const home = cosmosHome(world.seed, world.homestead.spot);
+      return { ...stop, x: home.x, y: home.y };
     }
-    return { ...stop, x: originX, y: originY };
+    return homesteadStop(world, stop);
   }
+  if (stop.at === "homestead") return homesteadStop(world, stop);
   if (stop.at !== "home") return stop;
   const home = homeStand(world, v);
   if (home) return { ...stop, x: home.x, y: home.y };
   const tent = tentStand(world, v);
   return tent ? { ...stop, x: tent.x, y: tent.y } : stop; // else the fallback it carries
+}
+
+/** Is Sidra down here right now?
+ *
+ *  NIGHT AND A SHOWER, both, which is `present`'s own condition rather than half
+ *  of it — and a test is what settled that. Asking only "is there a shower on
+ *  this date" put her on your homestead at NOON on the twelfth of August, where
+ *  presence made her invisible and her home in the sky stood empty for the whole
+ *  day. Climbing the stairs on the one day of the year she is technically
+ *  visiting, to find nobody in, is the exact opposite of the beat the calendar
+ *  rule was written for.
+ *
+ *  IT LIVES HERE, in the module that resolves the anchor, because the two facts
+ *  it decides — where she stands and which layer she is on — must never be able
+ *  to disagree, and sim/cosmos.ts already imports this file. Putting it there
+ *  instead would have closed a cycle between them. */
+export function cosmosVisiting(now: number): boolean {
+  return isNight(skyPhaseAt(now)) && showerTonight(now) !== null;
+}
+
+/** A visitor's spot on the player's plot. Beside the origin rather than on it,
+ *  and searched rather than offset: your tent is there, and by the time she turns
+ *  up you may have built over the rest of it. She stands wherever there is room,
+ *  which is what a visitor does. */
+function homesteadStop(world: WorldState, stop: ScheduleStop): ScheduleStop {
+  const { originX, originY } = world.homestead;
+  for (const [dx, dy] of LANDING) {
+    const x = originX + dx;
+    const y = originY + dy;
+    if (isWalkable(world, x, y)) return { ...stop, x, y };
+  }
+  return { ...stop, x: originX, y: originY };
 }
 
 /** Where someone waiting on a commission sleeps: beside their own tent.

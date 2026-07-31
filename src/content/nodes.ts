@@ -131,8 +131,14 @@ export function nodeDef(id: NodeId): NodeDef {
 
 /** Which node, if any, this tile IS — on the layer it would have to be on.
  *  Table-driven so adding a node row is the whole change; the alternative was a
- *  chain of `if (t === TREE)` that a fourth row would have to remember to join. */
-export function nodeForTile(tile: TileId, layer: "surface" | "under"): NodeId | null {
+ *  chain of `if (t === TREE)` that a fourth row would have to remember to join.
+ *
+ *  The parameter takes "sky" and no ROW ever will (Phase 7c). Nothing grows up
+ *  there and nothing may be gathered there — the reward for the hard-to-reach
+ *  place is a place, not loot (DESIGN §The sky) — so the widening is here, where
+ *  it costs a word, rather than on `NodeDef.layer`, where it would be an
+ *  invitation. Every sky tile falls through this loop and answers null. */
+export function nodeForTile(tile: TileId, layer: "surface" | "under" | "sky"): NodeId | null {
   for (const def of Object.values(NODES)) {
     if (def.layer === layer && def.tile === tile) return def.id;
   }

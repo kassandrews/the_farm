@@ -48,6 +48,11 @@ const SALT: Record<FoundKind, number> = {
   poledpond: 0x4c7f,
   mailbox: 0x2be6,
   stair: 0x71d4,
+  // Its own salt like everything else, and here it does a second job: the real
+  // staircase and the decoy must never share a bearing, or the way up would sit
+  // on the same walk out of town as the thing that looks exactly like it and the
+  // pair would read as a matched set.
+  skystair: 0x3ea9,
 };
 
 /** The ring the nth instance of a kind stands on. */
@@ -166,9 +171,106 @@ export function foundTile(site: FoundSite, x: number, y: number): TileId | null 
     /** The steps, and grass beside them. Two tiles rather than one so it reads as
      *  a flight going UP rather than as a block: the near tile is the bottom step,
      *  the centre is the top, and the top step ends in the air. */
+    /** THE SAME LINE, DELIBERATELY. The way up is three steps of the same stone
+     *  in the same arrangement as the flight that goes nowhere, because on the
+     *  ground they are the same object — the difference is which way the sky
+     *  answers when you stand at the foot of it and try (sim/game.ts §canClimb).
+     *
+     *  Written as its own case rather than falling through, so that anyone
+     *  tempted to give this one a marker has to type the difference in on
+     *  purpose and read this comment while doing it. */
     case "stair":
+    case "skystair":
       return y === site.y && Math.abs(x - site.x) <= 1 ? STAIR : GRASS;
   }
+}
+
+/** How far the cloud parts around a way down, in tiles from the stair's centre.
+ *
+ *  IT IS THIS BIG BECAUSE OF A HAZARD THE SKY HAS AND NOTHING ELSE DOES. The
+ *  plane is unbounded, plain, and identical in every direction, and the ways
+ *  down are three tiles wide and hundreds of tiles apart. A player who walked
+ *  out into that to see what was there and then turned round could genuinely
+ *  fail to find the way home, and "you are lost in a white room" is not a mood,
+ *  it is a soft lock in a game with no map.
+ *
+ *  So the exit is a PLACE rather than a speck: the cloud thins in a broad disc
+ *  around it and light comes up through the gap. It is the same fix the
+ *  underground already ships — a shaft pools daylight around itself, and finding
+ *  your way back to one is how you get out of the dark. Not a marker: it is not
+ *  on any UI, it says nothing, and it is only visible when you are near enough to
+ *  walk to it.
+ *
+ *  FOURTEEN, AND THE FIRST NUMBER WAS EIGHT, WHICH THE SCREEN REJECTED. Eight
+ *  tiles sounds generous and is not: the viewport is about twenty-two tiles by
+ *  eleven, so a radius-eight disc is smaller than one screen, and a photograph
+ *  taken seven tiles from the steps showed an unbroken white field with no hint
+ *  of anything in it. At fourteen the parting is wider than the view, so walking
+ *  into its edge tells you a way down is somewhere in THAT direction before you
+ *  can see the steps themselves — which is what a landmark is. */
+export const SKY_PARTING = 14;
+
+/** The way down nearest this sky tile, if one is close enough to matter, and how
+ *  far away it is. Null out on the open plane, which is nearly everywhere.
+ *
+ *  Asked from two ends and it must give one answer, which is why it is a
+ *  function of the coordinate rather than a flag on anything: the surface asks
+ *  it to decide whether ACT can climb here, and the SKY generator asks it to
+ *  decide where the head of the steps is. There is no stored entrance for those
+ *  two to disagree about — unlike a shaft, which is a stored edit and therefore
+ *  had to pick one layer to live on (content/tiles.ts §SHAFT). */
+export function skyStairNear(
+  seed: number,
+  spot: HomesteadSpot,
+  x: number,
+  y: number,
+  onLand: (seed: number, spot: HomesteadSpot, ring: number, a0: number) => { x: number; y: number },
+  reach: number = SKY_PARTING,
+): { site: FoundSite; d: number } | null {
+  const def = FOUND.skystair;
+  const r = Math.hypot(x, y);
+  // The same ring arithmetic `foundSiteAt` uses, with the reach in place of the
+  // footprint: only the instances whose ring passes near this tile can be it.
+  const slack = reach + 2;
+  const lo = Math.ceil((r - slack - def.ring) / def.spacing);
+  const hi = Math.floor((r + slack - def.ring) / def.spacing);
+  for (let i = Math.max(0, lo); i <= hi; i++) {
+    const c = centreOf(seed, spot, onLand, "skystair", i);
+    const d = Math.hypot(x - c.x, y - c.y);
+    if (d <= reach) return { site: { kind: "skystair", index: i, x: c.x, y: c.y }, d };
+  }
+  return null;
+}
+
+/** Where one instance of the staircase stands, asked directly.
+ *
+ *  Exported for exactly one caller: Sidra's home in the sky is sited relative to
+ *  the FIRST one (sim/world.ts §cosmosHome), because a plane with no landmarks is
+ *  a plane you cannot arrange to meet somebody on. Everything else asks the two
+ *  functions above, which answer about a tile rather than about a place. */
+export function skyStairCentre(
+  seed: number,
+  spot: HomesteadSpot,
+  index: number,
+  onLand: (seed: number, spot: HomesteadSpot, ring: number, a0: number) => { x: number; y: number },
+): { x: number; y: number } {
+  return centreOf(seed, spot, onLand, "skystair", index);
+}
+
+/** Is this exact tile a step of the staircase that goes somewhere? */
+export function skyStairAt(
+  seed: number,
+  spot: HomesteadSpot,
+  x: number,
+  y: number,
+  onLand: (seed: number, spot: HomesteadSpot, ring: number, a0: number) => { x: number; y: number },
+): FoundSite | null {
+  const near = skyStairNear(seed, spot, x, y, onLand, FOUND.skystair.radius + 0.5);
+  if (near === null) return null;
+  // Inside the footprint but not ON a step is the grass beside it, and grass
+  // beside a staircase is not a staircase. Asked of `foundTile` rather than
+  // re-derived, so the two ends of the flight are literally the same expression.
+  return foundTile(near.site, x, y) === STAIR ? near.site : null;
 }
 
 /** Whole days since the epoch, from the LOCAL date — the same arithmetic

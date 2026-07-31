@@ -34,7 +34,7 @@
 // logic is normal. Nobody explains them. Nothing comments on them. You walk into a
 // perfectly circular grove, stand in it, and leave.
 
-export type FoundKind = "ringgrove" | "poledpond" | "mailbox" | "stair";
+export type FoundKind = "ringgrove" | "poledpond" | "mailbox" | "stair" | "skystair";
 
 export interface FoundDef {
   id: FoundKind;
@@ -121,6 +121,32 @@ export const FOUND: Record<FoundKind, FoundDef> = {
     note: "a staircase, leading nowhere",
     ring: 163,
     spacing: 251,
+    radius: 1,
+  },
+
+  /** And the one that does (Phase 7c). The same three stone steps, the same
+   *  stone, the same footprint, drawn by the same code — there is no mark on it,
+   *  no glow, no hum, and no line of dialogue anywhere in the game that hints
+   *  one flight of steps out there is different from another.
+   *
+   *  THE DECOY IS THE FEATURE. The row above shipped a phase early precisely so
+   *  that this one arrives as something you have already walked past and
+   *  dismissed. A door introduced as a door was never a secret; what makes this
+   *  one work is the dozen times you stood at the bottom of the wrong steps.
+   *
+   *  The only difference is that you can climb it, and you find that out by
+   *  trying — stand at the foot, face them, ACT. On every other flight that does
+   *  nothing at all, which is what the flights are FOR.
+   *
+   *  Further out and much rarer than the decoy, so the odds are heavily that you
+   *  meet several of those first: at these numbers the nearest real one is past
+   *  the first decoy and inside the second. Rare enough to be a find, not so rare
+   *  that the sky is unreachable in a game somebody actually plays. */
+  skystair: {
+    id: "skystair",
+    note: "a staircase, leading somewhere",
+    ring: 244,
+    spacing: 553,
     radius: 1,
   },
 };

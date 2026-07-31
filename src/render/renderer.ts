@@ -9,7 +9,7 @@
 // day/night tint over everything. See the Raised docblock for why the standing
 // things share a single sorted pass rather than getting one each.
 
-import type { WorldState, Villager, Player, BuildCell, FurnitureCell, Tool } from "../sim/types";
+import type { WorldState, Villager, Player, BuildCell, FurnitureCell, Tool, Layer } from "../sim/types";
 import { tileAt, playerTile, actionTarget } from "../sim/game";
 import type { ActionTarget } from "../sim/game";
 import { cropDef, ripeStage } from "../content/crops";
@@ -27,6 +27,8 @@ import {
   POLE,
   MAILBOX,
   STAIR,
+  CLOUD_THIN,
+  SKY_STAIR,
   JUNK_PILE,
   MUSHROOM,
 } from "../content/tiles";
@@ -67,6 +69,10 @@ const TARGET_COLOR: Record<ActionTarget["kind"], string> = {
   // IS SPECIAL about a thing whose whole character is that nobody remarks on it.
   letter: "rgba(190,205,255,0.9)",
   shaft: "rgba(200,230,255,0.95)", // the way down, or the daylight above you
+  // The shaft's own colour, on the mailbox's argument one line up: both are a
+  // way through to another layer, and a hue of its own would be the reticle
+  // announcing that THESE steps are the real ones before you have taken one.
+  stair: "rgba(200,230,255,0.95)",
   none: "rgba(255,255,255,0.3)",
 };
 
@@ -514,34 +520,46 @@ export class Renderer {
     // Which world we are drawing. Below, nearly every pass in this method is a
     // SURFACE fact — crops, the tent, the museum's cases, roofs, villagers —
     // and skipping them is not an optimisation but the point: the underground
-    // is the one continuous world with none of that in it.
-    const under = world.player.layer === "under";
+    // is the one continuous world with none of that in it, and the sky has even
+    // less.
+    //
+    // A LAYER RATHER THAN A BOOLEAN, and the difference is the reason every
+    // `!under` below had to be read one at a time. Two thirds of them meant
+    // "only on the ground" (roofs, crops, the tent) and the rest meant "anywhere
+    // there is weather" (the day/night wash) — one word for two rules, which is
+    // exactly the kind of thing a third layer turns into a bug.
+    const layer = world.player.layer;
+    const under = layer === "under";
+    const ground = layer === "surface";
 
     // The frame's colours: the hour and the month, resolved once. Null season
     // underground — a cave has no weather, for the same reason the tint overlay
-    // below skips it.
+    // below skips it. The sky KEEPS the season: it is outdoors, the hour reaches
+    // it, and a plane of cloud under an August evening should be an August
+    // evening.
     this.palette = scenePalette(under ? null : seasonAt(now), night);
 
     // Sky/base wash — a flat ground tone behind the tiles for any gaps. There
-    // is no sky underground, so the gap colour is the dark itself.
+    // is no sky underground, so the gap colour is the dark itself; in the sky
+    // there are no gaps at all, because the layer is floor everywhere.
     ctx.fillStyle = under ? "#0b0908" : this.palette.sky;
     ctx.fillRect(0, 0, this.sw, this.sh);
 
-    if (!under) this.syncRoofs(world);
+    if (ground) this.syncRoofs(world);
 
     // Flat ground first, then everything with height in one depth-sorted pass.
     this.raised.length = 0;
     this.blockedSteps.length = 0;
     this.litShafts.length = 0;
     this.litLamps.length = 0;
-    this.drawTiles(world, t, night, under);
-    if (this.buildView && !under) this.drawBuildGrid();
-    if (!under) {
+    this.drawTiles(world, t, night, layer);
+    if (this.buildView && ground) this.drawBuildGrid();
+    if (ground) {
       this.drawCrops(world, now);
       this.collectTent(world, night);
       this.collectPlinths(world);
     }
-    this.collectMovers(world, t, night, under, now);
+    this.collectMovers(world, t, night, layer, now);
     this.flushRaised();
 
     // The dark goes over the scene but UNDER the reticle. The reticle is the
@@ -550,7 +568,7 @@ export class Renderer {
     // you have to guess about.
     if (under) this.drawDark(world, now);
     this.drawTargetTile(world);
-    if (!under) {
+    if (ground) {
       this.drawBlockedSteps(t);
       this.drawHomeCandidates(t);
     }
@@ -558,6 +576,10 @@ export class Renderer {
     // Real-clock day/night wash over the whole scene. Not underground: a cave
     // looks the same at 3am as at noon, and the only dark down there that means
     // anything is the one your lamp is holding back.
+    // The sky is INCLUDED, deliberately: it is outdoors, so night falls on it
+    // like anywhere else. A white plane that stayed noon-bright at three in the
+    // morning would be the one place in the game the clock does not reach, and
+    // the clock is what this whole world runs on.
     const tint = tintAt(now);
     if (tint.overlay && !under) {
       ctx.fillStyle = tint.overlay;
@@ -586,7 +608,7 @@ export class Renderer {
   // each is touched via getChunk, so the camera streams chunks in as it moves
   // and only what's on screen is ever generated. Within a chunk, tiles still go
   // through tileAt so player edits (which live outside the chunk) win.
-  private drawTiles(world: WorldState, t: number, night: boolean, under: boolean): void {
+  private drawTiles(world: WorldState, t: number, night: boolean, layer: Layer): void {
     const x0 = Math.floor(this.cam.x - this.sw / (2 * TILE)) - 1;
     const x1 = Math.ceil(this.cam.x + this.sw / (2 * TILE)) + 1;
     const y0 = Math.floor(this.cam.y - this.sh / (2 * TILE)) - 1;
@@ -599,8 +621,8 @@ export class Renderer {
         // Stream it in (and keep it resident). The lower layer has its own
         // chunks under their own keys, so the camera streams rock exactly the
         // way it streams grass and nothing here assumes a bounded world.
-        getChunk(world, cx, cy, under ? "under" : "surface");
-        this.drawChunkTiles(world, cx, cy, x0, x1, y0, y1, t, night, under);
+        getChunk(world, cx, cy, layer);
+        this.drawChunkTiles(world, cx, cy, x0, x1, y0, y1, t, night, layer);
       }
     }
   }
@@ -616,7 +638,7 @@ export class Renderer {
     y1: number,
     t: number,
     night: boolean,
-    under: boolean,
+    layer: Layer,
   ): void {
     const ctx = this.ctx;
     const tyStart = Math.max(y0, cy * CHUNK);
@@ -626,8 +648,16 @@ export class Renderer {
 
     for (let ty = tyStart; ty <= tyEnd; ty++) {
       for (let tx = txStart; tx <= txEnd; tx++) {
-        if (under) {
+        // Each layer draws its own cell, and they are separate methods on the
+        // file's existing argument (see drawUnderCell): almost nothing they draw
+        // is the same, and one method full of layer tests would be three
+        // characters sharing a costume.
+        if (layer === "under") {
           this.drawUnderCell(world, tx, ty);
+          continue;
+        }
+        if (layer === "sky") {
+          this.drawSkyCell(world, tx, ty);
           continue;
         }
         const id = tileAt(world, tx, ty);
@@ -985,6 +1015,85 @@ export class Renderer {
       });
       if (piece.id === "lamp") this.litLamps.push({ x: tx, y: ty });
     }
+  }
+
+  /** One cell of the sky. The underground's opposite number, and the shortest
+   *  draw path in the file, because the layer is a plane of cloud and two things
+   *  standing on it.
+   *
+   *  THIS IS THE PER-CELL EDGES RULE'S WORST CASE, so it takes no chances
+   *  (CLAUDE.md — caught three times). Cloud covers the ENTIRE viewport with one
+   *  material: there is no path, no shore, no wall to break it up, so any
+   *  edge, bevel or highlight drawn per cell would band the whole screen into
+   *  venetian blinds with nothing else on it to look at instead. Both sky tiles
+   *  therefore carry no `top`/`shade` at all (content/tiles.ts), and the drift
+   *  below is stepped off the WORLD coordinate rather than the cell, so the
+   *  banks run unbroken across the grid the way a river's does.
+   *
+   *  There is no bevel where cloud meets thin cloud either, and that is the same
+   *  rule pointed at the one boundary this layer has: the parting is a place the
+   *  cloud gets thinner, not a hole with a rim. */
+  private drawSkyCell(world: WorldState, tx: number, ty: number): void {
+    const ctx = this.ctx;
+    const id = tileAt(world, tx, ty, "sky");
+    const px = Math.round(this.sceneX(tx) - TILE / 2);
+    const py = Math.round(this.sceneY(ty) - TILE / 2);
+
+    // The steps stand up, so the flat pass draws the cloud they stand on and
+    // defers the flight itself — exactly as a tree defers on the surface.
+    const flat = id === SKY_STAIR ? CLOUD_THIN : id;
+    ctx.fillStyle = tileDef(flat).color;
+    ctx.fillRect(px, py, TILE, TILE);
+
+    // The drift: two slow bands of a slightly lighter white, keyed off the world
+    // coordinate so a bank of cloud crosses cell borders without noticing them.
+    // Quiet on purpose — this is texture to stop a flat fill reading as a
+    // rendering error, not weather. At any real contrast it becomes a pattern,
+    // and a pattern on the floor of the sky is a carpet.
+    const drift = Math.sin(tx * 0.31 + ty * 0.17) + Math.sin(tx * 0.11 - ty * 0.23);
+    // Alphas kept LOW on purpose, and they came down after the first photograph:
+    // at 0.55 the drift was stronger than the parting, so the plane had texture
+    // everywhere and its one landmark read as more of the same. The texture must
+    // stay quieter than the feature.
+    if (drift > 0.9) {
+      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      ctx.fillRect(px, py, TILE, TILE);
+    } else if (drift < -1.2) {
+      ctx.fillStyle = "rgba(150,170,200,0.06)";
+      ctx.fillRect(px, py, TILE, TILE);
+    }
+
+    if (id === SKY_STAIR) {
+      const x = tx;
+      const y = ty;
+      this.raised.push({ y, bias: BIAS_TERRAIN, draw: () => this.drawStairHead(x, y) });
+    }
+  }
+
+  /** The head of the steps, seen from the top. Not `drawStair` — from up here
+   *  you are looking at the TOP STEP and the drop beyond it, where from below
+   *  you were looking at the face of the whole flight. Drawing the same rising
+   *  sawtooth would put a staircase on the cloud going up to nothing.
+   *
+   *  Its two courses run left to right across the three cells on the same world
+   *  coordinate the flight below uses, so this reads as one object rather than
+   *  as three copies of a step (the bar-chart bug, §drawStair). */
+  private drawStairHead(tx: number, ty: number): void {
+    const ctx = this.ctx;
+    const px = Math.round(this.sceneX(tx) - TILE / 2);
+    const py = Math.round(this.sceneY(ty) - TILE / 2);
+
+    ctx.fillStyle = "#c8c2b6"; // the plaza's stone, as on the ground
+    ctx.fillRect(px, py + 2, TILE, TILE - 4);
+    // The lip, on the SOUTH edge only — the way down is toward the camera, and
+    // this is the one place on the layer where an edge is honest, because the
+    // surface genuinely ends here.
+    ctx.fillStyle = "#9a958b";
+    ctx.fillRect(px, py + TILE - 3, TILE, 1);
+    // And the dark under the lip: the drop. Two pixels of it, which at this size
+    // is enough to say "this goes down" without drawing a hole.
+    ctx.fillStyle = "rgba(40,50,70,0.35)";
+    ctx.fillRect(px, py + TILE - 2, TILE, 2);
   }
 
   /** The cut face of the rock, standing out of its cell toward you.
@@ -2221,15 +2330,15 @@ export class Renderer {
     world: WorldState,
     t: number,
     night: boolean,
-    under: boolean,
+    layer: Layer,
     now: number,
   ): void {
     // Filtered by LAYER rather than skipped wholesale, which is what this used
     // to do back when everyone was a surface creature. Drawing the town from
     // below would put its whole daily round in your tunnel, walking through
     // solid rock; drawing the Mole from above would stand him in a field. Same
-    // check, both directions.
-    const layer = under ? "under" : "surface";
+    // check, all three directions now: only Sidra is ever on the sky layer, and
+    // only when she is home (sim/cosmos.ts).
     for (const v of world.villagers) {
       if ((v.layer ?? "surface") !== layer) continue;
       // And by PRESENCE, which used to be a form check right here: the Ghost

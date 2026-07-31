@@ -28,6 +28,7 @@ import {
   homesteadOrigin,
   generatedTile,
   cubeSite,
+  skyStairSiteAt,
   tileSpeed,
 } from "./world";
 import { placeStructure, removeStructure } from "./structures";
@@ -39,7 +40,18 @@ import { placeFurniture, removeFurnitureAt } from "./furniture";
 import { FURNITURE, furnitureDef } from "../content/furniture";
 import type { FurnitureId, Facing } from "../content/furniture";
 import { structureDef } from "../content/structures";
-import { GRASS, DIRT, PLANK, FARMLAND, FARMLAND_WET, MUSHROOM, SHAFT, JUNK_PILE, MAILBOX } from "../content/tiles";
+import {
+  GRASS,
+  DIRT,
+  PLANK,
+  FARMLAND,
+  FARMLAND_WET,
+  MUSHROOM,
+  SHAFT,
+  SKY_STAIR,
+  JUNK_PILE,
+  MAILBOX,
+} from "../content/tiles";
 import { letterFor } from "../content/found";
 import { dayNumber } from "./found";
 import { foundAt } from "./world";
@@ -54,7 +66,7 @@ import { mineVein } from "./mining";
 import { meetMole } from "./mole";
 import { meetGhost } from "./ghost";
 import { present } from "./presence";
-import { meetCosmos } from "./cosmos";
+import { meetCosmos, updateCosmos } from "./cosmos";
 import { takeAlong, updateCompany } from "./company";
 import { starterSkins, defaultSkin } from "../content/skins";
 import { STARTING_CROP } from "../content/crops";
@@ -263,7 +275,95 @@ export function useShaft(world: WorldState): boolean {
   // DESIGN §Company's own example is "anyone for a dig", and a companion who
   // waved from the top of the ladder would be the feature declining to happen at
   // the one place it matters most.
-  takeAlong(world);
+  takeAlong(world, down ? "surface" : "under");
+  return true;
+}
+
+/** The staircase that goes somewhere, if you are standing at the foot of one and
+ *  facing it (Phase 7c). Returns the step you'd climb, or null.
+ *
+ *  BY HEADING, not by a search of the four neighbours, and the reason is the
+ *  same one the shovel has at a shoreline: a step you did not mean to take is
+ *  worse than a swing you did not mean to make, because it moves you to another
+ *  layer. Face the steps and you go up; stand beside them and you do not.
+ *
+ *  There is nothing here about having found it before, no flag, and no list.
+ *  Every other flight of steps in the world answers null to this, forever, and
+ *  that is the whole of the secret: you find out which one is real by standing
+ *  at the bottom of it and trying (DESIGN §The sky). */
+export function climbTarget(world: WorldState): { x: number; y: number } | null {
+  if (world.player.layer !== "surface") return null;
+  const ahead = aheadOf(world);
+  const site = skyStairSiteAt(world.seed, world.homestead.spot, ahead.x, ahead.y);
+  return site ? ahead : null;
+}
+
+export function canClimb(world: WorldState): boolean {
+  return climbTarget(world) !== null;
+}
+
+/** And the way back down: standing on the head of the steps, up in the sky. */
+export function canGoDownStair(world: WorldState): boolean {
+  if (world.player.layer !== "sky") return false;
+  const { x, y } = playerTile(world);
+  return tileAt(world, x, y, "sky") === SKY_STAIR;
+}
+
+/** Where you land when you come down. The steps themselves are SOLID on the
+ *  surface — they are a thing standing in a field, and 7b's decoys are the same
+ *  object — so unlike a shaft you cannot arrive on the coordinate you left from.
+ *
+ *  South first, because that is the face of the flight: the renderer draws the
+ *  near tile as the bottom step, so stepping off toward the camera is the move
+ *  the picture has already promised. The rest of the compass is the fallback for
+ *  a staircase whose front happens to be against water or a tree, and it is
+ *  ordered rather than searched-nearest so that one flight always returns you to
+ *  the same tile — arriving somewhere different each time would make the way
+ *  home feel unreliable at exactly the moment you want it not to be. */
+function stairFoot(world: WorldState, x: number, y: number): { x: number; y: number } | null {
+  for (const [dx, dy] of [
+    [0, 1],
+    [1, 0],
+    [-1, 0],
+    [0, -1],
+    [1, 1],
+    [-1, 1],
+    [1, -1],
+    [-1, -1],
+  ] as [number, number][]) {
+    if (isWalkable(world, x + dx, y + dy)) return { x: x + dx, y: y + dy };
+  }
+  return null;
+}
+
+/** Up the steps, or down them. The sky's answer to `useShaft`, and deliberately
+ *  its own function rather than a third case inside it: a shaft is a stored edit
+ *  the player dug and this is generated terrain nobody made, they share no
+ *  precondition, and the one thing they do share — take your company with you —
+ *  is one line each. */
+export function useStair(world: WorldState): boolean {
+  const p = world.player;
+  const up = climbTarget(world);
+  if (up) {
+    p.layer = "sky";
+    // The same coordinate, one layer up — "one continuous world, no interior
+    // scenes" pointed the other way. You arrive standing on the head of the
+    // steps you were looking at, which is also the way home.
+    p.x = up.x;
+    p.y = up.y;
+    p.target = null;
+    takeAlong(world, "surface");
+    return true;
+  }
+  if (!canGoDownStair(world)) return false;
+  const { x, y } = playerTile(world);
+  const foot = stairFoot(world, x, y);
+  if (!foot) return false;
+  p.layer = "surface";
+  p.x = foot.x;
+  p.y = foot.y;
+  p.target = null;
+  takeAlong(world, "sky");
   return true;
 }
 
@@ -337,6 +437,9 @@ export function tick(world: WorldState, dt: number, now: number): void {
   // five nights of the year.
   meetGhost(world, now);
   meetCosmos(world, now);
+  // And once met, she is wherever the calendar says — your homestead on one of
+  // the five nights, her own place in the sky on all the others (sim/cosmos.ts).
+  updateCosmos(world, now);
 
   // And you may be standing in front of the Cube. There is nothing to meet —
   // it is a landmark and not a person — so the only thing that happens is that
@@ -390,6 +493,7 @@ export type ActionKind =
   | "sink" // the second dig on one tile: a way down
   | "carve" // cutting the rock face ahead of you
   | "shaft" // going down, or coming back up
+  | "stair" // going up the one staircase that goes anywhere, or coming back down
   | "none";
 export interface ActionResult {
   kind: ActionKind;
@@ -404,7 +508,7 @@ export interface ActionResult {
 export interface ActionTarget {
   x: number;
   y: number;
-  kind: "harvest" | "gather" | "tool" | "read" | "letter" | "shaft" | "none";
+  kind: "harvest" | "gather" | "tool" | "read" | "letter" | "shaft" | "stair" | "none";
 }
 
 /** Where ACT will land, decided in ONE place so the reticle the player sees and
@@ -444,8 +548,23 @@ export interface ActionTarget {
 export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
   const { x, y } = playerTile(world);
   if (world.player.layer === "under") return undergroundTarget(world, tool, x, y);
+  if (world.player.layer === "sky") return skyTarget(world, x, y);
 
   if (isRipe(world, x, y)) return { x, y, kind: "harvest" };
+
+  // The way UP, and it goes here for the mailbox's reason rather than the
+  // shaft's — above the tool underfoot, because out there you are always
+  // standing on grass and grass is always diggable, so the shovel would win
+  // every time and the one staircase in the world that goes anywhere could never
+  // be climbed with the tool the game starts you holding (Phase 7b's lesson,
+  // relearned before it could be made again).
+  //
+  // The cost is the same small one the mailbox pays: standing at the foot of the
+  // real staircase and facing it, you cannot dig that tile. Facing any other
+  // flight of steps in the world, you still can — this branch declines, because
+  // there is nothing up there to go to.
+  const up = climbTarget(world);
+  if (up) return { ...up, kind: "stair" };
 
   // The way down, and it can sit this high in the ladder safely. A shaft cell
   // holds nothing else by construction: `canSink` refuses a cell with a crop, a
@@ -568,6 +687,24 @@ function undergroundTarget(world: WorldState, tool: Tool, x: number, y: number):
   return { x, y, kind: "none" };
 }
 
+/** ACT in the sky, and it is three lines because there are three lines' worth of
+ *  things to do up there.
+ *
+ *  The tool is not consulted at all, and that is the difference between this and
+ *  the tunnel: down there the shovel becomes a pick and the ladder has to say
+ *  which verb is on offer, while up here NO tool applies to anything, ever
+ *  (DESIGN §The sky — you visit, you do not reshape). Holding the watering can
+ *  on the head of the steps still offers you the steps, because the steps are
+ *  the only thing there is.
+ *
+ *  It also means the reticle spends most of its time in the sky saying "nothing
+ *  will happen here", which is honest: the plane is somewhere to walk and look
+ *  from, and the game should not pretend otherwise by lighting up. */
+function skyTarget(world: WorldState, x: number, y: number): ActionTarget {
+  if (tileAt(world, x, y, "sky") === SKY_STAIR) return { x, y, kind: "stair" };
+  return { x, y, kind: "none" };
+}
+
 /** The context action button: does whatever `actionTarget` is pointing at. */
 export function contextAction(world: WorldState, tool: Tool, now: number): ActionResult {
   const target = actionTarget(world, tool);
@@ -634,7 +771,29 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
     return {
       kind: "shaft",
       changed: true,
-      message: down ? "Down. The air goes cool and stops moving." : "Up. The sky is where you left it.",
+      // "Up. The sky is where you left it." was the line here for three phases,
+      // and the sky is now somewhere you can be, which makes it a joke with a
+      // wrong answer in it. What it was actually saying is that nothing changed
+      // while you were down there, so it says that.
+      message: down ? "Down. The air goes cool and stops moving." : "Up. Everything is where you left it.",
+    };
+  }
+
+  if (target.kind === "stair") {
+    // Same shape as the shaft, same reason: the button offers no choice of
+    // direction, because there is only ever one to go in.
+    const up = world.player.layer === "surface";
+    if (!useStair(world)) return { kind: "none", changed: false, message: "" };
+    return {
+      kind: "stair",
+      changed: true,
+      // Neither line says what the steps are, where they go, or that you have
+      // found anything. You climbed some stairs and now you are somewhere else;
+      // the game does not congratulate you, and there is no toast (DESIGN §Tone
+      // — secrets are never spoiled by UI).
+      message: up
+        ? "Up the steps. And then up the steps."
+        : "Down. The grass comes back up to meet you.",
     };
   }
 
@@ -659,6 +818,21 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
     // which is the UI's business (ui/app.ts watches for this kind), and the
     // message is the fallback for anywhere that only has a line to show.
     return { kind: "read", changed: false, message: "Notices, and one request." };
+  }
+
+  // NOT IN THE SKY, and this line is here because a test caught the alternative.
+  // `applyTool`'s shovel knows about the tunnel and assumes everything else is
+  // the ground: standing on a cloud with the shovel out, ACT reached straight
+  // past the layer and dug the field two hundred tiles below — a hole appearing
+  // in a meadow nobody was standing in. The reticle already said "none"; this is
+  // the ladder's other end agreeing with it.
+  //
+  // Written as a layer check rather than as a fifth case inside `applyTool`,
+  // because the rule is not about the shovel. There is no tool up there at all
+  // (DESIGN §The sky), so the refusal belongs where the tools are dispatched
+  // from and not inside one of them.
+  if (world.player.layer === "sky") {
+    return { kind: "none", changed: false, message: "Nothing to do up here. That is rather the point." };
   }
 
   // "tool" or "none": the held tool on the tile underfoot. When nothing applies
@@ -837,8 +1011,28 @@ export function isFurnitureTool(tool: BuildTool): tool is FurnitureId {
  *  same list; the sim refuses regardless of what the UI shows. */
 export const UNDER_TOOLS: BuildTool[] = ["lamp", "erase"];
 
+/** And what you may build in the sky: NOTHING. Not a shortened list — the empty
+ *  one. You visit; you do not reshape (DESIGN §The sky), and up there that is
+ *  total: no wall, no floor, no lamp, and no erase, because there is nothing to
+ *  erase.
+ *
+ *  WRITTEN AS A TABLE, WHICH IS THE ACTUAL FIX HERE. This used to be
+ *  `layer === "under" ? UNDER_TOOLS.includes(tool) : true` — one special case
+ *  and an `otherwise, yes`. That reads fine with two layers and is a trapdoor
+ *  with three: a layer nobody had thought about got the ENTIRE build palette by
+ *  default, and since `world.build` is keyed without a layer, a wall painted in
+ *  the sky would have appeared on the ground under it. An allowlist cannot fail
+ *  that way — a new layer with no row is a layer you can build nothing on, which
+ *  is the safe direction to be wrong in. */
+const TOOLS_ON: Record<Layer, BuildTool[] | "all"> = {
+  surface: "all",
+  under: UNDER_TOOLS,
+  sky: [],
+};
+
 export function toolAllowedOn(tool: BuildTool, layer: Layer): boolean {
-  return layer === "under" ? UNDER_TOOLS.includes(tool) : true;
+  const allowed = TOOLS_ON[layer];
+  return allowed === "all" ? true : allowed.includes(tool);
 }
 
 export function buildAt(
@@ -860,7 +1054,17 @@ export function buildAt(
   // can't offer, and this makes the hiding cosmetic rather than load-bearing: a
   // wall placed underground would key into a record that means the surface.
   if (!toolAllowedOn(tool, layer)) {
-    return { changed: false, message: "Not down here. There's nothing to put that on but rock.", broke: false };
+    return {
+      changed: false,
+      // Per layer, because "nothing to put it on but rock" is a sentence about
+      // the rock. Up here the refusal is the opposite complaint and has to sound
+      // like it: there is nothing to build ON, rather than nothing but.
+      message:
+        layer === "sky"
+          ? "Not up here. There's nothing to put that on at all."
+          : "Not down here. There's nothing to put that on but rock.",
+      broke: false,
+    };
   }
   if (tool === "erase") {
     // Furniture comes up FIRST. It sits inside rooms, so if erase preferred the
@@ -936,7 +1140,10 @@ export function buildAt(
     // Present-only underground, for the reason mining and carving are (4b): the
     // town has no business knowing you hung a lamp in a tunnel, but somebody who
     // was standing there watching you do it does.
-    witness(world, "built_plank", undefined, now, layer === "under");
+    // Present-only on any layer that is not the ground: the town hears about
+    // what you build in the town, and nobody at all hears about a board laid in
+    // a tunnel — or, some day, in the sky.
+    witness(world, "built_plank", undefined, now, layer !== "surface");
     return { changed: true, message: furnitureFlavour(tool, layer), broke: false };
   }
 

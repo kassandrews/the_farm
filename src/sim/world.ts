@@ -29,12 +29,24 @@ import {
   HUM_CUBE,
   SAND,
   SHALLOW,
+  CLOUD,
+  CLOUD_THIN,
+  SKY_STAIR,
+  STAIR,
   tileDef,
 } from "../content/tiles";
 import { NODES } from "../content/nodes";
 import type { BiomeId } from "../content/biomes";
 import { FIELD_WEIGHTS, biomeDef } from "../content/biomes";
-import { foundSiteAt, foundTile, type FoundSite } from "./found";
+import {
+  foundSiteAt,
+  foundTile,
+  skyStairAt,
+  skyStairNear,
+  skyStairCentre,
+  SKY_PARTING,
+  type FoundSite,
+} from "./found";
 import type { BiomeDef, Tint } from "../content/biomes";
 import type { WaterKindId, ChannelDef } from "../content/water";
 import { waterKind } from "../content/water";
@@ -47,9 +59,27 @@ export const CHUNK = 16; // tiles per chunk edge — chunks are a render/streami
 
 /** The sparse edit map for a layer. Underground edits live in their own record
  *  rather than under a prefixed key, so a save that predates the underground
- *  needs no rekeying — only an empty object added (schema v17). */
+ *  needs no rekeying — only an empty object added (schema v17).
+ *
+ *  THE SKY HAS NO RECORD, and that is not an oversight to fill in later. Nothing
+ *  up there can be changed — no digging, no filling, no building, no planting
+ *  (DESIGN §The sky) — so a sky edit map would be a field that is empty in every
+ *  save forever, plus a migration, plus a fourth thing undo has to have an
+ *  opinion about. The frozen empty object is what "you visit; you do not
+ *  reshape" looks like from the storage side: reads fall straight through to
+ *  generation, and a write that should never happen throws in dev instead of
+ *  quietly landing in the surface's record, which is where it would have gone. */
+const NO_EDITS: Record<string, TileId> = Object.freeze({});
+
 function editsFor(world: WorldState, layer: Layer): Record<string, TileId> {
-  return layer === "under" ? world.under : world.overrides;
+  switch (layer) {
+    case "under":
+      return world.under;
+    case "sky":
+      return NO_EDITS;
+    default:
+      return world.overrides;
+  }
 }
 
 export function tileKey(x: number, y: number): string {
@@ -118,7 +148,18 @@ interface ChunkCache {
 const chunkCache = new WeakMap<WorldState, ChunkCache>();
 
 export function chunkKey(cx: number, cy: number, layer: Layer = "surface"): string {
-  return layer === "under" ? `u:${cx},${cy}` : `${cx},${cy}`;
+  // The surface keeps the bare key it has always had; every other layer takes a
+  // prefix. Kept as a switch rather than a template with a prefix variable so
+  // that a new layer cannot get an empty prefix by forgetting a case and
+  // silently share the surface's chunks.
+  switch (layer) {
+    case "under":
+      return `u:${cx},${cy}`;
+    case "sky":
+      return `s:${cx},${cy}`;
+    default:
+      return `${cx},${cy}`;
+  }
 }
 
 /** Chunk coordinate containing a world tile. Floor division so it stays correct
@@ -140,10 +181,14 @@ function generateChunk(
   const oy = cy * CHUNK;
   for (let ty = 0; ty < CHUNK; ty++) {
     for (let tx = 0; tx < CHUNK; tx++) {
+      const x = ox + tx;
+      const y = oy + ty;
       tiles[ty * CHUNK + tx] =
         layer === "under"
-          ? generatedUnderTile(seed, ox + tx, oy + ty)
-          : generatedTile(seed, spot, ox + tx, oy + ty);
+          ? generatedUnderTile(seed, x, y)
+          : layer === "sky"
+            ? generatedSkyTile(seed, spot, x, y)
+            : generatedTile(seed, spot, x, y);
     }
   }
   return tiles;
@@ -399,6 +444,71 @@ export function generatedUnderTile(seed: number, x: number, y: number): TileId {
   return roll < NODES.vein.density ? ORE_VEIN : BEDROCK;
 }
 
+// --- The sky ------------------------------------------------------------------
+// The underground's inversion, inverted again. Down there the layer is solid and
+// the open space is what you carved; up here the layer is open and there is
+// nothing to carve, because there is no tool in the sky (DESIGN §The sky).
+//
+// So this generator is one line long, and its shortness is the design rather
+// than an omission. No biomes — the world getting stranger with radius (7a) is a
+// fact about the ground, and "what is over there" has the same answer in every
+// direction up here forever. No water, no nodes, no clutter, nothing to gather.
+// A plane of cloud, and quiet.
+
+/** Deterministic sky tile. Like the rock, this could ignore the homestead spot —
+ *  but unlike the rock it cannot, because the ONE feature up here is the head of
+ *  a staircase, and where that staircase stands is a question about dry ground on
+ *  the surface, which is a question about where you settled. */
+export function generatedSkyTile(
+  seed: number,
+  spot: HomesteadSpot,
+  x: number,
+  y: number,
+): TileId {
+  // Asked of the SURFACE siting, so the two ends of the flight cannot disagree —
+  // there is no stored entrance for them to disagree about (sim/found.ts
+  // §skyStairAt).
+  const near = skyStairNear(seed, spot, x, y, onLand);
+  if (near === null) return CLOUD;
+  if (foundTile(near.site, x, y) === STAIR) return SKY_STAIR;
+  // The parting, and it has a SOFT edge — the hash lets the thinning fray for
+  // the last tile and a half instead of stopping on a circle. A hard rim would
+  // read as a drawn ring on the floor of the sky, which is a marker; frayed, it
+  // reads as cloud doing what cloud does.
+  const frayed = SKY_PARTING - 1.5 + (hash2(x, y, seed ^ 0x5cae) / 4294967296) * 1.5;
+  return near.d <= frayed ? CLOUD_THIN : CLOUD;
+}
+
+/** How far Sidra's home sits from the first staircase, in tiles.
+ *
+ *  A SHORT WALK, and the number is the whole of how she is findable. The sky has
+ *  no landmarks and no bearings — every direction looks the same forever — so a
+ *  home sited independently of the way up would be a person you could only find
+ *  by luck, on a plane where luck is the only tool you have. Sited off the first
+ *  staircase instead, arriving in the sky puts her about a screen away: far
+ *  enough that she is not standing at the top of the steps waiting for you, near
+ *  enough that walking a small circle finds her.
+ *
+ *  The climb was the hard part. Finding the flight of steps that goes anywhere is
+ *  two hundred and forty tiles of walking past ones that do not, and the reward
+ *  for a hard-to-reach place is the place (DESIGN §The Mole) — not a second
+ *  search on the other side of the door. */
+const COSMOS_HOME_REACH = 11;
+
+/** Where she lives, when she is not down here. A total function of the seed,
+ *  stored nowhere, exactly like the warren and the grove. */
+export function cosmosHome(seed: number, spot: HomesteadSpot): { x: number; y: number } {
+  const c = skyStairCentre(seed, spot, 0, onLand);
+  // Its own salt, and no `onLand`: there is no water in the sky and nothing up
+  // there to be pushed off, which is the one way this siting is simpler than
+  // every landmark before it.
+  const a = (hash2(7, 0, seed ^ 0x51d2) / 4294967296) * Math.PI * 2;
+  return {
+    x: Math.round(c.x + Math.cos(a) * COSMOS_HOME_REACH),
+    y: Math.round(c.y + Math.sin(a) * COSMOS_HOME_REACH),
+  };
+}
+
 // --- The warren ---------------------------------------------------------------
 // The one place the rock is already open when you get there. Somebody else has
 // been digging out here for a long time (DESIGN §"The Mole, specifically"), and
@@ -562,7 +672,12 @@ export function refusesConstruction(
   y: number,
   layer: Layer = "surface",
 ): boolean {
-  if (layer === "under") return false;
+  // Only the surface has a grove to protect. The rock under it is just rock, and
+  // the sky above it refuses construction for a much simpler reason that lives
+  // somewhere else entirely: there is no build tool up there to refuse
+  // (sim/game.ts §TOOLS_ON). Answering "no objection" here is honest — this
+  // function is about the ground, and neither of those is ground.
+  if (layer !== "surface") return false;
   return inGrove(world.seed, world.homestead.spot, x, y);
 }
 
@@ -783,6 +898,17 @@ export function foundAt(
   y: number,
 ): FoundSite | null {
   return foundSiteAt(seed, spot, x, y, onLand);
+}
+
+/** The staircase that goes somewhere, if this coordinate is one of its steps
+ *  (Phase 7c). Same wrapper, same reason as `foundAt`. */
+export function skyStairSiteAt(
+  seed: number,
+  spot: HomesteadSpot,
+  x: number,
+  y: number,
+): FoundSite | null {
+  return skyStairAt(seed, spot, x, y, onLand);
 }
 
 /** Which biome a tile is in.
@@ -1969,7 +2095,13 @@ export function isWalkable(
   // the table, not by hope: `lamp.test.ts` asserts every tool offered below
   // ground has `solid: false`, so the day somebody adds a metal gate down here
   // the test fails and points at this line.
-  if (layer === "under") return true;
+  //
+  // The sky needs no such argument: nothing can be placed up there at all, so
+  // the only thing that could ever stop you is the tile, and the only tiles
+  // there are are cloud and the head of the steps. Neither is solid, so the
+  // plane is walkable everywhere, forever — which is what an unbounded open
+  // layer means (DESIGN §The sky).
+  if (layer !== "surface") return true;
   const built = world.build[tileKey(x, y)];
   if (built && structureDef(built.id).solid) return false;
   return !furnitureBlocksHere(world, x, y);

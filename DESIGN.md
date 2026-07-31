@@ -671,6 +671,56 @@ Content inside a found place may vary, but only as a **total function of
 it is not required. A letter is never a request and never names a task: a notice
 speaks only in the past tense (§The errands board).
 
+## The sky
+
+A third layer, on the same axis as the underground and reached the same
+way: through a threshold you find. Digging takes you down; **one rare
+staircase takes you up**, and it is a found place before it is a door
+(§Found places) — sited by the seed, on no map, indistinguishable from
+the ordinary steps that lead nowhere until you have climbed one.
+
+**You do not build the way up.** There is no tower, no ladder, no
+beanstalk you cultivate, for the same reason there is no height on the
+surface: a route the player constructs is a route the player can put
+anywhere, and then the sky is a floor rather than a place.
+
+**It is one open plane of cloud, unbounded**, exactly as the ground is
+unbounded. Every sky-stair's top is also a way down, so you may go up
+near town, walk the white a long way, and come down somewhere you have
+never been — which is the one thing the sky can do that the ground
+cannot. It has weather in the sense that it has a sky: the hour and the
+season reach it, because it is outdoors.
+
+**It has no biomes.** The world getting stranger with radius (§Biomes) is
+a fact about the ground. Up here the answer to "what is over there" is
+the same in every direction, forever, and that plainness is the point:
+the sky is quiet, not busy.
+
+**You visit; you do not reshape.** No digging, no filling, no building,
+no planting, no gathering — there is no tool up there at all. This is the
+symmetric negation to the underground's ("not somewhere you build a
+room"), and it is stronger, because the underground at least gives you
+rock to cut. The sky gives you nowhere to put anything and nothing to
+put there. Nothing on this layer is stored, because nothing on it can be
+changed.
+
+**The reward for the hard-to-reach place is a place, not loot** — §The
+Mole exactly. What the sky has that the ground doesn't is not a material,
+a yield, or a faster crop; it is that it is up there and somebody is
+home. **Nothing in the main game may ever require it.** You may finish a
+whole game without ever finding the stair, precisely as with the grove.
+
+**One person lives there, and she is not a new one.** §Found places says
+the wild holds moods and not people, and that rule holds — it is about
+the ground, where a hermit behind every hill would make the Ghost and the
+Mole ordinary. The sky is not the wild; it is one place, and the person
+in it is the Stray Cosmos, who has been visiting for five nights a year
+since before there was anywhere for her to come from. **She is in exactly
+one place at a time**: on a shower night she is down on your homestead as
+she always was, and her home up here is empty. That is what stops a
+visitor becoming a resident with an address — you can now find out where
+she goes, without being able to find her whenever you like.
+
 ## Materials
 
 Three gathered classes, and no more: **wood**, **stone**, and **ore** (one
@@ -826,6 +876,12 @@ ground convention. Isometric is off the table for the same reason.
 ground-level or one storey tall. This is the Minecraft organ taken at its
 minimum: an editable world, not voxels. Underground (later) is a layer,
 not a height.
+
+**The sky is the same move upward** — a discrete layer, entered through a
+found threshold, never a tile that floats above another tile. The surface
+map stays one storey whether or not there is a sky above it: if you can
+see something hovering over a ground tile, that is a height and it is
+wrong. Height is still forbidden; layers are still allowed. See §The sky.
 
 A storey is **24px — one and a half tiles**, not one. Standing art is
 drawn upward from its footprint's bottom edge, so at exactly one tile a

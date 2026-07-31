@@ -14,38 +14,20 @@
 // second August is that she has met you before.
 
 import type { WorldState, Villager } from "./types";
-import type { ShowerDef } from "../content/showers";
-import { SHOWERS } from "../content/showers";
+import { showerTonight } from "../content/showers";
 import { COSMOS } from "../content/cast";
 import { makeVillager } from "./villagers";
-import { stopTarget } from "./housing";
-import { isNight, skyPhaseAt } from "./time";
+import { stopTarget, cosmosVisiting } from "./housing";
 
-/** Before this hour, you are still in yesterday's night.
+/** Which shower is on tonight — re-exported from the table it reads.
  *
- *  A shower's peak is a NIGHT, not a date, and a night crosses midnight. Two in
- *  the morning on the thirteenth of August is the twelfth's shower to everyone
- *  standing outside in it, and a calendar lookup that disagrees would make her
- *  vanish at midnight in front of you. Set to the hour `isNight` stops being
- *  true (time.ts, dawn ends at 7), so "the night is over" means one thing. */
-const NIGHT_ROLLOVER_HOUR = 7;
-
-/** Which shower is on tonight, or null. A total function of the instant —
- *  nothing stored, nothing scheduled, the festivals' own trick.
- *
- *  Exported because presence, dialogue and the tests all ask it; it is the one
- *  fact about her that everything else is derived from. */
-export function showerTonight(now: number): ShowerDef | null {
-  const d = new Date(now);
-  // Roll back into the evening this night began in. Done by subtracting from
-  // the timestamp rather than by decrementing the date, so month ends, year
-  // ends and leap days are the platform's problem and not ours — the third of
-  // January at 01:00 is the second's night, and the Quadrantids are not on.
-  if (d.getHours() < NIGHT_ROLLOVER_HOUR) d.setTime(d.getTime() - NIGHT_ROLLOVER_HOUR * 3600_000);
-  const month = d.getMonth() + 1;
-  const day = d.getDate();
-  return SHOWERS.find((s) => s.month === month && s.day === day) ?? null;
-}
+ *  It used to be defined here. It moved to content/showers.ts when the sky
+ *  arrived, because sim/housing.ts needs it to place her and this file needs
+ *  housing.ts to place her on the ground; the two would have imported each
+ *  other. Re-exported rather than repointed at every call site, because "ask
+ *  cosmos.ts what the sky is doing tonight" is still the sentence the rest of the
+ *  sim wants to write. */
+export { showerTonight };
 
 /** Have you met her? She is in the villager list or she isn't — no flag, the
  *  same answer `moleMet` gives, for the same reason: a flag would be the fact
@@ -70,8 +52,22 @@ const MEET_RADIUS = 8;
  *  night, and a shower — because meeting somebody who is not here would be a
  *  villager appearing in your save on an afternoon in March. */
 export function meetCosmos(world: WorldState, now: number): void {
-  if (world.player.layer !== "surface" || cosmosMet(world)) return;
-  if (!isNight(skyPhaseAt(now)) || !showerTonight(now)) return;
+  if (cosmosMet(world)) return;
+  // TWO DOORS NOW, and they are the same door (Phase 7c). Down here she has to
+  // be here — night, and a shower — because meeting somebody who is not here
+  // would be a villager appearing in your save on an afternoon in March. Up
+  // there the condition is that you are up there: she is at home, and home is
+  // where she is on every day that is not one of the five.
+  //
+  // Which means the sky can be where you meet her FIRST, having never seen a
+  // meteor shower. That is the right way round: you walked two hundred tiles,
+  // found a staircase that goes somewhere, climbed it and knocked on a door.
+  // The five nights are then a person you know coming to visit.
+  const inSky = world.player.layer === "sky";
+  if (!inSky) {
+    if (world.player.layer !== "surface") return;
+    if (!cosmosVisiting(now)) return;
+  }
 
   // Where she'd stand, asked before she exists — the same anchor resolution
   // that will answer it every frame afterwards, so she cannot appear in one
@@ -81,5 +77,38 @@ export function meetCosmos(world: WorldState, now: number): void {
   if (Math.hypot(world.player.x - stop.x, world.player.y - stop.y) > MEET_RADIUS) return;
   v.x = stop.x;
   v.y = stop.y;
+  if (inSky) v.layer = "sky";
   world.villagers.push(v);
+}
+
+/** Called every tick once she exists: keep her where the calendar says she is.
+ *
+ *  ONE SIDRA, IN ONE PLACE (DESIGN §The sky). `stopTarget` already answers WHERE
+ *  through the "skyhome" anchor; this is the other half of the same fact, which
+ *  is WHICH LAYER, and it has to be applied rather than derived because a
+ *  villager's layer is a stored field that the renderer and the tap targeting
+ *  both read.
+ *
+ *  SHE IS MOVED RATHER THAN WALKED, which is true to what she is: the visitor
+ *  does not travel down from the sky at dusk on the twelfth of August and hike
+ *  back up at dawn. She is somewhere, and then she is somewhere else. Nothing
+ *  else in the game gets to do that, and nothing else in the game is passing
+ *  through.
+ *
+ *  It is deliberately not conditional on the player noticing. She is at home on
+ *  a Tuesday whether or not anybody has ever climbed the stairs, which is the
+ *  difference between a place somebody lives and a scene that plays when you
+ *  arrive. */
+export function updateCosmos(world: WorldState, now: number): void {
+  const v = cosmos(world);
+  if (!v) return;
+  const stop = stopTarget(world, v, now);
+  // The same predicate the anchor is resolved with, not a second copy of it: her
+  // layer and her coordinates are one fact and are answered once (§cosmosVisiting).
+  v.layer = cosmosVisiting(now) ? "surface" : "sky";
+  v.x = stop.x;
+  v.y = stop.y;
+  // A companion is a different matter, but she can never be one: she is a secret
+  // and secrets are refused by `canInvite` (sim/company.ts), so there is no state
+  // here that this could stamp on.
 }

@@ -88,6 +88,13 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
       () => "I have been underground. With you. There is rock down there and it is extremely rock.",
       () => ". ... The dark did something to my methodology. I liked it.",
     ],
+    // And the third afternoon (Phase 7c). Nobody names the staircase and nobody
+    // explains it — every one of these is somebody describing a thing that
+    // happened, in a voice that has decided it was normal.
+    climbed: [
+      () => "We went up. I have looked at the town from above and I am not sure it is arranged correctly.",
+      () => ". ... There was nothing up there to measure. I stayed a while anyway.",
+    ],
     // Imported raising history from The Meadow (see meadow_import.ts).
     raised_favorite: [
       (v) => `They fed me ${v}, back before. I've since disproven ${v}. It remains delicious.`,
@@ -156,6 +163,10 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
       () => "We went UNDER. Under the ground! There was no sky and I was fine because you were there.",
       () => "The tunnel! I remember the tunnel. It smelled like everything.",
     ],
+    climbed: [
+      () => "UP! We went UP! I have been in the sky and the sky is FLOOR now and I love it!",
+      () => "It was white and it went on forever and I ran in it. I ran in the SKY.",
+    ],
     errand: [
       (v) => `The ${v}! I carried it! I carried it the whole way and I did not eat it!`,
       () => "I delivered. Everyone was pleased. I have thought about it several times since.",
@@ -173,6 +184,10 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     delved: [
       () => "I have performed underground. The acoustics were extraordinary. The audience was you.",
       () => ". ... A cave. Me, in a cave. I've never been better lit, and there was no light.",
+    ],
+    climbed: [
+      () => "I have played the sky. No walls. Nothing came back. ... The best room I have ever died in.",
+      () => "We stood above the weather. I gave nothing. There was nothing to give it to. It was perfect.",
     ],
     errand: [
       (v) => `The ${v} arrived at my lowest moment. Well. One of them. I have several a day.`,
@@ -192,6 +207,10 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
       () => "You took me into a hole in the ground. ... I would go again. Don't ask me twice.",
       () => "I got dirt on me. Underground. With you. It was, and I choose the word carefully, fun.",
     ],
+    climbed: [
+      () => "You walked me up a staircase that had no business being there. ... I went first, at the end.",
+      () => "There is nothing up there. I stayed for an hour. Say one word about it and I'll deny the lot.",
+    ],
     errand: [
       (v) => `You brought the ${v}. Adequate. ... Prompt, even. I shan't make a thing of it.`,
       () => "I asked, and it was fetched. This is how things ought to go. It is not how they usually go.",
@@ -210,6 +229,10 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
       () => "Down there! With you! Everything down there is findable and nobody has found it.",
       () => "The deep bits. Best bits. Nothing's been moved yet, so anything I move is FIRST.",
     ],
+    climbed: [
+      () => "Up the steps! There's NOTHING up there. Nothing! You can't even take it! I tried!",
+      () => "I have been somewhere with no edges. Nowhere to put a thing. ... I hated it. I want to go back.",
+    ],
     errand: [
       (v) => `The ${v}. Mine now. It was always going to be mine. You just made it faster.`,
       () => "You did the errand. Straight. No swap, no trick. ... I don't know what to do with that.",
@@ -225,6 +248,9 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     delved: [
       () => "I went below the soil. Voluntarily. I have thoughts I am not ready to share.",
     ],
+    climbed: [
+      () => "I have been above the soil. Well above. ... Nothing grows there. I checked. Twice.",
+    ],
     errand: [
       (v) => `The ${v}. ... Yes. That's the one I asked for. Thank you. We're not going to discuss it further.`,
     ],
@@ -238,6 +264,9 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
     delved: [
       () => "I was underground. Unfiled. Unreachable. ... Genuinely the best afternoon of my retirement.",
+    ],
+    climbed: [
+      () => "We went up some steps that are on no plan of the district. I have not raised it. I will not.",
     ],
     errand: [
       (v) => `The ${v} came through. I've filed it. The filing is the important part.`,
@@ -771,6 +800,39 @@ export const GHOST_CUT: string[] = [
   "Take another if you need it. I'd rather you took it from here than somewhere you'd have to explain.",
   "There's a gap now. ... I like the gap, actually. More sky.",
   "You'll build with it. ... Good. It ought to be somewhere warm.",
+];
+
+// --- The Stray Cosmos, at home (Phase 7c) -----------------------------------------
+//
+// She has had five banks since 4c, one per shower night, and they are all lines
+// somebody says while PASSING. This is the sixth, and it is the only one she
+// speaks standing still, in the one place in the game that is hers.
+//
+// WHAT IT DOES NOT DO, and each of these was a line that got cut:
+//
+//   • It never explains the sky. Not what it is, not what holds it up, not why
+//     there is a staircase. She lives here; you do not explain your own street.
+//   • It never remarks that you found her. No "you came all this way", no "how
+//     did you get up here" — that is the game congratulating you, and the whole
+//     phase refuses to (DESIGN §Tone: secrets are never spoiled by UI).
+//   • It gives you nothing. No item, no hint, no direction, no errand.
+//   • It does not mention the town, which she does not live in and has, as far as
+//     anyone can tell, no opinions about.
+//
+// The voice is the one the showers established — passing, slightly out of step
+// with the hour you are having — with the one difference that she is not passing.
+// She is in, and you have turned up, and it is fine.
+export const COSMOS_HOME: string[] = [
+  "...",
+  "Oh. ... You're up.",
+  "This is where I am, most of the time. There isn't much to it.",
+  "It's the same in every direction. I find that restful. Some people don't.",
+  "I don't keep anything up here. Things fall.",
+  "You can see the weather arriving from a long way off. ... It never gets here.",
+  "It's very quiet. ... That isn't the same as empty. It took me a while.",
+  "I come down five times a year. ... You've possibly noticed. Or possibly not.",
+  "Sit anywhere. It's all the same bit.",
+  "The steps were here before I was. I've never asked.",
 ];
 
 // --- Seasons ---------------------------------------------------------------------

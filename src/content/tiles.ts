@@ -117,6 +117,27 @@ export const POLE: TileId = 19; // a rod stuck in a bank, one of a dozen
 export const MAILBOX: TileId = 20; // on a post, miles from anywhere
 export const STAIR: TileId = 21; // stone steps, ending in the air
 
+/** The sky (Phase 7c). Two rows, and the underground's inversion inverted again.
+ *
+ *  Down there the layer starts SOLID and you carve space out of it. Up here it
+ *  starts OPEN and you carve nothing, because there is no tool in the sky at all
+ *  (DESIGN §The sky — "you visit; you do not reshape"). So CLOUD is not the
+ *  sky's grass, with a dirt and a farmland waiting behind it: it is the whole
+ *  material of the layer, everywhere, forever.
+ *
+ *  SKY_STAIR is the top of the way down, and it exists on this layer for the
+ *  same reason the shaft does NOT exist on the one below it — one entrance, one
+ *  record. The difference is which end holds the record: a shaft is a stored
+ *  edit and lives on the surface, while a sky-stair is GENERATED terrain sited
+ *  by the seed, so both of its ends are generated and neither can drift. */
+export const CLOUD: TileId = 22; // the floor of the sky, and all of it
+export const SKY_STAIR: TileId = 23; // the head of the steps, seen from above
+/** Where the cloud thins around a way down, and light comes up from the world
+ *  below. It behaves EXACTLY like cloud — same nothing, same walkability — and
+ *  exists only so the exit is a place you can see from across a field rather
+ *  than a three-tile speck on an unbounded plain (sim/found.ts §SKY_PARTING). */
+export const CLOUD_THIN: TileId = 24;
+
 export const TILES: Record<TileId, TileDef> = {
   [GRASS]: {
     id: GRASS,
@@ -332,6 +353,52 @@ export const TILES: Record<TileId, TileDef> = {
     // wade here", and this makes the wading itself legible without a word of UI.
     // 0.6 is a drag you feel on a two-tile stream and can't mistake for lag.
     speed: 0.6,
+  },
+  // --- The sky ---------------------------------------------------------------
+  [CLOUD]: {
+    id: CLOUD,
+    name: "Cloud",
+    // FLAT, no bevel, and this one is not a preference. Cloud is the one
+    // material in the game that covers the entire visible screen with itself, so
+    // a per-cell lip would band the whole layer into venetian blinds at the one
+    // place there is nothing else on screen to look at instead (CLAUDE.md §the
+    // per-cell edges band). What texture it has is drawn off the WORLD
+    // coordinate by the renderer, so the drift runs unbroken across the cells.
+    color: "#eef1f7",
+    // Not diggable, not tillable, not solid, no speed. Every flag omitted, and
+    // the omissions ARE the design: there is nothing to do to it.
+  },
+  [CLOUD_THIN]: {
+    id: CLOUD_THIN,
+    // Named for what it is. "Opening" or "Way down" would be the game telling
+    // you what the gap is for, and the whole of finding it is walking over and
+    // looking.
+    name: "Thin cloud",
+    // Bluer and a shade darker than CLOUD — the ground showing faintly through,
+    // not a light. Flat, for the same reason cloud is: this is the one thing on
+    // the layer with a shape, and a bevel on every cell of it would turn a soft
+    // gap into a tiled disc.
+    //
+    // The first draft was #dfe6f2, a hair off the cloud, and it photographed as
+    // nothing at all: the renderer's own drift texture varies the plane by more
+    // than the parting did, so the one feature on the layer was quieter than its
+    // noise. This is far enough down and blue enough to read as a gap while
+    // still being cloud rather than a hole.
+    color: "#c6d2e8",
+  },
+  [SKY_STAIR]: {
+    id: SKY_STAIR,
+    name: "Steps",
+    // The same name and the same plaza stone as STAIR, because it is the same
+    // flight of steps seen from the other end. A player who reads a tile name
+    // out of a screenshot should learn nothing they could not have learned by
+    // standing there.
+    color: "#b8b2a6",
+    top: "#c0bab0",
+    shade: "#aaa498",
+    // NOT solid — stepping onto it is how you use it, exactly like SHAFT. The
+    // 7b steps on the ground stay solid; the difference between a flight you
+    // can climb and one you cannot is the entire secret, and it lives here.
   },
   [FARMLAND_WET]: {
     id: FARMLAND_WET,

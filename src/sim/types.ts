@@ -34,13 +34,24 @@ import type { ErrandId } from "../content/errands";
 import type { HomesteadSpot } from "../content/spots";
 export type { HomesteadSpot };
 
-/** Which layer a coordinate is on. Two, and there will never be a third: the
- *  underground is the second half of one world, not the first rung of a stack
- *  (DESIGN §Structures — "Underground is a layer, not a height").
+/** Which layer a coordinate is on.
  *
- *  Lives here rather than in sim/world.ts because it is now a SAVED shape (the
+ *  This used to say "two, and there will never be a third", on the argument that
+ *  the underground is the second half of one world rather than the first rung of
+ *  a stack. The argument was right and the number was wrong: the sky (Phase 7c)
+ *  is the same move upward, and what the rule actually forbids is HEIGHT, not
+ *  layers (DESIGN §Structures — "Underground is a layer, not a height"; §The
+ *  sky). A layer is reached through a threshold you stand on and step through,
+ *  at the same coordinate; a height would be a tile drawn above another tile,
+ *  and there are still none of those.
+ *
+ *  What keeps this from becoming a stack of levels is that each layer has to
+ *  earn a threshold of its own — you dig the shaft, you find the stair — and
+ *  neither one is a ladder to a third thing above it.
+ *
+ *  Lives here rather than in sim/world.ts because it is a SAVED shape (the
  *  player carries one), and world.ts imports this module. */
-export type Layer = "surface" | "under";
+export type Layer = "surface" | "under" | "sky";
 
 /** Which way the player last walked, to the nearest compass point.
  *
@@ -72,10 +83,11 @@ export interface Player {
   memory: MemoryLog;
   /** True when this sprite was imported rather than hatched here. */
   imported: boolean;
-  /** Which layer you're standing on. The player is the ONLY thing that carries
-   *  one — villagers are surface creatures and the town is a surface fact — so
-   *  this is the single piece of state that says whether the world you're
-   *  interacting with is the ground or what's under it. */
+  /** Which layer you're standing on: the ground, the rock under it, or the cloud
+   *  over it. The town is a surface fact and so is nearly everything in the game,
+   *  so this is the single piece of state that decides which world the ACT button
+   *  is talking to. (Villagers carry one too now — see `Villager.layer` — but
+   *  theirs is an exception and this one is the axis.) */
   layer: Layer;
 }
 

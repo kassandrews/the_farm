@@ -23,7 +23,7 @@
 
 import type { Villager } from "./types";
 import { isNight, skyPhaseAt } from "./time";
-import { showerTonight } from "./cosmos";
+import { showerTonight } from "../content/showers";
 
 /** Is this villager present in the world at this instant?
  *
@@ -44,7 +44,14 @@ export function present(v: Villager, now: number): boolean {
     // Night AND a real meteor shower. Both, because a visitor who turned up at
     // two in the afternoon on the twelfth of August would be a calendar event
     // wearing a costume.
+    // Night AND a real meteor shower — OR she is at home in the sky, which is
+    // where she is on the other three hundred and sixty days (Phase 7c). Both
+    // arms, because "present" means "there to be seen and spoken to", and she is
+    // both of those things at home; what stops her being visible from the town
+    // on an ordinary Tuesday is not presence but the LAYER, which every caller
+    // here already checks (ui/app.ts, renderer.ts, game.ts).
     case "cosmos":
+      if ((v.layer ?? "surface") === "sky") return true;
       return isNight(skyPhaseAt(now)) && showerTonight(now) !== null;
     default:
       return true;

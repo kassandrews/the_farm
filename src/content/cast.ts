@@ -95,8 +95,15 @@ export function isSecret(id: CharId): id is SecretId {
  *  "grove" and "homestead" are the same question asked about the surface, for
  *  4c's two visitors. The grove is generated from the seed like the warren; the
  *  homestead is where the player's own plot is, which content also cannot know.
- *  All four are the same rule — content states the anchor, sim answers it. */
-export type StopAnchor = "home" | "warren" | "grove" | "homestead";
+ *  "skyhome" is the fifth and the only one whose ANSWER changes with the
+ *  calendar: it means "wherever Sidra is tonight", which is your homestead on
+ *  one of the five shower nights and her own place in the sky on every other day
+ *  of the year (DESIGN §The sky — she is in exactly one place at a time). Stated
+ *  here as an anchor and answered in sim/housing.ts like the rest, because
+ *  content cannot know either of those coordinates.
+ *
+ *  All five are the same rule — content states the anchor, sim answers it. */
+export type StopAnchor = "home" | "warren" | "grove" | "homestead" | "skyhome";
 
 export interface ScheduleStop {
   fromHour: number;
@@ -430,7 +437,10 @@ export const COSMOS: CharDef = {
   form: "cosmos",
   name: "Sidra",
   fixed: true,
-  schedule: [{ fromHour: 0, at: "homestead", x: 0, y: 0, doing: "passing through" }],
+  // "skyhome" rather than "homestead", and it is the same one stop it always
+  // was: she has no routine and never did — she is either here or she is not.
+  // What changed in Phase 7c is that "not here" now has an address.
+  schedule: [{ fromHour: 0, at: "skyhome", x: 0, y: 0, doing: "passing through" }],
   subtitle: "Not from here",
 };
 

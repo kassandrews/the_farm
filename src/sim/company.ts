@@ -26,7 +26,7 @@
 //     is on a leash that expires — their day ends, so they go home, which is the
 //     same clock every other thing in this town runs on.
 
-import type { WorldState, Villager } from "./types";
+import type { WorldState, Villager, Layer } from "./types";
 import type { CharId, CharDef } from "../content/cast";
 import { charDef, scheduledStop, isSecret } from "../content/cast";
 import { remember } from "./memory";
@@ -161,8 +161,12 @@ export function partWays(world: WorldState, now: number): void {
   const v = companion(world);
   world.company = null;
   if (!v) return;
-  const under = (v.layer ?? "surface") === "under";
-  v.memory = remember(v.memory, { kind: under ? "delved" : "company", at: now });
+  // Three afternoons now, and the layer they are standing on picks which one.
+  // Written as a lookup on the layer rather than a pair of booleans so a fourth
+  // layer could never quietly log itself as an ordinary walk round the town.
+  const layer = v.layer ?? "surface";
+  const kind = layer === "under" ? "delved" : layer === "sky" ? "climbed" : "company";
+  v.memory = remember(v.memory, { kind, at: now });
   // They walk home from wherever they are. Nothing teleports them and nothing
   // needs to: tickVillager stops asking `followTarget` the moment the slot is
   // null, and the next tick routes them to whatever their hour says.
@@ -172,7 +176,11 @@ export function partWays(world: WorldState, now: number): void {
   // pathfinder walks through rock, and every routine in content/cast.ts is a
   // surface coordinate. Only the Mole belongs down there, and he was never
   // eligible to be here.
-  if (under) v.layer = "surface";
+  //
+  // From ANY non-surface layer, not just from under: somebody left standing in
+  // the sky is the same person the surface renderer stops drawing, with a longer
+  // walk home. Only Sidra belongs up there, and she is not eligible either.
+  if (layer !== "surface") v.layer = "surface";
 }
 
 /** Called every tick: send them home when their own day says so. Returns the
@@ -238,11 +246,17 @@ export function followTarget(world: WorldState, v: Villager): { x: number; y: nu
  *  they are still there. */
 const LADDER_REACH = 6;
 
-export function takeAlong(world: WorldState): void {
+/** `from` is the layer the player was on a moment ago, and it is PASSED IN
+ *  rather than worked out here. It used to be inferred by inversion — "they are
+ *  under, so they came from the surface" — which was true while there were two
+ *  layers and became a guess the moment there were three: standing in the sky
+ *  says nothing about whether you climbed from the ground or (some day) from
+ *  somewhere else. The caller always knows; asking it costs one argument and
+ *  removes a whole class of companion-left-behind bug. */
+export function takeAlong(world: WorldState, from: Layer): void {
   const v = companion(world);
   if (!v) return;
   const p = world.player;
-  const from = p.layer === "under" ? "surface" : "under"; // where they'd have been
   if ((v.layer ?? "surface") !== from) return;
   if (Math.hypot(p.x - v.x, p.y - v.y) > LADDER_REACH) return;
   const { x, y } = playerTile(world);
