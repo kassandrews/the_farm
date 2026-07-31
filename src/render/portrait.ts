@@ -18,8 +18,12 @@ import { creatureKey, renderPixels, CELL } from "../content/canon/sprites";
 import type { AdultForm } from "../content/canon/forms";
 import type { LookDef } from "../content/looks";
 
-/** How many screen pixels per sprite pixel. Integer, and it must stay one. */
-export const PORTRAIT_SCALE = 6;
+/** How many screen pixels per sprite pixel. Integer, and it must stay one — and
+ *  the CSS must display the canvas at exactly PORTRAIT_PX, not near it. Drawn at
+ *  6× (96px) into a 120px box, `image-rendering: pixelated` gives some source
+ *  pixels seven screen rows and others six: unequal eyes, by a different route
+ *  than a non-integer ctx.scale() but with the same result on the face. */
+export const PORTRAIT_SCALE = 8;
 export const PORTRAIT_PX = CELL * PORTRAIT_SCALE;
 
 /** Baked portraits, keyed by form + look. A character's face never changes

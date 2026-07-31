@@ -2148,14 +2148,26 @@ function panel(title: string, who: string, body: (Node | string)[]): HTMLElement
     ...body.map((b) => (typeof b === "string" ? document.createTextNode(b) : b)),
   ]);
 }
-/** The dialogue frame: a speaker column (face, name, and for a secret the one
- *  line saying where they're from) beside what they said.
+/** The dialogue frame: a creature, and a speech bubble.
+ *
+ *  TWO THINGS ON SCREEN, and keeping it to two is the whole design. The obvious
+ *  build is a panel containing a bubble containing the text, with the name on a
+ *  third plate and the replies on a fourth row — and mocked up, that is four
+ *  nested boxes to say one sentence. So the panel's own paper goes away
+ *  entirely: `.panel.speech` keeps the class for the modal plumbing but draws
+ *  nothing, the bubble is the only box, and it SWALLOWS the replies rather than
+ *  letting them sit outside as a fifth element.
  *
  *  Deliberately not a variant of `panel()`. The counters and the satchel are
  *  screens with a heading; this is a person talking, and the difference is the
  *  whole layout rather than one extra node — folding both into one function
  *  would mean a `who` argument that sometimes means an eyebrow and sometimes a
- *  portrait. */
+ *  portrait. It does mean conversations no longer look like the shop, which is
+ *  the deliberate part: a counter is a screen, a conversation is a person.
+ *
+ *  `from` is a secret's subtitle, and it goes INSIDE the name plate rather than
+ *  under it — on its own it would be a fifth floating thing, and with nothing
+ *  behind it it would be text lying directly on the grass. */
 function speechPanel(
   name: string,
   from: string | undefined,
@@ -2167,17 +2179,13 @@ function speechPanel(
     el("div", { class: "speech-top" }, [
       el("div", { class: "speaker" }, [
         face,
-        el("div", { class: "speaker-name" }, [name]),
-        ...(from ? [el("div", { class: "speaker-from" }, [from])] : []),
+        el("div", { class: "speaker-name" }, [
+          el("div", {}, [name]),
+          ...(from ? [el("div", { class: "speaker-from" }, [from])] : []),
+        ]),
       ]),
-      el("div", { class: "speech-said" }, [said]),
+      el("div", { class: "speech-said" }, [said, replies]),
     ]),
-    // The replies span the whole panel rather than sitting in the text column.
-    // Tried the other way first and looked at it: against a one-line remark the
-    // buttons crowd in beside the words like a footnote, while the space under
-    // the portrait sits empty. Full width, they read as what YOU say back — a
-    // separate turn, under everything they said.
-    replies,
   ]);
 }
 function actionRow(buttons: HTMLElement[]): HTMLElement {
