@@ -3219,7 +3219,7 @@ Doc amendment first, then code (house rule). Calls that are the author's are
 under *Decide*. The one hard sequencing rule is at the bottom: **Moments ships
 last.**
 
-### 9a — Buildings that remember
+### 9a — Buildings that remember — **done**
 
 Structures accrete a small history off the memory spine that already exists. A
 room knows who has slept in it and what happened within its walls, and says so
@@ -3254,6 +3254,70 @@ never a meter.
 
 - Inspection line, resident dialogue, or both.
 - How many spells a building keeps before the oldest falls off.
+
+**Settled, and why:**
+
+- **Anchored to coordinates, never to a building.** A building has no identity
+  in this game and did not get one. `Room.id` is the lexicographically smallest
+  interior key (`sim/rooms.ts`) — stable across recomputes, and emphatically not
+  stable across renovation: extend a house one row north and it changes. A
+  history filed under the walls would be **deleted by the player improving the
+  house**, which is the exact opposite of the promise. So `world.places` is one
+  flat log of `{kind, x, y, at, who?}` and a room is a QUERY over it
+  (`placesIn`). Knock a wall out, push the house into the next field, and it
+  keeps everything it had and inherits what that field remembers. Pinned in
+  `history.test.ts` by asserting the room id changed and the line did not.
+- **A place remembers a kind of work happening near it, not each swing.**
+  `PLACE_MERGE = 8`: a second event of the same kind within eight tiles is
+  dropped. This is the load-bearing constant. A floor is two hundred boards and
+  one afternoon — recording two hundred entries would be both a lie about what
+  happened and a flood that pushes every older entry out, and any cap then
+  evicts "the room where you first met Eloise" behind a day of shovel work. The
+  personal kinds are exempt and merge per PERSON instead: two residents who
+  first spoke to you in the same room are two memories, however close they
+  stood.
+- **`MAX_PLACES = 24`, a backstop rather than a budget.** With the merge doing
+  nearly all the work this should almost never bite; the scale is honest to the
+  town's real churn, which is a handful of names.
+- **Both channels, and they carry different things.** The record — flat, factual,
+  past tense, ONE line per kind — is `content/history.ts`, and a room that
+  phrased itself differently each time you asked would be a record you stop
+  trusting. The social half is `RESIDENT_HISTORY` and covers **only `met` and
+  `built_plank`**: six forms × eight kinds is forty-eight line pools for a
+  feature whose point is that it stays small, and a villager remarking that you
+  once dug a hole in what is now their kitchen is a sentence nobody needs. A
+  resident never narrates their own tenancy at you.
+- **No panel.** The Decide item said "inspection LINE", and it is one — a house
+  answers into the ordinary flash, top two notes joined. A screen listing what a
+  building remembers is a page with gaps in it, and a page with gaps is a
+  checklist. Two, not one (one means `met` outranks everything and the room never
+  mentions anything else) and not all (a wall of text is also an inventory).
+- **v24 backfills EMPTY.** Every plank in `build` is a floor the player laid and
+  every claimed `homeBed` is somebody who sleeps there, so a backfill would have
+  been trivial — and every entry would be a fabrication with a made-up timestamp
+  on it, in a system whose only promise is that it says things that happened.
+
+**Two bugs the browser found and the tests could not**, both worth keeping:
+
+- **`witness` anchors to the PLAYER, and the place has to anchor to the TILE.**
+  Everything else in `witness` is about who was standing near you, because
+  friendship is about company. Build mode paints at a distance, so flooring a
+  house while standing in the garden filed "you laid these boards" in the garden
+  and the room never said the one line it exists to say. It takes an optional
+  `where` now; the regression is the first test in `history.test.ts`.
+- **The door check sat BELOW the tool, and that meant never.** A doorstep is
+  grass, grass is always diggable, so the shovel won every tap and a house could
+  not be asked anything at all — which is, word for word, the mailbox's lesson
+  three comments up in the same function ("somewhere you cannot till is a
+  curiosity; a letter nobody can open is a feature that does not exist"). It
+  sits above the tool now. It is cheaper than the mailbox because it can
+  **decline**: a door only offers this when its room actually remembers
+  something, so a house that has seen nothing costs its own doorstep nothing.
+
+And one found by reading the real flash: two notes from the same season came out
+as "...back in spring. You laid these boards yourself, in spring." Both true,
+and the pair read like a form letter. The clause says WHEN, and once it has been
+said the next sentence is already in that season.
 
 ### 9b — The town hall's ridiculous paperwork
 
