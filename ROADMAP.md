@@ -139,8 +139,12 @@ list of gaps but a pass over the whole game for feel — the fine-tooth comb.
 
 **Phase 7 — the world out there — is DONE**, all three steps: biomes that get
 stranger with radius (7a), found places as a standing category (7b), and the sky
-as a layer rather than a height (7c). What is next is the feel pass, which this
-phase has now interrupted three times.
+as a layer rather than a height (7c).
+
+**Phase 8 is the feel pass**, which the exploration phases interrupted three
+times and which is now the whole of what's next — see §Phase 8 for the four
+things a drive-and-photograph survey turned up. It is a pass over surfaces that
+already work, not a list of missing features.
 
 **Save schema is at v23**, and Phase 7c deliberately did not move it: the sky
 stores nothing, so there was nothing to migrate, and bumping the number would
@@ -3017,6 +3021,82 @@ The lean is Sidra, because it makes an existing secret deeper instead of
 widening the surface area — but the hermit is the stronger discovery beat, and
 "nobody, just the view" is the most honest to "the reward is that it's there".
 Pick by which feeling you want the climb to end on.
+
+---
+
+## Phase 8 — The feel pass — **proposed, not started**
+
+The fine-tooth comb, deferred three times by exploration phases. Not a list of
+missing features — every numbered item before this is built — but a pass over
+what the game already does, looking for the places where it stops looking like
+one object made by one hand.
+
+**How the list was found: by driving the game and photographing it**, not by
+reading the CSS. Title screen, settle-in card, HUD, satchel, menu, build mode,
+a conversation. Three of the four findings below are invisible in the source and
+obvious in a screenshot, which is the same lesson §House rules keeps recording.
+
+The through-line: **the last three feel decisions each fixed one surface and
+left its siblings alone.** The icons pass took the emoji out of the UI; the chip
+pass took the dark ovals out of the HUD; the panel pass gave dialogue a face.
+Each was right and each stopped at the edge of its own file. What is left is the
+seams between them.
+
+### 8a — One vocabulary
+
+Two leaks, both of them things that belong to somebody else's design system.
+§*Every overlay is the same chip* already made this argument and then stopped
+short of the largest button on screen.
+
+- **`.action-btn` is a circle filled with a gradient.** `border-radius: 50%`,
+  `radial-gradient(circle at 40% 35%, …)` — the only circle and the only gradient
+  anywhere in the interface, sitting over art drawn one pixel at a time. The
+  exact complaint that retired the 999px capsule, on the button the player looks
+  at most.
+- **Two shadow inks.** The world-layer HUD (`.tool`, `.mode-btn`, `.action-btn`)
+  drops `rgba(0, 0, 0, …)`; every panel drops the ink `rgba(43, 37, 64, …)`.
+  Pure black is in no palette this game owns — the same "a colour that appears
+  nowhere else" tell that killed the ovals.
+- **"Selected" and "press me" are the same object.** In the satchel the chosen
+  finish is solid `--accent`, identical to the primary button, so three stacked
+  orange bars read as three calls to action of which one happens to be on.
+  Everywhere else chosen-ness is an accent *outline* — `.tool.selected`, the six
+  form tiles on the settle-in card. **One grammar: solid accent is the verb, an
+  accent outline is the state.**
+
+### 8b — The fold
+
+`.panel` is `max-height: calc(100dvh - 40px)` over `overflow-y: auto`, and says
+nothing when it uses it. On a 620px-tall window the satchel's **Done** is cut in
+half and the settle-in card's confirm button and Meadow import box are entirely
+below the fold — no fade, no cut edge, nothing that reads as "there is more".
+
+**The settle-in card is the first screen of the game**, which makes this the
+worst possible place for it: a landscape phone opens on a form whose only exit
+is off-screen, and the player has to guess to scroll. A panel that scrolls has
+to look scrollable.
+
+### 8c — Ground worth standing on
+
+The town centre reads: plaza, buildings, a river through it. **The homestead
+plot is flat green with a scatter of identical tufts**, and it is where the
+player spends the most time and builds everything they build.
+
+The trap is named in CLAUDE.md and has caught this project three times: the fix
+is **not** a per-cell anything. Texture keyed to the tile grid gives back the
+venetian-blind stripe. Whatever this turns out to be, it steps off **world**
+coordinates or off a noise field, never off the cell.
+
+### Smaller, still open
+
+- **The rectangular pond** south of the starting homestead is a hard-cornered
+  rectangle of water.
+- **The `E 6 · S 6` chip.** §*Every overlay is the same chip* says to cut a HUD
+  label that names something already visible — but coordinates are not visible,
+  so this one may genuinely earn its place. Decide, don't assume.
+- **A blank name gives "New Sprite"** while `content/names.ts` holds a register
+  per form. An unnamed arrival could be dealt a name the same way everyone else
+  in town is.
 
 ---
 
