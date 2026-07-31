@@ -8,6 +8,18 @@
   --panel-edge: #d8c9a8;
   --accent: #c98a3a;
   --accent-ink: #4a2f14;
+
+  /* ONE shadow colour, everywhere. The HUD used to drop `rgba(0, 0, 0, …)` and
+     the panels the ink below, which is two design systems' worth of shadow in
+     one screen — and pure black appears in no palette this game owns, so the
+     controls over open grass carried a grey nothing borrowed from a browser
+     default. Same complaint that retired the dark ovals: a colour from outside
+     the set reads as debug chrome.
+
+     A variable rather than a literal because the drift is what went wrong. The
+     offset stays per-element (a 52px tool wants 2px where a panel wants 6px);
+     only the colour is shared. */
+  --shadow: rgba(43, 37, 64, 0.28);
 }
 
 * {
@@ -140,7 +152,7 @@ select {
   border-radius: 14px;
   border: 2px solid var(--panel-edge);
   background: var(--panel);
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25);
+  box-shadow: 0 3px 0 var(--shadow);
 }
 
 .hud.building .build-bar {
@@ -196,7 +208,7 @@ select {
   display: grid;
   place-items: center;
   cursor: pointer;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 0 var(--shadow);
   transition: transform 0.05s;
 }
 
@@ -210,25 +222,41 @@ select {
   transform: scale(0.94);
 }
 
+/* The verb. It was a 50% circle filled with a radial gradient — the only circle
+   and the only gradient anywhere in the interface, which made the button the
+   player looks at most the one piece of chrome that belonged to another game.
+   The same argument §Every overlay is the same chip made about the 999px pill,
+   which stopped one button short.
+
+   So: the game's own edge, a 14px radius on a 3px border — the largest radius in
+   the HUD, because it is the largest control, and the flat accent underneath.
+   It keeps ACT unmistakable through SIZE and COLOUR rather than through shape;
+   84px of solid accent in the corner was never in danger of being missed, and
+   the gloss was doing nothing the fill wasn't. */
 .action-btn {
   position: absolute;
   right: 20px;
   bottom: 28px;
   width: 84px;
   height: 84px;
-  border-radius: 50%;
+  border-radius: 14px;
   border: 3px solid var(--panel-edge);
-  background: radial-gradient(circle at 40% 35%, #ffe6b0, var(--accent));
-  color: var(--accent-ink);
+  background: var(--accent);
+  /* White, like `.btn.primary` — NOT `--accent-ink`, which is what this wore
+     when the fill was a gradient. Dark ink only ever cleared the accent because
+     the gloss put a #ffe6b0 highlight under the label; on the flat fill it is
+     brown on brown. Solid accent takes white text everywhere now. */
+  color: #fff;
   font-size: 15px;
   font-weight: 700;
+  letter-spacing: 0.04em;
   cursor: pointer;
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
+  box-shadow: 0 3px 0 var(--shadow);
 }
 
 .action-btn:active {
   transform: translateY(2px);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 0 var(--shadow);
 }
 
 .action-btn:disabled {
@@ -259,7 +287,7 @@ select {
   font-weight: 700;
   letter-spacing: 0.04em;
   cursor: pointer;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 0 var(--shadow);
 }
 
 .mode-btn.selected {
@@ -269,7 +297,7 @@ select {
 
 .mode-btn:active {
   transform: translateY(2px);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+  box-shadow: 0 1px 0 var(--shadow);
 }
 
 /* Cream, like the tool buttons, and NOT the dark translucent chip these were.
@@ -289,7 +317,7 @@ select {
   display: grid;
   place-items: center;
   cursor: pointer;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 0 var(--shadow);
 }
 
 .menu-btn:active {
@@ -368,7 +396,7 @@ select {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
-  box-shadow: 0 2px 0 rgba(43, 37, 64, 0.22);
+  box-shadow: 0 2px 0 var(--shadow);
 }
 
 /* The survey reference — the clock's chip exactly, in the opposite corner. It
@@ -426,7 +454,7 @@ select {
   color: var(--ink);
   font-size: 13px;
   line-height: 1.35;
-  box-shadow: 0 3px 0 rgba(43, 37, 64, 0.22);
+  box-shadow: 0 3px 0 var(--shadow);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.12s;
@@ -488,7 +516,7 @@ select {
 
      Kept in the Farm's own cool ink rather than The Meadow's warm brown, per the
      decision to take the finishing and not the palette. */
-  box-shadow: 0 6px 0 rgba(43, 37, 64, 0.3);
+  box-shadow: 0 6px 0 var(--shadow);
 }
 
 /* Bolder than it was. A monospace face at the same weight as its body text makes
@@ -587,7 +615,7 @@ select {
   width: 128px;
   height: 128px;
   image-rendering: pixelated;
-  filter: drop-shadow(0 4px 0 rgba(43, 37, 64, 0.25));
+  filter: drop-shadow(0 4px 0 var(--shadow));
 }
 
 /* The name plate. Same rounded-rectangle family as everything else — but in the
@@ -608,7 +636,7 @@ select {
   font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.25;
-  box-shadow: 0 3px 0 rgba(43, 37, 64, 0.25);
+  box-shadow: 0 3px 0 var(--shadow);
 }
 
 /* The bubble. Panel furniture at panel weight — same paper, same 3px edge, same
@@ -624,7 +652,7 @@ select {
   border: 3px solid var(--panel-edge);
   border-radius: 16px;
   padding: 16px 18px 14px;
-  box-shadow: 0 6px 0 rgba(43, 37, 64, 0.3);
+  box-shadow: 0 6px 0 var(--shadow);
 }
 
 /* The tail, as two overlapping squares: the back one in the edge colour, the
@@ -744,13 +772,37 @@ select {
   /* The same hard edge as the panel and the tool buttons, at button scale, so a
      button reads as a thing sitting on the panel rather than a tinted rectangle
      printed on it. */
-  box-shadow: 0 3px 0 rgba(43, 37, 64, 0.22);
+  box-shadow: 0 3px 0 var(--shadow);
 }
 
+/* Solid accent is THE VERB — the thing that commits, one per panel. */
 .btn.primary {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+
+/* Solid accent is the STATE. `.chosen` is what a picker's current option wears:
+   the finishes in the satchel, the seed variety, the import role.
+
+   All three used to wear `.primary`, which made the satchel a column of three
+   solid orange bars reading as three things to press, one of which happened to
+   be switched on. Same grammar the form tiles already settled on — an accent
+   EDGE, not an accent fill — so the game has one answer to "which of these am I
+   on" instead of one per screen.
+
+   The doubled edge (border + inset ring) is what makes it survive next to a real
+   primary at a glance: border-colour alone against `--panel-edge` is a two-shade
+   difference, and on a picker whose options are otherwise identical rows that is
+   not enough to find without hunting. */
+.btn.chosen {
+  border-color: var(--accent);
+  background: #fffaf0;
+  box-shadow: 0 3px 0 var(--shadow), inset 0 0 0 2px var(--accent);
+}
+
+.btn.chosen:active {
+  box-shadow: 0 1px 0 var(--shadow), inset 0 0 0 2px var(--accent);
 }
 
 /* Press it INTO its own shadow — move down by exactly what the shadow loses, so
@@ -758,7 +810,7 @@ select {
    physical key going down; translate alone reads as the whole thing sliding. */
 .btn:active {
   transform: translateY(2px);
-  box-shadow: 0 1px 0 rgba(43, 37, 64, 0.22);
+  box-shadow: 0 1px 0 var(--shadow);
 }
 
 .choices {
@@ -876,12 +928,12 @@ input.text-field:disabled {
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 3px 0 rgba(43, 37, 64, 0.22);
+  box-shadow: 0 3px 0 var(--shadow);
 }
 
 .form-tile:active {
   transform: translateY(2px);
-  box-shadow: 0 1px 0 rgba(43, 37, 64, 0.22);
+  box-shadow: 0 1px 0 var(--shadow);
 }
 
 /* Selected is an accent EDGE, not an accent fill: `.btn.primary` floods the
@@ -891,7 +943,7 @@ input.text-field:disabled {
 .form-tile.selected {
   border-color: var(--accent);
   background: #fffaf0;
-  box-shadow: 0 3px 0 rgba(43, 37, 64, 0.22), inset 0 0 0 2px var(--accent);
+  box-shadow: 0 3px 0 var(--shadow), inset 0 0 0 2px var(--accent);
 }
 
 /* Half of `.portrait`'s 128px. Still an exact multiple of the 16px sprite (four
@@ -900,7 +952,7 @@ input.text-field:disabled {
 .portrait.tile {
   width: 64px;
   height: 64px;
-  filter: drop-shadow(0 3px 0 rgba(43, 37, 64, 0.2));
+  filter: drop-shadow(0 3px 0 var(--shadow));
 }
 
 textarea.import-box {

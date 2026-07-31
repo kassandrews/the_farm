@@ -406,14 +406,14 @@ export class App {
       const pick = (role: "villager" | "player", label: string) => {
         const b = choiceBtn(label, () => {
           importRole = role;
-          for (const other of buttons) other.classList.remove("primary");
-          b.classList.add("primary");
+          for (const other of buttons) other.classList.remove("chosen");
+          b.classList.add("chosen");
           // Embodying takes its name and form, so those pickers stop applying.
           const embodied = role === "player";
           nameInput.disabled = embodied;
           for (const fb of formButtons) fb.style.opacity = embodied ? "0.45" : "1";
         });
-        if (importRole === role) b.classList.add("primary");
+        if (importRole === role) b.classList.add("chosen");
         buttons.push(b);
         return b;
       };
@@ -1509,11 +1509,11 @@ export class App {
         const buttons = options.map((id) => {
           const b = choiceBtn(skinDef(id).name, () => {
             world.skins.selected[cls] = id;
-            for (const other of buttons) other.classList.remove("primary");
-            b.classList.add("primary");
+            for (const other of buttons) other.classList.remove("chosen");
+            b.classList.add("chosen");
             saveWorld(world);
           });
-          if (world.skins.selected[cls] === id) b.classList.add("primary");
+          if (world.skins.selected[cls] === id) b.classList.add("chosen");
           return b;
         });
         row.append(...buttons);
@@ -1535,11 +1535,11 @@ export class App {
         const buttons = varieties.map((id) => {
           const b = choiceBtn(cropDef(id).name, () => {
             selectCrop(world, id);
-            for (const other of buttons) other.classList.remove("primary");
-            b.classList.add("primary");
+            for (const other of buttons) other.classList.remove("chosen");
+            b.classList.add("chosen");
             saveWorld(world);
           });
-          if (world.seeds.selected === id) b.classList.add("primary");
+          if (world.seeds.selected === id) b.classList.add("chosen");
           return b;
         });
         row.append(...buttons);
