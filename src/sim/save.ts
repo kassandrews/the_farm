@@ -19,10 +19,11 @@ import type { CharId, AuthoredId } from "../content/cast";
 import { CAST, MOLE, GHOST, COSMOS } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 
-export const SCHEMA_VERSION = 25;
+export const SCHEMA_VERSION = 26;
 
-// It went to 24 at Phase 9a (`places`) and 25 at 9b (`filings`) — genuinely new
-// stored fields, which is exactly the case the note below says is worth a bump.
+// It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`) and 26 at 9c
+// (`notebook`) — genuinely new stored fields, which is exactly the case the note
+// below says is worth a bump.
 //
 // Note what 25 does NOT add: anything about which forms the town hall is
 // offering. A batch of forms is a total function of how long you have lived
@@ -586,6 +587,19 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
   // has been in town a month and the hall owes it every batch it has missed.
   // Nothing was lost by the feature arriving late.
   24: (raw) => ({ ...raw, schemaVersion: 25, filings: [] }),
+
+  // v25 → v26: the Notebook (Phase 9c, sim/notebook.ts).
+  //
+  // Empty, and here the backfill is not merely dishonest but impossible in
+  // principle. An entry records that you NOTICED something; a save records where
+  // you are, never where you have been. There is no trace in a v25 town of the
+  // fen it walked through last March, and inventing one would be the journal
+  // claiming an afternoon that nobody can now check.
+  //
+  // Nothing is lost by it starting empty. Every noticed trigger is arithmetic on
+  // the live world, so an old town rewrites its journal simply by walking around
+  // the places it already knows — which is what a notebook is for.
+  25: (raw) => ({ ...raw, schemaVersion: 26, notebook: [] }),
 };
 
 /** The name the tables now give an authored character, or null for anyone the

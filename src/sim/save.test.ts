@@ -806,3 +806,39 @@ describe("v24 → v25: the town hall grew a filing cabinet", () => {
     expect(migrated.museum).toEqual(raw.museum);
   });
 });
+
+describe("v25 → v26: the Notebook", () => {
+  function v25Save(): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    delete w.notebook;
+    return { ...w, schemaVersion: 25 };
+  }
+
+  it("gives an old town a blank notebook", () => {
+    // The backfill is not merely dishonest here but impossible in principle: an
+    // entry records that you NOTICED something, and a save records where you
+    // are, never where you have been. There is no trace of the fen a v25 town
+    // walked through last March.
+    const migrated = migrateSave(v25Save())!;
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated.notebook).toEqual([]);
+  });
+
+  it("stores no distance, depth or high-water mark of any kind", () => {
+    // sim/mining.ts and content/junk.ts both refuse a "deepest reached" counter
+    // in writing. A farthest-from-plaza field would be the same object renamed,
+    // and it would be visible right here in the save.
+    const migrated = migrateSave(v25Save())!;
+    for (const banned of ["farthest", "furthest", "deepest", "explored", "maxDepth"]) {
+      expect(Object.keys(migrated)).not.toContain(banned);
+    }
+  });
+
+  it("leaves the rest of the town alone", () => {
+    const raw = v25Save();
+    const migrated = migrateSave(raw)!;
+    expect(migrated.villagers).toEqual(raw.villagers);
+    expect(migrated.filings).toEqual(raw.filings);
+    expect(migrated.places).toEqual(raw.places);
+  });
+});

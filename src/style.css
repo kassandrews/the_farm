@@ -328,6 +328,11 @@ select {
   left: 64px;
 }
 
+/* Third along, on the same 52px pitch the menu and satchel already keep. */
+.notebook-btn {
+  left: 116px;
+}
+
 /* Carried items: icon, name, count. A plain list — no grid, no slots, because
    there is no capacity to visualise (see sim/inventory.ts). */
 .satchel {

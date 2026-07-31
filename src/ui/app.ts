@@ -43,6 +43,7 @@ import { count } from "../sim/inventory";
 import { beginStroke, captureCell, endStroke, undoStroke, canUndo, undoLabel } from "../sim/undo";
 import { qualify, assign, beds, rehomeAcrossStroke, bedKeys, pendingRehome, DISQUALIFIER_TEXT } from "../sim/assign";
 import { counterBatches, cabinet, cabinetEmpty, file } from "../sim/filings";
+import { journal, journalEmpty } from "../sim/notebook";
 import type { CharId, NewcomerId } from "../content/cast";
 import { isNewcomer, isSecret, CAST } from "../content/cast";
 import { present } from "../sim/presence";
@@ -213,6 +214,7 @@ export class App {
       () => this.doAction(),
       () => this.openMenu(),
       () => this.openSatchel(),
+      () => this.openNotebook(),
     );
     this.wireInput();
     window.addEventListener("resize", () => this.renderer.resize());
@@ -928,6 +930,58 @@ export class App {
         body,
         actionRow([primaryBtn("Thank you", close)]),
       ]);
+    }, { dismissable: true });
+  }
+
+  /** The Notebook — what you have noticed, and what you have been told.
+   *
+   *  One view, no counter, no transaction. It is the only panel in the game that
+   *  is purely a read, which is why it has no choices in it: a journal you can
+   *  DO something from is a quest log.
+   *
+   *  WHAT IT MUST NEVER DRAW (DESIGN §The Notebook, ROADMAP 9c):
+   *
+   *    • No count, no total, no denominator, and not `world.notebook.length`
+   *      reconstructed here.
+   *    • No blanks, no "???", no greyed future entries. A slot that implies more
+   *      is the exact UI spoiler the tone rules ban for secrets, wearing a
+   *      journal cover — and it is the single easiest way to ruin this feature.
+   *    • No headings by subject. Grouping needs categories, and categories you
+   *      have nothing under are those blanks again, while categories only for
+   *      what you DO have quietly tell you how many kinds of thing exist.
+   *      Chronological, because a journal is a sequence.
+   *
+   *  The one visible distinction is HOW an entry was recorded: a field note in
+   *  your own hand reads plain, and something you were told is prefixed with who
+   *  told you. That is the whole texture, and it costs one eyebrow.
+   */
+  private openNotebook(): void {
+    if (!this.world) return;
+    const world = this.world;
+
+    this.openModal((close) => {
+      const body = el("div", {});
+
+      if (journalEmpty(world)) {
+        // An empty state that is a line, not a zero — and one that promises
+        // nothing. It does not say "start exploring"; it says the book is new.
+        body.append(
+          el("p", {}, [
+            "Blank, so far. ... It is a good notebook. Stiff spine, ruled feint, and nothing in it yet.",
+          ]),
+        );
+      } else {
+        for (const { def, line } of journal(world)) {
+          if (def.source === "told") body.append(el("div", { class: "who" }, ["Told"]));
+          body.append(el("p", {}, [line]));
+        }
+      }
+
+      body.append(actionRow([primaryBtn("Close it", close)]));
+      // The eyebrow has to cover BOTH kinds. "What you've noticed" was wrong the
+      // moment the first told entry landed under it — found by reading the real
+      // panel, which is the only place the two sit together.
+      return panel("The Notebook", "Noticed, and told", [body]);
     }, { dismissable: true });
   }
 
@@ -2359,11 +2413,21 @@ function buildHud(
   onAction: () => void,
   onMenu: () => void,
   onSatchel: () => void,
+  onNotebook: () => void,
 ): HudRefs {
   const menu = el("button", { class: "menu-btn", ariaLabel: "Menu" }, [iconEl("menu")]);
   menu.addEventListener("click", onMenu);
   hoverHint(menu, "Menu — sound, and starting a new town.");
   const satchel = el("button", { class: "menu-btn satchel-btn", ariaLabel: "Satchel" }, [iconEl("satchel")]);
+  // Third in the corner the hands already reach for. It sits with the satchel
+  // rather than in the menu because the menu is for the GAME (sound, a new
+  // town) and this is part of the world — what you have noticed while living
+  // in it. A journal filed under settings would read as a manual.
+  const notebook = el("button", { class: "menu-btn notebook-btn", ariaLabel: "Notebook" }, [
+    iconEl("notebook"),
+  ]);
+  notebook.addEventListener("click", onNotebook);
+  hoverHint(notebook, "Notebook — what you've noticed, and what you've been told.");
   satchel.addEventListener("click", onSatchel);
   hoverHint(satchel, "Satchel — what you're carrying.");
   const clock = el("div", { class: "clock" }, ["—"]);
@@ -2448,6 +2512,7 @@ function buildHud(
   const hud = el("div", { class: "hud" }, [
     menu,
     satchel,
+    notebook,
     clock,
     survey,
     flash,

@@ -338,6 +338,28 @@ const FARM_ICONS = {
     ],
     palette: { k: K },
   },
+  // A ruled journal, closed, spine to the left. Deliberately not an open book:
+  // at button size an open book is two pale blobs with a crease, and it reads as
+  // a bird. The rules ARE the icon — they are what says "somebody writes in
+  // this" rather than "you may read this", which is the difference between a
+  // notebook and a manual.
+  notebook: {
+    rows: [
+      "............",
+      ".kkkkkkkkkk.",
+      ".kcpppppppk.",
+      ".kcplllllpk.",
+      ".kcpppppppk.",
+      ".kcplllllpk.",
+      ".kcpppppppk.",
+      ".kcplllllpk.",
+      ".kcpppppppk.",
+      ".kcpppppppk.",
+      ".kkkkkkkkkk.",
+      "............",
+    ],
+    palette: { k: K, c: "#7a5a3a", p: "#efe4cf", l: "#9aa8bd" },
+  },
   satchel: {
     rows: [
       "............",

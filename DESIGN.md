@@ -1039,6 +1039,40 @@ first met Eloise", "you laid these boards yourself".
   face, and it inverts this whole section.
 - The underground has no season, for the same reason it has no sky.
 
+## The Notebook
+
+A naturalist's journal that accretes oblique observations as you go: "owls have
+only been seen near very old forests", never "combine X + Y". It is the museum
+record applied to discovery — no total, no denominator, no empty slots. You
+learn what else it might hold by going and finding it, never by reading a blank.
+
+**It gives you a way to remember what you have seen, and never a way to see what
+you have missed.**
+
+- **Two kinds of entry, told apart by how they were recorded.** Some you noticed
+  yourself, and they read as field notes in your own hand: *a suspiciously round
+  cluster of trees; farther out than anyone has bothered to go*. Some you were
+  told, and they carry the name of whoever told you: *Malcolm mentioned a
+  staircase that goes nowhere*. The distinction is the whole texture of the
+  thing — a real journal is half what you saw and half what somebody said to you
+  in passing, and the two do not sound alike.
+- **The wild and the town, never a person.** Biomes, water, weather, what grows
+  where, the deep rock, the sky — and the town as a place, its plaza and its
+  institutions and how it behaves. Not observations ABOUT residents: they are
+  already remembered in the memory log and in what rooms keep (§"A place keeps a
+  history"), and a page per resident is a collection screen with faces on it.
+- **No blanks, no locked entries, no count.** A greyed slot that implies more is
+  the exact UI spoiler §Tone bans for secrets, wearing a journal cover. The panel
+  shows what has fired and stops there.
+- **It reads its own past and never sets a future.** No entry may name a thing to
+  do. An observation is in the past tense about something that is true; the
+  moment one reads as an instruction it has become a quest log.
+- **It must not imply completeness.** The record shows what you have seen — the
+  same sentence Corrigal's gallery carries, and nothing anywhere may gate on it.
+- **Being told is a conversation, not a delivery.** A told entry arrives because
+  somebody actually said it to you, in their own voice, once. It is not a
+  notification with a name attached.
+
 ## Tone and dialogue
 
 Inherit The Meadow's house rules wholesale (see vendored content):

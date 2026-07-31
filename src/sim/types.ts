@@ -9,6 +9,7 @@ import type { CharId, NewcomerId } from "../content/cast";
 import type { MemoryLog } from "./memory";
 import type { PlaceLog } from "./places";
 import type { Filing } from "./filings";
+import type { Observation } from "./notebook";
 import type { Inventory } from "./inventory";
 import type { NodeId } from "../content/nodes";
 import type { SkinId, SkinClass } from "../content/skins";
@@ -363,6 +364,21 @@ export interface WorldState {
    *  every form in the table changes nothing and a filing that gated a rule
    *  would turn a cabinet into a progression track. */
   filings: Filing[];
+
+  /** The Notebook (sim/notebook.ts), in the order you wrote it.
+   *
+   *  An id and a timestamp per entry, and NOTHING ELSE — no distance, no depth,
+   *  no high-water mark of any kind. The conditions that fire an entry are
+   *  arithmetic on where you happen to be standing, evaluated live, and the
+   *  entry itself is the whole record that you were once out there. That is
+   *  deliberate: sim/mining.ts and content/junk.ts both refuse a "deepest
+   *  reached" counter in writing, on the grounds that a monotonic number is a
+   *  score whatever it is called, and a `farthestFromPlaza` field would be the
+   *  same object with a different name.
+   *
+   *  A record, not a score, on `museum.donated`'s argument. Nothing may expose
+   *  its length and nothing anywhere may gate on it. */
+  notebook: Observation[];
 
   flags: {
     landClaimed: boolean;

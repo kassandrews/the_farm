@@ -13,6 +13,7 @@ import type { MemoryKind } from "./memory";
 import { describeHome, NOTE_PRIORITY, URGENT } from "./home";
 import { describeSeason } from "./seasons";
 import { describeHistory } from "./history";
+import { tellable, observe } from "./notebook";
 import type { HomeNote } from "./home";
 import type { AdultForm } from "../content/canon/forms";
 import {
@@ -181,6 +182,23 @@ export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Sp
   // them is a resident of the town, so none of the resident machinery below has
   // anything true to say about them. Each has its own live variable and reads it
   // off the world, never off a memory.
+  // A told observation, ABOVE the secrets branch and above everything else.
+  //
+  // Above the secrets specifically, because three of the seven told rows are
+  // spoken BY the secrets — the Mole about the metal, the Ghost about her wood,
+  // the Cosmos about the showers — and `trySecretLine` returns early for
+  // exactly those three. Below it, the half of this feature that belongs to the
+  // most interesting characters in the game could never fire once.
+  //
+  // First overall is right anyway: these are one-shot, gated on somebody
+  // actually knowing you, and there are seven of them in the whole game. A line
+  // that can be said once beats a line that can be said every day.
+  const telling = tryTellLine(world, v, now);
+  if (telling) {
+    v.lastLine = telling;
+    return { who: displayName(v), text: telling };
+  }
+
   const secret = trySecretLine(world, v, now);
   if (secret) {
     let text = rng.pick(secret);
@@ -356,6 +374,25 @@ function tryDissentLine(world: WorldState, v: Villager, rng: Rng): string | null
   const reading = rivalReading(world, v.id);
   if (!reading) return null;
   return rng.pick(SCHOLAR_DISSENT)(reading.def.title, reading.rival);
+}
+
+/** Something this character has privately concluded and will now say out loud,
+ *  once — and the Notebook entry that writes it down (Phase 9c).
+ *
+ *  WRITES, unlike every other `try*` in this file, and that is deliberate: being
+ *  told is a conversation and not a delivery, so the entry has to be recorded by
+ *  the act of them saying it. Recording it anywhere else — a sweep that noticed
+ *  you had become their friend — would produce a journal entry about a
+ *  conversation that never happened.
+ *
+ *  No chance roll. Every other line here is one of many a villager could say
+ *  today; this is the only one they will ever say, so making it a coin flip
+ *  would just mean standing there talking until it came up. */
+function tryTellLine(world: WorldState, v: Villager, now: number): string | null {
+  const [def] = tellable(world, v.id, now);
+  if (!def) return null;
+  observe(world, def.id, now);
+  return def.remark ?? null;
 }
 
 /** Odds a villager remarks on the history of the room you're both standing in.

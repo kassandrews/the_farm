@@ -13,6 +13,7 @@ import { arrivalDue, admitArrival } from "./commission";
 import { remember } from "./memory";
 import type { MemoryKind } from "./memory";
 import { rememberPlace, isWorkPlace } from "./places";
+import { sweepNoticed } from "./notebook";
 import {
   canDig,
   canFill,
@@ -171,6 +172,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     company: null, // you arrive alone; everyone here is a stranger
     places: [], // the ground has seen nothing yet; the town's history starts now
     filings: [], // the hall has its founding schedule; you have filed none of it
+    notebook: [], // you have just arrived and noticed nothing yet
     flags: { landClaimed: false, onboarded: false },
   };
 
@@ -373,6 +375,18 @@ export function useStair(world: WorldState): boolean {
 
 /** Fixed-timestep advance. `dt` seconds drives smooth movement; `now` (epoch
  *  ms) drives the wall-clock world (crops). */
+/** How often the noticing predicates are walked. Half a second: fast enough
+ *  that stepping into the glass country and stopping to look feels like the
+ *  moment you noticed it, slow enough that the table is walked twice a second
+ *  instead of sixty times. */
+const NOTICE_SWEEP_MS = 500;
+
+// Not serialised — a cache key, not state, exactly like `buildRevision` in
+// sim/structures.ts. A WeakMap keyed by world so a discarded world drops it.
+const sweepAt = new WeakMap<WorldState, number>();
+const lastSweep = (w: WorldState): number => sweepAt.get(w) ?? 0;
+const setLastSweep = (w: WorldState, t: number): void => void sweepAt.set(w, t);
+
 export function tick(world: WorldState, dt: number, now: number): void {
   // Player amble toward tap target.
   const p = world.player;
@@ -444,6 +458,21 @@ export function tick(world: WorldState, dt: number, now: number): void {
   // And once met, she is wherever the calendar says — your homestead on one of
   // the five nights, her own place in the sky on all the others (sim/cosmos.ts).
   updateCosmos(world, now);
+
+  // And you may have just noticed something (Phase 9c). Throttled, unlike every
+  // due-check above it: those compare two timestamps, and this walks a table of
+  // predicates that ask about biomes, water and found sites — cheap
+  // individually, not cheap sixty times a second. None of them can change
+  // between one frame and the next, because all of them are about where you are
+  // standing and you cannot cross a tile in a sixtieth of a second.
+  //
+  // Nothing is stored to make this work. `lastNoticeSweep` is in-memory only,
+  // like the undo buffer and the rooms cache — losing it on reload costs one
+  // extra sweep.
+  if (now - lastSweep(world) >= NOTICE_SWEEP_MS) {
+    setLastSweep(world, now);
+    sweepNoticed(world, now);
+  }
 
   // And you may be standing in front of the Cube. There is nothing to meet —
   // it is a landmark and not a person — so the only thing that happens is that
