@@ -34,6 +34,7 @@ import {
 import { NODES } from "../content/nodes";
 import type { BiomeId } from "../content/biomes";
 import { FIELD_WEIGHTS, biomeDef } from "../content/biomes";
+import { foundSiteAt, foundTile, type FoundSite } from "./found";
 import type { BiomeDef, Tint } from "../content/biomes";
 import type { WaterKindId, ChannelDef } from "../content/water";
 import { waterKind } from "../content/water";
@@ -270,6 +271,20 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     // fills it, and the Ghost stands inside a trunk in the one spot the whole
     // place was shaped around.
     if (inGroveClearing(seed, spot, x, y)) return GRASS;
+
+    // The found places (Phase 7b), on the same terms and for the same reason as
+    // the two above: before the ordinary scatter, or a circle of trees comes out
+    // with holes in it and a pond comes out with a tree standing in the water.
+    //
+    // They start at ring 96, well past the grove (44), the cube (58) and the
+    // blossom rows (72), so the nearest one cannot land on an older landmark. The
+    // guard for the town itself is the same `nearHome` this block already sits in,
+    // plus the plaza check above it.
+    const found = foundSiteAt(seed, spot, x, y, onLand);
+    if (found) {
+      const t = foundTile(found, x, y);
+      if (t !== null) return t;
+    }
 
     // What the region does to the scatter. Every multiplier is 1 and every
     // clutter chance 0 in the meadow, so the town's own region — and therefore
@@ -753,6 +768,21 @@ export function blossomCentre(seed: number, spot: HomesteadSpot): { x: number; y
   return memoCentre("blossom", seed, spot, () =>
     onLand(seed, spot, BLOSSOM_RING, (hash2(6, 0, seed ^ 0x7c1d) / 4294967296) * Math.PI * 2),
   );
+}
+
+/** Which found place a tile belongs to, if any (Phase 7b).
+ *
+ *  The wrapper exists so `onLand` stays private to this file: sim/found.ts needs
+ *  it, and importing it the other way would put a cycle between the two — a module
+ *  that half-initialises and hands back a landmark at (0,0). Everything outside
+ *  terrain asks this, not `foundSiteAt`. */
+export function foundAt(
+  seed: number,
+  spot: HomesteadSpot,
+  x: number,
+  y: number,
+): FoundSite | null {
+  return foundSiteAt(seed, spot, x, y, onLand);
 }
 
 /** Which biome a tile is in.

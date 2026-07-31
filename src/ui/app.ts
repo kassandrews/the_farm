@@ -86,6 +86,9 @@ const ACTION_CUES: Record<ActionKind, Cue> = {
   water: "water",
   harvest: "harvest",
   read: "menu", // a panel opens; the menu cue is what a panel opening sounds like
+  // No panel for a letter — it flashes a line, like every other small thing the
+  // world says. See doAction: `read` is caught before the cue, `letter` is not.
+  letter: "menu",
   sink: "dig", // still the shovel — it's the second dig on the same tile
   carve: "dig",
   shaft: "place", // a foot on a rung: the closest thing here to a solid landing

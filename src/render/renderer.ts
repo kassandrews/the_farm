@@ -24,12 +24,17 @@ import {
   SHAFT,
   DARK_TREE,
   HUM_CUBE,
+  POLE,
+  MAILBOX,
+  STAIR,
   JUNK_PILE,
   MUSHROOM,
 } from "../content/tiles";
 import { skinDef } from "../content/skins";
 import type { SkinClass, SkinDef } from "../content/skins";
-import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey, regionSkin } from "../sim/world";
+import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey, regionSkin, foundAt } from "../sim/world";
+import { dayNumber } from "../sim/found";
+import { letterFor } from "../content/found";
 import { wallMask, blockedDoorsteps, CONNECT_N, CONNECT_E, CONNECT_S, CONNECT_W } from "../sim/structures";
 import { furnitureDef, footprint } from "../content/furniture";
 import { plinthRuns } from "../sim/museum";
@@ -57,6 +62,10 @@ const TARGET_COLOR: Record<ActionTarget["kind"], string> = {
   gather: "rgba(160,255,150,0.9)", // a tree or rock in reach
   tool: "rgba(255,255,255,0.85)", // the held tool has work here
   read: "rgba(190,205,255,0.9)", // the errands board is within reach
+  // The board's own colour, deliberately. Both are "there is something here to
+  // read", and giving the mailbox its own hue would make the reticle say THIS ONE
+  // IS SPECIAL about a thing whose whole character is that nobody remarks on it.
+  letter: "rgba(190,205,255,0.9)",
   shaft: "rgba(200,230,255,0.95)", // the way down, or the daylight above you
   none: "rgba(255,255,255,0.3)",
 };
@@ -189,6 +198,11 @@ const ROCK_SHAPES: readonly { readonly rows: readonly number[]; readonly chip?: 
  *  is a whole tile: it is a CUBE, and the first draft was eleven pixels wide and
  *  seventeen tall, which on screen was a headstone. */
 const CUBE_H = 14;
+// The found places' props (Phase 7b). Each is under one storey (24px): they are
+// things left in a field, and a mailbox taller than a wall would be a monument.
+const POLE_H = 14;
+const MAILBOX_H = 11;
+const STAIR_H = 18; // six steps of three pixels; still under a storey
 const CUBE_W = 16;
 
 // --- The underground ----------------------------------------------------------
@@ -286,12 +300,21 @@ function groundIdOf(id: number): number {
   // Its tile colours are grass's colours on purpose (content/tiles.ts) — the
   // mushrooms are drawn ON the grass, and grass that has something growing in it
   // has not ended either.
+  // The found places' three props (7b), for the fourth, fifth and sixth time. It
+  // is the same bug every time and it announces itself the same way: a pole came
+  // out as a brown SQUARE with a rod drawn on top of it, and the mailbox as a grey
+  // slab, because a standing thing that is not listed here has its own tile colour
+  // painted flat across the cell it stands in. A rod stuck in a bank has not ended
+  // the bank.
   return id === TREE ||
     id === ROCK ||
     id === DARK_TREE ||
     id === HUM_CUBE ||
     id === JUNK_PILE ||
-    id === MUSHROOM
+    id === MUSHROOM ||
+    id === POLE ||
+    id === MAILBOX ||
+    id === STAIR
     ? GRASS
     : id;
 }
@@ -329,6 +352,8 @@ export class Renderer {
   private sh = 0;
   private scale = 3; // scene px → CSS px
   private t0 = performance.now();
+  /** The `now` the current frame is being drawn at — see draw(). */
+  private now = 0;
   private canvas: HTMLCanvasElement;
   /** Rebuilt every frame; see the Raised docblock. */
   private raised: Raised[] = [];
@@ -478,6 +503,12 @@ export class Renderer {
     this.cam.x += (world.player.x + this.pan.x - this.cam.x) * 0.12;
     this.cam.y += (world.player.y + this.pan.y - this.cam.y) * 0.12;
 
+    // The frame's clock, kept for anything drawn deeper down that has to agree
+    // with the SIM about what day it is. The mailbox's flag is the first: it was
+    // written as Date.now() and disagreed with the sim by a week under the
+    // screenshot harness, which pins the page clock to a fixed afternoon. Two
+    // clocks for one fact is how a flag ends up up on a box that is empty.
+    this.now = now;
     const phase = skyPhaseAt(now);
     const night = isNight(phase);
     // Which world we are drawing. Below, nearly every pass in this method is a
@@ -603,7 +634,15 @@ export class Renderer {
         // Resource nodes stand up, so the flat pass draws only the ground they
         // stand ON and defers the node itself to the raised pass. Without this
         // a tree is trapped inside its own 16px cell and the world reads flat.
-        if (id === TREE || id === ROCK || id === DARK_TREE || id === HUM_CUBE) {
+        if (
+          id === TREE ||
+          id === ROCK ||
+          id === DARK_TREE ||
+          id === HUM_CUBE ||
+          id === POLE ||
+          id === MAILBOX ||
+          id === STAIR
+        ) {
           const x = tx;
           const y = ty;
           this.raised.push({
@@ -612,6 +651,9 @@ export class Renderer {
             draw: () => {
               if (id === ROCK) this.drawRock(world, x, y, night);
               else if (id === HUM_CUBE) this.drawCube(world, x, y, night);
+              else if (id === POLE) this.drawPole(world, x, y, night);
+              else if (id === MAILBOX) this.drawMailbox(world, x, y, night);
+              else if (id === STAIR) this.drawStair(world, x, y, night);
               // A dark tree is a tree drawn in the other palette — one flag, not
               // a second function. It is the same tree in every other way
               // (content/nodes.ts), and two draw paths would let them drift into
@@ -1917,6 +1959,137 @@ export class Renderer {
     ctx.fillStyle = night ? shift([76, 81, 104]) : shift([116, 122, 146]); // sunlit far edge
     ctx.fillRect(px + 1, topY + 1, CUBE_W - 2, 1);
 
+    ctx.globalAlpha = prev;
+  }
+
+  // --- The found places' props (Phase 7b) ---------------------------------------
+  //
+  // Three standing things, drawn in the cube's idiom: integer rects only, a near
+  // face plus whatever top surface you can see from a 3/4 view, and a hard
+  // silhouette so none of them is a smudge at dusk. No scale(), no rotate() — a
+  // rod leaning against the light is a staircase of 1px rects and not a
+  // transform (CLAUDE.md §Sprite rendering).
+  //
+  // None of them animates. The cube pulses because the cube is doing something;
+  // these are objects somebody left, and the stillness is most of what says so.
+
+  /** A rod stuck in a bank at a lean. The lean is the whole sprite — a vertical
+   *  pole is a fence post, and there are a dozen of these round one pond. */
+  private drawPole(world: WorldState, tx: number, ty: number, night: boolean): void {
+    const ctx = this.ctx;
+    const cx = Math.round(this.sceneX(tx));
+    const base = Math.round(this.sceneY(ty) + TILE / 2);
+
+    const prev = ctx.globalAlpha;
+    if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
+    else if (this.hides(world, tx, ty, POLE_H)) ctx.globalAlpha = prev * HIDDEN_FADE;
+
+    // Which way it leans is a property of WHERE it is, not of when you looked, so
+    // the pond's dozen poles lean in different directions and stay that way.
+    const lean = decoHash(tx, ty, 0x9c1) % 2 === 0 ? 1 : -1;
+    ctx.fillStyle = night ? "#5b472e" : "#8a6b45";
+    for (let i = 0; i < POLE_H; i++) {
+      // One pixel of lean every third row: over fourteen rows that is a rod at
+      // about twenty degrees, which reads as propped rather than as falling.
+      ctx.fillRect(cx + lean * Math.floor(i / 3), base - 1 - i, 2, 1);
+    }
+    // The bank end, darker, so it looks pushed INTO the ground rather than laid
+    // on top of it.
+    ctx.fillStyle = night ? "#3f3120" : "#6f5537";
+    ctx.fillRect(cx - 1, base - 2, 3, 2);
+
+    ctx.globalAlpha = prev;
+  }
+
+  /** A box on a post. The flag is UP on a day there is something in it, which is
+   *  diegetic and not UI: it is a thing the mailbox does, visible only if you are
+   *  standing in front of it, and it names nothing. A marker on a map would be the
+   *  UI spoiling a secret; a flag on the actual box is how you know there is post. */
+  private drawMailbox(world: WorldState, tx: number, ty: number, night: boolean): void {
+    const ctx = this.ctx;
+    const cx = Math.round(this.sceneX(tx));
+    const base = Math.round(this.sceneY(ty) + TILE / 2);
+
+    const prev = ctx.globalAlpha;
+    if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
+    else if (this.hides(world, tx, ty, MAILBOX_H)) ctx.globalAlpha = prev * HIDDEN_FADE;
+
+    ctx.fillStyle = "rgba(0,0,0,0.22)";
+    ctx.fillRect(cx - 3, base - 1, 6, 2);
+
+    // The post.
+    ctx.fillStyle = night ? "#4a4034" : "#6d5f4c";
+    ctx.fillRect(cx - 1, base - MAILBOX_H, 2, MAILBOX_H);
+
+    // The box: a near face, a top, and a slot. Nine wide, which is more than the
+    // post and less than the tile — it has to overhang its own stem to read as a
+    // box on a stick rather than as a sign.
+    const bx = cx - 5;
+    const by = base - MAILBOX_H - 6;
+    ctx.fillStyle = night ? "#525c66" : "#7d8a94";
+    ctx.fillRect(bx, by + 2, 10, 6);
+    ctx.fillStyle = night ? "#5e6a76" : "#8c99a3";
+    ctx.fillRect(bx, by, 10, 2);
+    ctx.fillStyle = night ? "#3b434c" : "#65707a";
+    ctx.fillRect(bx + 2, by + 4, 6, 1); // the little door's seam
+
+    ctx.fillStyle = "rgba(0,0,0,0.40)";
+    ctx.fillRect(bx, by, 1, 8);
+    ctx.fillRect(bx + 9, by, 1, 8);
+    ctx.fillRect(bx, by + 7, 10, 1);
+
+    // The flag, and the one thing here that varies. Reads the same total function
+    // the sim reads (content/found.ts) — not a copy of the rule, the rule itself.
+    const site = foundAt(world.seed, world.homestead.spot, tx, ty);
+    if (site?.kind === "mailbox" && letterFor(world.seed, site.index, dayNumber(this.now))) {
+      ctx.fillStyle = night ? "#8f4a45" : "#c4635c";
+      ctx.fillRect(bx + 10, by - 3, 2, 6);
+      ctx.fillRect(bx + 9, by - 3, 3, 2);
+    }
+
+    ctx.globalAlpha = prev;
+  }
+
+  /** One flight of stone steps, rising left to right across the three tiles the
+   *  found place occupies, and stopping in the air.
+   *
+   *  EACH TILE DRAWS ITS OWN TWO STEPS, not the whole flight. The first version
+   *  drew four steps per cell and came out as a BAR CHART — three identical
+   *  sawteeth in a row, which is the per-cell rule (CLAUDE.md) in its most literal
+   *  form: a thing that reads as one continuous object may not be repeated per
+   *  cell. The step's height therefore comes from where the tile is in the FLIGHT,
+   *  which is a world coordinate, so the courses run unbroken across it. */
+  private drawStair(world: WorldState, tx: number, ty: number, night: boolean): void {
+    const ctx = this.ctx;
+    const cx = Math.round(this.sceneX(tx));
+    const base = Math.round(this.sceneY(ty) + TILE / 2);
+
+    const prev = ctx.globalAlpha;
+    if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
+    else if (this.hides(world, tx, ty, STAIR_H)) ctx.globalAlpha = prev * HIDDEN_FADE;
+
+    // Which part of the flight this cell is. Falls back to the middle if the site
+    // has gone — a step drawn at the wrong height is better than a thrown frame.
+    const site = foundAt(world.seed, world.homestead.spot, tx, ty);
+    const dx = site ? tx - site.x : 0;
+
+    const face = night ? "#7d7970" : "#b8b2a6";
+    const top = night ? "#8a857b" : "#c8c2b6";
+    for (let k = 0; k < 2; k++) {
+      const step = (dx + 1) * 2 + k; // 0..5 across the three tiles, left to right
+      const h = 3 + step * 3;
+      const x = cx - 8 + k * 8;
+      ctx.fillStyle = "rgba(0,0,0,0.22)";
+      ctx.fillRect(x, base - 1, 8, 2);
+      ctx.fillStyle = face;
+      ctx.fillRect(x, base - h, 8, h);
+      ctx.fillStyle = top;
+      ctx.fillRect(x, base - h - 2, 8, 2);
+      // The riser's own edge, on the left where this step actually rises above the
+      // one before it — never on both sides of every cell.
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.fillRect(x, base - h - 2, 1, h + 2);
+    }
     ctx.globalAlpha = prev;
   }
 

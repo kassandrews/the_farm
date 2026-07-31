@@ -39,7 +39,10 @@ import { placeFurniture, removeFurnitureAt } from "./furniture";
 import { FURNITURE, furnitureDef } from "../content/furniture";
 import type { FurnitureId, Facing } from "../content/furniture";
 import { structureDef } from "../content/structures";
-import { GRASS, DIRT, PLANK, FARMLAND, FARMLAND_WET, MUSHROOM, SHAFT, JUNK_PILE } from "../content/tiles";
+import { GRASS, DIRT, PLANK, FARMLAND, FARMLAND_WET, MUSHROOM, SHAFT, JUNK_PILE, MAILBOX } from "../content/tiles";
+import { letterFor } from "../content/found";
+import { dayNumber } from "./found";
+import { foundAt } from "./world";
 import { digWithFind, carveWithFind, findLine } from "./junk";
 import { emptyInventory, add, canAfford, spend, refund, shortfall } from "./inventory";
 import type { Cost } from "./inventory";
@@ -383,6 +386,7 @@ export type ActionKind =
   | "water"
   | "harvest"
   | "read"
+  | "letter" // a mailbox in the middle of nowhere, and what was in it today
   | "sink" // the second dig on one tile: a way down
   | "carve" // cutting the rock face ahead of you
   | "shaft" // going down, or coming back up
@@ -400,7 +404,7 @@ export interface ActionResult {
 export interface ActionTarget {
   x: number;
   y: number;
-  kind: "harvest" | "gather" | "tool" | "read" | "shaft" | "none";
+  kind: "harvest" | "gather" | "tool" | "read" | "letter" | "shaft" | "none";
 }
 
 /** Where ACT will land, decided in ONE place so the reticle the player sees and
@@ -471,6 +475,25 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
     if (canFill(world, ahead.x, ahead.y)) return { ...ahead, kind: "tool" };
   }
 
+  // A mailbox beside you, ABOVE the tool underfoot (Phase 7b).
+  //
+  // IT WAS LAST, AND LAST MEANT NEVER. The ladder's usual rule is that a thing
+  // beside you must not hijack the tool underfoot — that is why a tree can't steal
+  // a tap from the shovel — and the mailbox was put at the bottom for exactly that
+  // reason. On screen it meant walking to a mailbox, pressing ACT and DIGGING A
+  // HOLE: out there you are always standing on grass, grass is always diggable, so
+  // the shovel always won and the letter could not be read at all with the tool the
+  // game starts you holding. The errands board has the same precedence and gets
+  // away with it only because it stands on plaza stone, which no tool touches.
+  //
+  // So it sits above the tool, on the shaft's argument rather than the tree's:
+  // nothing else is competing for this cell. The cost is real and small — you
+  // cannot dig or till the four tiles around a mailbox while you're standing on
+  // them — and it is the right way round. Somewhere you cannot till is a curiosity;
+  // a letter nobody can open is a feature that does not exist.
+  const box = mailboxNear(world, x, y);
+  if (box) return { x: box.x, y: box.y, kind: "letter" };
+
   const near = nodeNear(world, x, y, world.player.facing);
   const underfoot = toolApplies(world, tool, x, y);
   if (near && tool === "gather" && !underfoot) return { x: near.x, y: near.y, kind: "gather" };
@@ -479,7 +502,31 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
 
   const board = boardNear(world, x, y);
   if (board) return { x: board.x, y: board.y, kind: "read" };
+
   return { x, y, kind: "none" };
+}
+
+/** A mailbox on one of the four tiles around you. It is solid, so it can never be
+ *  underfoot — same shape as `boardNear`, which has the same problem. */
+function mailboxNear(world: WorldState, x: number, y: number): { x: number; y: number } | null {
+  for (const [nx, ny] of [
+    [x, y + 1],
+    [x, y - 1],
+    [x + 1, y],
+    [x - 1, y],
+  ]) {
+    if (tileAt(world, nx, ny) === MAILBOX) return { x: nx, y: ny };
+  }
+  return null;
+}
+
+/** WHICH mailbox this is — its index out from the datum, which is the only name a
+ *  thing nobody has ever named can have. Null if the tile is a mailbox that is not
+ *  a found place, which cannot currently happen and is not worth a crash if it
+ *  ever does. */
+function mailboxSiteAt(world: WorldState, x: number, y: number): number | null {
+  const site = foundAt(world.seed, world.homestead.spot, x, y);
+  return site && site.kind === "mailbox" ? site.index : null;
 }
 
 /** Where ACT lands underground. A short ladder, because the lower layer is a
@@ -588,6 +635,22 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
       kind: "shaft",
       changed: true,
       message: down ? "Down. The air goes cool and stops moving." : "Up. The sky is where you left it.",
+    };
+  }
+
+  if (target.kind === "letter") {
+    // Nothing is taken and nothing is stored. The box holds what it holds today
+    // (content/found.ts §letterFor), reading it again reads the same line, and an
+    // empty box is the common case on purpose — a box with a letter every day is
+    // a collection route (DESIGN §Found places).
+    const site = mailboxSiteAt(world, target.x, target.y);
+    const letter = site === null ? null : letterFor(world.seed, site, dayNumber(now));
+    return {
+      kind: "letter",
+      changed: false,
+      // The empty line is deadpan on purpose and is NOT a failure: you looked, it
+      // was empty, that is what usually happens to a box in a field.
+      message: letter ?? "Empty. The little door swings.",
     };
   }
 

@@ -57,11 +57,20 @@ const CHROME =
  * `seed` shapes the save before the world loads (see the addInitScript note):
  *   { wood, clear: true, player: {x, y} | "inside" }
  */
+/** The clock the page is pinned to, unless a caller overrides it.
+ *
+ *  EXPORTED because anything that computes a date-dependent fact for comparison —
+ *  the mailbox's letter is the first (Phase 7b) — has to ask the same day the page
+ *  will be on. Working from the real clock instead finds a box with post that the
+ *  game, sitting on a fixed afternoon in July, reports as empty; it looks exactly
+ *  like a bug in the feature and is a bug in the harness. */
+export const HARNESS_TIME = "2026-07-24T13:00:00";
+
 export async function drive({
   url = process.env.URL || "http://localhost:5173/",
   viewport = { width: 1100, height: 560 },
   deviceScaleFactor = 3,
-  time = "2026-07-24T13:00:00",
+  time = HARNESS_TIME,
   seed = null,
 } = {}) {
   const browser = await chromium.launch({ executablePath: CHROME });

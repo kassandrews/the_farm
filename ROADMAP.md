@@ -2751,7 +2751,70 @@ Decide: the escalation curve, and whether there's a ceiling. On an infinite map
 "keeps getting stranger forever" becomes noise; bands that reach a weird plateau
 and hold it is probably right.
 
-### 7b. Found places
+### 7b. Found places — **done**
+
+Shipped as planned: `DESIGN.md §Found places` written first (folding the grove and
+the cube into it), then `content/found.ts` (the table + the letter bank) and
+`sim/found.ts` (the siting). Four kinds — the circle of trees, the pond with a
+dozen poles and no fish, the mailbox nowhere near a house, and the staircase that
+leads nowhere. Three new tiles, all solid, none diggable, none gatherable. **No
+schema change**: a found place is a total function of (seed, x, y), so nothing is
+stored and no migration hands you one, which is what keeps them secrets rather than
+fixtures you happen not to have visited.
+
+**Settled, and why:**
+
+- **They recur outward forever**, on rings — kind K's nth instance at
+  `ring + n * spacing`, on a fresh hashed bearing, through `onLand` like every
+  landmark since 4c. This is the one place the category departs from the grove and
+  the cube, which are one per town. On a map that does not end, a category that runs
+  out after the first lap has told you the world ends where its contents do. Rings
+  rather than a per-chunk roll because a ring is a DISTANCE, and distance is the only
+  thing you steer by out here.
+- **The rings start at 96**, past the grove (44), the cube (58) and the blossom rows
+  (72), so nothing here can land on an older landmark or the town. A thousand-seed
+  test asserts it.
+- **The wild holds moods, not people.** People stay in town; the far world holds
+  places and the *evidence* of people — a letter with no author, poles with nobody
+  holding them. The Ghost and the Mole are worth walking to precisely because almost
+  nothing else out there is somebody, and it leaves 7c's inhabitant a real event.
+- **The letter is a function of (town, box, day)** — the festival trick, nothing
+  stored. The seed is in the key, and was missing from the first cut: without it,
+  "the nearest mailbox" is one box shared by every save in the world, holding the
+  same line on the same afternoon. The box is empty about two days in three, because
+  a box with post every day is a collection route.
+
+**Four things the tests could not have caught:**
+
+- **The poles were brown squares and the mailbox a grey slab.** A standing tile that
+  is not in `groundIdOf` gets its own colour painted flat across its cell, with the
+  sprite drawn on top. The rule is the one this file keeps relearning: a rod stuck in
+  a bank has not ended the bank.
+- **The staircase came out as a BAR CHART** — three identical sawteeth, because each
+  of its three cells drew the whole four-step flight. The per-cell rule (CLAUDE.md)
+  in its purest form. Each cell now draws its own two steps, with the height taken
+  from where the tile is in the flight, so the courses run unbroken across it.
+- **ACT dug a hole instead of reading the letter.** The mailbox was last in the
+  action ladder, on the usual rule that a thing beside you must not hijack the tool
+  underfoot — and last meant never: out there you are always standing on grass, grass
+  is always diggable, so the shovel always won. The errands board has the same
+  precedence and survives only because it stands on plaza stone. The mailbox now sits
+  above the tool on the SHAFT's argument (nothing else competes for the cell), and
+  the price is that you cannot dig the four tiles around a mailbox while standing on
+  them. Somewhere you cannot till is a curiosity; a letter nobody can open is a
+  feature that does not exist.
+- **The flag looked broken and was the harness.** `drive.mjs` pins the page clock to
+  a fixed afternoon, the renderer was asking `Date.now()` for the day while the sim
+  used the `now` passed into it, and the two disagreed by a week — a flag up on a box
+  the sim reported empty. The renderer now keeps the frame's `now` (`draw(world,
+  now)`) and reads that. **Two clocks for one fact** is the actual bug; the harness
+  only exposed it. `HARNESS_TIME` is exported from `drive.mjs` so a script comparing
+  a date-dependent fact asks the same day the page is on.
+
+`scripts/shot-found.mts` stands in each kind, photographs it, then finds a box with
+post today and reads it — the letter flow end to end.
+
+### 7b. The plan as written
 
 One-off oddities scattered across the world, discovered and never directed to.
 This is the pattern 4c already proved — the humming cube, the dark grove —

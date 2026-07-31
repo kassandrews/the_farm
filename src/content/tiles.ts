@@ -101,6 +101,22 @@ export const JUNK_PILE: TileId = 16;
 export const SAND: TileId = 17;
 export const SHALLOW: TileId = 18;
 
+/** The found places (Phase 7b). Three props that exist only inside one, and are
+ *  generated terrain like the cube — never placed, never craftable, never listed.
+ *
+ *  They are TILES for the reason JUNK_PILE is: the world already has a way to put
+ *  a thing on a square, and a "scenery objects" layer would be a second one, with
+ *  its own opinions about rooms, roofs and pathfinding. Nothing here needs to sit
+ *  on a floorboard.
+ *
+ *  All three are SOLID, and that is the only thing they do. You cannot walk
+ *  through a mailbox; you also cannot dig it up, take it, or put another one
+ *  somewhere. A found place gives nothing (DESIGN §Found places), and a prop you
+ *  could pocket would be the first thing out there that ranks. */
+export const POLE: TileId = 19; // a rod stuck in a bank, one of a dozen
+export const MAILBOX: TileId = 20; // on a post, miles from anywhere
+export const STAIR: TileId = 21; // stone steps, ending in the air
+
 export const TILES: Record<TileId, TileDef> = {
   [GRASS]: {
     id: GRASS,
@@ -247,6 +263,35 @@ export const TILES: Record<TileId, TileDef> = {
   // it; it has no NodeDef, so gathering ignores it. It is untouchable without a
   // single rule saying so — which is better than a rule, because nothing here
   // is protected from you on purpose (the Mole's road).
+  [POLE]: {
+    id: POLE,
+    // Named for what it is rather than what it implies. "Fishing rod" would be
+    // the game explaining the joke, and there are no fish.
+    name: "Pole",
+    color: "#8a6b45",
+    top: "#9b7a50",
+    shade: "#6f5537",
+    solid: true,
+  },
+  [MAILBOX]: {
+    id: MAILBOX,
+    name: "Mailbox",
+    color: "#7d8a94",
+    top: "#8c99a3",
+    shade: "#65707a",
+    solid: true,
+  },
+  [STAIR]: {
+    id: STAIR,
+    name: "Steps",
+    // The plaza's stone, deliberately: whoever built these had the same rock the
+    // town is paved with, which is the detail that makes them unsettling rather
+    // than magical.
+    color: "#b8b2a6",
+    top: "#c0bab0",
+    shade: "#aaa498",
+    solid: true,
+  },
   [HUM_CUBE]: {
     id: HUM_CUBE,
     // Named plainly. It is not called "the Humming Cube" anywhere the game can

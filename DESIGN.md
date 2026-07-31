@@ -623,6 +623,54 @@ level is good physics and bad cozy.
 - **Never gate a material.** No recipe, yield or unlock is across water — same
   invariant as biomes. Water changes how far you walk, never what you may have.
 
+## Found places
+
+A **found place** is a small authored oddity sited by the seed. It exists at a
+real coordinate, differs per world, and is reached by walking into it — never by
+being pointed at. It appears on no map, is announced by no toast, and is spoiled
+by no UI (§Tone). The dark grove and the humming cube were the first two, and
+they are members of this category rather than one-offs.
+
+It holds a mood, or nothing. **Never a payout.** A finish is the most one may
+ever give, because a finish is weightless and gates nothing (§Materials); most
+give less than that. Nothing in the game may ever require having found one, and
+nothing a found place contains may be the thing another place then needs.
+
+**Finding it is the mechanic**, so there is no marker, no minimap pin, and no
+"undiscovered" slot in any list. A screen that can tell you how many you have
+left to find has converted a world into a checklist and told you the answer.
+
+### Why these get to be rare when water does not
+
+§Water forbids anything singular on an unbounded map: one ocean on an endless
+plain is a diorama. Found places are the deliberate exception, and the
+distinction is the whole reason they work.
+
+**Ambient natural features must scatter or the world feels empty. Authored
+secrets are allowed to be rare, because rarity is what makes them secret.**
+
+The safety valve is **many kinds at a low density each** — collectively
+scattered, individually a surprise. One kind at density one is a diorama; a
+dozen kinds at a twelfth each is a world with things in it. And they **recur
+outward forever** rather than being one-per-town: on an unbounded map, a
+category that runs out after the first lap has quietly told you the world ends
+where its contents do.
+
+### The wild holds moods, not people
+
+People stay in town. What the far world holds is places, weather, and the
+**evidence** of people — a letter with no author present, a dozen poles and
+nobody fishing, a bakery still warm. This is not a shortage of ideas: the Ghost
+and the Mole are worth walking to precisely because almost nothing else out
+there is somebody, and a wild full of hermits would make both of them ordinary.
+
+### The letter, and anything else that varies
+
+Content inside a found place may vary, but only as a **total function of
+(which place, which day)** — the festival trick. Nothing is stored, and reading
+it is not required. A letter is never a request and never names a task: a notice
+speaks only in the past tense (§The errands board).
+
 ## Materials
 
 Three gathered classes, and no more: **wood**, **stone**, and **ore** (one
