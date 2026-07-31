@@ -676,6 +676,50 @@ const FARM_ICONS = {
     ],
     palette: { k: K, r: "#c0392f", w: "#f7ece0", s: "#e8dcc0" },
   },
+
+  /** The homestead you picked, on the settle-in card. Nothing else awards one:
+   *  it is a marker, not a score, and the moment a second thing in this game
+   *  hands out stars it starts reading as one.
+   *
+   *  Gold rather than the panel accent, and that is the point of it — `--accent`
+   *  is the colour every selected control on that card already uses, so a star
+   *  in it would be a shape change and nothing more. This is warmer and lighter
+   *  than the accent so it reads as an object sitting on the chosen row.
+   *
+   *  THE ARMS ARE TWO ROWS THICK, and the first draft's were one. At this size a
+   *  one-row arm is entirely outline — no inside is left for the gold to be in —
+   *  so the star came out as a dark cross with a yellow middle, which is the
+   *  shape of a badge and not of a star. The horizontal bar is the widest part of
+   *  a five-point star and so the part that has to carry colour; the legs stay
+   *  thin, because by then the eye has been told what it is looking at.
+   *
+   *  The arm reads dark along its TOP and gold underneath, which looks like an
+   *  error and is not: the arm's upper edge is the silhouette's edge, so ink is
+   *  where it belongs (house rule one, above). A third draft tapered the arms to
+   *  points to even it up and lost them altogether — at twelve pixels a taper is
+   *  a dome, and the star became a gold blob with two dark nubs. Judge this one
+   *  at the size it ships at; 24× makes every icon in this file look wrong.
+   *
+   *  Drawn symmetrically about the seam between columns 5 and 6 — an odd-width
+   *  star would put its top point off-centre, which at twelve pixels is the only
+   *  thing anyone would see. */
+  star: {
+    rows: [
+      "............",
+      ".....kk.....",
+      "....kllk....",
+      "....kllk....",
+      "kkkkllggkkkk",
+      "klllgggggddk",
+      ".kllgggggdk.",
+      "..klgkkgdk..",
+      "..kgk..kdk..",
+      ".kgk....kdk.",
+      ".kk......kk.",
+      "............",
+    ],
+    palette: { k: K, l: "#f7d98a", g: "#e8b44a", d: "#c08a24" },
+  },
 } satisfies Record<string, IconDef>;
 
 /** Every icon the interface can draw: the ones authored here plus the handful

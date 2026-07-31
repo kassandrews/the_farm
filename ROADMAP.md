@@ -766,6 +766,33 @@ Verify with `npx tsx scripts/shot-spots.mts <dir> <seed>` — three panels, one
 seed, close enough that buildings read. If they don't look like three different
 places, the spot has stopped meaning anything again.
 
+**No map preview on the card. A gold star on the chosen row instead.** The plan
+was a thumbnail of your actual town beside each spot, so the blurb could be
+checked against the ground. Two things killed it, in order:
+
+- **The game's own renderer cannot show a spot.** `resize()` targets ~11 tiles on
+  the short edge and clamps the scale to integers, so a preview box renders the
+  plaza and the town hall — while the treeline is at 24 tiles and the shore at
+  34. Screenshotted all three at seed 104: they are indistinguishable.
+- **Zooming out is not a wiring job, it is forbidden.** Fitting ~96 tiles means
+  16px sprites at ~4px, and CLAUDE.md's sprite rule exists to stop exactly that.
+  A zoomed-out map would have to be its own drawing — flat tiles, no sprite art,
+  a second visual language on the one screen that introduces the first.
+
+The preview's job was catching a UI that oversold the terrain, and the terrain
+now does what the blurbs say, so the job is gone. The star costs one 12×12 icon
+and no architecture: in particular the seed stays inside `newWorld` instead of
+being hoisted into the UI so the card could draw with it.
+
+Two knock-ons worth keeping: the spot rows moved from `.primary` (a flood of
+`--accent`) to an accent EDGE, because gold-on-orange made the star vanish —
+`.form-tile.selected` had already settled that argument for the same reason one
+block up. And the star is hidden with `visibility`, not removed, so choosing a
+different homestead doesn't change the row heights under it.
+
+Nothing else in the game awards a star. The moment a second thing does, it stops
+being a marker and starts reading as a score.
+
 ### Undecided, deliberately
 
 - ~~**Money vs. barter vs. neither.**~~ **Settled: barter**, with the shop

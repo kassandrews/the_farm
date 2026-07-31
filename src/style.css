@@ -771,6 +771,52 @@ select {
   text-align: left;
 }
 
+/* A homestead. The name on its own line with the star at the far end, the blurb
+   under it — the old single run of "name — blurb" wrapped mid-sentence and the
+   name stopped being findable in it. */
+.spot-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.spot-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* The blurb is the quiet half: it describes, the name identifies. Same step down
+   the panel's own `p` takes from its heading. */
+.spot-blurb {
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.4;
+  opacity: 0.75;
+}
+
+/* Selection is the accent EDGE, exactly as `.form-tile.selected` does it and for
+   its reason — a flooded background would recolour the star it is meant to be
+   showing off. */
+.spot-choice.selected {
+  border-color: var(--accent);
+  background: #fffaf0;
+  box-shadow: 0 3px 0 rgba(43, 37, 64, 0.22), inset 0 0 0 2px var(--accent);
+}
+
+/* Present on every row, visible on one — see the note in `showOnboarding`. The
+   rows must not change height when the choice moves. */
+.spot-choice img {
+  visibility: hidden;
+  flex: none;
+}
+
+.spot-choice.selected img {
+  visibility: visible;
+}
+
 /* The one single-line text field in the game: your name, in Settle in. It used
    to borrow `.import-box`, whose only rule is `textarea.import-box` — so it
    matched nothing and the field was a bare browser input sitting on the panel's

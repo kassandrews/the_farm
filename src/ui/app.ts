@@ -355,14 +355,34 @@ export class App {
     });
     formRow.append(...formButtons);
 
+    // The homestead list, and the one place in the game that awards a star.
+    //
+    // NOT `.primary`, which is what these used to be. That floods the button
+    // with `--accent`, and the star is gold — near enough to the accent that it
+    // would have disappeared into its own highlight. `.form-tile.selected` two
+    // blocks up hit this first and settled it: selection is an accent EDGE, not
+    // an accent fill, precisely so the thing being selected keeps its colours.
+    // The spots now borrow that, and the star sits on cream where it reads.
+    //
+    // The star is in the DOM on every row and hidden by CSS rather than added
+    // and removed. Three rows is few enough that either would work, but a
+    // hidden element keeps each row the same height, so picking a different
+    // homestead doesn't shuffle the two below it.
     const spotRow = el("div", { class: "choices" });
     const spotButtons = SPOTS.map((s) => {
-      const b = choiceBtn(`${s.name} — ${s.blurb}`, () => {
+      const b = el("button", { class: "btn spot-choice" }, [
+        el("span", { class: "spot-head" }, [
+          el("span", {}, [s.name]),
+          iconEl("star", SCALE.inline),
+        ]),
+        el("span", { class: "spot-blurb" }, [s.blurb]),
+      ]);
+      b.addEventListener("click", () => {
         spot = s.id;
-        for (const other of spotButtons) other.classList.remove("primary");
-        b.classList.add("primary");
+        for (const other of spotButtons) other.classList.remove("selected");
+        b.classList.add("selected");
       });
-      if (s.id === spot) b.classList.add("primary");
+      if (s.id === spot) b.classList.add("selected");
       return b;
     });
     spotRow.append(...spotButtons);
