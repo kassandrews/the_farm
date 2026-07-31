@@ -129,11 +129,15 @@ export interface CharDef {
   /** Fixed cast are institutions and don't wander far; residents walk a ring. */
   fixed: boolean;
   schedule: ScheduleStop[];
-  /** What the conversation panel calls them under their name. Absent means
-   *  "Farm resident", which is true of everybody it was written for and of none
-   *  of the secrets — the Mole is not a resident of anywhere and the Cosmos is
-   *  not staying. Present tense and about WHERE, never about who: naming what
-   *  they are would be the UI doing the discovering for you. */
+  /** Where a secret is from — the Mole is not a resident of anywhere and the
+   *  Cosmos is not staying. Present tense and about WHERE, never about who:
+   *  naming what they are would be the UI doing the discovering for you.
+   *
+   *  CURRENTLY UNREAD. The conversation panel printed it under the name until
+   *  the speech-bubble rebuild, which gave the speaker a name plate and nothing
+   *  else. Kept because it is written content and the line is a good one; if
+   *  nothing has picked it up by the time secrets get their own beat, delete it
+   *  rather than leaving a field that describes a screen the game doesn't have. */
   subtitle?: string;
   /** What the town calls somebody whose name it hasn't earned yet — set only on
    *  the Quiet Ghost, and the whole of how a secret gets named.

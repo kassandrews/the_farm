@@ -41,7 +41,7 @@ import { count } from "../sim/inventory";
 import { beginStroke, captureCell, endStroke, undoStroke, canUndo, undoLabel } from "../sim/undo";
 import { qualify, assign, beds, rehomeAcrossStroke, bedKeys, pendingRehome, DISQUALIFIER_TEXT } from "../sim/assign";
 import type { CharId, NewcomerId } from "../content/cast";
-import { isNewcomer, isSecret, charDef, CAST } from "../content/cast";
+import { isNewcomer, isSecret, CAST } from "../content/cast";
 import { present } from "../sim/presence";
 import { humLevel } from "../sim/hum";
 import {
@@ -526,16 +526,15 @@ export class App {
         // frame rather than the generic `panel()`: speaker on the left, what
         // they said beside it.
         //
-        // No "Farm resident" line. It was under every name in the game and told
-        // you nothing you couldn't see — you are standing in the town talking to
-        // somebody who lives in it. A SECRET's subtitle stays, because that one
-        // is content: it says where they are rather than who they are ("Not from
-        // here"), they stay undocumented, and the string is the character's own
-        // (`CharDef.subtitle`) rather than a ternary that grew a branch per
-        // secret.
+        // A NAME AND NOTHING ELSE under the face. There used to be a line above
+        // it reading "Farm resident", which sat under every name in the game and
+        // told you nothing you couldn't see — you are standing in the town
+        // talking to somebody who lives in it. Secrets had their own version of
+        // it (`CharDef.subtitle`: "Out past the woods") and that went the same
+        // way: the bubble is where a character says who they are, and a caption
+        // under the name says it for them.
         speechPanel(
           speech.who,
-          charDef(them).subtitle,
           portrait(them.form, lookFor(them.id, them.form)),
           el("p", {}, [speech.text]),
           actionRow([
@@ -2165,25 +2164,20 @@ function panel(title: string, who: string, body: (Node | string)[]): HTMLElement
  *  portrait. It does mean conversations no longer look like the shop, which is
  *  the deliberate part: a counter is a screen, a conversation is a person.
  *
- *  `from` is a secret's subtitle, and it goes INSIDE the name plate rather than
- *  under it — on its own it would be a fifth floating thing, and with nothing
- *  behind it it would be text lying directly on the grass. */
+ *  The plate holds the NAME and nothing else. Secrets carry a `CharDef.subtitle`
+ *  saying where they're from ("Out past the woods"), which the old flat panel
+ *  printed as an eyebrow and which briefly rode along under the name here — but
+ *  a two-line plate is a label with a caption, and the speaker is the quiet half
+ *  of this layout. The subtitle now goes unread; see cast.ts. */
 function speechPanel(
   name: string,
-  from: string | undefined,
   face: HTMLElement,
   said: HTMLElement,
   replies: HTMLElement,
 ): HTMLElement {
   return el("div", { class: "panel speech" }, [
     el("div", { class: "speech-top" }, [
-      el("div", { class: "speaker" }, [
-        face,
-        el("div", { class: "speaker-name" }, [
-          el("div", {}, [name]),
-          ...(from ? [el("div", { class: "speaker-from" }, [from])] : []),
-        ]),
-      ]),
+      el("div", { class: "speaker" }, [face, el("div", { class: "speaker-name" }, [name])]),
       el("div", { class: "speech-said" }, [said, replies]),
     ]),
   ]);

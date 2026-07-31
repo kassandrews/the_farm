@@ -563,19 +563,6 @@ select {
   box-shadow: 0 3px 0 rgba(43, 37, 64, 0.25);
 }
 
-/* Secrets only — "Not from here", "Underground". Inside the plate, under the
-   name: on its own it would be a third floating object, and with nothing behind
-   it, text lying directly on the grass. */
-.speaker-from {
-  margin-top: 2px;
-  font-size: 10px;
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--accent);
-  line-height: 1.3;
-}
-
 /* The bubble. Panel furniture at panel weight — same paper, same 3px edge, same
    hard unblurred shadow — because it IS the panel now.
 
