@@ -771,50 +771,39 @@ select {
   text-align: left;
 }
 
-/* A homestead. The name on its own line with the star at the far end, the blurb
-   under it — the old single run of "name — blurb" wrapped mid-sentence and the
-   name stopped being findable in it. */
-.spot-choice {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 100%;
+/* The three homesteads, across. Always three columns — unlike `.form-tiles`,
+   which auto-fits because six forms have to fold to two-up on a phone. Three
+   emblems fit at any width this panel reaches, and folding them would put one
+   homestead on a line by itself looking like the recommended one. */
+.spot-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 4px;
 }
 
-.spot-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+/* Tighter side padding than `.form-tile`: the emblem is wider than a portrait
+   and this tile is a third of the panel rather than a half. */
+.spot-tile {
+  padding: 8px 4px 8px;
+  line-height: 1.25;
 }
 
-/* The blurb is the quiet half: it describes, the name identifies. Same step down
-   the panel's own `p` takes from its heading. */
-.spot-blurb {
-  font-weight: 400;
-  font-size: 13px;
-  line-height: 1.4;
-  opacity: 0.75;
+/* The emblem is pixel art at an exact ×3 and must never be handed a fractional
+   size, so it may shrink the tile but never the other way about — `max-width`
+   here would resample it, which is CLAUDE.md's sprite rule. */
+.spot-tile img {
+  border-radius: 4px;
 }
 
-/* Selection is the accent EDGE, exactly as `.form-tile.selected` does it and for
-   its reason — a flooded background would recolour the star it is meant to be
-   showing off. */
-.spot-choice.selected {
-  border-color: var(--accent);
-  background: #fffaf0;
-  box-shadow: 0 3px 0 rgba(43, 37, 64, 0.22), inset 0 0 0 2px var(--accent);
-}
-
-/* Present on every row, visible on one — see the note in `showOnboarding`. The
-   rows must not change height when the choice moves. */
-.spot-choice img {
-  visibility: hidden;
-  flex: none;
-}
-
-.spot-choice.selected img {
-  visibility: visible;
+/* One blurb, under the row, about the tile that's selected. */
+.panel p.spot-blurb {
+  margin: 10px 0 0;
+  /* THREE lines' worth, held open — `.panel p` sets line-height 1.45, so 3 × 1.45.
+     The three blurbs wrap to two lines or three at this width, and without the
+     floor the Claim button jumps a line as you try the choices. Two lines' worth
+     was the first guess and reserved exactly one line too few. */
+  min-height: 4.35em;
 }
 
 /* The one single-line text field in the game: your name, in Settle in. It used

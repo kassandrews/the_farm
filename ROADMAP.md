@@ -766,9 +766,9 @@ Verify with `npx tsx scripts/shot-spots.mts <dir> <seed>` — three panels, one
 seed, close enough that buildings read. If they don't look like three different
 places, the spot has stopped meaning anything again.
 
-**No map preview on the card. A gold star on the chosen row instead.** The plan
-was a thumbnail of your actual town beside each spot, so the blurb could be
-checked against the ground. Two things killed it, in order:
+**No map preview on the card. Three emblems instead — one per spot, on tiles.**
+The plan was a thumbnail of your actual town beside each spot, so the blurb could
+be checked against the ground. Two things killed it, in order:
 
 - **The game's own renderer cannot show a spot.** `resize()` targets ~11 tiles on
   the short edge and clamps the scale to integers, so a preview box renders the
@@ -780,18 +780,51 @@ checked against the ground. Two things killed it, in order:
   a second visual language on the one screen that introduces the first.
 
 The preview's job was catching a UI that oversold the terrain, and the terrain
-now does what the blurbs say, so the job is gone. The star costs one 12×12 icon
-and no architecture: in particular the seed stays inside `newWorld` instead of
-being hoisted into the UI so the card could draw with it.
+now does what the blurbs say, so the job is gone. What the card carries instead
+is an **emblem** per spot (`content/spots.ts`): a 24×16 char grid in the world's
+own greens and blues, three across, name under each, the chosen one's blurb under
+the row. No architecture, and in particular the seed stays inside `newWorld`
+rather than being hoisted into the UI so the card could draw with it.
 
-Two knock-ons worth keeping: the spot rows moved from `.primary` (a flood of
-`--accent`) to an accent EDGE, because gold-on-orange made the star vanish —
-`.form-tile.selected` had already settled that argument for the same reason one
-block up. And the star is hidden with `visibility`, not removed, so choosing a
-different homestead doesn't change the row heights under it.
+**What an emblem may claim.** Every promise in `world.ts` is about DISTANCE and
+none is about bearing: the treeline is a ring, the river's crossing angle is the
+seed's, and the coast is on a pure hash and can be any side at all. So no emblem
+puts water left or right — water lies along the bottom, trees go all the way
+round, and both read as "this, near you", which is true on every seed. There is a
+test for it. The danger with art here was never inexactness; it was looking
+precise enough to be read as a survey, which is why these stay flat and banded.
 
-Nothing else in the game awards a star. The moment a second thing does, it stops
-being a marker and starts reading as a score.
+Three things learned drawing them:
+
+- **A gold star marked the plot for one draft, and is gone.** It needed a ring of
+  ink to read at 12px at all — at seven cells wide every limb was two cells and
+  therefore entirely outline, so it rendered as a dark blob with gold caught in
+  it. Nine cells fixed that, and by then the emblems sat above their own names
+  and the thing the star explained was already obvious. A marker earns its place
+  by resolving an ambiguity, and there wasn't one.
+- **The wood's inner edge has to be ragged.** A strictly alternating tooth along
+  the top and a straight column down each side came out as battlements around a
+  lawn — CLAUDE.md's per-cell band rule showing up in a picture rather than in
+  the world. A feature that steps in time with the grid stops reading as the
+  thing it depicts.
+- **The spots use the same control as the forms**, tiles with the art on top,
+  because it is the same shape of question. They moved off `.primary` (a flood of
+  `--accent`) to an accent EDGE, since a wash of accent recolours the very
+  emblem being chosen — `.form-tile.selected` had settled that argument already,
+  for the portraits, one block up.
+
+The blurb sits under the row rather than in the tile: three sentences that long
+at a third of a phone's width is a wall of wrapped text. Its line has a
+`min-height` of three lines, because the blurbs wrap to two or three and the
+Claim button hopped as you tried them.
+
+`render/icons.ts` now takes grid dimensions from the rows instead of a hardcoded
+`CELL`. Exactly equivalent for the icons — `icons.test.ts` asserts all of them
+are 12×12 — and simply correct for the first grid that isn't, which would
+otherwise have been cropped to its top-left quarter with no error anywhere.
+`HomesteadSpot` moved to `content/spots.ts` and is re-exported from `sim/types.ts`,
+because content may not import sim and a table naming the spots has to own the
+type — the same call `BiomeId` and `WaterKindId` already made.
 
 ### Undecided, deliberately
 

@@ -6,10 +6,11 @@
 import { el, hoverHint, modal } from "./dom";
 import { mountTitleScene, type TitleScene } from "./title";
 import { Renderer } from "../render/renderer";
-import { iconEl, SCALE } from "../render/icons";
+import { iconEl, gridEl, SCALE } from "../render/icons";
 import { portrait } from "../render/portrait";
 import { lookFor } from "../content/looks";
 import type { IconName } from "../content/icons";
+import { SPOTS } from "../content/spots";
 import type { WorldState, Tool, BuildTool, HomesteadSpot, Layer } from "../sim/types";
 import { FACINGS, FURNITURE, furnitureDef } from "../content/furniture";
 import type { Facing } from "../content/furniture";
@@ -144,34 +145,6 @@ function buildToolLabel(t: BuildTool): string {
 /** Arrows for the rotate button, so the facing is legible without a legend. */
 const FACING_ARROW: Record<Facing, IconName> = { s: "arrow_s", w: "arrow_w", n: "arrow_n", e: "arrow_e" };
 
-/** The three homesteads.
- *
- *  THE BLURBS DESCRIBE THE TERRAIN, and that is a rule rather than a style. The
- *  old ones promised things no code did: "The Ghost may visit" on a spot the
- *  Ghost has no opinion about (her grove is sited off the seed, and always was),
- *  and "a view of the whole town" on a spot that generated the default world
- *  because nothing read it. A blurb that outruns the generator is the one lie
- *  the onboarding can tell you before you have any way to check it — and the
- *  preview beside it now means you CAN check it, immediately.
- *
- *  Names all take the article, so no two rhyme and none is a compass bearing. */
-const SPOTS: { id: HomesteadSpot; name: string; blurb: string }[] = [
-  {
-    id: "riverside",
-    name: "The riverbank",
-    blurb: "The water goes past the bottom of the garden, and keeps going.",
-  },
-  {
-    id: "forest",
-    name: "The forest edge",
-    blurb: "The meadow gives out about thirty paces on, and then it is trees.",
-  },
-  {
-    id: "coast",
-    name: "The coast",
-    blurb: "Salt air, a short walk to the shore, and a far side you may never see.",
-  },
-];
 
 export class App {
   private canvas: HTMLCanvasElement;
@@ -355,30 +328,35 @@ export class App {
     });
     formRow.append(...formButtons);
 
-    // The homestead list, and the one place in the game that awards a star.
+    // The homesteads: three tiles across, emblem over name, exactly as the form
+    // picker above does it — same shape of question (which of these do you want
+    // to be / to live in), so the same shape of control, and the card stops
+    // having two different ways to choose a thing.
     //
-    // NOT `.primary`, which is what these used to be. That floods the button
-    // with `--accent`, and the star is gold — near enough to the accent that it
-    // would have disappeared into its own highlight. `.form-tile.selected` two
-    // blocks up hit this first and settled it: selection is an accent EDGE, not
-    // an accent fill, precisely so the thing being selected keeps its colours.
-    // The spots now borrow that, and the star sits on cream where it reads.
+    // The BLURB moves out of the tile and under the row, showing only the
+    // chosen one. Three sentences that long side by side at a third of a phone's
+    // width is a wall of wrapped text nobody reads, and the sentences are worth
+    // keeping — so they are shown one at a time, about the thing you just
+    // picked. `min-height` on the line keeps the button below from hopping when
+    // it changes.
     //
-    // The star is in the DOM on every row and hidden by CSS rather than added
-    // and removed. Three rows is few enough that either would work, but a
-    // hidden element keeps each row the same height, so picking a different
-    // homestead doesn't shuffle the two below it.
-    const spotRow = el("div", { class: "choices" });
+    // NOT `.primary`, which is what these rows used to be. That floods the
+    // control with `--accent`, and the emblems are painted in the world's own
+    // greens and blues; an accent wash over them would recolour the very thing
+    // they exist to show. `.form-tile.selected` hit this first, with the
+    // portraits, and settled it: selection is an accent EDGE, never a fill.
+    const spotBlurb = el("p", { class: "spot-blurb" }, [
+      SPOTS.find((s) => s.id === spot)!.blurb,
+    ]);
+    const spotRow = el("div", { class: "spot-tiles" });
     const spotButtons = SPOTS.map((s) => {
-      const b = el("button", { class: "btn spot-choice" }, [
-        el("span", { class: "spot-head" }, [
-          el("span", {}, [s.name]),
-          iconEl("star", SCALE.inline),
-        ]),
-        el("span", { class: "spot-blurb" }, [s.blurb]),
+      const b = el("button", { class: "form-tile spot-tile" }, [
+        gridEl(`spot:${s.id}`, s.emblem, SCALE.emblem),
+        el("span", {}, [s.name]),
       ]);
       b.addEventListener("click", () => {
         spot = s.id;
+        spotBlurb.textContent = s.blurb;
         for (const other of spotButtons) other.classList.remove("selected");
         b.classList.add("selected");
       });
@@ -386,6 +364,7 @@ export class App {
       return b;
     });
     spotRow.append(...spotButtons);
+    const spotBlock = el("div", {}, [spotRow, spotBlurb]);
 
     const importBox = el("textarea", {
       class: "import-box",
@@ -460,7 +439,7 @@ export class App {
           labeled("Form", formRow),
           labeled("Or, import from The Meadow", importBox),
           importBlock,
-          labeled("Homestead", spotRow),
+          labeled("Homestead", spotBlock),
           actionRow([
             primaryBtn("Claim your plot", () => {
               refreshImport(); // catch a paste that never fired an input event
