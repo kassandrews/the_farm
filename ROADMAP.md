@@ -3124,8 +3124,24 @@ warped or dithered boundary rather than a cell-aligned one.
 
 ### Smaller, still open
 
-- **The rectangular pond** south of the starting homestead is a hard-cornered
-  rectangle of water.
+- ~~**The rectangular pond**~~ **There is no pond bug — it is the biome
+  boundary, and that one is real.** Called as work off a close-up screenshot,
+  then measured before touching the generator: `scripts/shot-map.mts` shows every
+  water body coming out lobed and irregular with a sand rim, exactly as
+  `coastWarp`'s angular harmonics intend. What reads as a hard rectangle in game
+  is a two-to-four-tile pond seen at 40 tiles across — at that size a warped
+  outline has nowhere to warp — sitting next to the thing that IS rectilinear.
+
+  **The biome patches are straight-edged blocks.** Obvious at map scale and
+  visible in `biome-border.png` as a staircase of tile-sized steps in the
+  meadow/birch tint. Confirmed pre-existing (shot at HEAD while checking 8c was
+  not the cause). It is the per-cell edges rule at region scale, and it wants the
+  answer 8c used on the grass: warp or dither the boundary so it stops agreeing
+  with the lattice. **This is the next piece of the feel pass.**
+
+  Worth keeping as method: the close-up said "pond", the map said "biomes". The
+  screenshot found something real and named it wrong, which is the argument for
+  measuring at the scale the artifact lives at before writing code.
 - **The `E 6 · S 6` chip.** §*Every overlay is the same chip* says to cut a HUD
   label that names something already visible — but coordinates are not visible,
   so this one may genuinely earn its place. Decide, don't assume.
