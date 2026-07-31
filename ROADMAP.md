@@ -3421,7 +3421,7 @@ never again. Reading old filings is half of what the cabinet is for. It holds th
 blurb too now, with the stamp under it as a greyed note, which reads as the
 office's annotation rather than as part of the form.
 
-### 9c — The Notebook
+### 9c — The Notebook — **done**
 
 A naturalist's journal that accretes oblique observations as you encounter the
 world — "owls have only been seen near very old forests," never "combine X + Y."
@@ -3456,6 +3456,65 @@ what you've missed.
 - Auto-fill on encounter, or only when a resident remarks (which ties it to
   dialogue and keeps it social)?
 - Nature only, or town and social observations too?
+
+**The finding that shaped everything: THERE IS NO FAUNA IN THIS GAME.** Not a
+bird, not a fish, not an insect. The two birds that once crossed the title sky
+were removed because three pixels cannot draw flight (`content/props.ts`), and
+the poled pond exists *precisely* because there is nothing to catch in it
+(`content/found.ts`: "the poles are not fishing equipment, they are evidence of a
+committee"). So this step's own headline example — "owls have only been seen near
+very old forests" — was never writable, and neither is any entry like it. What is
+actually out there is ground, water, light, rock, distance, shape and the town.
+`notebook.test.ts` asserts no entry mentions an animal, because the first player
+to go looking for the owl would find a bug.
+
+**Settled, and why:**
+
+- **Two kinds, told apart by HOW they were recorded** — the author's call, and
+  better than picking one. `noticed` reads as a field note in your own hand
+  ("A suspiciously round cluster of trees, all facing in. Trees do not face.
+  These do."); `told` carries the name of whoever told you ("{who} mentioned that
+  the metal does not come back"). Told rows hold TWO strings: the `remark` they
+  actually say, in their voice, and the `line` you write down afterwards. A test
+  fails if the two are ever identical, because then one of them is doing nothing.
+- **Nothing stores how far you got.** `sim/mining.ts` and `content/junk.ts` both
+  refuse a "deepest reached" counter in writing, and a `farthestFromPlaza` field
+  is that object renamed. So every noticed trigger is arithmetic on where you are
+  standing *right now*, and the ENTRY is the record that you were once out
+  there — which means the condition is free to go false again, and a test pins
+  that it does. v26 stores an id and a timestamp per entry and nothing else.
+- **The far country is keyed on the BIOME, not on a radius.** `dusk`, `glimmer`
+  and `glass` carry `near: 0` weight in `FIELD_WEIGHTS`, so they are impossible
+  near town: standing in one is proof of distance without anything having to
+  store a distance.
+- **Predicates live in sim, text lives in content**, because content may not
+  import sim. `notebook.test.ts` pins the correspondence in both directions — an
+  observation nothing can fire is dead content, and a trigger for a row that
+  doesn't exist is a typo that never reports itself.
+- **Told rows fire in conversation and nowhere else**, gated on the speaker being
+  `familiar` or better. Nobody tells a stranger the thing they have privately
+  concluded about the ground, and the gate staggers the town's half of the book
+  so four reachable institutions don't empty their pockets at you on the first
+  hello. `tryTellLine` is the one `try*` in `dialogue.ts` that WRITES, and it has
+  to be: being told is a conversation, so the entry is recorded by the act of
+  saying it.
+- **That branch sits ABOVE `trySecretLine`,** and this is the subtle one. Three
+  of the seven told rows are spoken by the Mole, the Ghost and the Cosmos, and
+  `trySecretLine` returns early for exactly those three — below it, the best half
+  of the feature could never fire once. There is a test whose only job is to
+  notice if somebody moves it.
+- **The sweep is throttled to 500ms** and its timestamp is a `WeakMap`, not save
+  state — a cache key, like `buildRevision`. The due-checks around it in `tick`
+  compare two timestamps and are free; this walks a table asking about biomes and
+  found sites, and none of those can change within one frame.
+- **The panel has no choices in it.** Three doors, no count, no blanks, no "???",
+  and no headings by subject — grouping needs categories, and categories you have
+  nothing under are the blanks this must not have, while categories only for what
+  you DO have quietly tell you how many kinds of thing exist. Chronological,
+  because a journal is a sequence. A journal you can act from is a quest log.
+
+Found by reading the real panel: the eyebrow said "What you've noticed" over a
+view that also holds what you were told.
 
 ### 9d — Moments (build last)
 
