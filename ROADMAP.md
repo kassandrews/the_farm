@@ -3319,7 +3319,7 @@ as "...back in spring. You laid these boards yourself, in spring." Both true,
 and the pair read like a form letter. The clause says WHEN, and once it has been
 said the next sentence is already in that season.
 
-### 9b — The town hall's ridiculous paperwork
+### 9b — The town hall's ridiculous paperwork — **done**
 
 Gary's "progression paperwork" (§fixed cast) grows into a standing filing
 system: world-customization disguised as bureaucracy, taken with total
@@ -3374,6 +3374,52 @@ the choice is conscious:
 - Which teeth-filings, if any, are worth their named carve-out. (The steer: ship
   all the flavor ones now; take the teeth one at a time, later, each on its own
   merits. The flavor stack alone already lands the pillar.)
+
+**Settled, and why:**
+
+- **Forms arrive in BATCHES, and each batch has a reason.** This is the author's
+  call and it is better than either option on the table. A catalogue on day one
+  is a to-do list wearing a letterhead; one form at a time is a deadline in a
+  cardigan. Instead the hall has the forms it has always had, and then a
+  referendum happens (turnout: one, and the hall is not permitted to say which
+  one), or an audit finds the hall was operating without a complete schedule, or
+  a drawer is opened and three forms are inside it already printed in a hand
+  nobody recognises. **The notice is printed above its own forms and is the best
+  part of the feature** — the reason the town acquired three more forms is more
+  interesting than the three forms.
+- **A batch is a total function of how long you have lived here** (`batchesBy`,
+  `daysInTown`), on the §Festivals model. Nothing schedules a batch, nothing
+  stores one, nothing counts them, so **v25 adds `filings` and nothing else**.
+  Four batches today at 0 / 3 / 10 / 21 days; more are rows.
+- **An old save gets every batch at once, and that is correct.** Releases key off
+  `createdAt`, so a town that predates the feature has been in town that long and
+  the hall owes it everything it missed. Nothing was lost by the cabinet arriving
+  late.
+- **The counter is not a to-do list.** A filed form LEAVES the counter, and a
+  batch with nothing left under it drops out entirely — five struck-through
+  titles under a heading is a completion meter nobody had to write. The empty
+  counter says the HALL is between forms: a fact about a bureaucracy, never a
+  verdict on the player, and always "not yet" rather than "finished" because the
+  next batch is on the real clock.
+- **No count anywhere.** `world.filings.length` is a number the UI may never
+  render, and `sim/filings.ts` exports no total, no denominator and no set of
+  what is outstanding. `cabinetEmpty` is a boolean so the empty state can be a
+  line rather than a zero — the museum's `collectionEmpty` exactly.
+- **All fourteen are flavour filings; none has teeth.** The three named teeth
+  candidates (a park designation, a sanctuary, a declared holiday) stay out, each
+  its own decision on its own merits. `filings.test.ts` asserts filing every form
+  changes nothing about the world, so a form that quietly grows teeth fails.
+- **A conversation AND a counter, which no other institution gets.** The other
+  six are counter-only ("the shop IS the conversation"), but Gary genuinely has
+  both — the land claim and the commission beat are conversations and already
+  live in his speech panel. So the hall is a `choiceBtn` that CLOSES the dialogue
+  before opening, rather than a modal stacked on a modal.
+
+Found by looking, and the reason to keep driving these: the cabinet showed only
+the **stamp**, so a form's own text — the joke — was read once at the counter and
+never again. Reading old filings is half of what the cabinet is for. It holds the
+blurb too now, with the stamp under it as a greyed note, which reads as the
+office's annotation rather than as part of the form.
 
 ### 9c — The Notebook
 
