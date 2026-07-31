@@ -142,9 +142,14 @@ stranger with radius (7a), found places as a standing category (7b), and the sky
 as a layer rather than a height (7c).
 
 **Phase 8 is the feel pass**, which the exploration phases interrupted three
-times and which is now the whole of what's next — see §Phase 8 for the four
-things a drive-and-photograph survey turned up. It is a pass over surfaces that
-already work, not a list of missing features.
+times. **8a (one vocabulary), 8b (the fold) and 8c (ground worth standing on)
+are built** — see §Phase 8. It is a pass over surfaces that already work, not a
+list of missing features, and it found what it found by driving the game and
+photographing it rather than by reading the source.
+
+What is left of it is the three smaller items at the end of §Phase 8, two of
+which are decisions rather than work: whether the coordinate chip earns its
+place, and what an unnamed arrival should be called.
 
 **Save schema is at v23**, and Phase 7c deliberately did not move it: the sky
 stores nothing, so there was nothing to migrate, and bumping the number would
@@ -3024,7 +3029,7 @@ Pick by which feeling you want the climb to end on.
 
 ---
 
-## Phase 8 — The feel pass — **proposed, not started**
+## Phase 8 — The feel pass — **8a, 8b and 8c built**
 
 The fine-tooth comb, deferred three times by exploration phases. Not a list of
 missing features — every numbered item before this is built — but a pass over
