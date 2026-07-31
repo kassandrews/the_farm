@@ -2486,15 +2486,27 @@ welcome and settle-in cards sit in its sky.
   perspective ramp is not available to pixel art — 1.6× is a resample. Doubling
   is the only depth cue there is, and it is enough; the first pass drew
   everything at 1× and the field read as a flat green wall.
-- **Horizon buildings are ALSO 2×**, despite being the furthest things in the
-  picture. The grids are drawn at a creature's scale, so at 1× the town hall
-  came out the same height as the resident standing in front of it. The eye
-  checks "a house is about three creatures tall" before it checks anything else.
+- **The town hall and the board are ALSO 2×**, despite being the furthest things
+  in the picture. The grids are drawn at a creature's scale, so at 1× a seat of
+  local government came out the height of the trees beside it. The eye checks "a
+  building is about three creatures tall" before it checks anything else.
 - **The card sits high, in the sky, not centred.** Centred, it landed on the
-  horizon and covered the hall, the cabin and one of the two residents.
-- **The two residents are randomised per load.** Whoever is standing in the
-  field is nobody in particular, and a town with a rotating cast of strangers is
-  truer to the place than two fixed mascots.
+  horizon and covered the buildings entirely.
+- **Nobody is in it.** An early pass put two residents in the field, randomised
+  per load. They pulled the eye straight off the town and onto themselves, and a
+  title screen that introduces two specific strangers is making a promise about
+  them. The place, empty, is the subject; you meet the first person on the next
+  screen.
+- **One built thing on the horizon, not two.** There was a homestead cabin as
+  well, and it went because its chimney floated — drawn rising off the left
+  slope of the roof, which works as a silhouette and falls apart at the join. It
+  is worth redrawing properly (chimney through the ridge, or set into a gable
+  end) rather than shipping the version that only works if nobody looks. A civic
+  building alone in a field is also the better joke: the retirement town has an
+  administration and not much else yet.
+- **One band of hills behind the town, not two.** Two read as layered hills
+  receding, which is a landscape painting's job; one reads as the edge of the
+  woods this clearing was cut out of, which is the town's.
 - **Always midday**, whatever the clock says. A title screen is a poster;
   opening the game at 11pm should still show the delightful version.
 

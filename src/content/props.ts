@@ -28,8 +28,6 @@ import { INK as K } from "./canon/icons";
 // Shared materials, quoted from the tables that own them so the title screen
 // and the world agree about what wood is. Plank/stone are TILES[PLANK] and
 // TILES[STONE] (color/top/shade); the crown greens are palette.ts SEASONLESS.
-const PLANK = "#c79a5e";
-const PLANK_LIT = "#d9ac6c";
 const PLANK_SHADE = "#a97e46";
 const STONE = "#b8b2a6";
 const STONE_LIT = "#c0bab0";
@@ -39,13 +37,11 @@ const CROWN_LIT = "#57975a";
 const TRUNK = "#7a5230";
 const TRUNK_SHADE = "#5c3d22";
 const DOOR = "#7a4a2c";
-// Roofs are the one place the two buildings are allowed to disagree: the hall
-// is slate because it is civic, the homestead is terracotta because it is
-// somebody's. That contrast is most of what tells them apart at this size.
+// The hall's roof is slate because it is civic. When a second, domestic
+// building comes back, give it terracotta — the roof is what tells two
+// buildings apart at this size, long before their doors or windows do.
 const SLATE = "#6f7a92";
 const SLATE_LIT = "#8a95ad";
-const TILE_ROOF = "#c96a4a";
-const TILE_ROOF_LIT = "#dd7f5c";
 
 const FARM_PROPS = {
   // Town Hall: gabled, stone, flag on the ridge. Where the paperwork gets
@@ -95,64 +91,53 @@ const FARM_PROPS = {
   // here a returning player will recognise from the plaza, and recognising it
   // should feel like spotting something, not like being shown it.
   board: {
+    // EVERYTHING here is centred on the 12-wide grid's midline, and it was not
+    // the first time: the posts sat at cols 3–5 and 8–10 (centre 6.5 against
+    // the board's 5.5) and the lower notice at cols 3–5 (centre 4). Both are a
+    // pixel or two off, which is invisible in the grid and glaring at 2× — the
+    // board looked like it was sliding off its own legs.
+    //
+    // ONE notice filling the board, not several pinned around it — and this
+    // took three tries. Two notices side by side with a third under them is a
+    // face: eyes and a mouth. Making the third one wider and shoving it left
+    // did not help; ANY arrangement of separated pale rectangles on a dark
+    // panel finds a face at this size, because that is what the eye is for.
+    //
+    // A single sheet has no isolated blobs to pair up. What sells it as paper
+    // instead of a white rectangle is the RAGGED right edge on the lines of
+    // writing — uneven line lengths are the one cue that reads as text at three
+    // pixels a line, and it is the cue a centred, justified block throws away.
     rows: [
-      "kkkkkkkkkkkk",
-      "kbbbbbbbbbbk",
-      "kbpppbbpppbk",
-      "kbpwpbbpwpbk",
-      "kbpppbbpppbk",
-      "kbbbbbbbbbbk",
-      "kbbpppbbbbbk",
-      "kbbpwpbbbbbk",
-      "kbbpppbbbbbk",
-      "kkkkkkkkkkkk",
-      "...ktk..ktk.",
-      "...ktk..ktk.",
-      "...ktk..ktk.",
+      "kkkkkkkkkkkkkk",
+      "kbbbbbbbbbbbbk",
+      "kbbppppppppbbk",
+      "kbbpwwwwwwpbbk",
+      "kbbppppppppbbk",
+      "kbbpwwwwpppbbk",
+      "kbbppppppppbbk",
+      "kbbpwwwwwwpbbk",
+      "kbbppppppppbbk",
+      "kbbbbbbbbbbbbk",
+      "kkkkkkkkkkkkkk",
+      "...ktk..ktk...",
+      "...ktk..ktk...",
+      "...ktk..ktk...",
+      "...ktk..ktk...",
+      "...ktk..ktk...",
     ],
     // `w` is a line of writing, too small to read — which is the point. The
     // errands on it are whatever the town needs this week and the title screen
     // must not appear to be promising any of them.
     palette: { k: K, b: "#c2a071", p: "#efe6cf", w: "#b9ad90", t: PLANK_SHADE },
   },
-  // Somebody's homestead: one room, one door, one chimney. Deliberately NOT
-  // the player's — the plot is claimed two screens later, and a title screen
-  // that showed you your own house would be showing you something you haven't
-  // been given yet.
-  cabin: {
-    rows: [
-      ".kck...........",
-      ".kck...........",
-      ".kck...........",
-      ".kck..kRk......",
-      ".kck.kRRrk.....",
-      "....kRRrrrk....",
-      "...kRRrrrrrk...",
-      "..kRRrrrrrrrk..",
-      ".kRRrrrrrrrrrk.",
-      "kkkkkkkkkkkkkkk",
-      ".klpppppppppdk.",
-      ".klkwwkpkwwkdk.",
-      ".klkwwkpkwwkdk.",
-      ".klkwwkpkwwkdk.",
-      ".klpppppppppdk.",
-      ".klppknnnkppdk.",
-      ".klppknnnkppdk.",
-      ".klppknnnkppdk.",
-      ".kkkkknnnkkkkk.",
-    ],
-    palette: {
-      k: K,
-      c: "#9a958c", // chimney stone, quoted from TILES[ROCK]
-      r: TILE_ROOF,
-      R: TILE_ROOF_LIT,
-      p: PLANK,
-      l: PLANK_LIT,
-      d: PLANK_SHADE,
-      w: "#a8d8e8",
-      n: DOOR,
-    },
-  },
+  // There was a homestead cabin here and it is gone. Its chimney was drawn
+  // rising off the LEFT SLOPE of the roof, which reads fine as a silhouette and
+  // falls apart the moment you look at the join — a stack floating a pixel off
+  // the roofline. A house is worth redrawing properly (chimney through the
+  // ridge, or set into a gable end) rather than shipping the version that only
+  // works if nobody looks; until then the horizon is a civic building in a
+  // field, which is the better joke anyway.
+  //
   // A tree in profile. The Meadow's is the right shape but wears its own warm
   // ink; this is the same silhouette re-inked and re-greened to match the
   // crowns the world renderer draws.

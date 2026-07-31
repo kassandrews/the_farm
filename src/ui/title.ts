@@ -10,19 +10,19 @@
 // one glance; the same field from above says "grass". The projection changes at
 // the door, which is a thing title screens have always been allowed to do.
 //
+// NOBODY IS IN IT, and that is the decision, not an omission. An early pass put
+// two residents in the field; they pulled the eye straight off the town and
+// onto themselves, and a title screen that introduces two specific strangers is
+// making a promise about them. The place, empty, is the subject. You meet the
+// first person on the next screen.
+//
 // Everything here is drawn in LOGICAL pixels — one logical pixel becomes an
 // integer `scale` device pixels, and the canvas backing store is the logical
 // size with CSS stretching it (`image-rendering: pixelated`), exactly as
 // `render/renderer.ts` does it. That is what keeps CLAUDE.md's sprite rule:
-// there is no ctx.scale anywhere, no fractional destination rect, and the
-// creatures go through `drawSpriteQuantized` like every other sprite in the
-// game.
+// there is no ctx.scale anywhere and no fractional destination rect.
 
-import { STANDARD_FORMS, type AdultForm } from "../content/canon/forms";
-import { creatureKey, CELL, type SpriteFrame } from "../content/canon/sprites";
 import { drawProp, propSize } from "../render/props";
-import { SpriteCache, drawSpriteQuantized } from "../render/sprites";
-import { makeRng, type Rng } from "../sim/rng";
 
 // Colours quoted from the tables that own them, so the title screen and the
 // world are the same place. Grass is TILES[GRASS]; farmland is TILES[FARMLAND];
@@ -34,7 +34,6 @@ const SOIL = "#7a5433";
 const SOIL_LIT = "#8a613c";
 const SOIL_SHADE = "#5f4026";
 const FAR_TREES = "#3f6b42";
-const FARTHER_TREES = "#557f57";
 
 // Flat bands rather than a gradient. A smooth ramp behind pixel art reads as a
 // different medium — the sky goes soft while everything on it stays hard — and
@@ -73,14 +72,12 @@ function pickScale(cssW: number, cssH: number): number {
 const NEAR = 0.45;
 const depthScale = (depth: number): number => (depth >= NEAR ? 2 : 1);
 
-/** The horizon buildings and the fence, at 2×.
+/** The town hall, the board and the fence, at 2×.
  *
  *  Not because they are near — they are the furthest things in the picture —
  *  but because of what they are. The grids are drawn at a creature's own scale
- *  (a 24-row town hall against a 16-row sprite), and at 1× the first pass put a
- *  seat of local government the same height as the resident standing in front
- *  of it. Doubling the buildings restores the only proportion the eye actually
- *  checks: a house is about three creatures tall. */
+ *  (a 24-row town hall against a 16-row sprite), and at 1× a seat of local
+ *  government came out the same height as the trees in the field beside it. */
 const HORIZON_SCALE = 2;
 
 interface Scatter {
@@ -96,7 +93,7 @@ interface Scatter {
 
 /** The field's dressing, as fractions rather than pixels, so one table lays out
  *  every viewport. Hand-placed rather than randomly scattered: a random field
- *  clumps, and this is a composition — the eye goes hall, plot, cabin, and the
+ *  clumps, and this is a composition — the eye goes hall, board, plot, and the
  *  big near tree at the right holds the corner down. */
 const SCATTER: Scatter[] = [
   { prop: "tree", x: 0.96, depth: 0.04, scale: 2 },
@@ -114,24 +111,11 @@ const SCATTER: Scatter[] = [
   { prop: "tuft", x: 0.06, depth: 0.98 },
 ];
 
-interface Resident {
-  form: AdultForm;
-  x: number; // fraction of width
-  depth: number;
-  facing: 1 | -1;
-  /** Seconds between blinks, and where in that cycle this one starts, so two
-   *  creatures standing together never blink in unison. */
-  blinkEvery: number;
-  phase: number;
-}
-
 export class TitleScene {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private cache = new SpriteCache();
   private raf = 0;
   private born = performance.now();
-  private residents: Resident[];
   private onResize = () => {
     this.resize();
     if (!this.animated) this.draw(0);
@@ -143,10 +127,7 @@ export class TitleScene {
   private field = 96; // the field's depth in logical px
   private animated: boolean;
 
-  constructor(parent: HTMLElement, seed = Date.now()) {
-    const rng = makeRng(seed >>> 0);
-    this.residents = pickResidents(rng);
-
+  constructor(parent: HTMLElement) {
     this.canvas = document.createElement("canvas");
     this.canvas.className = "title-scene";
     // Decorative, and the card in front of it carries all the words. A screen
@@ -157,9 +138,9 @@ export class TitleScene {
     this.ctx = this.canvas.getContext("2d")!;
     this.ctx.imageSmoothingEnabled = false;
 
-    // Motion here is ambient — drifting clouds, a creature breathing. Ambient
-    // motion is exactly what prefers-reduced-motion is about, so honour it by
-    // drawing the same picture once and never starting the loop.
+    // Motion here is ambient — drifting clouds, a bird crossing. Ambient motion
+    // is exactly what prefers-reduced-motion is about, so honour it by drawing
+    // the same picture once and never starting the loop.
     this.animated = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     this.resize();
@@ -206,7 +187,7 @@ export class TitleScene {
     this.drawFence(horizon);
     this.drawBuildings(horizon);
     this.drawPlot(horizon);
-    this.drawField(horizon, t);
+    this.drawField(horizon);
   }
 
   private drawSky(horizon: number, t: number): void {
@@ -261,31 +242,27 @@ export class TitleScene {
     }
   }
 
-  /** Two silhouette bands of woods behind the town. Drawn per COLUMN from a sum
-   *  of two sines rather than by tiling a tree — a tiled treeline repeats, and
-   *  the eye finds the repeat instantly on something this wide. */
+  /** ONE silhouette band of woods behind the town, drawn per COLUMN from a sum
+   *  of sines rather than by tiling a tree — a tiled treeline repeats, and the
+   *  eye finds the repeat instantly on something this wide.
+   *
+   *  One band and not two. Two read as layered hills receding, which is a
+   *  landscape painting's job; one reads as the edge of the woods this clearing
+   *  was cut out of, which is the town's.
+   *
+   *  And ONE LEVEL. There were two slow sine terms rolling the height by ±9px,
+   *  which drew hills — and hills are scenery with an opinion: they put the
+   *  town in a valley, they make one side of the picture higher than the other,
+   *  and they compete with the roofline for the eye. Level, the band is just
+   *  where the field stops. The fast term stays so the top edge is ragged
+   *  rather than ruled — that is the difference between treetops and a wall. */
   private drawTreeline(horizon: number): void {
     const { ctx, lw } = this;
-    const band = (color: string, base: number, a: number, b: number, phase: number) => {
-      ctx.fillStyle = color;
-      for (let x = 0; x < lw; x++) {
-        const h = Math.round(
-          base +
-            Math.sin(x * 0.055 + phase) * a +
-            Math.sin(x * 0.021 + phase * 2) * b +
-            // A third, fast term. The two slow ones alone gave a smooth curve
-            // that reads as bare hills; the crenellation is what makes the
-            // silhouette read as the tops of trees.
-            Math.sin(x * 0.34 + phase * 3) * 1.6,
-        );
-        ctx.fillRect(x, horizon - h, 1, h);
-      }
-    };
-    // Sized against the buildings, not against nothing: woods that come up to a
-    // cabin's eaves say the town is a clearing in something bigger, which is
-    // what The Meadow's retirees were sent into.
-    band(FARTHER_TREES, 22, 5, 4, 1.7);
-    band(FAR_TREES, 14, 4, 3, 0);
+    ctx.fillStyle = FAR_TREES;
+    for (let x = 0; x < lw; x++) {
+      const h = Math.round(15 + Math.sin(x * 0.34) * 1.6 + Math.sin(x * 0.13) * 1.2);
+      ctx.fillRect(x, horizon - h, 1, h);
+    }
   }
 
   private drawGround(horizon: number): void {
@@ -310,14 +287,18 @@ export class TitleScene {
     }
   }
 
+  /** The hall and the board — the town's whole built presence.
+   *
+   *  There WAS a homestead cabin on the right. It went because its chimney
+   *  floated: the chimney is drawn up the left slope of the roof, which works
+   *  as a silhouette and falls apart the moment you look at where it meets the
+   *  roofline. Two buildings also made the horizon a row of houses rather than
+   *  a civic building in a field, which is the joke — the retirement town has
+   *  an administration and not much else yet. */
   private drawBuildings(horizon: number): void {
     const { ctx, lw } = this;
-    drawProp(ctx, "townhall", lw * 0.2, horizon + 6, HORIZON_SCALE);
-    drawProp(ctx, "cabin", lw * 0.76, horizon + 8, HORIZON_SCALE);
-    // Pinned where it is in the game: in the town's half of the picture, beside
-    // the hall. Standing alone in the middle of the field it read as a
-    // billboard somebody had erected in a meadow.
-    drawProp(ctx, "board", lw * 0.52, horizon + this.field * 0.22, HORIZON_SCALE);
+    drawProp(ctx, "townhall", lw * 0.24, horizon + 6, HORIZON_SCALE);
+    drawProp(ctx, "board", lw * 0.6, horizon + this.field * 0.22, HORIZON_SCALE);
   }
 
   /** The tilled plot: soil, furrows, and a row of seedlings somebody has
@@ -351,68 +332,14 @@ export class TitleScene {
     }
   }
 
-  /** Everything standing on the grass — scenery and residents together, back to
-   *  front by depth. One sorted pass rather than two lists drawn in sequence,
-   *  because a creature and a tree at the same distance have to be able to
-   *  overlap correctly, and two passes can only ever put all of one kind in
-   *  front of all of the other. */
-  private drawField(horizon: number, t: number): void {
+  /** The scenery standing on the grass, back to front by depth — so a near
+   *  tree overlaps a far one rather than the table's order deciding it. */
+  private drawField(horizon: number): void {
     const { ctx, lw } = this;
-    const items: { depth: number; draw: () => void }[] = [];
-
-    for (const s of SCATTER) {
-      items.push({
-        depth: s.depth,
-        draw: () =>
-          drawProp(
-            ctx,
-            s.prop,
-            lw * s.x,
-            horizon + this.field * s.depth,
-            s.scale ?? depthScale(s.depth),
-          ),
-      });
+    for (const s of [...SCATTER].sort((a, b) => a.depth - b.depth)) {
+      drawProp(ctx, s.prop, lw * s.x, horizon + this.field * s.depth, s.scale ?? depthScale(s.depth));
     }
-
-    for (const r of this.residents) {
-      items.push({
-        depth: r.depth,
-        draw: () => {
-          const key = creatureKey("adult", r.form);
-          const cycle = (t + r.phase) % r.blinkEvery;
-          const frame: SpriteFrame = cycle < 0.14 ? "blink" : "base";
-          // The same slow breathe the world renderer gives a standing villager
-          // (renderer.ts drawEntity), so a creature on the title screen and the
-          // same creature in the game are idling identically.
-          const bob = Math.sin((t + r.phase) * 1.6) * 0.3;
-          const size = CELL * depthScale(r.depth);
-          const feet = horizon + this.field * r.depth + bob;
-          const sprite = this.cache.frame(key, "neutral", frame);
-          drawSpriteQuantized(ctx, this.cache, sprite, lw * r.x, feet, size, size, r.facing);
-        },
-      });
-    }
-
-    items.sort((a, b) => a.depth - b.depth);
-    for (const item of items) item.draw();
   }
-}
-
-/** Two residents, different forms, picked fresh each load. Different every time
- *  you open the game on purpose: whoever is standing in the field is nobody in
- *  particular, and the town having a rotating cast of strangers in it is more
- *  true to the place than two fixed mascots would be. */
-function pickResidents(rng: Rng): Resident[] {
-  const a = rng.pick(STANDARD_FORMS);
-  let b = rng.pick(STANDARD_FORMS);
-  while (b === a) b = rng.pick(STANDARD_FORMS);
-  return [
-    // One down in the near field turned back towards the plot, as if they'd
-    // been planting; one small and far off by the cabin. The size difference
-    // between them is the scene's clearest statement that it has depth.
-    { form: a, x: 0.38, depth: 0.56, facing: -1, blinkEvery: 4.3, phase: 0 },
-    { form: b, x: 0.66, depth: 0.2, facing: 1, blinkEvery: 5.6, phase: 2.1 },
-  ];
 }
 
 /** Put a farm behind whatever the app is showing. */
