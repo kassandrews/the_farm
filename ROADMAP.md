@@ -137,6 +137,11 @@ DESIGN's own open questions (fishing, async postcards between towns) are the onl
 unbuilt *systems*, and both are still deliberately open. What is left is not a
 list of gaps but a pass over the whole game for feel — the fine-tooth comb.
 
+**Proposed next: Phase 6 — the world out there**, written up below: biomes that
+get stranger with radius (6a), found places as a standing category (6b), and the
+sky as a layer rather than a height (6c). Not started, and it is an expansion
+outward, so it waits on the feel pass being where you want it.
+
 **Save schema is at v21.** Every change ships a tested migration — see
 `src/sim/save.ts`. Don't break this; the game is deployed and has live saves.
 
@@ -2492,6 +2497,183 @@ the screen — the reverse would be an elaborate way to walk the wrong direction
   allowed to spoil a secret (CLAUDE.md §Tone).
 - The reference reads off the TILE, never `player.x`. Off the float it flickers
   between two numbers while you stand still, which reads as broken.
+
+---
+
+## Phase 6 — The world out there — **proposed, not started**
+
+One exploration phase in three steps. Everything before this made the town
+deeper; this makes the world worth walking into. The through-line is one
+sentence: **the reward for going far is that there is somewhere to have gone.**
+No step adds a payout curve, a marker, or a stored world.
+
+Per the house rule, each step names its DESIGN.md amendment **first** — the doc
+changes, then the code. Where a call is genuinely open it's under *Decide*, not
+legislated. Nothing here may break an invariant; the *Must not* lines are the
+fences.
+
+**Order is 6a → 6b → 6c, and not any other.** 6a is the smallest and lowest-risk
+(it extends a system that exists). 6b establishes the found-place table that
+6c's entrance hangs off — the staircase is a 6b instance before it is a 6c door,
+so 6b has to exist first or 6c has nothing to attach to. 6c is the only one that
+touches the layer axis and the only one that warrants a schema look: do it last,
+alone, with a tested migration, and verify the ascent in a real browser. Layer
+transitions are exactly the "passed the unit test, failed on screen" class this
+file keeps warning about.
+
+**Note before 6a: there is no §Biomes in DESIGN.md.** Phase 5 shipped biomes
+without one — the invariant lives as a single line inside §Water ("same
+invariant as biomes"). So 6a's first move is to *write* §Biomes, stating what
+Phase 5 already does, and then add the radius rule to it. Amending a section
+that doesn't exist is the doc-first rule failing quietly.
+
+### 6a. The world gets stranger the farther out you go
+
+Extends Phase 5 (six regions, colour and density, nothing gated). The new input
+is **distance from the plaza datum**: biome character is partly a function of
+how far a chunk is from `0 · 0`. Near town reads ordinary; far out reads
+dreamlike.
+
+**DESIGN.md amendment — §Biomes (new).** Biome character escalates with radius.
+Palette, flora silhouette, ground cover and ambient particles drift from the
+familiar toward the strange as distance from origin grows — twilight bands,
+bioluminescent understory, pastel or glass-coloured light. This is Phase 5's
+rule with one more argument: still colour, density and flora, still a total
+function of `(seed, x, y)`, still stored nowhere, still gates nothing.
+
+Build:
+
+- Feed radius into region selection as a **weight, not a gate** — a far chunk is
+  more *likely* to draw an odd region, never locked to one, so there is no wall
+  you cross.
+- Strangeness is authored as new **region skins** (palette + flora + particles)
+  reusing the Phase 5 machinery. No new layer, no new mechanic.
+- Glowing mushrooms, drifting spores, odd grass colours are flora skins and
+  ambient particles — the same category as a season's repaint, not new
+  interactable objects.
+
+Must not:
+
+- **No height.** "Stranger" lives entirely inside the flat one-storey renderer.
+  Floating land, impossible geometry, stacked terrain are the no-height rule
+  (DESIGN.md §Structures) and are out — that's what 6c is for.
+- **No gate, no yield.** A far biome never holds a material the near ones don't,
+  never changes a growth time, never hides a finish behind distance.
+- **Nothing stored.** Derivable from seed and coordinate, exactly as now.
+
+Decide: the escalation curve, and whether there's a ceiling. On an infinite map
+"keeps getting stranger forever" becomes noise; bands that reach a weird plateau
+and hold it is probably right.
+
+### 6b. Found places
+
+One-off oddities scattered across the world, discovered and never directed to.
+This is the pattern 4c already proved — the humming cube, the dark grove —
+promoted from "the three leftover secrets" to a standing category the world can
+keep getting more of.
+
+**DESIGN.md amendment — §Found places (new), folding the cube and grove into
+it.** A found place is a small authored oddity sited by the seed: it exists at a
+real coordinate, differs per world, and is reached by walking into it, never by
+being pointed at. It appears on no map, is announced by no toast, and is spoiled
+by no UI (§Tone). It holds a mood, a person, or nothing — never a payout. A
+**finish** is the most it may ever give, because a finish is weightless and
+gates nothing (§Materials); most give less.
+
+**The singularity note, because it looks like it breaks a rule.** §Water forbids
+anything singular on an unbounded map — one ocean on an endless plain is a
+diorama. Found places are the deliberate exception, and the distinction is the
+whole reason they work: *ambient natural features must scatter or the world
+feels empty; authored secrets are allowed to be rare, because rarity is what
+makes them secret.* The safety valve is **many kinds at a low density each** —
+collectively scattered, individually a surprise. One kind at density one is a
+diorama; a dozen kinds at a twelfth each is a world with things in it.
+
+Build:
+
+- A found-place table (kind, siting rule, contents), each entry a seed-hashed
+  candidate the generator may place in a chunk, the way landmarks already drop.
+- Seed the first set from the tone that's working — earnestly convinced its own
+  absurd logic is normal:
+  - a perfectly circular grove where every tree faces inward,
+  - a pond with no fish and a dozen poles already stuck in the bank,
+  - a bakery, warm, with no baker,
+  - a lone mailbox in the middle of nowhere that sometimes holds a letter,
+  - a staircase that leads nowhere — and one, rarer, that does (6c).
+- The mailbox's letter is a total function of `(which mailbox, which day)` — the
+  festival trick, content with nothing stored. It is never a request and never
+  names a task (§Errands board: a notice speaks only in the past tense).
+
+Must not: no marker, no minimap pin, no "???" slot — finding it *is* the
+mechanic. No gate: nothing in the main game may ever require having found one.
+Give nothing that ranks — a finish or a line, never a material, a yield, or a
+thing another place then needs.
+
+Decide: how many kinds ship and how rare each is; and whether any found place
+holds a **person** — a resident who left town, a hermit like the Mole — or
+whether people stay in town and the wild holds only moods. That's the hinge
+between "cozy oddities" and "the world has characters hiding in it".
+
+### 6c. The sky, as a layer
+
+The one that has to earn its place against the no-height rule. It earns it by
+**not being a height.** The underground taught the pattern: a *layer*, not a
+height. The sky is its mirror — a third layer reached through a threshold, never
+stacked in z on the surface map.
+
+**DESIGN.md amendment — §Structures.** Extend the existing line. Today:
+"Underground (later) is a layer, not a height." Add: *the sky is the same move
+upward — a discrete layer, entered through a found threshold, never a tile that
+floats above another tile. The surface map stays one storey. Height is still
+forbidden; layers are still allowed.*
+
+**DESIGN.md amendment — §The sky (new)**, written as the mirror of the
+underground's rules:
+
+- **You reach it by a stair you find, not a tower you build** — the rare
+  staircase from 6b, sited far out by the seed. Digging takes you down; this one
+  thing takes you up. No build-your-own route, for the same reason there's no
+  height on the surface. (Alternative entrance worth weighing: a plant left
+  unattended long enough grows a beanstalk.)
+- **The reward for the hard-to-reach place is a place, not loot.** The Mole rule
+  exactly (§The Mole): what deep rock has that shallow rock doesn't is somebody
+  living in it, not more ore. The sky owes the same debt — a mood and ideally an
+  inhabitant — and owes you no payout.
+- **Nothing in the main game may ever require it.** The mirror of "no wall may
+  cost ore". The sky is a secret you may live a whole game without, exactly like
+  the grove.
+- **Derived, stored nowhere.** The stair from the seed; whatever lives up there
+  from seed and calendar.
+- **The clouds are not somewhere you \_\_\_.** The underground has its own
+  negations ("not somewhere you build a room"). The sky needs its symmetric
+  ones. Candidate: not somewhere you terraform — you visit, you don't reshape.
+  Decide the exact list.
+
+Build: a sky layer on the underground's layer axis (`present()` / layer-descent
+machinery from 4a/4c is the spine — this is ascent on the same mechanism); the
+staircase found-place wired to the transition; one authored sky region plus
+whatever inhabits it.
+
+Must not: **no floating islands on the surface** — if it can be seen hovering
+above a ground tile it's a height and it's wrong; reachable only by going to the
+layer. **No ladder of unlocks up there** — a "sky level" of tiered rewards is
+the high-water-mark-with-a-hat §The Mole already refused. **No marker to the
+stair** — it's a found place first (6b), unspoiled.
+
+**Decide — what's up there.** The real choice, and it's open. Three shapes:
+
+- **Sidra's home.** The Stray Cosmos already visits on the five meteor nights
+  and is gone by morning (4c). The sky is where she's from — the one place you
+  can find her the rest of the year. Ties a loose thread instead of adding one.
+- **A cloud hermit** — the sky-mirror of the Mole. Someone who went up and
+  stayed, undocumented, giving nothing, worth the climb because they're there.
+- **Only a mood** — a quiet cloud-field with a view back down and nobody in it.
+  The sky-cube: it does nothing at all, and that's the whole of it.
+
+The lean is Sidra, because it makes an existing secret deeper instead of
+widening the surface area — but the hermit is the stronger discovery beat, and
+"nobody, just the view" is the most honest to "the reward is that it's there".
+Pick by which feeling you want the climb to end on.
 
 ---
 
