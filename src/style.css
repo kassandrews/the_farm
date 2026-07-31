@@ -517,6 +517,14 @@ select {
   margin-bottom: 10px;
 }
 
+/* A labelled group (`labeled()`). The gap belongs ABOVE the eyebrow, not below
+   it: an eyebrow 10px under the previous control and 10px over its own reads as
+   a caption on the thing above. Settle in stacks four of these, and it was one
+   undifferentiated column until the groups had air between them. */
+.panel .field {
+  margin-top: 26px;
+}
+
 /* A point smaller and a little looser than the sans-serif this replaced.
    Monospace sets wider per character — the same 16px filled the panel to a much
    shorter line — and its even rhythm needs more room between lines before a

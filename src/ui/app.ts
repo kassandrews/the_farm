@@ -400,13 +400,24 @@ export class App {
 
     this.openModal(
       (close) =>
-        panel("Settle in", "", [
-          el("p", {}, ["You're a sprite too — newly arrived."]),
-          labeled("Name", nameInput),
+        // No eyebrow over the name box: the subheading already asks the
+        // question ("What will you call it?"), and a NAME label under it is the
+        // same word twice — the two-headings problem `panel` warns about, one
+        // step down. Every OTHER group keeps its eyebrow, because nothing above
+        // them says what they are.
+        //
+        // Import sits between form and homestead rather than last. Name, form
+        // and import are all the same question — who is arriving — and the
+        // homestead is the first thing you decide about the town. Asking where
+        // you live and then interrupting to ask whether somebody came with you
+        // put the seam in the wrong place.
+        panel("Time to settle in.", "", [
+          el("p", {}, ["Your sprite has just arrived. What will you call it?"]),
+          nameInput,
           labeled("Form", formRow),
-          labeled("Homestead", spotRow),
-          labeled("From The Meadow (optional)", importBox),
+          labeled("Or, import from The Meadow", importBox),
           importBlock,
+          labeled("Homestead", spotRow),
           actionRow([
             primaryBtn("Claim your plot", () => {
               refreshImport(); // catch a paste that never fired an input event
@@ -2240,10 +2251,12 @@ function choiceBtn(label: string, onClick: () => void): HTMLElement {
   b.addEventListener("click", onClick);
   return b;
 }
+/** An eyebrow over a control. `.field` is what puts air between one group and
+ *  whatever sits above it — Settle in is four of these stacked, and without it
+ *  an eyebrow reads as a caption on the box above rather than a heading for the
+ *  box below. The trailing empty div this used to carry did nothing (no rule
+ *  matches it, so it had no height); the margin does the job it was reaching
+ *  for. */
 function labeled(label: string, control: HTMLElement): HTMLElement {
-  return el("div", {}, [
-    el("div", { class: "who" }, [label]),
-    control,
-    el("div", {}, []),
-  ]);
+  return el("div", { class: "field" }, [el("div", { class: "who" }, [label]), control]);
 }
