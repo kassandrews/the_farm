@@ -31,6 +31,7 @@ import { structureAt } from "./structures";
 import { furnitureAt } from "./furniture";
 import { claimedBed } from "./housing";
 import { tileKey, parseTileKey } from "./world";
+import { rememberPlace } from "./places";
 
 /** Why a bed isn't somewhere to live. Structural only — every one of these is a
  *  "this is not a house" answer, never a "this house isn't nice enough" one. */
@@ -134,8 +135,22 @@ export function beds(world: WorldState): { x: number; y: number; verdict: Verdic
  *  the same anchor key would be two claims on one fact, and the loser would be
  *  decided by iteration order somewhere far from here. Whoever was there falls
  *  back to the plaza, which is the same honest homelessness a demolished bed
- *  produces (sim/housing.ts) — and something step 5 can give them a line about. */
-export function assign(world: WorldState, id: CharId, x: number, y: number): Verdict {
+ *  produces (sim/housing.ts) — and something step 5 can give them a line about.
+ *
+ *  Takes `now` because the room remembers the day (Phase 9a). This is the ONLY
+ *  place a sleeper spell is written, and the two other ways a claim can change
+ *  are both deliberately silent:
+ *
+ *  • `claimAuthoredBeds` (sim/housing.ts) hands out the town's authored beds at
+ *    world creation. Margfrom was living there before you arrived, so nobody
+ *    witnessed her moving in — recording it would be the log inventing a day,
+ *    which is the same thing the v23 migration refuses to do (sim/save.ts).
+ *  • `rehomeAcrossStroke` below carries a claim onto a bed that MOVED. Sliding
+ *    somebody's bed a tile left is not a new spell in their life, it is the
+ *    same one with the furniture rearranged, and the entry stays where the
+ *    spell began. At room granularity — which is the only granularity anything
+ *    reads this at — that is simply correct. */
+export function assign(world: WorldState, id: CharId, x: number, y: number, now: number): Verdict {
   const verdict = qualify(world, x, y);
   if (!verdict.ok) return verdict;
 
@@ -146,6 +161,13 @@ export function assign(world: WorldState, id: CharId, x: number, y: number): Ver
   }
   const v = world.villagers.find((w) => w.id === id);
   if (v) v.homeBed = key;
+  world.places = rememberPlace(world.places, {
+    kind: "slept",
+    x: found.ax,
+    y: found.ay,
+    at: now,
+    who: id,
+  });
   return verdict;
 }
 

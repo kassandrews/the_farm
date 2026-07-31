@@ -12,6 +12,7 @@ import { befriend } from "./friendship";
 import { arrivalDue, admitArrival } from "./commission";
 import { remember } from "./memory";
 import type { MemoryKind } from "./memory";
+import { rememberPlace, isWorkPlace } from "./places";
 import {
   canDig,
   canFill,
@@ -31,8 +32,9 @@ import {
   skyStairSiteAt,
   tileSpeed,
 } from "./world";
-import { placeStructure, removeStructure } from "./structures";
+import { placeStructure, removeStructure, structureAt } from "./structures";
 import { rooms } from "./rooms";
+import { roomRemembers, historyLine } from "./history";
 import { stampTown, ensureFixedCast } from "./town";
 import { newErrands, errandDue, postErrand, boardNear } from "./errands";
 import { settleResidents } from "./housing";
@@ -167,6 +169,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     // open with an identically quiet board.
     errands: newErrands(now),
     company: null, // you arrive alone; everyone here is a stranger
+    places: [], // the ground has seen nothing yet; the town's history starts now
     flags: { landClaimed: false, onboarded: false },
   };
 
@@ -490,6 +493,7 @@ export type ActionKind =
   | "harvest"
   | "read"
   | "letter" // a mailbox in the middle of nowhere, and what was in it today
+  | "remember" // a house, asked at its own door what has happened inside it
   | "sink" // the second dig on one tile: a way down
   | "carve" // cutting the rock face ahead of you
   | "shaft" // going down, or coming back up
@@ -508,7 +512,7 @@ export interface ActionResult {
 export interface ActionTarget {
   x: number;
   y: number;
-  kind: "harvest" | "gather" | "tool" | "read" | "letter" | "shaft" | "stair" | "none";
+  kind: "harvest" | "gather" | "tool" | "read" | "letter" | "remember" | "shaft" | "stair" | "none";
 }
 
 /** Where ACT will land, decided in ONE place so the reticle the player sees and
@@ -613,6 +617,27 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
   const box = mailboxNear(world, x, y);
   if (box) return { x: box.x, y: box.y, kind: "letter" };
 
+  // A door beside you, and a room behind it with something to say (Phase 9a).
+  //
+  // ABOVE THE TOOL, on the mailbox's argument one screen up — and it is here
+  // because the version BELOW the tool was built, driven in a browser, and
+  // failed in precisely the way that comment predicts. A doorstep is grass,
+  // grass is always diggable, so the shovel won every tap and a house could
+  // never be asked anything at all. "Somewhere you cannot till is a curiosity;
+  // a letter nobody can open is a feature that does not exist" applies word for
+  // word to a room nobody can ask.
+  //
+  // It is cheaper than the mailbox, though, because it can DECLINE: a door only
+  // offers this when its room actually remembers something. A house that has
+  // seen nothing costs its own doorstep nothing.
+  //
+  // Deliberately not gated on WHOSE house it is. Standing at the town hall and
+  // hearing that this is where you first met the Office Creature is the same
+  // feature; a rule that only your own buildings remember would be the game
+  // deciding which parts of the town are yours.
+  const door = doorNear(world, x, y);
+  if (door) return { x: door.x, y: door.y, kind: "remember" };
+
   const near = nodeNear(world, x, y, world.player.facing);
   const underfoot = toolApplies(world, tool, x, y);
   if (near && tool === "gather" && !underfoot) return { x: near.x, y: near.y, kind: "gather" };
@@ -623,6 +648,30 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
   if (board) return { x: board.x, y: board.y, kind: "read" };
 
   return { x, y, kind: "none" };
+}
+
+/** A door on one of the four tiles around you whose room has a history — same
+ *  shape as `boardNear` and `mailboxNear`, which have the same problem: a door
+ *  is solid, so it can never be the tile underfoot.
+ *
+ *  The door's OWN cell is the right thing to ask about: `roomRemembers` reads
+ *  interior and shell alike (sim/history.ts), and a door is shell, so it
+ *  resolves to the room it lets you into without anybody here having to work
+ *  out which side of it the inside is on. */
+function doorNear(world: WorldState, x: number, y: number): { x: number; y: number } | null {
+  for (const [dx, dy] of [
+    [0, 1],
+    [0, -1],
+    [1, 0],
+    [-1, 0],
+  ]) {
+    const nx = x + dx;
+    const ny = y + dy;
+    if (structureAt(world, nx, ny)?.id !== "door") continue;
+    if (!roomRemembers(world, nx, ny)) continue;
+    return { x: nx, y: ny };
+  }
+  return null;
 }
 
 /** A mailbox on one of the four tiles around you. It is solid, so it can never be
@@ -718,7 +767,7 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
     // that walks every ring buffer in the save to fix a word no player ever
     // sees. It is named after the crop the slice shipped and covers all eight;
     // the VALUE is what carries which one.
-    witness(world, "harvested_carrot", def.carried, now);
+    witness(world, "harvested_carrot", def.carried, now, false, target);
     return {
       kind: "harvest",
       changed: true,
@@ -748,7 +797,7 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
       };
     }
     const got = gather(world, target.x, target.y, now)!;
-    witness(world, "gathered", undefined, now);
+    witness(world, "gathered", undefined, now, false, target);
     return {
       kind: "gather",
       changed: true,
@@ -818,6 +867,22 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
     // which is the UI's business (ui/app.ts watches for this kind), and the
     // message is the fallback for anywhere that only has a line to show.
     return { kind: "read", changed: false, message: "Notices, and one request." };
+  }
+
+  if (target.kind === "remember") {
+    // Nothing moves. A room reading its own past is the one action in the game
+    // that is purely a read — no item, no unlock, no friendship, and nothing
+    // recorded about having read it. There is no "you have heard this" flag,
+    // because a flag is what a checklist is made of.
+    //
+    // The line comes back through `message` and lands in the ordinary flash,
+    // which is the whole UI: no panel, no toast, no screen. `historyLine`
+    // cannot return null here — the ladder only offered this because
+    // `roomRemembers` said yes — but it is typed as if it could, so the
+    // fallback is the honest sentence rather than an assertion that stops being
+    // true the day somebody demolishes a wall mid-tap.
+    const line = historyLine(world, target.x, target.y, now);
+    return { kind: "remember", changed: false, message: line ?? "The room keeps its own counsel." };
   }
 
   // NOT IN THE SKY, and this line is here because a test caught the alternative.
@@ -901,7 +966,7 @@ function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: num
       // made this gesture free to claim in the first place.
       if (canSink(world, x, y)) {
         sink(world, x, y);
-        witness(world, "dug", undefined, now);
+        witness(world, "dug", undefined, now, false, { x, y });
         return { kind: "sink", changed: true, message: "The earth gives, and keeps giving. There's a way down." };
       }
       // Water in, shore out. Before digWithFind for the same reason `canSink`
@@ -912,7 +977,7 @@ function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: num
       // ocean a farm rather than a folly.
       if (canFill(world, x, y)) {
         fill(world, x, y);
-        witness(world, "dug", undefined, now);
+        witness(world, "dug", undefined, now, false, { x, y });
         return {
           kind: "dig",
           changed: true,
@@ -924,7 +989,7 @@ function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: num
       // its override (sim/junk.ts explains what splitting them cost).
       const { dug, find } = digWithFind(world, x, y, now);
       if (dug) {
-        witness(world, "dug", undefined, now);
+        witness(world, "dug", undefined, now, false, { x, y });
         // The find replaces the usual line rather than joining it. Two toasts
         // for one tap is a queue, and the interesting sentence should not have
         // to wait behind "You turn the earth."
@@ -953,7 +1018,7 @@ function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: num
     case "plant": {
       const sown = sow(world, x, y, now);
       if (sown) {
-        witness(world, "planted_carrot", undefined, now);
+        witness(world, "planted_carrot", undefined, now, false, { x, y });
         return {
           kind: "plant",
           changed: true,
@@ -1127,7 +1192,7 @@ export function buildAt(
   if (tool === "plank") {
     if (!placePlank(world, x, y)) return { changed: false, message: "Can't lay a board there.", broke: false };
     spend(world.inventory, cost);
-    witness(world, "built_plank", undefined, now);
+    witness(world, "built_plank", undefined, now, false, { x, y });
     return { changed: true, message: "A board goes down. The house begins.", broke: false };
   }
 
@@ -1143,7 +1208,7 @@ export function buildAt(
     // Present-only on any layer that is not the ground: the town hears about
     // what you build in the town, and nobody at all hears about a board laid in
     // a tunnel — or, some day, in the sky.
-    witness(world, "built_plank", undefined, now, layer !== "surface");
+    witness(world, "built_plank", undefined, now, layer !== "surface", { x, y });
     return { changed: true, message: furnitureFlavour(tool, layer), broke: false };
   }
 
@@ -1153,7 +1218,7 @@ export function buildAt(
     return { changed: false, message: `Can't put a ${structureDef(tool).name.toLowerCase()} there.`, broke: false };
   }
   spend(world.inventory, cost);
-  witness(world, "built_plank", undefined, now);
+  witness(world, "built_plank", undefined, now, false, { x, y });
 
   // Closing the last gap is the beat: the roof arrives on its own, because it
   // was never something you could buy (DESIGN §Structures).
@@ -1240,8 +1305,29 @@ function witness(
   value: string | undefined,
   now: number,
   onlyPresent = false,
+  where?: { x: number; y: number },
 ): void {
   const p = world.player;
+  // The ground was there too (DESIGN §"A place keeps a history").
+  //
+  // `where` IS THE TILE THAT CHANGED, AND IT IS NOT THE PLAYER. Everything else
+  // in this function is about who was standing near YOU, because friendship is
+  // about company. A place memory is about the ground, and in build mode the
+  // ground you are editing can be most of a screen away — tap places and drag
+  // paints a run (DESIGN §Structures). Anchored to the player, flooring a house
+  // while standing in the garden would file "you laid these boards" in the
+  // garden, and the room would never say the one line it exists to say. Callers
+  // that have a target tile pass it; the few that genuinely happen underfoot
+  // fall back to the player.
+  //
+  // Surface only: rooms are built out of `world.build`, which exists on one
+  // layer, so an entry at (x, y) underground would be read back as something
+  // that happened in the room standing at (x, y) above it. A tunnel is not a
+  // room.
+  if (p.layer === "surface" && isWorkPlace(kind)) {
+    const at = where ?? { x: Math.round(p.x), y: Math.round(p.y) };
+    world.places = rememberPlace(world.places, { kind, x: at.x, y: at.y, at: now });
+  }
   for (const v of world.villagers) {
     // Somebody who is not HERE cannot have seen anything, and by 4c that is a
     // real state rather than a philosophical one: the Ghost stands at a fixed
@@ -1276,6 +1362,23 @@ function witness(
 export function talk(world: WorldState, id: CharId, rng: Rng, now: number): Speech | null {
   const v = world.villagers.find((w) => w.id === id);
   if (!v) return null;
+  // Where you first met them. `rememberPlace` keeps only the first per person,
+  // so this fires on every conversation and records exactly one — the check
+  // lives in the log rather than here, because "have we met" is a fact about
+  // the log and duplicating it at the call site is how the two drift.
+  //
+  // Their coordinate, not yours: you are standing in the doorway as often as
+  // not, and a doorway is in the wall rather than in the room (sim/rooms.ts
+  // §roomAt). The room where you met them is the room THEY were in.
+  if (world.player.layer === "surface" && (v.layer ?? "surface") === "surface") {
+    world.places = rememberPlace(world.places, {
+      kind: "met",
+      x: Math.round(v.x),
+      y: Math.round(v.y),
+      at: now,
+      who: v.id,
+    });
+  }
   befriend(v, 2);
   return speak(world, v, rng, now);
 }

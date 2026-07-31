@@ -7,6 +7,7 @@ import type { CropId } from "../content/crops";
 import type { AdultForm } from "../content/canon/forms";
 import type { CharId, NewcomerId } from "../content/cast";
 import type { MemoryLog } from "./memory";
+import type { PlaceLog } from "./places";
 import type { Inventory } from "./inventory";
 import type { NodeId } from "../content/nodes";
 import type { SkinId, SkinClass } from "../content/skins";
@@ -332,6 +333,20 @@ export interface WorldState {
    *  UI to turn into a bar. `sinceAt` exists so a line can say "all afternoon"
    *  one day, and for nothing else. */
   company: { id: CharId; sinceAt: number } | null;
+
+  /** What the GROUND remembers, oldest first (sim/places.ts).
+   *
+   *  One flat log for the whole world rather than a record per building, and
+   *  that is the load-bearing decision: a building has no identity here — a
+   *  room is derived from whichever walls are standing, so its `Room.id` moves
+   *  when you extend it — and a history filed under the walls would be deleted
+   *  by the player improving the house. Entries are anchored to coordinates;
+   *  a room is a QUERY over them (`placesIn`), never their owner.
+   *
+   *  Like `museum.donated`, it accumulates and still is not a score: no total,
+   *  no denominator, nothing reads its length, and nothing anywhere gates on
+   *  whether a place has any. It is capped, like a villager's memory. */
+  places: PlaceLog;
 
   flags: {
     landClaimed: boolean;

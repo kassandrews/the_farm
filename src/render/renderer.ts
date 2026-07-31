@@ -68,6 +68,12 @@ const TARGET_COLOR: Record<ActionTarget["kind"], string> = {
   // read", and giving the mailbox its own hue would make the reticle say THIS ONE
   // IS SPECIAL about a thing whose whole character is that nobody remarks on it.
   letter: "rgba(190,205,255,0.9)",
+  // And the same colour a third time, for a door with a history behind it. It
+  // is the third "there is something here to read", and the reticle should say
+  // exactly that and no more. A hue of its own would mark out which buildings
+  // remember something and which don't — a completion map drawn in reticles,
+  // which is the one thing this feature must never become (ROADMAP §Phase 9a).
+  remember: "rgba(190,205,255,0.9)",
   shaft: "rgba(200,230,255,0.95)", // the way down, or the daylight above you
   // The shaft's own colour, on the mailbox's argument one line up: both are a
   // way through to another layer, and a hue of its own would be the reticle

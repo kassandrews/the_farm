@@ -19,6 +19,11 @@ import { ARRIVALS } from "../content/arrivals";
 import { stopTarget } from "./housing";
 import type { WorldState } from "./types";
 
+/** A fixed clock. `assign` stamps a sleeper spell into the place log, and a
+ *  test that passed Date.now() would write a different season depending on the
+ *  month it ran in (ROADMAP §"Two clocks for one fact"). */
+const NOW = Date.UTC(2026, 6, 1, 12);
+
 function town() {
   const w = newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
   w.flags.onboarded = true;
@@ -125,11 +130,11 @@ describe("satisfying a commission", () => {
     const w = town();
     const c = admitArrival(w, w.createdAt + HOUR)!;
     const bed = buildHouse(w, 40, 40);
-    assign(w, c.id, bed.x, bed.y);
+    assign(w, c.id, bed.x, bed.y, NOW);
     expect(commissionState(w, c).done).toBe(true);
 
     // Then take a wall out from under it. This is the only way these verdicts
-    // ever surface: assign() won't hand someone a bed that doesn't qualify in
+    // ever surface: assign(, NOW) won't hand someone a bed that doesn't qualify in
     // the first place, so a commission sees "no-room" when a FINISHED house
     // stops being one — which is the case worth reporting anyway. The words are
     // qualify()'s own, so the form and the panel can't disagree about what a
@@ -146,7 +151,7 @@ describe("satisfying a commission", () => {
     // you'd give someone. That gap is exactly why the minimum lives on the
     // COMMISSION and not in qualify().
     const bed = buildHouse(w, 40, 40, 3, 5);
-    assign(w, c.id, bed.x, bed.y);
+    assign(w, c.id, bed.x, bed.y, NOW);
     const state = commissionState(w, c);
     expect(state.done).toBe(false);
     expect(state).toMatchObject({ why: "too-small" });
@@ -157,7 +162,7 @@ describe("satisfying a commission", () => {
     const w = town();
     const c = admitArrival(w, w.createdAt + HOUR)!;
     const bed = buildHouse(w, 40, 40);
-    assign(w, c.id, bed.x, bed.y);
+    assign(w, c.id, bed.x, bed.y, NOW);
     // No finish, no furniture, no generosity of space. Taste is delight, never
     // a gate (DESIGN) — a plain box you made them is a house.
     expect(commissionState(w, c).done).toBe(true);
@@ -169,7 +174,7 @@ describe("stamping", () => {
     const w = town();
     const c = admitArrival(w, w.createdAt + HOUR)!;
     const bed = buildHouse(w, 40, 40);
-    assign(w, c.id, bed.x, bed.y);
+    assign(w, c.id, bed.x, bed.y, NOW);
     return { w, c };
   }
 

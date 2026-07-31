@@ -89,6 +89,11 @@ const ACTION_CUES: Record<ActionKind, Cue> = {
   // No panel for a letter — it flashes a line, like every other small thing the
   // world says. See doAction: `read` is caught before the cue, `letter` is not.
   letter: "menu",
+  // A house telling you what it remembers is a line, not a panel — the letter's
+  // shape exactly. It reports `changed: false`, so doAction has to catch it
+  // before the cue or the ordinary "nothing moved" rule would play the REFUSAL
+  // sound at a room answering a question correctly.
+  remember: "menu",
   sink: "dig", // still the shovel — it's the second dig on the same tile
   carve: "dig",
   shaft: "place", // a foot on a rung: the closest thing here to a solid landing
@@ -1493,7 +1498,7 @@ export class App {
         ? world.villagers.find((v) => v.id === verdict.occupant)
         : undefined;
 
-    assign(world, id, x, y);
+    assign(world, id, x, y, Date.now());
     audio.play("place");
     this.endAssigning();
     this.persist();
@@ -2032,6 +2037,16 @@ export class App {
     // cue below, or standing at the board would play the refusal sound.
     if (res.kind === "read") {
       this.openErrands();
+      return;
+    }
+    // A room reading its own past. Caught here for the same reason `read` is —
+    // it changes nothing, so the cue rule below would sound a refusal — but it
+    // flashes its line instead of opening anything. There is no panel for this
+    // on purpose: a screen listing what a building remembers is a page with
+    // gaps in it, and a page with gaps is a checklist (ROADMAP §Phase 9a).
+    if (res.kind === "remember") {
+      audio.play(ACTION_CUES.remember);
+      this.flash(res.message);
       return;
     }
     // Changing layer puts down anything that doesn't make sense on the new one.

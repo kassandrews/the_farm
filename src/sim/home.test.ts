@@ -13,6 +13,11 @@ import type { AdultForm } from "../content/canon/forms";
 import { speak } from "./dialogue";
 import { makeRng } from "./rng";
 
+/** A fixed clock. `assign` stamps a sleeper spell into the place log, and a
+ *  test that passed Date.now() would write a different season depending on the
+ *  month it ran in (ROADMAP §"Two clocks for one fact"). */
+const NOW = Date.UTC(2026, 6, 1, 12);
+
 function world() {
   return newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
 }
@@ -64,7 +69,7 @@ describe("reading a home as something to talk about", () => {
   it("notices when their bed has been taken away", () => {
     const w = world();
     const bed = house(w, 40, 40);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
     expect(kinds(w)).not.toContain("homeless");
 
     buildAt(w, "erase", bed.x, bed.y, Date.now());
@@ -76,7 +81,7 @@ describe("reading a home as something to talk about", () => {
   it("notices the walls coming down around the bed", () => {
     const w = world();
     const bed = house(w, 40, 50);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
 
     // A mid-wall cell, not a corner: the fill is four-way, so a missing corner
     // is still a sealed room (sim/rooms.ts) and wouldn't leak.
@@ -87,7 +92,7 @@ describe("reading a home as something to talk about", () => {
   it("notices being walled in with no way out", () => {
     const w = world();
     const bed = house(w, 40, 60);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
 
     buildAt(w, "wall", 42, 64, Date.now()); // paint over the doorway
     expect(kinds(w)).toEqual(["sealed"]);
@@ -96,7 +101,7 @@ describe("reading a home as something to talk about", () => {
   it("trouble outranks decor", () => {
     const w = world();
     const bed = house(w, 40, 70);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
     buildAt(w, "table", 42, 41 + 30, Date.now());
 
     buildAt(w, "erase", bed.x, bed.y, Date.now());
@@ -107,7 +112,7 @@ describe("reading a home as something to talk about", () => {
   it("calls a room with only a bed in it bare, and stops once it isn't", () => {
     const w = world();
     const bed = house(w, 80, 40);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
     expect(kinds(w)).toContain("bare");
     expect(kinds(w)).not.toContain("furnished");
 
@@ -120,18 +125,18 @@ describe("reading a home as something to talk about", () => {
   it("reads size off the actual room, and stays quiet in between", () => {
     const w = world();
     const mid = house(w, 80, 60); // interior 9
-    assign(w, "resident1", mid.x, mid.y);
+    assign(w, "resident1", mid.x, mid.y, NOW);
     expect(kinds(w)).not.toContain("snug");
     expect(kinds(w)).not.toContain("grand");
 
     const big = house(w, 100, 40, { span: 7 }); // interior 25
-    assign(w, "resident1", big.x, big.y);
+    assign(w, "resident1", big.x, big.y, NOW);
     const grand = describeHome(w, resident(w)).find((n) => n.kind === "grand")!;
     expect(Number(grand.value)).toBe(25);
     expect(Number(grand.value)).toBeGreaterThanOrEqual(GRAND);
 
     const small = house(w, 130, 40, { span: 4 }); // interior 4
-    assign(w, "resident1", small.x, small.y);
+    assign(w, "resident1", small.x, small.y, NOW);
     const snug = describeHome(w, resident(w)).find((n) => n.kind === "snug")!;
     expect(Number(snug.value)).toBeLessThanOrEqual(SNUG);
   });
@@ -139,7 +144,7 @@ describe("reading a home as something to talk about", () => {
   it("names what the walls are made of", () => {
     const w = world();
     const bed = house(w, 80, 80);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
     const finish = describeHome(w, resident(w)).find((n) => n.kind === "finish")!;
     expect(finish.value).toBe("pale pine"); // the starter wood finish, lowercased
   });
@@ -155,7 +160,7 @@ describe("saying it out loud", () => {
       meadowImport: { name: "Grimble", form: "scholar", memorySeed: [] },
     });
     const bed = house(w, 40, 40);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
     buildAt(w, "erase", bed.x, bed.y, Date.now());
 
     const v = resident(w);
@@ -179,7 +184,7 @@ describe("saying it out loud", () => {
       meadowImport: { name: "Grimble", form: "scholar", memorySeed: [] },
     });
     const bed = house(w, 40, 40);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
 
     const v = resident(w);
     const rng = makeRng(11);
@@ -200,7 +205,7 @@ describe("taste", () => {
   it("says nothing extra about a house that isn't to their taste", () => {
     const w = world();
     const bed = house(w, 40, 40);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
     // Margfrom is a scholar and scholars like a shelf. There isn't one, and
     // that costs her nothing: no note, no grumble, no missing-points readout.
     // The vocabulary has no word for disappointment, which is the design.
@@ -211,7 +216,7 @@ describe("taste", () => {
   it("notices the piece their form likes", () => {
     const w = world();
     const bed = house(w, 40, 40);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
     expect(TASTES.scholar!.piece).toBe("shelf");
     buildAt(w, "shelf", 42, 41, Date.now(), "s");
     expect(kinds(w)).toContain("delight_piece");
@@ -220,7 +225,7 @@ describe("taste", () => {
   it("is not fooled by furniture that isn't the one they like", () => {
     const w = world();
     const bed = house(w, 40, 40);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
     buildAt(w, "chair", 42, 41, Date.now(), "s");
     expect(kinds(w)).not.toContain("delight_piece");
     expect(kinds(w)).toContain("furnished"); // still worth remarking on
@@ -229,7 +234,7 @@ describe("taste", () => {
   it("puts delight ahead of the plain observations", () => {
     const w = world();
     const bed = house(w, 40, 40);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
     buildAt(w, "shelf", 42, 41, Date.now(), "s");
     const notes = describeHome(w, resident(w));
     // Built them the thing they like and they lead with it. Anything else
@@ -240,7 +245,7 @@ describe("taste", () => {
   it("names what pleased them, so the line can say it", () => {
     const w = world();
     const bed = house(w, 40, 40);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
     buildAt(w, "shelf", 42, 41, Date.now(), "s");
     const note = describeHome(w, resident(w)).find((n) => n.kind === "delight_piece")!;
     expect(note.value).toBe("shelf");

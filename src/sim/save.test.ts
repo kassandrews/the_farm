@@ -733,3 +733,40 @@ describe("v22 → v23: everybody has a name", () => {
     expect(her.memory).toHaveLength(1);
   });
 });
+
+describe("v23 → v24: the ground gained a memory", () => {
+  function v23Save(): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    delete w.places;
+    return { ...w, schemaVersion: 23 };
+  }
+
+  it("gives an old town an empty log rather than an invented past", () => {
+    // IT HAS TO BE EMPTY, and that is the whole decision. Backfilling would be
+    // easy — every plank in `build` is a floor the player laid, every claimed
+    // `homeBed` is somebody who sleeps there — and every entry would be a
+    // fabrication with a made-up timestamp on it, in a system whose only promise
+    // is that it says things that happened.
+    const migrated = migrateSave(v23Save())!;
+    expect(migrated.schemaVersion).toBe(24);
+    expect(migrated.places).toEqual([]);
+  });
+
+  it("invents nothing from the buildings that are already standing", () => {
+    const raw = v23Save();
+    raw.build = { "10,10": { id: "plank", finish: "pine" }, "10,11": { id: "wall", finish: "pine" } };
+    const migrated = migrateSave(raw)!;
+    expect(migrated.places).toEqual([]);
+    // And the buildings themselves are untouched: a migration that reads the
+    // world to describe its past must not also rewrite it.
+    expect(migrated.build).toEqual(raw.build);
+  });
+
+  it("leaves everything else exactly as it was", () => {
+    const raw = v23Save();
+    const migrated = migrateSave(raw)!;
+    expect(migrated.villagers).toEqual(raw.villagers);
+    expect(migrated.inventory).toEqual(raw.inventory);
+    expect(migrated.museum).toEqual(raw.museum);
+  });
+});

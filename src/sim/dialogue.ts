@@ -12,6 +12,7 @@ import { friendshipTier, displayName } from "./friendship";
 import type { MemoryKind } from "./memory";
 import { describeHome, NOTE_PRIORITY, URGENT } from "./home";
 import { describeSeason } from "./seasons";
+import { describeHistory } from "./history";
 import type { HomeNote } from "./home";
 import type { AdultForm } from "../content/canon/forms";
 import {
@@ -20,6 +21,7 @@ import {
   OFFICE_IDLE,
   RESIDENT_MEMORY,
   RESIDENT_HOME,
+  RESIDENT_HISTORY,
   seasonLines,
   SCHOLAR_DISSENT,
   MOLE_DEEP,
@@ -208,6 +210,16 @@ export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Sp
     return { who: displayName(v), text: memoryLine };
   }
 
+  // Then the room you're both standing in. Below memory and above the season,
+  // which is exactly where it belongs on the same specificity ladder: something
+  // you and this person did together beats something that happened in this
+  // room, and something that happened in this room beats the weather.
+  const historyLine = tryHistoryLine(world, v, rng, now);
+  if (historyLine && rng.next() < HISTORY_CHANCE) {
+    v.lastLine = historyLine;
+    return { who: displayName(v), text: historyLine };
+  }
+
   // The month, which is the least specific true thing anybody can say and so
   // goes last before idle. Below memory on purpose: something you and this
   // person did together is always more specific than the weather.
@@ -344,6 +356,36 @@ function tryDissentLine(world: WorldState, v: Villager, rng: Rng): string | null
   const reading = rivalReading(world, v.id);
   if (!reading) return null;
   return rng.pick(SCHOLAR_DISSENT)(reading.def.title, reading.rival);
+}
+
+/** Odds a villager remarks on the history of the room you're both standing in.
+ *  Low, and lower than the season: it fires only indoors, so it is already rare
+ *  by geography, and the thing it is competing with is a person telling you
+ *  something about themselves. A room's past should feel like something you
+ *  caught them thinking about, not their opening move. */
+const HISTORY_CHANCE = 0.3;
+
+/** Something a villager could say about the room you are BOTH IN, or null.
+ *
+ *  Their coordinates, not the player's, and not their home: it is a remark
+ *  about where this conversation is happening. Outdoors there is no room and so
+ *  nothing to say, which is the correct shape — you get these lines by standing
+ *  inside somewhere together.
+ *
+ *  Skips notes about the speaker (see RESIDENT_HISTORY's header): a villager
+ *  narrating their own tenancy at you is the game doing its remembering out
+ *  loud. `built_plank` has no `who` at all, so it always survives the filter. */
+function tryHistoryLine(world: WorldState, v: Villager, rng: Rng, now: number): string | null {
+  const banks = RESIDENT_HISTORY[v.form];
+  if (!banks) return null;
+
+  for (const note of describeHistory(world, Math.round(v.x), Math.round(v.y), now)) {
+    if (note.who === displayName(v)) continue;
+    const templates = banks[note.kind];
+    if (!templates || templates.length === 0) continue;
+    return rng.pick(templates)(note.who);
+  }
+  return null;
 }
 
 /** Find a memory-referencing line the villager could say right now, or null. */

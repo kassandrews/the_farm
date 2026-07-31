@@ -19,9 +19,12 @@ import type { CharId, AuthoredId } from "../content/cast";
 import { CAST, MOLE, GHOST, COSMOS } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 
-export const SCHEMA_VERSION = 23;
+export const SCHEMA_VERSION = 24;
 
-// STILL 23 AFTER THE SKY (Phase 7c), and the absence of a v24 is a decision.
+// It went to 24 at Phase 9a, when the world gained `places` — a genuinely new
+// stored field, which is exactly the case the note below says is worth a bump.
+//
+// IT STAYED AT 23 THROUGH THE SKY (Phase 7c), and that absence was a decision.
 //
 // The sky adds no stored field. Nothing up there can be edited — no digging, no
 // building, no planting (DESIGN §The sky) — so there is no `sky` edit map to
@@ -553,6 +556,19 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
     });
     return { ...raw, schemaVersion: 23, villagers: renamed };
   },
+
+  // v23 → v24: the ground gained a memory (Phase 9a, sim/places.ts).
+  //
+  // Empty, and it has to be empty. A place log is a record of what was
+  // WITNESSED, and nobody witnessed anything in a town that existed before the
+  // log did. It would be trivial to backfill — every plank in `build` is a
+  // floor the player laid, every claimed `homeBed` is somebody who sleeps
+  // there — and every one of those entries would be invented, with a made-up
+  // timestamp attached, in a system whose whole promise is that it only ever
+  // says things that happened. A migration must never describe a past it did
+  // not see (the same rule as the frozen literals below, arrived at from the
+  // other direction). An old town simply starts remembering from today.
+  23: (raw) => ({ ...raw, schemaVersion: 24, places: [] }),
 };
 
 /** The name the tables now give an authored character, or null for anyone the

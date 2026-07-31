@@ -936,6 +936,38 @@ paints a run. This also splits the verbs cleanly: the **ACT** button is
 what you do to the tile at your feet (dig, gather, plant, water, harvest),
 **BUILD** is a mode where you edit the map by tapping it.
 
+### A place keeps a history, the same way a resident does
+
+Residents keep a memory log (§NPCs that remember). So does the ground they
+stand on. A room knows who has slept in it and what has happened inside its
+walls, and it says so when asked, or when somebody who lives there brings it
+up: "the Menace has slept here since spring", "this is the room where you
+first met Eloise", "you laid these boards yourself".
+
+- **It is anchored to coordinates, not to a building.** A building has no
+  identity in this game and should not acquire one — rooms are derived from
+  the walls that happen to be standing, so a room's identity dies the moment
+  you extend it northward. Events are remembered at the spot they happened,
+  and a room simply *contains* the ones inside it. Knock a wall out and push
+  the house into the next field and it keeps everything it had and inherits
+  what the field remembers. Renovation cannot erase a history that was never
+  filed under the walls.
+- **A place remembers a kind of work happening near it, not each swing.** A
+  floor is two hundred boards and one afternoon. Recording two hundred
+  entries would be both a lie about what happened and a flood that pushes
+  everything older out of the log, so a second event of the same kind near an
+  existing one is not recorded. What survives is the sentence that was true
+  all along — you laid these boards — and never a measure of how many.
+- **It is a memory, never a meter.** No count, no rank, no "sheltered twelve
+  families". The scale here is honest to the town's real churn, which is a
+  handful of names: arrivals run out at four, on purpose.
+- **There is no completion.** No building is finished being historied, no
+  screen shows which ones have history and which don't, and nothing anywhere
+  gates on it — the same rule as the museum's record (§The museum) and for
+  the same reason.
+- **The log is capped**, like a villager's. A place that has been lived in for
+  a year is not carrying a year of receipts.
+
 ## Time and the away simulation
 
 - **Real clock, real calendar.** Day/night follows the actual clock; seasons

@@ -6,6 +6,11 @@ import { add } from "./inventory";
 import { claimedBed, homeStand, stopTarget } from "./housing";
 import { qualify, assign, beds, rehomeAcrossStroke, bedKeys, pendingRehome, DISQUALIFIER_TEXT } from "./assign";
 
+/** A fixed clock. `assign` stamps a sleeper spell into the place log, and a
+ *  test that passed Date.now() would write a different season depending on the
+ *  month it ran in (ROADMAP §"Two clocks for one fact"). */
+const NOW = Date.UTC(2026, 6, 1, 12);
+
 function world() {
   return newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
 }
@@ -82,7 +87,7 @@ describe("qualifying a room as somewhere to live", () => {
   it("reports the current occupant instead of refusing", () => {
     const w = world();
     const bed = house(w, 40, 50);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
 
     // Someone sleeping here is a fact the caller should be able to present, not
     // a wall the caller runs into.
@@ -106,7 +111,7 @@ describe("assigning someone a home", () => {
     const bed = house(w, 40, 70);
     const before = claimedBed(w, w.villagers.find((v) => v.id === "resident1")!);
 
-    expect(assign(w, "resident1", bed.x, bed.y).ok).toBe(true);
+    expect(assign(w, "resident1", bed.x, bed.y, NOW).ok).toBe(true);
     const v = w.villagers.find((x) => x.id === "resident1")!;
     expect(v.homeBed).toBe(tileKey(bed.x, bed.y));
     expect(claimedBed(w, v)).toEqual(bed);
@@ -130,15 +135,15 @@ describe("assigning someone a home", () => {
     setTile(w, 90, 91, GRASS);
     buildAt(w, "bed", 90, 90, Date.now(), "s");
 
-    expect(assign(w, "resident1", 90, 90)).toEqual({ ok: false, why: "no-room" });
+    expect(assign(w, "resident1", 90, 90, NOW)).toEqual({ ok: false, why: "no-room" });
     expect(v.homeBed).toBe(before);
   });
 
   it("evicts the previous occupant rather than letting two claim one bed", () => {
     const w = world();
     const bed = house(w, 40, 80);
-    assign(w, "resident1", bed.x, bed.y);
-    assign(w, "office", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
+    assign(w, "office", bed.x, bed.y, NOW);
 
     const resident = w.villagers.find((x) => x.id === "resident1")!;
     const office = w.villagers.find((x) => x.id === "office")!;
@@ -181,7 +186,7 @@ describe("sliding a bed across the room", () => {
   it("keeps the claim across the two strokes a move actually takes", () => {
     const w = world();
     const bed = house(w, 50, 40);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
     const v = w.villagers.find((x) => x.id === "resident1")!;
 
     move(w, bed, { x: bed.x + 1, y: bed.y });
@@ -193,7 +198,7 @@ describe("sliding a bed across the room", () => {
   it("waits between the strokes rather than rehousing on the spot", () => {
     const w = world();
     const bed = house(w, 50, 45);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
     const v = w.villagers.find((x) => x.id === "resident1")!;
 
     const s1 = bedKeys(w);
@@ -210,7 +215,7 @@ describe("sliding a bed across the room", () => {
     const w = world();
     const a = house(w, 50, 55);
     const b = house(w, 60, 55);
-    assign(w, "resident1", a.x, a.y);
+    assign(w, "resident1", a.x, a.y, NOW);
     const v = w.villagers.find((x) => x.id === "resident1")!;
 
     const s1 = bedKeys(w);
@@ -218,7 +223,7 @@ describe("sliding a bed across the room", () => {
     rehomeAcrossStroke(w, s1);
 
     // The player talks to them and gives them the other house instead.
-    assign(w, "resident1", b.x, b.y);
+    assign(w, "resident1", b.x, b.y, NOW);
 
     // Now they put a bed back in the first house. It must NOT drag them back.
     const s2 = bedKeys(w);
@@ -231,7 +236,7 @@ describe("sliding a bed across the room", () => {
   it("leaves them honestly homeless when the bed just goes away", () => {
     const w = world();
     const bed = house(w, 50, 50);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
     const v = w.villagers.find((x) => x.id === "resident1")!;
 
     const before = bedKeys(w);
@@ -246,7 +251,7 @@ describe("sliding a bed across the room", () => {
   it("forgets the waiting claim when the world is reloaded", () => {
     const w = world();
     const bed = house(w, 50, 95);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
 
     const before = bedKeys(w);
     buildAt(w, "erase", bed.x, bed.y, Date.now());
@@ -261,7 +266,7 @@ describe("sliding a bed across the room", () => {
   it("doesn't guess when a stroke scatters several beds", () => {
     const w = world();
     const bed = house(w, 50, 60);
-    assign(w, "resident1", bed.x, bed.y);
+    assign(w, "resident1", bed.x, bed.y, NOW);
     const v = w.villagers.find((x) => x.id === "resident1")!;
 
     const before = bedKeys(w);
@@ -279,8 +284,8 @@ describe("sliding a bed across the room", () => {
     const w = world();
     const a = house(w, 50, 70);
     const b = house(w, 60, 70);
-    assign(w, "resident1", a.x, a.y);
-    assign(w, "office", b.x, b.y);
+    assign(w, "resident1", a.x, a.y, NOW);
+    assign(w, "office", b.x, b.y, NOW);
 
     const before = bedKeys(w);
     buildAt(w, "erase", a.x, a.y, Date.now());
@@ -297,8 +302,8 @@ describe("sliding a bed across the room", () => {
     const w = world();
     const a = house(w, 50, 80);
     const b = house(w, 60, 80);
-    assign(w, "resident1", a.x, a.y);
-    assign(w, "office", b.x, b.y);
+    assign(w, "resident1", a.x, a.y, NOW);
+    assign(w, "office", b.x, b.y, NOW);
     const officeKey = tileKey(b.x, b.y);
 
     // An earlier stroke takes the office's bed away. Their claim goes stale but
