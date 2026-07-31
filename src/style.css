@@ -488,6 +488,85 @@ select {
   white-space: pre-wrap;
 }
 
+/* --- The dialogue panel --------------------------------------------------- */
+/* A conversation gets a face. The speaker stacks (portrait, name, and for a
+   secret the line saying where they're from) in a fixed-width left column, and
+   what they said sits beside it — the layout both Animal Crossing and Stardew
+   settle on, because the eye finds who is talking once and then stays in the
+   text.
+
+   The column is FIXED width, not a fraction: it holds a 96px portrait, and a
+   percentage would let a narrow phone shrink the column while the canvas inside
+   it stayed 96px and overflowed. */
+.panel.speech {
+  width: min(520px, 100%);
+}
+
+.speech-top {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.speaker {
+  flex: 0 0 96px;
+  text-align: center;
+}
+
+/* Nearest-neighbour on the way to the device pixels. The canvas is already
+   baked at an integer 6× (render/portrait.ts); this is what stops a 2× or 3×
+   display from putting the blur back in on the last step. */
+.portrait {
+  display: block;
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+  /* The same cut-out framing as the panel itself, one size down: a drawn edge
+     and a hard offset shadow, no blur. A portrait with a soft shadow would be
+     the one floating element in a game made of stickers. */
+  background: var(--panel-edge);
+  border: 2px solid var(--panel-edge);
+  border-radius: 10px;
+  box-shadow: 0 3px 0 rgba(43, 37, 64, 0.22);
+}
+
+/* The name carries what the eyebrow used to: it is now the only label on the
+   speaker, so it takes the h2's weight rather than the .who treatment. */
+.speaker-name {
+  margin-top: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+/* Secrets only — "Not from here", "Underground". Quiet, because it is a note
+   about the person and not their name. */
+.speaker-from {
+  margin-top: 3px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--accent);
+  line-height: 1.3;
+}
+
+/* min-width:0 or a long unbroken line of dialogue refuses to wrap and pushes
+   the flex row wider than the panel. */
+.speech-said {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* The said line is the panel's subject, so it starts at the top of the portrait
+   rather than being centred against it, and it drops the bottom margin the
+   generic .panel p carries — the reply row below brings its own spacing. A
+   touch of leading-in from the frame's top edge puts the first line level with
+   the face rather than with the frame. */
+.speech-said p {
+  margin: 4px 0 0;
+}
+
 /* A quieter paragraph inside a panel: the errands board's notices, and the line
    that says what you're short of. Deliberately NOT `.hint`, which is the fixed
    hover tooltip and would have positioned these off the panel entirely.

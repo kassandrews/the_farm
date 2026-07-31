@@ -6,6 +6,8 @@
 import { el, hoverHint, modal } from "./dom";
 import { Renderer } from "../render/renderer";
 import { iconEl, SCALE } from "../render/icons";
+import { portrait } from "../render/portrait";
+import { lookFor } from "../content/looks";
 import type { IconName } from "../content/icons";
 import type { WorldState, Tool, BuildTool, HomesteadSpot, Layer } from "../sim/types";
 import { FACINGS, FURNITURE, furnitureDef } from "../content/furniture";
@@ -520,12 +522,21 @@ export class App {
 
     this.openModal(
       (close) =>
-        // A secret is not a farm resident and the subtitle should not claim one
-        // is. It says where they are rather than who they are — they stay
-        // undocumented, and the player already knows they walked here. The
-        // string is the character's own (`CharDef.subtitle`) rather than a
-        // ternary that grew a branch per secret.
-        panel(speech.who, charDef(them).subtitle ?? "Farm resident", [
+        // A conversation is the one panel that has a FACE, so it gets its own
+        // frame rather than the generic `panel()`: speaker on the left, what
+        // they said beside it.
+        //
+        // No "Farm resident" line. It was under every name in the game and told
+        // you nothing you couldn't see — you are standing in the town talking to
+        // somebody who lives in it. A SECRET's subtitle stays, because that one
+        // is content: it says where they are rather than who they are ("Not from
+        // here"), they stay undocumented, and the string is the character's own
+        // (`CharDef.subtitle`) rather than a ternary that grew a branch per
+        // secret.
+        speechPanel(
+          speech.who,
+          charDef(them).subtitle,
+          portrait(them.form, lookFor(them.id, them.form)),
           el("p", {}, [speech.text]),
           actionRow([
             ...(offerable
@@ -564,7 +575,7 @@ export class App {
               : []),
             primaryBtn("...", close),
           ]),
-        ]),
+        ),
       { dismissable: true },
     );
   }
@@ -2135,6 +2146,38 @@ function panel(title: string, who: string, body: (Node | string)[]): HTMLElement
     el("div", { class: "who" }, [who]),
     el("h2", {}, [title]),
     ...body.map((b) => (typeof b === "string" ? document.createTextNode(b) : b)),
+  ]);
+}
+/** The dialogue frame: a speaker column (face, name, and for a secret the one
+ *  line saying where they're from) beside what they said.
+ *
+ *  Deliberately not a variant of `panel()`. The counters and the satchel are
+ *  screens with a heading; this is a person talking, and the difference is the
+ *  whole layout rather than one extra node — folding both into one function
+ *  would mean a `who` argument that sometimes means an eyebrow and sometimes a
+ *  portrait. */
+function speechPanel(
+  name: string,
+  from: string | undefined,
+  face: HTMLElement,
+  said: HTMLElement,
+  replies: HTMLElement,
+): HTMLElement {
+  return el("div", { class: "panel speech" }, [
+    el("div", { class: "speech-top" }, [
+      el("div", { class: "speaker" }, [
+        face,
+        el("div", { class: "speaker-name" }, [name]),
+        ...(from ? [el("div", { class: "speaker-from" }, [from])] : []),
+      ]),
+      el("div", { class: "speech-said" }, [said]),
+    ]),
+    // The replies span the whole panel rather than sitting in the text column.
+    // Tried the other way first and looked at it: against a one-line remark the
+    // buttons crowd in beside the words like a footnote, while the space under
+    // the portrait sits empty. Full width, they read as what YOU say back — a
+    // separate turn, under everything they said.
+    replies,
   ]);
 }
 function actionRow(buttons: HTMLElement[]): HTMLElement {
