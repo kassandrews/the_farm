@@ -3087,6 +3087,36 @@ is **not** a per-cell anything. Texture keyed to the tile grid gives back the
 venetian-blind stripe. Whatever this turns out to be, it steps off **world**
 coordinates or off a noise field, never off the cell.
 
+**Built.** Two halves, and the ratio between them is the finding: the tonal
+field did most of the work and the tufts were where the bug was.
+
+- **`groundTone(x, y, seed)`** — smooth value noise on the WORLD coordinate at
+  two octaves, 11 and 29 tiles. Grass and sand mix up to 14% of black by it.
+  Nothing is quantized: neighbours differ by well under an RGB unit, so the field
+  gets shape and cannot get a contour. `sim/ground.test.ts` asserts that as a
+  number (max neighbour step < 0.07) alongside the opposite failure — that it
+  still varies by 0.15 within one screen, since a field that only swings over a
+  thousand tiles is flat where you are standing.
+- **The first version was invisible**, and the reason is worth keeping: it mixed
+  the tile's `color` toward its own `shade`, which are eight RGB units apart
+  because `shade` is the 1px boundary lip. Across a whole field that moved the
+  green by three units and photographed as no change at all. **The lip's job and
+  the field's job are different jobs** — reaching for the nearest existing
+  colour was the mistake.
+- **Three tuft shapes, not one**, off the same hash that places them, and the
+  threshold from 0.72 to 0.62. Every blade in the world had been the identical
+  five-pixel mark; the eye finds a repeated glyph long before it notices the
+  placement underneath is random, so the sparse random scatter was reading as a
+  printed repeat. All three shapes stay inside the original 2px, so none can
+  reach a neighbour and start pairing edges.
+
+**Found while checking it, not fixed: the biome boundary steps in hard
+rectangles.** `biome-border.png` shows the meadow/birch tint changing along a
+staircase of tile-sized blocks. Confirmed pre-existing (shot at HEAD before the
+tone change to be sure it was not a regression). It is the same class of problem
+this step just solved for the grass and it wants the same kind of answer — a
+warped or dithered boundary rather than a cell-aligned one.
+
 ### Smaller, still open
 
 - **The rectangular pond** south of the starting homestead is a hard-cornered

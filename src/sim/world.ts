@@ -2148,6 +2148,52 @@ export function decoHash(x: number, y: number, seed: number): number {
   return hash2(x, y, seed) / 4294967296;
 }
 
+/** Smooth value noise in 0..1, sampled at a wavelength of `period` TILES.
+ *
+ *  Bilinear between hashed lattice corners, with a smoothstep on each axis so
+ *  the lattice itself doesn't show as diamonds. Deterministic in (x, y, seed):
+ *  the ground must look the same every time you walk back onto it. */
+function smoothNoise(x: number, y: number, seed: number, period: number): number {
+  const fx = x / period;
+  const fy = y / period;
+  const x0 = Math.floor(fx);
+  const y0 = Math.floor(fy);
+  const sx = fx - x0;
+  const sy = fy - y0;
+  const ease = (t: number) => t * t * (3 - 2 * t);
+  const ex = ease(sx);
+  const ey = ease(sy);
+  const corner = (cx: number, cy: number) => hash2(cx, cy, seed) / 4294967296;
+  const top = corner(x0, y0) + ex * (corner(x0 + 1, y0) - corner(x0, y0));
+  const bot = corner(x0, y0 + 1) + ex * (corner(x0 + 1, y0 + 1) - corner(x0, y0 + 1));
+  return top + ey * (bot - top);
+}
+
+/** How light or dark this patch of ground is, 0..1, centred near 0.5.
+ *
+ *  Open grass was one flat green with a sparse tuft on it, which is fine for a
+ *  tile you cross and wrong for the plot you live on: at any distance the
+ *  homestead read as painted card while the town centre — which has buildings,
+ *  a plaza and a river breaking it up — read as a place.
+ *
+ *  THE WHOLE POINT IS THE WAVELENGTH. Two octaves at 11 and 29 tiles, so the
+ *  lightest and darkest parts of a patch are half a screen apart and no edge of
+ *  it can line up with a cell. This is the per-cell edges band rule (CLAUDE.md)
+ *  answered the way that rule prescribes — texture stepped off the WORLD
+ *  coordinate, not off the tile — and it is why the renderer mixes the result
+ *  CONTINUOUSLY rather than quantizing it into two or three shades. Quantizing
+ *  would put a hard contour back on the field; it would be an irregular contour
+ *  rather than a grid, so it would not stripe, but a visible edge in the middle
+ *  of open grass is a thing to explain and this has nothing to explain.
+ *
+ *  Sampled on the world coordinate, so it does not move with the camera, the
+ *  chunk, or the homestead — walk far enough and the ground keeps rolling. */
+export function groundTone(x: number, y: number, seed: number): number {
+  const broad = smoothNoise(x, y, seed ^ 0x9e37, 29);
+  const fine = smoothNoise(x, y, seed ^ 0x1b57, 11);
+  return broad * 0.65 + fine * 0.35;
+}
+
 // --- Terrain verbs (the two placeable tile types + tilling) ------------------
 // These enforce what a tool is allowed to do; the game layer calls them from
 // the action button. Each returns whether it changed anything (for feedback).

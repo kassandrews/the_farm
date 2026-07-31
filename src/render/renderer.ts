@@ -34,7 +34,7 @@ import {
 } from "../content/tiles";
 import { skinDef } from "../content/skins";
 import type { SkinClass, SkinDef } from "../content/skins";
-import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey, regionSkin, foundAt } from "../sim/world";
+import { decoHash, groundTone, chunkCoordOf, getChunk, CHUNK, tileKey, regionSkin, foundAt } from "../sim/world";
 import { dayNumber } from "../sim/found";
 import { letterFor } from "../content/found";
 import { wallMask, blockedDoorsteps, CONNECT_N, CONNECT_E, CONNECT_S, CONNECT_W } from "../sim/structures";
@@ -756,7 +756,33 @@ export class Renderer {
           );
         const px = Math.round(this.sceneX(tx) - TILE / 2);
         const py = Math.round(this.sceneY(ty) - TILE / 2);
-        ctx.fillStyle = def.color;
+        // Open ground rolls. `groundTone` is smooth noise on the WORLD
+        // coordinate at an 11-and-29-tile wavelength, so a light patch is half a
+        // screen across and its edges can never line up with a cell — the band
+        // rule's own prescribed fix (CLAUDE.md), and the reason this mixes
+        // continuously instead of stepping into shades. Neighbouring tiles differ
+        // by well under a percent; the field has shape and no seams.
+        //
+        // Grass and sand only. A laid floor is a made surface and should be
+        // exactly as flat as it was laid, so anything wearing a finish, and every
+        // built tile, keeps its colour untouched.
+        // Toward BLACK, and not toward the tile's own `shade`. The obvious
+        // version mixed `color` into `shade`, and `shade` is the boundary lip —
+        // eight RGB units from the fill, deliberately, because it is drawn as a
+        // 1px edge where one material meets another. Running a whole field
+        // across it moved the green by three units and photographed as no change
+        // at all. The lip's job and this one are different jobs.
+        //
+        // Darken only, never lighten: mixing toward white desaturates, and grass
+        // that loses its green in the bright patches reads as sun-bleach on a
+        // lawn nobody has left. 14% between the lightest patch and the darkest.
+        ctx.fillStyle =
+          def.name === "Grass" || def.name === "Sand"
+            ? mixHex(def.color, {
+                color: "#000000",
+                amount: (1 - groundTone(tx, ty, world.seed)) * 0.14,
+              })
+            : def.color;
         ctx.fillRect(px, py, TILE, TILE);
         // The bevel is drawn ONLY where the material changes. On every tile, a
         // light top row and a dark bottom row pair up across a field into
@@ -792,7 +818,9 @@ export class Renderer {
         } else if (def.name === "Grass") {
           // Stable tuft speckle so grass reads as texture, not flat paint.
           const h = decoHash(tx, ty, world.seed);
-          if (h > 0.72) {
+          // 0.72 before: a tuft on 28% of cells, which at three shapes leaves
+          // each shape on under one cell in ten and the field still mostly bare.
+          if (h > 0.62) {
             // Placed by a hash on WORLD coordinates and sparse, so it is texture
             // and not a per-cell edge — the band rule (CLAUDE.md) does not reach
             // it, and a seasonal recolour doesn't change that.
@@ -805,8 +833,29 @@ export class Renderer {
             );
             const gx = px + 2 + Math.floor(h * 9);
             const gy = py + 4 + Math.floor((h * 53) % 9);
-            ctx.fillRect(gx, gy, 2, 1);
-            ctx.fillRect(gx + 1, gy - 1, 1, 1);
+            // THREE tufts, not one. Every blade in the world used to be the same
+            // five-pixel mark, which is what made a field of them read as a
+            // printed repeat rather than as ground — the eye finds the identical
+            // glyph long before it notices the sparse placement is random.
+            //
+            // Chosen off the same hash that placed it, so a tuft never changes
+            // shape between frames, and shaped rather than merely offset: a
+            // clump, a taller blade, a pair. All within the 2px the original
+            // occupied, so nothing here can reach a neighbouring cell and start
+            // pairing edges across the grid.
+            const shape = Math.floor((h * 311) % 3);
+            if (shape === 0) {
+              ctx.fillRect(gx, gy, 2, 1);
+              ctx.fillRect(gx + 1, gy - 1, 1, 1);
+            } else if (shape === 1) {
+              ctx.fillRect(gx + 1, gy, 1, 1);
+              ctx.fillRect(gx + 1, gy - 1, 1, 1);
+              ctx.fillRect(gx, gy - 2, 1, 1);
+            } else {
+              ctx.fillRect(gx, gy, 1, 1);
+              ctx.fillRect(gx + 2, gy, 1, 1);
+              ctx.fillRect(gx + 1, gy - 1, 1, 1);
+            }
           }
         } else if (def.name === "Sand") {
           // Grain, on the same terms as the grass tuft: a hash of the WORLD
