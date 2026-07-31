@@ -395,7 +395,7 @@ export class App {
 
     this.openModal(
       (close) =>
-        panel("Settle in", "Choose your sprite", [
+        panel("Settle in", "", [
           el("p", {}, ["You're a sprite too — newly arrived."]),
           labeled("Name", nameInput),
           labeled("Form", formRow),
@@ -2172,9 +2172,14 @@ function buildHud(
 }
 
 // --- Panel helpers ------------------------------------------------------------
+/** `who` is the eyebrow over the heading — the place the panel is speaking from
+ *  ("Town Hall", "The counter"). Pass "" where the heading already says it: a
+ *  card titled "Settle in" over the words CHOOSE YOUR SPRITE is two headings for
+ *  one screen, and the eyebrow is the one carrying no information. Empty means
+ *  no node at all rather than an empty one, or the gap above the title stays. */
 function panel(title: string, who: string, body: (Node | string)[]): HTMLElement {
   return el("div", { class: "panel" }, [
-    el("div", { class: "who" }, [who]),
+    ...(who ? [el("div", { class: "who" }, [who])] : []),
     el("h2", {}, [title]),
     ...body.map((b) => (typeof b === "string" ? document.createTextNode(b) : b)),
   ]);
