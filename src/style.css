@@ -443,22 +443,21 @@ select {
   z-index: 10;
 }
 
-/* Over the title screen's farm. Two departures from the ordinary scrim, both
-   for the same reason — there is a picture back there and the point is to see
-   it.
+/* Over the title screen's farm. One departure from the ordinary scrim: the wash
+   is a light warm gradient rather than a flat 55% black, because there is a
+   picture back there and the point is to see it.
 
-   The wash is a gradient rather than a flat 55% black, warm rather than
-   neutral, and light: enough at the top to seat the card against empty sky,
-   nothing at all by the bottom, where the field and the creatures are.
+   The card is CENTRED on the screen, like every other panel in the game. It
+   used to sit up in the sky, to keep the horizon clear — but a card pinned to
+   the top of a tall window is a browser notification, not the thing the screen
+   is about, and it left the composition lopsided with the buildings peering out
+   underneath it. Centred, it is the subject and the farm is the setting.
 
-   And the card sits UP, in the sky, instead of dead centre. Centred, it landed
-   squarely on the horizon and covered the town hall, the cabin and one of the
-   two residents — the game's first screenshot, with the subject of the sentence
-   hidden behind the sentence. */
+   The scene is composed around this: the hall sits left of centre and the barn
+   right of it, so the card lands in the GAP between them rather than on either
+   one. If the card's width changes, look at the screen — the two buildings are
+   what it must not cover. */
 .modal-scrim.over-scene {
-  align-items: start;
-  padding-top: clamp(24px, 9vh, 84px);
-  --scene-inset: clamp(24px, 9vh, 84px);
   background: linear-gradient(
     to bottom,
     rgba(28, 22, 46, 0.24) 0%,
@@ -467,15 +466,10 @@ select {
   );
 }
 
-/* Pushing the card off centre costs it head room, and the settle-in panel is
-   the tall one — six forms, three homesteads, an import box. Its own
-   `max-height: calc(100dvh - 40px)` was measured for a CENTRED panel, so with
-   the top inset added it ran off the bottom of the window and the "Claim your
-   plot" button went with it. Give back exactly what the inset took. */
-.modal-scrim.over-scene .panel {
-  max-height: calc(100dvh - var(--scene-inset) - 20px);
-}
-
+/* The over-scene panel used to need its own `max-height`, because pushing the
+   card up into the sky cost it head room and the tall settle-in panel ran off
+   the bottom of the window. Centred, `.panel`'s own measurement is correct
+   again — it was always the one written for a centred panel. */
 .panel {
   width: min(440px, 100%);
   max-height: calc(100dvh - 40px);

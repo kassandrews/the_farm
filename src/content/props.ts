@@ -16,8 +16,8 @@
 //  - Light comes from the top left. Highlight letter on the upper-left face
 //    (`l`/`R`), shade on the lower-right (`d`).
 //  - Outline in `k` = INK and nothing else, so the scene shares one edge
-//    colour. The exception is anything meant to sit far back — the bird uses a
-//    softer key so it recedes instead of punching a hole in the sky.
+//    colour. Anything that needs to sit further back gets a softer colour under
+//    a DIFFERENT key rather than a softer `k` — `props.test.ts` checks it.
 //  - Materials come from the tables that already own them: plank and stone from
 //    `tiles.ts`, crown green from `render/palette.ts`. A title screen that
 //    invented its own browns would be a second Farm.
@@ -42,8 +42,44 @@ const DOOR = "#7a4a2c";
 // buildings apart at this size, long before their doors or windows do.
 const SLATE = "#6f7a92";
 const SLATE_LIT = "#8a95ad";
+// The barn, which is the terracotta-roof note above finally being taken up —
+// except the warm colour went on the WALLS, where a barn keeps it, and the roof
+// went dark so the two buildings still read apart at a glance.
+const BARN_RED = "#b8483c";
+const BARN_RED_LIT = "#cc5a4d";
+const BARN_RED_SHADE = "#94382f";
+// Dark and barely warm, but NOT near-black. Two misses on the way here: a mid
+// brown read as thatch, a big soft dome sitting on the walls; and the
+// correction went so dark it closed on INK, which welded the roof to its own
+// outline and made it a hole in the sky. A roof has to be darker than the wall
+// it caps and lighter than the line around it.
+const BARN_ROOF = "#5b4a4e";
+const BARN_ROOF_LIT = "#74605f";
 
 const FARM_PROPS = {
+  // The sun, and this entry SHADOWS the canon one — `ALL` spreads FARM_PROPS
+  // over CANON_PROPS, so this is the sun the scene gets. The canon file is left
+  // exactly as it was vendored (CLAUDE.md: cozy_sprites stays untouched, and so
+  // does the copy of it), which is why this is an override and not an edit.
+  //
+  // The Meadow's sun is 12×11. Drawn at the scene's 2× — which is what stops it
+  // being the finest-grained thing in a chunky picture — that is 24 logical px
+  // of sun, and it dominated the sky and hung down into the barn's roof. This
+  // is 9×9: the same disc, the same chunk size, less of it.
+  sun: {
+    rows: [
+      "..ooooo..",
+      ".oyyyyyo.",
+      "oyylllyyo",
+      "oylllllyo",
+      "oylllllyo",
+      "oylllllyo",
+      "oyylllyyo",
+      ".oyyyyyo.",
+      "..ooooo..",
+    ],
+    palette: { o: "#f5c968", y: "#ffe9a8", l: "#fff4c9" },
+  },
   // Town Hall: gabled, stone, flag on the ridge. Where the paperwork gets
   // stamped, so it is the biggest thing on the horizon and reads as civic
   // rather than agricultural — the joke of the title screen is that the
@@ -130,6 +166,54 @@ const FARM_PROPS = {
     // must not appear to be promising any of them.
     palette: { k: K, b: "#c2a071", p: "#efe6cf", w: "#b9ad90", t: PLANK_SHADE },
   },
+  // The barn: the domestic half of the horizon, and the reason the hall reads as
+  // civic at all. One building alone is just a building; a barn beside it is the
+  // contrast that says the slate-roofed one is an office.
+  //
+  // The Meadow's barn (`canon/props.ts` names it as one of the three grids that
+  // wear their own ink) is the source of the shape, re-inked in K and rebuilt
+  // taller: theirs is 24×11, which next to a 24-row hall is a shed. This is
+  // 23×18, gambrel — the upper slope shallow, the lower one steep, which is the
+  // roof that says "barn" before the colour does.
+  //
+  // Red walls, DARK roof, not red-on-red. The hall's note above calls the roof
+  // the thing that tells two buildings apart at this size, and it is right: a
+  // red roof over red walls is one red mass with a door in it.
+  barn: {
+    rows: [
+      ".........kkkkk.........",
+      ".......kRRrrrrrk.......",
+      ".....kRRrrrrrrrrrk.....",
+      "...kRRrrrrrrrrrrrrrk...",
+      "..kRRrrrrrrrrrrrrrrrk..",
+      ".kRRrrrrrrrrrrrrrrrrrk.",
+      "kRRrrrrrrrrrrrrrrrrrrrk",
+      "kkkkkkkkkkkkkkkkkkkkkkk",
+      "kBbbbbbbbbknnkbbbbbbbdk",
+      "kBbbbbbbbbknnkbbbbbbbdk",
+      "kBbbbbbbbbkkkkbbbbbbbdk",
+      "kBbbbbbbbbbbbbbbbbbbbdk",
+      "kBbbbbbkkkkkkkkkbbbbbdk",
+      "kBbbbbbknnnwnnnkbbbbbdk",
+      "kBbbbbbknnnwnnnkbbbbbdk",
+      "kBbbbbbknnnwnnnkbbbbbdk",
+      "kBbbbbbknnnwnnnkbbbbbdk",
+      "kkkkkkkkkkkkkkkkkkkkkkk",
+    ],
+    // `w` is the seam between the two door leaves, and it is the only white in
+    // the barn — the one cue that reads as DOORS rather than as a dark hole. It
+    // was a lintel across the top as well, which drew a white T.
+    palette: {
+      k: K,
+      r: BARN_ROOF,
+      R: BARN_ROOF_LIT,
+      b: BARN_RED,
+      B: BARN_RED_LIT,
+      d: BARN_RED_SHADE,
+      n: DOOR,
+      w: "#f7ecd8",
+    },
+  },
   // There was a homestead cabin here and it is gone. Its chimney was drawn
   // rising off the LEFT SLOPE of the roof, which reads fine as a silhouette and
   // falls apart the moment you look at the join — a stack floating a pixel off
@@ -141,24 +225,27 @@ const FARM_PROPS = {
   // A tree in profile. The Meadow's is the right shape but wears its own warm
   // ink; this is the same silhouette re-inked and re-greened to match the
   // crowns the world renderer draws.
+  //
+  // Redrawn from 15×16 down to 13×14. The title screen draws everything at one
+  // scale now, so the tree can only be sized by its GRID, and at 15×16 it stood
+  // two-thirds the height of the town hall — which made the hall look like a
+  // bungalow in a forest rather than the biggest thing in town.
   tree: {
     rows: [
-      ".....kkkkk.....",
-      "...kklllggkk...",
-      "..kllllgggggk..",
-      ".klllllgggggggk",
-      "kllllgggggggggk",
-      "klllggggggggggk",
-      "kllgggggggggggk",
-      "klggggggggggggk",
-      ".kgggggggggggk.",
-      "..kgggggggggk..",
-      "...kkgggggkk...",
-      ".....kkkkk.....",
-      "......ktbk.....",
-      "......ktbk.....",
-      ".....kttbbk....",
-      ".....kttbbk....",
+      "....kkkkk....",
+      "..kkllgggkk..",
+      ".klllggggggk.",
+      "klllggggggggk",
+      "kllgggggggggk",
+      "klggggggggggk",
+      "kgggggggggggk",
+      ".kgggggggggk.",
+      "..kgggggggk..",
+      "....kkkkk....",
+      ".....ktbk....",
+      ".....ktbk....",
+      "....kttbbk...",
+      "....kttbbk...",
     ],
     palette: { k: K, g: CROWN, l: CROWN_LIT, t: TRUNK, b: TRUNK_SHADE },
   },
@@ -173,39 +260,15 @@ const FARM_PROPS = {
     ],
     palette: { g: "#5a8a3a", l: "#7fc45a" },
   },
-  // Left in the furrows by whoever was watering before you turned up.
-  wateringcan: {
-    rows: [
-      "....kkkk.",
-      "...km..mk",
-      "kkkkmmmmk",
-      ".kkkmmmmk",
-      "..klmmmmk",
-      "..klmmmmk",
-      "..kmmmmmk",
-      "..kkkkkkk",
-    ],
-    palette: { k: K, m: "#8fb3c4", l: "#bcd6e2" },
-  },
-  log: {
-    rows: [
-      "kkkkkkkkkkkkkk",
-      "kbttttttttttbk",
-      "kbtbttbtbttbbk",
-      "kkkkkkkkkkkkkk",
-    ],
-    palette: { k: K, t: "#a97048", b: "#8a5a3c" },
-  },
-  // Crossing the sky. Inked in a soft slate rather than K: at three pixels
-  // wide, full outline ink reads as a hole punched in the sky, not a bird.
-  bird: {
-    rows: [
-      "d.....d",
-      ".d...d.",
-      "..ddd..",
-    ],
-    palette: { d: "#3f4a63" },
-  },
+  // There was a fallen LOG lying in the field and it is gone with the birds. On
+  // a lawn between a town hall and a barn it did not read as a fallen tree — it
+  // read as a brown box someone had left out, because nothing else in the
+  // picture is lying down.
+  //
+  // There were two BIRDS crossing the sky here, and they are gone. Three pixels
+  // is not enough to draw flight: they read as dashes sliding sideways, and a
+  // bobbing dash is worse than an empty sky. The clouds already carry the
+  // ambient motion the screen needs.
 } satisfies Record<string, PropDef>;
 
 // Named off the literal so `PropName` is the union of the actual props, then
