@@ -19,10 +19,15 @@ import type { CharId, AuthoredId } from "../content/cast";
 import { CAST, MOLE, GHOST, COSMOS } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 
-export const SCHEMA_VERSION = 24;
+export const SCHEMA_VERSION = 25;
 
-// It went to 24 at Phase 9a, when the world gained `places` — a genuinely new
-// stored field, which is exactly the case the note below says is worth a bump.
+// It went to 24 at Phase 9a (`places`) and 25 at 9b (`filings`) — genuinely new
+// stored fields, which is exactly the case the note below says is worth a bump.
+//
+// Note what 25 does NOT add: anything about which forms the town hall is
+// offering. A batch of forms is a total function of how long you have lived
+// here (sim/filings.ts), so there is no schedule to persist and no "released"
+// set to backfill — the same reason festivals cost no save data at all.
 //
 // IT STAYED AT 23 THROUGH THE SKY (Phase 7c), and that absence was a decision.
 //
@@ -569,6 +574,18 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
   // not see (the same rule as the frozen literals below, arrived at from the
   // other direction). An old town simply starts remembering from today.
   23: (raw) => ({ ...raw, schemaVersion: 24, places: [] }),
+
+  // v24 → v25: the town hall grew a filing cabinet (Phase 9b, sim/filings.ts).
+  //
+  // Empty, like the place log above it and for a plainer reason: nobody has
+  // filed anything, because until this version there was nothing to file. There
+  // is no honest backfill available here even in principle.
+  //
+  // An OLD town gets the whole schedule at once rather than a drip, and that is
+  // correct: releases are keyed off `createdAt`, so a save that is a month old
+  // has been in town a month and the hall owes it every batch it has missed.
+  // Nothing was lost by the feature arriving late.
+  24: (raw) => ({ ...raw, schemaVersion: 25, filings: [] }),
 };
 
 /** The name the tables now give an authored character, or null for anyone the

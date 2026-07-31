@@ -8,6 +8,7 @@ import type { AdultForm } from "../content/canon/forms";
 import type { CharId, NewcomerId } from "../content/cast";
 import type { MemoryLog } from "./memory";
 import type { PlaceLog } from "./places";
+import type { Filing } from "./filings";
 import type { Inventory } from "./inventory";
 import type { NodeId } from "../content/nodes";
 import type { SkinId, SkinClass } from "../content/skins";
@@ -347,6 +348,21 @@ export interface WorldState {
    *  no denominator, nothing reads its length, and nothing anywhere gates on
    *  whether a place has any. It is capped, like a villager's memory. */
   places: PlaceLog;
+
+  /** The filing cabinet at the town hall (sim/filings.ts), oldest first.
+   *
+   *  Only half the feature is here. WHICH forms the hall offers is a total
+   *  function of how long you have lived in town, the way a festival is of the
+   *  date — nothing schedules a batch and nothing stores one. This is the other
+   *  half: what you actually filed.
+   *
+   *  An accumulating record and still not a score, on `museum.donated`'s exact
+   *  argument: a list of what you did, with no total, no denominator and no set
+   *  of what is outstanding. Nothing may expose its LENGTH — "no filing count
+   *  anywhere" — and nothing outside sim/filings.ts may read it at all, because
+   *  every form in the table changes nothing and a filing that gated a rule
+   *  would turn a cabinet into a progression track. */
+  filings: Filing[];
 
   flags: {
     landClaimed: boolean;

@@ -188,6 +188,42 @@ variation on their form's canon art, a body colour **or** one accessory, never
 both. The fixed cast above and the player are always the canon art; residents
 never are. It is derived from who they are and stored nowhere.
 
+### Paperwork
+
+Filings are the town's deadpan self-government, and Gary's counter is where they
+happen. A filing is a form you submit at the hall; the joke is that these
+creatures govern themselves this earnestly, at this length, about this little.
+Filing is free, because nothing here costs anything.
+
+**Two classes, and they are not the same feature.** **Flavour filings** change
+nothing and exist to be filed and to sit in the cabinet — Petition to Rename
+Tuesday, Official Recognition of Tiny Mountain, Certificate of Suspicious Moss,
+License to Haunt. **Filings with teeth** change a rule, and each is a separate
+decision taken on its own merits, never a free addition. The flavour stack alone
+carries the whole idea; teeth are added one at a time or not at all.
+
+- **Forms arrive in batches, and each batch has a reason.** The hall does not
+  hand you a catalogue on day one. It has the forms it has always had, and then
+  a referendum happens, or an audit, or somebody finds a drawer, and the town is
+  suddenly obliged to offer three more. The reason is printed with them and is
+  the best part. This is bureaucracy doing what bureaucracy does — accreting —
+  and it is the town changing around you rather than a list you work through.
+- **A batch is a total function of how long you have lived here**, on the model
+  of §Festivals. Nothing schedules a batch, nothing stores one, nothing counts
+  them; ask the calendar how long you have been in town and it says which forms
+  the hall is currently obliged to offer. Real time gates the living world here
+  exactly as it does everywhere else, and never the player's hands: a form you
+  have not been offered yet is not a thing you are failing to do.
+- **The cabinet is a record, not a score** (§The museum, and the same sentence).
+  No filing count, no total, no "forms remaining", and nothing anywhere may gate
+  on having filed anything. Reading old filings is half the delight; browsing
+  them is not a checklist because there is nothing to complete.
+- **The counter is not a to-do list.** No filing names a task, carries a target,
+  or shows a completion state (§Errands notices: past tense, no task). A form
+  you have filed leaves the counter and lives in the cabinet, so the counter is
+  only ever what the hall currently has — and when it has nothing, it says so as
+  a fact about the hall, not as a verdict on you.
+
 Secret forms stay secret in spirit:
 
 - **Quiet Ghost** — only appears at real-clock night. She is **Eloise**, but the

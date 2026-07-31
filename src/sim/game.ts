@@ -170,6 +170,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     errands: newErrands(now),
     company: null, // you arrive alone; everyone here is a stranger
     places: [], // the ground has seen nothing yet; the town's history starts now
+    filings: [], // the hall has its founding schedule; you have filed none of it
     flags: { landClaimed: false, onboarded: false },
   };
 

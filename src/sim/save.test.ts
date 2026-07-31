@@ -747,8 +747,11 @@ describe("v23 → v24: the ground gained a memory", () => {
     // `homeBed` is somebody who sleeps there — and every entry would be a
     // fabrication with a made-up timestamp on it, in a system whose only promise
     // is that it says things that happened.
+    // Asserted against SCHEMA_VERSION rather than 24: `migrateSave` runs the
+    // whole ladder, so a v23 save comes back at whatever the current version
+    // is, and pinning the literal here breaks every time a later rung is added.
     const migrated = migrateSave(v23Save())!;
-    expect(migrated.schemaVersion).toBe(24);
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
     expect(migrated.places).toEqual([]);
   });
 
@@ -767,6 +770,39 @@ describe("v23 → v24: the ground gained a memory", () => {
     const migrated = migrateSave(raw)!;
     expect(migrated.villagers).toEqual(raw.villagers);
     expect(migrated.inventory).toEqual(raw.inventory);
+    expect(migrated.museum).toEqual(raw.museum);
+  });
+});
+
+describe("v24 → v25: the town hall grew a filing cabinet", () => {
+  function v24Save(): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    delete w.filings;
+    return { ...w, schemaVersion: 24 };
+  }
+
+  it("gives an old town an empty cabinet", () => {
+    // There is no honest backfill even in principle: nobody filed anything,
+    // because until this version there was nothing to file.
+    const migrated = migrateSave(v24Save())!;
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated.filings).toEqual([]);
+  });
+
+  it("adds nothing about which forms the hall is offering", () => {
+    // The releases are a total function of how long you have lived here, so
+    // there is no schedule to persist. If a `releasedBatches` field ever
+    // appears in a save, something has misunderstood the feature.
+    const migrated = migrateSave(v24Save())!;
+    expect(Object.keys(migrated)).not.toContain("filingBatches");
+    expect(Object.keys(migrated)).not.toContain("releasedBatches");
+  });
+
+  it("leaves the rest of the town alone", () => {
+    const raw = v24Save();
+    const migrated = migrateSave(raw)!;
+    expect(migrated.villagers).toEqual(raw.villagers);
+    expect(migrated.places).toEqual(raw.places);
     expect(migrated.museum).toEqual(raw.museum);
   });
 });

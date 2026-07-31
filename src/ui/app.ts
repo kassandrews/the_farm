@@ -42,6 +42,7 @@ import { recall } from "../sim/memory";
 import { count } from "../sim/inventory";
 import { beginStroke, captureCell, endStroke, undoStroke, canUndo, undoLabel } from "../sim/undo";
 import { qualify, assign, beds, rehomeAcrossStroke, bedKeys, pendingRehome, DISQUALIFIER_TEXT } from "../sim/assign";
+import { counterBatches, cabinet, cabinetEmpty, file } from "../sim/filings";
 import type { CharId, NewcomerId } from "../content/cast";
 import { isNewcomer, isSecret, CAST } from "../content/cast";
 import { present } from "../sim/presence";
@@ -684,6 +685,23 @@ export class App {
                   }),
                 ]
               : []),
+            // The hall's counter, and only Gary has one. It CLOSES first rather
+            // than opening over this panel: the shop's rule is that a counter
+            // is not a menu you reach through another menu, and a stacked pair
+            // of modals is exactly that. Same gesture as the bed offer above,
+            // which also closes and then does its thing.
+            //
+            // A conversation and a counter, where the other six institutions
+            // have only a counter, because Gary genuinely has both — the land
+            // claim and the commission beat are conversations and live here.
+            ...(villagerId === "office"
+              ? [
+                  choiceBtn("Anything to file?", () => {
+                    close();
+                    this.openHall();
+                  }),
+                ]
+              : []),
             ...(askable
               ? [
                   choiceBtn("Come with me?", () => {
@@ -910,6 +928,137 @@ export class App {
         body,
         actionRow([primaryBtn("Thank you", close)]),
       ]);
+    }, { dismissable: true });
+  }
+
+  /** The town hall's counter — forms to file, and the cabinet they end up in
+   *  (DESIGN §Paperwork).
+   *
+   *  Three views swapped in place, on the museum's exact model: what the hall is
+   *  currently obliged to offer, the stamp it gives you back, and the cabinet.
+   *  Not stacked modals, for the reason spelled out over `openMuseum` — and with
+   *  extra force here, because navigating a filing system inside a filing
+   *  cabinet would be the joke eating itself.
+   *
+   *  WHAT THIS PANEL MUST NEVER DRAW (ROADMAP 9b, DESIGN §Paperwork):
+   *
+   *    • No count. Not "17 filed", not "3 of 5", not a bar, and not
+   *      `world.filings.length` reconstructed here. There is no denominator to
+   *      be part of.
+   *    • No empty slots. A form you have filed leaves the counter; a batch with
+   *      nothing left under it drops out entirely rather than showing five
+   *      struck-through titles, which is a completion meter nobody had to write.
+   *    • No task. A form names nothing to go and do, so no button here is ever
+   *      disabled for want of anything — filing is free, and every form on the
+   *      counter can be filed the moment you can see it.
+   *
+   *  The empty counter says the HALL is between forms. That is a fact about a
+   *  bureaucracy, not a verdict on you: the batches arrive on the real clock,
+   *  so "nothing today" always means "not yet" and never means "finished".
+   */
+  private openHall(): void {
+    if (!this.world) return;
+    const world = this.world;
+
+    this.openModal((close) => {
+      const body = el("div", {});
+      const rewind = () => body.parentElement?.scrollTo({ top: 0 });
+
+      // The counter. Re-derived after each filing rather than patched, for the
+      // reason the museum's is: it is a pure function of the clock and the
+      // cabinet, and re-deriving beats keeping a stale list in step.
+      const counter = () => {
+        body.replaceChildren();
+        rewind();
+        const batches = counterBatches(world, Date.now());
+
+        if (batches.length === 0) {
+          body.append(
+            el("p", {}, [
+              "There is nothing on the schedule today. ... The hall is between forms. It has been between forms before.",
+            ]),
+          );
+        } else {
+          body.append(
+            el("p", {}, [
+              "The hall is obliged to offer the following. Filing is free, and changes nothing. ... That is not a disclaimer. It is the service.",
+            ]),
+          );
+          for (const { batch, forms } of batches) {
+            // The batch's NOTICE, above its own forms. This is the best part of
+            // the feature and it goes at the top of its group rather than being
+            // collapsed into one heading — the reason the hall added three forms
+            // is more interesting than the three forms.
+            body.append(el("div", { class: "who" }, ["Notice"]), el("p", {}, [batch.notice]));
+            const choices = el("div", { class: "choices" });
+            for (const def of forms) {
+              choices.append(
+                choiceBtn(def.title, () => {
+                  const stamp = file(world, def.id, Date.now());
+                  if (!stamp) return;
+                  audio.play("place");
+                  this.persist();
+                  stamped(def.title, def.blurb, stamp);
+                }),
+              );
+            }
+            body.append(choices);
+          }
+        }
+
+        body.append(
+          actionRow([choiceBtn("What's in the cabinet?", drawer), primaryBtn("That's all", close)]),
+        );
+      };
+
+      // The form, and what the hall said back. Alone on the panel, exactly as a
+      // placard is: the stamp is the entire payoff — nothing else is returned —
+      // so it gets the view rather than a flash it would outlive.
+      const stamped = (title: string, blurb: string, stamp: string) => {
+        body.replaceChildren(
+          el("h3", {}, [title]),
+          el("p", {}, [blurb]),
+          el("div", { class: "who" }, ["Stamped"]),
+          el("p", {}, [stamp]),
+          actionRow([primaryBtn("...", counter)]),
+        );
+        rewind();
+      };
+
+      // The cabinet: what you have filed, under the reason the hall printed it.
+      // A batch you have nothing from is absent, not blank.
+      const drawer = () => {
+        body.replaceChildren();
+        rewind();
+        if (cabinetEmpty(world)) {
+          body.append(
+            el("p", {}, [
+              "Empty. ... The drawer runs the full depth of the building. I mention that without expectation.",
+            ]),
+          );
+        } else {
+          for (const { batch, filings } of cabinet(world)) {
+            body.append(el("div", { class: "who" }, ["Notice"]), el("p", {}, [batch.notice]));
+            for (const { def } of filings) {
+              // Title, the form's OWN TEXT, then the stamp. The blurb is the
+              // joke and without it here the cabinet is a list of receipts —
+              // you would read each form exactly once, at the counter, and
+              // never again. Reading old filings is half of what this is for,
+              // so the cabinet has to hold the thing worth re-reading. It makes
+              // for a long drawer, which is correct: it is a filing cabinet.
+              body.append(
+                el("h3", {}, [def.title]),
+                el("p", {}, [def.blurb]),
+                el("p", { class: "note" }, [def.stamp]),
+              );
+            }
+          }
+        }
+        body.append(actionRow([primaryBtn("Back to the counter", counter)]));
+      };
+
+      counter();
+      return panel(CAST.office.name, "Town hall", [body]);
     }, { dismissable: true });
   }
 
