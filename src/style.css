@@ -502,10 +502,15 @@ select {
   width: min(520px, 100%);
 }
 
+/* The speaker sits CENTRED against the text rather than topped out with it.
+   Dialogue runs from one line to five, and top-aligned the portrait stayed
+   pinned to the first line while the column beside it grew downward — the panel
+   went lopsided the moment somebody said anything long. Centred, the face reads
+   as belonging to the whole remark. */
 .speech-top {
   display: flex;
   gap: 18px;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .speaker {
@@ -521,13 +526,12 @@ select {
   width: 96px;
   height: 96px;
   image-rendering: pixelated;
-  /* The same cut-out framing as the panel itself, one size down: a drawn edge
-     and a hard offset shadow, no blur. A portrait with a soft shadow would be
-     the one floating element in a game made of stickers. */
-  background: var(--panel-edge);
-  border: 2px solid var(--panel-edge);
-  border-radius: 10px;
-  box-shadow: 0 3px 0 rgba(43, 37, 64, 0.22);
+  /* No fill behind the sprite, and no frame around it. A tinted plate under the
+     face made the portrait a second panel sitting on the first, and the pale
+     forms (the Ghost, the Office) lost their outline against it. Bare on the
+     panel's own paper, the creature reads as a creature rather than as a
+     photograph of one — and the sprite already carries an ink outline, which is
+     all the edge it ever needed. */
 }
 
 /* The name carries what the eyebrow used to: it is now the only label on the
