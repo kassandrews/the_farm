@@ -280,7 +280,7 @@ export class App {
           // to the player instead of reporting it as already done, and the
           // Office Creature stamps their claim two screens later (runLandClaim).
           el("p", {}, [
-            "It's real. And it's delightful.\n. ... We just need someone to stamp the paperwork.",
+            "It's real. And it's delightful\n. ... We just need someone to stamp the paperwork.",
           ]),
           actionRow([
             primaryBtn("Arrive", () => {
@@ -1513,7 +1513,7 @@ export class App {
           // Second step: confirm, because a new town erases this one.
           body.replaceChildren(
             el("p", {}, [
-              "Start a new town? Your homestead, crops, and neighbours here are erased.\n. ... This can't be undone.",
+              "Start a new town? Your homestead, crops, and neighbours here are erased\n. ... This can't be undone.",
             ]),
             primaryBtn("Yes, start over", () => this.resetTown()),
             choiceBtn("Cancel", close),
