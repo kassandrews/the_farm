@@ -6,7 +6,7 @@ import { SHOP } from "../content/shop";
 import { itemDef } from "../content/items";
 
 function world() {
-  return newWorld({ name: "Test", form: "blob", spot: "hilltop", seed: 42 });
+  return newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
 }
 
 describe("what the counter will take", () => {

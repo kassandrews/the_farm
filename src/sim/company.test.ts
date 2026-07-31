@@ -15,7 +15,7 @@ import type { WorldState, Villager } from "./types";
 import type { CharId } from "../content/cast";
 
 function freshWorld(): WorldState {
-  return newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 21 });
+  return newWorld({ name: "Me", form: "dog", spot: "forest", seed: 21 });
 }
 
 function find(w: WorldState, id: CharId): Villager {

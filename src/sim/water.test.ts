@@ -29,7 +29,7 @@ import { WATER, SHALLOW, SAND, GRASS, PLANK, TREE } from "../content/tiles";
 import { WATER_KINDS } from "../content/water";
 import type { HomesteadSpot } from "./types";
 
-const SPOTS: HomesteadSpot[] = ["riverside", "forest", "hilltop"];
+const SPOTS: HomesteadSpot[] = ["riverside", "forest", "coast"];
 
 /** Vitest's default timeout is 5s, which is tuned for unit tests that call a
  *  function a few times. The transects below evaluate the terrain generator over
@@ -197,10 +197,19 @@ describe("the sea is finite", () => {
     // whole town: the homestead is off to one side of it, and a lake in the
     // vegetable patch is the same bug with a nicer view. Sand is allowed — the
     // shore is meant to be able to come near — but standing water is not.
+    // THE COAST IS ASKED A NARROWER QUESTION, and it is not a weakened one. The
+    // bug above is the SCATTER landing a body on the town by accident, and that
+    // path is `clearsTown` — unchanged, and still checked here on all three
+    // spots, because the scatter runs on all three. What the coast adds is a
+    // body sited on purpose, whose whole reason to exist is that the water comes
+    // near; holding it to "no standing water within thirty tiles" would be
+    // holding it to not being a coast. It still has to stay off the ground the
+    // town actually stands on, which is what the tighter box checks.
     for (const spot of SPOTS) {
+      const reach = spot === "coast" ? 16 : 30;
       for (let seed = 1; seed <= 250; seed++) {
-        for (let y = -30; y <= 30; y += 2) {
-          for (let x = -30; x <= 30; x += 2) {
+        for (let y = -reach; y <= reach; y += 2) {
+          for (let x = -reach; x <= reach; x += 2) {
             const k = waterKindAt(seed, spot, x, y);
             if (k !== "sea" && k !== "lake") continue;
             const t = generatedTile(seed, spot, x, y);
@@ -284,10 +293,10 @@ describe("small water is fordable, and nothing had to say so", () => {
     for (let seed = 1; seed <= 12; seed++) {
       for (let y = -300; y <= 300; y += 3) {
         for (let x = -300; x <= 300; x += 3) {
-          const kind = waterKindAt(seed, "hilltop", x, y);
+          const kind = waterKindAt(seed, "forest", x, y);
           if (kind !== "stream" && kind !== "pond") continue;
           streams++;
-          expect(generatedTile(seed, "hilltop", x, y)).not.toBe(WATER);
+          expect(generatedTile(seed, "forest", x, y)).not.toBe(WATER);
         }
       }
     }
@@ -587,11 +596,11 @@ describe("a river may run through town, because the town has bridges", () => {
     let found = 0;
     for (let seed = 1; seed <= 400 && found < 12; seed++) {
       for (let x = -22; x <= 22; x++) {
-        if (generatedTile(seed, "hilltop", x, -1) !== PLANK) continue;
+        if (generatedTile(seed, "forest", x, -1) !== PLANK) continue;
         found++;
         // Planked, so there was water here — and the kind is one the town
         // bridges rather than the sea.
-        const kind = waterKindAt(seed, "hilltop", x, -1);
+        const kind = waterKindAt(seed, "forest", x, -1);
         expect(kind === "river" || kind === "stream").toBe(true);
         break;
       }

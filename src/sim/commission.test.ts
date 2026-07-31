@@ -20,7 +20,7 @@ import { stopTarget } from "./housing";
 import type { WorldState } from "./types";
 
 function town() {
-  const w = newWorld({ name: "Test", form: "blob", spot: "hilltop", seed: 42 });
+  const w = newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
   w.flags.onboarded = true;
   return w;
 }

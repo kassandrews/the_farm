@@ -122,7 +122,7 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
     // homestead spot — so the migration can answer exactly as newWorld does.
     const seed = typeof raw.seed === "number" ? raw.seed : 0;
     const homestead = (raw.homestead ?? {}) as Record<string, unknown>;
-    const spot = (typeof homestead.spot === "string" ? homestead.spot : "hilltop") as HomesteadSpot;
+    const spot = (typeof homestead.spot === "string" ? homestead.spot : "forest") as HomesteadSpot;
     stampTown(target, (x, y) => generatedTile(seed, spot, x, y));
     return {
       ...raw,
@@ -616,7 +616,7 @@ function stampInto(raw: Record<string, unknown>): StampTarget {
   };
   const seed = typeof raw.seed === "number" ? raw.seed : 0;
   const homestead = (raw.homestead ?? {}) as Record<string, unknown>;
-  const spot = (typeof homestead.spot === "string" ? homestead.spot : "hilltop") as HomesteadSpot;
+  const spot = (typeof homestead.spot === "string" ? homestead.spot : "forest") as HomesteadSpot;
   stampTown(target, (x, y) => generatedTile(seed, spot, x, y));
   return target;
 }

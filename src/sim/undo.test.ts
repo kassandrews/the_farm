@@ -10,7 +10,7 @@ import { claimedBed } from "./housing";
 import { beginStroke, captureCell, endStroke, undoStroke, canUndo, undoLabel } from "./undo";
 
 function world() {
-  return newWorld({ name: "Test", form: "blob", spot: "hilltop", seed: 42 });
+  return newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
 }
 
 /** Build somewhere far from the authored town and clear of generated scatter,

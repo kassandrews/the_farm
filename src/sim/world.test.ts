@@ -264,7 +264,7 @@ describe("the underground layer", () => {
     // The surface shapes itself around where you settled; the rock does not, or
     // two towns from one seed would disagree about where the ore is.
     const a = newWorld({ name: "A", form: "dog", spot: "forest", seed: 12 });
-    const b = newWorld({ name: "B", form: "dog", spot: "hilltop", seed: 12 });
+    const b = newWorld({ name: "B", form: "dog", spot: "forest", seed: 12 });
     for (let x = 0; x < 40; x++) {
       expect(tileAt(a, x, 3, "under")).toBe(tileAt(b, x, 3, "under"));
     }

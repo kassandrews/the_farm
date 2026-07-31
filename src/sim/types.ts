@@ -16,8 +16,17 @@ import type { ExhibitId } from "../content/museum";
 import type { ErrandId } from "../content/errands";
 
 /** Where the player chose to settle (DESIGN §"Town and homestead": 3–4 spots).
- *  Cosmetic-plus-origin: it shifts the homestead plot and its flavour. */
-export type HomesteadSpot = "riverside" | "forest" | "hilltop";
+ *
+ *  NOT COSMETIC, which it was until now — each of these names a body of terrain
+ *  the generator is required to put within sight of your plot: a river across
+ *  the bottom of the garden, a treeline where the town's meadow ends, a shore
+ *  you can walk to. `sim/world.ts` honours all three, and the onboarding card
+ *  shows you the actual result before you commit.
+ *
+ *  `hilltop` was the fourth and is gone. It was the one spot no line of code
+ *  ever read, so it generated a world identical to the default — a choice that
+ *  was not one. Nothing was saved under it, so it left no legacy value behind. */
+export type HomesteadSpot = "riverside" | "forest" | "coast";
 
 /** Which layer a coordinate is on. Two, and there will never be a third: the
  *  underground is the second half of one world, not the first rung of a stack

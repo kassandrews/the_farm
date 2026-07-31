@@ -14,7 +14,7 @@ function importedScholarWorld() {
   return newWorld({
     name: "Me",
     form: "dog",
-    spot: "hilltop",
+    spot: "forest",
     seed: 3,
     meadowImport: { name: "Grimble", form: "scholar", memorySeed: [{ kind: "raised_favorite", at: 1, value: "carrots" }] },
   });

@@ -19,7 +19,7 @@ import { BIOMES, FIELD_BIOMES } from "../content/biomes";
 import { ROCK, WATER, SHALLOW, SAND } from "../content/tiles";
 import type { HomesteadSpot } from "./types";
 
-const SPOTS: HomesteadSpot[] = ["riverside", "forest", "hilltop"];
+const SPOTS: HomesteadSpot[] = ["riverside", "forest", "coast"];
 
 /** BIOMES.blossom's radius, mirrored here so the orchard-in-the-sea test can
  *  check its EDGES and not merely its centre — a stand whose far side is in the
@@ -41,7 +41,7 @@ describe("the biome field", () => {
     // The same coordinate, a hundred seeds: if the field ignored the seed this
     // would be one answer a hundred times.
     const seen = new Set<string>();
-    for (let seed = 1; seed <= 100; seed++) seen.add(biomeAt(seed, "hilltop", 150, 90));
+    for (let seed = 1; seed <= 100; seed++) seen.add(biomeAt(seed, "forest", 150, 90));
     expect(seen.size).toBeGreaterThan(1);
   });
 
@@ -52,7 +52,7 @@ describe("the biome field", () => {
     const seen = new Set<string>();
     for (let seed = 1; seed <= 40; seed++) {
       for (let x = -220; x <= 220; x += 11) {
-        for (let y = -220; y <= 220; y += 11) seen.add(biomeAt(seed, "hilltop", x, y));
+        for (let y = -220; y <= 220; y += 11) seen.add(biomeAt(seed, "forest", x, y));
       }
     }
     for (const id of new Set(FIELD_BIOMES)) expect(seen).toContain(id);
@@ -64,9 +64,9 @@ describe("the biome field", () => {
     // every border would be a straight line 64 tiles long. Walk a row and collect
     // where the answer changes: those columns must not all share a factor.
     const changes: number[] = [];
-    let prev = biomeAt(7, "hilltop", -400, 33);
+    let prev = biomeAt(7, "forest", -400, 33);
     for (let x = -399; x <= 400; x++) {
-      const b = biomeAt(7, "hilltop", x, 33);
+      const b = biomeAt(7, "forest", x, 33);
       if (b !== prev) changes.push(x);
       prev = b;
     }
@@ -110,7 +110,7 @@ describe("the town's own ground is untouched", () => {
         const th = (a / 32) * Math.PI * 2;
         const x = Math.round(Math.cos(th) * HOME_REGION_REACH);
         const y = Math.round(Math.sin(th) * HOME_REGION_REACH);
-        expect(biomeAt(seed, "hilltop", x, y)).toBe("meadow");
+        expect(biomeAt(seed, "forest", x, y)).toBe("meadow");
       }
     }
   });
@@ -230,13 +230,13 @@ describe("rocks never touch", () => {
     let tiles = 0;
     for (let y = -220; y <= 220; y += 3) {
       for (let x = -220; x <= 220; x += 3) {
-        if (biomeAt(21, "hilltop", x, y) !== "scrub") continue;
+        if (biomeAt(21, "forest", x, y) !== "scrub") continue;
         // Coast doesn't count. A scrub region that runs into the sea is still as
         // rocky as it ever was on the ground it has — counting the water and the
         // beach as un-rocky scrub measures the coastline, not the scatter, and
         // would turn any future change to where the sea sits into a mystifying
         // failure in a test about rocks.
-        const t = generatedTile(21, "hilltop", x, y);
+        const t = generatedTile(21, "forest", x, y);
         if (t === WATER || t === SHALLOW || t === SAND) continue;
         tiles++;
         if (t === ROCK) rocks++;
@@ -253,8 +253,8 @@ describe("rocks never touch", () => {
     let diagonals = 0;
     for (let y = -120; y <= 120; y++) {
       for (let x = -120; x <= 120; x++) {
-        if (generatedTile(21, "hilltop", x, y) !== ROCK) continue;
-        if (generatedTile(21, "hilltop", x + 1, y + 1) === ROCK) diagonals++;
+        if (generatedTile(21, "forest", x, y) !== ROCK) continue;
+        if (generatedTile(21, "forest", x + 1, y + 1) === ROCK) diagonals++;
       }
     }
     expect(diagonals).toBeGreaterThan(0);

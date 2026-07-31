@@ -9,7 +9,7 @@ import { makeRng } from "./rng";
 import { MOLE_DEEP, MOLE_SHALLOW, MOLE_LIT } from "../content/dialogue";
 
 function freshWorld() {
-  return newWorld({ name: "Sprout", form: "dog", spot: "hilltop", seed: 4242 });
+  return newWorld({ name: "Sprout", form: "dog", spot: "forest", seed: 4242 });
 }
 
 /** Put the player in his front room. There is no other way to meet him, which

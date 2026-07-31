@@ -9,7 +9,7 @@ import { meetMole } from "./mole";
 import { warrenChamber } from "./world";
 
 function freshWorld() {
-  return newWorld({ name: "Sprout", form: "dog", spot: "hilltop", seed: 4242 });
+  return newWorld({ name: "Sprout", form: "dog", spot: "forest", seed: 4242 });
 }
 
 const NOON = new Date(2026, 6, 1, 12, 0).getTime();

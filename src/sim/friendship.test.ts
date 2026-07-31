@@ -6,7 +6,7 @@ import { makeRng } from "./rng";
 import { warmLines } from "../content/dialogue";
 
 function freshWorld() {
-  return newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 12 });
+  return newWorld({ name: "Me", form: "dog", spot: "forest", seed: 12 });
 }
 
 describe("friendship milestones", () => {

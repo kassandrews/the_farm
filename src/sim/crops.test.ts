@@ -8,7 +8,7 @@ import { count } from "./inventory";
 const HOUR = 3_600_000;
 
 function freshWorld() {
-  return newWorld({ name: "Test", form: "scholar", spot: "hilltop", seed: 42 });
+  return newWorld({ name: "Test", form: "scholar", spot: "forest", seed: 42 });
 }
 
 describe("crop growth", () => {

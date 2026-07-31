@@ -17,7 +17,7 @@ const HOUR = 3_600_000;
 const TOOLS: Tool[] = ["dig", "gather", "plant", "water"];
 
 function freshWorld(): WorldState {
-  return newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 21 });
+  return newWorld({ name: "Me", form: "dog", spot: "forest", seed: 21 });
 }
 
 /** Find a generated tree near town, and stand the player on the grass beside it

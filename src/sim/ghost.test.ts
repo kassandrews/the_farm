@@ -23,7 +23,7 @@ import { canInvite } from "./company";
 import { possibleAskers } from "./errands";
 
 function freshWorld() {
-  return newWorld({ name: "Sprout", form: "dog", spot: "hilltop", seed: 4242 });
+  return newWorld({ name: "Sprout", form: "dog", spot: "forest", seed: 4242 });
 }
 
 /** Two instants, both real. Every test about her is a test about the hour. */

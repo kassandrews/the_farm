@@ -6,7 +6,7 @@ import { placeStructure, removeStructure } from "./structures";
 import { rooms, roomAt, roofRoomAt, findRoom, MAX_ROOM } from "./rooms";
 
 function world() {
-  const w = newWorld({ name: "Test", form: "blob", spot: "hilltop", seed: 7 });
+  const w = newWorld({ name: "Test", form: "blob", spot: "forest", seed: 7 });
   // A blank canvas. These tests are about the flood-fill itself, and the town's
   // buildings (src/content/town.ts) are enclosed rooms in their own right — so
   // every "how many rooms" assertion would otherwise be counting the town

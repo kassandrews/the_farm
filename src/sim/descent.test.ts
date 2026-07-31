@@ -23,7 +23,7 @@ import { count } from "./inventory";
 import { NODES } from "../content/nodes";
 
 function freshWorld(): WorldState {
-  return newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 21 });
+  return newWorld({ name: "Me", form: "dog", spot: "forest", seed: 21 });
 }
 
 /** Put the player on a shaft of their own making, standing on it. */

@@ -22,7 +22,7 @@ import { nodeDef } from "../content/nodes";
 import { plant } from "./crops";
 
 function world() {
-  return newWorld({ name: "Test", form: "blob", spot: "hilltop", seed: 42 });
+  return newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
 }
 
 /** Clear generated terrain off a tile. The generator scatters solid trees and

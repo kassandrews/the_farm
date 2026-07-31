@@ -21,7 +21,7 @@ import {
 import { harvest, updateCrop } from "./crops";
 
 function world() {
-  return newWorld({ name: "Test", form: "carrot", spot: "hilltop", seed: 7 });
+  return newWorld({ name: "Test", form: "carrot", spot: "forest", seed: 7 });
 }
 
 describe("what the stall will take", () => {

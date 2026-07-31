@@ -7,7 +7,7 @@ import { claimedBed, homeStand, stopTarget } from "./housing";
 import { qualify, assign, beds, rehomeAcrossStroke, bedKeys, pendingRehome, DISQUALIFIER_TEXT } from "./assign";
 
 function world() {
-  return newWorld({ name: "Test", form: "blob", spot: "hilltop", seed: 42 });
+  return newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
 }
 
 /** Build a sealed room with a door and a bed inside, far from the authored town.

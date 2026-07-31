@@ -38,7 +38,7 @@ describe("daily routines", () => {
   });
 
   it("a villager walks toward its post for the current hour", () => {
-    const w = newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 3 });
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 3 });
     const v = w.villagers.find((x) => x.id === "resident1")!;
     const target = scheduledStop(CAST.resident1, at(13));
     // Park them somewhere else, then tick a while at 1pm.
@@ -51,7 +51,7 @@ describe("daily routines", () => {
   });
 
   it("needs no catch-up after a long absence — it just walks to today's post", () => {
-    const w = newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 3 });
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 3 });
     const v = w.villagers.find((x) => x.id === "resident1")!;
     const target = scheduledStop(CAST.resident1, at(13));
     // Simulate returning days later: one tick at the new time is enough to aim.
@@ -60,7 +60,7 @@ describe("daily routines", () => {
   });
 
   it("reports what a villager is nominally up to", () => {
-    const w = newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 3 });
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 3 });
     const v = w.villagers.find((x) => x.id === "resident1")!;
     expect(currentActivity(v, at(8))).toBe("conducting morning research");
     expect(currentActivity(v, at(20))).toBe("writing it all up");
@@ -70,7 +70,7 @@ describe("daily routines", () => {
 describe("villagers respect walls", () => {
   /** A villager parked short of its 1pm post, with clear ground between. */
   function setup() {
-    const w = newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 3 });
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 3 });
     const v = w.villagers.find((x) => x.id === "resident1")!;
     const target = scheduledStop(CAST.resident1, at(13));
     for (let y = target.y - 4; y <= target.y + 4; y++) {

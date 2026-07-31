@@ -15,7 +15,7 @@ import { newWorld, contextAction } from "./game";
 import { JUNK_DENSITY, JUNK_FINDS, DEEP_FINDS } from "../content/junk";
 
 function freshWorld() {
-  return newWorld({ name: "Sprout", form: "scholar", spot: "hilltop", seed: 99 });
+  return newWorld({ name: "Sprout", form: "scholar", spot: "forest", seed: 99 });
 }
 
 /** A patch of virgin ground with something under it, for the tests that need

@@ -14,7 +14,7 @@ import { speak } from "./dialogue";
 import { makeRng } from "./rng";
 
 function world() {
-  return newWorld({ name: "Test", form: "blob", spot: "hilltop", seed: 42 });
+  return newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
 }
 
 /** A sealed room with a door and a bed, far from the authored town. `span` is
@@ -150,7 +150,7 @@ describe("saying it out loud", () => {
     const w = newWorld({
       name: "Me",
       form: "dog",
-      spot: "hilltop",
+      spot: "forest",
       seed: 3,
       meadowImport: { name: "Grimble", form: "scholar", memorySeed: [] },
     });
@@ -174,7 +174,7 @@ describe("saying it out loud", () => {
     const w = newWorld({
       name: "Me",
       form: "dog",
-      spot: "hilltop",
+      spot: "forest",
       seed: 3,
       meadowImport: { name: "Grimble", form: "scholar", memorySeed: [] },
     });

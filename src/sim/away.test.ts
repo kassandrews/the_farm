@@ -27,7 +27,7 @@ function ripe(w: ReturnType<typeof newWorld>, x: number, y: number, id: CropId, 
 }
 
 function worldWithBoards(count: number) {
-  const w = newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 11 });
+  const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 11 });
   // Lay `count` boards by walking the player along a row.
   for (let i = 0; i < count; i++) {
     w.player.x = w.homestead.originX + i;
@@ -71,7 +71,7 @@ describe("away simulation", () => {
   });
 
   it("never disturbs a planted crop", () => {
-    const w = newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 5 });
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 5 });
     contextAction(w, "plant", 1000);
     const key = tileKey(Math.round(w.player.x), Math.round(w.player.y));
     for (let seed = 0; seed < 25; seed++) {
@@ -150,7 +150,7 @@ describe("away simulation", () => {
   });
 
   it("the curator revises a donated exhibit, and remembers doing it", () => {
-    const w = newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 4 });
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 4 });
     // Give her something to be wrong about, twice over.
     w.inventory.wood = 5;
     donate(w, exhibitDef("timber"));
@@ -170,7 +170,7 @@ describe("away simulation", () => {
   });
 
   it("says nothing about the museum when nothing has been donated", () => {
-    const w = newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 4 });
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 4 });
     const curator = w.villagers.find((v) => v.id === "museum")!;
     for (let i = 0; i < 20; i++) {
       const lines = simulateAway(w, 72 * HOUR, Date.now(), makeRng(i));
@@ -186,7 +186,7 @@ describe("away simulation", () => {
     // she comes FIRST in the list. A form-based lookup landed on whichever one
     // happened to be earlier, so the same event hit different people depending
     // on how old the town was.
-    const w = newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 4 });
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 4 });
     w.inventory.wood = 5;
     donate(w, exhibitDef("timber"));
     const resident = w.villagers.find((v) => v.id === "resident1")!;
@@ -295,7 +295,7 @@ describe("a festival you missed", () => {
   const AFTER = new Date(2026, MARCH.month - 1, MARCH.day, 22, 0, 0).getTime();
 
   function town() {
-    return newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 11 });
+    return newWorld({ name: "Me", form: "dog", spot: "forest", seed: 11 });
   }
 
   it("is news when the window covered it, and nothing when it didn't", () => {

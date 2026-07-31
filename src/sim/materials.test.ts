@@ -9,7 +9,7 @@ import { NODES } from "../content/nodes";
 const HOUR = 3_600_000;
 
 function freshWorld() {
-  return newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 21 });
+  return newWorld({ name: "Me", form: "dog", spot: "forest", seed: 21 });
 }
 
 /** Find a generated tree near the town for tests that need a real one. */

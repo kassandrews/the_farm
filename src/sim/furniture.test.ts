@@ -13,7 +13,7 @@ import {
 import { footprint, furnitureDef } from "../content/furniture";
 
 function world() {
-  const w = newWorld({ name: "Test", form: "blob", spot: "hilltop", seed: 3 });
+  const w = newWorld({ name: "Test", form: "blob", spot: "forest", seed: 3 });
   // A blank canvas. These tests are about the anchor mechanism itself, so the
   // town's own furniture (src/content/town.ts) is noise that would make every
   // "what's in the layer" assertion a restatement of the town layout. Tests

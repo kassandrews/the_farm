@@ -9,7 +9,7 @@ import { invite } from "./company";
 import { humLevel, HUM_REACH } from "./hum";
 
 function freshWorld(seed = 4242) {
-  return newWorld({ name: "Sprout", form: "dog", spot: "hilltop", seed });
+  return newWorld({ name: "Sprout", form: "dog", spot: "forest", seed });
 }
 
 const NOON = new Date(2026, 6, 1, 12, 0).getTime();
@@ -18,7 +18,7 @@ describe("the Humming Cube", () => {
   it("is exactly one cell, far out, and in every town", () => {
     for (const seed of [1, 4242, 99999, 0x7fffffff, 12345678]) {
       const w = freshWorld(seed);
-      const c = cubeSite(seed, "hilltop");
+      const c = cubeSite(seed, "forest");
       expect(tileAt(w, c.x, c.y)).toBe(HUM_CUBE);
       // Its neighbours are not it. A landmark is a thing, not a region.
       expect(tileAt(w, c.x + 1, c.y)).not.toBe(HUM_CUBE);
@@ -54,8 +54,8 @@ describe("the Humming Cube", () => {
 
   it("shares its walk with nothing else — not the grove, not the warren", () => {
     for (const seed of [1, 4242, 99999, 7, 31337]) {
-      const cube = cubeSite(seed, "hilltop");
-      const grove = groveCentre(seed, "hilltop");
+      const cube = cubeSite(seed, "forest");
+      const grove = groveCentre(seed, "forest");
       const warren = warrenChamber(seed);
       expect(Math.hypot(cube.x - grove.x, cube.y - grove.y)).toBeGreaterThan(10);
       expect(Math.hypot(cube.x - warren.x, cube.y - warren.y)).toBeGreaterThan(10);

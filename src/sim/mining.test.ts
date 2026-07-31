@@ -11,7 +11,7 @@ import { ORE_VEIN, BEDROCK, CAVE_FLOOR } from "../content/tiles";
 import type { WorldState } from "./types";
 
 function freshWorld(): WorldState {
-  return newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 21 });
+  return newWorld({ name: "Me", form: "dog", spot: "forest", seed: 21 });
 }
 
 /** A town with one shaft at (sx, sy), and the player down it. */

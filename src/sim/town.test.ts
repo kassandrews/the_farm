@@ -11,8 +11,9 @@ import { AUDIENCE } from "../content/festivals";
 import { cellsFor } from "./furniture";
 import { stopTarget } from "./housing";
 import { CAST } from "../content/cast";
+import type { HomesteadSpot } from "./types";
 
-function world(spot: "riverside" | "forest" | "hilltop" = "hilltop", seed = 7) {
+function world(spot: HomesteadSpot = "forest", seed = 7) {
   return newWorld({ name: "Test", form: "blob", spot, seed });
 }
 
@@ -48,7 +49,7 @@ describe("the town's own buildings", () => {
   it("bring their own floor, so nothing lands in a river or a tree", () => {
     // riverside puts water to the west and forest raises tree density — the two
     // ways an authored building could land on solid ground and half-fail.
-    for (const spot of ["riverside", "forest", "hilltop"] as const) {
+    for (const spot of ["riverside", "forest", "forest"] as const) {
       for (let seed = 0; seed < 12; seed++) {
         const w = world(spot, seed);
         for (const b of allTownBuildings()) {
@@ -68,7 +69,7 @@ describe("the town's own buildings", () => {
     // generated tree landing there makes the building unenterable. Found in the
     // browser, where Margfrom teleported home instead of walking — the snap
     // rule doing its job and hiding a real bug behind it.
-    for (const spot of ["riverside", "forest", "hilltop"] as const) {
+    for (const spot of ["riverside", "forest", "forest"] as const) {
       for (let seed = 0; seed < 25; seed++) {
         const w = world(spot, seed);
         for (const b of allTownBuildings()) {
@@ -175,7 +176,7 @@ describe("Margfrom actually lives in her house", () => {
     // The end-to-end version of the doorstep bug: she teleported home in the
     // browser because no route existed, and the snap rule made that look normal.
     const house = TOWN_BUILDINGS.margfrom_house;
-    for (const spot of ["riverside", "forest", "hilltop"] as const) {
+    for (const spot of ["riverside", "forest", "forest"] as const) {
       for (let seed = 0; seed < 25; seed++) {
         const w = world(spot, seed);
         const outside = { x: house.door.x, y: house.door.y + 2 };

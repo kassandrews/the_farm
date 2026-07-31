@@ -11,7 +11,7 @@ import { possibleAskers } from "./errands";
 import { simulateAway } from "./away";
 
 function freshWorld() {
-  return newWorld({ name: "Sprout", form: "dog", spot: "hilltop", seed: 4242 });
+  return newWorld({ name: "Sprout", form: "dog", spot: "forest", seed: 4242 });
 }
 
 /** The night of the Perseids, 2026: the twelfth of August, at half past ten. */

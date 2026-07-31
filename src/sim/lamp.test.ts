@@ -27,7 +27,7 @@ import { beginStroke, captureCell, endStroke, undoStroke } from "./undo";
 import type { WorldState } from "./types";
 
 function freshWorld(): WorldState {
-  return newWorld({ name: "Me", form: "dog", spot: "hilltop", seed: 21 });
+  return newWorld({ name: "Me", form: "dog", spot: "forest", seed: 21 });
 }
 
 /** Sink a shaft under the player and climb down it, standing one step east on

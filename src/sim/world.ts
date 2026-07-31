@@ -230,7 +230,7 @@ export function homesteadOrigin(spot: HomesteadSpot): { x: number; y: number } {
       return { x: HOME.x, y: HOME.y };
     case "forest":
       return { x: HOME.x + 2, y: HOME.y + 1 };
-    case "hilltop":
+    case "coast":
       return { x: HOME.x + 1, y: HOME.y - 1 };
   }
 }
@@ -292,8 +292,16 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     }
 
     // Two independent hashes so trees and rocks don't correlate into stripes.
+    //
+    // NO SPOT TERM HERE ANY MORE. "Forest edge" used to multiply this by 1.8,
+    // which measured as real (8.5% of tiles near home became 15.3%) and read as
+    // nothing: it thickened the ENTIRE WORLD uniformly, so there was no edge to
+    // stand on — every region got denser together, including the ones you walk
+    // to in order to get away from trees. The spot now bends the biome FIELD
+    // instead (`biomeAt`), which puts a treeline where the town's meadow ends,
+    // about thirty tiles out, and leaves the far country alone.
     const treeRoll = hash2(x, y, seed ^ 0x7a11) / 4294967296;
-    const density = (spot === "forest" ? NODES.tree.density * 1.8 : NODES.tree.density) * biome.trees;
+    const density = NODES.tree.density * biome.trees;
     if (treeRoll < density) return TREE;
     if (rockRoll(seed, x, y) < NODES.rock.density * biome.rocks && rockIsLoneliest(seed, x, y)) {
       return ROCK;
@@ -757,10 +765,80 @@ export function biomeAt(seed: number, spot: HomesteadSpot, x: number, y: number)
   const w = biomeWarp(seed, x, y);
   const site = nearestSite(seed, w.x, w.y);
   const home = originSite();
-  if (site.mx === home.mx && site.my === home.my) return "meadow";
+  const atHome = site.mx === home.mx && site.my === home.my;
+
+  // The forest edge: a clearing with the town in it, and trees from there out.
+  //
+  // TWO RULES, BECAUSE ONE WAS NOT AN EDGE. Forcing the eight cells AROUND the
+  // town's is the obvious version and it measured as almost nothing — a wooded
+  // region already turns up within forty tiles of home on 88% of seeds by pure
+  // chance, so guaranteeing it moved the tree count from 8.4% to 11.5% and put
+  // the border a full BIOME_CELL out, at ~34 tiles, where it reads as a patch
+  // near the horizon rather than as somewhere the meadow stops.
+  //
+  // So the town's own cell gets a RADIUS as well, and that is the rule you can
+  // actually see: meadow to `FOREST_CLEARING`, wood past it. The ring is a
+  // single kind — it is one wood, the town's own — and it meets whatever the
+  // neighbouring regions turned out to be further out.
+  const wooded = (mx: number, my: number): BiomeId =>
+    hash2(mx, my, seed ^ 0x7ee5) % 2 === 0 ? "pinewood" : "birch";
+
+  if (spot === "forest") {
+    if (atHome) {
+      // Measured from the ORIGIN, not from the homestead plot, so the clearing
+      // is the town's and not the player's — you live at its edge, like
+      // everybody else does.
+      // THE RING IS ALWAYS PINES, and that is not a missed chance for variety.
+      // The coin flip `wooded` does elsewhere decides between 2.2× trees on a
+      // needle-dark floor and 1.4× on a pale one, and on the seeds that came up
+      // birch the treeline of a town chosen FOR its treeline was a faint speckle
+      // you had to be told about — seed 31, found by looking. The wood you can
+      // see from your own door is the whole promise of the spot, so it does not
+      // get to be the sparse one. Past the clearing the flip resumes, so walking
+      // out still finds birches; they are just not what the promise rests on.
+      if (Math.hypot(x, y) > clearingRadius(seed, Math.atan2(y, x))) return "pinewood";
+    } else if (Math.max(Math.abs(site.mx - home.mx), Math.abs(site.my - home.my)) === 1) {
+      return wooded(site.mx, site.my);
+    }
+  }
+
+  if (atHome) return "meadow";
 
   const roll = hash2(site.mx, site.my, seed ^ 0x30de) / 4294967296;
   return FIELD_BIOMES[Math.floor(roll * FIELD_BIOMES.length) % FIELD_BIOMES.length];
+}
+
+/** Where a forest-edge town's clearing stops, at its NARROWEST.
+ *
+ *  Bounded BELOW by a proof, not by taste: `HOME_REGION_REACH` is 21, and there
+ *  is a thousand-seed test asserting the town's region is meadow that far out on
+ *  every spot. Anything under that would grow a wood inside somebody's house.
+ *  Three tiles of margin over it, and no more — every tile added here pushes the
+ *  treeline back toward the horizon it was brought in from. */
+const FOREST_CLEARING = 24;
+
+/** How far the treeline wanders in and out around the town. */
+const FOREST_WANDER = 7;
+
+/** The clearing's radius on one bearing.
+ *
+ *  A CLEARING IS NOT A CIRCLE, and the first version was — a mathematically
+ *  perfect disc of meadow with wood outside it, which on screen reads as a
+ *  vignette someone applied to the town rather than as country. It is the same
+ *  failure `biomeWarp` exists to fix one level up, and `warrenRadius` two
+ *  hundred lines up: exact geometry at a scale you can walk across always
+ *  announces itself.
+ *
+ *  Same two-sine trick as `warrenRadius`, and for its reasons — cheap, smooth,
+ *  and coprime multiples so it doesn't repeat around the circle. The wander is
+ *  added OUTWARD only, so `FOREST_CLEARING` stays the guaranteed minimum and the
+ *  proof above it survives: the treeline can back away from the town, never
+ *  close in on it. */
+function clearingRadius(seed: number, angle: number): number {
+  const a = (hash2(4, 0, seed ^ 0x7ee5) / 4294967296) * Math.PI * 2;
+  const b = (hash2(5, 0, seed ^ 0x7ee5) / 4294967296) * Math.PI * 2;
+  const wobble = 0.6 * Math.sin(angle * 3 + a) + 0.4 * Math.sin(angle * 5 + b);
+  return FOREST_CLEARING + FOREST_WANDER * (0.5 + 0.5 * wobble);
 }
 
 // --- Water --------------------------------------------------------------------
@@ -996,8 +1074,8 @@ function clearsTown(cx: number, cy: number, r: number): boolean {
   return Math.hypot(cx, cy) > r + r * WOBBLE_FRACTION + COAST_WARP + TOWN_DRY;
 }
 
-function seaDepth(seed: number, _spot: HomesteadSpot, x: number, y: number): number {
-  return scatteredDepth(
+function seaDepth(seed: number, spot: HomesteadSpot, x: number, y: number): number {
+  const scatter = scatteredDepth(
     seed,
     0x5ea0,
     SEA_CELL,
@@ -1007,6 +1085,66 @@ function seaDepth(seed: number, _spot: HomesteadSpot, x: number, y: number): num
     x,
     y,
     clearsTown,
+  );
+  return Math.max(scatter, townSeaDepth(seed, spot, x, y));
+}
+
+/** The coast's sea — the one body of salt water a homestead can ASK for.
+ *
+ *  THIS AMENDS THE RULE BELOW `lakeDepth`, and deliberately. That note says no
+ *  town is promised a coast, because a world where every town is coastal is one
+ *  where being coastal means nothing, and it is still right: two of the three
+ *  spots are promised nothing here and go on rolling the scatter's dice. What
+ *  changed is that a player may now ASK, and the answer to a question you had
+ *  to choose to ask is not the same thing as a guarantee handed to everybody.
+ *  The lottery survives where it was worth having.
+ *
+ *  AN EXTRA BODY, not a bent lattice, for exactly the reason `TOWN_LAKE` gives:
+ *  forcing the sea's own cell to fire would put the coast wherever that cell's
+ *  jitter landed, which is a far weaker promise than a shore at a known ring.
+ *
+ *  AND NOT A SMALLER SEA. The shore is what you wanted; the sea can stay the
+ *  size a sea is. `SEA_RING` is measured so the WATERLINE lands close — centre
+ *  distance minus radius, minus the wobble and the coast warp at their worst —
+ *  which is why the ring is only a little larger than the radius. The far shore
+ *  is still an expedition; it is the near one that moved. */
+/** `ring` is measured from the invariant, not chosen for taste. The waterline
+ *  sits at `ring - radius`, and the wobble and the coast warp move it by
+ *  `radius * WOBBLE_FRACTION + COAST_WARP` in the worst case — so the CLOSEST
+ *  the sea can come is `ring - radius * 1.1 - COAST_WARP`, about 23 tiles here.
+ *  That clears the plaza, the homestead and the town's buildings with room to
+ *  spare, and leaves the typical shore around thirty-four tiles out: a short
+ *  walk, and visible on the card's preview from the moment you pick it. */
+const TOWN_SEA = { radius: 62, ring: 96 };
+
+/** Where it sits: a hashed bearing, and no search.
+ *
+ *  Every other sited body searches bearings for dry ground (`onLand`), and this
+ *  one must not: `onLand` asks about water, water asks `seaDepth`, and `seaDepth`
+ *  is what this feeds. A hash has no such appetite. It costs nothing either,
+ *  because the thing a search would protect against cannot happen here — the
+ *  landmarks that need dry ground (grove, cube, blossom) do their own searching
+ *  and will simply walk around this sea like any other. */
+function townSeaCentre(seed: number, spot: HomesteadSpot): { x: number; y: number } {
+  return memoCentre("townSea", seed, spot, () => {
+    const a = (hash2(11, 0, seed ^ 0x5ea0) / 4294967296) * Math.PI * 2;
+    return {
+      x: Math.round(Math.cos(a) * TOWN_SEA.ring),
+      y: Math.round(Math.sin(a) * TOWN_SEA.ring),
+    };
+  });
+}
+
+function townSeaDepth(seed: number, spot: HomesteadSpot, x: number, y: number): number {
+  if (spot !== "coast") return -Infinity;
+  const salt = 0x5ea0;
+  return roundDepth(
+    seed,
+    salt,
+    townSeaCentre(seed, spot),
+    TOWN_SEA.radius,
+    TOWN_SEA.radius * WOBBLE_FRACTION,
+    coastWarp(seed, salt, x, y),
   );
 }
 

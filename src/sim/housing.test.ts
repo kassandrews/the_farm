@@ -8,7 +8,7 @@ import { TOWN_BUILDINGS } from "../content/town";
 import type { WorldState, Villager } from "./types";
 
 function world(seed = 7) {
-  return newWorld({ name: "Test", form: "blob", spot: "hilltop", seed });
+  return newWorld({ name: "Test", form: "blob", spot: "forest", seed });
 }
 
 function margfrom(w: WorldState): Villager {

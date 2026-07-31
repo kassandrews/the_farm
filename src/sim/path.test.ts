@@ -7,7 +7,7 @@ import { placeFurniture } from "./furniture";
 import { findPath, MAX_PATH_NODES } from "./path";
 
 function world() {
-  return newWorld({ name: "Test", form: "blob", spot: "hilltop", seed: 7 });
+  return newWorld({ name: "Test", form: "blob", spot: "forest", seed: 7 });
 }
 
 /** Clear generated terrain over a rectangle so a test is pathing across known

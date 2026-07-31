@@ -700,6 +700,72 @@ having half its look in `app.ts` meant the CSS half couldn't see it.
 Checked over open grass at midday and over the night wash; cream chips stay
 legible in both, which is unsurprising given the tool buttons were always cream.
 
+### The homestead spot is terrain, not flavour
+
+The three spots on the settle-in card used to be a choice that wasn't one. Only
+two lines of code anywhere read `spot`: `forest` multiplied tree density by 1.8,
+and `riverside` anchored a river. `hilltop` was read by **nothing** — it
+generated the default world, and its blurb ("a view of the whole town") described
+a feature that did not exist. Measured over eight seeds, within sixty tiles of
+home: riverside 8.1% trees / river at 7 tiles, forest 15.3% / river at 79,
+hilltop 8.5% / river at 79 — hilltop and the baseline being the same number
+twice.
+
+**Settled: each spot names a body of terrain the generator must put within sight
+of the plot**, and the onboarding card shows you the actual result before you
+commit. `hilltop` is deleted outright — nothing had been saved under it, so it
+left no legacy value and needed no migration.
+
+- **The riverbank** — unchanged. `RIVERSIDE_ANCHOR` already worked; it is the
+  one piece of the old system that was doing its job.
+- **The forest edge** — the world-wide ×1.8 is gone. It measured as real and
+  read as nothing: thickening every region equally leaves no edge to stand on,
+  including the regions you walk to in order to leave the trees. The spot now
+  bends the biome *field* — a wandering clearing (`clearingRadius`) with the
+  town in it and pines from there out, meeting whatever the neighbouring regions
+  are further along.
+- **The coast** — a sea sited at a known ring, `TOWN_SEA`.
+
+Three things this cost, each found by looking rather than by reasoning:
+
+- **The clearing was a perfect circle**, which reads as a vignette applied to
+  the town rather than as country. Same failure `biomeWarp` and `warrenRadius`
+  already exist to fix, and the same two-sine cure. Exact geometry at a scale
+  you can walk across always announces itself.
+- **The ring is always pines, never birch.** The coin flip between them is 2.2×
+  trees on a dark floor versus 1.4× on a pale one, and the birch seeds gave a
+  town chosen *for* its treeline a faint speckle you had to be told about
+  (seed 31). The flip resumes past the clearing.
+- **`FOREST_CLEARING` is bounded below by a proof**, not by taste.
+  `HOME_REGION_REACH` is 21 and a thousand-seed test asserts the town's region
+  is meadow that far out; anything under it grows a wood inside a finished
+  house. 24, with three tiles of margin and no more.
+
+**This amends "no town is promised a coast"** (the note under `lakeDepth`). That
+note is still right about what it was defending — a world where *every* town is
+coastal is one where being coastal means nothing — and two of the three spots
+are still promised nothing and go on rolling the scatter's dice. What changed is
+that a player may now **ask**, and an answer to a question you had to choose to
+ask is not a guarantee handed to everybody. `TOWN_SEA` is an extra body rather
+than a bent lattice, for the reason `TOWN_LAKE` gives: forcing the sea's own
+cell to fire would put the coast wherever that cell's jitter landed.
+
+`TOWN_SEA.ring` is derived, not tuned. The closest the waterline can come is
+`ring - radius * 1.1 - COAST_WARP`, and the water invariant needs that clear of
+the town's own ground — which is what fixes it at 96 and puts the typical shore
+about thirty-four tiles out.
+
+The water invariants (`water.test.ts`) run on all three spots, and the coast is
+asked a *narrower* question in one of them — standing water must clear ±16
+rather than ±30. That is not a weakened guard: the bug that test was written for
+is the **scatter** landing a body on town by accident, that path is `clearsTown`,
+and it is unchanged and still checked on all three. Holding a deliberately sited
+coast to "no water within thirty tiles" would be holding it to not being a coast.
+
+Verify with `npx tsx scripts/shot-spots.mts <dir> <seed>` — three panels, one
+seed, close enough that buildings read. If they don't look like three different
+places, the spot has stopped meaning anything again.
+
 ### Undecided, deliberately
 
 - ~~**Money vs. barter vs. neither.**~~ **Settled: barter**, with the shop

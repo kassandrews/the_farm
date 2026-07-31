@@ -144,10 +144,33 @@ function buildToolLabel(t: BuildTool): string {
 /** Arrows for the rotate button, so the facing is legible without a legend. */
 const FACING_ARROW: Record<Facing, IconName> = { s: "arrow_s", w: "arrow_w", n: "arrow_n", e: "arrow_e" };
 
+/** The three homesteads.
+ *
+ *  THE BLURBS DESCRIBE THE TERRAIN, and that is a rule rather than a style. The
+ *  old ones promised things no code did: "The Ghost may visit" on a spot the
+ *  Ghost has no opinion about (her grove is sited off the seed, and always was),
+ *  and "a view of the whole town" on a spot that generated the default world
+ *  because nothing read it. A blurb that outruns the generator is the one lie
+ *  the onboarding can tell you before you have any way to check it — and the
+ *  preview beside it now means you CAN check it, immediately.
+ *
+ *  Names all take the article, so no two rhyme and none is a compass bearing. */
 const SPOTS: { id: HomesteadSpot; name: string; blurb: string }[] = [
-  { id: "riverside", name: "Riverside", blurb: "Water to the west. The Blob approves of the drama." },
-  { id: "forest", name: "Forest edge", blurb: "Trees at your back. Quiet. The Ghost may visit." },
-  { id: "hilltop", name: "Hilltop", blurb: "A view of the whole town. The wind has opinions." },
+  {
+    id: "riverside",
+    name: "The riverbank",
+    blurb: "The water goes past the bottom of the garden, and keeps going.",
+  },
+  {
+    id: "forest",
+    name: "The forest edge",
+    blurb: "The meadow gives out about thirty paces on, and then it is trees.",
+  },
+  {
+    id: "coast",
+    name: "The coast",
+    blurb: "Salt air, a short walk to the shore, and a far side you may never see.",
+  },
 ];
 
 export class App {

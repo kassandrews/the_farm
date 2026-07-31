@@ -59,7 +59,7 @@ describe("what an import becomes", () => {
     const w = newWorld({
       name: "ignored",
       form: "dog",
-      spot: "hilltop",
+      spot: "forest",
       seed: 1,
       meadowImport: imported,
       importRole: "player",
@@ -76,7 +76,7 @@ describe("what an import becomes", () => {
     const w = newWorld({
       name: "Me",
       form: "dog",
-      spot: "hilltop",
+      spot: "forest",
       seed: 1,
       meadowImport: imported,
       importRole: "villager",
