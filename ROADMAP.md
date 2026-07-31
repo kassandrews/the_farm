@@ -147,9 +147,18 @@ are built** — see §Phase 8. It is a pass over surfaces that already work, not
 list of missing features, and it found what it found by driving the game and
 photographing it rather than by reading the source.
 
-What is left of it is the three smaller items at the end of §Phase 8, two of
-which are decisions rather than work: whether the coordinate chip earns its
-place, and what an unnamed arrival should be called.
+**What is left of Phase 8, in order:**
+
+1. **8d — the biome boundary.** Region patches are straight-edged blocks; it is
+   the per-cell edges rule at region scale, and it wants what 8c did to the
+   grass. Evidence captured (`shot-map`, `biome-border.png`), not started.
+2. **8e — four more counter faces.** Nub, Winifred, Derek, Aurelio. One line
+   each, plus the one open call about where the spoken line aligns.
+3. **A second survey pass, verified this time.** The first one covered the
+   institution panels, night, autumn, winter and the underground, reported
+   everything clean, and was wrong about the first panel anybody checked. Nobody
+   has genuinely looked at the other five counters, the seasons, or the
+   underground yet.
 
 **Save schema is at v23**, and Phase 7c deliberately did not move it: the sky
 stores nothing, so there was nothing to migrate, and bumping the number would
@@ -3142,9 +3151,46 @@ warped or dithered boundary rather than a cell-aligned one.
   Worth keeping as method: the close-up said "pond", the map said "biomes". The
   screenshot found something real and named it wrong, which is the argument for
   measuring at the scale the artifact lives at before writing code.
-- **The `E 6 · S 6` chip.** §*Every overlay is the same chip* says to cut a HUD
-  label that names something already visible — but coordinates are not visible,
-  so this one may genuinely earn its place. Decide, don't assume.
+- ~~**The `E 6 · S 6` chip.**~~ **Settled: it stays.** §*Every overlay is the
+  same chip* says to cut a HUD label naming something already visible, and
+  coordinates are not visible — the rule does not reach it.
+
+### 8e — The counters show whose voice it is — **Arabella built, four to go**
+
+Found by photographing all seven institution panels, which nothing had done
+before. Arabella's counter opens with *"Cloth. ... You can't grow it, and you
+certainly can't chop it down."* — her voice, in the house ellipsis style
+CLAUDE.md defines for spoken lines, printed as body text under a heading with
+**nobody attached to it**.
+
+§*A counter is a screen, a conversation is a person* gave the test — "whether a
+face would look wrong on it" — then applied it to Gary and left the five
+counters alone. That was right about the FRAME and wrong about the speaker.
+
+- **`panel()` takes an optional `face`**, beside the heading block, via
+  `counterFace(id)`. Same portrait and same `lookFor` as the dialogue frame, so
+  the person behind the counter is the person you meet on the path.
+- **NOT `speechPanel` folded in.** Its docblock refuses that and still should: a
+  counter is a price list you scroll and a conversation is not, and `who` keeps
+  meaning the eyebrow and nothing else. This is the smaller claim.
+- **The errands board stays faceless, and is the control.** It has no speaker,
+  its prose is written as notices rather than speech, and it reads correctly as
+  it is. If a later change gives it a face, the rule has been misread.
+- **Still to do:** Nub (heap), Winifred (museum), Derek (seed stall), Aurelio
+  (stage). One line each — `counterFace("heap")`. Arabella shipped alone on
+  purpose, so the frame could be looked at before four more followed it.
+- **Open, deliberately:** the spoken line sits flush to the panel edge while the
+  name is indented past the portrait. Aligning it under the name reads as
+  speech; leaving it full-width reads as a subtitle for the screen. Pick once,
+  for all five — it changes the character of the frame.
+
+**Method note, and the reason this was found at all.** The survey was run by a
+subagent that reported all seven panels clean. Two of its fourteen screenshots
+were checked by hand and the first one held this bug. Its first pass had also
+returned five byte-identical files as five separate screens. **A clean result
+from an unverified survey is not evidence.** The rest of that pass — night,
+autumn, winter, underground, the other five panels — remains one reviewer's
+word, and is worth re-checking before anything is built on it.
 - ~~**A blank name gives "New Sprite"**~~ **Settled: the card requires one.**
   Dealing a name out of the form's register was the prettier option and was
   rejected for the reason `content/names.ts` already gives about arrivals — a
