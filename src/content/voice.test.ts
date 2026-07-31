@@ -10,32 +10,31 @@
 // It shipped on the welcome card, the new-town warning and the pause menu —
 // which is why the check reads every file rather than every bank. This copy
 // lives in content tables, in app.ts panels, and in cutscene scripts alike.
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-function sourceFiles(dir: string): string[] {
-  return readdirSync(dir).flatMap((name) => {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) return sourceFiles(path);
-    return name.endsWith(".ts") && !name.endsWith(".test.ts") ? [path] : [];
-  });
-}
+/** Every non-test source file, as text — the same `import.meta.glob` trick as
+ *  looks.test.ts, and for the reason its docblock gives: this is a Vite project
+ *  with no `@types/node`, so `fs` here compiles under vitest but fails `tsc`,
+ *  which is what `npm run build` runs. That mistake shipped three red deploys. */
+const SOURCES = import.meta.glob("../**/*.ts", { query: "?raw", import: "default", eager: true }) as
+  Record<string, string>;
 
 describe("house ellipsis style", () => {
   it("never starts a line with the ellipsis's own period", () => {
     // Matching source text, so `\n` is the literal two characters as they are
     // typed in a TS string, not a newline.
     const doubled = /(\\n|[.!?]("| )*)\. \.\.\./;
-    const offenders = sourceFiles(join(__dirname, "..")).flatMap((path) =>
-      readFileSync(path, "utf8")
-        .split("\n")
-        .map((line, i) => ({ path, n: i + 1, line }))
+    const offenders: string[] = [];
+    for (const [path, text] of Object.entries(SOURCES)) {
+      if (path.endsWith(".test.ts")) continue;
+      text.split("\n").forEach((line, i) => {
         // Comments are allowed to quote the bad form — that is how the reason
         // for the rule gets written down next to the code that follows it.
-        .filter(({ line }) => doubled.test(line) && !/^\s*(\/\/|\*)/.test(line))
-        .map(({ path, n, line }) => `${path}:${n}: ${line.trim()}`),
-    );
+        if (doubled.test(line) && !/^\s*(\/\/|\*)/.test(line)) {
+          offenders.push(`${path}:${i + 1}: ${line.trim()}`);
+        }
+      });
+    }
     expect(offenders).toEqual([]);
   });
 });
