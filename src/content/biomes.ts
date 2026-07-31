@@ -35,7 +35,18 @@ export interface Tint {
   amount: number;
 }
 
-export type BiomeId = "meadow" | "pinewood" | "birch" | "scrub" | "fen" | "blossom";
+export type BiomeId =
+  | "meadow"
+  | "pinewood"
+  | "birch"
+  | "scrub"
+  | "fen"
+  | "blossom"
+  // The far country — commoner the farther from the datum you are, impossible
+  // near town. See FIELD_WEIGHTS at the foot of this file.
+  | "dusk"
+  | "glimmer"
+  | "glass";
 
 export interface BiomeDef {
   id: BiomeId;
@@ -246,6 +257,113 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     crownRows: [4, 6, 7, 7, 7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2],
   },
 
+  // --- The far country (Phase 7a) ---------------------------------------------
+  //
+  // Three rows that are commoner the farther out you are, and impossible near
+  // town (FIELD_WEIGHTS). Read them as a SEQUENCE of one idea getting louder —
+  // the light is wrong, then the light is coming from the ground, then the light
+  // is coming through everything — rather than as three unrelated places.
+  //
+  // Every one of them is a tint, a density and a silhouette, which is the whole
+  // of what a biome is allowed to be (DESIGN.md §Biomes). They chop into `wood`.
+  // Nothing out here is worth more than it is at home, and the entire reward for
+  // the walk is that it looks like this.
+
+  /** The mildest strangeness, and the first the world offers: an ordinary wood at
+   *  the wrong hour. Nothing is shaped oddly — that is the point. The trees are
+   *  the meadow's own broadleaf and the light is simply not the light you left. */
+  dusk: {
+    id: "dusk",
+    name: "the dusk",
+    trees: 1.3,
+    rocks: 0.6,
+    mushrooms: 0.05,
+    water: 0,
+    // Violet, and pulled hard, because a gentle version of this is just "evening"
+    // and the game already has an evening. It has to be wrong at NOON.
+    // MEASURED, not eyeballed. Grass is (139,191,90) and a tint is a lerp toward
+    // the target, so a mid-violet at 0.55 lands on (112,134,107) — which is still
+    // green, because green was 191 and had the furthest to fall. The first pass
+    // shipped exactly that and photographed as "slightly murky meadow". The target
+    // has to be darker than it looks and the amount high, or the ground stays the
+    // colour it started.
+    ground: { color: "#4a4570", amount: 0.85 },
+    tuft: { color: "#7a76a8", amount: 0.8 }, // 0.6 left green flecks on violet ground
+    crown: { color: "#2a2740", amount: 0.7 },
+    trunk: { color: "#3a3348", amount: 0.45 },
+    // The meadow's silhouette exactly. Colour carries this one alone, deliberately:
+    // it is the shape you know, which is what makes the colour unsettling instead
+    // of merely decorative.
+    crownRows: BROADLEAF,
+  },
+
+  /** Light from the wrong direction. A dark canopy over a floor that glows —
+   *  bioluminescent understory, built out of the mushroom density that already
+   *  exists rather than out of a light source, which the flat renderer has no
+   *  business growing for a repaint. */
+  glimmer: {
+    id: "glimmer",
+    name: "the glimmer",
+    trees: 1.6,
+    rocks: 0.3,
+    // THE FEN'S NUMBER EXACTLY, AND IT IS NOT ALLOWED TO BE HIGHER. The draft had
+    // 0.4 — the mushrooms were going to BE the biome — and the test caught what
+    // that actually is: a mushroom is a gathered material (`add(inventory,
+    // "mushroom")`), so 3.3× the record makes foraging measurably better the
+    // farther out you walk. Scrub's 5× rocks are fine because they are a LATERAL
+    // choice: some direction, a hundred tiles. A density that climbs with radius
+    // is a payout curve for distance, which is the one thing this phase refuses
+    // (DESIGN.md §Biomes). Tied with the fen, never above it.
+    //
+    // So the glow is the TUFT, which is where it belonged anyway. The speckle is
+    // on every cell of grass; the mushrooms were only ever going to be scattered
+    // punctuation, and a floor that glows has to glow everywhere.
+    mushrooms: 0.12,
+    water: 0,
+    ground: { color: "#1e5a72", amount: 0.8 },
+    tuft: { color: "#7cf0dc", amount: 0.8 }, // the speckle is the glow
+    crown: { color: "#16303a", amount: 0.75 }, // near-black, so the floor reads bright
+    trunk: { color: "#243a42", amount: 0.5 },
+    // Tall and close-topped: the canopy has to close over you or the floor has
+    // nothing to be the brighter thing than.
+    crownRows: [2, 4, 6, 7, 7, 7, 7, 7, 7, 6, 5, 4, 3, 2],
+  },
+
+  /** The loudest, the rarest, and the end of the escalation: a wood the light
+   *  goes THROUGH. Pale to the point of bleached, and thin enough to see a long
+   *  way across, which is the opposite of every other far region and the reason
+   *  it is worth arriving at last. */
+  glass: {
+    id: "glass",
+    name: "the glass wood",
+    trees: 0.9,
+    rocks: 0.3,
+    mushrooms: 0.03,
+    water: 0,
+    // A COLD FLOOR, NOT A PALE ONE, and the screenshot is why. Drafted pale
+    // (#ccdcf0 at 0.8) the ground came out at (193,214,210) and the near-white
+    // crowns at (223,234,242) — thirty levels apart, which at this size is
+    // nothing. The wood lost its trees: bare grey trunks with a ghost over them,
+    // and a tree here is SOLID, so an invisible one is something you walk into
+    // rather than something that looks wrong.
+    //
+    // Green is the stubborn channel — grass is (139,191,90), so anything pale
+    // keeps a high green and stays minty. This target is dark enough to drop the
+    // value and blue enough that the result finally has b above g.
+    ground: { color: "#7fa8c4", amount: 0.85 },
+    tuft: { color: "#b9d6e8", amount: 0.8 }, // ditto: the speckle is the last thing to stop reading as grass
+    // The palest crown in the table by a long way. Nearly white with a blue cast,
+    // which at this size reads as translucent rather than as snow — snow would be
+    // a season, and a season is not something a place gets to have on its own.
+    crown: { color: "#dfeaf2", amount: 0.8 },
+    trunk: { color: "#9fb6c6", amount: 0.6 },
+    // Narrow, upright, and sparse-shouldered: closer to the birch than to anything
+    // else here, because the one ordinary region it should remind you of is the
+    // pale one. A far biome that recalls a near one is what keeps the drift
+    // continuous.
+    crownRows: [2, 3, 5, 5, 6, 6, 5, 5, 4, 3, 2],
+  },
+
   /** The one you go and find. Not rolled from the field like the others — it is
    *  SITED, once per town, on its own bearing, exactly the way the grove and the
    *  cube are (sim/world.ts).
@@ -280,20 +398,63 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
   },
 };
 
-/** The biomes the noise field may roll. Blossom is absent BY DESIGN — it is
- *  placed like a landmark, and a copy of it turning up in a random band would
- *  cost it the only thing that makes it worth the walk.
+/** How likely each biome is to be rolled, NEAR the town and FAR from it.
  *
- *  Meadow appears twice, which is the whole tuning knob for how strange the
- *  world feels: ordinary ground should be the commonest thing in it, or the
- *  distinctive regions stop being distinctive. */
-export const FIELD_BIOMES: BiomeId[] = [
-  "meadow",
-  "meadow",
-  "pinewood",
-  "birch",
-  "scrub",
-  "fen",
+ *  Blossom is absent BY DESIGN — it is placed like a landmark, and a copy of it
+ *  turning up in a random band would cost it the only thing that makes it worth
+ *  the walk.
+ *
+ *  THE ORDER OF THIS TABLE IS LOAD-BEARING, and so are the `near` numbers. Until
+ *  Phase 7a this was a flat array of six slots — meadow, meadow, pinewood, birch,
+ *  scrub, fen — indexed by `floor(roll * 6)`. The `near` column reproduces that
+ *  array exactly: the weights sum to 6, and cumulating them in this order puts
+ *  each biome on precisely the span of the roll it used to own. That is not
+ *  tidiness. Base terrain isn't stored, so a roll that answers differently
+ *  re-landscapes every live save, and a re-rolled region changes TREE DENSITY,
+ *  which is solidity — the failure is a tree standing inside a house somebody
+ *  already built. `sim/biome.test.ts` re-implements the old formula and asserts
+ *  the two agree, tile for tile, out to the ramp.
+ *
+ *  THE `far` COLUMN IS THE PHASE 7a RULE (DESIGN.md §Biomes): the world gets
+ *  stranger the farther out you go. A region's weight is interpolated between
+ *  these two columns by how far its site is from the plaza datum. It is a WEIGHT
+ *  and never a gate — every ordinary biome keeps a real weight out there, so
+ *  there is no wall you cross and no distance at which the familiar becomes
+ *  impossible. Meadow at the plateau is 0.7 against a total of 6.4: uncommon,
+ *  never gone.
+ *
+ *  What the strange rows do NOT have is a number the near ones lack. Same trees,
+ *  same rocks, same mushrooms, same wood when you chop them. Distance changes the
+ *  view, never what you may have. */
+export interface FieldWeight {
+  /** Weight at the datum and out to `STRANGE_FROM`. Sums to 6 across the table,
+   *  in this order, because that is what makes it the old array. */
+  near: number;
+  /** Weight at `STRANGE_TO` and beyond — the plateau. */
+  far: number;
+}
+
+export const FIELD_WEIGHTS: [BiomeId, FieldWeight][] = [
+  // Ordinary ground stays the commonest single thing in the world even at the
+  // plateau, which is the tuning knob for how strange the far country feels: a
+  // world with no familiar ground in it has stopped having anywhere to be from.
+  ["meadow", { near: 2, far: 0.7 }],
+  ["pinewood", { near: 1, far: 0.4 }],
+  ["birch", { near: 1, far: 0.4 }],
+  ["scrub", { near: 1, far: 0.4 }],
+  // The fen decays least of the four. It is already the odd one near town — murky,
+  // mushroomy, standing water — so it is the hinge between the ordinary regions
+  // and the strange ones, and the drift outward reads as continuous rather than as
+  // one set of regions being swapped for another.
+  ["fen", { near: 1, far: 0.5 }],
+  // The strange three, in the order they take over. Dusk is the commonest because
+  // it is the mildest — a familiar wood at the wrong hour — so the first thing the
+  // far country says is "the light is off here", not "you are somewhere else".
+  ["dusk", { near: 0, far: 1.6 }],
+  ["glimmer", { near: 0, far: 1.4 }],
+  // The rarest, because it is the loudest. Glass is the one you walk into and
+  // stop, and a plateau made mostly of it would be wallpaper by the second one.
+  ["glass", { near: 0, far: 1.0 }],
 ];
 
 export function biomeDef(id: BiomeId): BiomeDef {

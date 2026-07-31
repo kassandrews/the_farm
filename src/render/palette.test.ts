@@ -196,9 +196,25 @@ describe("crown silhouettes", () => {
 
   it("makes the shapes actually distinguishable from each other", () => {
     // Colour alone left the pines reading as a dark meadow. Two biomes with the
-    // same outline AND a similar hue would be the same failure again.
-    const shapes = Object.values(BIOMES).map((b) => b.crownRows.join(","));
-    expect(new Set(shapes).size).toBe(shapes.length);
+    // same outline AND a similar hue would be the same failure again — and it is
+    // the AND that this asserts, because one biome deliberately fails the first
+    // half. THE DUSK IS THE MEADOW'S OWN BROADLEAF, unchanged: it is the mildest
+    // of the far regions, and what makes it unsettling rather than merely pretty
+    // is that the trees are the shape you know and the light is not. So a shared
+    // outline is allowed, and pays for it by having to be unmistakable on colour.
+    const rows = Object.values(BIOMES);
+    for (let i = 0; i < rows.length; i++) {
+      for (let j = i + 1; j < rows.length; j++) {
+        const a = rows[i];
+        const b = rows[j];
+        if (a.crownRows.join(",") !== b.crownRows.join(",")) continue;
+        // How far apart the two crowns actually PULL. Comparing hex alone would
+        // be wrong: the meadow's crown is #000000 at amount 0, which does not mean
+        // black — it means "leave the season's colour alone".
+        const apart = Math.abs(a.crown.amount - b.crown.amount);
+        expect(apart, `${a.id} and ${b.id} share an outline`).toBeGreaterThanOrEqual(0.5);
+      }
+    }
   });
 
   it("keeps conifers narrow and broadleaves broad", () => {

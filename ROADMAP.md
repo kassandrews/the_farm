@@ -2658,7 +2658,62 @@ invariant as biomes"). So 7a's first move is to *write* §Biomes, stating what
 Phase 5 already does, and then add the radius rule to it. Amending a section
 that doesn't exist is the doc-first rule failing quietly.
 
-### 7a. The world gets stranger the farther out you go
+### 7a. The world gets stranger the farther out you go — **done**
+
+Shipped as planned, with two changes the screen forced. **§Biomes was written into
+DESIGN.md first** — Phase 5 never wrote one, and the invariant had been living as a
+clause inside §Water ("same invariant as biomes"), so there was nothing to amend.
+
+`FIELD_WEIGHTS` replaces the flat six-slot array: a `near`/`far` weight per row,
+interpolated by how far the region's SITE is from the datum, smoothstepped from
+200 tiles to a plateau at 900. Three new rows — **dusk, glimmer, glass** — at zero
+weight near town. No schema change: it is all generation.
+
+**The near world is provably byte-identical.** The `near` column sums to 6 and
+cumulates in table order, so it reproduces `FIELD_BIOMES[floor(roll * 6)]` exactly;
+one test walks 6000 rolls against a copy of the old formula, and another asserts
+`regionStrangeness` is 0 across every tile within 90 of the origin on 200 seeds.
+Both halves are needed — the identity is worthless if a region near town is quietly
+running at 0.02, which would look untouched on the seed you checked and re-landscape
+a house on the one you didn't.
+
+**Two things the tests could not have caught, and one they did:**
+
+- **Strangeness was binary, and the frontier was a paint edge.** The weights alone
+  make the roll land all at once: the nearest dusk region was 259 tiles out and
+  FULL violet against ordinary meadow, with a hard tile border between them. Near
+  regions have always shared borders invisibly *because they barely differ*; the far
+  rows are ten times the tint. Fixed by `regionSkin` — a far row's tint amount is
+  multiplied by its own strangeness, so the first dusk you meet is a wood with the
+  light very slightly off and the one at the plateau is violet to the ground. That is
+  what DESIGN.md said all along ("character DRIFTS"); the binary version was the
+  cheapest reading of it. Photographed at the frontier: strangeness 0.09, no seam.
+  It is RENDER-PATH ONLY — densities never fade, because a tree that faded in with
+  distance would be solid at one radius and not at another.
+- **Glass lost its trees.** Drafted pale (ground 0.8 toward `#ccdcf0`) the floor came
+  out at (193,214,210) and the near-white crowns at (223,234,242) — thirty levels
+  apart, which at this size is nothing. Bare grey trunks with a ghost above them, and
+  a tree here is SOLID, so that is something you walk into rather than something that
+  merely looks wrong. The floor had to get *colder and darker*, not paler. Green is
+  the stubborn channel: grass is (139,191,90), so any pale target keeps a high green
+  and stays minty — the fix was a target dark and blue enough that the result finally
+  has b above g. Same failure produced the first violet, which photographed as
+  "slightly murky meadow" at 0.55.
+- **A far region may not be RICHER than the near table** — caught by a test, not the
+  screen. Glimmer was drafted at 0.4 mushrooms, over three times the fen's record,
+  because the mushrooms were going to *be* the biome. A mushroom is a gathered
+  material, so that is foraging getting better the farther out you walk: a payout
+  curve for distance, which is the one thing this phase refuses. Scrub's 5× rocks are
+  fine because they are a **lateral** choice — some direction, a hundred tiles — and
+  the distinction is now the test. Glimmer is tied with the fen at 0.12 and the glow
+  moved to the tuft, where it belonged: the speckle is on every cell, and a floor
+  that glows has to glow everywhere.
+
+Verified with `scripts/shot-biomes.mts`, which grew a longer spiral for the far rows
+and now photographs them **at the plateau** — its first run shot the nearest example,
+which by design is a whisper, and reported the tints as broken.
+
+### 7a. The plan as written
 
 Extends Phase 5 (six regions, colour and density, nothing gated). The new input
 is **distance from the plaza datum**: biome character is partly a function of

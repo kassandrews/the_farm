@@ -422,6 +422,59 @@ already see turns noticing into reading. The hour earns its chip because you act
 on the hour; the reference earns its chip because you steer by it. The season was
 weather, and weather needs no caption.
 
+## Biomes
+
+The world is unbounded and it must not be uniform, or a player has no way to say
+where they are. Biomes are **the wayfinding system**: you navigate by "out past
+the birches", which is how anybody navigates anywhere. Regions are sized to be
+walked across rather than admired from a distance, and their borders are
+irregular, so there is no seam to find.
+
+A biome is **colour, growth density, and flora silhouette. Nothing else.** Not
+one number in the table touches a yield, a recipe, a growth time or an unlock. A
+cherry tree chops into `wood`. A biome that gated a material would be a daily cap
+on building wearing a hat — *walk two hundred tiles or no pink house* — and there
+are no caps here. What a region changes is how somewhere looks, and the reasons
+to walk there are that it looks like somewhere and that somebody asked to live
+in it.
+
+Every colour is a **tint, not a value** — a direction and how far to go — which
+is what lets biome and season compose instead of fighting. Autumn still turns the
+world; the fen is a murkier autumn and the blossom rows stay stubbornly pink.
+
+Biomes are a **total function of (seed, x, y)** and are stored nowhere. The
+town's own region is always the ordinary meadow, whose every number is an
+identity, so ground people have already built on generates exactly what it always
+did. That is a region and not a radius on purpose: a circle of ordinary grass
+stamped round the plaza would draw a hard rim across open country.
+
+### The world gets stranger the farther out you go
+
+Biome character is partly a function of **distance from the plaza datum**. Near
+town reads ordinary; far out reads dreamlike — palette, flora silhouette and
+ground cover drift from the familiar toward the strange as the radius grows:
+twilight bands, bioluminescent understory, glass-coloured light.
+
+This is the rule above with one more argument, and every clause of it survives.
+Distance is a **weight, not a gate**: a far region is more *likely* to be an odd
+one and never locked to one, so there is no wall you cross and no boundary you
+can stand on. It is still colour, density and flora; still a total function of
+seed and coordinate; still stored nowhere; still gates nothing. **A far biome
+never holds a material the near ones don't, never changes a growth time, and
+never hides a finish behind distance.** Same invariant as water: distance changes
+the view, never what you may have.
+
+**"Stranger" is never taller.** There is no height axis (§Structures) and
+strangeness lives entirely inside the flat, one-storey world — no floating land,
+no impossible geometry, no stacked terrain. The world's odd colours are a
+repaint, on exactly the terms a season is.
+
+The escalation **reaches a plateau and holds it**. On an infinite map, "keeps
+getting stranger forever" is a promise that ends in noise: the far country has a
+character rather than an ever-climbing scale. And the ordinary never falls to
+zero — meadow remains possible at any distance, because a world where the
+familiar becomes impossible has a boundary in it after all.
+
 ## Water
 
 The world is unbounded, so **no water may be unbounded with it**. A body of

@@ -33,7 +33,8 @@ import {
 } from "../content/tiles";
 import { NODES } from "../content/nodes";
 import type { BiomeId } from "../content/biomes";
-import { FIELD_BIOMES, biomeDef } from "../content/biomes";
+import { FIELD_WEIGHTS, biomeDef } from "../content/biomes";
+import type { BiomeDef, Tint } from "../content/biomes";
 import type { WaterKindId, ChannelDef } from "../content/water";
 import { waterKind } from "../content/water";
 import { structureDef } from "../content/structures";
@@ -807,7 +808,123 @@ export function biomeAt(seed: number, spot: HomesteadSpot, x: number, y: number)
   if (atHome) return "meadow";
 
   const roll = hash2(site.mx, site.my, seed ^ 0x30de) / 4294967296;
-  return FIELD_BIOMES[Math.floor(roll * FIELD_BIOMES.length) % FIELD_BIOMES.length];
+  return rollRegion(roll, strangeness(seed, site.mx, site.my));
+}
+
+/** Where the world starts getting strange, and where it stops getting stranger,
+ *  as distances from the plaza datum in tiles (DESIGN.md §Biomes).
+ *
+ *  200 IS A SAFETY MARGIN BEFORE IT IS A TASTE. Base terrain isn't stored, so
+ *  anything that moves this field re-landscapes live saves, and tree density is
+ *  solidity — the failure mode is a tree inside a finished house. Inside
+ *  STRANGE_FROM the weights are exactly the flat six-slot array this used to be
+ *  (see FIELD_WEIGHTS), so the near world generates byte-for-byte what it did
+ *  before Phase 7a.
+ *
+ *  The margin is bigger than it looks, because this is measured from the SITE and
+ *  a tile is at most about a cell and a half from the site that owns it: no TILE
+ *  inside ~90 of the origin can be owned by a rolled site, whatever the warp does.
+ *  The town needs 21 (HOME_REGION_REACH) and a housed neighbour can only be a plot
+ *  at a time out (MAX_PATH_NODES), so this is four times any distance the built
+ *  world reaches. There is a test.
+ *
+ *  700 TILES OF RAMP is deliberately most of a very long walk. The drift has to be
+ *  slower than you can perceive at the border, or it becomes a boundary you can
+ *  stand on — which is the thing "a weight, not a gate" exists to prevent. */
+const STRANGE_FROM = 200;
+const STRANGE_TO = 900;
+
+/** How far along the drift a region is: 0 ordinary, 1 the plateau.
+ *
+ *  Measured off the SITE and not off the tile, so a region has ONE character all
+ *  the way across it. Per tile, a wood would grow stranger as you walked through
+ *  it and the far half of it would be a different biome from the near half —
+ *  which is the Voronoi seam problem again, in the other axis.
+ *
+ *  Smoothstepped rather than linear so the onset has no kink in it. At exactly
+ *  STRANGE_FROM a linear ramp starts changing the odds at full slope; this one
+ *  leaves and arrives flat, and the plateau is a plateau rather than a corner. */
+function strangeness(seed: number, mx: number, my: number): number {
+  const s = biomeSite(seed, mx, my);
+  const r = Math.hypot(s.x, s.y);
+  const t = Math.min(1, Math.max(0, (r - STRANGE_FROM) / (STRANGE_TO - STRANGE_FROM)));
+  return t * t * (3 - 2 * t);
+}
+
+/** How strange the region owning a tile is, 0 to 1. Exported for the migration
+ *  test: "the near world is untouched" is only a proof if the near world can be
+ *  shown to be running at strangeness ZERO, since a region flipped by a whisker of
+ *  drift looks exactly like a region that was always going to roll that way. */
+export function regionStrangeness(seed: number, x: number, y: number): number {
+  const w = biomeWarp(seed, x, y);
+  const site = nearestSite(seed, w.x, w.y);
+  return strangeness(seed, site.mx, site.my);
+}
+
+/** The far country's rows, whose colour comes UP with the drift. */
+const FAR_ROWS = new Set<BiomeId>(["dusk", "glimmer", "glass"]);
+
+/** What a tile's region looks like here — the biome's row, with the far country's
+ *  tints scaled by how far out this particular region is.
+ *
+ *  FOUND ON SCREEN, and it is the difference between the doc and the first cut.
+ *  The weights alone make strangeness a coin that lands: the nearest dusk region
+ *  on the test seed was 259 tiles out and it was FULL violet, up against ordinary
+ *  meadow green, and the border between them was a paint edge you could stand on.
+ *  Near regions have always been able to share a border invisibly because they
+ *  barely differ; the far rows are ten times the tint, so the seam became the
+ *  loudest thing on screen — a wall you cross, which is the one thing distance is
+ *  not allowed to be (DESIGN.md §Biomes).
+ *
+ *  So a far region's colour is its own strangeness. The first dusk you ever meet
+ *  is a wood with the light very slightly off; the one at the plateau is violet to
+ *  the ground. That is what the doc says out loud — character DRIFTS from the
+ *  familiar toward the strange — and the binary version was only ever the cheapest
+ *  reading of it.
+ *
+ *  Constant across a region, because `strangeness` is a property of the SITE. A
+ *  per-tile ramp would put a gradient inside one wood and two different gradients
+ *  either side of every border.
+ *
+ *  RENDER PATH ONLY. Densities are untouched and generation never calls this: what
+ *  grows where has to stay a total function of (seed, x, y), and a tree that faded
+ *  in with distance would be a tree that is solid at one radius and not at another. */
+export function regionSkin(seed: number, spot: HomesteadSpot, x: number, y: number): BiomeDef {
+  const id = biomeAt(seed, spot, x, y);
+  const def = biomeDef(id);
+  if (!FAR_ROWS.has(id)) return def;
+
+  const t = regionStrangeness(seed, x, y);
+  const fade = (tint: Tint): Tint => ({ color: tint.color, amount: tint.amount * t });
+  return {
+    ...def,
+    ground: fade(def.ground),
+    tuft: fade(def.tuft),
+    crown: fade(def.crown),
+    trunk: fade(def.trunk),
+  };
+}
+
+/** Pick a region from a roll in [0,1) and a strangeness in [0,1].
+ *
+ *  Exported for the tests, which assert the two things this has to be at once: at
+ *  strangeness 0 it is the old `FIELD_BIOMES[floor(roll * 6)]` exactly, and past
+ *  it every ordinary region still has a real share of the roll.
+ *
+ *  The cumulative walk runs in table order, which is what makes the first of
+ *  those true — see FIELD_WEIGHTS. */
+export function rollRegion(roll: number, strange: number): BiomeId {
+  let total = 0;
+  for (const [, w] of FIELD_WEIGHTS) total += w.near + (w.far - w.near) * strange;
+
+  let at = roll * total;
+  for (const [id, w] of FIELD_WEIGHTS) {
+    at -= w.near + (w.far - w.near) * strange;
+    if (at < 0) return id;
+  }
+  // Unreachable while `roll` is in [0,1): the walk consumes exactly `total`.
+  // Falling back to the ordinary is the right way to be wrong.
+  return "meadow";
 }
 
 /** Where a forest-edge town's clearing stops, at its NARROWEST.

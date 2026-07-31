@@ -29,7 +29,7 @@ import {
 } from "../content/tiles";
 import { skinDef } from "../content/skins";
 import type { SkinClass, SkinDef } from "../content/skins";
-import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey, biomeAt } from "../sim/world";
+import { decoHash, chunkCoordOf, getChunk, CHUNK, tileKey, regionSkin } from "../sim/world";
 import { wallMask, blockedDoorsteps, CONNECT_N, CONNECT_E, CONNECT_S, CONNECT_W } from "../sim/structures";
 import { furnitureDef, footprint } from "../content/furniture";
 import { plinthRuns } from "../sim/museum";
@@ -39,7 +39,7 @@ import type { Room } from "../sim/rooms";
 import { tintAt, isNight, skyPhaseAt } from "../sim/time";
 import { seasonAt } from "../sim/seasons";
 import { scenePalette, seasonSkin, biomeSkin, mixHex, type ScenePalette } from "./palette";
-import { biomeDef, BROADLEAF } from "../content/biomes";
+import { BROADLEAF } from "../content/biomes";
 import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
 import { lookFor } from "../content/looks";
@@ -680,7 +680,7 @@ export class Renderer {
           biomeSkin(
             seasonSkin(tileDef(groundId), groundId, this.palette),
             groundId,
-            biomeDef(biomeAt(world.seed, world.homestead.spot, tx, ty)),
+            regionSkin(world.seed, world.homestead.spot, tx, ty),
           );
         const px = Math.round(this.sceneX(tx) - TILE / 2);
         const py = Math.round(this.sceneY(ty) - TILE / 2);
@@ -729,7 +729,7 @@ export class Renderer {
             // detaches from the surface it belongs to.
             ctx.fillStyle = mixHex(
               this.palette.tuft,
-              biomeDef(biomeAt(world.seed, world.homestead.spot, tx, ty)).tuft,
+              regionSkin(world.seed, world.homestead.spot, tx, ty).tuft,
             );
             const gx = px + 2 + Math.floor(h * 9);
             const gy = py + 4 + Math.floor((h * 53) % 9);
@@ -1706,7 +1706,7 @@ export class Renderer {
     // would be a secret joining in with the scenery.
     const biome = dark
       ? null
-      : biomeDef(biomeAt(world.seed, world.homestead.spot, tx, ty));
+      : regionSkin(world.seed, world.homestead.spot, tx, ty);
 
     // Silhouette and therefore HEIGHT, both from the region. Read before the fade
     // because how far a tree reaches up is what decides whether it's hiding you:

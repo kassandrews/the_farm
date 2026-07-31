@@ -14,8 +14,10 @@ import {
   homesteadOrigin,
   PLAZA,
   HOME_REGION_REACH,
+  regionStrangeness,
+  rollRegion,
 } from "./world";
-import { BIOMES, FIELD_BIOMES } from "../content/biomes";
+import { BIOMES, FIELD_WEIGHTS } from "../content/biomes";
 import { ROCK, WATER, SHALLOW, SAND } from "../content/tiles";
 import type { HomesteadSpot } from "./types";
 
@@ -55,7 +57,9 @@ describe("the biome field", () => {
         for (let y = -220; y <= 220; y += 11) seen.add(biomeAt(seed, "forest", x, y));
       }
     }
-    for (const id of new Set(FIELD_BIOMES)) expect(seen).toContain(id);
+    // The NEAR table only. The far country (dusk, glimmer, glass) is impossible
+    // this close on purpose, and is covered by its own describe below.
+    for (const [id, w] of FIELD_WEIGHTS) if (w.near > 0) expect(seen).toContain(id);
     expect(seen).toContain("blossom"); // sited, not rolled, but it must exist
   });
 
@@ -198,7 +202,127 @@ describe("the blossom rows", () => {
   it("is not something the field can roll", () => {
     // It has to be found. A copy turning up in a random band would cost it the
     // only thing that makes it worth the walk.
-    expect(FIELD_BIOMES).not.toContain("blossom");
+    expect(FIELD_WEIGHTS.map(([id]) => id)).not.toContain("blossom");
+  });
+});
+
+describe("the world gets stranger the farther out you go", () => {
+  /** The flat six-slot array the field WAS before Phase 7a, kept here on purpose
+   *  rather than imported: a copy the production table can't quietly edit is the
+   *  only version of this that can catch the production table being edited. */
+  const LEGACY = ["meadow", "meadow", "pinewood", "birch", "scrub", "fen"];
+
+  /** How far out no TILE can be owned by a drifting region — see STRANGE_FROM.
+   *  The ramp starts at 200 measured from the site, and a tile is at most about a
+   *  cell and a half from its own site. */
+  const NEAR = 90;
+
+  it("is the old flat array exactly, at strangeness zero", () => {
+    // The migration, and it is a property of the generator rather than of the
+    // save. Every roll the hash can produce, mapped through the weights, has to
+    // land on the same biome the array used to hand back.
+    for (let i = 0; i < 6000; i++) {
+      const roll = i / 6000;
+      expect(rollRegion(roll, 0)).toBe(LEGACY[Math.floor(roll * 6) % 6]);
+    }
+  });
+
+  it("runs at strangeness zero everywhere the built world can reach", () => {
+    // The other half of that proof. The identity above is worth nothing if a
+    // region near town is running at 0.02 — it would look untouched on the seed
+    // you checked and re-landscape somebody's house on the one you didn't.
+    for (let seed = 1; seed <= 200; seed++) {
+      for (let a = 0; a < 16; a++) {
+        const th = (a / 16) * Math.PI * 2;
+        for (const r of [0, 21, 50, NEAR]) {
+          const x = Math.round(Math.cos(th) * r);
+          const y = Math.round(Math.sin(th) * r);
+          expect(regionStrangeness(seed, x, y)).toBe(0);
+        }
+      }
+    }
+  });
+
+  it("keeps the far country out of the near world entirely", () => {
+    for (let seed = 1; seed <= 60; seed++) {
+      for (let y = -NEAR; y <= NEAR; y += 3) {
+        for (let x = -NEAR; x <= NEAR; x += 3) {
+          if (Math.hypot(x, y) > NEAR) continue;
+          const b = biomeAt(seed, "forest", x, y);
+          expect(["dusk", "glimmer", "glass"]).not.toContain(b);
+        }
+      }
+    }
+  });
+
+  /** The share of a ring that came up one of the three far regions. Sampled on a
+   *  circle rather than a box so it is a distance being measured and not an area. */
+  function strangeShare(r: number): number {
+    let strange = 0;
+    let n = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      for (let a = 0; a < 60; a++) {
+        const th = (a / 60) * Math.PI * 2;
+        const b = biomeAt(seed, "forest", Math.round(Math.cos(th) * r), Math.round(Math.sin(th) * r));
+        if (b === "dusk" || b === "glimmer" || b === "glass") strange++;
+        n++;
+      }
+    }
+    return strange / n;
+  }
+
+  it("drifts, rather than switching over at a line", () => {
+    const near = strangeShare(150);
+    const mid = strangeShare(550);
+    const far = strangeShare(1200);
+    expect(near).toBe(0);
+    // The middle of the ramp is genuinely mixed — this is the number that says
+    // there is no wall you cross. If it ever reads ~0 or ~1, the drift has become
+    // a boundary and the region you're standing in announces which side you're on.
+    expect(mid).toBeGreaterThan(0.15);
+    expect(mid).toBeLessThan(0.8);
+    expect(far).toBeGreaterThan(mid);
+  });
+
+  it("reaches a plateau and stops climbing", () => {
+    // "Keeps getting stranger forever" is a promise that ends in noise. Past
+    // STRANGE_TO the world has a character instead of a scale.
+    expect(strangeShare(2500)).toBeCloseTo(strangeShare(9000), 1);
+  });
+
+  it("never makes the ordinary impossible, however far out you walk", () => {
+    // The invariant that keeps this a WEIGHT and not a gate: a meadow at nine
+    // thousand tiles is uncommon and never unavailable, so there is no distance
+    // at which the world you came from has been taken away.
+    const seen = new Set<string>();
+    for (let seed = 1; seed <= 60; seed++) {
+      for (let a = 0; a < 40; a++) {
+        const th = (a / 40) * Math.PI * 2;
+        seen.add(biomeAt(seed, "forest", Math.round(Math.cos(th) * 9000), Math.round(Math.sin(th) * 9000)));
+      }
+    }
+    for (const [id, w] of FIELD_WEIGHTS) if (w.far > 0) expect(seen).toContain(id);
+  });
+
+  it("gives the far country nothing the near one hasn't got", () => {
+    // Distance changes the view, never what you may have (DESIGN.md §Biomes).
+    // A biome's only numbers are how thickly things grow, so the check is that no
+    // far row is RICHER than the near table already was. Note what this is NOT
+    // forbidding: the near table varies wildly between itself — the scrub has 5×
+    // the rocks — and that is fine, because it is a lateral choice. What it forbids
+    // is a density that climbs with RADIUS, which is a payout curve for distance
+    // and makes the far country a place you farm rather than a place you saw. It
+    // has already caught one: glimmer's mushrooms, drafted at 0.4.
+    const near = FIELD_WEIGHTS.filter(([, w]) => w.near > 0).map(([id]) => BIOMES[id]);
+    const far = FIELD_WEIGHTS.filter(([, w]) => w.near === 0).map(([id]) => BIOMES[id]);
+    const most = (xs: typeof near, k: "trees" | "rocks" | "mushrooms") =>
+      Math.max(...xs.map((b) => b[k]));
+    for (const k of ["trees", "rocks", "mushrooms"] as const) {
+      expect(most(far, k)).toBeLessThanOrEqual(most(near, k));
+    }
+    // And no standing water out there: a region you cannot cross is a wall, and
+    // one you found after a nine-hundred-tile walk is the worst place for a wall.
+    for (const b of far) expect(b.water).toBe(0);
   });
 });
 

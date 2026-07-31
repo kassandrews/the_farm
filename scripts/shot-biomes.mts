@@ -45,6 +45,10 @@ import type { HomesteadSpot } from "../src/sim/types.ts";
 
 const OUT = process.argv[2] ?? ".";
 
+/** The regions distance makes likely rather than the field rolling flat — they
+ *  need a much longer spiral to find. See findBiome. */
+const FAR = new Set<BiomeId>(["dusk", "glimmer", "glass"]);
+
 const d = await drive({ seed: { wood: 500 } });
 const save = await d.save();
 const seed: number = save.seed;
@@ -75,7 +79,19 @@ function usable(id: BiomeId, x: number, y: number): boolean {
  *  the nearest example, which is also the one a player would actually meet. */
 function findBiome(id: BiomeId): { x: number; y: number } | null {
   if (id === "blossom") return blossomCentre(seed, spot);
-  for (let r = 30; r < 600; r += 3) {
+  // THE FAR COUNTRY IS FAR (Phase 7a). Dusk, glimmer and glass are impossible
+  // inside 200 tiles and only common past the plateau at 900, so the old 600-tile
+  // spiral would have reported them missing on most seeds and been believed. The
+  // near regions keep the short search on purpose: it returns the NEAREST example,
+  // which is the one a player actually meets.
+  // PHOTOGRAPH THE FAR ROWS AT THE PLATEAU, not at the frontier. Their colour is
+  // their own strangeness (`regionSkin`), so the nearest dusk region is meant to
+  // be a whisper — shooting it proves nothing about what the far country looks
+  // like, and the first run of this script did exactly that and reported the tints
+  // as broken.
+  const from = FAR.has(id) ? 1200 : 30;
+  const reach = FAR.has(id) ? 2600 : 600;
+  for (let r = from; r < reach; r += 3) {
     for (let a = 0; a < 48; a++) {
       const th = (a / 48) * Math.PI * 2;
       const x = Math.round(Math.cos(th) * r);
