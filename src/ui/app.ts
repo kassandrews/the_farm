@@ -455,7 +455,25 @@ export class App {
   }
 
   /** The opening cutscene: the Office Creature stamps your land claim, line by
-   *  line (DESIGN §"Opening beat"). */
+   *  line (DESIGN §"Opening beat").
+   *
+   *  DRAWN AS A CONVERSATION, because it is one. This ran on `panel()` for a
+   *  long time — Gary's name as the heading, "Town Hall" as the eyebrow under
+   *  it — which is the frame the shop and the museum use, and `speechPanel`'s
+   *  own docblock says why that is wrong: a counter is a screen, a conversation
+   *  is a person. It made the player's first minute in the game a form being
+   *  read aloud by a building, and then every conversation afterwards looked
+   *  different from the one that taught them what talking looks like.
+   *
+   *  He is also the last person you meet before the world opens, so this is
+   *  where the dialogue frame should be introduced, not where it should be the
+   *  exception. The eyebrow goes with it: the plate holds the name and nothing
+   *  else, everywhere.
+   *
+   *  STILL NOT DISMISSABLE, unlike `openDialogue`. The one-way flows opt out on
+   *  purpose (ROADMAP) — a cutscene you can tap past before it has given you the
+   *  plot is a cutscene that sometimes doesn't happen. The frame changed; the
+   *  plumbing did not. */
   private runLandClaim(): void {
     const step = (line: number): void => {
       const speech = officeLandClaimLine(line);
@@ -466,8 +484,17 @@ export class App {
         }
         return;
       }
+      // Found rather than assumed: `ensureFixedCast` put him in at `newWorld`,
+      // so the look is the same one his portrait will have every time you go
+      // back to the desk. `CAST.office` is the fallback and cannot normally be
+      // reached — it keeps this a total function without pretending a miss is
+      // impossible.
+      const gary = this.world.villagers.find((v) => v.id === "office");
+      const form = gary?.form ?? CAST.office.form;
       this.openModal((close) =>
-        panel(speech.who, "Town Hall", [
+        speechPanel(
+          speech.who,
+          portrait(form, lookFor("office", form)),
           el("p", {}, [speech.text]),
           actionRow([
             primaryBtn(officeLandClaimLine(line + 1) ? "Next" : "It's mine", () => {
@@ -475,7 +502,7 @@ export class App {
               step(line + 1);
             }),
           ]),
-        ]),
+        ),
       );
     };
     step(0);

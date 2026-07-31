@@ -661,6 +661,31 @@ Knock-on: monospace sets wider per character, so `.panel p` went 16px → 15px w
 cream like the tool buttons — they were dark translucent to hold a white ☰ and a
 🎒, and dark ink on a dark chip is a button with nothing on it.
 
+### A counter is a screen, a conversation is a person — including the first one
+
+There are two panel frames and the difference is not decoration. `panel()` is a
+screen with a heading: the shop, the heap, the museum, the satchel, the settle-in
+card. `speechPanel()` is somebody talking — a portrait, a name plate holding the
+name and nothing else, and a bubble that swallows its own replies so a reply is
+not a fifth box outside the fourth.
+
+**The land claim was on the wrong one.** Gary's opening beat ran on `panel()`
+with his name as the heading and "Town Hall" as the eyebrow, which is the frame
+the counters use — so the player's first minute was a form read aloud by a
+building, and then every conversation afterwards looked unlike the one that
+taught them what talking looks like. He is the last person you meet before the
+world opens; that is where the dialogue frame should be introduced, not where it
+should be the exception. The eyebrow went with the move, because the plate holds
+the name and nothing else, everywhere.
+
+The plumbing did **not** move with the frame: the land claim is still
+non-dismissable, like the other one-way flows. A cutscene you can tap past before
+it has given you the plot is a cutscene that sometimes doesn't happen.
+
+The general rule, for anything added later: if the words have a speaker, they get
+`speechPanel`. If they are a screen you operate, they get `panel`. The test is
+whether a face would look wrong on it.
+
 ### Every overlay is the same chip — no dark ovals
 
 Third piece of the feel pass. The clock, the season, the activity toast and the
