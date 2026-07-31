@@ -1,12 +1,15 @@
 // House-voice lint over the actual source text, not over one table.
 //
-// The Meadow's ellipsis is written ". ... Capital", and the leading period IS
-// the previous sentence's full stop — that is the whole reason it's written
-// with the space in front. So a clause that already ends in punctuation before
-// it prints two full stops in a row ("delightful. ... We just need"), which is
-// the bug this catches. It shipped twice on the two screens every new player
-// sees, which is why the check reads every file rather than every bank: the
-// copy lives in content tables, in app.ts panels, and in cutscene scripts.
+// The Meadow's pause is written INLINE — "I took no notes. ... I want that on
+// the record." The clause keeps its own full stop and the ellipsis follows it
+// on the same line. What this catches is the other form, "…notes\n. ... I want",
+// where the stop has been moved onto the next line: on screen that is a period
+// floating at the start of a line with no word in front of it, and where the
+// clause kept its period too, two full stops in a row.
+//
+// It shipped on the welcome card, the new-town warning and the pause menu —
+// which is why the check reads every file rather than every bank. This copy
+// lives in content tables, in app.ts panels, and in cutscene scripts alike.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -20,14 +23,17 @@ function sourceFiles(dir: string): string[] {
 }
 
 describe("house ellipsis style", () => {
-  it("never puts a period before the ellipsis's own period", () => {
-    // The `\n` is the literal two characters as they appear in a TS string.
-    const doubled = /[.!?]("|\\n| )*\. \.\.\./;
+  it("never starts a line with the ellipsis's own period", () => {
+    // Matching source text, so `\n` is the literal two characters as they are
+    // typed in a TS string, not a newline.
+    const doubled = /(\\n|[.!?]("| )*)\. \.\.\./;
     const offenders = sourceFiles(join(__dirname, "..")).flatMap((path) =>
       readFileSync(path, "utf8")
         .split("\n")
         .map((line, i) => ({ path, n: i + 1, line }))
-        .filter(({ line }) => doubled.test(line))
+        // Comments are allowed to quote the bad form — that is how the reason
+        // for the rule gets written down next to the code that follows it.
+        .filter(({ line }) => doubled.test(line) && !/^\s*(\/\/|\*)/.test(line))
         .map(({ path, n, line }) => `${path}:${n}: ${line.trim()}`),
     );
     expect(offenders).toEqual([]);

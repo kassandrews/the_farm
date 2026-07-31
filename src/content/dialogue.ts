@@ -21,7 +21,7 @@ export const OFFICE_LANDCLAIM: string[] = [
   "Welcome to the Farm. You're expected. Everyone is, eventually.",
   "Plot on the edge of town. Standard issue. Congratulations, I suppose.",
   "I'll need to stamp this. The stamping is the important part. Not the land. The stamp.",
-  "*stamps the claim*\n. ... There. It's yours now. Legally. Emotionally, that's between you and the soil.",
+  "*stamps the claim*\n... There. It's yours now. Legally. Emotionally, that's between you and the soil.",
 ];
 
 export const OFFICE_IDLE: string[] = [

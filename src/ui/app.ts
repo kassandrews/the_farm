@@ -280,7 +280,7 @@ export class App {
           // to the player instead of reporting it as already done, and the
           // Office Creature stamps their claim two screens later (runLandClaim).
           el("p", {}, [
-            "It's real. And it's delightful\n. ... We just need someone to stamp the paperwork.",
+            "It's real. And it's delightful. ... We just need someone to stamp the paperwork.",
           ]),
           actionRow([
             primaryBtn("Arrive", () => {
@@ -1499,7 +1499,10 @@ export class App {
     }
     this.openModal((close) => {
       const body = el("div", { class: "choices" });
-      if (past.length > 0) body.append(el("p", {}, [past.join("\n. ... ")]));
+      // One paragraph each, for the postcard's reason (see showPostcardIfAny):
+      // these are complete sentences, so joining them with the house pause put a
+      // full stop at the start of a line with no word in front of it.
+      if (past.length > 0) body.append(...past.map((line) => el("p", {}, [line])));
       const soundLabel = () => (audio.isMuted() ? "Sound: off" : "Sound: on");
       const soundBtn = choiceBtn(soundLabel(), () => {
         audio.toggleMute();
@@ -1513,7 +1516,7 @@ export class App {
           // Second step: confirm, because a new town erases this one.
           body.replaceChildren(
             el("p", {}, [
-              "Start a new town? Your homestead, crops, and neighbours here are erased\n. ... This can't be undone.",
+              "Start a new town? Your homestead, crops, and neighbours here are erased. ... This can't be undone.",
             ]),
             primaryBtn("Yes, start over", () => this.resetTown()),
             choiceBtn("Cancel", close),
