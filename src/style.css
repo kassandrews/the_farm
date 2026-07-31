@@ -841,6 +841,21 @@ select {
   box-shadow: 0 1px 0 var(--shadow), inset 0 0 0 2px var(--accent);
 }
 
+/* A button waiting on you rather than one that is missing. It keeps its shape
+   and its shadow and loses its confidence — the settle-in card's only use of
+   this is "you have not said what to call it yet", which is a sentence about
+   the form above, not about the button. Fading it to nothing would read as
+   broken, and hiding it would leave a card with no way out (§8b). */
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.btn:disabled:active {
+  transform: none;
+  box-shadow: 0 3px 0 var(--shadow);
+}
+
 /* Press it INTO its own shadow — move down by exactly what the shadow loses, so
    the button's top edge travels and its bottom edge stays put. That reads as a
    physical key going down; translate alone reads as the whole thing sliding. */

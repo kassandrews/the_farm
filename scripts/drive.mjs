@@ -160,12 +160,20 @@ export async function drive({
   };
 }
 
-/** Click through title → character → land claim, whatever's in front of us. */
+/** Click through title → character → land claim, whatever's in front of us.
+ *
+ *  THE NAME BOX IS NOT OPTIONAL. The settle-in card disables "Claim your plot"
+ *  until it has something in it (Phase 8), so a harness that only clicks primary
+ *  buttons sits on the first screen forever and every screenshot after it comes
+ *  back as the title art. Fill any empty text field before clicking. */
 async function onboard(page) {
   for (let i = 0; i < 8; i++) {
+    const field = await page.$("input.text-field:not([disabled])");
+    if (field && !(await field.inputValue())) await field.fill("Harness");
     const primary = await page.$("button.primary:not(.choices button)");
     const target = primary || (await page.$$("button")).at(-1);
     if (!target) break;
+    if (await target.isDisabled().catch(() => false)) break;
     await target.click();
     await page.waitForTimeout(400);
   }

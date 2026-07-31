@@ -308,7 +308,28 @@ export class App {
       placeholder: "Your name",
       value: "",
     }) as HTMLInputElement;
-    nameInput.addEventListener("input", () => (name = nameInput.value));
+    // The card will not let you past without a name. It used to fall back to
+    // "New Sprite", which put the one anonymous person in a town where everybody
+    // else is named on purpose — and it is the player, so it is the name the
+    // menu shows you every time you open it.
+    //
+    // Gating beats defaulting here, and the reason is the same one `content/
+    // names.ts` gives for arrivals carrying literal names rather than generated
+    // ones: a name nobody decided to give is a name nobody chose. Dealing one
+    // out of the form's register would have been the prettier fix and still says
+    // "the game named you". Two seconds of typing says otherwise.
+    const claimable = (): boolean =>
+      // …unless a Meadow sprite is being EMBODIED, in which case it arrives with
+      // its own name and the box is disabled — gating on an input the card has
+      // deliberately switched off is a dead end with no way to see why.
+      nameInput.value.trim() !== "" || (meadowImport !== null && importRole === "player");
+    const refreshClaim = (): void => {
+      (claimBtn as HTMLButtonElement).disabled = !claimable();
+    };
+    nameInput.addEventListener("input", () => {
+      name = nameInput.value;
+      refreshClaim();
+    });
 
     // Faces, not a list of words: you are choosing which sprite you are, and
     // until you have seen one "Gremlin" is a noun. The tile shows the same
@@ -412,6 +433,7 @@ export class App {
           const embodied = role === "player";
           nameInput.disabled = embodied;
           for (const fb of formButtons) fb.style.opacity = embodied ? "0.45" : "1";
+          refreshClaim(); // embodying supplies the name; moving in next door does not
         });
         if (importRole === role) b.classList.add("chosen");
         buttons.push(b);
@@ -422,10 +444,31 @@ export class App {
         pick("player", "Embody them — you are this sprite"),
       );
     };
-    importBox.addEventListener("input", refreshImport);
+    importBox.addEventListener("input", () => {
+      refreshImport();
+      // A paste that fails to parse takes the embodied sprite's name away with
+      // it, so the gate has to be re-asked on every keystroke in the box.
+      refreshClaim();
+    });
+
+    // The button is built out here rather than inline in the panel because the
+    // gate has to reach it from three places — the name box, the import box and
+    // the embody/house-next-door choice. `openModal` hands `close` to the
+    // builder, so the builder assigns it through.
+    let closeOnboarding = (): void => {};
+    const claimBtn = primaryBtn("Claim your plot", () => {
+      refreshImport(); // catch a paste that never fired an input event
+      if (!claimable()) return; // that paste may have just taken the only name away
+      const world = newWorld({ name, form, spot, meadowImport, importRole });
+      closeOnboarding();
+      this.beginWorld(world);
+      this.runLandClaim();
+    });
+    refreshClaim();
 
     this.openModal(
-      (close) =>
+      (close) => (
+        (closeOnboarding = close),
         // No eyebrow over the name box: the subheading already asks the
         // question ("What will you call it?"), and a NAME label under it is the
         // same word twice — the two-headings problem `panel` warns about, one
@@ -444,16 +487,9 @@ export class App {
           labeled("Or, import from The Meadow", importBox),
           importBlock,
           labeled("Homestead", spotBlock),
-          actionRow([
-            primaryBtn("Claim your plot", () => {
-              refreshImport(); // catch a paste that never fired an input event
-              const world = newWorld({ name, form, spot, meadowImport, importRole });
-              close();
-              this.beginWorld(world);
-              this.runLandClaim();
-            }),
-          ]),
-        ]),
+          actionRow([claimBtn]),
+        ])
+      ),
       { scrimClass: "over-scene" },
     );
   }

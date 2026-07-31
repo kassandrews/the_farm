@@ -3129,9 +3129,18 @@ warped or dithered boundary rather than a cell-aligned one.
 - **The `E 6 · S 6` chip.** §*Every overlay is the same chip* says to cut a HUD
   label that names something already visible — but coordinates are not visible,
   so this one may genuinely earn its place. Decide, don't assume.
-- **A blank name gives "New Sprite"** while `content/names.ts` holds a register
-  per form. An unnamed arrival could be dealt a name the same way everyone else
-  in town is.
+- ~~**A blank name gives "New Sprite"**~~ **Settled: the card requires one.**
+  Dealing a name out of the form's register was the prettier option and was
+  rejected for the reason `content/names.ts` already gives about arrivals — a
+  name nobody decided to give is a name nobody chose, and this one is the
+  PLAYER's, shown in the menu every time they open it. Gating costs two seconds
+  of typing. Embodying a Meadow import is the exception: it arrives with its own
+  name and the box is disabled, so gating on it would be a dead end.
+
+  **Knock-on worth knowing: this broke every screenshot script.** `drive.mjs`
+  clicked primary buttons to get through onboarding, and a disabled one left the
+  harness sitting on the title art forever. `onboard()` fills the name box now
+  and bails on a disabled button rather than clicking into the void.
 
 ---
 
