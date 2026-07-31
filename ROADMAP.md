@@ -3206,6 +3206,210 @@ word, and is worth re-checking before anything is built on it.
 
 ---
 
+## Phase 9 — What the town keeps — **proposed, not started**
+
+Four steps that deepen the town's texture and memory. The through-line: **the
+town keeps things, and nothing it keeps is ever a score.** Each step rides a
+discipline already written here — the museum record (no total, no denominator,
+no empty slots) and the festival rule (being there is remembered; missing it is
+not). The recurring enemy is the checklist; those two rules are the fence,
+quoted where they apply.
+
+Doc amendment first, then code (house rule). Calls that are the author's are
+under *Decide*. The one hard sequencing rule is at the bottom: **Moments ships
+last.**
+
+### 9a — Buildings that remember
+
+Structures accrete a small history off the memory spine that already exists. A
+room knows who has slept in it and what happened within its walls, and says so
+when asked or when a resident brings it up.
+
+**DESIGN.md amendment** — §"NPCs that remember" / §Structures. Add: a structure
+keeps a short history the same way a resident does — past sleepers (home is
+already a claim on a bed, `sim/home.ts`) and notable events witnessed at its
+coordinates (`witness`, with the `onlyPresent` proximity model from 4b). It
+surfaces as a line, on inspection or in dialogue: "the Menace has slept here
+since spring," "this is the room where you first met Eloise." It is a memory,
+never a meter.
+
+**Build**
+
+- A per-structure history log — a capped, appended list of sleeper spells and
+  location-tagged events, reusing `witness` output rather than a new capture
+  path.
+- Surfaced through the channels memory already uses: a resident's line, and/or a
+  context action on the building.
+
+**Must not**
+
+- No count that grows into a rank. "Sheltered twelve families" is a score with a
+  roof on it. Keep the scale honest to the town's real churn (arrivals run out
+  at four) — this is a handful of names, not a tally to climb.
+- No completion. There is no "every building historied" state and nothing reads
+  whether a building has history.
+- Cap the log. Stored edits are fine; unbounded ones are not.
+
+**Decide**
+
+- Inspection line, resident dialogue, or both.
+- How many spells a building keeps before the oldest falls off.
+
+### 9b — The town hall's ridiculous paperwork
+
+Gary's "progression paperwork" (§fixed cast) grows into a standing filing
+system: world-customization disguised as bureaucracy, taken with total
+seriousness, free because nothing here costs anything. This is the Pillar 5
+crown jewel, and it drops in cleanly as long as the two classes of filing are
+held apart.
+
+**DESIGN.md amendment** — §The fixed cast (Gary). Add a §Paperwork: filings are
+the town's deadpan self-government. A filing is a form you submit at the hall;
+the joke is that these creatures govern themselves this earnestly. Two classes,
+and they are not the same feature. **Flavor filings** change nothing and exist
+to be filed and to sit in the cabinet — Petition to Rename Tuesday, Application
+for Local Legend Status, Official Recognition of Tiny Mountain, Certificate of
+Suspicious Moss, License to Haunt. **Filings with teeth** change a rule, and each
+is a separate decision, never a free addition. The cabinet is a record, not a
+score (§museum): no filing count, no total, no "forms remaining."
+
+**Build — flavor filings**
+
+- Author freely. A table of forms, each a title, a straight-faced blurb, and a
+  stamp. The stack is browsable — reading old filings is half the delight — and
+  browsing it is not a checklist, because there is nothing to complete.
+
+**Build — filings with teeth (each vetted, none free)**
+
+The teeth are where the fun smuggles in exactly what the doc forbids. Named, so
+the choice is conscious:
+
+- A **protected/park designation** would stop building there. Nobody but the
+  player builds (only the Gremlin nudges fences), so this can only lock your own
+  shovel — and Pillar 6 says real time gates the living world, never your hands.
+  Allowed only if it's opt-in and freely un-filed; a hard, sticky lock on
+  terraforming is off-tone.
+- A **sanctuary → rare birds arrive**. Spawning fauna as a filing's reward turns
+  the form into an unlock, which paperwork must not be. If birds are ambient and
+  cosmetic anyway, the filing may name what's already possible — it must not gate
+  it.
+- A **declared holiday** is a player-made festival, and festivals are a total
+  function of the date with nothing stored or counted (§Festivals). A declaration
+  has to store a date, so it's a real carve-out in the stateless rule — the same
+  one the "accidental traditions" idea tripped. Lovely, but it's a decision, not
+  a freebie.
+
+**Must not**
+
+- The cabinet is not a to-do list. No filing names a task, carries a target, or
+  shows a completion state (§Errands notices: past tense, no task).
+- No filing count anywhere.
+
+**Decide**
+
+- Which teeth-filings, if any, are worth their named carve-out. (The steer: ship
+  all the flavor ones now; take the teeth one at a time, later, each on its own
+  merits. The flavor stack alone already lands the pillar.)
+
+### 9c — The Notebook
+
+A naturalist's journal that accretes oblique observations as you encounter the
+world — "owls have only been seen near very old forests," never "combine X + Y."
+Observations, not instructions; a record of what you've noticed, never a
+checklist of what's left.
+
+**DESIGN.md amendment** — new §The Notebook. The Notebook holds observations in
+the world's own voice, added when you first meet the thing they concern. It is
+the museum record applied to discovery: no total, no denominator, no empty slots.
+You learn what else it might hold by going and finding it, never by reading a
+blank. It gives you a way to remember what you've seen and never a way to see
+what you've missed.
+
+**Build**
+
+- An observation table: a trigger condition and one oblique, in-voice line.
+  Entries append on first trigger; the panel shows only what has fired.
+- The panel gets a door — closable three ways (house rule; the satchel shipped
+  trapping the player once).
+
+**Must not**
+
+- No "???" slots, no locked entries, no count. A blank that implies more is the
+  exact UI spoiler §Tone bans for secrets, wearing a journal cover.
+- It reads its own past; it never sets a future task. No entry may name a thing
+  to do.
+- It must not imply completeness. The record shows what you've seen and stops
+  there — same sentence as Corrigal's gallery.
+
+**Decide**
+
+- Auto-fill on encounter, or only when a resident remarks (which ties it to
+  dialogue and keeps it social)?
+- Nature only, or town and social observations too?
+
+### 9d — Moments (build last)
+
+The game quietly notices beautiful configurations — the first snowfall, the
+meteor night you watched with a crowd in the plaza, a companion who walked a long
+way with you — and remembers them the way a person does: unbidden, unranked,
+resurfaced later in a line. This is the easiest idea in the whole pile to ruin,
+and it's ruined the instant it becomes a screen.
+
+The cleanest form is not a new feature at all. It's the memory spine noticing
+more than dialogue-facts — noticing firsts and configurations — and letting them
+back out through the channels memory already uses. There is no Moments panel.
+There is only a world that occasionally says "I remember when we watched the
+meteor shower."
+
+**DESIGN.md amendment** — new §Moments (under §Time). A Moment is the festival
+rule generalized: some configurations of the world are remembered when they
+happen, nothing is lost when they don't, and nothing anywhere counts them. A
+Moment is detected as it occurs, stored as an ordinary memory entry, and only
+ever resurfaces the way a memory does — a resident's line, a postcard, past
+tense. There is no Moments list, no gallery, no total, and no notification. It is
+remembered, never awarded.
+
+**Build**
+
+- A small authored set of Moment triggers (a first, a shared rarity, a long
+  companionship) feeding the existing memory log — a widening of `witness`, not a
+  new capture system.
+- Resurfacing rides dialogue and the postcard. Nothing new for the player to
+  open.
+
+**Must not**
+
+- No Moments screen. A page of Moments with gaps is an achievements page, which
+  is XP with a scrapbook cover — and §Materials/§Time rule out XP.
+- No toast. "✨ Moment unlocked" is an achievement notification; it surfaces later
+  and obliquely or not at all.
+- No count, no tiers, no rarity badge.
+- Ungameable triggers. A surfaced, farmable condition ("watch a sunrise with six
+  villagers") becomes an objective the moment players learn it. Triggers stay
+  unstated and unoptimizable — remembered, never set.
+
+**Decide**
+
+- Which firsts and configurations qualify (keep the set small and authored).
+- Whether the player has Moments about themselves (the companion who walked 300
+  days) or only ones shared with a resident.
+- Channel: dialogue, postcard, or both.
+
+### Sequencing for code
+
+The only hard rule: **9d ships last, alone**, because it is the one most easily
+turned into a score and it benefits from being built slowly against its own
+fence. Before it, any order works; a sensible one is 9a → 9b → 9c. 9a is small
+and proves the "read history through channels that already exist" approach that
+9d then reuses. 9b is largely authoring — reach for it first if you want a quick,
+high-tone delight win, and keep every teeth-filing out of the first pass. 9c is a
+new panel, so it inherits the panel house rule (a door, three ways to close) and
+the museum-record fence (no blanks, no total). Each schema touch ships a tested
+migration; verify the Notebook panel and any dialogue resurfacing in a real
+browser, not just tests.
+
+---
+
 ## The title screen — **done**
 
 The first screen used to be a cream card on a black void. The first line the
