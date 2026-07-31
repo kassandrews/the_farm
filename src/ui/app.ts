@@ -274,7 +274,7 @@ export class App {
     this.titleScene ??= mountTitleScene(document.body);
     this.openModal(
       (close) =>
-        panel("Welcome to the Farm!", "The town they were sent to", [
+        panel("Welcome to the Farm!", "", [
           // "We just need someone to stamp the paperwork" rather than the older
           // "Someone stamped the paperwork": the same joke, but it hands the job
           // to the player instead of reporting it as already done, and the
