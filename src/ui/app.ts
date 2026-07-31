@@ -761,11 +761,16 @@ export class App {
       // Name from the table, institution in the subtitle — the counter is what
       // makes her an institution, so it is the counter that should say so. The
       // five panels here all used to print a species where a name goes.
-      return panel(CAST.shop.name, "The Counter", [
-        el("p", {}, ["Cloth. ... You can't grow it, and you certainly can't chop it down."]),
-        body,
-        actionRow([primaryBtn("That's all", close)]),
-      ]);
+      return panel(
+        CAST.shop.name,
+        "The Counter",
+        [
+          el("p", {}, ["Cloth. ... You can't grow it, and you certainly can't chop it down."]),
+          body,
+          actionRow([primaryBtn("That's all", close)]),
+        ],
+        counterFace("shop"),
+      );
     }, { dismissable: true });
   }
 
@@ -2297,10 +2302,36 @@ function buildHud(
  *  card titled "Settle in" over the words CHOOSE YOUR SPRITE is two headings for
  *  one screen, and the eyebrow is the one carrying no information. Empty means
  *  no node at all rather than an empty one, or the gap above the title stays. */
-function panel(title: string, who: string, body: (Node | string)[]): HTMLElement {
-  return el("div", { class: "panel" }, [
+/** A screen you operate. `who` is the EYEBROW — the institution, "The Counter" —
+ *  and `title` is the heading.
+ *
+ *  `face` is the amendment §A counter is a screen wanted and did not make. That
+ *  entry moved Gary to `speechPanel` and gave the test — "whether a face would
+ *  look wrong on it" — and then left the five counters alone, which was right
+ *  about the FRAME and wrong about the speaker: Arabella's opener is
+ *  "Cloth. ... You can't grow it, and you certainly can't chop it down." That is
+ *  her voice, in the house ellipsis style CLAUDE.md defines for spoken lines,
+ *  printed as body text under a heading with nobody attached to it.
+ *
+ *  This is NOT `speechPanel` folded in, which its own docblock refuses and still
+ *  should: a counter is a list of prices you scroll and a conversation is not,
+ *  and `who` keeps meaning exactly one thing. It is the smaller claim — that a
+ *  screen someone is TALKING ON should show whose voice it is. The errands board
+ *  is the control: it has no speaker, gets no face, and reads correctly today. */
+function panel(
+  title: string,
+  who: string,
+  body: (Node | string)[],
+  face?: HTMLElement,
+): HTMLElement {
+  const heading = [
     ...(who ? [el("div", { class: "who" }, [who])] : []),
     el("h2", {}, [title]),
+  ];
+  return el("div", { class: "panel" }, [
+    face
+      ? el("div", { class: "panel-head" }, [face, el("div", { class: "panel-titles" }, heading)])
+      : el("div", {}, heading),
     ...body.map((b) => (typeof b === "string" ? document.createTextNode(b) : b)),
   ]);
 }
@@ -2338,6 +2369,16 @@ function speechPanel(
       el("div", { class: "speech-said" }, [said, replies]),
     ]),
   ]);
+}
+/** The face for a counter's heading — the same portrait the dialogue frame draws,
+ *  through the same `lookFor`, so the person behind the counter is the person you
+ *  meet on the path. Sized by `.portrait.counter`, which is half `.portrait.tile`
+ *  and still an exact multiple of 16. */
+function counterFace(id: keyof typeof CAST): HTMLElement {
+  const who = CAST[id];
+  const face = portrait(who.form, lookFor(id, who.form));
+  face.classList.add("counter");
+  return face;
 }
 function actionRow(buttons: HTMLElement[]): HTMLElement {
   return el("div", { class: "row" }, buttons);

@@ -997,6 +997,30 @@ input.text-field:disabled {
   box-shadow: 0 3px 0 var(--shadow), inset 0 0 0 2px var(--accent);
 }
 
+/* A counter's speaker sits beside its heading, not above the body: the eyebrow
+   and the name already form a block, and the face belongs to that block rather
+   than to the price list under it. `align-items: center` rather than baseline —
+   a 48px portrait next to two lines of text hangs wrong on a baseline. */
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.panel-titles {
+  min-width: 0;
+}
+
+/* 48px — three screen pixels per source pixel on the 16px sprite, which is the
+   hard rule (never a fractional multiple). `.portrait.tile` is 64 and would
+   crowd a heading; 32 loses the face at a glance. */
+.portrait.counter {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 3px 0 var(--shadow));
+}
+
 /* Half of `.portrait`'s 128px. Still an exact multiple of the 16px sprite (four
    screen pixels per source pixel), which is the whole hard rule — 100px or
    "60%" would hand some rows four and others three. */
