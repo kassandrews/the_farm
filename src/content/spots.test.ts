@@ -15,7 +15,7 @@ const H = 16;
 
 describe("homestead emblems", () => {
   it("offers each spot exactly once", () => {
-    expect(SPOTS.map((s) => s.id).sort()).toEqual(["coast", "forest", "riverside"]);
+    expect(SPOTS.map((s) => s.id).sort()).toEqual(["coast", "forest", "lakeside", "riverside"]);
   });
 
   for (const spot of SPOTS) {

@@ -1,4 +1,4 @@
-// The three homesteads — the choice on the settle-in card, and the emblem that
+// The four homesteads — the choice on the settle-in card, and the emblem that
 // stands for each one.
 //
 // Content is data (CLAUDE.md): a homestead is a row here, not a branch in the
@@ -20,6 +20,8 @@
 //     so an emblem that draws trees on every side is exactly right, always.
 //   • the riverbank — the river runs past. It is anchored west of the plaza, but
 //     the bearing it crosses on is the seed's.
+//   • the lakeside — the lake every town is promised anyway, moved in close. A
+//     bearing found by search (`townLakeSearch`), so again: any side.
 //   • the coast — a shore about thirty-four tiles out, on a bearing that is a
 //     pure hash (`townSeaCentre`). It can be any side at all.
 //
@@ -39,11 +41,11 @@
 // THERE IS NO "YOU ARE HERE" MARKER. A gold star stood in the middle of each of
 // these for one draft. It was the only figurative thing on the card, it needed a
 // ring of ink to read at all, and once the emblems sat side by side above their
-// own names the thing it was explaining was already obvious — three swatches of
+// own names the thing it was explaining was already obvious — four swatches of
 // country, pick one. A marker earns its place by resolving an ambiguity, and
 // there wasn't one.
 
-export type HomesteadSpot = "riverside" | "forest" | "coast";
+export type HomesteadSpot = "riverside" | "forest" | "lakeside" | "coast";
 
 /** A char-grid picture, same format as `content/icons.ts` but free of its 12×12
  *  size rule — `render/icons.ts` takes the dimensions from the rows. */
@@ -54,7 +56,7 @@ export interface Emblem {
 
 export interface SpotDef {
   id: HomesteadSpot;
-  /** Shown on the tile. All three take the article, so no two rhyme and none is
+  /** Shown on the tile. All four take the article, so no two rhyme and none is
    *  a compass bearing — the terrain is not on a fixed side of anything. */
   name: string;
   /** Describes the TERRAIN, and that is a rule (ROADMAP §"The homestead spot is
@@ -134,6 +136,34 @@ const RIVER_ROWS = [
   "W".repeat(6) + "w".repeat(5) + g(13),
 ];
 
+/** The lake: water with THE FAR BANK IN IT, which is the whole distinction from
+ *  the coast and the only honest way to draw one.
+ *
+ *  Three kinds of water, three pictures, and every difference between them is a
+ *  number in `content/water.ts` rather than a mood. A river has `beach: 0`, so
+ *  green banks. A lake has `beach: 2` and `shelf: 3` — a thin strand and a
+ *  middle that is only just deep, on a body of radius 16 you can see across, so:
+ *  a band of water with grass on the far side of it. The sea has `beach: 3` and
+ *  `shelf: 5` and runs off the bottom edge, because its far shore is a trip. */
+const LAKE_ROWS = [
+  g(24),
+  g(24),
+  g(24),
+  g(24),
+  g(24),
+  g(24),
+  g(24),
+  g(24),
+  g(9) + "s".repeat(10) + g(5),
+  g(4) + "s".repeat(17) + g(3),
+  "s".repeat(6) + "w".repeat(14) + "s".repeat(4),
+  "w".repeat(4) + "W".repeat(17) + "w".repeat(3),
+  "w".repeat(7) + "W".repeat(12) + "w".repeat(5),
+  "s".repeat(5) + "w".repeat(15) + "s".repeat(4),
+  g(3) + "s".repeat(16) + g(5),
+  g(24),
+];
+
 /** A shore along the bottom: grass, then a beach that curves the way a coast
  *  does, then the wade, then the deep. Sand is what says SEA rather than river —
  *  `beach` is the field that distinguishes them, so it is the field the emblem
@@ -169,6 +199,12 @@ export const SPOTS: SpotDef[] = [
     name: "The forest edge",
     blurb: "The meadow gives out about thirty paces on, and then it is trees.",
     emblem: { rows: FOREST_ROWS, palette: { g: GRASS, t: PINE, T: PINE_LIT } },
+  },
+  {
+    id: "lakeside",
+    name: "The lakeside",
+    blurb: "Still water a short walk off, with the other side of it in plain view.",
+    emblem: { rows: LAKE_ROWS, palette: { g: GRASS, s: SAND, w: SHALLOW, W: DEEP } },
   },
   {
     id: "coast",

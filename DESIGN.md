@@ -367,8 +367,25 @@ Design rule: a perk should read as *personality leaking out*, not a stat.
 
 The town pre-exists: plaza, institutions, fixed cast, a few starting
 residents. The player's **homestead** is a plot on the edge of town, chosen
-at the start from 3–4 map spots (riverside, forest edge, hilltop, …) —
-meaningful choice without blank-page paralysis.
+at the start from four map spots — meaningful choice without blank-page
+paralysis.
+
+**A spot names terrain, not a mood.** Each of the four obliges the generator to
+put a particular thing within sight of the plot, and the card says which:
+
+- **the riverbank** — a river past the bottom of the garden (see below),
+- **the forest edge** — a clearing with the town in it and pines from about
+  twenty-four tiles out,
+- **the lakeside** — the lake every town is promised anyway (see §Water), moved
+  in to about thirty tiles,
+- **the coast** — a shore about thirty-four tiles out.
+
+This is a rule and not a description, because it was once neither. *Hilltop* was
+the fourth spot for a long time and no line of code ever read it: it generated a
+world identical to the default while its blurb promised a view of the town. A
+spot that changes nothing is a choice that isn't one, and the fix has to be
+stated as an obligation or it decays back into flavour text. Anything added here
+later has to name terrain too.
 
 **A riverside town has a river.** It did not, for a long time: the spot's water
 was an ocean pinned due west, a fossil of the era when the sea *was* the whole
@@ -435,6 +452,19 @@ thing worth saying about your particular town. The exception is the ground the
 town itself stands on, which is kept dry on purpose — a lattice has a cell over
 the origin exactly like it has one everywhere, and a plaza under two feet of
 water is not a design choice.
+
+**Unless it asks.** The homestead spots amend that: choosing *the coast* sites a
+sea whose shore is about thirty-four tiles out, and choosing *the lakeside* moves
+the promised lake in to about thirty. The rule above is still doing its job —
+what it defends against is a world where *every* town is coastal, and being
+coastal then meaning nothing. Two of the four spots are still promised no sea at
+all and go on rolling the scatter's dice; the sea turns up near about a third of
+those towns, which is what makes it worth mentioning when it does. An answer to a
+question you had to choose to ask is not a guarantee handed to everybody.
+
+Both are sited as bodies **in addition** to the scatter, at a searched or hashed
+bearing, so a coast can be on any side. Neither relaxes the dry ground under the
+town: the ring each sits on is derived from that clearance, not chosen for taste.
 
 ### Depth is one number
 

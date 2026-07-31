@@ -230,6 +230,8 @@ export function homesteadOrigin(spot: HomesteadSpot): { x: number; y: number } {
       return { x: HOME.x, y: HOME.y };
     case "forest":
       return { x: HOME.x + 2, y: HOME.y + 1 };
+    case "lakeside":
+      return { x: HOME.x, y: HOME.y - 1 };
     case "coast":
       return { x: HOME.x + 1, y: HOME.y - 1 };
   }
@@ -1208,18 +1210,39 @@ function lakeDepth(seed: number, spot: HomesteadSpot, x: number, y: number): num
 const LAKE_RING = 104;
 const TOWN_LAKE = { radius: 16 };
 
+/** Where a LAKESIDE town's lake sits instead.
+ *
+ *  The fourth spot is the cheapest of the four, and that is the argument for it
+ *  being this one rather than a new kind of anything: every town already has
+ *  this lake (DESIGN §"Town and homestead" — "there should always be big water
+ *  to go and look at"), sited by the search below. Choosing the lakeside moves
+ *  it in. Nothing new is generated, and no promise is made that wasn't already
+ *  being kept somewhere over the horizon.
+ *
+ *  Derived the same way `TOWN_SEA.ring` is: the waterline's closest approach is
+ *  `ring - radius * 1.1 - COAST_WARP`, here `48 - 17.6 - 5` ≈ 25, which clears
+ *  the ground the town stands on. The typical shore lands about thirty-two tiles
+ *  out — a walk before lunch, and near enough that the far bank is part of the
+ *  view rather than a rumour. */
+const LAKESIDE_RING = 48;
+
+function lakeRing(spot: HomesteadSpot): number {
+  return spot === "lakeside" ? LAKESIDE_RING : LAKE_RING;
+}
+
 function townLakeCentre(seed: number, spot: HomesteadSpot): { x: number; y: number } {
   return memoCentre("townLake", seed, spot, () => townLakeSearch(seed, spot));
 }
 
 function townLakeSearch(seed: number, spot: HomesteadSpot): { x: number; y: number } {
   const a0 = (hash2(10, 0, seed ^ 0x1a4e) / 4294967296) * Math.PI * 2;
+  const ring = lakeRing(spot);
   let first = { x: 0, y: 0 };
   for (let i = 0; i < BEARINGS; i++) {
     const a = a0 + (i / BEARINGS) * Math.PI * 2;
     const at = {
-      x: Math.round(Math.cos(a) * LAKE_RING),
-      y: Math.round(Math.sin(a) * LAKE_RING),
+      x: Math.round(Math.cos(a) * ring),
+      y: Math.round(Math.sin(a) * ring),
     };
     if (i === 0) first = at;
     if (seaDepth(seed, spot, at.x, at.y) < -(TOWN_LAKE.radius + LAKE_SEA_MARGIN)) return at;

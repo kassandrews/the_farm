@@ -725,6 +725,19 @@ left no legacy value and needed no migration.
   town in it and pines from there out, meeting whatever the neighbouring regions
   are further along.
 - **The coast** — a sea sited at a known ring, `TOWN_SEA`.
+- **The lakeside** — added last, and the cheapest of the four: every town is
+  already promised a lake (DESIGN §Water), sited by `townLakeSearch` at ring 104.
+  The spot moves it to 48. Nothing new is generated, and no promise is made that
+  wasn't already being kept over the horizon. Median lake over 24 seeds: 30 tiles
+  here, ~70 on the other three.
+
+  It arrived because the picker wanted a fourth tile, which is **not** a reason —
+  that is the exact reasoning that produced hilltop. It earns its place on the
+  terrain instead: the three big waters differ by numbers already in
+  `content/water.ts`, and a lake is the one you can see across (`beach: 2`,
+  `shelf: 3`, radius 16) against a sea whose far shore is an expedition. The
+  emblems draw that difference and nothing softer — the lake's water has grass on
+  the far side of it, the sea's runs off the bottom edge.
 
 Three things this cost, each found by looking rather than by reasoning:
 

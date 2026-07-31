@@ -19,7 +19,7 @@ import { BIOMES, FIELD_BIOMES } from "../content/biomes";
 import { ROCK, WATER, SHALLOW, SAND } from "../content/tiles";
 import type { HomesteadSpot } from "./types";
 
-const SPOTS: HomesteadSpot[] = ["riverside", "forest", "coast"];
+const SPOTS: HomesteadSpot[] = ["riverside", "forest", "lakeside", "coast"];
 
 /** BIOMES.blossom's radius, mirrored here so the orchard-in-the-sea test can
  *  check its EDGES and not merely its centre — a stand whose far side is in the

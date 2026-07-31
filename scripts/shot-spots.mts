@@ -46,7 +46,7 @@ function png(w: number, h: number, rgb: Uint8Array) {
 const hex = (s: string): [number, number, number] =>
   [1, 3, 5].map((i) => parseInt(s.slice(i, i + 2), 16)) as [number, number, number];
 
-const SPOTS: HomesteadSpot[] = ["riverside", "forest", "coast"];
+const SPOTS: HomesteadSpot[] = ["riverside", "forest", "lakeside", "coast"];
 const HALF = 48;  // tiles from the homestead to the frame edge
 const PX = 5;     // screen pixels per tile
 const GUTTER = 8;

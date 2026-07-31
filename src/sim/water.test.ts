@@ -29,7 +29,7 @@ import { WATER, SHALLOW, SAND, GRASS, PLANK, TREE } from "../content/tiles";
 import { WATER_KINDS } from "../content/water";
 import type { HomesteadSpot } from "./types";
 
-const SPOTS: HomesteadSpot[] = ["riverside", "forest", "coast"];
+const SPOTS: HomesteadSpot[] = ["riverside", "forest", "lakeside", "coast"];
 
 /** Vitest's default timeout is 5s, which is tuned for unit tests that call a
  *  function a few times. The transects below evaluate the terrain generator over
@@ -205,8 +205,11 @@ describe("the sea is finite", () => {
     // near; holding it to "no standing water within thirty tiles" would be
     // holding it to not being a coast. It still has to stay off the ground the
     // town actually stands on, which is what the tighter box checks.
+    // The spots that SITE a body on purpose are asked the narrower question. The
+    // rest keep the full ±30.
+    const sited = new Set<HomesteadSpot>(["coast", "lakeside"]);
     for (const spot of SPOTS) {
-      const reach = spot === "coast" ? 16 : 30;
+      const reach = sited.has(spot) ? 16 : 30;
       for (let seed = 1; seed <= 250; seed++) {
         for (let y = -reach; y <= reach; y += 2) {
           for (let x = -reach; x <= reach; x += 2) {
