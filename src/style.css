@@ -759,6 +759,42 @@ select {
   margin-top: 14px;
 }
 
+/* THE FOLD. `.panel` is `max-height: calc(100dvh - 40px)` over `overflow-y:
+   auto` and said nothing at all when it used it: on a short window the satchel's
+   Done was cut in half and the settle-in card's confirm button was off the
+   bottom entirely, with no fade, no edge, nothing that reads as "there is more".
+   The settle-in card is the FIRST screen of the game, so a landscape phone
+   opened on a form whose only exit was somewhere you had to guess to scroll.
+
+   The fix is to pin the way out rather than to hint at it. A scroll-fade is the
+   obvious move and it is the wrong one twice over: it is a gradient, in a game
+   that as of 8a has none, and it advertises that content is hidden without
+   making the button reachable — you would still be scrolling to reach Done.
+   Sticky puts the exit permanently on screen and lets the body run under it.
+
+   The rule above it is a drawn edge, not a shadow, for the reason `.panel`'s own
+   docblock gives: an unblurred line says "this is where the panel's foot is",
+   which is true whether or not anything is currently scrolling beneath it.
+
+   NOT on `.panel.speech` — a speech bubble uses `.row` for its replies, it never
+   scrolls, and a rule across a bubble would cut somebody's dialogue in half. */
+.panel:not(.speech) .row {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin: 14px -22px 0;
+  padding: 12px 22px 18px;
+  background: var(--panel);
+  border-top: 2px solid var(--panel-edge);
+}
+
+/* The row supplies the panel's bottom padding once it is sticky, so the panel
+   must stop supplying its own or the two stack into a 36px gutter. Panels with
+   no action row at all (the menu is choices and nothing else) keep theirs. */
+.panel:has(.row):not(.speech) {
+  padding-bottom: 0;
+}
+
 .btn {
   appearance: none;
   border: 2px solid var(--panel-edge);
