@@ -137,9 +137,9 @@ DESIGN's own open questions (fishing, async postcards between towns) are the onl
 unbuilt *systems*, and both are still deliberately open. What is left is not a
 list of gaps but a pass over the whole game for feel — the fine-tooth comb.
 
-**Proposed next: Phase 8 — the world out there**, written up below: biomes that
-get stranger with radius (8a), found places as a standing category (8b), and the
-sky as a layer rather than a height (8c). Not started, and it is an expansion
+**Proposed next: Phase 7 — the world out there**, written up below: biomes that
+get stranger with radius (7a), found places as a standing category (7b), and the
+sky as a layer rather than a height (7c). Not started, and it is an expansion
 outward, so it waits on the feel pass being where you want it.
 
 **Save schema is at v21.** Every change ships a tested migration — see
@@ -2500,7 +2500,7 @@ the screen — the reverse would be an elaborate way to walk the wrong direction
 
 ---
 
-## Phase 7 — The naming pass, and looks
+## Phase 6 — The naming pass, and looks
 
 Two problems with one root: **the game had a cast of types, not a cast of
 people.** Schema v23.
@@ -2631,7 +2631,7 @@ old tint-vs-crown split, which is the pattern the gremlin work replaced.
 
 ---
 
-## Phase 8 — The world out there — **proposed, not started**
+## Phase 7 — The world out there — **proposed, not started**
 
 One exploration phase in three steps. Everything before this made the town
 deeper; this makes the world worth walking into. The through-line is one
@@ -2643,22 +2643,22 @@ changes, then the code. Where a call is genuinely open it's under *Decide*, not
 legislated. Nothing here may break an invariant; the *Must not* lines are the
 fences.
 
-**Order is 8a → 8b → 8c, and not any other.** 8a is the smallest and lowest-risk
-(it extends a system that exists). 8b establishes the found-place table that
-8c's entrance hangs off — the staircase is an 8b instance before it is a 8c door,
-so 8b has to exist first or 8c has nothing to attach to. 8c is the only one that
+**Order is 7a → 7b → 7c, and not any other.** 7a is the smallest and lowest-risk
+(it extends a system that exists). 7b establishes the found-place table that
+7c's entrance hangs off — the staircase is a 7b instance before it is a 7c door,
+so 7b has to exist first or 7c has nothing to attach to. 7c is the only one that
 touches the layer axis and the only one that warrants a schema look: do it last,
 alone, with a tested migration, and verify the ascent in a real browser. Layer
 transitions are exactly the "passed the unit test, failed on screen" class this
 file keeps warning about.
 
-**Note before 8a: there is no §Biomes in DESIGN.md.** Phase 5 shipped biomes
+**Note before 7a: there is no §Biomes in DESIGN.md.** Phase 5 shipped biomes
 without one — the invariant lives as a single line inside §Water ("same
-invariant as biomes"). So 8a's first move is to *write* §Biomes, stating what
+invariant as biomes"). So 7a's first move is to *write* §Biomes, stating what
 Phase 5 already does, and then add the radius rule to it. Amending a section
 that doesn't exist is the doc-first rule failing quietly.
 
-### 8a. The world gets stranger the farther out you go
+### 7a. The world gets stranger the farther out you go
 
 Extends Phase 5 (six regions, colour and density, nothing gated). The new input
 is **distance from the plaza datum**: biome character is partly a function of
@@ -2687,7 +2687,7 @@ Must not:
 
 - **No height.** "Stranger" lives entirely inside the flat one-storey renderer.
   Floating land, impossible geometry, stacked terrain are the no-height rule
-  (DESIGN.md §Structures) and are out — that's what 8c is for.
+  (DESIGN.md §Structures) and are out — that's what 7c is for.
 - **No gate, no yield.** A far biome never holds a material the near ones don't,
   never changes a growth time, never hides a finish behind distance.
 - **Nothing stored.** Derivable from seed and coordinate, exactly as now.
@@ -2696,7 +2696,7 @@ Decide: the escalation curve, and whether there's a ceiling. On an infinite map
 "keeps getting stranger forever" becomes noise; bands that reach a weird plateau
 and hold it is probably right.
 
-### 8b. Found places
+### 7b. Found places
 
 One-off oddities scattered across the world, discovered and never directed to.
 This is the pattern 4c already proved — the humming cube, the dark grove —
@@ -2730,7 +2730,7 @@ Build:
   - a pond with no fish and a dozen poles already stuck in the bank,
   - a bakery, warm, with no baker,
   - a lone mailbox in the middle of nowhere that sometimes holds a letter,
-  - a staircase that leads nowhere — and one, rarer, that does (8c).
+  - a staircase that leads nowhere — and one, rarer, that does (7c).
 - The mailbox's letter is a total function of `(which mailbox, which day)` — the
   festival trick, content with nothing stored. It is never a request and never
   names a task (§Errands board: a notice speaks only in the past tense).
@@ -2745,7 +2745,7 @@ holds a **person** — a resident who left town, a hermit like the Mole — or
 whether people stay in town and the wild holds only moods. That's the hinge
 between "cozy oddities" and "the world has characters hiding in it".
 
-### 8c. The sky, as a layer
+### 7c. The sky, as a layer
 
 The one that has to earn its place against the no-height rule. It earns it by
 **not being a height.** The underground taught the pattern: a *layer*, not a
@@ -2762,7 +2762,7 @@ forbidden; layers are still allowed.*
 underground's rules:
 
 - **You reach it by a stair you find, not a tower you build** — the rare
-  staircase from 8b, sited far out by the seed. Digging takes you down; this one
+  staircase from 7b, sited far out by the seed. Digging takes you down; this one
   thing takes you up. No build-your-own route, for the same reason there's no
   height on the surface. (Alternative entrance worth weighing: a plant left
   unattended long enough grows a beanstalk.)
@@ -2789,7 +2789,7 @@ Must not: **no floating islands on the surface** — if it can be seen hovering
 above a ground tile it's a height and it's wrong; reachable only by going to the
 layer. **No ladder of unlocks up there** — a "sky level" of tiered rewards is
 the high-water-mark-with-a-hat §The Mole already refused. **No marker to the
-stair** — it's a found place first (8b), unspoiled.
+stair** — it's a found place first (7b), unspoiled.
 
 **Decide — what's up there.** The real choice, and it's open. Three shapes:
 
