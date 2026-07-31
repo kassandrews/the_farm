@@ -275,12 +275,17 @@ export class App {
     this.openModal(
       (close) =>
         panel("Welcome to the Farm!", "", [
-          // "We just need someone to stamp the paperwork" rather than the older
+          // "All we need is someone to stamp the paperwork" rather than the older
           // "Someone stamped the paperwork": the same joke, but it hands the job
           // to the player instead of reporting it as already done, and the
           // Office Creature stamps their claim two screens later (runLandClaim).
+          //
+          // The pause goes at the END here, which the house style otherwise
+          // doesn't do. It isn't a beat between two clauses — it's the sentence
+          // trailing off into the thing you are about to be walked into, and the
+          // Arrive button underneath is what finishes it.
           el("p", {}, [
-            "It's real. And it's delightful. ... We just need someone to stamp the paperwork.",
+            "It's real. And it's delightful. All we need is someone to stamp the paperwork ...",
           ]),
           actionRow([
             primaryBtn("Arrive", () => {
