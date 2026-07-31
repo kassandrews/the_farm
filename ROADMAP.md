@@ -2462,11 +2462,62 @@ old tint-vs-crown split, which is the pattern the gremlin work replaced.
 
 ---
 
+## The title screen — **done**
+
+The first screen used to be a cream card on a black void. The first line the
+game says is "it's real", and nothing was behind it. There is now a farm:
+`src/ui/title.ts` draws the town seen from the road on its own canvas, and the
+welcome and settle-in cards sit in its sky.
+
+**Settled, and why:**
+
+- **Side-on, not top-down.** The game is a top-down tilemap and the title screen
+  is not. A horizon with buildings on it says "a town" in one glance; the same
+  field from above says "grass". The projection changes at the door.
+- **One canvas, logical pixels, integer scale**, exactly as `render/renderer.ts`
+  works — not a stack of positioned `<img>` props at CSS percentages, which is
+  how The Meadow builds its paddock and which lands art on fractional pixels the
+  moment the window is an odd width.
+- **Scale comes from the geometric mean of the viewport's sides**, not its
+  width. Width alone gave a phone a 195×422 logical scene: a composition 195
+  wide stretched under a sky 422 tall, with the whole town in a strip at the
+  bottom. The mean pulls a tall screen up a step.
+- **Two depth tiers, 1× and 2×**, plus 3× for the one framing tree. A continuous
+  perspective ramp is not available to pixel art — 1.6× is a resample. Doubling
+  is the only depth cue there is, and it is enough; the first pass drew
+  everything at 1× and the field read as a flat green wall.
+- **Horizon buildings are ALSO 2×**, despite being the furthest things in the
+  picture. The grids are drawn at a creature's scale, so at 1× the town hall
+  came out the same height as the resident standing in front of it. The eye
+  checks "a house is about three creatures tall" before it checks anything else.
+- **The card sits high, in the sky, not centred.** Centred, it landed on the
+  horizon and covered the hall, the cabin and one of the two residents.
+- **The two residents are randomised per load.** Whoever is standing in the
+  field is nobody in particular, and a town with a rotating cast of strangers is
+  truer to the place than two fixed mascots.
+- **Always midday**, whatever the clock says. A title screen is a poster;
+  opening the game at 11pm should still show the delightful version.
+
+Content is in `content/props.ts` (Farm-side art) and `content/canon/props.ts`
+(five outline-free props vendored from The Meadow — its sun, cloud, fence,
+flowers and tuft draw no ink at all, so they cross over unchanged; anything of
+its that carries its warm `#402e3a` outline was redrawn in Farm ink instead of
+imported, or it reads as pasted in from another game).
+
+---
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
 you trip over them:
 
+- **The Meadow's `flowers` prop has a miscounted row, and the vendored copy
+  corrects it.** Its bottom row is twelve cells where the other four are eleven;
+  its rasterizer sizes the canvas off the first row and silently drops the
+  overflow, so the bug never showed there. `content/props.test.ts` caught it on
+  its first run. Same situation as the Menace below — the copy is no longer
+  byte-identical, the fix has to be made by hand in the other repo, and nobody
+  should "restore" the twelfth cell here.
 - **The Farm's Menace is one pixel different from The Meadow's, on purpose, and
   The Meadow has not been fixed yet.** Its bottom outline ran cols 4–9 under
   sides sitting at 4 and 10, so the bottom-left corner stacked two dark pixels

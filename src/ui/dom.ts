@@ -71,9 +71,18 @@ export function hoverHint(target: HTMLElement, text: string): void {
  *
  *  `onDismiss` makes a tap outside the panel close it — and it calls the
  *  CALLER's close, never a private one, so the caller's "a modal is open" state
- *  can't be left set while the panel is gone (which is a frozen game). */
-export function modal(content: HTMLElement, opts: { onDismiss?: () => void } = {}): () => void {
-  const scrim = el("div", { class: "modal-scrim" }, [content]);
+ *  can't be left set while the panel is gone (which is a frozen game).
+ *
+ *  `scrimClass` adds a modifier to the wash behind the panel. It exists for one
+ *  case: the panels that open over the title screen's farm, where the default
+ *  55% black would throw a blanket over the picture the card is standing in. */
+export function modal(
+  content: HTMLElement,
+  opts: { onDismiss?: () => void; scrimClass?: string } = {},
+): () => void {
+  const scrim = el("div", { class: `modal-scrim${opts.scrimClass ? ` ${opts.scrimClass}` : ""}` }, [
+    content,
+  ]);
   const dismiss = opts.onDismiss;
   if (dismiss) {
     scrim.addEventListener("pointerdown", (e) => {

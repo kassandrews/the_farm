@@ -68,6 +68,19 @@ select {
   touch-action: none;
 }
 
+/* The title screen's farm (ui/title.ts), behind the welcome card. Same deal as
+   #scene: a low-res backing store stretched to the viewport, never smoothed.
+   Fixed rather than absolute so it survives a phone's address bar sliding away,
+   and pinned under the modal's z-index (10) so the card stays on top of it. */
+.title-scene {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  z-index: 5;
+}
+
 /* Pixel-art UI icons (render/icons.ts). They are already rasterized at an integer
    multiple of the 12×12 grid, so the browser has no resampling to do and nothing
    here should ever give it any — no width/height overrides, no transforms that
@@ -428,6 +441,39 @@ select {
   place-items: center;
   padding: 20px;
   z-index: 10;
+}
+
+/* Over the title screen's farm. Two departures from the ordinary scrim, both
+   for the same reason — there is a picture back there and the point is to see
+   it.
+
+   The wash is a gradient rather than a flat 55% black, warm rather than
+   neutral, and light: enough at the top to seat the card against empty sky,
+   nothing at all by the bottom, where the field and the creatures are.
+
+   And the card sits UP, in the sky, instead of dead centre. Centred, it landed
+   squarely on the horizon and covered the town hall, the cabin and one of the
+   two residents — the game's first screenshot, with the subject of the sentence
+   hidden behind the sentence. */
+.modal-scrim.over-scene {
+  align-items: start;
+  padding-top: clamp(24px, 9vh, 84px);
+  --scene-inset: clamp(24px, 9vh, 84px);
+  background: linear-gradient(
+    to bottom,
+    rgba(28, 22, 46, 0.24) 0%,
+    rgba(28, 22, 46, 0.12) 50%,
+    rgba(28, 22, 46, 0) 100%
+  );
+}
+
+/* Pushing the card off centre costs it head room, and the settle-in panel is
+   the tall one — six forms, three homesteads, an import box. Its own
+   `max-height: calc(100dvh - 40px)` was measured for a CENTRED panel, so with
+   the top inset added it ran off the bottom of the window and the "Claim your
+   plot" button went with it. Give back exactly what the inset took. */
+.modal-scrim.over-scene .panel {
+  max-height: calc(100dvh - var(--scene-inset) - 20px);
 }
 
 .panel {

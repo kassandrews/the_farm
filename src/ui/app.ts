@@ -4,6 +4,7 @@
 // postcard). This is the ui layer — the only place DOM events meet the sim.
 
 import { el, hoverHint, modal } from "./dom";
+import { mountTitleScene, type TitleScene } from "./title";
 import { Renderer } from "../render/renderer";
 import { iconEl, SCALE } from "../render/icons";
 import { portrait } from "../render/portrait";
@@ -226,6 +227,12 @@ export class App {
   }
 
   private beginWorld(world: WorldState): void {
+    // The title screen's farm goes now, not when its card closed: the land-claim
+    // cutscene runs straight after this, and the real world is already drawing
+    // underneath it. Two render loops painting full-viewport canvases at once is
+    // a frame budget spent on a picture nobody can see any more.
+    this.titleScene?.destroy();
+    this.titleScene = null;
     this.world = world;
     this.rng = makeRng(world.seed);
     this.renderer.snapCamera(world);
@@ -258,18 +265,31 @@ export class App {
   }
 
   // --- Title + onboarding -----------------------------------------------------
+  /** The farm behind the title and settle-in cards. Lives for both of them and
+   *  is torn down when the world begins — see `beginWorld`. */
+  private titleScene: TitleScene | null = null;
+
   private showTitle(): void {
     this.hud.root.style.display = "none";
-    this.openModal((close) =>
-      panel("The Farm", "The town they were sent to", [
-        el("p", {}, ["It's real. And it's delightful.\n. ... Someone stamped the paperwork."]),
-        actionRow([
-          primaryBtn("Arrive", () => {
-            close();
-            this.showOnboarding();
-          }),
+    this.titleScene ??= mountTitleScene(document.body);
+    this.openModal(
+      (close) =>
+        panel("Welcome to the Farm!", "The town they were sent to", [
+          // "We just need someone to stamp the paperwork" rather than the older
+          // "Someone stamped the paperwork": the same joke, but it hands the job
+          // to the player instead of reporting it as already done, and the
+          // Office Creature stamps their claim two screens later (runLandClaim).
+          el("p", {}, [
+            "It's real. And it's delightful.\n. ... We just need someone to stamp the paperwork.",
+          ]),
+          actionRow([
+            primaryBtn("Arrive", () => {
+              close();
+              this.showOnboarding();
+            }),
+          ]),
         ]),
-      ]),
+      { scrimClass: "over-scene" },
     );
   }
 
@@ -367,24 +387,26 @@ export class App {
     };
     importBox.addEventListener("input", refreshImport);
 
-    this.openModal((close) =>
-      panel("Settle in", "Choose your sprite", [
-        el("p", {}, ["You're a sprite too — newly arrived."]),
-        labeled("Name", nameInput),
-        labeled("Form", formRow),
-        labeled("Homestead", spotRow),
-        labeled("From The Meadow (optional)", importBox),
-        importBlock,
-        actionRow([
-          primaryBtn("Claim your plot", () => {
-            refreshImport(); // catch a paste that never fired an input event
-            const world = newWorld({ name, form, spot, meadowImport, importRole });
-            close();
-            this.beginWorld(world);
-            this.runLandClaim();
-          }),
+    this.openModal(
+      (close) =>
+        panel("Settle in", "Choose your sprite", [
+          el("p", {}, ["You're a sprite too — newly arrived."]),
+          labeled("Name", nameInput),
+          labeled("Form", formRow),
+          labeled("Homestead", spotRow),
+          labeled("From The Meadow (optional)", importBox),
+          importBlock,
+          actionRow([
+            primaryBtn("Claim your plot", () => {
+              refreshImport(); // catch a paste that never fired an input event
+              const world = newWorld({ name, form, spot, meadowImport, importRole });
+              close();
+              this.beginWorld(world);
+              this.runLandClaim();
+            }),
+          ]),
         ]),
-      ]),
+      { scrimClass: "over-scene" },
     );
   }
 
@@ -1964,12 +1986,16 @@ export class App {
    *  LOOK at needs — tap outside, or Escape — on top of whatever button the
    *  panel itself offers. The one-way flows (title, onboarding, the land claim)
    *  leave it off: those must be answered, not skipped. */
-  private openModal(build: (close: () => void) => HTMLElement, opts: { dismissable?: boolean } = {}): void {
+  private openModal(
+    build: (close: () => void) => HTMLElement,
+    opts: { dismissable?: boolean; scrimClass?: string } = {},
+  ): void {
     audio.play("menu");
     this.modalOpen = true;
     let closeFn: () => void = () => {};
     const close = modal(build(() => closeFn()), {
       onDismiss: opts.dismissable ? () => closeFn() : undefined,
+      scrimClass: opts.scrimClass,
     });
     closeFn = () => {
       close();
