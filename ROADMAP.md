@@ -4244,6 +4244,31 @@ imported, or it reads as pasted in from another game).
 Small things that are half-built or deliberately stubbed. Worth knowing before
 you trip over them:
 
+- **Three pieces still borrow their north view from their front, and two read
+  as blocks turned sideways.** `scripts/shot-rotations.mjs` photographs every
+  piece facing all four ways — run it, look at it, that is the whole tool. What
+  it found, in the order worth fixing:
+
+  1. ~~Wardrobe, shelf and chest showed their doors, books and clasp from every
+     angle.~~ **Fixed 1 Aug 2026** — one back panel each, used for `n` AND `e`
+     with `mirrorW`, because at one tile wide a box's side IS its back. Painted
+     in the finish's shade rather than its colour; see the comment above
+     `WARDROBE_BACK` in `content/furnishings.ts` before authoring another.
+  2. **`desk`, `dresser` and `cot` have no `n` grid**, so a desk pushed against
+     the top wall still shows the camera its drawers and its kneehole. Same
+     shape of fix as the three above, but these are 2×1 and the back is not the
+     side, so it is a real second grid rather than a shared panel.
+  3. **`sofa` and `bench` turned east or west collapse into a tall block.** The
+     arms-and-back reading that carries the front view has nowhere to live in a
+     one-tile width. This one is a redraw, not a missing grid.
+
+  Settled while doing it: **rotation is opt-in per piece, not a property of
+  furniture** (which is also what Stardew does — most of their catalogue is a
+  single sprite). `gridFor()` falling back to the front view is the feature. A
+  piece earns a second grid when its silhouette has a front: a chair does, a
+  stool does not. Rendering cost is not the constraint — grids rasterize once
+  and cache per id/facing/finish — authoring is.
+
 - **The Meadow's `flowers` prop has a miscounted row, and the vendored copy
   corrects it.** Its bottom row is twelve cells where the other four are eleven;
   its rasterizer sizes the canvas off the first row and silently drops the
