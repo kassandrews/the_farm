@@ -199,6 +199,28 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   },
 };
 
+/** What placing something costs, in one of two shapes.
+ *
+ *  A **number** means "this many of whatever the finish is made of" — the
+ *  cost-follows-material rule (DESIGN §Materials). It is the only shape a
+ *  buildable that can wear more than one class may use, because a wall in
+ *  slate has to cost stone and a wall in pine has to cost wood, and a fixed
+ *  record could only ever name one of them.
+ *
+ *  A **record** is a fixed price regardless of finish, for things whose look
+ *  and whose materials are genuinely unrelated. The lamp is the case that
+ *  proves the shape is needed: its post takes your wood finishes, but what it
+ *  costs is ore, and `2` would have quietly repriced it in timber. */
+export type BuildPrice = number | Partial<Record<ItemId, number>>;
+
+/** Resolve a price against the material the chosen finish is made of. The
+ *  three finish classes are spelled exactly like the three material items, so
+ *  the substitution is the identity and no lookup table is needed — which is
+ *  also the reason to never rename one without renaming the other. */
+export function priceItems(cost: BuildPrice, material: ItemId): Partial<Record<ItemId, number>> {
+  return typeof cost === "number" ? { [material]: cost } : cost;
+}
+
 export function itemDef(id: ItemId): ItemDef {
   return ITEMS[id];
 }

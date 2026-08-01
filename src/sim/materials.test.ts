@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { newWorld, contextAction, BUILD_COSTS, buildAt } from "./game";
+import { newWorld, contextAction, buildCost, buildAt, loadedFinish } from "./game";
 import { count, add, spend, canAfford, refund, shortfall, emptyInventory } from "./inventory";
 import { gather, nodeAt, nodeNear, updateRegrowth, pendingRegrowth, updateReclaim } from "./gather";
-import { tileAt, setTile, tileKey, generatedTile, dig, sink, RECLAIM_MS } from "./world";
-import { GRASS, DIRT, TREE, ROCK, PLANK, MUSHROOM, FARMLAND, SHAFT } from "../content/tiles";
+import { tileAt, setTile, tileKey, generatedTile, dig, sink, RECLAIM_MS, floorFinish } from "./world";
+import { GRASS, DIRT, TREE, ROCK, FLOOR, MUSHROOM, FARMLAND, SHAFT } from "../content/tiles";
 import { NODES } from "../content/nodes";
 
 const HOUR = 3_600_000;
@@ -130,10 +130,15 @@ describe("gathering", () => {
     w.player.y = y;
     w.player.facing = 1; // facing the tree
     const wood = count(w.inventory, "wood");
+    // Build on GRASS beside the tree, not on whatever the player happens to be
+    // standing on: the homestead is stamped with floors, and laying pine over
+    // pine is now correctly a no-op rather than a board silently spent to change
+    // nothing. The thing under test is the tree, not the tile.
+    const target = findNode(w, GRASS);
     // Placement lives in build mode and targets a TAPPED tile, so an adjacent
     // tree has no way to hijack it — the bug this guards against is now
     // structurally impossible rather than merely avoided.
-    const res = buildAt(w, "plank", w.player.x, w.player.y, 1000);
+    const res = buildAt(w, "floor", target.x, target.y, 1000);
     expect(res.changed).toBe(true);
     expect(tileAt(w, x, y)).toBe(TREE); // tree still standing
     expect(count(w.inventory, "wood")).toBe(wood - 1); // spent, not gained
@@ -164,9 +169,9 @@ describe("gathering", () => {
     const w = freshWorld();
     const { x, y } = findNode(w, TREE);
     gather(w, x, y, 1000);
-    setTile(w, x, y, PLANK); // you built here
+    setTile(w, x, y, FLOOR); // you built here
     updateRegrowth(w, 1000 + NODES.tree.regrowMs! * 10);
-    expect(tileAt(w, x, y)).toBe(PLANK); // your floor survived
+    expect(tileAt(w, x, y)).toBe(FLOOR); // your floor survived
     expect(pendingRegrowth(w)).toBe(0); // and it stopped nagging
   });
 
@@ -229,7 +234,7 @@ describe("grass closes over what you dug", () => {
   });
 
   it("leaves tilled, paved and built ground alone, and stops tracking it", () => {
-    for (const claim of [FARMLAND, PLANK] as const) {
+    for (const claim of [FARMLAND, FLOOR] as const) {
       const w = freshWorld();
       const { x, y } = findGrass(w);
       dig(w, x, y, 1000);
@@ -244,7 +249,7 @@ describe("grass closes over what you dug", () => {
     const w = freshWorld();
     const { x, y } = findGrass(w);
     dig(w, x, y, 1000);
-    w.build[tileKey(x, y)] = { id: "wall", finish: w.skins.selected.wood };
+    w.build[tileKey(x, y)] = { id: "wall", finish: loadedFinish(w, "wall") };
     updateReclaim(w, 1000 + RECLAIM_MS * 10);
     expect(tileAt(w, x, y)).toBe(DIRT);
   });
@@ -290,15 +295,15 @@ describe("building costs", () => {
   it("laying a board spends wood", () => {
     const w = freshWorld();
     const before = count(w.inventory, "wood");
-    const res = buildAt(w, "plank", w.player.x, w.player.y, 1000);
+    const res = buildAt(w, "floor", w.player.x, w.player.y, 1000);
     expect(res.changed).toBe(true);
-    expect(count(w.inventory, "wood")).toBe(before - (BUILD_COSTS.plank.wood ?? 0));
+    expect(count(w.inventory, "wood")).toBe(before - (buildCost("floor", "pine").wood ?? 0));
   });
 
   it("refuses politely when short, and takes nothing", () => {
     const w = freshWorld();
     w.inventory = emptyInventory();
-    const res = buildAt(w, "plank", w.player.x, w.player.y, 1000);
+    const res = buildAt(w, "floor", w.player.x, w.player.y, 1000);
     expect(res.changed).toBe(false);
     expect(res.message).toContain("trees"); // points you at the fix
     expect(count(w.inventory, "wood")).toBe(0);
@@ -306,11 +311,11 @@ describe("building costs", () => {
 
   it("a new town can build immediately", () => {
     const w = freshWorld();
-    expect(canAfford(w.inventory, BUILD_COSTS.plank)).toBe(true);
+    expect(canAfford(w.inventory, buildCost("floor", "pine"))).toBe(true);
   });
 
   it("one tree pays for several boards", () => {
-    const cost = BUILD_COSTS.plank.wood ?? 0;
+    const cost = buildCost("floor", "pine").wood ?? 0;
     expect(NODES.tree.yield / cost).toBeGreaterThanOrEqual(5);
   });
 });
@@ -338,19 +343,182 @@ describe("produce goes into the satchel", () => {
 });
 
 describe("finishes", () => {
-  it("a new town starts with finishes selected and some unlocked", () => {
+  it("a new town starts with some unlocked, and every tool has a finish to hand", () => {
     const w = freshWorld();
     expect(w.skins.unlocked.length).toBeGreaterThan(0);
-    expect(w.skins.selected.wood).toBeTruthy();
-    expect(w.skins.selected.stone).toBeTruthy();
+    // `selected` is empty in a new town on purpose — an entry is a choice the
+    // player made. What must be true is that asking anyway gets an answer.
+    expect(loadedFinish(w, "floor")).toBeTruthy();
+    expect(loadedFinish(w, "wall")).toBeTruthy();
   });
 
   it("changing a finish costs nothing and carries nothing", () => {
     const w = freshWorld();
     const before = { ...w.inventory };
-    w.skins.selected.wood = "ash";
+    w.skins.selected.floor = "ash";
     expect(w.inventory).toEqual(before); // free, by construction
     // …and it is not an item: no finish ever appears in the satchel.
     expect(count(w.inventory as never, "ash" as never)).toBe(0);
+  });
+
+  it("falls back rather than throwing when a selection has gone stale", () => {
+    const w = freshWorld();
+    // A finish that exists but was never unlocked — the shape a hand-edited or
+    // rolled-back save can arrive in. A wrong colour is recoverable; a crash on
+    // load is not.
+    w.skins.selected.floor = "walnut";
+    w.skins.unlocked = w.skins.unlocked.filter((id) => id !== "walnut");
+    expect(loadedFinish(w, "floor")).toBe("pine");
+  });
+
+  it("a stone finish costs stone and a wood finish costs wood", () => {
+    // The cost-follows-material rule (DESIGN §Materials). Same number, different
+    // stuff — that is the whole of it.
+    expect(buildCost("wall", "pine")).toEqual({ wood: 2 });
+    expect(buildCost("wall", "granite")).toEqual({ stone: 2 });
+    expect(buildCost("floor", "pine")).toEqual({ wood: 1 });
+    expect(buildCost("floor", "slate")).toEqual({ stone: 1 });
+  });
+});
+
+// The rules that arrived with per-tile floor finishes (schema v27). The thing
+// they collectively guard is the sentence in finishFor's docblock that was false
+// for two phases: a finish is something you chose when you built, NOT a filter
+// over the world.
+describe("a floor keeps the finish it was laid in", () => {
+  function grassAt(w: ReturnType<typeof newWorld>) {
+    return findNode(w, GRASS);
+  }
+
+  /** Walnut and ash are not both starters, and loadedFinish correctly refuses a
+   *  finish you have not earned — so a test about stamping has to earn them
+   *  first or it ends up asserting the fallback. */
+  function withFinishes(w: ReturnType<typeof newWorld>) {
+    for (const id of ["walnut", "ash", "granite"] as const) {
+      if (!w.skins.unlocked.includes(id)) w.skins.unlocked.push(id);
+    }
+    return w;
+  }
+
+  it("stamps the held finish onto the tile, not onto the town", () => {
+    const w = withFinishes(freshWorld());
+    add(w.inventory, "wood", 20);
+    const a = grassAt(w);
+    w.skins.selected.floor = "walnut";
+    buildAt(w, "floor", a.x, a.y, 1000);
+    expect(floorFinish(w, a.x, a.y)).toBe("walnut");
+
+    // Change what you're holding: the board already down must not move.
+    w.skins.selected.floor = "ash";
+    expect(floorFinish(w, a.x, a.y)).toBe("walnut");
+  });
+
+  it("lets two floors laid on different days differ", () => {
+    const w = withFinishes(freshWorld());
+    add(w.inventory, "wood", 20);
+    const a = grassAt(w);
+    w.skins.selected.floor = "walnut";
+    buildAt(w, "floor", a.x, a.y, 1000);
+    w.skins.selected.floor = "ash";
+    buildAt(w, "floor", a.x + 1, a.y, 1000);
+    expect(floorFinish(w, a.x, a.y)).toBe("walnut");
+    expect(floorFinish(w, a.x + 1, a.y)).toBe("ash");
+  });
+
+  it("stores the default as absence rather than as a value", () => {
+    const w = freshWorld();
+    add(w.inventory, "wood", 20);
+    const a = grassAt(w);
+    buildAt(w, "floor", a.x, a.y, 1000); // pine, the default
+    expect(w.finishes[tileKey(a.x, a.y)]).toBeUndefined();
+    expect(floorFinish(w, a.x, a.y)).toBe("pine");
+  });
+
+  it("forgets the finish when the board is lifted", () => {
+    // Otherwise a fresh board silently inherits the colour of the one before it.
+    const w = freshWorld();
+    add(w.inventory, "wood", 20);
+    const a = grassAt(w);
+    w.skins.selected.floor = "walnut";
+    buildAt(w, "floor", a.x, a.y, 1000);
+    buildAt(w, "erase", a.x, a.y, 1000);
+    expect(w.finishes[tileKey(a.x, a.y)]).toBeUndefined();
+  });
+});
+
+describe("cost follows the material; the look is free within one", () => {
+  it("charges stone for a stone floor and wood for a wood one", () => {
+    const w = freshWorld();
+    add(w.inventory, "wood", 20);
+    add(w.inventory, "stone", 20);
+    add(w.inventory, "granite" as never, 0);
+    w.skins.unlocked.push("granite");
+    const a = findNode(w, GRASS);
+
+    const wood0 = count(w.inventory, "wood");
+    const stone0 = count(w.inventory, "stone");
+    w.skins.selected.floor = "granite";
+    expect(buildAt(w, "floor", a.x, a.y, 1000).changed).toBe(true);
+    expect(count(w.inventory, "stone")).toBe(stone0 - 1);
+    expect(count(w.inventory, "wood")).toBe(wood0); // not a board in sight
+  });
+
+  it("re-finishing WITHIN a material is free, on something already built", () => {
+    const w = freshWorld();
+    add(w.inventory, "wood", 20);
+    w.skins.unlocked.push("walnut");
+    const a = findNode(w, GRASS);
+    buildAt(w, "floor", a.x, a.y, 1000); // pine
+    const wood0 = count(w.inventory, "wood");
+
+    w.skins.selected.floor = "walnut";
+    expect(buildAt(w, "floor", a.x, a.y, 1000).changed).toBe(true);
+    expect(floorFinish(w, a.x, a.y)).toBe("walnut");
+    expect(count(w.inventory, "wood")).toBe(wood0); // free — the look never costs
+  });
+
+  it("re-finishing ACROSS a material is a rebuild and costs the new stuff", () => {
+    const w = freshWorld();
+    add(w.inventory, "wood", 20);
+    add(w.inventory, "stone", 20);
+    w.skins.unlocked.push("granite");
+    const a = findNode(w, GRASS);
+    buildAt(w, "floor", a.x, a.y, 1000); // pine
+    const stone0 = count(w.inventory, "stone");
+
+    w.skins.selected.floor = "granite";
+    expect(buildAt(w, "floor", a.x, a.y, 1000).changed).toBe(true);
+    expect(count(w.inventory, "stone")).toBe(stone0 - 1);
+  });
+
+  it("refuses to spend anything re-laying the finish already there", () => {
+    // During a drag you sweep over cells you have already done. Charging for
+    // each would be a board spent to change nothing.
+    const w = freshWorld();
+    add(w.inventory, "wood", 20);
+    const a = findNode(w, GRASS);
+    buildAt(w, "floor", a.x, a.y, 1000);
+    const wood0 = count(w.inventory, "wood");
+    const again = buildAt(w, "floor", a.x, a.y, 1000);
+    expect(again.changed).toBe(false);
+    expect(count(w.inventory, "wood")).toBe(wood0);
+  });
+
+  it("refunds what a thing was WEARING, not what you happen to be holding", () => {
+    // Otherwise erase launders one material into another.
+    const w = freshWorld();
+    add(w.inventory, "wood", 20);
+    add(w.inventory, "stone", 20);
+    w.skins.unlocked.push("granite");
+    const a = findNode(w, GRASS);
+    w.skins.selected.floor = "granite";
+    buildAt(w, "floor", a.x, a.y, 1000); // a stone floor
+
+    w.skins.selected.floor = "pine"; // now holding wood
+    const wood0 = count(w.inventory, "wood");
+    const stone0 = count(w.inventory, "stone");
+    buildAt(w, "erase", a.x, a.y, 1000);
+    expect(count(w.inventory, "stone")).toBe(stone0 + 1); // stone back
+    expect(count(w.inventory, "wood")).toBe(wood0); // no board conjured
   });
 });

@@ -19,7 +19,7 @@
 // Ids are stored in saves, so they are STABLE. Add rows; never rename one
 // without a migration.
 
-import type { ItemId } from "./items";
+import type { BuildPrice } from "./items";
 import type { SkinClass } from "./skins";
 
 export type FurnitureId =
@@ -41,7 +41,7 @@ export const FACINGS: Facing[] = ["s", "w", "n", "e"];
 export interface FurnitureDef {
   id: FurnitureId;
   name: string;
-  cost: Partial<Record<ItemId, number>>;
+  cost: BuildPrice;
   /** Footprint in tiles when facing "s"/"n". Turned east or west, these swap. */
   w: number;
   h: number;
@@ -52,7 +52,12 @@ export interface FurnitureDef {
   /** How far it stands off the floor, in scene px. Below TILE on purpose for
    *  the low pieces — they should read as sitting IN the room, not looming. */
   height: number;
-  finish: SkinClass;
+  /** Which finish classes it may wear. A list to match structures, though every
+   *  row here is single-class and probably always will be: a piece of furniture
+   *  is a made object, and unlike a floor or a wall it is not a surface you
+   *  could plausibly render in either timber or stone. The list buys one code
+   *  path in the picker, not an open axis. */
+  finishes: SkinClass[];
 }
 
 export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
@@ -64,7 +69,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 2,
     solid: true,
     height: 10,
-    finish: "wood",
+    finishes: ["wood"],
   },
   table: {
     id: "table",
@@ -74,7 +79,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: true,
     height: 12,
-    finish: "wood",
+    finishes: ["wood"],
   },
   chair: {
     id: "chair",
@@ -85,7 +90,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // Walk-through: a chair you can't step past turns a 4x3 room into a maze.
     solid: false,
     height: 14,
-    finish: "wood",
+    finishes: ["wood"],
   },
   shelf: {
     id: "shelf",
@@ -95,7 +100,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: false,
     height: 18,
-    finish: "wood",
+    finishes: ["wood"],
   },
   // --- Soft goods, bought not gathered -------------------------------------
   // Both are LOW and both are walk-on. A cushion you had to path around would
@@ -110,7 +115,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: false,
     height: 4,
-    finish: "cloth",
+    finishes: ["cloth"],
   },
   rug: {
     id: "rug",
@@ -121,7 +126,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     solid: false,
     // Almost flat: a rug is a floor that is nicer, not a thing standing on one.
     height: 1,
-    finish: "cloth",
+    finishes: ["cloth"],
   },
   // --- The one thing made of metal -----------------------------------------
   // Ore's sink, and the only row in this table that can be placed underground
@@ -148,7 +153,10 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   // the occlusion fade's threshold (half a tile at STOREY 24) — roofs should be
   // that machinery's first real user, not this.
   //
-  // `finish: "wood"` because the POST is timber and takes your wood finishes.
+  // `finishes: ["wood"]` because the POST is timber and takes your wood
+  // finishes, while `cost` stays an explicit ore record rather than a bare
+  // number — this is the one row where what it looks like and what it costs
+  // are unrelated, and a number would have quietly repriced it in timber.
   // The head is brass in every town: a finish that cost ore would break the
   // free-appearance axis, and a metal finish class is the tempting-and-wrong
   // version of this whole feature (ROADMAP §"Ore's sink").
@@ -160,7 +168,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: false,
     height: 18,
-    finish: "wood",
+    finishes: ["wood"],
   },
   // --- Town furniture, which is not for sale -------------------------------
   // The errands board. It is a row here because it is a thing standing in a
@@ -185,7 +193,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: true,
     height: 22,
-    finish: "wood",
+    finishes: ["wood"],
   },
   // The plaza stage. Town furniture like the board — no cost, not in the build
   // menu, put there by the town.
@@ -212,7 +220,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 2,
     solid: true,
     height: 8,
-    finish: "wood",
+    finishes: ["wood"],
   },
 };
 

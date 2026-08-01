@@ -26,9 +26,9 @@ import { CANON_PROPS, type PropDef } from "./canon/props";
 import { INK as K } from "./canon/icons";
 
 // Shared materials, quoted from the tables that own them so the title screen
-// and the world agree about what wood is. Plank/stone are TILES[PLANK] and
+// and the world agree about what wood is. Plank/stone are TILES[FLOOR] and
 // TILES[STONE] (color/top/shade); the crown greens are palette.ts SEASONLESS.
-const PLANK_SHADE = "#a97e46";
+const WOOD_SHADE = "#a97e46";
 const STONE = "#b8b2a6";
 const STONE_LIT = "#c0bab0";
 const STONE_SHADE = "#aaa498";
@@ -164,7 +164,7 @@ const FARM_PROPS = {
     // `w` is a line of writing, too small to read — which is the point. The
     // errands on it are whatever the town needs this week and the title screen
     // must not appear to be promising any of them.
-    palette: { k: K, b: "#c2a071", p: "#efe6cf", w: "#b9ad90", t: PLANK_SHADE },
+    palette: { k: K, b: "#c2a071", p: "#efe6cf", w: "#b9ad90", t: WOOD_SHADE },
   },
   // The barn: the domestic half of the horizon, and the reason the hall reads as
   // civic at all. One building alone is just a building; a barn beside it is the

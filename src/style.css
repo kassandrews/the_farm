@@ -146,8 +146,9 @@ select {
   max-width: 100%;
   margin: 0 auto;
   display: none;
-  align-items: center;
-  gap: 14px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
   padding: 10px;
   border-radius: 14px;
   border: 2px solid var(--panel-edge);
@@ -157,6 +158,74 @@ select {
 
 .hud.building .build-bar {
   display: flex;
+}
+
+/* The tool strip proper. It became its own row when the finish picker moved
+   into the bar and needed somewhere to sit that wasn't beside the tools. */
+.build-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* What the held tool will be finished in — boards or flagstones for a floor,
+   cloth for a cushion, nothing at all for erase.
+
+   ABOVE the tools, and `:empty { display: none }` is the other half of that
+   decision. The bar is anchored to the BOTTOM of the screen, so a row that
+   appears and disappears with the held tool grows and shrinks the bar upward
+   and the tool row never moves under your thumb. Collapsing to nothing (rather
+   than reserving height) is safe for exactly that reason — it is the vertical
+   answer to the same problem the reserved two-wide `.build-mods` slot solves
+   horizontally, and it can afford to be the cheaper answer because nothing
+   sits below it. */
+.build-finishes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.build-finishes:empty {
+  display: none;
+}
+
+/* A swatch and a name. The swatch alone would be six beige squares — "Ash" and
+   "Pale pine" are not tellable apart at 16px — and the name alone would make
+   you learn what "Salvage" looks like by laying one. */
+.finish-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px 5px 6px;
+  border-radius: 10px;
+  border: 2px solid var(--panel-edge);
+  background: var(--panel);
+  cursor: pointer;
+  box-shadow: 0 2px 0 var(--shadow);
+  font: inherit;
+  font-size: 13px;
+  color: inherit;
+  transition: transform 0.05s;
+}
+
+/* Chosen-ness is an accent OUTLINE, the same idiom as `.tool.selected` and
+   `.form-tile.selected`. It cannot be a fill here: the fill is the finish's own
+   colour and is carrying real information. */
+.finish-chip.chosen {
+  border-color: var(--accent);
+  background: #fff6e2;
+}
+
+.finish-chip:active {
+  transform: scale(0.94);
+}
+
+.finish-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1px solid var(--panel-edge);
+  /* background is set per finish in syncFinishUi() */
 }
 
 /* Wrapping, not scrolling. A scrolling toolbar hides tools behind a gesture

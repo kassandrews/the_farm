@@ -60,9 +60,9 @@ describe("a room reading its own past", () => {
     // The player has not moved; they are back at the homestead.
     expect(Math.hypot(w.player.x - 200, w.player.y - 200)).toBeGreaterThan(20);
 
-    buildAt(w, "plank", h.inside.x, h.inside.y, SUMMER);
+    buildAt(w, "floor", h.inside.x, h.inside.y, SUMMER);
     expect(describeHistory(w, h.inside.x, h.inside.y, SUMMER).map((n) => n.kind)).toContain(
-      "built_plank",
+      "built_floor",
     );
   });
 
@@ -104,7 +104,7 @@ describe("a room reading its own past", () => {
     // by the player improving the house.
     const w = world();
     const h = house(w, 200, 200, SUMMER);
-    buildAt(w, "plank", h.inside.x, h.inside.y, SUMMER);
+    buildAt(w, "floor", h.inside.x, h.inside.y, SUMMER);
     const before = historyLine(w, h.inside.x, h.inside.y, SUMMER);
 
     const wasId = roofRoomAt(w, h.inside.x, h.inside.y)!.id;
@@ -126,7 +126,7 @@ describe("a room reading its own past", () => {
   it("offers at most two things at the door, and never a list", () => {
     const w = world();
     const h = house(w, 200, 200, SUMMER);
-    buildAt(w, "plank", h.inside.x, h.inside.y, SUMMER);
+    buildAt(w, "floor", h.inside.x, h.inside.y, SUMMER);
     assign(w, "resident1", h.bed.x, h.bed.y, SPRING);
     // A third note, so there is genuinely something for the cut to leave out.
     const v = w.villagers.find((x) => x.id === "resident1")!;
@@ -160,7 +160,7 @@ describe("a room reading its own past", () => {
     // form letter.
     const w = world();
     const h = house(w, 200, 200, SPRING);
-    buildAt(w, "plank", h.inside.x, h.inside.y, SPRING);
+    buildAt(w, "floor", h.inside.x, h.inside.y, SPRING);
     assign(w, "resident1", h.bed.x, h.bed.y, SPRING);
     const line = historyLine(w, h.inside.x, h.inside.y, SUMMER)!;
     expect(line.match(/spring/g)).toHaveLength(1);
@@ -179,7 +179,7 @@ describe("a room reading its own past", () => {
     const kinds = describeHistory(w, h.inside.x, h.inside.y, SUMMER).map((n) => n.kind);
     expect(kinds).not.toContain("sleeper");
     expect(kinds).not.toContain("past_sleeper");
-    expect(kinds).toContain("built_plank");
+    expect(kinds).toContain("built_floor");
   });
 });
 
@@ -195,7 +195,7 @@ describe("asking a house at its door", () => {
     // its tap. That decline is what lets this branch sit below the tool at all.
     expect(actionTarget(w, "dig").kind).not.toBe("remember");
 
-    buildAt(w, "plank", h.inside.x, h.inside.y, SUMMER);
+    buildAt(w, "floor", h.inside.x, h.inside.y, SUMMER);
     const target = actionTarget(w, "gather");
     expect(target.kind).toBe("remember");
     expect(target).toMatchObject({ x: h.door.x, y: h.door.y });
@@ -211,7 +211,7 @@ describe("asking a house at its door", () => {
     // of. Asking twice gives the same answer and leaves the world alone.
     const w = world();
     const h = house(w, 200, 200, SUMMER);
-    buildAt(w, "plank", h.inside.x, h.inside.y, SUMMER);
+    buildAt(w, "floor", h.inside.x, h.inside.y, SUMMER);
     w.player.x = h.door.x;
     w.player.y = h.door.y + 1;
 
@@ -263,10 +263,10 @@ describe("a resident remarking on the room you're both in", () => {
   const HOUSED: AdultForm[] = ["dog", "blob", "gremlin", "scholar", "office", "menace"];
 
   it("gives every housed form both lines, and no line it can never be handed", () => {
-    // Only `met` and `built_plank` are the social channel's; the other six kinds
+    // Only `met` and `built_floor` are the social channel's; the other six kinds
     // belong to the flat record alone (see RESIDENT_HISTORY's header). This
     // pins that decision in both directions so a seventh cannot be half-added.
-    const SPOKEN = new Set<HistoryNoteKind>(["met", "built_plank"]);
+    const SPOKEN = new Set<HistoryNoteKind>(["met", "built_floor"]);
     for (const form of HOUSED) {
       const bank = RESIDENT_HISTORY[form];
       expect(bank, `${form} has no history bank at all`).toBeDefined();

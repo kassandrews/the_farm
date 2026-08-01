@@ -5,7 +5,7 @@ import {
   dig,
   inWarren,
   warrenChamber,
-  placePlank,
+  placeFloor,
   tileAt,
   setTile,
   tileKey,
@@ -28,7 +28,7 @@ import {
 import {
   GRASS,
   DIRT,
-  PLANK,
+  FLOOR,
   STONE,
   TREE,
   BEDROCK,
@@ -77,8 +77,8 @@ describe("chunked tilemap edits", () => {
   it("placing a plank works on non-solid ground", () => {
     const w = freshWorld();
     const { x, y } = findGrass(w);
-    expect(placePlank(w, x, y)).toBe(true);
-    expect(tileAt(w, x, y)).toBe(PLANK);
+    expect(placeFloor(w, x, y, "pine")).toBe(true);
+    expect(tileAt(w, x, y)).toBe(FLOOR);
   });
 
   it("refuses to place on a solid tile (a tree is a real obstacle)", () => {
@@ -90,7 +90,7 @@ describe("chunked tilemap edits", () => {
       }
     }
     expect(tree).not.toBeNull();
-    expect(placePlank(w, tree!.x, tree!.y)).toBe(false);
+    expect(placeFloor(w, tree!.x, tree!.y, "pine")).toBe(false);
     expect(isWalkable(w, tree!.x, tree!.y)).toBe(false);
   });
 

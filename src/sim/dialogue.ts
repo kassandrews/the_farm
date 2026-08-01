@@ -136,7 +136,7 @@ export const MEMORY_PRIORITY: MemoryKind[] = [
   // harvest is something they watched you do.
   "winter_came",
   "harvested_carrot",
-  "built_plank",
+  "built_floor",
   "planted_carrot",
   "raised_by",
   "raised_favorite",
@@ -434,7 +434,7 @@ const HISTORY_CHANCE = 0.3;
  *
  *  Skips notes about the speaker (see RESIDENT_HISTORY's header): a villager
  *  narrating their own tenancy at you is the game doing its remembering out
- *  loud. `built_plank` has no `who` at all, so it always survives the filter. */
+ *  loud. `built_floor` has no `who` at all, so it always survives the filter. */
 function tryHistoryLine(world: WorldState, v: Villager, rng: Rng, now: number): string | null {
   const banks = RESIDENT_HISTORY[v.form];
   if (!banks) return null;

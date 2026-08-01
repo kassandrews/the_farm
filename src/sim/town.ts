@@ -19,7 +19,7 @@ import type { BuildCell, FurnitureCell } from "./types";
 import type { CharDef } from "../content/cast";
 import { CAST } from "../content/cast";
 import type { TileId } from "../content/tiles";
-import { PLANK, GRASS } from "../content/tiles";
+import { FLOOR, GRASS } from "../content/tiles";
 import { tileDef } from "../content/tiles";
 import type { TownBuilding } from "../content/town";
 import { allTownBuildings, footprintCells, isPerimeter, TOWN_FIXTURES } from "../content/town";
@@ -69,7 +69,7 @@ export function stampBuilding(t: StampTarget, b: TownBuilding, probe?: TerrainPr
   if (cells.some((c) => occupied(t, c.x, c.y))) return false;
 
   // Floor first, so nothing lands on a tree or in the river.
-  for (const c of cells) t.overrides[tileKey(c.x, c.y)] = PLANK;
+  for (const c of cells) t.overrides[tileKey(c.x, c.y)] = FLOOR;
 
   clearApron(t, b, probe);
 

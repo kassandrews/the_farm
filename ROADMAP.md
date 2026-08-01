@@ -126,12 +126,12 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   with them.
 
 **Next: nothing on the list.** Every numbered item is done, and so is every loose
-end that was a gap. What is still written down under *Known gaps* is three
-deliberate POSITIONS rather than work owed — floors reading the town-wide finish
-while walls store their own (which wants doing when floors are next touched, since
-per-cell floor finishes need somewhere to store one), undo covering build strokes
-and not ACT, and the occlusion fade waiting for a genuinely tall piece. Each says
-why in place.
+end that was a gap. What is still written down under *Known gaps* is two
+deliberate POSITIONS rather than work owed — undo covering build strokes and not
+ACT, and the occlusion fade waiting for a genuinely tall piece. Each says why in
+place. (The third, floors reading the town-wide finish, was the one with a
+trigger condition attached, and the trigger fired: see §"Floors carry their own
+finish".)
 
 DESIGN's own open questions (fishing, async postcards between towns) are the only
 unbuilt *systems*, and both are still deliberately open. What is left is not a
@@ -178,11 +178,14 @@ Recorded in full in DESIGN.md §Materials. The short version and *why*:
 
 - **Three gathered classes, ever: wood, stone, ore.** One "ore" entry covers
   every metal. Resisting a fourth is deliberate.
-- **Appearance is a separate, free axis.** A finish (pale pine, dark walnut) is
-  a property of a placed tile, *never a different item*. This is the rule that
-  keeps the inventory small: item count is the number of materials (three), not
-  materials × looks (dozens). It's what stops this becoming the
-  eleven-kinds-of-plank inventory sprawl that makes cozy games tiring.
+- **Appearance is a separate axis, free WITHIN a material.** A finish (pale pine,
+  dark walnut, slate) is a property of a placed tile, *never a different item*.
+  This is the rule that keeps the inventory small: item count is the number of
+  materials (three), not materials × looks (dozens). It's what stops this
+  becoming the eleven-kinds-of-plank inventory sprawl that makes cozy games
+  tiring. Since v27 a finish also NAMES its material and the material is what
+  costs — pine to walnut is free forever, pine to slate is a rebuild in stone.
+  See §"Floors carry their own finish" for the argument.
 - **No crafting table, no recipe tree.** Placing a thing *is* making it. Animal
   Crossing's placement, not Minecraft's grid. "Crafting-tree sprawl" is on
   DESIGN's explicit not-taken list.
@@ -498,6 +501,112 @@ never hijack a deliberate act, or you can't till at the forest edge); the lie
 was that the reticle promised something else. Colour carries the difference now:
 gold = a ripe crop underfoot, green = felling a node, white = the held tool has
 work here, faint = ACT would do nothing.
+
+### Floors carry their own finish — schema v27
+
+**Built.** The reported bug was "picking a floor skin recolours the whole game."
+It was narrower than it sounded and hid a second one underneath.
+
+- **Only floors ever moved.** Walls, doors and furniture have stamped their
+  finish onto the placed cell since v5/v6, so two houses could already differ.
+  Floors couldn't: `placeFloor` wrote a bare tile id into `overrides`, so there
+  was nowhere to put a finish and the renderer had to ask the town — a live
+  filter over the world, which is the exact opposite of what `finishFor`'s own
+  docblock claimed a finish was. This was the known gap with a trigger condition
+  attached ("wants doing when floors are next touched"), and the trigger fired.
+- **The stone finishes were worn by nothing.** `StructureDef.finish` was typed
+  `"wood" | "stone"`, but wall and door were both wood and every furniture row
+  was wood or cloth. Granite shipped as a starter, slate paid out twelve tiles
+  down a tunnel, cobble cost twelve junk — and picking any of them changed
+  nothing on screen. The three-row satchel picker is what hid it: it showed a
+  Stone row because finishes existed, not because anything could wear them.
+
+The decisions, and why:
+
+- **Floor, not Plank.** A tool called Plank that can be slate is contradicting
+  itself in the toolbar; "plank" names the material and the whole point of the
+  axis is that material and look are separate. The tile const is `FLOOR` now.
+  **The tile NUMBER stays 2** — it is written into every chunk override in every
+  save — and so does the icon id.
+- **A def declares a LIST of classes, and the player never sees a class.**
+  `finishes: SkinClass[]`; floor and wall take `["wood", "stone"]`. The build bar
+  shows every unlocked finish the held tool can wear, in table order, so the
+  boards come out before the flagstones without anyone sorting anything.
+  `SKIN_CLASSES` / `SKIN_CLASS_NAMES` are gone from the UI entirely. Written into
+  DESIGN §Materials as a rule, because a wood/stone/cloth menu is the kind of
+  thing that gets re-added by someone being helpful.
+- **Cost follows the material; the look is free within one.** A bare `cost`
+  number means "N of the finish's own material" (`items.BuildPrice`); the three
+  classes are spelled exactly like the three items, so the substitution is the
+  identity. Re-finishing pine→walnut is free forever on things already built;
+  pine→slate is a rebuild and costs the stone. That is what keeps "the look is
+  free" literally true while letting a stone floor actually be stone. Price
+  everything in wood and granite is made of boards, which the player can see
+  through; price every finish separately and your town looks like your inventory
+  instead of your taste.
+- **The lamp is why `BuildPrice` has two shapes.** Its post takes wood finishes
+  and it costs ore. A bare number would have quietly repriced it in timber, so a
+  record is still legal for the case where look and materials are unrelated.
+- **`skins.selected` is keyed by TOOL now, not by class.** Once a floor may be
+  either material there is no single class to key on — picking slate for the
+  floor is a statement about floors, not about stone. Per tool also gets the
+  behaviour you want for free: a pine floor under whitewashed walls is an
+  ordinary thing to want, and a class key made the two fight.
+- **The default finish is stored as ABSENCE.** `world.finishes` is sparse in the
+  strong sense: no entry means pale pine, and `placeFloor` deletes the key rather
+  than writing it. The map is the size of the choices you made, not the size of
+  everything you ever paved. **First version of that line was wrong** — it
+  compared against the default for the finish's own class, so a granite floor
+  (granite being the stone default) cleared its entry and read back as pine.
+  Absence has to mean exactly one finish; `FLOOR_DEFAULT_FINISH` is it.
+- **Stone got rebalanced, or the choice would have been fake.** Rocks sit at a
+  third of the density of trees and yielded five to a tree's eight, so stone cost
+  ~4.6× the walking. Every town would have been wood — the free axis repealed by
+  arithmetic. Rock yield is 12 now (~2:1), and **cutting rock returns 1 stone per
+  cell**. Deliberately not parity: wood is the everyday material and stone the
+  deliberate one, and equal-cost materials make choosing between them weightless.
+- **The mining trickle is capped at ONE and the cap is the design.** The rock is
+  unbounded, so a face that paid out properly would make stone free and *wood*
+  the scarce material — which is how Minecraft shakes out, and it ends with
+  everything built of cobble. One per swing is far too slow to be why you went
+  down and enough that you never surface empty: stone is a byproduct of the
+  tunnel, never a reason for it. No toast, either — a notification per swing
+  would turn the quietest verb in the game into a stream.
+- **The finish row sits ABOVE the tool row**, and that is load-bearing rather
+  than aesthetic. It comes and goes with the held tool, and the bar is anchored
+  to the bottom of the screen, so it grows the bar upward and the tools never
+  move under your thumb. It collapses to nothing (`:empty { display: none }`)
+  rather than reserving height, which is safe here precisely because nothing sits
+  below it — the cheaper version of the reserved two-wide `.build-mods` slot,
+  available for the vertical axis only.
+- **A lone chip is not a choice.** Fewer than two options collapses the row: a
+  single swatch you cannot deselect is furniture, not a control.
+- **`built_plank` was renamed to `built_floor` and MIGRATED.** It is persisted in
+  three logs — the player's memory, every villager's, and the ground's — and
+  dialogue is written against it. Leaving the old string would have orphaned
+  every memory of a floor being laid: the note survives in the save and matches
+  nothing in the banks, so a villager who watched you build quietly stops
+  mentioning it.
+- **The migration's job is that nothing changes colour.** It stamps the old
+  town-wide wood selection onto every existing floor, so an upgraded town looks
+  *identical* to how it looked before — which matters more than usual here,
+  because the whole point is that floors stop moving when you change your mind,
+  and a migration that shuffled them on the way in would be the last time they
+  ever did. Verified on screen against a real v26 save: 214 floors, all walnut,
+  and the build bar opens holding walnut.
+- **Erase refunds what a thing was WEARING**, not what you happen to be holding.
+  Otherwise erase launders stone into wood.
+- **Re-laying the finish already there is refused**, not charged. During a drag
+  you sweep over cells you have already done, and each would otherwise spend
+  material, log a memory and eat a slot in the undo stroke. (The old code charged
+  a board to change nothing; a test was asserting that, and had to be re-aimed.)
+- **`CellSnapshot` gained a fourth field.** A re-finish stroke changes nothing
+  else — the ground override stays FLOOR, the build cell stays absent — so
+  without it undo reported success and visibly did nothing.
+- **The roof's fallback was the same bug in miniature.** `drawRoofCell` read the
+  live selection when there was no wall under it, so a roof restyled itself when
+  you picked up a colour while the walls holding it up stayed put. It takes the
+  default now. Custom roof finishes are still open.
 
 ### Seasons — weather and light, and the museum stopped being exhaustive
 
@@ -3878,10 +3987,11 @@ you trip over them:
   `content/arrivals.ts` holds four, and the town takes them in one at a time.
   Note the queue **runs out** rather than looping — the fourth Rummage would say
   more about the table than about the town.
-- **Finishes are town-wide for FLOORS, per-cell for structures.** Walls and doors
-  store their own finish (v5), so two houses can differ. Plank floors still read
-  the town-wide selection and restyle all at once; worth unifying when floors
-  next get touched.
+- ~~**Finishes are town-wide for FLOORS, per-cell for structures.**~~ **Fixed at
+  schema v27** — see §"Floors carry their own finish" below. Floors store their
+  own finish in `world.finishes` exactly as walls have since v5, the picker moved
+  out of the satchel and into build mode, and the stone finishes finally have
+  something to sit on.
 - ~~**Villagers walk through walls and furniture.**~~ Fixed in 2b step 1
   (`sim/path.ts`), and verified on screen in step 2: Margfrom walks from the
   plaza, through her own doorway, to her bed, standing in a wall at no point.

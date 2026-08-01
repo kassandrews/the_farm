@@ -35,15 +35,15 @@ describe("memory-driven dialogue", () => {
     const w = importedScholarWorld();
     // Player stands on the homestead; lay a board.
     const pt = playerTile(w);
-    const res = buildAt(w, "plank", pt.x, pt.y, 1000);
+    const res = buildAt(w, "floor", pt.x, pt.y, 1000);
     expect(res.changed).toBe(true);
-    for (const v of w.villagers) expect(hasMemory(v.memory, "built_plank")).toBe(true);
+    for (const v of w.villagers) expect(hasMemory(v.memory, "built_floor")).toBe(true);
   });
 
   it("the scholar can later bring up the board you laid", () => {
     const w = importedScholarWorld();
     const pt = playerTile(w);
-    buildAt(w, "plank", pt.x, pt.y, 1000);
+    buildAt(w, "floor", pt.x, pt.y, 1000);
     const scholar = w.villagers.find((v) => v.id === "resident1")!;
     const rng = makeRng(5);
     const said = new Set<string>();

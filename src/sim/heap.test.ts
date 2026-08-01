@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { newWorld } from "./game";
+import { newWorld, buildCost } from "./game";
+import { defaultSkin } from "../content/skins";
 import { HEAP, SHOP } from "../content/shop";
 import { SKINS } from "../content/skins";
 import { FURNITURE } from "../content/furniture";
@@ -28,7 +29,7 @@ describe("the heap — junk in, finishes out", () => {
     // Belt to the braces above: no furniture row and no structure may ever cost
     // junk, or the Gremlin's pile becomes load-bearing for housing.
     for (const def of Object.values(FURNITURE)) {
-      expect(def.cost.junk).toBeUndefined();
+      expect(buildCost(def.id, defaultSkin(def.finishes[0])).junk).toBeUndefined();
     }
   });
 

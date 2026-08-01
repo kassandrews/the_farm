@@ -9,7 +9,7 @@ import {
   generatedTile,
   canFill,
   fill,
-  placePlank,
+  placeFloor,
   isWalkable,
   canDig,
   till,
@@ -25,7 +25,7 @@ import { canPlaceStructure } from "./structures";
 import { canPlaceFurniture } from "./furniture";
 import { updateReclaim } from "./gather";
 import { findPath } from "./path";
-import { WATER, SHALLOW, SAND, GRASS, PLANK, TREE } from "../content/tiles";
+import { WATER, SHALLOW, SAND, GRASS, FLOOR, TREE } from "../content/tiles";
 import { WATER_KINDS } from "../content/water";
 import type { HomesteadSpot } from "./types";
 
@@ -536,10 +536,10 @@ describe("what water will and will not take", () => {
     const w = newWorld({ name: "T", form: "dog", spot: "forest", seed: 7 });
     setTile(w, 25, 25, WATER);
     setTile(w, 26, 25, SHALLOW);
-    expect(placePlank(w, 25, 25)).toBe(true);
-    expect(placePlank(w, 26, 25)).toBe(true);
-    expect(tileAt(w, 25, 25)).toBe(PLANK);
-    expect(tileAt(w, 26, 25)).toBe(PLANK);
+    expect(placeFloor(w, 25, 25, "pine")).toBe(true);
+    expect(placeFloor(w, 26, 25, "pine")).toBe(true);
+    expect(tileAt(w, 25, 25)).toBe(FLOOR);
+    expect(tileAt(w, 26, 25)).toBe(FLOOR);
   });
 
   it("will not take a building in the shallows", () => {
@@ -599,7 +599,7 @@ describe("a river may run through town, because the town has bridges", () => {
     let found = 0;
     for (let seed = 1; seed <= 400 && found < 12; seed++) {
       for (let x = -22; x <= 22; x++) {
-        if (generatedTile(seed, "forest", x, -1) !== PLANK) continue;
+        if (generatedTile(seed, "forest", x, -1) !== FLOOR) continue;
         found++;
         // Planked, so there was water here — and the kind is one the town
         // bridges rather than the sea.

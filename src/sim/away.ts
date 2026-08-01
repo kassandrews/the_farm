@@ -18,7 +18,7 @@
 import type { WorldState } from "./types";
 import type { Rng } from "./rng";
 import { tileAt, setTile, tileKey } from "./world";
-import { GRASS, DIRT, PLANK, MUSHROOM, JUNK_PILE } from "../content/tiles";
+import { GRASS, DIRT, FLOOR, MUSHROOM, JUNK_PILE } from "../content/tiles";
 import { remember } from "./memory";
 import { remountExhibit } from "./museum";
 import { festivalsBetween, sawYouAt, gatherers } from "./festival";
@@ -107,7 +107,7 @@ const mushroomsSpread: AwayEvent = (world, rng) => {
  *  §fixed cast: "Sometimes moves your fences") and deliberately harmless: the
  *  board is moved, never removed, so nothing you built is ever lost. */
 const gremlinMovesABoard: AwayEvent = (world, rng) => {
-  const planks = overrideTiles(world).filter(([, , id]) => id === PLANK);
+  const planks = overrideTiles(world).filter(([, , id]) => id === FLOOR);
   if (planks.length === 0) return null;
 
   const [x, y] = planks[rng.int(planks.length)];
@@ -121,7 +121,7 @@ const gremlinMovesABoard: AwayEvent = (world, rng) => {
 
   const [nx, ny] = neighbours[rng.int(neighbours.length)];
   setTile(world, x, y, GRASS); // reverts to whatever generation says underneath
-  setTile(world, nx, ny, PLANK);
+  setTile(world, nx, ny, FLOOR);
   return "One of your boards is one tile to the left of where you left it. The Gremlin denies everything.";
 };
 

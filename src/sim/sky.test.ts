@@ -203,7 +203,7 @@ describe("what you may do up there", () => {
     // The empty allowlist, and the reason it is an allowlist: the old form of
     // this rule ("under is special, otherwise yes") would have handed a new
     // layer the entire palette, and `world.build` has no layer in its keys.
-    const every: BuildTool[] = ["plank", "wall", "door", "erase", ...(Object.keys(FURNITURE) as BuildTool[])];
+    const every: BuildTool[] = ["floor", "wall", "door", "erase", ...(Object.keys(FURNITURE) as BuildTool[])];
     for (const t of every) expect(toolAllowedOn(t, "sky")).toBe(false);
     // And the surface still allows all of them, so this test can never pass by
     // having quietly switched everything off.

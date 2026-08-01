@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { newWorld } from "./game";
+import { newWorld, buildCost } from "./game";
+import { defaultSkin } from "../content/skins";
 import { add, count } from "./inventory";
 import { itemDef } from "../content/items";
 import { CROPS, CROP_ORDER, STARTING_CROP } from "../content/crops";
@@ -264,7 +265,9 @@ describe("nothing gates on what you have planted", () => {
     // The same guard heap.test.ts puts on finishes. A variety is unlocked
     // forever and costs nothing to use, which is only safe while nothing reads
     // the unlocked list to decide whether you may have something.
-    for (const def of Object.values(FURNITURE)) expect(def.cost.seed).toBeUndefined();
+    for (const def of Object.values(FURNITURE)) {
+      expect(buildCost(def.id, defaultSkin(def.finishes[0])).seed).toBeUndefined();
+    }
     for (const row of HEAP) expect(row.cost).toBeGreaterThan(0); // junk only, still
     for (const row of SHOP) {
       expect(row.accepts.map((p) => p.item)).not.toContain("seed");

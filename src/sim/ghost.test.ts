@@ -418,7 +418,7 @@ describe("her trees' ground takes no construction", () => {
     w.inventory.wood = 999;
     w.inventory.stone = 999;
 
-    for (const tool of ["wall", "plank", "chair"] as const) {
+    for (const tool of ["wall", "floor", "chair"] as const) {
       const res = buildAt(w, tool, x, y, NOON);
       expect(res.changed).toBe(false);
       expect(w.build[tileKey(x, y)]).toBeUndefined();
@@ -456,7 +456,7 @@ describe("her trees' ground takes no construction", () => {
     setTile(w, x, y, DIRT); // as felling leaves it
     expect(tileAt(w, x, y)).toBe(DIRT);
     w.inventory.wood = 999;
-    expect(buildAt(w, "plank", x, y, NOON).changed).toBe(false);
+    expect(buildAt(w, "floor", x, y, NOON).changed).toBe(false);
     expect(tileAt(w, x, y)).toBe(DIRT);
   });
 
@@ -468,7 +468,7 @@ describe("her trees' ground takes no construction", () => {
     const c = groveCentre(w.seed, w.homestead.spot);
     expect(inGroveClearing(w.seed, w.homestead.spot, c.x, c.y)).toBe(true);
     w.inventory.wood = 999;
-    const res = buildAt(w, "plank", c.x, c.y, NOON);
+    const res = buildAt(w, "floor", c.x, c.y, NOON);
     expect(res.changed).toBe(true);
   });
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { scenePalette, seasonSkin, biomeSkin, mixHex } from "./palette";
 import { BIOMES, BROADLEAF } from "../content/biomes";
 import { SEASONS, seasonOn } from "../content/seasons";
-import { TILES, tileDef, GRASS, MUSHROOM, WATER, FARMLAND, FARMLAND_WET, PLANK, STONE, BEDROCK, CAVE_FLOOR, ORE_VEIN, SHAFT, DARK_TREE } from "../content/tiles";
+import { TILES, tileDef, GRASS, MUSHROOM, WATER, FARMLAND, FARMLAND_WET, FLOOR, STONE, BEDROCK, CAVE_FLOOR, ORE_VEIN, SHAFT, DARK_TREE } from "../content/tiles";
 
 const at = (month: number) => new Date(2026, month - 1, 15, 12).getTime();
 
@@ -36,7 +36,7 @@ describe("seasonSkin", () => {
     // Water animates its own way; soil you turned over yourself is a thing you
     // did, not weather; a built tile belongs to its finish; and the grove is
     // dark wood in every month on purpose.
-    const untouched = [WATER, FARMLAND, FARMLAND_WET, PLANK, STONE, DARK_TREE];
+    const untouched = [WATER, FARMLAND, FARMLAND_WET, FLOOR, STONE, DARK_TREE];
     for (const season of SEASONS) {
       const p = scenePalette(season, false);
       for (const id of untouched) {

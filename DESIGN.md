@@ -863,14 +863,37 @@ technical limit — a room down there would want enclosure, a roof and a
 flood fill through solid stone, which is a building where a tunnel should
 be. You install a light in the rock; you build a house on the grass.
 
-**Appearance is a separate, free axis.** Any built tile can wear any
-unlocked finish at no cost: pale pine, dark walnut, whitewash. A finish is
-a property of the tile, never a different item. This is the rule that keeps
-the inventory small — item count is the number of *materials* (three), not
-materials × looks (dozens). Changing a finish costs nothing, carries
-nothing, and can be done to things already built. Some finishes are
-available from the start; others are earned through friendship, discovery,
-and the underground, and once earned are permanent and weightless.
+**Appearance is a separate axis, free within a material.** Any built tile
+can wear any unlocked finish its material allows: pale pine, dark walnut,
+whitewash, granite, slate. A finish is a property of the tile, never a
+different item. This is the rule that keeps the inventory small — item
+count is the number of *materials* (three), not materials × looks
+(dozens). Some finishes are there from the start; others are earned
+through friendship, discovery, and the underground, and once earned are
+permanent and weightless.
+
+**A finish names its material, and the material is what costs.** Pine,
+walnut, whitewash, ash and salvage are wood; granite, slate and cobble are
+stone. A floor or a wall may be either — the same tool lays a boardwalk
+and a flagstone path — and the price follows the stuff rather than the
+look. Within a material nothing is charged at all: pine to walnut to
+whitewash is free, forever, on things already built. Across one it is not
+a repaint but a rebuild, and it costs what building it that way would have
+cost in the first place.
+
+That line is what keeps "the look is free" true while letting a stone
+floor actually be stone. Price every finish the same wood and granite is
+made of boards, which the player can see through. Give every finish its
+own price and your town ends up looking like your inventory instead of
+your taste, which is the free axis being quietly repealed. The material
+carries the cost; the look never does.
+
+**The player is never asked which class they mean.** Wood, stone and cloth
+are how the content table knows what a finish belongs to — they are not a
+question the game puts to anybody. You hold a tool and you are shown the
+finishes that tool can wear. A picker that made you choose a category
+before choosing a look would be the item-sprawl this section forbids,
+wearing a menu instead of an inventory.
 
 There is **no crafting table and no recipe tree** — placing a thing *is*
 making it. Pick an object, see its cost, put it down. This is Animal
@@ -883,7 +906,12 @@ Materials are required but never rationed:
   ever — the shovel is never blocked. That includes **water**: filling a
   stream, a pond or the sea itself costs no material and needs no tool you
   don't already hold (§Water).
-- One tree yields many boards. Cost is a rhythm, not an economy.
+- One tree yields many boards, one rock many flagstones. Cost is a
+  rhythm, not an economy. The two surface materials are deliberately *not*
+  tuned to parity — wood is the everyday stuff and stone the deliberate
+  choice, because a flagstone floor should feel like more of an
+  undertaking than boards. Equal-cost materials would make choosing
+  between them weightless, which is a different way of having no choice.
 - Felled trees and rocks regrow on the real clock — *unless you've claimed
   that ground*. Clear a tree and leave bare dirt and it returns; clear it
   and pave, till, or build there and it's yours for good. The world heals
@@ -896,6 +924,15 @@ Materials are required but never rationed:
   prevent. What replaces regrowth below is *distance*. The rock is
   unbounded, so ore is never scarce, only further off; you are slowed by a
   walk, which is the one thing this list permits.
+- **Cutting rock returns a little stone — a trickle, never a supply.** You
+  are tunnelling through the stuff, so coming up empty-handed would be
+  strange; but the rock is unbounded, and an unbounded face paying out
+  properly would make stone the free material and *wood* the scarce one.
+  That is precisely how Minecraft shakes out, and it ends with everything
+  built of cobble. So a dug cell gives one, which is far too slow to be
+  why you went down and more than enough that you never surface with
+  nothing. Stone is a byproduct of the tunnel, never a reason for it: the
+  reasons are ore, junk, slate and the dark.
 
 You can be slowed for a minute. You can never be stopped, capped, or made
 to grind.

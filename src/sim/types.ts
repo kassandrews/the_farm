@@ -12,7 +12,7 @@ import type { Filing } from "./filings";
 import type { Observation } from "./notebook";
 import type { Inventory } from "./inventory";
 import type { NodeId } from "../content/nodes";
-import type { SkinId, SkinClass } from "../content/skins";
+import type { SkinId } from "../content/skins";
 import type { StructureId } from "../content/structures";
 import type { FurnitureId, Facing } from "../content/furniture";
 import type { ExhibitId } from "../content/museum";
@@ -221,6 +221,27 @@ export interface WorldState {
    *  size of this object is the size of your tunnel. */
   under: Record<string, TileId>;
 
+  /** What FINISH a laid floor wears, keyed "x,y" — the ground layer's answer to
+   *  `BuildCell.finish`, which walls and doors have carried since v5.
+   *
+   *  Sparse in the strong sense: **an absent entry means the class default**,
+   *  not "unfinished". So a pine floor costs nothing to store, and `placeFloor`
+   *  deletes the key rather than writing `pine` into it. That keeps the map the
+   *  size of the floors you actually made a choice about instead of the size of
+   *  everything you ever paved.
+   *
+   *  Its own record rather than a field on the tile because a tile is a NUMBER
+   *  in `overrides` and always has been (ids are stable and stored). The
+   *  alternative was one tile id per material × finish, which is precisely the
+   *  eleven-kinds-of-plank sprawl DESIGN §Materials exists to refuse.
+   *
+   *  Why this exists at all: until v27 the renderer asked the town what colour
+   *  every floor was, so changing your selection restyled every board you had
+   *  ever laid — a live filter over the world, which is the opposite of what
+   *  `finishFor`'s own docblock claimed it was. A finish is something you chose
+   *  when you built. Now it is stored where you built it. */
+  finishes: Record<string, SkinId>;
+
   /** Things STANDING on the ground, keyed "x,y" — walls and doors now,
    *  furniture later. A separate layer from `overrides` because a tile answers
    *  "what is the ground here" and this answers "what is standing on it"; a
@@ -273,11 +294,29 @@ export interface WorldState {
   reclaim: Record<string, number>;
 
   /** Appearance, the free axis (DESIGN §Materials). Finishes are unlocked
-   *  permanently and weightlessly; `selected` is what you're currently
-   *  building in, per material class. */
+   *  permanently and weightlessly; `selected` is what each build tool is
+   *  currently loaded with.
+   *
+   *  **Keyed by TOOL, not by finish class**, and the difference is the whole
+   *  reason this changed at v27. A class key worked while every buildable wore
+   *  exactly one class, so "the wood you are building in" was a coherent thing
+   *  to store. Once a floor may be boards *or* flagstones there is no single
+   *  class to key on: picking slate for the floor is not a statement about
+   *  stone, it is a statement about floors. Per tool also gets the behaviour
+   *  you actually want for free — a pine floor under whitewashed walls is an
+   *  ordinary thing to want, and a class key would have made the two fight.
+   *
+   *  Partial because a tool the player has never dressed has no entry; read it
+   *  through `loadedFinish()`, which falls back to the class default and also
+   *  guards against an entry that has gone stale (a finish that no longer
+   *  applies to the tool, or one that was never unlocked).
+   *
+   *  It stays in world state rather than moving to the UI so that what you are
+   *  building in survives a reload, which is the same reason the seed variety
+   *  below sits beside it. */
   skins: {
     unlocked: SkinId[];
-    selected: Record<SkinClass, SkinId>;
+    selected: Partial<Record<BuildTool, SkinId>>;
   };
 
   /** Farming's free axis, and deliberately the same shape as `skins` above.
@@ -399,4 +438,4 @@ export type Tool = "dig" | "gather" | "plant" | "water";
 /** A tool BUILD MODE applies, to a tapped tile. `erase` takes back whatever is
  *  there and refunds it — building and un-building must never quietly drain
  *  you. */
-export type BuildTool = "plank" | "wall" | "door" | "erase" | FurnitureId;
+export type BuildTool = "floor" | "wall" | "door" | "erase" | FurnitureId;

@@ -44,7 +44,7 @@ export const HISTORY_LINES: Record<string, (who: string, when: string) => string
   past_sleeper: (who, when) =>
     when ? `${who} slept here, in ${when}.` : `${who} slept here.`,
 
-  built_plank: (_who, when) =>
+  built_floor: (_who, when) =>
     when ? `You laid these boards yourself, in ${when}.` : `You laid these boards yourself.`,
 
   // The four below are the ground's own past leaking into a room built on top

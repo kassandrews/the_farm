@@ -3,7 +3,7 @@ import { newWorld, summarizeAway, contextAction, buildAt } from "./game";
 import { simulateAway } from "./away";
 import { makeRng } from "./rng";
 import { tileKey } from "./world";
-import { PLANK, MUSHROOM, JUNK_PILE, GRASS } from "../content/tiles";
+import { FLOOR, MUSHROOM, JUNK_PILE, GRASS } from "../content/tiles";
 import { hasMemory, recall } from "./memory";
 import { donate } from "./museum";
 import { exhibitDef } from "../content/museum";
@@ -32,7 +32,7 @@ function worldWithBoards(count: number) {
   for (let i = 0; i < count; i++) {
     w.player.x = w.homestead.originX + i;
     w.player.y = w.homestead.originY + 3;
-    buildAt(w, "plank", w.player.x, w.player.y, 1000);
+    buildAt(w, "floor", w.player.x, w.player.y, 1000);
   }
   return w;
 }
@@ -64,9 +64,9 @@ describe("away simulation", () => {
     // way the town's floors are covered by it as well.
     for (let seed = 0; seed < 40; seed++) {
       const w = worldWithBoards(4);
-      const before = countTiles(w, PLANK);
+      const before = countTiles(w, FLOOR);
       simulateAway(w, 72 * HOUR, Date.now(), makeRng(seed));
-      expect(countTiles(w, PLANK)).toBe(before);
+      expect(countTiles(w, FLOOR)).toBe(before);
     }
   });
 
@@ -133,10 +133,10 @@ describe("away simulation", () => {
     w.inventory.wood = 400;
     const ox = w.homestead.originX;
     const oy = w.homestead.originY;
-    for (let dx = -3; dx <= 3; dx++) buildAt(w, "plank", ox + dx, oy + 3, Date.now());
+    for (let dx = -3; dx <= 3; dx++) buildAt(w, "floor", ox + dx, oy + 3, Date.now());
     const boards = new Set(
       Object.entries(w.overrides)
-        .filter(([, id]) => id === PLANK)
+        .filter(([, id]) => id === FLOOR)
         .map(([k]) => k),
     );
     expect(boards.size).toBeGreaterThan(0);

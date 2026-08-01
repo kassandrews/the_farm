@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { newWorld, buildAt } from "./game";
-import { setTile, tileKey } from "./world";
+import { setTile, tileKey, floorFinish } from "./world";
 import { GRASS } from "../content/tiles";
 import { add, count } from "./inventory";
 import { structureAt } from "./structures";
@@ -207,5 +207,44 @@ describe("undoing a build stroke", () => {
     // "Gone on reload" with no call to make it so: the buffer is keyed by the
     // world object, and a load or a new town mints a fresh one.
     expect(canUndo(world())).toBe(false);
+  });
+});
+
+describe("undoing a re-finish", () => {
+  // The case that motivated putting `finish` in CellSnapshot at all. A re-finish
+  // stroke changes NOTHING else: the ground override stays FLOOR and the build
+  // cell stays absent, so a snapshot of those two restores a cell that is still
+  // the new colour — undo would report success and visibly do nothing.
+  it("puts the old finish back", () => {
+    const w = world();
+    add(w.inventory, "wood", 40);
+    w.skins.unlocked.push("walnut");
+    clear(w, 30, 30);
+
+    stroke(w, "floor", "floor", [[30, 30]]); // pine, the default
+    expect(floorFinish(w, 30, 30)).toBe("pine");
+
+    w.skins.selected.floor = "walnut";
+    stroke(w, "floor", "floor", [[30, 30]]); // free re-finish
+    expect(floorFinish(w, 30, 30)).toBe("walnut");
+
+    expect(undoStroke(w)).toBe(true);
+    expect(floorFinish(w, 30, 30)).toBe("pine");
+  });
+
+  it("takes the finish away with the floor when the whole stroke goes", () => {
+    const w = world();
+    add(w.inventory, "wood", 40);
+    w.skins.unlocked.push("walnut");
+    clear(w, 31, 31);
+
+    w.skins.selected.floor = "walnut";
+    stroke(w, "floor", "floor", [[31, 31]]);
+    expect(w.finishes[tileKey(31, 31)]).toBe("walnut");
+
+    expect(undoStroke(w)).toBe(true);
+    // Not merely reset to pine — the entry itself has to go, or the map keeps a
+    // colour for ground that is grass again.
+    expect(w.finishes[tileKey(31, 31)]).toBeUndefined();
   });
 });

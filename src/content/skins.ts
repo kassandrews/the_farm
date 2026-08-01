@@ -189,10 +189,29 @@ export function starterSkins(): SkinId[] {
   return (Object.keys(SKINS) as SkinId[]).filter((id) => SKINS[id].starter);
 }
 
-/** Unlocked finishes for a class, in table order — what the picker shows. */
+/** Unlocked finishes for a class, in table order. */
 export function availableSkins(unlocked: readonly SkinId[], applies: SkinClass): SkinId[] {
   return (Object.keys(SKINS) as SkinId[]).filter(
     (id) => SKINS[id].applies === applies && unlocked.includes(id),
+  );
+}
+
+/** Unlocked finishes across SEVERAL classes, in table order — what the build
+ *  bar shows for the tool in hand.
+ *
+ *  This is the picker's real question, and the singular version above is not.
+ *  A floor may be wood or stone, so asking per class would mean rendering one
+ *  row per class and making the player pick a category before picking a look —
+ *  the menu DESIGN §Materials forbids ("the player is never asked which class
+ *  they mean"). Table order does the grouping for free: SKINS is declared wood,
+ *  then stone, then cloth, so the boards come out before the flagstones without
+ *  anyone sorting anything. */
+export function availableSkinsForClasses(
+  unlocked: readonly SkinId[],
+  classes: readonly SkinClass[],
+): SkinId[] {
+  return (Object.keys(SKINS) as SkinId[]).filter(
+    (id) => classes.includes(SKINS[id].applies) && unlocked.includes(id),
   );
 }
 

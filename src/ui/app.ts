@@ -25,6 +25,8 @@ import {
   summarizeAway,
   toolAllowedOn,
   playerTile,
+  toolFinishes,
+  loadedFinish,
 } from "../sim/game";
 import { officeLandClaimLine, homeLineFor, companyYesLine, companyByeLine } from "../sim/dialogue";
 import { companion, canInvite, invite, partWays } from "../sim/company";
@@ -63,7 +65,7 @@ import { heapOffers, heapExhausted, redeem } from "../sim/heap";
 import { donatable, donate, collection, collectionEmpty, wingsWithDonations } from "../sim/museum";
 import { openErrand, errandState, cardText, deliverErrand, declineErrand, notices } from "../sim/errands";
 import { festivalOn, activeFestival, nextFestival, lastFestival, daysUntil, attend } from "../sim/festival";
-import { availableSkins, skinDef, SKIN_CLASSES, SKIN_CLASS_NAMES } from "../content/skins";
+import { availableSkinsForClasses, skinDef } from "../content/skins";
 import { cropDef } from "../content/crops";
 import { STALL_OPENER, STALL_EXHAUSTED } from "../content/seedstall";
 import {
@@ -130,7 +132,7 @@ const TOOLS: { id: Tool; icon: IconName; label: string; hint: string; key?: stri
 ];
 
 const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string }[] = [
-  { id: "plank", icon: "plank", label: "Floor", hint: "Lay floorboards. Costs wood." },
+  { id: "floor", icon: "plank", label: "Floor", hint: "Lay a floor. Boards or flagstones — pick the finish below." },
   { id: "wall", icon: "wall", label: "Wall", hint: "Raise a wall. Close a shape and it gets a roof." },
   { id: "door", icon: "door", label: "Door", hint: "Cut a doorway. Put it on a south wall so it shows." },
   { id: "bed", icon: "bed", label: "Bed", hint: "A bed makes a room somewhere to live." },
@@ -1762,26 +1764,21 @@ export class App {
         body.append(list);
       }
 
-      // Finishes — free, weightless, applied to anything you build next.
-      for (const cls of SKIN_CLASSES) {
-        const options = availableSkins(world.skins.unlocked, cls);
-        if (options.length === 0) continue;
-        const row = el("div", { class: "choices" });
-        const buttons = options.map((id) => {
-          const b = choiceBtn(skinDef(id).name, () => {
-            world.skins.selected[cls] = id;
-            for (const other of buttons) other.classList.remove("chosen");
-            b.classList.add("chosen");
-            saveWorld(world);
-          });
-          if (world.skins.selected[cls] === id) b.classList.add("chosen");
-          return b;
-        });
-        row.append(...buttons);
-        body.append(labeled(`${SKIN_CLASS_NAMES[cls]} finish — free`, row));
-      }
+      // Finishes are NOT here any more, and their absence is the point.
+      //
+      // The satchel used to carry three rows — Wood finish, Stone finish, Cloth
+      // finish — and they were wrong twice over. They set a town-wide look, so
+      // choosing one restyled every floor you had ever laid; and they made you
+      // name a material class before naming a colour, which is a menu standing
+      // where a choice should be (DESIGN §Materials: "the player is never asked
+      // which class they mean").
+      //
+      // Both went the same way: the picker moved into build mode, where you are
+      // already holding the thing you are about to dress. See buildFinishRow().
+      // What remains here is what the satchel is actually for — the stuff you
+      // are carrying, and the one free axis that has nowhere better to live.
 
-      // What the next seed becomes. It sits with the finishes and not with the
+      // What the next seed becomes. It sits here and not with the
       // items on purpose: a variety is the same KIND of thing as a finish —
       // unlocked forever, weightless, free to change — and seed itself is
       // already up in the carried list as the ordinary stuff it is (DESIGN
@@ -2254,7 +2251,62 @@ export class App {
       ? `${furnitureDef(this.buildTool as never).name} facing ${this.facing.toUpperCase()}`
       : "Rotate";
 
+    this.syncFinishUi();
     this.syncUndoUi();
+  }
+
+  /** Rebuild the finish row for the tool in hand.
+   *
+   *  ONE row, never one per material class. The tool already knows which classes
+   *  it can wear, so asking the player to pick a category before picking a
+   *  colour would be a menu standing where a choice should be (DESIGN
+   *  §Materials). A floor simply offers the boards and the flagstones together,
+   *  in table order, and the grouping falls out of that for free.
+   *
+   *  Rebuilt from scratch on every sync rather than diffed. The list changes
+   *  with the held tool AND with what you have unlocked — walnut can arrive
+   *  mid-session from the grove — and a dozen buttons is nothing to make. */
+  private syncFinishUi(): void {
+    const row = this.hud.buildFinishes;
+    const tool = this.buildTool;
+    if (!this.world || tool === null) {
+      row.replaceChildren();
+      return;
+    }
+
+    const world = this.world;
+    const options = availableSkinsForClasses(world.skins.unlocked, toolFinishes(tool));
+    // Erase wears nothing, and a tool with exactly one unlocked finish is not a
+    // choice — a lone chip you cannot deselect is furniture, not a control. Both
+    // collapse the row to nothing, which the bottom-anchored layout absorbs
+    // without moving the tools.
+    if (options.length < 2) {
+      row.replaceChildren();
+      return;
+    }
+
+    const held = loadedFinish(world, tool);
+    const chips = options.map((id) => {
+      const skin = skinDef(id);
+      const chip = el("button", { class: "finish-chip", ariaLabel: skin.name }, [
+        // The finish's own colour, so you see what you are about to lay rather
+        // than reading its name and guessing. Swatch AND label, because "Ash"
+        // and "Pale pine" are two beige squares otherwise.
+        el("span", { class: "finish-swatch" }, []),
+        el("span", { class: "finish-name" }, [skin.name]),
+      ]);
+      const swatch = chip.firstElementChild as HTMLElement;
+      swatch.style.background = skin.color;
+      chip.classList.toggle("chosen", id === held);
+      chip.addEventListener("click", () => {
+        world.skins.selected[tool] = id;
+        saveWorld(world);
+        this.syncFinishUi();
+      });
+      hoverHint(chip, `${skin.name} — free to change, on anything already built.`);
+      return chip;
+    });
+    row.replaceChildren(...chips);
   }
 
   /** Show the undo control only in build mode, and only when there's a stroke to
@@ -2483,6 +2535,8 @@ interface HudRefs {
   flash: HTMLElement;
   toolButtons: [Tool, HTMLElement][];
   buildButtons: [BuildTool, HTMLElement][];
+  /** The finish row, refilled per held tool by syncFinishUi(). */
+  buildFinishes: HTMLElement;
   build: HTMLElement;
   rotate: HTMLElement;
   undo: HTMLElement;
@@ -2589,12 +2643,24 @@ function buildHud(
   undo.addEventListener("click", onUndo);
   undo.style.display = "none";
 
-  // Rotate and undo ride at the end of the same strip, past a gap. They modify
+  // What the held tool will be finished in. Filled by syncFinishUi() because the
+  // contents depend on the tool in hand — a floor offers boards and flagstones,
+  // a cushion offers cloth, erase offers nothing at all.
+  //
+  // ABOVE the tool row, and that placement is load-bearing. The row comes and
+  // goes as you switch tools, and the bar is anchored to the bottom of the
+  // screen, so a row that appears here grows the bar UPWARD and the tools stay
+  // exactly where your thumb left them. Below the tools it would shove the whole
+  // strip down mid-build — the same failure the reserved two-wide slot for
+  // rotate and undo was added to prevent, one axis over.
+  const buildFinishes = el("div", { class: "build-finishes" });
+
+  // Rotate and undo ride at the end of the tool strip, past a gap. They modify
   // what you're about to do rather than choosing it, so they want to be in
   // reach of the tools without reading as one of them.
   const buildBar = el("div", { class: "build-bar" }, [
-    buildTools,
-    el("div", { class: "build-mods" }, [rotate, undo]),
+    buildFinishes,
+    el("div", { class: "build-row" }, [buildTools, el("div", { class: "build-mods" }, [rotate, undo])]),
   ]);
 
   // BUILD sits directly above ACT, in the one corner the hands already live in,
@@ -2622,7 +2688,7 @@ function buildHud(
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, survey, flash, toolButtons, buildButtons, build, rotate, undo, zoom };
+  return { root: hud, clock, survey, flash, toolButtons, buildButtons, buildFinishes, build, rotate, undo, zoom };
 }
 
 // --- Panel helpers ------------------------------------------------------------

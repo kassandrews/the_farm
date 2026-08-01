@@ -15,7 +15,7 @@ import type { ActionTarget } from "../sim/game";
 import { cropDef, ripeStage } from "../content/crops";
 import {
   tileDef,
-  PLANK,
+  FLOOR,
   GRASS,
   TREE,
   ROCK,
@@ -33,8 +33,19 @@ import {
   MUSHROOM,
 } from "../content/tiles";
 import { skinDef } from "../content/skins";
-import type { SkinClass, SkinDef } from "../content/skins";
-import { decoHash, groundTone, chunkCoordOf, getChunk, CHUNK, tileKey, regionSkin, foundAt } from "../sim/world";
+import type { SkinDef } from "../content/skins";
+import {
+  decoHash,
+  groundTone,
+  chunkCoordOf,
+  getChunk,
+  CHUNK,
+  tileKey,
+  regionSkin,
+  foundAt,
+  floorFinish,
+  FLOOR_DEFAULT_FINISH,
+} from "../sim/world";
 import { dayNumber } from "../sim/found";
 import { letterFor } from "../content/found";
 import { wallMask, blockedDoorsteps, CONNECT_N, CONNECT_E, CONNECT_S, CONNECT_W } from "../sim/structures";
@@ -349,17 +360,26 @@ function groundIdOf(id: number): number {
  *  so a season can only ever reach a tile that had no finish to lose. The
  *  sentence above stays true and is now the reason the season interception is
  *  safe (Phase 4d; ROADMAP §Seasons). */
-function finishClassOf(id: number): SkinClass | null {
-  if (id === PLANK) return "wood";
-  return null;
+function isFinishedTile(id: number): boolean {
+  return id === FLOOR;
 }
 
-/** A built tile's appearance under the town's currently selected finish. Falls
- *  back to the tile's own colours when the tile isn't a built one. */
-function finishFor(world: WorldState, id: number): { name: string; color: string; top?: string; shade?: string } | null {
-  const cls = finishClassOf(id);
-  if (!cls) return null;
-  const skin = skinDef(world.skins.selected[cls]);
+/** A built tile's appearance under the finish IT is wearing. Falls back to the
+ *  tile's own colours when the tile isn't a built one.
+ *
+ *  Takes x,y and not just the tile id, and that is the whole of the v27 change.
+ *  It used to read `world.skins.selected`, which made every floor in the world
+ *  the same colour and restyled all of them the instant you changed your mind —
+ *  a live filter over the world, and the exact thing the docblock above says a
+ *  finish is not. Now it asks the cell what it was built as. */
+function finishFor(
+  world: WorldState,
+  id: number,
+  x: number,
+  y: number,
+): { name: string; color: string; top?: string; shade?: string } | null {
+  if (!isFinishedTile(id)) return null;
+  const skin = skinDef(floorFinish(world, x, y));
   return { name: tileDef(id).name, color: skin.color, top: skin.top, shade: skin.shade };
 }
 
@@ -809,8 +829,10 @@ export class Renderer {
           }
         }
         const groundId = groundIdOf(id);
-        // Built tiles wear the town's selected finish — appearance is a free
-        // property of the tile, never a separate item (DESIGN §Materials).
+        // Built tiles wear THEIR OWN finish — appearance is a free property of
+        // the tile, never a separate item (DESIGN §Materials). Two floors laid
+        // on different days may differ, and neither changes when you pick up a
+        // different finish.
         //
         // A FINISH IS ASKED FIRST AND WINS OUTRIGHT, which is what makes the two
         // repaints disjoint by construction rather than by discipline: a season
@@ -820,7 +842,7 @@ export class Renderer {
         // biome too, on the same argument: a whitewashed floor is whitewashed in
         // the fen. Only untouched natural ground gets the region's colour.
         const def =
-          finishFor(world, groundId) ??
+          finishFor(world, groundId, tx, ty) ??
           biomeSkin(
             seasonSkin(tileDef(groundId), groundId, this.palette),
             groundId,
@@ -1538,7 +1560,13 @@ export class Renderer {
   private drawRoofCell(world: WorldState, tx: number, ty: number, covered: Set<string>, alpha: number): void {
     const ctx = this.ctx;
     const cell = world.build[tileKey(tx, ty)];
-    const skin = skinDef(cell ? cell.finish : world.skins.selected.wood);
+    // A roof cell with no wall under it takes the DEFAULT, not whatever finish
+    // happens to be loaded in the build bar. Reading the selection here was the
+    // floor bug in miniature — a roof over an interior cell would restyle
+    // itself the moment you picked up a different colour, while the walls
+    // holding it up stayed put. A house should not change its hat when you
+    // change your mind.
+    const skin = skinDef(cell ? cell.finish : FLOOR_DEFAULT_FINISH);
     const px = Math.round(this.sceneX(tx) - TILE / 2);
     const py = Math.round(this.sceneY(ty) - TILE / 2) - STOREY;
 

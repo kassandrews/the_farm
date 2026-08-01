@@ -31,7 +31,7 @@ export type HistoryNoteKind =
   | "sleeper" // they sleep here now
   | "past_sleeper" // they slept here once; their bed is elsewhere, or gone
   // About the ground:
-  | "built_plank"
+  | "built_floor"
   | "dug"
   | "gathered"
   | "planted_carrot"
@@ -59,7 +59,7 @@ export const HISTORY_PRIORITY: HistoryNoteKind[] = [
   "met",
   "sleeper",
   "past_sleeper",
-  "built_plank",
+  "built_floor",
   "planted_carrot",
   "harvested_carrot",
   "gathered",

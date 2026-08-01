@@ -13,7 +13,7 @@ import type { TileId } from "../content/tiles";
 import {
   GRASS,
   STONE,
-  PLANK,
+  FLOOR,
   WATER,
   DIRT,
   FARMLAND,
@@ -51,6 +51,8 @@ import type { BiomeDef, Tint } from "../content/biomes";
 import type { WaterKindId, ChannelDef } from "../content/water";
 import { waterKind } from "../content/water";
 import { structureDef } from "../content/structures";
+import { defaultSkin } from "../content/skins";
+import type { SkinId } from "../content/skins";
 import { furnitureDef, covers, MAX_SPAN } from "../content/furniture";
 import type { WorldState, HomesteadSpot, Layer } from "./types";
 import { hash2 } from "./rng";
@@ -350,7 +352,7 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
       // The town's own crossing, where it has one. Only the water itself is
       // decked — the shore either side is left as shore, so a bridge reads as a
       // bridge and not as a road that stops at the bank.
-      if (at && (wet === WATER || wet === SHALLOW) && isTownBridge(x, y, at.kind)) return PLANK;
+      if (at && (wet === WATER || wet === SHALLOW) && isTownBridge(x, y, at.kind)) return FLOOR;
       if (wet !== null) return wet;
     }
 
@@ -2220,7 +2222,7 @@ export function healsTo(world: WorldState, x: number, y: number): TileId {
 /** Ground that will hold a board but not a building: the shallows.
  *
  *  WHY IT ISN'T PART OF `refusesConstruction`. That predicate is also consulted
- *  by `placePlank`, and a plank over the shallows is a BOARDWALK — a thing you
+ *  by `placeFloor`, and a plank over the shallows is a BOARDWALK — a thing you
  *  should absolutely be able to want, and one that costs the game nothing to
  *  allow. What has to be refused is footing: a wall, a floor, a bed.
  *
@@ -2290,20 +2292,64 @@ export function dig(world: WorldState, x: number, y: number, now: number): boole
   return true;
 }
 
-/** Place a wood plank on any non-solid, non-planted ground — and on water of
- *  either depth, which is the one place a plank is allowed to sit on something
+/** What an absent `world.finishes` entry means, and the one finish that never
+ *  needs storing. It is the floor tile's own colours in content/tiles.ts, so a
+ *  cell with no entry draws identically whether the renderer consults the map
+ *  or not — which is what makes the sparse encoding invisible rather than a
+ *  trap. Keep the three in step if pine is ever restyled. */
+export const FLOOR_DEFAULT_FINISH: SkinId = defaultSkin("wood");
+
+/** What finish a laid floor is wearing. Absent means the default — see
+ *  WorldState.finishes for why the map is sparse in that particular way.
+ *
+ *  Answers for any cell, floor or not: a caller asking about bare grass gets
+ *  the default rather than an error, because every call site here is a
+ *  renderer or a refund working out what something looked like, and neither has
+ *  anything useful to do with an exception. */
+export function floorFinish(world: WorldState, x: number, y: number): SkinId {
+  return world.finishes[tileKey(x, y)] ?? FLOOR_DEFAULT_FINISH;
+}
+
+/** Forget a cell's floor finish. Called wherever a floor stops being one —
+ *  erase, and anything else that overwrites the ground.
+ *
+ *  Without it the map leaks: lift a slate board, lay a fresh one, and the new
+ *  board would silently inherit the old one's colour instead of the finish you
+ *  are actually holding. */
+export function clearFloorFinish(world: WorldState, x: number, y: number): void {
+  delete world.finishes[tileKey(x, y)];
+}
+
+/** Lay a floor on any non-solid, non-planted ground — and on water of either
+ *  depth, which is the one place a floor is allowed to sit on something
  *  `solid`.
  *
  *  A BRIDGE OVER THE OCEAN IS ALLOWED. Deliberately (DESIGN §Water): real time
- *  gates this world, never the player's hands, and someone who planks ninety
+ *  gates this world, never the player's hands, and someone who boards ninety
  *  tiles out to the far shore has built the best story this game can produce.
- *  Refusing it would buy a wall and sell a legend. */
-export function placePlank(world: WorldState, x: number, y: number): boolean {
+ *  Refusing it would buy a wall and sell a legend.
+ *
+ *  The finish is STAMPED here rather than read at draw time, which is the whole
+ *  point of v27: a finish is something you chose when you built, not a filter
+ *  over the world. Laying a floor on a floor is a legal repaint and returns
+ *  true — the same courtesy placeStructure extends to a wall you re-finish. */
+export function placeFloor(world: WorldState, x: number, y: number, finish: SkinId): boolean {
   const t = tileAt(world, x, y);
   if (tileDef(t).solid && t !== WATER) return false;
   if (world.crops[tileKey(x, y)]) return false; // don't pave over a plant
   if (refusesConstruction(world, x, y)) return false; // nor over her trees
-  setTile(world, x, y, 2 /* PLANK */);
+  setTile(world, x, y, 2 /* FLOOR */);
+  // The floor's default finish is stored as ABSENCE, not as a value: see
+  // WorldState.finishes. Writing "pine" here would grow the save by one entry
+  // per board for the commonest possible choice.
+  //
+  // Compared against FLOOR_DEFAULT_FINISH and not against the default for the
+  // finish's OWN class, which was the first version of this line and was
+  // wrong: granite is the stone class's default, so a granite floor cleared
+  // its entry and then read back as pine. Absence has to mean exactly one
+  // finish, and it is this one.
+  if (finish === FLOOR_DEFAULT_FINISH) clearFloorFinish(world, x, y);
+  else world.finishes[tileKey(x, y)] = finish;
   return true;
 }
 

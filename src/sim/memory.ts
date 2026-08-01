@@ -12,7 +12,7 @@ export type MemoryKind =
   | "raised_by" // owner/how it was raised (a name or a phrase)
   | "raised_favorite" // its favourite food back then
   // Witnessed here on the Farm:
-  | "built_plank" // saw the player lay floorboards
+  | "built_floor" // saw the player lay floorboards
   | "dug" // saw the player dig
   | "gathered" // saw the player fell a tree or split a rock
   | "planted_carrot"
@@ -114,7 +114,7 @@ const MAX_MEMORIES = 64; // a bounded ring; the town lives at hour forty, not fo
  *  doesn't stack five identical "you built that?" memories. Imports and
  *  repeatable events (harvests) may recur. */
 export function remember(log: MemoryLog, ev: MemoryEvent): MemoryLog {
-  const oneShot: MemoryKind[] = ["built_plank", "dug", "planted_carrot", "arrived", "housed", "raised_by", "raised_favorite", "hum", "far_out"];
+  const oneShot: MemoryKind[] = ["built_floor", "dug", "planted_carrot", "arrived", "housed", "raised_by", "raised_favorite", "hum", "far_out"];
   if (oneShot.includes(ev.kind) && log.some((m) => m.kind === ev.kind)) return log;
   const next = [...log, ev];
   return next.length > MAX_MEMORIES ? next.slice(next.length - MAX_MEMORIES) : next;

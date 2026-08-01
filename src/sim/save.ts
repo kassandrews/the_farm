@@ -19,11 +19,16 @@ import type { CharId, AuthoredId } from "../content/cast";
 import { CAST, MOLE, GHOST, COSMOS } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 
-export const SCHEMA_VERSION = 26;
+export const SCHEMA_VERSION = 27;
 
-// It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`) and 26 at 9c
-// (`notebook`) — genuinely new stored fields, which is exactly the case the note
-// below says is worth a bump.
+// It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
+// (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
+// which is exactly the case the note below says is worth a bump.
+//
+// 27 is the first bump that also RESHAPES an existing field rather than only
+// adding one (`skins.selected` goes from per-class to per-tool) and the first
+// that rewrites persisted note kinds (`built_plank` → `built_floor`). Both are
+// spelled out at the migration itself.
 //
 // Note what 25 does NOT add: anything about which forms the town hall is
 // offering. A batch of forms is a total function of how long you have lived
@@ -600,6 +605,89 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
   // the live world, so an old town rewrites its journal simply by walking around
   // the places it already knows — which is what a notebook is for.
   25: (raw) => ({ ...raw, schemaVersion: 26, notebook: [] }),
+
+  // v26 → v27: floors carry their own finish, and the finish you are building
+  // in is remembered per TOOL instead of per material class.
+  //
+  // Three edits, and the first is the only one anybody will see.
+  //
+  // 1. BACKFILL `finishes` FROM THE TOWN-WIDE SELECTION. Until now the renderer
+  //    asked the town what colour every floor was, so a v26 save records a
+  //    single answer for all of them. Writing that answer onto each laid floor
+  //    is what makes an upgraded town look EXACTLY as it did before the
+  //    upgrade — which matters more than usual here, because the whole point of
+  //    the change is that floors stop moving when you change your mind, and a
+  //    migration that shuffled their colours on the way in would be the last
+  //    time they ever did.
+  //
+  //    Skipped entirely when the town was building in pine: an absent entry
+  //    already means pale pine (WorldState.finishes), so the common case costs
+  //    zero bytes and the map stays the size of the choices actually made.
+  //
+  // 2. RESHAPE `skins.selected`. Class keys cannot express "the floor is slate"
+  //    once a floor may be either material. Floor, wall and door all inherit the
+  //    old wood pick, which is what they were wearing; the cloth pieces inherit
+  //    the old cloth pick. Anything not named here simply falls back through
+  //    `loadedFinish()`, which is why this list does not have to be complete.
+  //
+  // 3. RENAME THE `built_plank` NOTE KIND. It is persisted in three logs — the
+  //    player's own memory, every villager's, and the ground's — and dialogue
+  //    is written against it (CLAUDE.md: villagers must be able to reference
+  //    remembered events). Leaving the old string in place would orphan every
+  //    memory of a floor being laid: the note would survive in the save and
+  //    match nothing in the banks, so a villager who watched you build would
+  //    quietly stop mentioning it. Renaming in place keeps those afternoons.
+  //
+  // Every fact below is HARDCODED at its v26 value — tile 2, "pine", the tool
+  // ids of the day — because a migration must never ask the current content
+  // tables to describe the past. Renaming a tool later must not reach back and
+  // change what this function does.
+  26: (raw) => {
+    const V26_FLOOR_TILE = 2;
+    const V26_PINE = "pine";
+
+    const overrides = (raw.overrides ?? {}) as Record<string, number>;
+    const oldSkins = (raw.skins ?? {}) as { unlocked?: unknown; selected?: Record<string, string> };
+    const oldSelected = oldSkins.selected ?? {};
+    const townWood = oldSelected.wood ?? V26_PINE;
+
+    const finishes: Record<string, string> = {};
+    if (townWood !== V26_PINE) {
+      for (const [key, tile] of Object.entries(overrides)) {
+        if (tile === V26_FLOOR_TILE) finishes[key] = townWood;
+      }
+    }
+
+    const selected: Record<string, string> = { floor: townWood, wall: townWood, door: townWood };
+    if (oldSelected.cloth) {
+      selected.cushion = oldSelected.cloth;
+      selected.rug = oldSelected.cloth;
+    }
+
+    const renameNotes = (log: unknown): unknown =>
+      Array.isArray(log)
+        ? log.map((e) =>
+            e && typeof e === "object" && (e as { kind?: string }).kind === "built_plank"
+              ? { ...(e as object), kind: "built_floor" }
+              : e,
+          )
+        : log;
+
+    const player = raw.player as { memory?: unknown } | undefined;
+    const villagers = raw.villagers as { memory?: unknown }[] | undefined;
+
+    return {
+      ...raw,
+      schemaVersion: 27,
+      finishes,
+      skins: { ...oldSkins, selected },
+      places: renameNotes(raw.places),
+      ...(player ? { player: { ...player, memory: renameNotes(player.memory) } } : {}),
+      ...(villagers
+        ? { villagers: villagers.map((v) => ({ ...v, memory: renameNotes(v.memory) })) }
+        : {}),
+    };
+  },
 };
 
 /** The name the tables now give an authored character, or null for anyone the

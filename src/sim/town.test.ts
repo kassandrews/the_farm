@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { newWorld, tick } from "./game";
 import { tileKey, isWalkable, tileAt, PLAZA } from "./world";
-import { PLANK, WATER, TREE } from "../content/tiles";
+import { FLOOR, WATER, TREE } from "../content/tiles";
 import { rooms, roomAt } from "./rooms";
 import { findPath } from "./path";
 import { stampBuilding, stampTown, stampFixtures } from "./town";
@@ -54,7 +54,7 @@ describe("the town's own buildings", () => {
         const w = world(spot, seed);
         for (const b of allTownBuildings()) {
           for (const c of footprintCells(b)) {
-            expect(tileAt(w, c.x, c.y)).toBe(PLANK);
+            expect(tileAt(w, c.x, c.y)).toBe(FLOOR);
             expect(tileAt(w, c.x, c.y)).not.toBe(WATER);
             expect(tileAt(w, c.x, c.y)).not.toBe(TREE);
           }

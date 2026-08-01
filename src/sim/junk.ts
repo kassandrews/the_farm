@@ -137,6 +137,23 @@ export function carveWithFind(
   if (!canCarve(world, x, y)) return { carved: false, find: null };
   const payout = depthAt(world, x, y) >= DEEP_FIND_DEPTH && embeddedAt(world, x, y);
   if (!carve(world, x, y)) return { carved: false, find: null };
+
+  // A cut face gives up ONE stone, every time, at any depth. You are tunnelling
+  // through the stuff; coming back up with none of it would be strange.
+  //
+  // One, and never more, because the rock is unbounded (DESIGN §Materials). A
+  // face that paid out properly would make stone the free material and WOOD the
+  // scarce one — which is precisely how Minecraft shakes out, and it ends with
+  // everything built of cobble. At one per swing it is far too slow to be why
+  // you came down and more than enough that you never leave empty: stone is a
+  // byproduct of the tunnel, never a reason for it. The reasons are ore, junk,
+  // slate and the dark.
+  //
+  // No `find` line goes with it, deliberately. A toast every time you swing
+  // would turn the quietest verb in the game into a stream of notifications;
+  // the number in the satchel going up is the whole of the telling.
+  add(world.inventory, "stone", 1);
+
   if (!payout) return { carved: true, find: null };
   add(world.inventory, "junk", 1);
   return { carved: true, find: deepFindLine(world, x, y) };

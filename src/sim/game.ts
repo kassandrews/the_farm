@@ -23,11 +23,14 @@ import {
   sink,
   fillShaft,
   canCarve,
-  placePlank,
+  placeFloor,
+  floorFinish,
+  clearFloorFinish,
   refusesConstruction,
   isWalkable,
   tileAt,
   setTile,
+  tileKey,
   homesteadOrigin,
   generatedTile,
   cubeSite,
@@ -47,7 +50,7 @@ import { structureDef } from "../content/structures";
 import {
   GRASS,
   DIRT,
-  PLANK,
+  FLOOR,
   FARMLAND,
   FARMLAND_WET,
   MUSHROOM,
@@ -55,6 +58,7 @@ import {
   SKY_STAIR,
   JUNK_PILE,
   MAILBOX,
+  FLOOR_BUILD,
 } from "../content/tiles";
 import { letterFor } from "../content/found";
 import { dayNumber } from "./found";
@@ -62,7 +66,7 @@ import { foundAt } from "./world";
 import { digWithFind, carveWithFind, findLine } from "./junk";
 import { emptyInventory, add, canAfford, spend, refund, shortfall } from "./inventory";
 import type { Cost } from "./inventory";
-import { itemLabel } from "../content/items";
+import { itemLabel, priceItems } from "../content/items";
 import type { ItemId } from "../content/items";
 import { gather, nodeAt, nodeNear, updateRegrowth, updateReclaim } from "./gather";
 import { nodeDef } from "../content/nodes";
@@ -72,7 +76,8 @@ import { meetGhost } from "./ghost";
 import { present } from "./presence";
 import { meetCosmos, updateCosmos } from "./cosmos";
 import { takeAlong, updateCompany } from "./company";
-import { starterSkins, defaultSkin } from "../content/skins";
+import { starterSkins, defaultSkin, skinDef } from "../content/skins";
+import type { SkinId, SkinClass } from "../content/skins";
 import { STARTING_CROP } from "../content/crops";
 import { STARTING_SEED, canSow, sow } from "./seeds";
 import { canPlant, water, canWater, harvest, isRipe, updateAllCrops, updateCrop } from "./crops";
@@ -147,6 +152,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     homestead: { spot: opts.spot, originX: origin.x, originY: origin.y },
     overrides: {},
     under: {}, // solid rock until you cut into it
+    finishes: {}, // empty means every floor is pale pine — see WorldState.finishes
     build: {},
     furniture: {},
     underFurniture: {},
@@ -161,10 +167,11 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     inventory: { ...emptyInventory(), wood: 8, seed: STARTING_SEED },
     regrow: {},
     reclaim: {},
-    skins: {
-      unlocked: starterSkins(),
-      selected: { wood: defaultSkin("wood"), stone: defaultSkin("stone"), cloth: defaultSkin("cloth") },
-    },
+    // Empty on purpose: `selected` is keyed by tool and every entry is a choice
+    // the player made. `loadedFinish()` supplies the default for a tool nobody
+    // has dressed yet, so seeding this with one entry per tool would be writing
+    // down the fallback in three places and letting two of them drift.
+    skins: { unlocked: starterSkins(), selected: {} },
     seeds: { unlocked: [STARTING_CROP], selected: STARTING_CROP },
     museum: { donated: [] },
     // Same helper the v15 migration uses, so a new town and an upgraded one
@@ -517,20 +524,96 @@ export function tick(world: WorldState, dt: number, now: number): void {
   updateReclaim(world, now); // and the grass closes over what you dug
 }
 
-/** What building costs. Deliberately tiny — a rhythm, not an economy
- *  (DESIGN §Materials). Digging and gathering appear nowhere here because
- *  terraforming is always free. Structures carry their own cost in the content
- *  table, so this is only the floor. */
-export const BUILD_COSTS: Record<"plank", Cost> = {
-  plank: { wood: 1 }, // one tree (8 wood) lays eight boards
-};
+/** Which finish classes a build tool may wear. One question asked in one place,
+ *  because the picker and the cost rule both need the same answer and a second
+ *  copy of this switch would be the thing that drifts. */
+export function toolFinishes(tool: BuildTool): SkinClass[] {
+  if (tool === "floor") return FLOOR_BUILD.finishes;
+  if (tool === "erase") return [];
+  if (isFurnitureTool(tool)) return furnitureDef(tool).finishes;
+  return structureDef(tool).finishes;
+}
 
-/** What a build tool costs to apply. */
-export function buildCost(tool: BuildTool): Cost {
-  if (tool === "plank") return BUILD_COSTS.plank;
+/** The finish a tool is currently loaded with, guarded.
+ *
+ *  Guarded because `world.skins.selected` is a Partial keyed by tool and can go
+ *  stale in two ways a save will eventually see: a tool the player never
+ *  dressed has no entry at all, and an entry can name a finish that no longer
+ *  applies (a def's `finishes` list narrowed) or was never unlocked (a hand-
+ *  edited save). Both fall back to the default for the tool's first class
+ *  rather than throwing — a wrong colour is recoverable, a crash on load is
+ *  not. */
+export function loadedFinish(world: WorldState, tool: BuildTool): SkinId {
+  const classes = toolFinishes(tool);
+  const chosen = world.skins.selected[tool];
+  if (
+    chosen &&
+    classes.includes(skinDef(chosen).applies) &&
+    world.skins.unlocked.includes(chosen)
+  ) {
+    return chosen;
+  }
+  return defaultSkin(classes[0] ?? "wood");
+}
+
+/** The finish already worn by whatever this tool would replace here, or null if
+ *  there is nothing of the tool's own kind on this cell.
+ *
+ *  This is what makes re-finishing distinguishable from building, and it only
+ *  answers for the two things that are SURFACES — a floor and a wall. Furniture
+ *  is deliberately excluded: a piece occupies several cells from one anchor, so
+ *  "the chair already here" is a question about the anchor rather than the cell
+ *  you tapped, and placement onto an occupied cell already refuses. Re-finishing
+ *  a chair means taking it back and putting it down again, which costs nothing
+ *  because erase refunds. */
+function existingFinish(world: WorldState, tool: BuildTool, x: number, y: number): SkinId | null {
+  if (tool === "floor") return tileAt(world, x, y) === FLOOR ? floorFinish(world, x, y) : null;
+  if (tool === "wall" || tool === "door") {
+    const cell = world.build[tileKey(x, y)];
+    return cell && cell.id === tool ? cell.finish : null;
+  }
+  return null;
+}
+
+/** Where to go and get the thing you are short of.
+ *
+ *  The shortfall message has always ended in a signpost rather than a refusal —
+ *  "You'd need 2 wood. There are trees." — and once a wall can be flagstones,
+ *  a hardcoded mention of trees starts pointing at the wrong half of the map.
+ *  Keyed by the item because the item is what you are short of; the fallback is
+ *  silence rather than a guess, since a wrong direction is worse than none. */
+function whereToFind(need: Partial<Record<ItemId, number>>): string {
+  const WHERE: Partial<Record<ItemId, string>> = {
+    wood: "There are trees.",
+    stone: "There are rocks.",
+    ore: "There is ore in the deep rock.",
+    cloth: "The Menace sells cloth.",
+  };
+  for (const id of Object.keys(need) as ItemId[]) {
+    const line = WHERE[id];
+    if (line) return line;
+  }
+  return "";
+}
+
+/** What a build tool costs to apply IN A GIVEN FINISH.
+ *
+ *  The finish is an argument rather than something this reads off the world,
+ *  and that is the cost-follows-material rule made unavoidable (DESIGN
+ *  §Materials): a wall in pine costs wood and a wall in slate costs stone, so
+ *  there is no price to quote until you know which was asked for. A caller that
+ *  wants "what the player is about to spend" passes `loadedFinish(world, tool)`.
+ *
+ *  Erase is free and refunds; it wears no finish and has no price to name. */
+export function buildCost(tool: BuildTool, finish: SkinId): Cost {
   if (tool === "erase") return {};
-  if (isFurnitureTool(tool)) return furnitureDef(tool).cost;
-  return structureDef(tool).cost;
+  const price =
+    tool === "floor"
+      ? FLOOR_BUILD.cost
+      : isFurnitureTool(tool)
+        ? furnitureDef(tool).cost
+        : structureDef(tool).cost;
+  return priceItems(price, skinDef(finish).applies);
 }
 
 export type ActionKind =
@@ -1184,9 +1267,13 @@ export function buildAt(
     // Furniture comes up FIRST. It sits inside rooms, so if erase preferred the
     // structure layer you'd take the wall out from behind a shelf you were
     // aiming at.
+    // Every refund below is computed from the finish the thing was WEARING, not
+    // from the one currently loaded in the bar. Taking down a slate wall has to
+    // return stone even if you are holding pine at the time, or erase becomes a
+    // way to launder one material into another.
     const piece = removeFurnitureAt(world, x, y, layer);
     if (piece) {
-      refund(world.inventory, furnitureDef(piece.id).cost);
+      refund(world.inventory, buildCost(piece.id, piece.finish));
       return { changed: true, message: `${furnitureDef(piece.id).name} taken back.`, broke: false };
     }
     // Underground, furniture is all there is to take back. Everything below this
@@ -1196,7 +1283,7 @@ export function buildAt(
     if (layer === "under") return { changed: false, message: "Nothing to take back down here.", broke: false };
     const taken = removeStructure(world, x, y);
     if (taken) {
-      refund(world.inventory, structureDef(taken.id).cost);
+      refund(world.inventory, buildCost(taken.id, taken.finish));
       return { changed: true, message: `${structureDef(taken.id).name} taken back down.`, broke: false };
     }
     // A shaft comes up like anything else you put down. ACT has no undo
@@ -1210,9 +1297,11 @@ export function buildAt(
       }
       return { changed: true, message: "Filled in. The ground closes over it.", broke: false };
     }
-    if (tileAt(world, x, y) === PLANK) {
+    if (tileAt(world, x, y) === FLOOR) {
+      const worn = floorFinish(world, x, y);
       setTile(world, x, y, DIRT);
-      refund(world.inventory, BUILD_COSTS.plank);
+      clearFloorFinish(world, x, y);
+      refund(world.inventory, buildCost("floor", worn));
       return { changed: true, message: "Board lifted.", broke: false };
     }
     return { changed: false, message: "Nothing built here.", broke: false };
@@ -1231,23 +1320,44 @@ export function buildAt(
     return { changed: false, message: "Not on this ground. ... The dark trees were here first.", broke: false };
   }
 
-  const cost = buildCost(tool);
+  const finish = loadedFinish(world, tool);
+  const was = existingFinish(world, tool, x, y);
+
+  // Placing the very thing that is already there. Refused rather than charged
+  // or witnessed: during a drag you sweep over cells you have already done, and
+  // every one of them would otherwise spend material, log a memory and consume
+  // a slot in the undo stroke.
+  if (was !== null && was === finish) {
+    return { changed: false, message: "Already finished that way.", broke: false };
+  }
+
+  // The free-refinish rule (DESIGN §Materials). Changing a thing's look within
+  // its own material costs nothing, forever, on things already built — that is
+  // the free axis, and removing the town-wide selector must not take it away.
+  // Across a material it is not a repaint but a rebuild, so it costs the new
+  // stuff at full price.
+  const refinishing = was !== null && skinDef(was).applies === skinDef(finish).applies;
+  const cost: Cost = refinishing ? {} : buildCost(tool, finish);
   if (!canAfford(world.inventory, cost)) {
     const need = shortfall(world.inventory, cost);
     const what = (Object.entries(need) as [ItemId, number][]).map(([id, n]) => itemLabel(id, n)).join(", ");
-    return { changed: false, message: `You'd need ${what}. There are trees.`, broke: true };
+    return { changed: false, message: `You'd need ${what}. ${whereToFind(need)}`, broke: true };
   }
 
-  if (tool === "plank") {
-    if (!placePlank(world, x, y)) return { changed: false, message: "Can't lay a board there.", broke: false };
+  if (tool === "floor") {
+    if (!placeFloor(world, x, y, finish)) return { changed: false, message: "Can't lay a floor there.", broke: false };
     spend(world.inventory, cost);
-    witness(world, "built_plank", undefined, now, false, { x, y });
-    return { changed: true, message: "A board goes down. The house begins.", broke: false };
+    witness(world, "built_floor", undefined, now, false, { x, y });
+    return {
+      changed: true,
+      message: refinishing ? "Refinished." : "A board goes down. The house begins.",
+      broke: false,
+    };
   }
 
   if (isFurnitureTool(tool)) {
     const def = furnitureDef(tool);
-    if (!placeFurniture(world, x, y, tool, facing, world.skins.selected[def.finish], layer)) {
+    if (!placeFurniture(world, x, y, tool, facing, finish, layer)) {
       return { changed: false, message: `The ${def.name.toLowerCase()} won't fit there.`, broke: false };
     }
     spend(world.inventory, cost);
@@ -1257,17 +1367,16 @@ export function buildAt(
     // Present-only on any layer that is not the ground: the town hears about
     // what you build in the town, and nobody at all hears about a board laid in
     // a tunnel — or, some day, in the sky.
-    witness(world, "built_plank", undefined, now, layer !== "surface", { x, y });
+    witness(world, "built_floor", undefined, now, layer !== "surface", { x, y });
     return { changed: true, message: furnitureFlavour(tool, layer), broke: false };
   }
 
-  const finish = world.skins.selected[structureDef(tool).finish];
   const roomsBefore = rooms(world).length;
   if (!placeStructure(world, x, y, tool, finish)) {
     return { changed: false, message: `Can't put a ${structureDef(tool).name.toLowerCase()} there.`, broke: false };
   }
   spend(world.inventory, cost);
-  witness(world, "built_plank", undefined, now, false, { x, y });
+  witness(world, "built_floor", undefined, now, false, { x, y });
 
   // Closing the last gap is the beat: the roof arrives on its own, because it
   // was never something you could buy (DESIGN §Structures).

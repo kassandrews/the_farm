@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { newWorld, buildAt } from "./game";
+import { newWorld, buildAt, buildCost, loadedFinish } from "./game";
 import { setTile, isWalkable, tileKey } from "./world";
 import { GRASS } from "../content/tiles";
 import { placeStructure, buildRevision } from "./structures";
@@ -104,7 +104,7 @@ describe("building furniture through the build tool", () => {
     const before = w.inventory.wood!;
     const placed = buildAt(w, "bed", 20, 20, 1000);
     expect(placed.changed).toBe(true);
-    expect(w.inventory.wood).toBe(before - furnitureDef("bed").cost.wood!);
+    expect(w.inventory.wood).toBe(before - buildCost("bed", loadedFinish(w, "bed")).wood!);
 
     const removed = buildAt(w, "erase", 20, 21, 1000);
     expect(removed.changed).toBe(true);

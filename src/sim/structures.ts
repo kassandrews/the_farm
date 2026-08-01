@@ -62,7 +62,7 @@ export function touchBuild(world: WorldState): void {
 
 /** Can a structure go here? Ground must be something you could stand on (no
  *  building into the river) and nothing already planted may be paved over —
- *  the same courtesy placePlank extends. An existing piece is NOT a blocker:
+ *  the same courtesy placeFloor extends. An existing piece is NOT a blocker:
  *  painting a door over a wall is how you cut a doorway, and re-painting a
  *  wall in a new finish shouldn't require demolishing it first. */
 export function canPlaceStructure(world: WorldState, x: number, y: number): boolean {

@@ -327,7 +327,7 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
 /** Something the town stood in the open, on ground it did not lay.
  *
  *  Separate from TOWN_BUILDINGS because a building OWNS ITS GROUND — `stampBuilding`
- *  writes PLANK under its whole footprint first, so nothing lands in the river or
+ *  writes FLOOR under its whole footprint first, so nothing lands in the river or
  *  inside a generated tree. That is exactly wrong for a lone object on the plaza:
  *  the paving is already there and already walkable, and a one-cell plank patch
  *  under the board would be a scar in the middle of the square.

@@ -19,7 +19,8 @@
 // Ids are strings and are stored in saves, so they are STABLE — add rows, never
 // rename one without a migration.
 
-import type { ItemId } from "./items";
+import type { BuildPrice } from "./items";
+import type { SkinClass } from "./skins";
 
 export type StructureId = "wall" | "door";
 
@@ -27,8 +28,10 @@ export interface StructureDef {
   id: StructureId;
   name: string;
   /** What placing it costs. Small on purpose: a rhythm, not an economy
-   *  (DESIGN §Materials). Placing a thing IS making it — no recipe tree. */
-  cost: Partial<Record<ItemId, number>>;
+   *  (DESIGN §Materials). Placing a thing IS making it — no recipe tree.
+   *
+   *  A bare number is N of the finish's own material — see items.BuildPrice. */
+  cost: BuildPrice;
   /** Blocks walking. A door is a hole you can walk through, which is precisely
    *  what makes it worth having a separate row for. */
   solid: boolean;
@@ -36,29 +39,42 @@ export interface StructureDef {
    *  A door seals a room even though you can walk through it — otherwise every
    *  house would leak at its own front door and never get a roof. */
   encloses: boolean;
-  /** Which finish class it wears, so a built wall follows the same free
-   *  appearance axis as a floor. */
-  finish: "wood" | "stone";
+  /** Which finish classes it may wear — a LIST, because a wall may be boards
+   *  or flagstones and the player picks by pointing at the look they want
+   *  (DESIGN §Materials: "the player is never asked which class they mean").
+   *
+   *  It was a single class until floors got their own finish. That was fine
+   *  while every buildable was timber, but it made the stone finishes — granite
+   *  from the start, slate twelve tiles down a tunnel, cobble for twelve junk —
+   *  unwearable by anything in the game. They were obtainable and had nowhere
+   *  to go. */
+  finishes: SkinClass[];
 }
 
 export const STRUCTURES: Record<StructureId, StructureDef> = {
   wall: {
     id: "wall",
     name: "Wall",
-    // Two boards a wall, against one a floor board: a wall is more of a thing
-    // than a plank, and one tree (8 wood) still puts up four of them.
-    cost: { wood: 2 },
+    // Two units a wall, against one a floor tile: a wall is more of a thing
+    // than a board, and one tree (8 wood) still puts up four of them. Two of
+    // STONE if you asked for flagstones — same number, different stuff, which
+    // is the whole of the cost-follows-material rule.
+    cost: 2,
     solid: true,
     encloses: true,
-    finish: "wood",
+    finishes: ["wood", "stone"],
   },
   door: {
     id: "door",
     name: "Door",
-    cost: { wood: 4 },
+    cost: 4,
     solid: false,
     encloses: true,
-    finish: "wood",
+    // Wood only, and not an oversight. A door is a made object rather than a
+    // surface — it swings, it has a handle, it is the one part of a wall you
+    // touch — and a slab of granite on hinges is a portcullis. The stone
+    // finishes reach the wall it sits in; they stop at the door itself.
+    finishes: ["wood"],
   },
 };
 

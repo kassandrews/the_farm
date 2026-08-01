@@ -28,6 +28,7 @@
 
 import type { WorldState, BuildCell, FurnitureCell, Layer } from "./types";
 import type { TileId } from "../content/tiles";
+import type { SkinId } from "../content/skins";
 import type { Inventory } from "./inventory";
 import type { ItemId } from "../content/items";
 import { MAX_SPAN } from "../content/furniture";
@@ -50,6 +51,17 @@ interface CellSnapshot {
   /** The furniture ANCHOR entry stored at this key, if any. Furniture is stored
    *  once at its anchor (sim/furniture.ts), so this is the only record. */
   furniture: FurnitureCell | null;
+  /** The floor FINISH stored at this key, if any — null covers both "not a
+   *  floor" and "a floor wearing the default", which the sparse map encodes
+   *  identically as an absent entry (WorldState.finishes).
+   *
+   *  Surface only, like `build`: there are no laid floors in the rock.
+   *
+   *  Needed because re-finishing is a build stroke that changes NOTHING else.
+   *  The ground override stays FLOOR and the build cell stays absent, so a
+   *  snapshot of those two restores a cell that is still the new colour — undo
+   *  would report success and visibly do nothing. */
+  finish: SkinId | null;
 }
 
 interface Stroke {
@@ -124,6 +136,7 @@ export function captureCell(world: WorldState, x: number, y: number): void {
     build: under ? null : (world.build[key] ?? null),
     ground: (under ? world.under[key] : world.overrides[key]) ?? null,
     furniture: furnitureFor(world, stroke.layer)[key] ?? null,
+    finish: under ? null : (world.finishes[key] ?? null),
   });
   for (let ay = y - MAX_SPAN + 1; ay <= y; ay++) {
     for (let ax = x - MAX_SPAN + 1; ax <= x; ax++) {
@@ -190,6 +203,9 @@ export function undoStroke(world: WorldState): boolean {
     if (!under) {
       if (snap.build) world.build[key] = snap.build;
       else delete world.build[key];
+
+      if (snap.finish) world.finishes[key] = snap.finish;
+      else delete world.finishes[key];
     }
 
     if (snap.ground !== null) ground[key] = snap.ground;

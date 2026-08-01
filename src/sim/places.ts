@@ -44,7 +44,7 @@ export type PlaceKind =
   | "met" // the first time you spoke to them, and where you were standing
   | "slept" // a bed they claimed. Past sleepers stay; that IS the history
   // Work the ground saw, merged by distance (see PLACE_MERGE):
-  | "built_plank"
+  | "built_floor"
   | "dug"
   | "gathered"
   | "planted_carrot"
@@ -60,7 +60,7 @@ export type PlaceKind =
  *  log a UI reads back would be the game telling you about a secret. */
 export function isWorkPlace(kind: string): kind is PlaceKind {
   return (
-    kind === "built_plank" ||
+    kind === "built_floor" ||
     kind === "dug" ||
     kind === "gathered" ||
     kind === "planted_carrot" ||

@@ -37,7 +37,7 @@ describe("friendship milestones", () => {
     v.y = w.player.y;
     const before = v.friendship;
     const pt = playerTile(w);
-    buildAt(w, "plank", pt.x, pt.y, 1000);
+    buildAt(w, "floor", pt.x, pt.y, 1000);
     expect(v.friendship).toBeGreaterThan(before);
   });
 
@@ -48,7 +48,7 @@ describe("friendship milestones", () => {
     v.y = w.player.y + 40;
     const before = v.friendship;
     const pt = playerTile(w);
-    buildAt(w, "plank", pt.x, pt.y, 1000);
+    buildAt(w, "floor", pt.x, pt.y, 1000);
     expect(v.friendship).toBe(before);
   });
 

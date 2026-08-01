@@ -36,7 +36,7 @@ export const OFFICE_IDLE: string[] = [
 // A tiny reactive bank the office pulls from once the player has done things —
 // it notices your homestead taking shape, in its own flat way.
 export const OFFICE_MEMORY: Partial<Record<string, ((v: string) => string)[]>> = {
-  built_plank: [
+  built_floor: [
     () => "I see you've been building. Unpermitted, but I'll allow it. Don't tell the stamp.",
     () => "Floorboards, is it. The homestead grows. Noted. Filed. Forgotten by lunch.",
   ],
@@ -105,7 +105,7 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
       (v) => `. ... ${v}. I remember ${v}. The dark, the lantern, the whole methodology.`,
     ],
     // Events witnessed here on the Farm.
-    built_plank: [
+    built_floor: [
       () => "You built that yourself? Tile by tile? Fascinating. Wildly inefficient. I approve.",
       () => "I watched you lay those boards. I took notes. The notes say: 'good.'",
     ],
@@ -719,7 +719,7 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
 //
 //   • `met` — the only fact in the set the player could not have worked out by
 //     looking around the room, and the only one that is about the two of you.
-//   • `built_plank` — the roadmap's own example line, and the one thing in
+//   • `built_floor` — the roadmap's own example line, and the one thing in
 //     here a resident can pay the player a compliment about.
 //
 // A villager remarking that you once dug a hole in what is now their kitchen is
@@ -741,7 +741,7 @@ export const RESIDENT_HISTORY: Partial<
       (w) => `${w} and I first spoke in this room. I logged it. I log arrivals.`,
       (w) => `This is where ${w} turned up. I have the date. I have most dates.`,
     ],
-    built_plank: [
+    built_floor: [
       () => "You laid this floor. I've measured it. It's within tolerance, which is a compliment.",
       () => "These are your boards. ... I stand on them daily and think about the labour. Briefly.",
     ],
@@ -751,7 +751,7 @@ export const RESIDENT_HISTORY: Partial<
       (w) => `${w} was received in this room. No form was filed. There ought to have been a form.`,
       (w) => `This is where ${w} was first encountered. I remember rooms. It's what I have.`,
     ],
-    built_plank: [
+    built_floor: [
       () => "You laid this floor yourself. Unpermitted. ... Excellent work. I'd have approved it.",
       () => "These boards went down without a requisition. I've decided not to notice.",
     ],
@@ -761,7 +761,7 @@ export const RESIDENT_HISTORY: Partial<
       (w) => `${w} came in here once, for the first time. I was already here. I'm always already here.`,
       (w) => `This is the room where you met ${w}. I watched. I watch everything in here.`,
     ],
-    built_plank: [
+    built_floor: [
       () => "You put this floor down. Personally. ... I have not tripped on it once, which is my review.",
       () => "Your boards. Every one. I've walked the whole thing checking. They held.",
     ],
@@ -771,7 +771,7 @@ export const RESIDENT_HISTORY: Partial<
       (w) => `This is where ${w} came from! Not FROM. But where they were. First!`,
       (w) => `${w}! In this room! That happened! I was so pleased. I'm still pleased.`,
     ],
-    built_plank: [
+    built_floor: [
       () => "You made this floor. With your HANDS. I've been lying on it thinking about that.",
       () => "These are your boards! I sleep on them. It's the best floor.",
     ],
@@ -781,7 +781,7 @@ export const RESIDENT_HISTORY: Partial<
       (w) => `${w} made their entrance here. ... I have thought about restaging it.`,
       (w) => `This room has met ${w}. Rooms remember an entrance. So do I.`,
     ],
-    built_plank: [
+    built_floor: [
       () => "You built this floor. I have performed on it. It does not creak, which is a loss.",
       () => "Your boards. ... A stage is only ever somebody's floor, taken seriously.",
     ],
@@ -791,7 +791,7 @@ export const RESIDENT_HISTORY: Partial<
       (w) => `${w} first showed up in this room. I was under something at the time.`,
       (w) => `This is where ${w} happened. I remember. I remember rooms better than names.`,
     ],
-    built_plank: [
+    built_floor: [
       () => "You laid these boards. I've had one up. I put it back. You'd never know.",
       () => "Your floor. Nice work. There's a gap by the wall and I'm keeping it.",
     ],

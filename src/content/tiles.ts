@@ -4,6 +4,9 @@
 // retired. The renderer reads `top`/`shade` to draw a tile with a subtle 3D
 // lip; the sim reads the behaviour flags.
 
+import type { BuildPrice } from "./items";
+import type { SkinClass } from "./skins";
+
 export type TileId = number;
 
 export interface TileDef {
@@ -40,10 +43,15 @@ export interface TileDef {
 }
 
 // Stable ids. The vertical slice ships six; the two the player places by hand
-// are dirt and plank (DESIGN §"Dig and place two tile types").
+// are dirt and floor (DESIGN §"Dig and place two tile types").
+//
+// FLOOR is `2` and stays `2`. The tile the player lays used to be called PLANK,
+// which named the MATERIAL — and a tool called Plank that can be slate is a
+// contradiction in the toolbar, so the word went. The number never can: it is
+// written into every chunk override in every save.
 export const GRASS: TileId = 0;
 export const DIRT: TileId = 1;
-export const PLANK: TileId = 2;
+export const FLOOR: TileId = 2;
 export const STONE: TileId = 3; // town plaza paving
 export const WATER: TileId = 4;
 export const FARMLAND: TileId = 5; // tilled, dry
@@ -51,6 +59,24 @@ export const FARMLAND_WET: TileId = 6; // tilled, watered (crop drinks from it)
 export const MUSHROOM: TileId = 7; // spread here while you were away — scenery, not a chore
 export const TREE: TileId = 8; // a resource node; solid, gatherable, regrows
 export const ROCK: TileId = 9;
+
+/** What laying a floor costs, and what it may be finished in.
+ *
+ *  It lives here rather than in content/structures.ts because a floor is a
+ *  TILE — it does not stand up, and structures.ts is explicitly the things
+ *  that do. It lives in content at all (rather than as a constant in
+ *  sim/game.ts, where it sat as BUILD_COSTS) because content is data
+ *  (CLAUDE.md) and this is now two fields with a rule attached rather than one
+ *  number.
+ *
+ *  `cost: 1` is one unit of whatever the finish is made of — one tree's eight
+ *  wood still lays eight boards, and a rock's twelve stone lays twelve
+ *  flagstones. See items.BuildPrice for why a bare number rather than a
+ *  record. */
+export const FLOOR_BUILD: { cost: BuildPrice; finishes: SkinClass[] } = {
+  cost: 1,
+  finishes: ["wood", "stone"],
+};
 
 // The underground (Phase 4a). Four rows, and note what they are NOT: a second
 // set of grass/dirt/farmland. Down there the world starts SOLID and you carve
@@ -158,9 +184,15 @@ export const TILES: Record<TileId, TileDef> = {
     shade: "#8f6339",
     tillable: true,
   },
-  [PLANK]: {
-    id: PLANK,
-    name: "Wood plank",
+  // The colours here are pale pine's, and they are a FALLBACK rather than the
+  // truth: a laid floor carries its own finish (world.finishes) and the
+  // renderer paints from that. These are what a floor looks like when no
+  // finish is recorded, which after the v27 migration means one that somehow
+  // escaped the backfill. Keeping them in step with `pine` in content/skins.ts
+  // means that case is invisible instead of magenta.
+  [FLOOR]: {
+    id: FLOOR,
+    name: "Floor",
     color: "#c79a5e",
     top: "#d9ac6c",
     shade: "#a97e46",

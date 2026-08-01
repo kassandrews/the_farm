@@ -14,7 +14,8 @@
 // bedroom.
 
 import { describe, it, expect } from "vitest";
-import { newWorld, buildAt, playerTile, UNDER_TOOLS } from "./game";
+import { newWorld, buildAt, playerTile, UNDER_TOOLS, buildCost } from "./game";
+import { defaultSkin } from "../content/skins";
 import { FURNITURE, furnitureDef } from "../content/furniture";
 import { STRUCTURES } from "../content/structures";
 import { furnitureAt, furnitureFor, canPlaceFurniture } from "./furniture";
@@ -51,12 +52,20 @@ describe("ore is an alternative, never a requirement", () => {
     // and a bed are what housing is made of, and a commission asks for all
     // three. Put ore in any of those costs and giving somebody a home requires
     // going underground first — which is the one thing DESIGN forbids ore to do.
+    // Asked through buildCost rather than off the def, because a cost may now be
+    // a bare number meaning "N of the finish's own material" (items.BuildPrice).
+    // Resolving it is what turns that into the item list this rule is about —
+    // and the resolution can never produce ore, which is the rule holding.
     for (const def of Object.values(STRUCTURES)) {
-      expect(def.cost.ore).toBeUndefined();
+      for (const cls of def.finishes) {
+        expect(buildCost(def.id, defaultSkin(cls)).ore).toBeUndefined();
+      }
     }
     for (const [id, def] of Object.entries(FURNITURE)) {
       if (id === "lamp") continue;
-      expect(def.cost.ore).toBeUndefined();
+      for (const cls of def.finishes) {
+        expect(buildCost(def.id, defaultSkin(cls)).ore).toBeUndefined();
+      }
     }
   });
 

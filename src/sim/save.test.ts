@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { newWorld } from "./game";
+import { newWorld, loadedFinish } from "./game";
 import { serialize, deserialize, migrateSave, SCHEMA_VERSION } from "./save";
-import { tileKey, shafts, RECLAIM_MS } from "./world";
-import { SHAFT, CAVE_FLOOR, DIRT, PLANK } from "../content/tiles";
+import { tileKey, shafts, RECLAIM_MS, floorFinish } from "./world";
+import { SHAFT, CAVE_FLOOR, DIRT, FLOOR } from "../content/tiles";
 import { TOWN_BUILDINGS, footprintCells } from "../content/town";
 import { count } from "./inventory";
 import { STARTING_SEED } from "./seeds";
@@ -288,9 +288,14 @@ describe("migrations", () => {
     };
   }
 
+  // These read the shape v27 left behind, not the one v10 wrote. A v9 save runs
+  // the whole ladder, and v27 rekeys `skins.selected` from material class to
+  // build tool — so "somewhere to put a cloth finish" is now the two cloth
+  // pieces having one, which is the same claim in the current vocabulary.
   it("gives an existing town somewhere to put a cloth finish", () => {
     const migrated = migrateSave(v9Save())!;
-    expect(migrated.skins.selected.cloth).toBe("undyed");
+    expect(loadedFinish(migrated, "cushion")).toBe("undyed");
+    expect(loadedFinish(migrated, "rug")).toBe("undyed");
   });
 
   it("unlocks the cloth starters, or the picker would be empty", () => {
@@ -331,7 +336,9 @@ describe("migrations", () => {
   it("leaves a chosen cloth finish alone", () => {
     const save = v9Save();
     (save.skins as { selected: Record<string, string> }).selected.cloth = "madder";
-    expect(migrateSave(save)!.skins.selected.cloth).toBe("madder");
+    const migrated = migrateSave(save)!;
+    expect(loadedFinish(migrated, "cushion")).toBe("madder");
+    expect(loadedFinish(migrated, "rug")).toBe("madder");
   });
 
   it("keeps villager identity and memory across the v2 → v3 drop", () => {
@@ -642,7 +649,7 @@ describe("v21 → v22: dug earth grasses over", () => {
     // its bare patches are sitting there in `overrides`.
     const before = Date.now();
     const migrated = migrateSave(
-      v21Save({ overrides: { "4,4": DIRT, "5,4": DIRT, "6,4": PLANK } }),
+      v21Save({ overrides: { "4,4": DIRT, "5,4": DIRT, "6,4": FLOOR } }),
     )!;
     expect(Object.keys(migrated.reclaim).sort()).toEqual(["4,4", "5,4"]);
     // Dated from THIS LOAD, not from a dig time nobody recorded: an old scar gets
@@ -757,7 +764,7 @@ describe("v23 → v24: the ground gained a memory", () => {
 
   it("invents nothing from the buildings that are already standing", () => {
     const raw = v23Save();
-    raw.build = { "10,10": { id: "plank", finish: "pine" }, "10,11": { id: "wall", finish: "pine" } };
+    raw.build = { "10,10": { id: "floor", finish: "pine" }, "10,11": { id: "wall", finish: "pine" } };
     const migrated = migrateSave(raw)!;
     expect(migrated.places).toEqual([]);
     // And the buildings themselves are untouched: a migration that reads the
@@ -840,5 +847,84 @@ describe("v25 → v26: the Notebook", () => {
     expect(migrated.villagers).toEqual(raw.villagers);
     expect(migrated.filings).toEqual(raw.filings);
     expect(migrated.places).toEqual(raw.places);
+  });
+});
+
+describe("v26 → v27: floors carry their own finish", () => {
+  /** A v26 save: floors laid, a town-wide wood finish chosen, and the note kind
+   *  spelled the way it was spelled before floors stopped being planks. */
+  function v26Save(townWood = "walnut"): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const overrides = { ...(w.overrides as Record<string, number>), "5,5": 2, "6,5": 2, "7,5": 0 };
+    const player = { ...(w.player as Record<string, unknown>), memory: [{ kind: "built_plank", at: 1000 }] };
+    const villagers = (w.villagers as Record<string, unknown>[]).map((v) => ({
+      ...v,
+      memory: [{ kind: "built_plank", at: 1000 }],
+    }));
+    return {
+      ...w,
+      schemaVersion: 26,
+      overrides,
+      player,
+      villagers,
+      places: [{ kind: "built_plank", x: 5, y: 5, at: 1000 }],
+      skins: { unlocked: ["pine", "walnut", "granite", "undyed"], selected: { wood: townWood, stone: "granite", cloth: "undyed" } },
+    };
+  }
+
+  it("stamps the town-wide finish onto every floor, so nothing changes colour", () => {
+    // The whole point of v27 is that floors stop moving when you change your
+    // mind. A migration that shuffled them on the way in would be the last time
+    // they ever did.
+    const migrated = migrateSave(v26Save())!;
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated.finishes["5,5"]).toBe("walnut");
+    expect(migrated.finishes["6,5"]).toBe("walnut");
+  });
+
+  it("writes nothing for ground that was never a floor", () => {
+    const migrated = migrateSave(v26Save())!;
+    expect(migrated.finishes["7,5"]).toBeUndefined(); // grass
+  });
+
+  it("stores NOTHING at all when the town was building in pine", () => {
+    // An absent entry already means pale pine, so the commonest case must cost
+    // zero bytes — otherwise the map is the size of everything ever paved
+    // rather than the size of the choices actually made.
+    const migrated = migrateSave(v26Save("pine"))!;
+    expect(migrated.finishes).toEqual({});
+    expect(floorFinish(migrated, 5, 5)).toBe("pine"); // and still reads back right
+  });
+
+  it("rekeys the finish selection from material class to build tool", () => {
+    const migrated = migrateSave(v26Save())!;
+    expect(loadedFinish(migrated, "floor")).toBe("walnut");
+    expect(loadedFinish(migrated, "wall")).toBe("walnut");
+    expect(loadedFinish(migrated, "door")).toBe("walnut");
+    expect(loadedFinish(migrated, "cushion")).toBe("undyed");
+  });
+
+  it("renames built_plank in all three logs, or old memories are orphaned", () => {
+    // Dialogue is written against the note kind (CLAUDE.md: villagers must be
+    // able to reference remembered events). Leave the old string in the save and
+    // a villager who watched you lay a floor quietly stops mentioning it.
+    const migrated = migrateSave(v26Save())!;
+    expect(migrated.player.memory[0].kind).toBe("built_floor");
+    expect(migrated.villagers[0].memory[0].kind).toBe("built_floor");
+    expect((migrated.places as { kind: string }[])[0].kind).toBe("built_floor");
+    expect(JSON.stringify(migrated)).not.toContain("built_plank");
+  });
+
+  it("keeps everything else about the note it renamed", () => {
+    const migrated = migrateSave(v26Save())!;
+    expect((migrated.places as { x: number; y: number; at: number }[])[0]).toMatchObject({ x: 5, y: 5, at: 1000 });
+  });
+
+  it("leaves the rest of the town alone", () => {
+    const raw = v26Save();
+    const migrated = migrateSave(raw)!;
+    expect(migrated.build).toEqual(raw.build);
+    expect(migrated.crops).toEqual(raw.crops);
+    expect(migrated.skins.unlocked).toEqual(["pine", "walnut", "granite", "undyed"]);
   });
 });

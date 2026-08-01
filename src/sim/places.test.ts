@@ -13,9 +13,9 @@ describe("what the ground remembers", () => {
     // The whole reason the log survives. A floor is two hundred boards and one
     // afternoon; recording two hundred entries would flood out everything else.
     const l = log(
-      { kind: "built_plank", x: 40, y: 40, at: T },
-      { kind: "built_plank", x: 41, y: 40, at: T + 1 },
-      { kind: "built_plank", x: 44, y: 43, at: T + 2 },
+      { kind: "built_floor", x: 40, y: 40, at: T },
+      { kind: "built_floor", x: 41, y: 40, at: T + 1 },
+      { kind: "built_floor", x: 44, y: 43, at: T + 2 },
     );
     expect(l).toHaveLength(1);
     expect(l[0]).toMatchObject({ x: 40, y: 40 });
@@ -35,7 +35,7 @@ describe("what the ground remembers", () => {
     // different sentences.
     const l = log(
       { kind: "dug", x: 10, y: 10, at: T },
-      { kind: "built_plank", x: 10, y: 10, at: T + 1 },
+      { kind: "built_floor", x: 10, y: 10, at: T + 1 },
     );
     expect(l).toHaveLength(2);
   });

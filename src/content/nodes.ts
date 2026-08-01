@@ -68,7 +68,17 @@ export const NODES: Record<NodeId, NodeDef> = {
     layer: "surface",
     drop: "stone",
     line: "Split it.",
-    yield: 5,
+    // Twelve, against a tree's eight, and the larger number is not generosity —
+    // it is the correction for how much rarer a rock is. Rocks are scattered at
+    // a third of the density of trees (they are scenery as well as a resource,
+    // and a field of them would read as noise), so at the old yield of five,
+    // stone cost roughly five times the walking that wood did. That was
+    // survivable while stone built nothing; once a floor or a wall can be
+    // flagstones it would have decided the question for the player — every town
+    // wood, because wood was near. Twelve brings the two to about two-to-one,
+    // which leaves stone the more deliberate material without making it a chore
+    // (DESIGN §Materials: deliberately not tuned to parity).
+    yield: 12,
     regrowMs: 10 * HOUR,
     density: 0.035,
   },
