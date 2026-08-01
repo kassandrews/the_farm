@@ -3,7 +3,7 @@ import { newWorld, buildCost } from "./game";
 import { defaultSkin } from "../content/skins";
 import { add, count } from "./inventory";
 import { itemDef } from "../content/items";
-import { CROPS, CROP_ORDER, STARTING_CROP } from "../content/crops";
+import { CROPS, CROP_ORDER, STARTING_CROP, ripenHours, ripeStage } from "../content/crops";
 import { SEED_ROWS, VARIETY_ROWS } from "../content/seedstall";
 import { SHOP, HEAP } from "../content/shop";
 import { MUSEUM } from "../content/museum";
@@ -274,6 +274,37 @@ describe("nothing gates on what you have planted", () => {
     }
     for (const row of MUSEUM) {
       expect(row.cost?.item).not.toBe("seed");
+    }
+  });
+});
+
+describe("the picker shows the one axis varieties vary on", () => {
+  it("orders CROP_ORDER by ripening time, shortest first", () => {
+    // The picker renders in CROP_ORDER (`plantable`), and time is the ONLY thing
+    // a variety may differ in — DESIGN §Materials, "no crop is better than
+    // another". So the row reads as a scale rather than an arbitrary list, and
+    // that is only true while the table stays sorted. Asserted here rather than
+    // trusted, because a new crop is appended to a literal by hand and lands
+    // wherever the hand left it.
+    const times = CROP_ORDER.map((id) => ripenHours(CROPS[id]));
+    expect(times).toEqual([...times].sort((a, b) => a - b));
+  });
+
+  it("gives every variety a distinct ripening time", () => {
+    // Two varieties that ripen together differ in nothing at all, which makes
+    // one of them a reskin the picker still charges a stall visit for.
+    const times = CROP_ORDER.map((id) => ripenHours(CROPS[id]));
+    expect(new Set(times).size).toBe(CROP_ORDER.length);
+  });
+
+  it("counts every stage, and the ripe stage is always a destination", () => {
+    // ripenHours is a plain sum, which is only correct while the terminal stage
+    // is a zero-length wait. A crop that put hours on its ripe stage would make
+    // every number in the picker quietly too large.
+    for (const id of CROP_ORDER) {
+      const def = CROPS[id];
+      expect(def.stages[ripeStage(def)].hours).toBe(0);
+      expect(ripenHours(def)).toBe(def.stages.reduce((s, x) => s + x.hours, 0));
     }
   });
 });

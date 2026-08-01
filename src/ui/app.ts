@@ -66,7 +66,7 @@ import { donatable, donate, collection, collectionEmpty, wingsWithDonations } fr
 import { openErrand, errandState, cardText, deliverErrand, declineErrand, notices } from "../sim/errands";
 import { festivalOn, activeFestival, nextFestival, lastFestival, daysUntil, attend } from "../sim/festival";
 import { availableSkinsForClasses, skinDef } from "../content/skins";
-import { cropDef } from "../content/crops";
+import { cropDef, ripenHours } from "../content/crops";
 import { STALL_OPENER, STALL_EXHAUSTED } from "../content/seedstall";
 import {
   seedOffers,
@@ -1832,31 +1832,19 @@ export class App {
       // What remains here is what the satchel is actually for — the stuff you
       // are carrying, and the one free axis that has nowhere better to live.
 
-      // What the next seed becomes. It sits here and not with the
-      // items on purpose: a variety is the same KIND of thing as a finish —
-      // unlocked forever, weightless, free to change — and seed itself is
-      // already up in the carried list as the ordinary stuff it is (DESIGN
-      // §Materials, "seed is the stuff, the variety is the look").
+      // THE VARIETY PICKER IS NOT HERE ANY MORE, and its absence is the point —
+      // the third time a picker has left this panel for the mode it belongs to.
       //
-      // It is also why planting can stay one tap. Choosing here means ACT never
-      // has to ask, and the reticle can go on promising exactly what the button
-      // will do.
-      const varieties = plantable(world);
-      if (varieties.length > 1) {
-        const row = el("div", { class: "choices" });
-        const buttons = varieties.map((id) => {
-          const b = choiceBtn(cropDef(id).name, () => {
-            selectCrop(world, id);
-            for (const other of buttons) other.classList.remove("chosen");
-            b.classList.add("chosen");
-            saveWorld(world);
-          });
-          if (world.seeds.selected === id) b.classList.add("chosen");
-          return b;
-        });
-        row.append(...buttons);
-        body.append(labeled("Planting — free", row));
-      }
+      // The argument is the finishes' argument, one row down: it set what the
+      // next seed becomes, but it did it in a drawer you open to read counts,
+      // three taps and a scroll away from the ground you were standing on. A
+      // variety bought at the stall was a variety you never found, because
+      // nothing on the way from the counter to the soil mentioned it existed.
+      //
+      // It moved to the act palette, where it appears while you hold the plant
+      // tool. See syncSeedUi(). What remains here is what the satchel is
+      // actually for — the stuff you are carrying, seed included, as the
+      // ordinary countable thing it is.
 
       // The way out. A panel with nothing to answer still needs a door in it —
       // on a phone there is no Escape key and no back gesture into a canvas.
@@ -2348,7 +2336,62 @@ export class App {
       : "Rotate";
 
     this.syncFinishUi();
+    this.syncSeedUi();
     this.syncUndoUi();
+  }
+
+  /** Rebuild the variety row for the seed about to go in the ground.
+   *
+   *  Shown only while the plant tool is held, and only outside build mode —
+   *  the same rule the act palette itself follows, since the two modes are
+   *  never on screen together. Any other tool and the row collapses, so it
+   *  cannot sit under your thumb while you are digging.
+   *
+   *  Rebuilt from scratch on every sync rather than diffed, for the same reason
+   *  the finish row is: the list grows mid-session — a variety can arrive from
+   *  the stall between one tap and the next — and eight buttons is nothing to
+   *  make. */
+  private syncSeedUi(): void {
+    const row = this.hud.seedVarieties;
+    const world = this.world;
+    if (!world || this.buildTool !== null || this.tool !== "plant") {
+      row.replaceChildren();
+      return;
+    }
+
+    // One unlocked variety is not a choice — a lone chip you cannot deselect is
+    // furniture, not a control, and a fresh town holding only the carrot should
+    // look exactly as it did before the row existed.
+    const varieties = plantable(world);
+    if (varieties.length < 2) {
+      row.replaceChildren();
+      return;
+    }
+
+    const chips = varieties.map((id) => {
+      const crop = cropDef(id);
+      const chip = el("button", { class: "finish-chip", ariaLabel: crop.name }, [
+        // The crop's ripe colour, the same swatch-and-name pairing the finishes
+        // use. Seed is one item and every variety of it looks identical in the
+        // satchel, so the swatch is the only place the choice has a face.
+        el("span", { class: "finish-swatch" }, []),
+        el("span", { class: "finish-name" }, [crop.name]),
+      ]);
+      const swatch = chip.firstElementChild as HTMLElement;
+      swatch.style.background = crop.ripeColor;
+      chip.classList.toggle("chosen", id === world.seeds.selected);
+      chip.addEventListener("click", () => {
+        selectCrop(world, id);
+        saveWorld(world);
+        this.syncSeedUi();
+      });
+      // Time is the ONE axis varieties vary on (DESIGN §Materials: "no crop is
+      // better than another"), so the hint states it plainly rather than
+      // implying a yield or a value the game does not have.
+      hoverHint(chip, `${crop.name} — ${ripenHours(crop)}h to ripen. Free to change.`);
+      return chip;
+    });
+    row.replaceChildren(...chips);
   }
 
   /** Rebuild the finish row for the tool in hand.
@@ -2635,6 +2678,8 @@ interface HudRefs {
   groupButtons: [BuildGroup, HTMLElement][];
   /** The finish row, refilled per held tool by syncFinishUi(). */
   buildFinishes: HTMLElement;
+  /** The variety row, refilled by syncSeedUi() while the plant tool is held. */
+  seedVarieties: HTMLElement;
   build: HTMLElement;
   rotate: HTMLElement;
   undo: HTMLElement;
@@ -2715,6 +2760,28 @@ function buildHud(
     toolButtons.push([t.id, btn]);
     palette.append(btn);
   }
+
+  // What the next seed becomes, beside the hand that sows it.
+  //
+  // It lives HERE and not in the satchel for the reason the finishes moved into
+  // build mode: you pick the look while you are already holding the thing you
+  // are about to dress (see the note above `buildFinishes`). Buried in the
+  // satchel, a variety you had bought was a variety you never found — the stall
+  // sold you a radish and the game went on planting carrots without ever
+  // mentioning there was a choice.
+  //
+  // This is still a MODE and not a prompt (ROADMAP §"Seeds — one item, many
+  // varieties"). Nothing here opens on ACT, nothing stands between the tap and
+  // the tile, and the reticle goes on promising exactly what the button does —
+  // the row only makes the standing selection visible where it applies.
+  // ABOVE the tools rather than beside them, and that placement is the finish
+  // row's lesson a second time. Beside the palette it had only the strip between
+  // the tools and the ACT column to live in — about 170px on a phone — so eight
+  // varieties stacked into a single column eight chips tall and swallowed 40% of
+  // the screen. Above them it has the whole width, wraps to two or three short
+  // rows, and clears the BUILD/ACT column entirely, which only occupies the
+  // bottom band.
+  const seedVarieties = el("div", { class: "seed-varieties" });
 
   // The build bar: one strip across the foot of the screen, present only while
   // build mode is on. A strip rather than a column because the list is eleven
@@ -2801,13 +2868,17 @@ function buildHud(
     clock,
     survey,
     flash,
-    palette,
+    // The row and the tools ride in one bottom-left stack, so the row growing a
+    // second line of chips pushes itself up and leaves the tools exactly where
+    // your thumb left them — the same reason the build bar stacks its finishes
+    // above its tools rather than below.
+    el("div", { class: "act-dock" }, [seedVarieties, palette]),
     buildBar,
     build,
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, survey, flash, toolButtons, buildButtons, groupButtons, buildFinishes, build, rotate, undo, zoom };
+  return { root: hud, clock, survey, flash, toolButtons, buildButtons, groupButtons, buildFinishes, seedVarieties, build, rotate, undo, zoom };
 }
 
 // --- Panel helpers ------------------------------------------------------------

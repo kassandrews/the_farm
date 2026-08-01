@@ -279,3 +279,14 @@ export function cropDef(id: CropId): CropDef {
 export function ripeStage(def: CropDef): number {
   return def.stages.length - 1;
 }
+
+/** Watered hours from sowing to ripe — the whole of what a variety costs you.
+ *
+ *  A plain sum, and it can stay one because the ripe stage is always `{hours: 0}`
+ *  (it is a destination, not a wait). It lives here rather than at the picker
+ *  that shows it: this is the ONE axis varieties differ on (see the header), so
+ *  a second place deriving it is a second place that could disagree about what
+ *  a radish costs. */
+export function ripenHours(def: CropDef): number {
+  return def.stages.reduce((sum, s) => sum + s.hours, 0);
+}

@@ -119,13 +119,50 @@ select {
   pointer-events: auto;
 }
 
-.tool-palette {
+/* The act dock: the variety row stacked on top of the tool column, anchored to
+   the bottom-left corner the thumb already lives in. One stack rather than two
+   absolutely-positioned things, so the row can change height without any part
+   of it needing to know how tall the tool column is. */
+.act-dock {
   position: absolute;
   left: 12px;
   bottom: 24px;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
+}
+
+.tool-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* The variety row: what the next seed becomes, shown while the plant tool is
+   held. It reuses `.finish-chip` outright rather than restyling it — the two are
+   the same control (an unlocked, weightless, free-to-change look) and a second
+   chip style would say they were different kinds of thing.
+
+   It sits at the top of `.act-dock`, so wrapping to a second line grows the
+   stack upward and the tools below it do not move. The max-width is the window
+   less both margins: up here it is clear of the BUILD/ACT column, which only
+   occupies the bottom band, so the row may use the full width and wrap into two
+   or three short lines instead of one tall column. */
+.seed-varieties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: calc(100vw - 24px);
+}
+
+.seed-varieties:empty {
+  display: none;
+}
+
+/* Build mode hides the act palette, and the row is part of it. */
+.hud.building .seed-varieties {
+  display: none;
 }
 
 /* The build bar: a strip along the foot of the screen, like every building game

@@ -411,6 +411,25 @@ item per crop or inventing nothing.
 - **Choosing a variety is a mode, not a prompt.** The selection lives in world
   state beside `skins.selected`; ACT stays one tap on the tile at your feet. A
   modal on ACT would break the reticle's promise (see above).
+- **The picker belongs to the hand, not the satchel** — settled later, after the
+  row shipped inside the satchel panel and the reported bug was "you can unlock
+  seeds but there is no way to plant them". It was reachable the whole time; it
+  was three taps and a scroll into a drawer you open to read counts, so a variety
+  bought at the stall was a variety you never found. Nothing between the counter
+  and the soil mentioned it existed. It now appears in the act palette while the
+  plant tool is held (`syncSeedUi`), which is the finishes' argument a third
+  time: **you pick the look while you are already holding the thing you are about
+  to dress.** This is not the modal the entry above forbids — nothing opens on
+  ACT, nothing stands between the tap and the tile, and the mode is still a mode.
+  It only made the standing selection visible where it applies.
+- **A chip row goes ABOVE the tools, never beside them.** Beside the palette it
+  had only the strip between the tools and the BUILD/ACT column — about 170px on
+  a phone — so eight varieties stacked into one column eight chips tall and ate
+  40% of the screen. Above them the row has the full width, wraps to three short
+  lines, and clears the BUILD/ACT column, which only occupies the bottom band.
+  The tool column and the row now ride in one bottom-left stack (`.act-dock`) so
+  the row can change height without anything needing to know how tall the tools
+  are, and nothing under your thumb moves when it does.
 
 ### Adding a cast row does not add a person
 
