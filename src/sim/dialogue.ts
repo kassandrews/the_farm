@@ -135,9 +135,9 @@ export const MEMORY_PRIORITY: MemoryKind[] = [
   // farming lines because it is still something you were both there for, where a
   // harvest is something they watched you do.
   "winter_came",
-  "harvested_carrot",
+  "harvested",
   "built_floor",
-  "planted_carrot",
+  "planted",
   "raised_by",
   "raised_favorite",
   "dug",

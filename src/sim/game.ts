@@ -894,12 +894,16 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
     // `harvest` pays out the produce AND a seed itself — the cost of sowing and
     // the return on pulling are one rule and live together (see its docblock).
     const def = harvest(world, target.x, target.y, now)!;
-    // The memory KIND is still "harvested_carrot" and stays that way: kinds are
-    // stored strings in every villager's log, so renaming one is a migration
-    // that walks every ring buffer in the save to fix a word no player ever
-    // sees. It is named after the crop the slice shipped and covers all eight;
-    // the VALUE is what carries which one.
-    witness(world, "harvested_carrot", def.carried, now, false, target);
+    // The kind is the ACT and the value is the crop — one kind covering all
+    // eight, the same split as seed-the-item versus variety-the-look.
+    //
+    // It was `harvested_carrot` until v30, named after the crop the slice
+    // shipped and outliving it by seven varieties. The note here used to argue
+    // the rename was not worth a migration because no player ever sees the
+    // string, which was true and beside the point: the next person to read the
+    // union sees it, and a kind that names a crop it no longer means is how
+    // somebody eventually writes the carrot branch that shouldn't exist.
+    witness(world, "harvested", def.carried, now, false, target);
     return {
       kind: "harvest",
       changed: true,
@@ -1150,7 +1154,12 @@ function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: num
     case "plant": {
       const sown = sow(world, x, y, now);
       if (sown) {
-        witness(world, "planted_carrot", undefined, now, false, { x, y });
+        // The crop rides along as the value, the same way `harvested` carries
+        // what you pulled. It used to pass `undefined`, so the town could
+        // remember you had planted but never what — a villager could say "you
+        // pulled a radish" and, about the act five seconds earlier, only "you've
+        // planted". The memory now matches the ground.
+        witness(world, "planted", cropDef(sown).carried, now, false, { x, y });
         return {
           kind: "plant",
           changed: true,

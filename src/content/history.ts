@@ -59,9 +59,9 @@ export const HISTORY_LINES: Record<string, (who: string, when: string) => string
       ? `Something was standing here, in ${when}, until you took it down.`
       : `Something was standing here until you took it down.`,
 
-  planted_carrot: (_who, when) =>
+  planted: (_who, when) =>
     when ? `Something was planted in this ground, in ${when}.` : `Something was planted in this ground.`,
 
-  harvested_carrot: (_who, when) =>
+  harvested: (_who, when) =>
     when ? `Something was pulled up out of here, in ${when}.` : `Something was pulled up out of here.`,
 };

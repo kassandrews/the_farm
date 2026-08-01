@@ -47,8 +47,8 @@ export type PlaceKind =
   | "built_floor"
   | "dug"
   | "gathered"
-  | "planted_carrot"
-  | "harvested_carrot";
+  | "planted"
+  | "harvested";
 
 /** The witnessed kinds the GROUND also hears — `MemoryKind` and `PlaceKind`
  *  share these names on purpose, so `witness` forwards without a lookup table
@@ -63,8 +63,8 @@ export function isWorkPlace(kind: string): kind is PlaceKind {
     kind === "built_floor" ||
     kind === "dug" ||
     kind === "gathered" ||
-    kind === "planted_carrot" ||
-    kind === "harvested_carrot"
+    kind === "planted" ||
+    kind === "harvested"
   );
 }
 

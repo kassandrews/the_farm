@@ -40,7 +40,7 @@ export const OFFICE_MEMORY: Partial<Record<string, ((v: string) => string)[]>> =
     () => "I see you've been building. Unpermitted, but I'll allow it. Don't tell the stamp.",
     () => "Floorboards, is it. The homestead grows. Noted. Filed. Forgotten by lunch.",
   ],
-  harvested_carrot: [
+  harvested: [
     (v) => `Word is you pulled ${v} out of the ground. The Carrot will pretend not to care.`,
   ],
   errand: [
@@ -109,8 +109,12 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
       () => "You built that yourself? Tile by tile? Fascinating. Wildly inefficient. I approve.",
       () => "I watched you lay those boards. I took notes. The notes say: 'good.'",
     ],
-    planted_carrot: [
-      () => "You've planted. I'll monitor the plot. For science, and because I'm nosy.",
+    // The value is what went in — "a radish". Pre-v30 memories were logged
+    // without one and the migration backfills them to "something", so an old
+    // save reads "You've planted something" rather than losing the memory or
+    // rendering a hole where the crop should be.
+    planted: [
+      (v) => `You've planted ${v}. I'll monitor the plot. For science, and because I'm nosy.`,
     ],
     // Set by the away simulation when a curator revises a placard in your
     // absence (sim/away.ts). The value is the exhibit's TITLE, so these read as
@@ -123,7 +127,7 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
       (v) => `You missed the unveiling. The exhibit is ${v}. The placard is, I'll admit, a first draft.`,
       (v) => `Have you seen my ${v} exhibit? Don't read the placard too closely. Or do. I stand by it.`,
     ],
-    harvested_carrot: [
+    harvested: [
       (v) => `You pulled ${v}. The data is conclusive: you are a farmer now. Congratulations, subject.`,
     ],
     errand: [

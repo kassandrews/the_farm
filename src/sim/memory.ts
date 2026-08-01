@@ -15,8 +15,8 @@ export type MemoryKind =
   | "built_floor" // saw the player lay floorboards
   | "dug" // saw the player dig
   | "gathered" // saw the player fell a tree or split a rock
-  | "planted_carrot"
-  | "harvested_carrot"
+  | "planted"
+  | "harvested"
   | "exhibit" // something the villager did while you were away (see sim/away.ts)
   | "arrived" // the villager's own arrival on the Farm
   | "housed" // the day you finished their house (sim/commission.ts)
@@ -114,7 +114,7 @@ const MAX_MEMORIES = 64; // a bounded ring; the town lives at hour forty, not fo
  *  doesn't stack five identical "you built that?" memories. Imports and
  *  repeatable events (harvests) may recur. */
 export function remember(log: MemoryLog, ev: MemoryEvent): MemoryLog {
-  const oneShot: MemoryKind[] = ["built_floor", "dug", "planted_carrot", "arrived", "housed", "raised_by", "raised_favorite", "hum", "far_out"];
+  const oneShot: MemoryKind[] = ["built_floor", "dug", "planted", "arrived", "housed", "raised_by", "raised_favorite", "hum", "far_out"];
   if (oneShot.includes(ev.kind) && log.some((m) => m.kind === ev.kind)) return log;
   const next = [...log, ev];
   return next.length > MAX_MEMORIES ? next.slice(next.length - MAX_MEMORIES) : next;

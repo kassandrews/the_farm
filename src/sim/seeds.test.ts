@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { newWorld, buildCost } from "./game";
+import { newWorld, buildCost, contextAction, playerTile } from "./game";
+import { setTile } from "./world";
+import { GRASS } from "../content/tiles";
 import { defaultSkin } from "../content/skins";
 import { add, count } from "./inventory";
 import { itemDef } from "../content/items";
@@ -306,5 +308,46 @@ describe("the picker shows the one axis varieties vary on", () => {
       expect(def.stages[ripeStage(def)].hours).toBe(0);
       expect(ripenHours(def)).toBe(def.stages.reduce((s, x) => s + x.hours, 0));
     }
+  });
+});
+
+describe("a planting memory names what went in", () => {
+  it("records the crop as the memory's value, not just that you planted", () => {
+    // The bug this locks down: `planted` was witnessed with `undefined`, so the
+    // town could remember you had planted and never what. A villager could say
+    // "you pulled a radish" about a harvest and, about the sowing five seconds
+    // earlier, only "you've planted" — the one memory in the pair that knew
+    // nothing. Harvest has carried its value since it shipped; this is planting
+    // catching up.
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 21 });
+    const now = 1000;
+    const { x, y } = playerTile(w);
+    setTile(w, x, y, GRASS); // known plantable ground underfoot
+    add(w.inventory, "seed", 5);
+    w.seeds.unlocked = ["carrot", "wheat"];
+    w.seeds.selected = "wheat";
+
+    expect(contextAction(w, "plant", now).changed).toBe(true);
+
+    const remembered = w.villagers.flatMap((v) => v.memory).filter((m) => m.kind === "planted");
+    expect(remembered.length).toBeGreaterThan(0);
+    for (const m of remembered) expect(m.value).toBe(CROPS.wheat.carried);
+  });
+
+  it("files the act under the ground it happened on, without a crop on it", () => {
+    // A place is about the ground and takes no value — the room's line is
+    // "something was planted in this ground", which is true of all eight and
+    // would be a different sentence if it named one.
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 21 });
+    const { x, y } = playerTile(w);
+    setTile(w, x, y, GRASS);
+    add(w.inventory, "seed", 5);
+
+    contextAction(w, "plant", 1000);
+
+    const place = w.places.find((p) => p.kind === "planted")!;
+    expect(place).toBeDefined();
+    expect(place).toMatchObject({ x, y });
+    expect(place).not.toHaveProperty("value");
   });
 });

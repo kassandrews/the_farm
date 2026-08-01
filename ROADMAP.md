@@ -430,6 +430,31 @@ item per crop or inventing nothing.
   The tool column and the row now ride in one bottom-left stack (`.act-dock`) so
   the row can change height without anything needing to know how tall the tools
   are, and nothing under your thumb moves when it does.
+- **The memory kind is the act; the value is the crop** — schema v30. The kinds
+  were `planted_carrot` and `harvested_carrot`, named after the crop the slice
+  shipped and then outliving it by seven varieties. A note in `game.ts` argued
+  the rename was not worth a migration "to fix a word no player ever sees",
+  which was true about players and wrong about the code: the next person to read
+  the union sees it, and a kind that names a crop it no longer means is how
+  somebody eventually writes the carrot branch that shouldn't exist.
+  - The rename was the cheap half. The real bug it was hiding: `planted` was
+    witnessed with `value: undefined` while `harvested` passed `def.carried`, so
+    the town could remember that you planted but never **what**. A villager could
+    say "you pulled a radish" about the harvest and, about the sowing, only
+    "you've planted". Planting now carries the crop the same way harvesting does.
+  - **The migration walks all three logs or none** — `places`, the player's
+    memory, and every villager's — the same walk v26 did for `built_plank`. A
+    kind left behind in any one of them is a memory that still exists and can
+    never be spoken again, because nothing matches it. The failure mode is
+    silence, which looks exactly like nothing having happened.
+  - **It backfills the forgotten crop to `"something"`.** A bank line that reads
+    the value renders a hole for every memory made before v30 —
+    `tmpl(ev.value ?? "")` turns a missing value into nothing at all. "Something"
+    is the honest answer (the town watched you plant and does not remember what)
+    and keeps the memory speakable instead of dropping it.
+  - **`x` tells a place from a memory, not `at`.** Both carry `at`, so it reads
+    like a discriminator right up until the backfill puts a `value` on every
+    place entry in the save. A place is a coordinate; a memory is not.
 
 ### Adding a cast row does not add a person
 

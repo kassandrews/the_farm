@@ -19,7 +19,7 @@ import type { CharId, AuthoredId } from "../content/cast";
 import { CAST, MOLE, GHOST, COSMOS } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 
-export const SCHEMA_VERSION = 29;
+export const SCHEMA_VERSION = 30;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -778,6 +778,70 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       }
     }
     return { ...raw, schemaVersion: 29, build };
+  },
+  // v29 → v30: the farming memories stop naming the carrot.
+  //
+  // `planted_carrot` and `harvested_carrot` were named after the crop the slice
+  // shipped, and then seven more varieties arrived. The kinds covered all eight
+  // the whole time — the VALUE is what says which — so nothing was ever
+  // mis-rendered to a player. What was wrong is the union: a kind that names a
+  // crop it does not mean is how somebody eventually writes the carrot branch
+  // that should not exist. They are now `planted` and `harvested`, the act
+  // rather than the vegetable.
+  //
+  // The same walk v26 did for `built_plank` → `built_floor`, over the same three
+  // logs, and it must be all three: the ground's `places`, the player's memory,
+  // and every villager's. A kind left behind in any of them is a memory that
+  // still exists and can never be spoken, because nothing matches it any more.
+  //
+  // AND a backfill, which v26 needed no equivalent of. `planted` now carries
+  // what went in, where it used to be logged with no value at all; a bank line
+  // reading that value renders an empty hole for every memory made before today.
+  // "something" is the honest answer — the town watched you plant and genuinely
+  // does not remember what — and it keeps the memory speakable instead of
+  // dropping it. `harvested` has carried its value since it shipped and needs
+  // nothing.
+  29: (raw) => {
+    const V29_RENAMES: Record<string, string> = {
+      planted_carrot: "planted",
+      harvested_carrot: "harvested",
+    };
+    // What a memory of planting says when it was logged before we recorded the
+    // crop. Prose, like the `carried` strings it stands in for ("a radish"), so
+    // it drops into the same sentence without the line knowing which it got.
+    const V29_FORGOTTEN = "something";
+
+    const rename = (log: unknown): unknown =>
+      Array.isArray(log)
+        ? log.map((e) => {
+            if (!e || typeof e !== "object") return e;
+            const ev = e as { kind?: string; value?: string };
+            const kind = ev.kind ? V29_RENAMES[ev.kind] : undefined;
+            if (!kind) return e;
+            // Only the memory logs carry a value; a `places` entry is about the
+            // ground and must not grow one. The two are told apart by `x` — a
+            // place is a coordinate, a memory is not. NOT by `at`, which both
+            // of them have, and which reads like a discriminator right up until
+            // it silently backfills every place entry in the save.
+            const isPlace = "x" in ev;
+            return kind === "planted" && !isPlace && ev.value === undefined
+              ? { ...ev, kind, value: V29_FORGOTTEN }
+              : { ...ev, kind };
+          })
+        : log;
+
+    const player = raw.player as { memory?: unknown } | undefined;
+    const villagers = raw.villagers as { memory?: unknown }[] | undefined;
+
+    return {
+      ...raw,
+      schemaVersion: 30,
+      places: rename(raw.places),
+      ...(player ? { player: { ...player, memory: rename(player.memory) } } : {}),
+      ...(villagers
+        ? { villagers: villagers.map((v) => ({ ...v, memory: rename(v.memory) })) }
+        : {}),
+    };
   },
 };
 

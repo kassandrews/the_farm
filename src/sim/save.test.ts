@@ -1041,3 +1041,68 @@ describe("v28 → v29: marble, and windows in the façade", () => {
     expect(migrated.build[CORNER].finish).toBe("oxblood");
   });
 });
+
+describe("v29 → v30: the farming memories stop naming the carrot", () => {
+  /** A v29 save with both old kinds in all three logs. `planted_carrot` is
+   *  logged the way it always was — with no value at all — and
+   *  `harvested_carrot` with the one it has always carried. */
+  function v29Save(): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const memory = [
+      { kind: "planted_carrot", at: 1000 },
+      { kind: "harvested_carrot", at: 2000, value: "a radish" },
+      { kind: "dug", at: 3000 },
+    ];
+    const player = { ...(w.player as Record<string, unknown>), memory };
+    const villagers = (w.villagers as Record<string, unknown>[]).map((v) => ({ ...v, memory }));
+    return {
+      ...w,
+      schemaVersion: 29,
+      player,
+      villagers,
+      places: [
+        { kind: "planted_carrot", x: 5, y: 5, at: 1000 },
+        { kind: "harvested_carrot", x: 6, y: 5, at: 2000 },
+      ],
+    };
+  }
+
+  it("renames both kinds in the player's memory, the villagers', and the ground's", () => {
+    // All three logs or none. A kind left behind in any one of them is a memory
+    // that still exists and can never be spoken again, because nothing matches
+    // it — the failure mode is silence, which looks exactly like nothing having
+    // happened.
+    const migrated = migrateSave(v29Save())!;
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+
+    const kinds = (log: { kind: string }[]) => log.map((e) => e.kind);
+    expect(kinds(migrated.player.memory)).toEqual(["planted", "harvested", "dug"]);
+    for (const v of migrated.villagers) {
+      expect(kinds(v.memory)).toEqual(["planted", "harvested", "dug"]);
+    }
+    expect(kinds(migrated.places)).toEqual(["planted", "harvested"]);
+  });
+
+  it("backfills a forgotten crop so an old planting memory can still speak", () => {
+    // The bank line reads the value now. Without this the sentence renders with
+    // a hole in it for every memory made before today — `tmpl(ev.value ?? "")`
+    // in sim/dialogue.ts turns a missing value into nothing at all.
+    const migrated = migrateSave(v29Save())!;
+    const planted = migrated.player.memory.find((m) => m.kind === "planted")!;
+    expect(planted.value).toBe("something");
+  });
+
+  it("leaves a harvest's own value alone", () => {
+    const migrated = migrateSave(v29Save())!;
+    const pulled = migrated.player.memory.find((m) => m.kind === "harvested")!;
+    expect(pulled.value).toBe("a radish");
+  });
+
+  it("does not give a place a value, which is a memory's field and not the ground's", () => {
+    // `at` is on both a PlaceEvent and a MemoryEvent, so it reads like a way to
+    // tell them apart right up until it backfills every place in the save. The
+    // discriminator is `x`: a place is a coordinate, a memory is not.
+    const migrated = migrateSave(v29Save())!;
+    for (const p of migrated.places) expect(p).not.toHaveProperty("value");
+  });
+});

@@ -34,8 +34,8 @@ export type HistoryNoteKind =
   | "built_floor"
   | "dug"
   | "gathered"
-  | "planted_carrot"
-  | "harvested_carrot";
+  | "planted"
+  | "harvested";
 
 export interface HistoryNote {
   kind: HistoryNoteKind;
@@ -60,8 +60,8 @@ export const HISTORY_PRIORITY: HistoryNoteKind[] = [
   "sleeper",
   "past_sleeper",
   "built_floor",
-  "planted_carrot",
-  "harvested_carrot",
+  "planted",
+  "harvested",
   "gathered",
   "dug",
 ];
