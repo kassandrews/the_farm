@@ -34,7 +34,7 @@ import {
 } from "../content/tiles";
 import type { TileDef } from "../content/tiles";
 import { skinDef } from "../content/skins";
-import type { SkinDef, SkinClass } from "../content/skins";
+import type { SkinDef, SkinClass, SkinId } from "../content/skins";
 import {
   decoHash,
   groundTone,
@@ -45,7 +45,6 @@ import {
   regionSkin,
   foundAt,
   floorFinish,
-  FLOOR_DEFAULT_FINISH,
 } from "../sim/world";
 import { dayNumber } from "../sim/found";
 import { letterFor } from "../content/found";
@@ -69,6 +68,7 @@ import { seasonAt } from "../sim/seasons";
 import { scenePalette, seasonSkin, biomeSkin, mixHex, type ScenePalette } from "./palette";
 import { zoomLadder } from "./zoom";
 import { forEachGrainMark } from "./grain";
+import { roofFinish } from "./roof";
 import { BROADLEAF } from "../content/biomes";
 import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
@@ -478,6 +478,8 @@ export class Renderer {
   private roofIndex = new Map<string, Room>();
   /** Room id → every cell it roofs, for drawing edges only where a roof ends. */
   private roofCover = new Map<string, Set<string>>();
+  /** Room id → what its roof is MADE of. See `roofFinish`. */
+  private roofSkin = new Map<string, SkinId>();
   /** Room id → current roof opacity, eased toward 0 while you're inside. Kept
    *  across frames so walking through a door FADES the roof rather than
    *  snapping it, which is the whole feel of the cutaway. */
@@ -869,8 +871,13 @@ export class Renderer {
           const y = ty;
           const alpha = this.roofAlpha.get(roofRoom.id) ?? 1;
           const covered = this.roofCover.get(roofRoom.id)!;
+          const roofing = this.roofSkin.get(roofRoom.id)!;
           if (alpha > 0.02) {
-            this.raised.push({ y, bias: BIAS_ROOF, draw: () => this.drawRoofCell(world, x, y, covered, alpha) });
+            this.raised.push({
+              y,
+              bias: BIAS_ROOF,
+              draw: () => this.drawRoofCell(world, x, y, covered, roofing, alpha),
+            });
           }
         }
         const groundId = groundIdOf(id);
@@ -1578,9 +1585,11 @@ export class Renderer {
       this.roomsRef = list;
       this.roofIndex.clear();
       this.roofCover.clear();
+      this.roofSkin.clear();
       for (const room of list) {
         const covered = new Set<string>([...room.interior, ...room.shell]);
         this.roofCover.set(room.id, covered);
+        this.roofSkin.set(room.id, roofFinish(world, room));
         for (const key of covered) this.roofIndex.set(key, room);
       }
       // Forget fade state for rooms that no longer exist, so the map doesn't
@@ -1658,16 +1667,25 @@ export class Renderer {
    *  alike. Edges are drawn only where the roof actually ENDS: per-cell edges
    *  would tile the surface into a grid of boxes, the same mistake the ground
    *  bevel and the wall side-runs each made once already. */
-  private drawRoofCell(world: WorldState, tx: number, ty: number, covered: Set<string>, alpha: number): void {
+  private drawRoofCell(
+    world: WorldState,
+    tx: number,
+    ty: number,
+    covered: Set<string>,
+    roofing: SkinId,
+    alpha: number,
+  ): void {
     const ctx = this.ctx;
-    const cell = world.build[tileKey(tx, ty)];
-    // A roof cell with no wall under it takes the DEFAULT, not whatever finish
-    // happens to be loaded in the build bar. Reading the selection here was the
-    // floor bug in miniature — a roof over an interior cell would restyle
-    // itself the moment you picked up a different colour, while the walls
-    // holding it up stayed put. A house should not change its hat when you
-    // change your mind.
-    const skin = skinDef(cell ? cell.finish : FLOOR_DEFAULT_FINISH);
+    // The whole ROOM's material, decided once by `roofFinish`, not read off the
+    // cell underneath. Per-cell was how every roof in the game ended up a rim in
+    // the wall's colour around a pale pine middle: over the interior there is no
+    // build cell to read, and the fallback was the default finish.
+    //
+    // The old note here still holds and is the reason the fallback exists at
+    // all: it must never read the build bar's SELECTION, or a house restyles its
+    // hat the moment you pick up a different colour while the walls holding it
+    // up stay put.
+    const skin = skinDef(roofing);
     const px = Math.round(this.sceneX(tx) - TILE / 2);
     const py = Math.round(this.sceneY(ty) - TILE / 2) - STOREY;
 
