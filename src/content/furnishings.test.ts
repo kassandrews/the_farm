@@ -31,7 +31,12 @@ describe("furniture art", () => {
       });
 
       it(`${id} facing ${facing} is rise + footprint + height tall`, () => {
-        expect(grid.rows).toHaveLength(rise + h * TILE + def.height);
+        // A WALL-MOUNTED piece has no footprint in the grid at all: it hangs on
+        // a vertical face, so there is no tile depth to draw and its height is
+        // the whole of it. Getting this wrong is invisible in a screenshot — the
+        // picture just hangs a few pixels low — which is why it is asserted.
+        const want = def.mount === "wall" ? def.height : rise + h * TILE + def.height;
+        expect(grid.rows).toHaveLength(want);
       });
     }
 

@@ -9,6 +9,7 @@ import {
   furnitureAt,
   canPlaceFurniture,
   cellsFor,
+  furnitureBlocks,
 } from "./furniture";
 import { footprint, furnitureDef } from "../content/furniture";
 
@@ -178,5 +179,52 @@ describe("a placed piece invalidates what depends on walkability", () => {
     const before = buildRevision(w);
     expect(placeFurniture(w, 7, 7, "cushion", "s", "undyed")).toBe(true);
     expect(buildRevision(w)).not.toBe(before);
+  });
+});
+
+describe("a painting hangs on a wall", () => {
+  function room() {
+    const w = newWorld({ name: "Test", form: "blob", spot: "forest", seed: 7 });
+    w.build = {};
+    w.furniture = {};
+    for (let x = 0; x <= 4; x++) for (let y = 0; y <= 4; y++) setTile(w, x, y, GRASS);
+    // A short south wall with a door in it, and open floor in front.
+    placeStructure(w, 1, 2, "wall", "pine");
+    placeStructure(w, 2, 2, "door", "pine");
+    return w;
+  }
+
+  it("goes on a wall cell, which every other piece refuses", () => {
+    const w = room();
+    expect(canPlaceFurniture(w, 1, 2, "painting", "s")).toBe(true);
+    // The inversion, stated as a pair: the same cell is the one place a chair
+    // cannot go, and the only place a painting can.
+    expect(canPlaceFurniture(w, 1, 2, "chair", "s")).toBe(false);
+  });
+
+  it("refuses open floor, which every other piece accepts", () => {
+    const w = room();
+    expect(canPlaceFurniture(w, 3, 3, "painting", "s")).toBe(false);
+    expect(canPlaceFurniture(w, 3, 3, "chair", "s")).toBe(true);
+  });
+
+  it("refuses a door — a picture over the doorway is across the way in", () => {
+    const w = room();
+    expect(canPlaceFurniture(w, 2, 2, "painting", "s")).toBe(false);
+  });
+
+  it("will not hang two on the same wall cell", () => {
+    const w = room();
+    expect(placeFurniture(w, 1, 2, "painting", "s", "pine")).toBe(true);
+    expect(canPlaceFurniture(w, 1, 2, "painting", "s")).toBe(false);
+  });
+
+  it("leaves the wall doing the blocking, not itself", () => {
+    // `solid: false` on the row, deliberately: the wall is what stops you, and a
+    // painting that claimed to block would be a second reason for the same fact.
+    const w = room();
+    placeFurniture(w, 1, 2, "painting", "s", "pine");
+    expect(furnitureBlocks(w, 1, 2)).toBe(false);
+    expect(isWalkable(w, 1, 2)).toBe(false); // the wall, still
   });
 });

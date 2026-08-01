@@ -1841,6 +1841,27 @@ export class Renderer {
       return;
     }
 
+    // A WALL-MOUNTED piece hangs on the face of the wall it was placed on, so
+    // none of the floor geometry below applies: there is no footprint to lift,
+    // no near face, and no shadow on a floor it does not touch. Its grid is
+    // `w * TILE` by `height`, hung under the wall's cap.
+    //
+    // It sorts at the same y and bias as its own wall and is pushed after it, so
+    // a stable sort draws the wall and then the picture on it. That is the whole
+    // of the layering, and it is why this needs no new pass.
+    const mounted = FURNITURE_ART[cell.id];
+    if (def.mount === "wall") {
+      if (mounted) {
+        const { grid, mirror } = gridFor(mounted, cell.facing);
+        const raster = pieceCanvas(`${cell.id}:${cell.facing}:${cell.finish}`, grid, skin, mirror);
+        // The wall's own datum, not the furniture one: `base` here is the floor
+        // line of the cell, and a wall's face runs from a storey above it.
+        ctx.drawImage(raster, px, base - STOREY + WALL_CAP + 2);
+      }
+      ctx.globalAlpha = prev;
+      return;
+    }
+
     // Art, where a piece has been given some. The grid occupies exactly the box
     // the fallback below draws — `pw` by `h * TILE + H` — plus its own `rise`,
     // so the two paths are interchangeable per piece and the table can be

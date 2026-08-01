@@ -1350,4 +1350,31 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
       palette: { k: INK },
     },
   },
+
+  // A PAINTING IS THE ONE PIECE THAT HANGS. Its grid is `w * TILE` by `height`
+  // and nothing else — no footprint to lift and no near face, because it never
+  // touches a floor. Frame in the finish, picture in literals: a walnut frame
+  // should not repaint the hills inside it, which is the bookshelf's rule about
+  // its own books and the lamp's about its brass.
+  painting: {
+    s: {
+      rows: [
+        ".kkkkkkkkkkkkkk.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kccaaaaaaaacck.",
+        ".kccaaaaaaaacck.",
+        ".kccaaaammaacck.",
+        ".kccaammbbmacck.",
+        ".kccambbbbbmcck.",
+        ".kccbbbbbbbbcck.",
+        ".kccbbbbbbbbcck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kkkkkkkkkkkkkk.",
+        "..dddddddddddd..",
+      ],
+      palette: { k: INK, a: "#a8cfe8", m: "#8fb87a", b: "#6f9e5c", d: "rgba(0,0,0,0.20)" },
+    },
+  },
 };

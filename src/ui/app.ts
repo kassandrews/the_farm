@@ -188,6 +188,10 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
   { id: "lamp", icon: "lamp", label: "Floor lamp", hint: "Costs ore. Give the dark something to argue with.", group: "decor" },
   { id: "desklamp", icon: "desklamp", label: "Desk lamp", hint: "Costs ore. Half a lamp, for one corner.", group: "decor" },
   { id: "rug", icon: "rug", label: "Rug", hint: "Costs cloth. Walk right over it.", group: "decor" },
+  // The one tool that wants a WALL under it rather than a floor, which the hint
+  // has to say outright — a tool that refuses everywhere you point it reads as
+  // broken long before it reads as specific.
+  { id: "painting", icon: "painting", label: "Painting", hint: "Hangs on a wall. Point it at one.", group: "decor" },
 ];
 
 /** What the undo control calls the last stroke. A phrase, not a tool name, so it

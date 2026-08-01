@@ -1452,6 +1452,8 @@ function furnitureFlavour(id: FurnitureId, layer: Layer): string {
       return "A chest. Shut. It arrived that way and has not been asked.";
     case "dresser":
       return "A dresser. Drawers, stacked, which is the whole of the idea.";
+    case "painting":
+      return "A painting. The wall has stopped being just a wall.";
     case "desklamp":
       return layer === "under"
         ? "A desk lamp, in the rock. Small, and enough."

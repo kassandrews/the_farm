@@ -369,6 +369,26 @@ const FARM_ICONS = {
     ],
     palette: { k: K, b: BRASS, f: FLAME, d: WOOD },
   },
+  // A framed landscape. The frame is WOOD and the picture is not — same split
+  // the world art makes, so the icon and the object agree about what a finish
+  // would repaint.
+  painting: {
+    rows: [
+      "............",
+      ".kkkkkkkkkk.",
+      ".kdddddddddk",
+      ".kdkkkkkkkdk",
+      ".kdkaaaaakdk",
+      ".kdkaammakdk",
+      ".kdkambbmkdk",
+      ".kdkbbbbbkdk",
+      ".kdkkkkkkkdk",
+      ".kdddddddddk",
+      ".kkkkkkkkkk.",
+      "............",
+    ],
+    palette: { k: K, d: WOOD, a: "#a8cfe8", m: "#8fb87a", b: "#6f9e5c" },
+  },
   // Two panes with a mullion between them, because a run of windows joins into
   // one window and the icon should say so before the hint has to. Deep sill,
   // which is the one line that reads as "set into something thick" at 12px.

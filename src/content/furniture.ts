@@ -45,6 +45,7 @@ export type FurnitureId =
   | "chest"
   | "dresser"
   | "desklamp"
+  | "painting"
   | "noticeboard"
   | "stage";
 
@@ -81,6 +82,19 @@ export interface FurnitureDef {
    *  Being a light is a property of the object, so it belongs here — the same
    *  argument `speed` on a tile makes about how ground feels underfoot. */
   light?: boolean;
+  /** What it stands on. Omitted means the floor, which is every other row.
+   *
+   *  `"wall"` is the painting, and it is the one piece in the table that does
+   *  not occupy a tile you could walk on: it hangs on the FACE of a wall cell.
+   *  That inverts the placement rule rather than relaxing it — the floor rows
+   *  refuse a cell that already holds a wall, and this one requires it.
+   *
+   *  A field rather than a second layer beside `furniture`. A painting is a
+   *  thing with a footprint, a finish and a facing-less silhouette, which is
+   *  exactly what this table is for; a parallel map would give the renderer,
+   *  the pathfinder and the room fill a second kind of thing to have an opinion
+   *  about, which is the argument the notice board already settled. */
+  mount?: "wall";
 }
 
 export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
@@ -350,6 +364,25 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     light: true,
   },
 
+  painting: {
+    id: "painting",
+    name: "Painting",
+    // The frame is the only part anybody makes; the picture is the picture.
+    cost: { wood: 2 },
+    w: 1,
+    h: 1,
+    // Moot, and set false rather than true so nothing reads it as the reason a
+    // wall blocks you. The WALL is solid. A painting has no footprint on the
+    // floor at all, which is the whole point of `mount`.
+    solid: false,
+    // On a wall-mounted piece `height` is how tall the art is, not how far it
+    // stands off a floor — there is no floor under it. Fourteen of the wall
+    // face's twenty-one usable pixels, so it hangs clear of the cap above and
+    // the skirting below rather than filling the wall like a poster.
+    height: 14,
+    finishes: ["wood"],
+    mount: "wall",
+  },
   // --- Town furniture, which is not for sale -------------------------------
   // The errands board. It is a row here because it is a thing standing in a
   // cell with a footprint, a height and a finish, and that is exactly what this

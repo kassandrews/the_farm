@@ -93,6 +93,22 @@ export function canPlaceFurniture(
   facing: Facing,
   layer: Layer = "surface",
 ): boolean {
+  // A WALL-MOUNTED piece inverts every test below rather than skipping them.
+  // The floor rows refuse a cell that already holds a wall ("no furniture inside
+  // a wall"); a painting requires one, and cares about nothing else — not the
+  // ground under it, not the shallows, not a crop, because it is not standing on
+  // any of them. It hangs on the face of the wall.
+  //
+  // Surface only, and a DOOR is not a wall: hanging a picture over the doorway
+  // would put it across the one cell you walk through, and the renderer draws a
+  // door's opening over the same pixels.
+  if (furnitureDef(id).mount === "wall") {
+    if (layer !== "surface") return false;
+    const cell = world.build[tileKey(ax, ay)];
+    if (!cell || cell.id !== "wall") return false;
+    return furnitureAt(world, ax, ay, layer) === null;
+  }
+
   for (const [x, y] of cellsFor(ax, ay, id, facing)) {
     const key = tileKey(x, y);
     // Solidity on the piece's OWN layer. Underground this is the whole test that
