@@ -94,15 +94,16 @@ for (let page = 0; page * PER_SHOT < PIECES.length; page++) {
     return { t: 16 * (r.width / c.width), cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
   });
   const t = geom.t;
-  // Headroom above the first row: `rise` art (a chair back, a wardrobe) hangs
-  // above its own anchor tile, so a clip that starts one tile up decapitates it.
-  const [x0, y0] = [geom.cx + (COL[0] - 1) * t, geom.cy + (ROW[0] - 1.8) * t];
+  // Headroom above the first row. Offsets here are from the player's tile
+  // CENTRE, and a wardrobe's art starts 26px — 1.6 tiles — above its anchor
+  // tile's top edge, so anything less than 2.3 takes the top off it.
+  const [x0, y0] = [geom.cx + (COL[0] - 1) * t, geom.cy + (ROW[0] - 2.3) * t];
   const width = (COL[3] + 2.5 - COL[0] + 1) * t;
   await d.shot(`${out}/rot-${page}.png`, {
     x: x0,
     y: y0,
     width,
-    height: (ROW[3] + 2.2 - ROW[0] + 1.8) * t,
+    height: (ROW[3] + 2.2 - ROW[0] + 2.3) * t,
   });
   // And each row on its own, because the sheet is only useful for comparing
   // pieces and the question this answers is per piece. Same frame every time,
@@ -110,11 +111,11 @@ for (let page = 0; page * PER_SHOT < PIECES.length; page++) {
   for (let r = 0; r < batch.length; r++) {
     await d.shot(`${out}/rot-${batch[r][0]}.png`, {
       x: x0,
-      y: geom.cy + (ROW[r] - 1.8) * t,
+      y: geom.cy + (ROW[r] - 2.3) * t,
       width,
       // Tall enough for a two-tile piece (bed, cot) plus its rise, and no
       // taller: the gap between rows is what keeps neighbours out of frame.
-      height: 4 * t,
+      height: 4.5 * t,
     });
   }
   await d.browser.close();

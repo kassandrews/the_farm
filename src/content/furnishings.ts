@@ -19,13 +19,92 @@
 // whole box is the box with extra steps.
 
 import type { FurnitureId } from "./furniture";
-import type { PieceArt } from "../render/furnishings";
+import type { Grid, PieceArt } from "../render/furnishings";
 import { INK } from "../render/furnishings";
 
 /** Pieces drawn from art. Partial ON PURPOSE and permanently: `noticeboard` and
  *  `stage` are town fixtures whose procedural cases already say what they are,
  *  and the lamp leaves the generic path before this is ever consulted. A missing
  *  row is a piece that has not been converted, not a bug. */
+// The back of a box, for the three pieces that are one.
+//
+// A wardrobe, a bookcase and a chest have exactly one face worth drawing and
+// five that are panelling. Until now they shipped only `s`, so `gridFor()`
+// served the front view for every facing and a wardrobe turned to the wall
+// still showed you its doors and its handle — the one place the fallback
+// actively lies, because these are pieces you can walk behind.
+//
+// ONE grid each, used for `n` AND `e` with `mirrorW`, rather than three. That
+// is not laziness about the side view: on a one-tile footprint the side of a
+// wardrobe IS its back — same width, same panel, same shadow. Authoring three
+// identical grids would be three chances to typo the same picture.
+//
+// Painted in the finish's `s` (shade) rather than its `c`, which is what makes
+// the turn legible at a glance. Every one of these pieces already uses `c` for
+// the face that catches the light and `s` for the plinth beneath it; a panel
+// that is shade all the way up reads as the side of the object that is turned
+// away, without inventing a single new colour.
+
+/** Wardrobe seen from anywhere but the front: cornice, plain panel, feet. */
+const WARDROBE_BACK: Grid = {
+  rows: [
+    "kkkkkkkkkkkkkkkk",
+    "kttttttttttttttk",
+    "kssssssssssssssk",
+    "kkkkkkkkkkkkkkkk",
+    ".kkkkkkkkkkkkkk.",
+    ".kttttttttttttk.",
+    ...Array<string>(30).fill("..kssssssssssk.."),
+    ".kssssssssssssk.",
+    ".kkkkkkkkkkkkkk.",
+    "...kk......kk...",
+    "...kk......kk...",
+    "...kk......kk...",
+    "...kk......kk...",
+  ],
+  palette: { k: INK },
+};
+
+/** Bookcase from behind: no books, no shelf edges, but the plinth line stays —
+ *  without it the back is one thirty-row slab and the piece loses the
+ *  proportion its front view has. */
+const SHELF_BACK: Grid = {
+  rows: [
+    ".kkkkkkkkkkkkkk.",
+    ".kttttttttttttk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kkkkkkkkkkkkkk.",
+    ...Array<string>(20).fill("..kssssssssssk.."),
+    ".kkkkkkkkkkkkkk.",
+    ...Array<string>(8).fill("..kssssssssssk.."),
+    ".kkkkkkkkkkkkkk.",
+    "...kk......kk...",
+    "...kk......kk...",
+    "...kk......kk...",
+  ],
+  palette: { k: INK },
+};
+
+/** Chest from behind. The lid keeps its rim — a lid is a lid from every side,
+ *  and it is the rim rather than the clasp that says "this opens". */
+const CHEST_BACK: Grid = {
+  rows: [
+    "................",
+    "................",
+    "................",
+    "..kkkkkkkkkkkk..",
+    ".kttttttttttttk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kkkkkkkkkkkkkk.",
+    ...Array<string>(15).fill(".kssssssssssssk."),
+    ".kkkkkkkkkkkkkk.",
+  ],
+  palette: { k: INK },
+};
+
 export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // A CHAIR IS THE TEST CASE, because it is the piece whose icon and whose world
   // drawing disagreed most. The icon has a back and four legs; the world had a
@@ -822,6 +901,9 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // a tall box does not. Two doors, a centre stile, two knobs.
   wardrobe: {
     rise: 6,
+    n: WARDROBE_BACK,
+    e: WARDROBE_BACK,
+    mirrorW: true,
     s: {
       rows: [
         "kkkkkkkkkkkkkkkk",
@@ -874,6 +956,9 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // Curved lid, hard rim, one brass clasp. The rim is the whole trick —
   // it is what says lid rather than box, and it costs one row.
   chest: {
+    n: CHEST_BACK,
+    e: CHEST_BACK,
+    mirrorW: true,
     s: {
       rows: [
         "................",
@@ -1130,6 +1215,9 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // the lamp makes about brass.
   shelf: {
     rise: 4,
+    n: SHELF_BACK,
+    e: SHELF_BACK,
+    mirrorW: true,
     s: {
       rows: [
         ".kkkkkkkkkkkkkk.",
