@@ -3726,6 +3726,89 @@ looking at pictures.
   same chip* says to cut a HUD label naming something already visible, and
   coordinates are not visible — the rule does not reach it.
 
+### 8i — The town stops floating — **built**
+
+Every standing thing in the world already had a contact shadow. The things that
+MOVE did not: `drawEntity` drew the quantized sprite and nothing else, so the
+player and all eleven villagers hovered over ground that the trees, rocks,
+mushrooms, lamps, walls and museum cases were all sitting on. Two lines to fix,
+and it was invisible in the source for the usual reason — the fifteen objects
+that had one each spelled it out locally, so nothing anywhere said "movers are
+the exception".
+
+- **Same band, same ink, same hard edge as the other fifteen** — `rgba(0,0,0,
+  0.16)`, 2px tall, at `feetY - 2`. Worth stating because the style doc this
+  came from asked for a *soft, blurred, dithered ellipse* three times, and all
+  three words are outside this game's vocabulary (§*One vocabulary*: no circles,
+  no gradients, no blur). The existing convention was already the right answer.
+- **It does not take the walk bob.** A shadow that hops with the sprite is
+  attached to the creature rather than to the ground, which is the opposite of
+  what a contact shadow is for. Leaving it on the floor is what makes the hop
+  read as a hop.
+- **It does take `alpha`**, so the Ghost's shadow is as faint at night as she is.
+- **WIDER THAN THE FEET, and that is the whole of why it reads.** The first
+  version copied the tree's 9px band and changed nothing on screen: a creature
+  sprite is a teardrop, about 9px across at the base and wider above, so the
+  shadow landed entirely BEHIND the body. **This is 8c's first-ground-field
+  mistake in a second disguise** — there, reaching for the nearest existing
+  colour (`shade`, eight RGB units away) gave a texture nobody could see; here,
+  reaching for the nearest existing width gave a shadow nobody could see. A
+  contact shadow is legible only where it spills past the silhouette. 14px.
+
+**Still open, and deliberately not done here:** the tree and rock bands have the
+same problem — 9px under a crown three times that wide, invisible against grass
+at every zoom. Widening them is the same one-line change fifteen times over and
+wants its own look, because unlike a creature they are not all the same width.
+
+### 8j — Reconciling the visual style doc — **verdicts only, nothing built**
+
+An external style brief (roofs, walls, interiors, biomes, finishes) was read
+against the code and against this file. Most of it describes problems already
+solved, often **by a different method than it proposes**, so the verdicts are
+recorded here to stop them being re-proposed.
+
+**Already built, do not rebuild:** roof shingle courses (stepped off world px,
+coprime with TILE); the roof's directional edges (drawn only where the roof
+ENDS, via a neighbour test — the brief's "replace the uniform outline" is done);
+the roof overhang and door notch; wall autotiling, top-cap/front-face, merged
+window runs, door frame in its own finish; per-footprint floor finishes (v27) and
+rugs; warm light pools (5a); grass tonal variation and three tuft shapes (8c);
+water tonal noise and the hashed ripple (8g); day/night tint and the season
+palette swap.
+
+**Settled the other way — the brief is wrong for this game:**
+
+- **Per-building roof tint.** A roof is ONE material per room, derived from that
+  room's own walls (`render/roof.ts`). The dark-museum bug was fixed by a
+  lighter STONE, not a lighter roof, and §8f says so explicitly. Building
+  identity comes through wall material and (still unbuilt) signage.
+- **Transition tiles between biome pairs.** The staircase is real and is 8d, but
+  the settled method is to warp or dither the BOUNDARY, not to author edge
+  tiles — same answer `biomeWarp` and `coastWarp` already give.
+- **A `{material, paint, weathering}` finish model.** A `paint` axis was nearly
+  built and killed by name in 8f (a stored field on every built tile, a
+  migration, a second swatch row — for something a finish already is). DESIGN's
+  "a finish names its material and the material is what costs" is the model.
+  There is no weathering system; adding one is a design decision, not a style
+  tweak.
+- **Seasonal snow on roofs.** §Seasons: no snow layer, ever. It would want to sit
+  on every cell — the per-cell edges band — and snow that melted would be the
+  first weather with state. `moments.test.ts` fails on the word.
+- **The biome kit's critters and mist.** There is no fauna; `notebook.test.ts`
+  fails on any content line naming an animal. Weather is a named open loose end
+  needing its own pass across three docs (§Known loose ends), not a style change.
+- **A hero landmark per biome.** §7b: authored rarity is many kinds at a low
+  density each. One guaranteed per biome is a diorama, and it is the sentence
+  "one kind at density one" says.
+
+**Genuinely open, and the brief's real yield:** roof PITCH shading (a
+distance-to-edge value ramp — nothing in this file has ever discussed it, and it
+must be reconciled with 8f's "grain the surfaces the player looks AT, leave the
+ones they look ACROSS alone" before it is built); a wet rim / foam band at the
+shoreline; surface clutter (items rendered ON tables and shelves); and a
+world-space chimney, which §*Title screen* already flagged as worth redrawing
+properly rather than the version that floats at the join.
+
 ### 8e — The counters show whose voice it is — **Arabella built, four to go**
 
 Found by photographing all seven institution panels, which nothing had done
