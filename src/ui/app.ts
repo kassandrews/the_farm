@@ -131,22 +131,63 @@ const TOOLS: { id: Tool; icon: IconName; label: string; hint: string; key?: stri
   { id: "water", icon: "droplet", label: "Water", hint: "Water what's planted. Growth resumes.", key: "4" },
 ];
 
-const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string }[] = [
-  { id: "floor", icon: "plank", label: "Floor", hint: "Lay a floor. Boards or flagstones — pick the finish below." },
-  { id: "wall", icon: "wall", label: "Wall", hint: "Raise a wall. Close a shape and it gets a roof." },
-  { id: "door", icon: "door", label: "Door", hint: "Cut a doorway. Put it on a south wall so it shows." },
+/** The build bar's tabs, in the order they appear.
+ *
+ *  THE BAR OUTGREW ONE ROW. Eleven tools fitted; twenty-two do not, and the
+ *  failure on a phone is not "it looks busy" — it is that the row runs off the
+ *  side of the screen and half the game becomes unreachable. So the tools are
+ *  grouped and the row shows one group at a time.
+ *
+ *  Grouped by WHAT THE THING IS, not by what it costs or which finish it takes,
+ *  because that is the question you actually arrive with: you want somewhere to
+ *  sit, and then you choose between a stool and a bench. Cost is what you
+ *  discover second, and the hint already carries it.
+ *
+ *  `structure` is first and holds erase, so the group you land in is the one
+ *  that makes rooms — furniture is meaningless until there is a room to put it
+ *  in, and that ordering is also the order somebody builds in. */
+const BUILD_GROUPS = [
+  { id: "structure", label: "Build" },
+  { id: "seating", label: "Seating" },
+  { id: "surface", label: "Tables" },
+  { id: "sleep", label: "Beds" },
+  { id: "storage", label: "Storage" },
+  { id: "decor", label: "Light" },
+] as const;
+type BuildGroup = (typeof BUILD_GROUPS)[number]["id"];
+
+const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string; group: BuildGroup }[] = [
+  { id: "floor", icon: "plank", label: "Floor", hint: "Lay a floor. Boards or flagstones — pick the finish below.", group: "structure" },
+  { id: "wall", icon: "wall", label: "Wall", hint: "Raise a wall. Close a shape and it gets a roof.", group: "structure" },
+  { id: "door", icon: "door", label: "Door", hint: "Cut a doorway. Put it on a south wall so it shows.", group: "structure" },
   // Beside the door, because it is the other opening and the two are chosen
   // against each other. The hint says the thing you cannot see from the icon:
   // a window is still wall, and a row of them is one window.
-  { id: "window", icon: "window", label: "Window", hint: "Still a wall — you just see through it. Side by side, they join up." },
-  { id: "bed", icon: "bed", label: "Bed", hint: "A bed makes a room somewhere to live." },
-  { id: "table", icon: "table", label: "Table", hint: "Place a table. Press R to turn it." },
-  { id: "chair", icon: "chair", label: "Chair", hint: "Place a chair. Press R to turn it." },
-  { id: "shelf", icon: "shelf", label: "Shelf", hint: "Place a shelf. Press R to turn it." },
-  { id: "cushion", icon: "cushion", label: "Cushion", hint: "Costs cloth. The Menace sells cloth." },
-  { id: "rug", icon: "rug", label: "Rug", hint: "Costs cloth. Walk right over it." },
-  { id: "lamp", icon: "lamp", label: "Lamp", hint: "Costs ore. Give the dark something to argue with." },
-  { id: "erase", icon: "takedown", label: "Take back down", hint: "Remove what you built here. Materials come back." },
+  { id: "window", icon: "window", label: "Window", hint: "Still a wall — you just see through it. Side by side, they join up.", group: "structure" },
+  { id: "erase", icon: "takedown", label: "Take back down", hint: "Remove what you built here. Materials come back.", group: "structure" },
+
+  { id: "chair", icon: "chair", label: "Chair", hint: "Place a chair. Press R to turn it.", group: "seating" },
+  { id: "stool", icon: "stool", label: "Stool", hint: "A chair with the back question settled.", group: "seating" },
+  { id: "bench", icon: "bench", label: "Bench", hint: "Two tiles of sitting. Press R to turn it.", group: "seating" },
+  { id: "sofa", icon: "sofa", label: "Sofa", hint: "Costs wood and cloth. The Menace sells cloth.", group: "seating" },
+  { id: "cushion", icon: "cushion", label: "Cushion", hint: "Costs cloth. The Menace sells cloth.", group: "seating" },
+
+  { id: "table", icon: "table", label: "Table", hint: "Place a table. Press R to turn it.", group: "surface" },
+  { id: "coffeetable", icon: "coffeetable", label: "Coffee table", hint: "A table, lower. Low enough to step over.", group: "surface" },
+  { id: "desk", icon: "desk", label: "Desk", hint: "Drawers one end, room for your knees the other.", group: "surface" },
+  { id: "nightstand", icon: "nightstand", label: "Nightstand", hint: "Small. Goes beside a bed, holds a lamp.", group: "surface" },
+
+  { id: "bed", icon: "bed", label: "Bed", hint: "A bed makes a room somewhere to live.", group: "sleep" },
+  { id: "cot", icon: "cot", label: "Cot", hint: "Cheap, and it shows. Costs a little cloth.", group: "sleep" },
+
+  { id: "shelf", icon: "shelf", label: "Bookshelf", hint: "Place a bookshelf. Press R to turn it.", group: "storage" },
+  { id: "wardrobe", icon: "wardrobe", label: "Wardrobe", hint: "The tallest thing that will fit in a room.", group: "storage" },
+  { id: "dresser", icon: "dresser", label: "Dresser", hint: "Three drawers, two tiles wide. Press R to turn it.", group: "storage" },
+  { id: "chest", icon: "chest", label: "Chest", hint: "A box. Shut. It came that way.", group: "storage" },
+
+  { id: "lamp", icon: "lamp", label: "Floor lamp", hint: "Costs ore. Give the dark something to argue with.", group: "decor" },
+  { id: "desklamp", icon: "desklamp", label: "Desk lamp", hint: "Costs ore. Half a lamp, for one corner.", group: "decor" },
+  { id: "rug", icon: "rug", label: "Rug", hint: "Costs cloth. Walk right over it.", group: "decor" },
 ];
 
 /** What the undo control calls the last stroke. A phrase, not a tool name, so it
@@ -180,6 +221,10 @@ export class App {
    *  halfway through and having to say "wall" again is the kind of small tax
    *  that makes a mode feel like a detour rather than a place. */
   private lastBuildTool: BuildTool = "wall";
+  /** Which tab of the build bar is showing. Not persisted: it follows the tool
+   *  you are holding (see syncBuildUi), so restoring it separately could put the
+   *  bar on a tab that does not contain the selected tool. */
+  private buildGroup: BuildGroup = "structure";
   /** Tiles already painted during the current drag, so dragging back and forth
    *  over one tile doesn't re-charge or re-message for it. */
   private painted = new Set<string>();
@@ -218,6 +263,7 @@ export class App {
       root,
       (t) => this.selectTool(t),
       (t) => this.selectBuildTool(t),
+      (g) => this.selectBuildGroup(g),
       () => this.toggleBuild(),
       () => this.rotate(),
       () => this.doUndo(),
@@ -2206,7 +2252,28 @@ export class App {
     }
     this.buildTool = t;
     this.lastBuildTool = t;
+    // THE TAB FOLLOWS THE TOOL, and only here — when the tool actually changes.
+    // Doing it inside syncToolUi instead meant every sync re-derived the tab
+    // from whatever was in hand, so tapping a tab was overwritten the same
+    // frame and the bar simply refused to change: browsing was impossible and
+    // the only reachable tools were the ones in the held tool's own group.
+    // Found by the screenshot harness timing out on an invisible button, which
+    // is exactly what a thumb would have found.
+    const group = BUILD_TOOLS.find((b) => b.id === t)?.group;
+    if (group) this.buildGroup = group;
     this.endAssigning(); // same door, from the other palette
+    this.syncToolUi();
+  }
+
+  /** Switch the build bar to another category.
+   *
+   *  Deliberately does NOT change the held tool. Browsing the tabs while holding
+   *  a wall should leave you holding a wall — swapping the tool on every tab tap
+   *  would mean you could not look at what exists without also putting down what
+   *  you were doing, and on a phone the tabs are exactly where a stray thumb
+   *  lands. Tapping a tool is what picks one up. */
+  private selectBuildGroup(g: BuildGroup): void {
+    this.buildGroup = g;
     this.syncToolUi();
   }
 
@@ -2222,13 +2289,34 @@ export class App {
     for (const [id, btn] of this.hud.toolButtons) {
       btn.classList.toggle("selected", !building && id === this.tool);
     }
+    // Which tabs have anything IN them here. Underground the palette is two
+    // tools long, so most tabs would be empty — an empty tab is a promise the
+    // room cannot keep, so it goes rather than showing an empty row.
+    const live = new Set(
+      BUILD_TOOLS.filter((b) => toolAllowedOn(b.id, this.layer())).map((b) => b.group),
+    );
+    // If the tab we're on has nothing left in it — you climbed down a shaft with
+    // Seating open — move to one that does, rather than showing an empty row and
+    // no way to understand why.
+    if (!live.has(this.buildGroup)) {
+      const first = BUILD_GROUPS.find((g) => live.has(g.id));
+      if (first) this.buildGroup = first.id;
+    }
+    for (const [id, btn] of this.hud.groupButtons) {
+      btn.classList.toggle("selected", id === this.buildGroup);
+      btn.style.display = live.has(id) ? "" : "none";
+    }
+    // Only ever one tab's worth of tools at a time, and that IS the fix: the row
+    // used to hold every tool in the game, which fitted while there were eleven
+    // and ran off the side of a phone at twenty-two.
     for (const [id, btn] of this.hud.buildButtons) {
       btn.classList.toggle("selected", id === this.buildTool);
       // The palette says what is possible here rather than offering nine tools
       // that refuse. Hidden, not disabled: a row of greyed buttons in a tunnel
       // reads as the game being broken, where two buttons read as what the rock
       // is for.
-      btn.style.display = toolAllowedOn(id, this.layer()) ? "" : "none";
+      const inTab = btn.dataset.group === this.buildGroup;
+      btn.style.display = inTab && toolAllowedOn(id, this.layer()) ? "" : "none";
     }
     this.renderer.setBuildView(building);
     // Leaving build mode puts the camera back on the player, and this is the one
@@ -2539,6 +2627,8 @@ interface HudRefs {
   flash: HTMLElement;
   toolButtons: [Tool, HTMLElement][];
   buildButtons: [BuildTool, HTMLElement][];
+  /** The category tabs, and which tools each button belongs to. */
+  groupButtons: [BuildGroup, HTMLElement][];
   /** The finish row, refilled per held tool by syncFinishUi(). */
   buildFinishes: HTMLElement;
   build: HTMLElement;
@@ -2551,6 +2641,7 @@ function buildHud(
   root: HTMLElement,
   onTool: (t: Tool) => void,
   onBuildTool: (t: BuildTool) => void,
+  onBuildGroup: (g: BuildGroup) => void,
   onBuild: () => void,
   onRotate: () => void,
   onUndo: () => void,
@@ -2628,12 +2719,31 @@ function buildHud(
   // in a row under the thing you're building, not beside it.
   const buildButtons: [BuildTool, HTMLElement][] = [];
   const buildTools = el("div", { class: "build-tools" });
+  // Every tool button is built once and kept; the tabs only change which are
+  // DISPLAYED. Rebuilding the row per tab would throw away the selected class,
+  // the hover hints and the icon elements on every tap, and `syncBuildUi` holds
+  // references to these nodes.
   for (const t of BUILD_TOOLS) {
     const btn = el("button", { class: "tool", ariaLabel: t.label }, [iconEl(t.icon, SCALE.button)]);
     btn.addEventListener("click", () => onBuildTool(t.id));
     hoverHint(btn, `${t.label} — ${t.hint}`);
+    btn.dataset.group = t.group;
     buildButtons.push([t.id, btn]);
     buildTools.append(btn);
+  }
+
+  // The tabs. Text rather than icons, because a group is a WORD — "Seating" is
+  // one glance and a picture of a category is a riddle. They sit above the tool
+  // row for the same reason the finish swatches do: the bar is anchored to the
+  // bottom of the screen, so anything that appears up here grows it upward and
+  // the tools stay under the thumb that was already using them.
+  const groupTabs = el("div", { class: "build-groups" });
+  const groupButtons: [BuildGroup, HTMLElement][] = [];
+  for (const g of BUILD_GROUPS) {
+    const btn = el("button", { class: "build-group", ariaLabel: g.label }, [g.label]);
+    btn.addEventListener("click", () => onBuildGroup(g.id));
+    groupButtons.push([g.id, btn]);
+    groupTabs.append(btn);
   }
 
   const rotate = el("button", { class: "tool rotate-btn", ariaLabel: "Rotate" }, [iconEl("arrow_s", SCALE.button)]);
@@ -2663,6 +2773,7 @@ function buildHud(
   // what you're about to do rather than choosing it, so they want to be in
   // reach of the tools without reading as one of them.
   const buildBar = el("div", { class: "build-bar" }, [
+    groupTabs,
     buildFinishes,
     el("div", { class: "build-row" }, [buildTools, el("div", { class: "build-mods" }, [rotate, undo])]),
   ]);
@@ -2692,7 +2803,7 @@ function buildHud(
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, survey, flash, toolButtons, buildButtons, buildFinishes, build, rotate, undo, zoom };
+  return { root: hud, clock, survey, flash, toolButtons, buildButtons, groupButtons, buildFinishes, build, rotate, undo, zoom };
 }
 
 // --- Panel helpers ------------------------------------------------------------

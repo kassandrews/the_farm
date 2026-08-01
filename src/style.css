@@ -179,6 +179,42 @@ select {
    answer to the same problem the reserved two-wide `.build-mods` slot solves
    horizontally, and it can afford to be the cheaper answer because nothing
    sits below it. */
+/* The category tabs. Above the finishes, so the bar reads top to bottom as
+   "what kind of thing → what it's made of → which one", which is the order the
+   questions actually arrive in. */
+.build-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Text, not icons. A group is a word — a picture of a category is a riddle,
+   and "Seating" is one glance. Quieter than a finish chip on purpose: these
+   navigate, they don't choose anything, and they must not compete with the
+   tools underneath them for the eye. */
+.build-group {
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  color: inherit;
+  opacity: 0.62;
+  transition: transform 0.05s;
+}
+
+.build-group.selected {
+  border-color: var(--accent);
+  background: var(--panel);
+  opacity: 1;
+}
+
+.build-group:active {
+  transform: scale(0.94);
+}
+
 .build-finishes {
   display: flex;
   flex-wrap: wrap;
