@@ -3356,6 +3356,35 @@ nothing). `Renderer.drawGrain` inks them from the skin.
   of stepping with the terrain behind it.
 - **Cloth has no grain**, and the table says so in place. A seam across a rug
   reads as two rugs.
+- **A joint needs two boards to butt** — so a floor one tile wide gets none.
+  Reported off a screenshot of a plank bridge: the boards run the width of the
+  deck, there is nothing for them to butt against, and the joints scattered up
+  it by the per-course stagger read as brickwork. **The same failure as the
+  cross-planked side run, and the same underlying cause: a 16px span is not
+  something a joint can sit IN, it is a single board.** A joint now needs a
+  finished neighbour along the board direction to be earned, which leaves wide
+  floors and their ends untouched and turns a one-wide run into plain planks.
+- **A wall shows its top exactly when a wall stands to the SOUTH** (`showsTop`,
+  sim/structures.ts). It was `N && S` — run-mates behind and in front — which is
+  right in the middle of a side run and wrong at a corner: the north-west corner
+  has run-mates east and south and no north, so it drew a face. The back wall's
+  surface carried straight across both corners and the solid side walls stopped
+  short at its near edge instead of running up to meet it. **The fix deletes half
+  the condition rather than adding to it**, which is usually the sign the
+  original was an approximation of something simpler — a face you cannot see is a
+  face nobody should draw. Kass's framing was the spec: standing in a real room
+  you see the side walls solid all the way to the back, and the back wall's
+  surface only between them.
+
+  The south wall's corners are the check that this is the *right* rule and not
+  merely a looser one: they have run-mates north and east, no south, so they
+  still draw a face. Tested both ways.
+
+  **A near-miss worth recording: `drawDoorstep` held the identical expression**
+  and means something else by it — "is this door in a north–south run", which
+  genuinely wants both neighbours. The two agreed by coincidence and were the
+  same line of code, so fixing the wall rule would silently have moved every
+  doorstep. It is renamed now.
 - **A door's shell is the WALL's material; only its frame is its own**
   (`shellFinish`, sim/structures.ts). content/structures.ts already said this in
   the note explaining why a door is wood-only — "the stone finishes reach the

@@ -52,6 +52,7 @@ import {
   wallMask,
   blockedDoorsteps,
   shellFinish,
+  showsTop,
   CONNECT_N,
   CONNECT_E,
   CONNECT_S,
@@ -915,10 +916,28 @@ export class Renderer {
         // of it — a floor is flat because it was laid flat, and what it has
         // instead of a roll is a grain. Terrain has no grain and never will.
         if (isFinishedTile(groundId)) {
+          // A BUTT JOINT NEEDS TWO BOARDS TO BUTT. On a floor one tile wide —
+          // a bridge, a jetty, a path across a stream — the boards run the
+          // width of the deck and there is nothing for them to butt against, so
+          // a joint there is not a joint but a nick in the middle of a plank.
+          // Scattered up the deck by the per-course stagger, they photographed
+          // as brick: the same failure as the cross-planked side run, and for
+          // the same underlying reason — a 16px span is not long enough to have
+          // a joint IN, it is a single board.
+          //
+          // So the joints need a neighbour along the board direction to be
+          // earned. A wide floor is unaffected (its tiles all have one); the
+          // ends of a wide floor are unaffected (they have one on the inside);
+          // a one-wide run and a lone tile come out as plain planks, which is
+          // what a deck is.
+          const runsOn =
+            isFinishedTile(groundIdOf(tileAt(world, tx - 1, ty))) ||
+            isFinishedTile(groundIdOf(tileAt(world, tx + 1, ty)));
           this.drawGrain(px, py, TILE, TILE, skinDef(floorFinish(world, tx, ty)), {
             wx: tx * TILE,
             wy: ty * TILE,
             seed: world.seed,
+            jointed: runsOn,
           });
         }
         // The bevel is drawn ONLY where the material changes. On every tile, a
@@ -1927,8 +1946,15 @@ export class Renderer {
       // or south. Stepping off the side of a doorway isn't a way in, and a step
       // drawn there would read as a ledge around the whole house.
       const mask = wallMask(world, tx + dx, ty + dy);
-      const sideOn = Boolean(mask & CONNECT_N) && Boolean(mask & CONNECT_S);
-      if (sideOn !== (dy === 0)) continue;
+      // DELIBERATELY NOT `showsTop`, despite the identical-looking test this
+      // used to share with the wall renderer. That one asks "is this wall's face
+      // hidden" and answers "yes if anything stands south of it"; this asks "is
+      // this door in a north–south run", which genuinely wants run-mates on BOTH
+      // sides. They agreed by coincidence and were the same expression, which is
+      // how the corner bug hid: fixing the wall rule would silently have moved
+      // every doorstep too.
+      const inNorthSouthRun = Boolean(mask & CONNECT_N) && Boolean(mask & CONNECT_S);
+      if (inNorthSouthRun !== (dy === 0)) continue;
 
       ctx.fillStyle = STEP_STONE;
       if (dy === 0) {
@@ -2023,13 +2049,13 @@ export class Renderer {
       ctx.fillRect(px, base, TILE, 2);
     }
 
-    // A wall with run-mates both behind AND in front is running away from the
-    // camera — a SIDE wall. Its face is hidden by the piece in front of it, so
-    // drawing one gives every enclosure a uniform 24px band on all four sides
-    // and the whole house reads as an earth berm rather than a building. Draw
-    // its top surface instead: consecutive cells' bands are exactly TILE apart,
-    // so a run joins into one seamless strip.
-    const sideOn = mask & CONNECT_N && mask & CONNECT_S;
+    // Whether this wall shows its top surface instead of its face. The rule and
+    // the argument for it live in sim/structures.ts, with its tests — it is a
+    // claim about the build layer's geometry, not about drawing.
+    //
+    // Consecutive cells' bands are exactly TILE apart, so a run of tops joins
+    // into one seamless strip.
+    const sideOn = showsTop(mask);
     if (sideOn) {
       // Flat, with no per-cell bottom edge: a side run is one continuous
       // surface, and an edge drawn on every cell stripes it exactly the way

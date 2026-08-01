@@ -136,6 +136,30 @@ function joinsAt(world: WorldState, x: number, y: number): boolean {
   return cell !== null && joinsWallRun(cell.id);
 }
 
+/** Does this wall show its TOP SURFACE rather than its face?
+ *
+ *  Exactly when there is a wall in front of it — to the SOUTH. That is the whole
+ *  geometric fact: a face you cannot see is a face nobody should draw, and what
+ *  you see instead is the wall's top.
+ *
+ *  It was `N && S` in the renderer — run-mates both behind and in front — which
+ *  is the same answer in the middle of a side run and the wrong one at a CORNER.
+ *  A north-west corner has run-mates east and south and no north, so it failed
+ *  the test and drew a face: the back wall's surface carried straight across both
+ *  corners, and the solid side walls stopped short at the back wall's near edge
+ *  instead of running up to meet it. Standing in a real room you see the side
+ *  walls solid all the way to the back, and the back wall's surface only BETWEEN
+ *  them.
+ *
+ *  The south wall's corners are the check that this is the RIGHT rule and not
+ *  merely a looser one: a south-west corner has run-mates north and east and no
+ *  south, so it still draws a face — correctly, since the front of a house is a
+ *  thing you look straight at, corners included.
+ */
+export function showsTop(mask: number): boolean {
+  return (mask & CONNECT_S) !== 0;
+}
+
 /** The finish of the WALL a cell's shell is built from — which for a door is
  *  its neighbours' finish rather than its own.
  *

@@ -16,6 +16,7 @@ import {
   doorApproaches,
   blockedDoorsteps,
   shellFinish,
+  showsTop,
 } from "./structures";
 import { placeFurniture } from "./furniture";
 import { gather, updateRegrowth } from "./gather";
@@ -315,5 +316,51 @@ describe("what a door's shell is built from", () => {
 
   it("is null where nothing is built", () => {
     expect(shellFinish(world(), 20, 20)).toBe(null);
+  });
+});
+
+describe("which face of a wall you see", () => {
+  /** A closed rectangle of wall, so every corner and every run exists. */
+  function box(x0: number, y0: number, w: number, h: number) {
+    const wd = world();
+    for (let y = y0; y < y0 + h; y++)
+      for (let x = x0; x < x0 + w; x++) {
+        if (x !== x0 && x !== x0 + w - 1 && y !== y0 && y !== y0 + h - 1) continue;
+        clear(wd, x, y);
+        placeStructure(wd, x, y, "wall", "pine");
+      }
+    return wd;
+  }
+
+  // A wall shows its top exactly when something stands in front of it — to the
+  // south. The rule was `N && S`, which is right in the middle of a side run and
+  // wrong at a corner: the north-west corner drew a FACE, so the back wall's
+  // surface carried across both corners and the solid side walls stopped short
+  // of it instead of running up to meet it.
+  it("shows its top wherever a wall stands to the south", () => {
+    const w = box(20, 20, 5, 5);
+    const at = (x: number, y: number) => showsTop(wallMask(w, x, y));
+    expect(at(20, 20)).toBe(true); // north-west corner — the reported bug
+    expect(at(24, 20)).toBe(true); // north-east corner
+    expect(at(20, 22)).toBe(true); // middle of the west run
+    expect(at(24, 22)).toBe(true); // middle of the east run
+  });
+
+  it("shows its face on every wall you look straight at", () => {
+    const w = box(20, 20, 5, 5);
+    const at = (x: number, y: number) => showsTop(wallMask(w, x, y));
+    expect(at(22, 20)).toBe(false); // middle of the back wall
+    expect(at(22, 24)).toBe(false); // middle of the front wall
+    // The front corners are the check that this is the right rule and not just
+    // a looser one — the front of a house is a thing you look at, corners too.
+    expect(at(20, 24)).toBe(false);
+    expect(at(24, 24)).toBe(false);
+  });
+
+  it("shows its face on a wall standing alone", () => {
+    const w = world();
+    clear(w, 20, 20);
+    placeStructure(w, 20, 20, "wall", "pine");
+    expect(showsTop(wallMask(w, 20, 20))).toBe(false);
   });
 });
