@@ -178,10 +178,16 @@ const WALL_CAP = 3;
  *  photographed as brickwork: a five-px course broken every thirteen IS a brick
  *  bond, whatever colour it is painted. A board is milled from a tree and runs
  *  most of a room, so it butts every 47 — three tiles, and rarely twice in one
- *  view. Flagstones are cut and laid, and break every nine. */
+ *  view. Flagstones are cut and laid, and break every nine.
+ *
+ *  `bond` is how many courses before the joints line up again — 3 for boards, a
+ *  stepped bond; 2 for stone, the running bond every brick wall is laid in. It
+ *  replaced a random per-course offset, which is what a floor looks like if you
+ *  have never seen one: joints crowding, drifting, sometimes landing two pixels
+ *  apart. Regularity is the thing that reads as workmanship. */
 const GRAIN = {
-  wood: { course: 5, joint: 47, seam: 0.13, joint_ink: 0.2 },
-  stone: { course: 6, joint: 9, seam: 0.11, joint_ink: 0.17 },
+  wood: { course: 5, joint: 47, bond: 3, seam: 0.13, joint_ink: 0.2 },
+  stone: { course: 6, joint: 9, bond: 2, seam: 0.11, joint_ink: 0.17 },
   // Cloth has no grain. A rug is woven, not built, and a seam across one would
   // read as two rugs — the pieces that wear cloth get their pattern from their
   // own draw path (drawFurniture), not from this.
@@ -936,7 +942,6 @@ export class Renderer {
           this.drawGrain(px, py, TILE, TILE, skinDef(floorFinish(world, tx, ty)), {
             wx: tx * TILE,
             wy: ty * TILE,
-            seed: world.seed,
             jointed: runsOn,
           });
         }
@@ -2002,7 +2007,7 @@ export class Renderer {
     w: number,
     h: number,
     skin: SkinDef,
-    spec: { wx: number; wy: number; seed: number; axis?: "h" | "v"; jointed?: boolean },
+    spec: { wx: number; wy: number; axis?: "h" | "v"; jointed?: boolean },
   ): void {
     const g = GRAIN[skin.applies];
     if (!g) return;
@@ -2015,10 +2020,10 @@ export class Renderer {
         wy: spec.wy,
         w,
         h,
-        seed: spec.seed,
         axis: spec.axis ?? "h",
         course: g.course,
         joint: spec.jointed === false ? null : g.joint,
+        bond: g.bond,
       },
       (mx, my, mw, mh, ink) => {
         ctx.fillStyle = ink === "seam" ? seam : joint;
@@ -2098,7 +2103,6 @@ export class Renderer {
       this.drawGrain(px, top + WALL_CAP, TILE, STOREY - WALL_CAP, skin, {
         wx: tx * TILE,
         wy: WALL_CAP,
-        seed: world.seed,
         axis: stone ? "h" : "v",
         jointed: stone,
       });

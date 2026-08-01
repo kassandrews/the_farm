@@ -3356,6 +3356,26 @@ nothing). `Renderer.drawGrain` inks them from the skin.
   of stepping with the terrain behind it.
 - **Cloth has no grain**, and the table says so in place. A seam across a rug
   reads as two rugs.
+- **The joints step by a BOND, not by a random offset.** The first version
+  jittered each course's joints off a hash, which is what a floor looks like if
+  you have never seen a floor: joints crowding, drifting apart, occasionally
+  landing two pixels from each other. Reported as "it still looks chaotic — I
+  want planks laid at regular patterns", which is the correct description of the
+  thing and also its fix. **Nobody lays a floor at random.** A bond is regular by
+  definition, and being regular is exactly what reads as workmanship.
+
+  Boards step a third of a board per course (`bond: 3`); stone is `bond: 2`, the
+  running bond every brick wall in the world is laid in. `grain.ts` no longer
+  takes a seed at all — the pattern is geometry now, which is simpler than the
+  thing it replaced. Two tests pin it: the joints in a course are exactly one
+  board apart and the fourth course lines up with the first, and the bond has no
+  centre (modulo on a negative course index folds the wrong way and would run a
+  line of joints to the horizon along y = 0).
+
+  Some stagger remains non-negotiable — with none, every board in a room ends on
+  the same line and the floor is a checkerboard, which is the tile grid again at
+  another pitch. The bond is the disciplined version of the stagger, not an
+  alternative to it.
 - **A joint needs two boards to butt** — so a floor one tile wide gets none.
   Reported off a screenshot of a plank bridge: the boards run the width of the
   deck, there is nothing for them to butt against, and the joints scattered up

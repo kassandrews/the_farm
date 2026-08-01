@@ -36,8 +36,6 @@
 // hundred thousand short-lived allocations a second for no gain. A callback is
 // just as testable (collect into an array in the test) and allocates nothing.
 
-import { decoHash } from "../sim/world";
-
 /** What a mark is FOR, so the caller picks the ink. A seam is the gap between
  *  two boards or two courses and runs the length of the surface; a joint is
  *  where one board ends and the next begins, and crosses a single course. */
@@ -51,17 +49,33 @@ export interface GrainSpec {
   wy: number;
   w: number;
   h: number;
-  seed: number;
   /** Which way the boards run. "h" is floorboards and masonry courses (seams
    *  are horizontal lines); "v" is wall planking stood on end. */
   axis: "h" | "v";
   /** Board width / course height in world px. Keep it coprime with TILE — see
    *  the docblock above; this is the one number that must not be 2, 4, 8 or 16. */
   course: number;
-  /** Roughly how long a board runs before it butts against the next, in world
-   *  px. `null` for planking that runs the full height of what it covers — a
-   *  wall board is one board from floor to ceiling and has no butt joint. */
+  /** How long a board runs before it butts against the next, in world px.
+   *  `null` for planking that runs the full height of what it covers — a wall
+   *  board is one board from floor to ceiling and has no butt joint. */
   joint: number | null;
+  /** THE BOND: how many courses before the joints line up again.
+   *
+   *  Each course is offset from the last by `joint / bond`, so 2 is a running
+   *  bond (every other course lines up, the classic brick) and 3 is a stepped
+   *  one, which is how floorboards are actually laid.
+   *
+   *  This replaced a per-course RANDOM offset, and the difference is the whole
+   *  point. Random offsets are what a floor looks like if you have never seen a
+   *  floor: joints crowd together, drift apart, and occasionally fall two pixels
+   *  from each other, and the surface reads as chaos rather than as something
+   *  somebody laid. Nobody lays a floor that way. A bond is regular BY
+   *  DEFINITION, and being regular is what makes it legible as workmanship.
+   *
+   *  Keep `joint` coprime with TILE even so — a bond that divides the tile puts
+   *  every joint at the same place in every cell, which is the per-cell edges
+   *  rule again by a different road (see the docblock above). */
+  bond: number;
 }
 
 /** Walk the grain marks covering a box, in box-local coordinates.
@@ -74,7 +88,7 @@ export function forEachGrainMark(
   spec: GrainSpec,
   emit: (x: number, y: number, w: number, h: number, ink: GrainInk) => void,
 ): void {
-  const { wx, wy, w, h, seed, axis, course, joint } = spec;
+  const { wx, wy, w, h, axis, course, joint, bond } = spec;
   // Work in "along" (the direction boards run) and "across" (the direction the
   // courses stack). Mapping back at the emit call keeps one implementation for
   // both axes instead of two that drift apart.
@@ -103,16 +117,24 @@ export function forEachGrainMark(
     // conventions disagree about which tile owns the shared line.
     put(along0, bandStart, alongLen, 1, "seam");
     if (joint == null) continue;
-    // Butt joints, staggered per course. Without the stagger every board in a
-    // room ends on the same line and the floor reads as a checkerboard — which
-    // is the tile grid again, just at a different pitch. The hash takes the
-    // course index as one coordinate, so neighbouring courses are unrelated.
-    const jFirst = Math.floor(along0 / joint);
-    const jLast = Math.floor((along0 + alongLen - 1) / joint);
+    // Butt joints, stepped by the bond. The offset depends ONLY on which course
+    // this is, so every joint in a course sits at the same interval and each
+    // course steps a fixed fraction of a board past the one behind it — a
+    // staircase you can read, which is what a laid floor looks like.
+    //
+    // Some stagger is still non-negotiable: with none, every board in the room
+    // ends on the same line and the floor is a checkerboard, which is the tile
+    // grid again at a different pitch. The bond is the disciplined version of
+    // that, not an alternative to it.
+    //
+    // Modulo on a NEGATIVE course index would fold the wrong way and put a seam
+    // in the bond at the world origin, which is a line of joints running to the
+    // horizon through y = 0. `% bond + bond` costs nothing and means the pattern
+    // has no centre.
+    const off = Math.round((((c % bond) + bond) % bond) * (joint / bond));
+    const jFirst = Math.floor((along0 - off) / joint);
+    const jLast = Math.floor((along0 + alongLen - 1 - off) / joint);
     for (let j = jFirst; j <= jLast; j++) {
-      // Inset by 1 at each end so a jittered joint can never land exactly on
-      // the next joint's cell boundary and pair up into a straight line.
-      const off = 1 + Math.floor(decoHash(c, j, seed) * (joint - 2));
       put(j * joint + off, bandStart, 1, course, "joint");
     }
   }

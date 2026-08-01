@@ -24,10 +24,10 @@ function tile(tx: number, ty: number, over: Partial<GrainSpec> = {}): Mark[] {
     wy: ty * TILE,
     w: TILE,
     h: TILE,
-    seed: 7,
     axis: "h",
     course: 5,
     joint: 13,
+    bond: 3,
     ...over,
   });
 }
@@ -84,10 +84,10 @@ describe("grain marks", () => {
       wy: 0,
       w: 64,
       h: 40,
-      seed: 7,
       axis: "h",
       course: 5,
       joint: 13,
+      bond: 3,
     });
     const byCourse = new Map<number, number[]>();
     for (const m of wide.filter((v) => v.ink === "joint")) {
@@ -109,10 +109,10 @@ describe("grain marks", () => {
       wy: 0,
       w: TILE,
       h: 24,
-      seed: 7,
       axis: "v",
       course: 5,
       joint: null,
+      bond: 3,
     });
     expect(wall.every((m) => m.ink === "seam")).toBe(true);
     // Vertical boards: every seam is a full-height 1px column.
@@ -122,8 +122,34 @@ describe("grain marks", () => {
     }
   });
 
-  it("is deterministic in its seed", () => {
-    expect(tile(2, 3)).toEqual(tile(2, 3));
-    expect(tile(2, 3)).not.toEqual(tile(2, 3, { seed: 8 }));
+  // THE BOND, as a number. This replaced a random per-course offset that
+  // photographed as chaos — joints crowding, drifting, occasionally landing two
+  // pixels apart. A floor nobody laid. Regularity is what reads as workmanship,
+  // so it is worth asserting rather than eyeballing.
+  it("steps its joints by a regular bond", () => {
+    const wide = marks({ wx: 0, wy: 0, w: 200, h: 45, axis: "h", course: 5, joint: 12, bond: 3 });
+    const xsIn = (courseIndex: number) =>
+      wide.filter((m) => m.ink === "joint" && m.y === courseIndex * 5).map((m) => m.x);
+    // Within a course the joints are evenly spaced, one board apart.
+    for (const c of [0, 1, 2, 3]) {
+      const xs = xsIn(c);
+      expect(xs.length).toBeGreaterThan(3);
+      for (let i = 1; i < xs.length; i++) expect(xs[i] - xs[i - 1]).toBe(12);
+    }
+    // Each course steps a third of a board past the one behind it...
+    expect(xsIn(0)[0]).toBe(0);
+    expect(xsIn(1)[0]).toBe(4);
+    expect(xsIn(2)[0]).toBe(8);
+    // ...and the fourth course lines up with the first. That is what `bond` is.
+    expect(xsIn(3)).toEqual(xsIn(0));
+  });
+
+  // A regular bond must not develop a seam at the world origin. Modulo on a
+  // negative course index folds the wrong way, which would run a line of joints
+  // to the horizon along y = 0.
+  it("has no centre", () => {
+    const above = marks({ wx: 0, wy: -45, w: 200, h: 45, axis: "h", course: 5, joint: 12, bond: 3 });
+    const below = marks({ wx: 0, wy: 0, w: 200, h: 45, axis: "h", course: 5, joint: 12, bond: 3 });
+    expect(above).toEqual(below);
   });
 });
