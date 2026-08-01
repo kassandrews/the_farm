@@ -3206,7 +3206,7 @@ word, and is worth re-checking before anything is built on it.
 
 ---
 
-## Phase 9 — What the town keeps — **proposed, not started**
+## Phase 9 — What the town keeps — **done**
 
 Four steps that deepen the town's texture and memory. The through-line: **the
 town keeps things, and nothing it keeps is ever a score.** Each step rides a
@@ -3516,7 +3516,7 @@ to go looking for the owl would find a bug.
 Found by reading the real panel: the eyebrow said "What you've noticed" over a
 view that also holds what you were told.
 
-### 9d — Moments (build last)
+### 9d — Moments — **done**
 
 The game quietly notices beautiful configurations — the first snowfall, the
 meteor night you watched with a crowd in the plaza, a companion who walked a long
@@ -3563,6 +3563,83 @@ remembered, never awarded.
 - Whether the player has Moments about themselves (the companion who walked 300
   days) or only ones shared with a resident.
 - Channel: dialogue, postcard, or both.
+
+**Settled, and why:**
+
+- **A Moment about yourself goes in the NOTEBOOK, and that is the author's call.**
+  Both options on the table were worse. A player-side store is the shape that
+  grows a panel and would have cost a schema version; "a moment alone is simply
+  not remembered" throws away the best thing in the idea. The journal already is
+  the record of what you personally noticed, already refuses counts and blanks,
+  and already fires once and stays — so a solitary Moment needed no new storage,
+  no new panel, and no new rule. **Nothing about 9d bumped the schema. It ships
+  on v26**, because a Moment is written into two logs that were already in the
+  save.
+- **Two records for one event, and the journal half never waits on company.**
+  Alone or not, you saw it; if somebody was standing there, they also remember
+  it. Making solitude the ONLY route to a journal entry would have taught players
+  to walk away from people before anything nice happened, which inverts the
+  section — `moments.test.ts` pins both halves firing together.
+- **Two of the three Moments needed no new journal row at all.** `a-busy-sky` was
+  already the field note for a meteor shower and `far-out` for the edge of the
+  survey, both written in 9c. That is the strongest evidence the shape is right:
+  a Moment is not a new thing that happened, it is a SECOND RECORD of something
+  the game already knew about. Only `the-cold-came` had to be written.
+- **The postcard is not a channel, and this was not a taste call.** It fires
+  exclusively on load (`app.ts`, from `start()`), so a Moment — which happens
+  while you are playing — could only reach it by inventing an in-session
+  postcard, and an in-session panel announcing something you just did IS the
+  toast the section bans. Dialogue only.
+- **`sweepMoments` does not call `witness`, for two separate reasons.** `witness`
+  befriends whoever was present, because friendship here grows out of doing work
+  somebody can see — and nobody has done anything under a meteor shower, the sky
+  is doing it. It also *could not*: these predicates are evaluated on the 500ms
+  sweep rather than at the instant of an action, so a Moment routed through
+  `witness` would pay a friendship point every half second for as long as the
+  condition stayed true.
+- **The sweep is why `already()` exists, and it is the one real trap here.**
+  `shower` and `winter_came` are deliberately not one-shots (each night and each
+  year is its own, the `festival` argument), and every other repeatable memory in
+  the game is written ONCE at the instant of an action. These are written by a
+  predicate that stays true for hours. Without de-duplication by kind AND value a
+  single shower would append twice a second and push a villager's entire 64-entry
+  life out of the ring inside a minute.
+- **No crowd clause**, though the sketch said "with a crowd in the plaza". The
+  fixed cast stand at their posts around the clock and everybody else is asleep
+  in a bed they own, so a plaza holding two waking villagers at 2am is not
+  something this game produces — the clause would have read beautifully and never
+  fired once. Whoever is beside you is who was there.
+- **THERE IS NO SNOW**, and the headline example died the same death as 9c's owl.
+  "Saw my first snow" was the obvious first Moment and is unwritable:
+  `content/seasons.ts` says in writing that winter is a colour temperature and
+  NOT a weather layer, because snow on the ground would want to sit on every cell
+  (the per-cell edges band, three times now) and snow that melted would be the
+  first weather in the game with state. The entry is about the light and the
+  trees, which are what actually change on screen. `moments.test.ts` fails on any
+  line mentioning snow, and on any line that names its own trigger.
+
+**A bug found on the way, on the same mechanism:** the Cube's `witness` call fires
+EVERY FRAME while you stand near it, and `witness` befriends unconditionally — so
+a companion walked all the way out to the Humming Cube gained a friendship point
+sixty times a second and pegged at maximum in about two seconds. The longest walk
+in the game was also the only friendship faucet in it. Nothing caught it because
+`hum` is a one-shot, so the MEMORY was always correct and only the friendship
+leaked, and every test here asserts on the log. `someoneHereLacks` now gates the
+call; removing the gate turns the regression test from 1 back into 60.
+
+**Verified in a browser** (the roadmap asked for it): Prudence brought the winter
+up unprompted — "We were out when the cold arrived. I recorded the day. I was
+wrong about the day — it had been coming for a week." — with the matching field
+note in the Notebook. Two things the drive found that tests could not: an
+institution's tap opens their COUNTER rather than a conversation, so Moments only
+surface through ordinary residents; and standing at the heap wrote no Moment at
+all, because the facility has a roof and `underTheSky` correctly refused it.
+
+**Known loose end, deliberately not tackled here: weather.** The author wants to
+consider real weather at some point, and it is a genuine design decision rather
+than an addition — `seasons.ts` currently refuses it in writing (state, and the
+banding risk), and §Moments and §The Notebook both have entries written around
+its absence. It needs its own pass, reconciling those three docs first.
 
 ### Sequencing for code
 

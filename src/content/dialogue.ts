@@ -326,6 +326,136 @@ for (const [form, lines] of Object.entries(FESTIVAL_LINES)) {
   bank.festival = lines;
 }
 
+// --- Moments (DESIGN §Moments) ---------------------------------------------------
+// Merged in the same way and for the same structural reason as the festivals: a
+// Moment is written to WHOEVER HAPPENED TO BE STANDING THERE (sim/moments.ts),
+// which is not a pool anybody curates, so a form with nothing to say would make
+// the best night of the year land on silence from the one person who was out in
+// it with you.
+//
+// THE LINE IS THE ENTIRE PAYOUT. There is no Moments screen, no notification and
+// no record the player can open — the section is explicit that a Moment surfaces
+// obliquely in somebody's line or not at all. So these banks are not flavour on
+// top of a feature; they ARE the feature, and every one of them is the only
+// evidence in the game that the night happened.
+//
+// NOBODY THANKS YOU FOR BEING THERE, exactly as the festival lines refuse to.
+// They talk about the sky, or the walk, or the cold. A line like "I'm glad you
+// brought me" makes the Moment a thing you are seen to have arranged, which is a
+// half step from a thing you are meant to arrange, and these must never become
+// something to go and get.
+//
+// AND NOBODY NAMES THE CONDITION. Not one line says how far out we were, which
+// month it was, or that the sky does this five times a year. A villager who
+// explains the trigger has published the objective.
+
+/** The value is the shower's own name — "the short one", "the old one" — which
+ *  is what she calls it and never what an almanac calls it (content/showers.ts).
+ *  Free specificity, the same trick the festival bank runs: five nights share
+ *  seven voices and the noun does the work. */
+const SHOWER_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
+  scholar: [
+    (v) => `We were out for ${v}. I counted for a while and then I stopped counting, which I want noted.`,
+    () => ". ... I have no methodology for that. I stood there like everybody else.",
+  ],
+  dog: [
+    (v) => `${v}! The sky was DOING things! I looked up the whole time! My neck hurt after and it was WORTH IT!`,
+    () => "We stood outside in the dark and nothing was wrong. Nothing! I checked twice!",
+  ],
+  blob: [
+    (v) => `${v}. ... An entire performance, no stage, no notes, and not one of them took a bow.`,
+    () => "I have never been so thoroughly upstaged, and I was not even working.",
+  ],
+  menace: [
+    (v) => `We watched ${v}. I stayed out longer than I meant to. ... That is all I intend to say about it.`,
+    () => "The sky put on a display and I stood in a field to look at it. Repeat that and I'll deny it.",
+  ],
+  gremlin: [
+    (v) => `${v}! Bits coming off the sky! ... You can't have any. I checked. I checked properly.`,
+    () => "Nobody owns those. Nobody's even claimed them. I find that very relaxing and I don't know why.",
+  ],
+  carrot: [
+    (v) => `. ... ${v}. Yes. I was out for that one. It was better than I was expecting.`,
+  ],
+  office: [
+    (v) => `${v} took place. Unscheduled, unminuted, unreported. ... I have decided not to file it.`,
+  ],
+};
+
+/** No value: past the edge of the survey is one place, however far past it you
+ *  went, and a distance in the line would be a number to beat. */
+const FAR_OUT_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
+  scholar: [
+    () => "We got out past where anything is arranged. The ground stops being about us. I found that steadying.",
+    () => ". ... No survey. No datum. Nothing to measure from, so nothing to measure. I took no notes at all.",
+  ],
+  dog: [
+    () => "We went SO far. Past everything! There was nothing there and it was the BEST nothing!",
+    () => "I couldn't smell the town any more. Not at ALL. And I was still fine, because you were there.",
+  ],
+  blob: [
+    () => "We walked until there was no audience. ... I performed anyway. You were very kind about it.",
+    () => "Out there the town is a rumour. I have never had a better room and there was no room.",
+  ],
+  menace: [
+    () => "You walked me to the end of the arranged world. ... I would go again. Do not make an occasion of it.",
+    () => "There is nothing out there. Nothing at all. I stayed a good while, looking at it.",
+  ],
+  gremlin: [
+    () => "Nobody's been out there! Nothing's been moved! Everything I touched was FIRST!",
+    () => "No fences that far out. ... I looked for one for an hour. I wanted to move it.",
+  ],
+  carrot: [
+    () => "We went past the last of the tended ground. ... I don't grow out there. Nothing does. It was fine.",
+  ],
+  office: [
+    () => "We left the district entirely. There is no form for that, and I have looked.",
+  ],
+};
+
+/** The value is the YEAR, and not one line says it aloud. It is in the log so
+ *  that two winters are two memories (sim/memory.ts); a villager announcing the
+ *  date would be reading the save file at you. */
+const WINTER_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
+  scholar: [
+    () => "We were out when the cold arrived. I recorded the day. I was wrong about the day — it had been coming for a week.",
+    () => ". ... Everything simply stops, and none of it is dead. I have read about it. Reading about it is not the same.",
+  ],
+  dog: [
+    () => "It went COLD and we were OUTSIDE! The ground was hard and it made a NOISE when I ran on it!",
+    () => "All the leaves went and nobody took them anywhere. Where do they GO. I have theories.",
+  ],
+  blob: [
+    () => "The colour left. ... I have been trying to do that on purpose for years, and the field did it while we watched.",
+    () => "We stood out in it. The whole town went quiet and not one of them was doing it for effect.",
+  ],
+  menace: [
+    () => "We were caught out in the cold together. I did not complain, which you may take as a compliment.",
+    () => "The trees gave up entirely. ... Frankly, a good look on them. Nobody asked me.",
+  ],
+  gremlin: [
+    () => "Everything went grey and now you can SEE the shapes of things. Best season for finding. Obviously.",
+    () => "Nothing grows over anything in the cold. It's all just sitting there, being findable.",
+  ],
+  carrot: [
+    () => "The cold came while we were out in it. ... I don't mind it. I'm not going to explain why.",
+  ],
+  office: [
+    () => "The season turned while we were standing in it. Nobody filed anything. It turned regardless.",
+  ],
+};
+
+for (const [kind, table] of [
+  ["shower", SHOWER_LINES],
+  ["far_out", FAR_OUT_LINES],
+  ["winter_came", WINTER_LINES],
+] as const) {
+  for (const [form, lines] of Object.entries(table)) {
+    const bank = (RESIDENT_MEMORY[form as AdultForm] ??= {});
+    bank[kind] = lines;
+  }
+}
+
 // A Scholar resident's affinity perk (DESIGN §Affinity perks): their own reading
 // of a recent exhibit, disagreeing with the curator's. `t` is the exhibit's
 // title; `r` is the rival card — one of that row's readings Corrigal has not

@@ -47,6 +47,7 @@ import { SLATE_DEPTH } from "./mining";
 import { humLevel } from "./hum";
 import { showerTonight } from "../content/showers";
 import { skyPhaseAt, isNight } from "./time";
+import { seasonAt } from "./seasons";
 import { friendshipTier } from "./friendship";
 
 /** An observation, as the save holds it. An id and when — never the text, which
@@ -199,7 +200,13 @@ function outFrom(world: WorldState): number {
  *  radius inside which the world generates exactly as it did before the far
  *  country existed — so this sits just beyond it, where being out is a fact
  *  about the world rather than about your stamina. */
-const FAR_OUT = 240;
+export const FAR_OUT = 240;
+
+/** Exported for sim/moments.ts, which asks the same question about the same
+ *  radius: the far-country Moment and the far-country field note are the two
+ *  records of ONE walk (DESIGN §Moments), and two constants would be two walks
+ *  that drift apart. */
+export { outFrom };
 
 export const NOTICED_WHEN: Partial<Record<ObservationId, Trigger>> = {
   "far-out": (w) => w.player.layer === "surface" && outFrom(w) > FAR_OUT,
@@ -243,6 +250,16 @@ export const NOTICED_WHEN: Partial<Record<ObservationId, Trigger>> = {
     w.player.layer === "surface" &&
     isNight(skyPhaseAt(now)) &&
     showerTonight(now) !== null &&
+    roofRoomAt(w, Math.round(w.player.x), Math.round(w.player.y)) === null,
+
+  // Outdoors, in winter, and that is the whole condition — no first-of-season
+  // bookkeeping, because the ENTRY is the record that you were out in it and
+  // there is nothing else to store (the same argument `outFrom` makes above).
+  // The roof check for the same reason `a-busy-sky` has one: the colour going
+  // out of the field is not visible from a kitchen.
+  "the-cold-came": (w, now) =>
+    w.player.layer === "surface" &&
+    seasonAt(now).id === "winter" &&
     roofRoomAt(w, Math.round(w.player.x), Math.round(w.player.y)) === null,
 
   "the-datum": (w) => w.player.layer === "surface" && inRect(at(w), PLAZA),

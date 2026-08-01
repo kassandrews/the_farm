@@ -10,10 +10,11 @@ import type { CharId } from "../content/cast";
 import { makeVillager, tickVillager } from "./villagers";
 import { befriend } from "./friendship";
 import { arrivalDue, admitArrival } from "./commission";
-import { remember } from "./memory";
+import { remember, hasMemory } from "./memory";
 import type { MemoryKind } from "./memory";
 import { rememberPlace, isWorkPlace } from "./places";
 import { sweepNoticed } from "./notebook";
+import { sweepMoments } from "./moments";
 import {
   canDig,
   canFill,
@@ -472,6 +473,12 @@ export function tick(world: WorldState, dt: number, now: number): void {
   if (now - lastSweep(world) >= NOTICE_SWEEP_MS) {
     setLastSweep(world, now);
     sweepNoticed(world, now);
+    // And whether the world is in a shape worth remembering, which rides the
+    // same throttle for the same reason: its predicates are about the calendar,
+    // the hour and where you are standing, and none of those can change between
+    // one frame and the next. Writes nothing you can see — a Moment surfaces
+    // later, in somebody's line, or not at all (DESIGN §Moments).
+    sweepMoments(world, now);
   }
 
   // And you may be standing in front of the Cube. There is nothing to meet —
@@ -482,7 +489,19 @@ export function tick(world: WorldState, dt: number, now: number): void {
   if (world.player.layer === "surface") {
     const c = cubeSite(world.seed, world.homestead.spot);
     if (Math.hypot(world.player.x - c.x, world.player.y - c.y) <= CUBE_EARSHOT) {
-      witness(world, "hum", undefined, now, true);
+      // Only when somebody here hasn't got it yet, and that guard is not a
+      // micro-optimisation — it is a bug fix. This runs EVERY FRAME while you
+      // stand in front of the Cube, and `witness` befriends everyone present
+      // unconditionally, so a companion walked all the way out here used to gain
+      // a point of friendship sixty times a second and peg at the maximum in
+      // about two seconds. The longest walk in the game was also the only
+      // friendship faucet in it.
+      //
+      // `remember` was already idempotent for `hum` (it is a one-shot), so the
+      // MEMORY was always right and only the friendship leaked — which is why
+      // nothing caught it: every test here asserts on the log. The walk still
+      // pays its one point, to whoever came, once.
+      if (someoneHereLacks(world, "hum", now)) witness(world, "hum", undefined, now, true);
     }
   }
 
@@ -1307,6 +1326,29 @@ const TOGETHER_RADIUS = 4;
  *  from across a field is not the same as having stood in front of it, and the
  *  memory is about the standing. */
 const CUBE_EARSHOT = 3;
+
+/** Is there anybody standing with you who does not already remember this?
+ *
+ *  For the one `witness` call site that fires on a CONDITION rather than on an
+ *  action — standing near the Cube is a place you are, not a thing you did, so
+ *  it is true for as long as you stand there. `witness` is built for the other
+ *  shape: it pays friendship every time it is called, which is right for an act
+ *  somebody watched and wrong for a fact that stays true.
+ *
+ *  sim/moments.ts hit the same wall from the other side and answered it by not
+ *  calling `witness` at all. This one still should — the walk out to the Cube IS
+ *  something you did together, and it should warm whoever came — so it asks
+ *  first instead. */
+function someoneHereLacks(world: WorldState, kind: MemoryKind, now: number): boolean {
+  const p = world.player;
+  return world.villagers.some(
+    (v) =>
+      present(v, now) &&
+      (v.layer ?? "surface") === p.layer &&
+      Math.hypot(v.x - p.x, v.y - p.y) <= TOGETHER_RADIUS &&
+      !hasMemory(v.memory, kind),
+  );
+}
 
 /** Broadcast a witnessed event to the town's memory logs. Everyone hears about
  *  it (news travels in a town this small), but anyone who was actually STANDING

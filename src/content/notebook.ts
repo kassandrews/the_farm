@@ -48,6 +48,7 @@ export type ObservationId =
   | "above-the-cloud"
   | "the-hum"
   | "a-busy-sky"
+  | "the-cold-came"
   // --- Noticed: the town ------------------------------------------------------
   | "the-datum"
   | "the-museum-is-large"
@@ -143,6 +144,21 @@ export const OBSERVATIONS: ObservationDef[] = [
     id: "a-busy-sky",
     source: "noticed",
     line: "The sky was busy tonight. Nobody in town mentioned it in the morning, which I take to mean it is not unusual.",
+  },
+  // The solitary half of a Moment (DESIGN §Moments), and the reason the Notebook
+  // is where those go: a night nobody else was out for is still a night you saw,
+  // and this is the record of it.
+  //
+  // NO SNOW. Winter here is a colour temperature and not a weather layer, and
+  // that is a rule with reasons in content/seasons.ts — snow on the ground would
+  // want to sit on every cell (the per-cell edges band, which has caught this
+  // project three times) and snow that melted would be the first weather in the
+  // game with state. So the entry is about the light and the trees, which are
+  // the two things that actually change on screen, and never about a fall.
+  {
+    id: "the-cold-came",
+    source: "noticed",
+    line: "The colour went out of the field some time this week and I did not see it go. The trees have given up entirely. Nothing has died; it has all just stopped, and intends to start again.",
   },
 
   // --- Noticed: the town ------------------------------------------------------

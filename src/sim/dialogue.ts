@@ -79,7 +79,11 @@ const SEASON_CHANCE = 0.22;
 
 /** Which memories a form is inclined to bring up, richest first. The selector
  *  walks this list and uses the first kind the villager actually remembers. */
-const MEMORY_PRIORITY: MemoryKind[] = [
+/** Exported so sim/moments.test.ts can assert every Moment is ranked. A kind
+ *  missing from this list has a bank nothing ever reads — which is already true
+ *  of `gathered`, `arrived` and `housed`, and is survivable for them because
+ *  they have other ways to surface. A Moment has none: the line IS the payout. */
+export const MEMORY_PRIORITY: MemoryKind[] = [
   // Above the festival, which is saying something. A festival is twelve times a
   // year and the whole town was at it; a day underground was the two of you and
   // nobody else has one. It is the most specific true thing that can exist
@@ -101,7 +105,20 @@ const MEMORY_PRIORITY: MemoryKind[] = [
   // once, ever, and this is not.
   "climbed",
   "delved",
+  // A Moment (DESIGN §Moments), and it ranks here on the same rarity argument as
+  // everything above it: past the survey's edge is a walk almost nobody in this
+  // town has any reason to take, and taking it with somebody is a day that
+  // exists between exactly the two of you. Under `delved` because a shaft goes
+  // somewhere nobody has ever been, where the far country is merely somewhere
+  // nobody bothered to arrange.
+  "far_out",
   "company",
+  // The other rare Moment, and ABOVE the festival for the reason the festival
+  // itself is high: rarity plus company. There are five real showers in a year
+  // against twelve festivals, the dates cannot be moved by anybody, and the
+  // festival gathers the whole town where a shower gathers whoever you happened
+  // to be standing with.
+  "shower",
   // Above everything else, because it is rare and recent — twelve times a year,
   // and both of you were there.
   // It also decays on its own: the log is a bounded ring, so a festival stops
@@ -112,6 +129,12 @@ const MEMORY_PRIORITY: MemoryKind[] = [
   // PERSON, where a harvest is something they merely watched. The most specific
   // true thing between the two of you should be the thing they reach for.
   "errand",
+  // The third Moment, and the low one, because it is the only one here that is
+  // not rare: winter arrives every year for everybody, and the two of you being
+  // outdoors in it is the least unlikely thing on this list. It stays above the
+  // farming lines because it is still something you were both there for, where a
+  // harvest is something they watched you do.
+  "winter_came",
   "harvested_carrot",
   "built_plank",
   "planted_carrot",

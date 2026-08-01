@@ -1039,6 +1039,47 @@ first met Eloise", "you laid these boards yourself".
   face, and it inverts this whole section.
 - The underground has no season, for the same reason it has no sky.
 
+### Moments
+
+A Moment is the festival rule generalized. Some configurations of the world are
+worth remembering — the evening the trees finally went bare, a shower over the
+plaza with half the town standing in it, the day you took somebody past where
+the survey stops. When one happens it is remembered. When it doesn't, nothing is
+lost, and nothing anywhere counts them.
+
+- **It is remembered, never awarded.** No Moments screen, no list, no gallery, no
+  total, and no notification. A page of Moments with gaps in it is an
+  achievements page, which is XP with a scrapbook cover, and "✨ Moment unlocked"
+  is the same idea with a sound effect. It surfaces later and obliquely, or it
+  does not surface at all.
+- **It is not a new thing the game stores.** A Moment is written into the two
+  records that already exist — a resident's memory log (§NPCs that remember) and
+  the Notebook (§The Notebook) — and comes back out through the channels those
+  already use. Nothing new for the player to open.
+- **Two records, and which ones you get depends on who was there.** The journal
+  entry is yours: you saw the sky do that, and you wrote it down. The memory is
+  somebody else's: they were standing next to you, and now they are a person who
+  was there. **Both may fire for the same event**, and the journal half never
+  waits on company — a night alone is still a night you saw. Making solitude the
+  only route to a journal entry would teach players to walk away from people
+  before anything nice happened, which inverts the whole section.
+- **Most Moments need no new journal entry**, because the Notebook already
+  records the meteor shower and the far country as field notes. What the Moment
+  adds is the second record — the one that exists only because you were not
+  alone. That is the feature: not that the sky was busy, but that you and Eloise
+  both remember it being busy.
+- **Triggers are unstated and unoptimizable.** A surfaced, farmable condition
+  ("watch a sunrise with six villagers") becomes an objective the moment players
+  work it out. Nothing announces what qualifies, no UI hints at one, and the set
+  stays small and authored. Tying a Moment to *another person being present* is
+  most of what keeps it unfarmable — you cannot schedule the town.
+- **A first is a fact about the log, never a counter.** "Has this ever happened"
+  is already answerable from the memory log and the journal, so no Moment
+  introduces a high-water mark, a streak, or a tally — the same refusal
+  §Materials makes about depth and junk.
+- **No Moment may ever gate anything.** Same sentence as the museum's record and
+  the festival's attendance: nothing reads it to decide anything.
+
 ## The Notebook
 
 A naturalist's journal that accretes oblique observations as you go: "owls have
