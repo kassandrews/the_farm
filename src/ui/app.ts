@@ -156,6 +156,10 @@ function buildToolLabel(t: BuildTool): string {
 /** Arrows for the rotate button, so the facing is legible without a legend. */
 const FACING_ARROW: Record<Facing, IconName> = { s: "arrow_s", w: "arrow_w", n: "arrow_n", e: "arrow_e" };
 
+/** Which zoom step the view is on. Its own key beside `the-farm-muted`, and
+ *  pointedly not inside `the-farm-save` — see the Zoom section in App. */
+const ZOOM_KEY = "the-farm-zoom";
+
 
 export class App {
   private canvas: HTMLCanvasElement;
@@ -215,9 +219,17 @@ export class App {
       () => this.openMenu(),
       () => this.openSatchel(),
       () => this.openNotebook(),
+      () => this.cycleZoom(),
     );
     this.wireInput();
-    window.addEventListener("resize", () => this.renderer.resize());
+    this.restoreZoom();
+    window.addEventListener("resize", () => {
+      this.renderer.resize();
+      // The ladder is a property of the viewport, so a resize can retire the
+      // step the view was on (renderer.resize re-clamps it) or hand a narrow
+      // window back its missing steps. Either way the button has to catch up.
+      this.refreshZoom();
+    });
   }
 
   /** Entry: continue an existing save (with a welcome-back postcard) or run the
@@ -1994,6 +2006,12 @@ export class App {
         this.toggleBuild();
       } else if (k === "e") {
         this.tryTalkNearest();
+      } else if (k === "-" || k === "_") {
+        // Out and in. Accepts the shifted twins so a hand that never let go of
+        // shift still zooms rather than doing nothing.
+        this.stepZoom(1);
+      } else if (k === "=" || k === "+") {
+        this.stepZoom(-1);
       } else if (k === "z") {
         // Bare Z as well as ctrl/cmd-Z: the browser has no text field to steal
         // it from here, and one-handed undo beside WASD is what a build session
@@ -2010,6 +2028,73 @@ export class App {
     window.addEventListener("beforeunload", () => {
       this.persist();
     });
+  }
+
+  // --- Zoom -------------------------------------------------------------------
+  // Deliberately NOT in the save. Zoom is a fact about the screen, not about the
+  // town: a save carried from a desktop to a phone must not bring "two steps
+  // back" with it, because the phone is already at the sprite-rule floor and has
+  // no such step to stand on. Its own localStorage key, exactly like the mute
+  // flag in audio.ts — and that is what keeps this change clear of
+  // schemaVersion and a migration.
+
+  /** The icon for a step, given how many there are. The first is always the
+   *  near frame and the last always the far one, so a two-step ladder reads as
+   *  the two ends rather than as "near and slightly-less-near". */
+  private zoomIcon(step: number, count: number): IconName {
+    if (step === 0) return "view_near";
+    return step === count - 1 ? "view_far" : "view_mid";
+  }
+
+  /** Put the button in step with the renderer: right frame, or gone entirely. */
+  private refreshZoom(): void {
+    const count = this.renderer.zoomStepCount();
+    // One step means the screen has nowhere to stand back to. See zoom.ts.
+    this.hud.zoom.style.display = count > 1 ? "" : "none";
+    if (count < 2) return;
+    const step = this.renderer.zoomStepIndex();
+    this.hud.zoom.replaceChildren(iconEl(this.zoomIcon(step, count)));
+    hoverHint(this.hud.zoom, "How far back you're standing.  (− and =)");
+  }
+
+  private restoreZoom(): void {
+    // A stored step from a wider window may not exist here; setZoomStep clamps
+    // rather than throws, which is why this can trust whatever it reads back.
+    const saved = Number(localStorage.getItem(ZOOM_KEY));
+    if (Number.isFinite(saved) && saved > 0) this.renderer.setZoomStep(saved);
+    this.refreshZoom();
+  }
+
+  private setZoom(step: number): void {
+    const count = this.renderer.zoomStepCount();
+    if (count < 2) return;
+    // Not clamped here: setZoomStep clamps into the current ladder itself, and
+    // reading the index back below is what makes `-` at the far end a no-op
+    // rather than a stored value that drifts further out on every press.
+    this.renderer.setZoomStep(step);
+    this.refreshZoom();
+    try {
+      localStorage.setItem(ZOOM_KEY, String(this.renderer.zoomStepIndex()));
+    } catch {
+      // Private browsing, a full quota — the view still moved, and a zoom that
+      // forgets itself next session is not worth breaking the tap over.
+    }
+  }
+
+  /** The button: one tap per step, wrapping back to nearest. Wrapping rather
+   *  than stopping at the far end because there is exactly one button, and a
+   *  control that runs out of effect halfway through reads as broken. */
+  private cycleZoom(): void {
+    const count = this.renderer.zoomStepCount();
+    if (count < 2) return;
+    this.setZoom((this.renderer.zoomStepIndex() + 1) % count);
+  }
+
+  /** Desktop's version: step, don't cycle. A keyboard has two keys for this and
+   *  therefore no reason to wrap — `-` at the far end should sit still, the way
+   *  every zoom control anyone has used behaves. */
+  private stepZoom(by: number): void {
+    this.setZoom(this.renderer.zoomStepIndex() + by);
   }
 
   /** The layer the player is standing on, defaulting to the surface before a
@@ -2401,6 +2486,7 @@ interface HudRefs {
   build: HTMLElement;
   rotate: HTMLElement;
   undo: HTMLElement;
+  zoom: HTMLElement;
 }
 
 function buildHud(
@@ -2414,6 +2500,7 @@ function buildHud(
   onMenu: () => void,
   onSatchel: () => void,
   onNotebook: () => void,
+  onZoom: () => void,
 ): HudRefs {
   const menu = el("button", { class: "menu-btn", ariaLabel: "Menu" }, [iconEl("menu")]);
   menu.addEventListener("click", onMenu);
@@ -2430,6 +2517,18 @@ function buildHud(
   hoverHint(notebook, "Notebook — what you've noticed, and what you've been told.");
   satchel.addEventListener("click", onSatchel);
   hoverHint(satchel, "Satchel — what you're carrying.");
+  // How far back you're standing. Fourth in the corner cluster rather than in the
+  // menu, even though the menu is where sound lives and both are comfort
+  // settings: sound is set once and forgotten, and this is something you reach
+  // for mid-build to check what you're laying out against the ground around it.
+  // A view control filed under settings is a view control nobody turns.
+  //
+  // Hidden outright on a screen with only one step (see refreshZoom). The
+  // build palette already established that in this HUD — a greyed row of
+  // buttons in a tunnel reads as the game being broken, where fewer buttons
+  // reads as the place having less in it.
+  const zoom = el("button", { class: "menu-btn zoom-btn", ariaLabel: "View" }, [iconEl("view_near")]);
+  zoom.addEventListener("click", onZoom);
   const clock = el("div", { class: "clock" }, ["—"]);
   // NO SEASON CHIP. There was one, reading "autumn" under the clock, and it went
   // because the game already says the season twice in better places: the whole
@@ -2513,6 +2612,7 @@ function buildHud(
     menu,
     satchel,
     notebook,
+    zoom,
     clock,
     survey,
     flash,
@@ -2522,7 +2622,7 @@ function buildHud(
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, survey, flash, toolButtons, buildButtons, build, rotate, undo };
+  return { root: hud, clock, survey, flash, toolButtons, buildButtons, build, rotate, undo, zoom };
 }
 
 // --- Panel helpers ------------------------------------------------------------

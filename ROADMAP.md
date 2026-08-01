@@ -838,10 +838,16 @@ be checked against the ground. Two things killed it, in order:
   the short edge and clamps the scale to integers, so a preview box renders the
   plaza and the town hall — while the treeline is at 24 tiles and the shore at
   34. Screenshotted all three at seed 104: they are indistinguishable.
-- **Zooming out is not a wiring job, it is forbidden.** Fitting ~96 tiles means
-  16px sprites at ~4px, and CLAUDE.md's sprite rule exists to stop exactly that.
-  A zoomed-out map would have to be its own drawing — flat tiles, no sprite art,
-  a second visual language on the one screen that introduces the first.
+- **Zooming out THIS FAR is not a wiring job, it is forbidden.** Fitting ~96
+  tiles means 16px sprites at ~4px, and CLAUDE.md's sprite rule exists to stop
+  exactly that. A zoomed-out map would have to be its own drawing — flat tiles,
+  no sprite art, a second visual language on the one screen that introduces the
+  first.
+
+  Amended by §The view stands back three steps: a *modest* zoom turned out to be
+  cheap and legal, because the constraint is the integer floor rather than
+  zooming as such. It does not resurrect the preview — 96 tiles is still four
+  times what the furthest step shows.
 
 The preview's job was catching a UI that oversold the terrain, and the terrain
 now does what the blurbs say, so the job is gone. What the card carries instead
@@ -889,6 +895,49 @@ otherwise have been cropped to its top-left quarter with no error anywhere.
 `HomesteadSpot` moved to `content/spots.ts` and is re-exported from `sim/types.ts`,
 because content may not import sim and a table naming the spots has to own the
 type — the same call `BiomeId` and `WaterKindId` already made.
+
+### The view stands back three steps
+
+The camera was fixed at ~11 tiles on the short edge forever. It now has up to
+three settings, cycled from a HUD button or `-`/`=`. What made it a half-day
+rather than a rewrite, and the traps:
+
+- **Zoom is an integer, never a multiplier.** The renderer draws into a
+  low-resolution buffer at a fixed 16 scene px per tile and lets CSS upscale the
+  whole thing by an integer with `image-rendering: pixelated`. Sprites are never
+  rescaled by zoom — only the finished buffer is, and only by whole numbers — so
+  CLAUDE.md's sprite rule is satisfied by construction *provided the factor stays
+  an integer ≥ 2*. A multiplier crosses that by accident: `4 × 0.66 = 2.64`.
+  `render/zoom.ts` therefore returns the scales themselves and no factor.
+- **The ladder is the whole design problem, and the obvious two builds both
+  fail.** Rounding each target tile count (11/16/22) on its own **collides** —
+  at a 600px short edge, 16 and 22 tiles both round to scale 2, so the far step
+  renders pixel-for-pixel identically to the mid one. A fixed `base/base-1/base-2`
+  ladder never collides but is far too timid on a big screen (8/7/6 at 1400px).
+  The shipped rule is the hybrid: aim for the target, then force each step
+  *strictly below* the one before it, and stop when it would go under 2.
+- **Per-device availability falls out of that stop**, rather than being a special
+  case anywhere. A phone's short edge is already at the floor, gets a one-entry
+  ladder, and the HUD hides the button outright — the same "hidden, not disabled"
+  call the build palette makes in a tunnel. Verified at 390×844.
+- **Zoom is not in the save, and must not be.** It is a fact about the screen,
+  not the town: a save synced from desktop to phone must not arrive two steps
+  back on a device with no such step. Its own `localStorage` key beside the mute
+  flag, which is also what keeps the whole feature clear of `schemaVersion` and a
+  migration.
+- **`PAN_LIMIT` was a lie waiting to happen.** It was 14 tiles, documented as "a
+  bit over one screen" — true only while a screen was always ~11 tiles. Left
+  alone, the furthest step would have had a pan clamp *smaller than its own
+  viewport*. It is now a multiple of the screen.
+- **No pinch.** Two fingers already mean pan in build mode, and one gesture with
+  two meanings is how that affordance gets broken.
+
+The real gate was not arithmetic but whether the `Raised` overhang system — trees
+and rock faces exceeding `TILE` so they overhang what is behind them — still
+reads standing back. Screenshotted all three steps at seed 104 on the plaza and
+at the treeline: trunks, canopies, shadows and roof courses all hold, with no
+per-cell striping appearing at the new scales. It does **not** reopen the spot
+preview (see Phase 9's note); 96 tiles is still four times the furthest step.
 
 ### Undecided, deliberately
 

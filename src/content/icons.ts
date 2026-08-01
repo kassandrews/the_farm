@@ -319,6 +319,73 @@ const FARM_ICONS = {
   },
 
   // --- HUD ------------------------------------------------------------------
+  // How far back the view is standing (ui/app.ts, render/zoom.ts). Four corner
+  // brackets — a viewfinder, not a magnifying glass. A magnifier means "look
+  // closer at this thing", which is a different promise: nothing is inspected
+  // here and no detail is added, you simply see more or less ground.
+  //
+  // THE FRAME IS THE READOUT. The three differ only in how far apart the
+  // brackets sit, so the button always shows the view you are currently in
+  // rather than the one you would get by pressing it. That way round because
+  // the control cycles — an icon promising the NEXT step would have to change
+  // meaning at the end of the loop, and a button whose label lies once every
+  // three taps is worse than one that simply reports.
+  //
+  // Brackets rather than a filled rectangle: at 12px a filled frame with a hole
+  // in it reads as a window, and the gaps are what keep it reading as a crop
+  // mark. They also let the three sizes stay distinguishable, which a nested
+  // set of solid rectangles would not at this size.
+  view_far: {
+    rows: [
+      "kkk......kkk",
+      "k..........k",
+      "k..........k",
+      "............",
+      "............",
+      "............",
+      "............",
+      "............",
+      "............",
+      "k..........k",
+      "k..........k",
+      "kkk......kkk",
+    ],
+    palette: { k: K },
+  },
+  view_mid: {
+    rows: [
+      "............",
+      ".kkk....kkk.",
+      ".k........k.",
+      ".k........k.",
+      "............",
+      "............",
+      "............",
+      "............",
+      ".k........k.",
+      ".k........k.",
+      ".kkk....kkk.",
+      "............",
+    ],
+    palette: { k: K },
+  },
+  view_near: {
+    rows: [
+      "............",
+      "............",
+      "..kkk..kkk..",
+      "..k......k..",
+      "..k......k..",
+      "............",
+      "............",
+      "..k......k..",
+      "..k......k..",
+      "..kkk..kkk..",
+      "............",
+      "............",
+    ],
+    palette: { k: K },
+  },
   // Three bars: the one piece of interface iconography everyone already reads,
   // and 2px bars with 1px gaps so it survives at button size.
   menu: {

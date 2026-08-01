@@ -46,6 +46,7 @@ import type { Room } from "../sim/rooms";
 import { tintAt, isNight, skyPhaseAt } from "../sim/time";
 import { seasonAt } from "../sim/seasons";
 import { scenePalette, seasonSkin, biomeSkin, mixHex, type ScenePalette } from "./palette";
+import { zoomLadder } from "./zoom";
 import { BROADLEAF } from "../content/biomes";
 import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
@@ -156,12 +157,18 @@ const BRASS = "#9c7a2c";
 const BRASS_LIT = "#c9a24f";
 const FLAME = "#ffcf7a";
 const FLAME_CORE = "#fff3cd";
-/** How far build mode may slide the view off the player, in tiles — a bit over
- *  one screen. Bounded rather than free on purpose: build mode exists to arrange
- *  a building around where you are standing, and a camera that could wander a
+/** How far build mode may slide the view off the player, as a multiple of the
+ *  screen. Bounded rather than free on purpose: build mode exists to arrange a
+ *  building around where you are standing, and a camera that could wander a
  *  hundred tiles away makes it a level editor you can get lost in. Walking is
- *  still how you go somewhere. */
-const PAN_LIMIT = 14;
+ *  still how you go somewhere.
+ *
+ *  A multiple of the SCREEN rather than a flat tile count because the screen is
+ *  no longer one size — see zoom.ts. This was 14 tiles, which was "a bit over
+ *  one screen" only while a screen was always ~11 tiles; left as a constant, the
+ *  furthest zoom step would have had a pan limit smaller than its own viewport
+ *  and the pan would have felt dead exactly where it is most useful. */
+const PAN_LIMIT_SCREENS = 1.25;
 
 function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
@@ -363,6 +370,11 @@ export class Renderer {
   private sw = 0;
   private sh = 0;
   private scale = 3; // scene px → CSS px
+  /** Which rung of `zoomLadder` the view is standing on, 0 being the nearest —
+   *  the view the game has always had. Held as an INDEX rather than a scale
+   *  because the ladder is a property of the viewport: the same index has to
+   *  survive a window resize or a phone rotating, and a stored scale would not. */
+  private zoomStep = 0;
   private t0 = performance.now();
   /** The `now` the current frame is being drawn at — see draw(). */
   private now = 0;
@@ -423,9 +435,20 @@ export class Renderer {
    *  bounds all keep reading `cam` and need no idea this exists. */
   private pan = { x: 0, y: 0 };
 
+  /** The pan clamp in tiles, for the current viewport. Derived per call rather
+   *  than cached because it has to follow a zoom step or a window resize, and
+   *  this runs once per pan gesture frame — it is two divisions. */
+  private panLimit(): { x: number; y: number } {
+    return {
+      x: (this.sw / TILE) * PAN_LIMIT_SCREENS,
+      y: (this.sh / TILE) * PAN_LIMIT_SCREENS,
+    };
+  }
+
   panBy(dx: number, dy: number): void {
-    this.pan.x = clamp(this.pan.x + dx, -PAN_LIMIT, PAN_LIMIT);
-    this.pan.y = clamp(this.pan.y + dy, -PAN_LIMIT, PAN_LIMIT);
+    const lim = this.panLimit();
+    this.pan.x = clamp(this.pan.x + dx, -lim.x, lim.x);
+    this.pan.y = clamp(this.pan.y + dy, -lim.y, lim.y);
   }
 
   /** Back to the player. Called when build mode closes, so the pan can never
@@ -467,20 +490,63 @@ export class Renderer {
     this.resize();
   }
 
-  /** Match the backing buffer to the viewport at an integer-ish scale, keeping
-   *  the world's tiles a comfortable size on phone and desktop alike. */
+  /** The zoom steps this viewport can offer, nearest first. One entry means the
+   *  screen is already at the sprite-rule floor and there is nowhere to stand
+   *  back to — see zoom.ts. */
+  private ladder(): number[] {
+    const cssW = this.canvas.clientWidth || window.innerWidth;
+    const cssH = this.canvas.clientHeight || window.innerHeight;
+    return zoomLadder(Math.min(cssW, cssH), TILE);
+  }
+
+  /** How many zoom steps exist here. The HUD hides its control entirely when
+   *  this is 1, rather than offering a button that cannot move. */
+  zoomStepCount(): number {
+    return this.ladder().length;
+  }
+
+  /** Which step the view is on. */
+  zoomStepIndex(): number {
+    return this.zoomStep;
+  }
+
+  /** Stand the view on a different rung. Out-of-range values are clamped rather
+   *  than rejected, so a step restored from a previous session on a bigger
+   *  screen lands somewhere sensible instead of throwing.
+   *
+   *  Re-running `resize()` is the entire implementation: everything downstream
+   *  reads `scale`/`sw`/`sh` rather than assuming a viewport size. In
+   *  particular the camera is untouched, so the view grows around the player
+   *  rather than jumping — which is what keeps it locked to them through a zoom. */
+  setZoomStep(i: number): void {
+    this.zoomStep = i;
+    this.resize();
+  }
+
+  /** Match the backing buffer to the viewport at an integer scale, keeping the
+   *  world's tiles a comfortable size on phone and desktop alike. */
   resize(): void {
     const cssW = this.canvas.clientWidth || window.innerWidth;
     const cssH = this.canvas.clientHeight || window.innerHeight;
-    // Aim for ~11 tiles across the short edge; clamp the scale to integers so
-    // upscaling never blurs.
-    const short = Math.min(cssW, cssH);
-    this.scale = Math.max(2, Math.round(short / (11 * TILE)));
+    // The scale is always one of the ladder's integers, so upscaling never
+    // blurs. Step 0 is the ~11-tile view this used to compute inline.
+    const ladder = this.ladder();
+    // Clamped HERE rather than only in setZoomStep, because the ladder shrinks
+    // when the window does: dragging a desktop window narrow, or rotating a
+    // phone, can retire the step the view is standing on.
+    this.zoomStep = clamp(Math.round(this.zoomStep), 0, ladder.length - 1);
+    this.scale = ladder[this.zoomStep];
     this.sw = Math.ceil(cssW / this.scale);
     this.sh = Math.ceil(cssH / this.scale);
     this.canvas.width = this.sw;
     this.canvas.height = this.sh;
     this.ctx.imageSmoothingEnabled = false;
+    // Zooming IN shrinks the pan clamp, which can leave an existing build-mode
+    // pan outside it. Re-clamping keeps the view somewhere panBy could have put
+    // it, so the next drag moves smoothly instead of snapping back.
+    const lim = this.panLimit();
+    this.pan.x = clamp(this.pan.x, -lim.x, lim.x);
+    this.pan.y = clamp(this.pan.y, -lim.y, lim.y);
   }
 
   /** Snap the camera to the player (called once on load to avoid a pan-in). */

@@ -333,6 +333,12 @@ select {
   left: 116px;
 }
 
+/* Fourth, same pitch. Hidden outright on screens with only one zoom step (see
+   render/zoom.ts), which is why nothing here reserves its space. */
+.zoom-btn {
+  left: 168px;
+}
+
 /* Carried items: icon, name, count. A plain list — no grid, no slots, because
    there is no capacity to visualise (see sim/inventory.ts). */
 .satchel {
