@@ -58,6 +58,7 @@ import { tintAt, isNight, skyPhaseAt } from "../sim/time";
 import { seasonAt } from "../sim/seasons";
 import { scenePalette, seasonSkin, biomeSkin, mixHex, type ScenePalette } from "./palette";
 import { zoomLadder } from "./zoom";
+import { forEachGrainMark } from "./grain";
 import { BROADLEAF } from "../content/biomes";
 import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
@@ -155,6 +156,28 @@ const HIDDEN_FADE = 0.28;
 const STOREY = 24;
 /** The lit top surface of a wall, seen from slightly above. */
 const WALL_CAP = 3;
+/** How a surface is grained, per material class (render/grain.ts).
+ *
+ *  BOTH PERIODS ARE COPRIME WITH TILE, and that is not a taste call — it is the
+ *  per-cell edges rule, which a plank seam is otherwise a textbook violation of.
+ *  Read grain.ts's docblock before changing either number; 4 or 8 would look
+ *  nearly the same in a mockup and stripe the floor at the tile pitch in game.
+ *
+ *  Wood boards are narrower and LONGER than flagstones are, and the length is
+ *  what separates the two surfaces — more than the colour does and more than the
+ *  course height does. The first version butted its boards every 13px and
+ *  photographed as brickwork: a five-px course broken every thirteen IS a brick
+ *  bond, whatever colour it is painted. A board is milled from a tree and runs
+ *  most of a room, so it butts every 47 — three tiles, and rarely twice in one
+ *  view. Flagstones are cut and laid, and break every nine. */
+const GRAIN = {
+  wood: { course: 5, joint: 47, seam: 0.13, joint_ink: 0.2 },
+  stone: { course: 6, joint: 9, seam: 0.11, joint_ink: 0.17 },
+  // Cloth has no grain. A rug is woven, not built, and a seam across one would
+  // read as two rugs — the pieces that wear cloth get their pattern from their
+  // own draw path (drawFurniture), not from this.
+  cloth: null,
+} as const;
 /** The doorstep: a flagstone slab, deliberately NOT a wood finish, so it reads
  *  as a step laid at the threshold rather than as more of the house. */
 const STEP_STONE = "#9a9187";
@@ -878,6 +901,18 @@ export class Renderer {
               })
             : def.color;
         ctx.fillRect(px, py, TILE, TILE);
+        // A laid floor shows its boards or its flagstones. Only a FINISHED tile
+        // gets this: `groundTone` above deliberately leaves made surfaces flat,
+        // and this is the other half of that decision rather than a contradiction
+        // of it — a floor is flat because it was laid flat, and what it has
+        // instead of a roll is a grain. Terrain has no grain and never will.
+        if (isFinishedTile(groundId)) {
+          this.drawGrain(px, py, TILE, TILE, skinDef(floorFinish(world, tx, ty)), {
+            wx: tx * TILE,
+            wy: ty * TILE,
+            seed: world.seed,
+          });
+        }
         // The bevel is drawn ONLY where the material changes. On every tile, a
         // light top row and a dark bottom row pair up across a field into
         // venetian-blind banding — flat stripes that fight the depth now that
@@ -1916,6 +1951,48 @@ export class Renderer {
    *
    *  Night isn't handled here on purpose: the global day/night wash covers the
    *  whole scene, the same way flat tiles are left alone. */
+  /** Lay the grain of `skin`'s material over a box already filled with its
+   *  colour — floorboards on a floor, planking or masonry on a wall face.
+   *
+   *  `wx`/`wy` are the box's WORLD pixel origin and are what make this obey the
+   *  band rule: two neighbouring tiles ask for the same courses at different
+   *  offsets, so a run of them is one continuous surface rather than a repeated
+   *  stamp. Passing the box's SCREEN position here instead would grain the
+   *  camera rather than the floor, and the boards would slide as you walked.
+   *
+   *  `axis` and `joint` default to floorboards. A wall face overrides both.
+   */
+  private drawGrain(
+    px: number,
+    py: number,
+    w: number,
+    h: number,
+    skin: SkinDef,
+    spec: { wx: number; wy: number; seed: number; axis?: "h" | "v"; jointed?: boolean },
+  ): void {
+    const g = GRAIN[skin.applies];
+    if (!g) return;
+    const ctx = this.ctx;
+    const seam = mixHex(skin.color, { color: "#000000", amount: g.seam });
+    const joint = mixHex(skin.color, { color: "#000000", amount: g.joint_ink });
+    forEachGrainMark(
+      {
+        wx: spec.wx,
+        wy: spec.wy,
+        w,
+        h,
+        seed: spec.seed,
+        axis: spec.axis ?? "h",
+        course: g.course,
+        joint: spec.jointed === false ? null : g.joint,
+      },
+      (mx, my, mw, mh, ink) => {
+        ctx.fillStyle = ink === "seam" ? seam : joint;
+        ctx.fillRect(px + mx, py + my, mw, mh);
+      },
+    );
+  }
+
   private drawWall(world: WorldState, tx: number, ty: number, cell: BuildCell): void {
     const ctx = this.ctx;
     const skin = skinDef(cell.finish);
@@ -1948,9 +2025,43 @@ export class Renderer {
       // the tile bevel used to stripe open ground.
       ctx.fillStyle = skin.top;
       ctx.fillRect(px, top, TILE, TILE);
+      // The top of a side run is a surface you look down on, so it takes a
+      // floor's grain — but turned. A side run is always north–south (that is
+      // what having run-mates fore and aft MEANS), so its boards run north–south
+      // too, along the length of the wall.
+      //
+      // Grained the other way it was cross-planking: boards laid across a
+      // one-tile-wide strip, butting at both edges of every cell, which
+      // photographed as a brick course down each side of the house. A wall is
+      // not built out of 16px stubs, and the grid it drew was the band rule
+      // sneaking back in through the joints rather than through the seams.
+      this.drawGrain(px, top, TILE, TILE, skin, {
+        wx: tx * TILE,
+        wy: ty * TILE,
+        seed: world.seed,
+        axis: "v",
+      });
     } else {
       ctx.fillStyle = skin.color;
       ctx.fillRect(px, top, TILE, STOREY);
+      // The face, below its cap. Wood is PLANKING STOOD ON END — vertical
+      // boards, one per storey, so no butt joints; stone is masonry, which is
+      // horizontal courses with joints like a floor. That difference is most of
+      // what makes a stone wall read as stone at this size, more than the
+      // colour does.
+      //
+      // `wy` is the offset within the FACE, not the world row, and deliberately:
+      // every wall in the game stands the same height, so measuring the courses
+      // from the ground means a run's courses line up with its neighbours'
+      // instead of stepping with the terrain behind it.
+      const stone = skin.applies === "stone";
+      this.drawGrain(px, top + WALL_CAP, TILE, STOREY - WALL_CAP, skin, {
+        wx: tx * TILE,
+        wy: WALL_CAP,
+        seed: world.seed,
+        axis: stone ? "h" : "v",
+        jointed: stone,
+      });
       if (!(mask & CONNECT_N)) {
         ctx.fillStyle = skin.top;
         ctx.fillRect(px, top, TILE, WALL_CAP);

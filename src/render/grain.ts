@@ -1,0 +1,119 @@
+// Grain — the marks that make a built surface read as boards or as masonry
+// rather than as a fill.
+//
+// A laid floor and a wall face were each one flat rectangle of `skin.color`.
+// Photographed, a walnut floor is a brown field wall to wall and a pine wall is
+// a tan band: you can tell the finishes apart and you cannot tell what either
+// one is MADE of. Every other surface in the game earned some texture (the
+// ground got `groundTone` in 8c, the water has its ripple, a tree has layered
+// crown rows); the things the player actually builds had none.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// THE PER-CELL EDGES RULE IS THE WHOLE DESIGN OF THIS FILE.
+//
+// CLAUDE.md's band rule has caught this project three times, and a plank seam is
+// exactly the shape of the trap: a horizontal light-and-dark line, drawn on a
+// surface that reads as continuous. Drawn once per CELL — a seam at the top of
+// every tile — a floor becomes venetian blinds at the tile pitch, and we would
+// have found it a fourth time.
+//
+// So the courses step off the WORLD PIXEL, and their period is deliberately
+// COPRIME WITH THE TILE. A 5px board on a 16px tile puts a seam at world y 0, 5,
+// 10, 15, 20 — three seams in the first tile, at 0/5/10, and the next tile's
+// fall at 15/20/25, which is 15, 4 and 9 in cell-local terms. The pattern only
+// repeats every 5 tiles (lcm(5,16) = 80px), and by then it has walked far enough
+// that the eye reads boards rather than a grid. Pick a period that divides 16
+// and this file becomes the bug it was written to avoid.
+//
+// This is the banding the rule EXPLICITLY allows — "deliberate banding, like the
+// tent's striped canvas, is fine; it's banding that follows the tile grid that's
+// the bug." Floorboards are supposed to look like floorboards.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Emits through a callback rather than returning an array. The renderer calls
+// this for every visible built tile every frame — a few hundred calls at sixty
+// hertz — and handing back a fresh array of mark objects each time is a few
+// hundred thousand short-lived allocations a second for no gain. A callback is
+// just as testable (collect into an array in the test) and allocates nothing.
+
+import { decoHash } from "../sim/world";
+
+/** What a mark is FOR, so the caller picks the ink. A seam is the gap between
+ *  two boards or two courses and runs the length of the surface; a joint is
+ *  where one board ends and the next begins, and crosses a single course. */
+export type GrainInk = "seam" | "joint";
+
+export interface GrainSpec {
+  /** World pixel coordinate of the box's top-left. The courses are computed
+   *  from this and NOT from the box's position on screen, which is what makes a
+   *  run of tiles line up into one continuous surface. */
+  wx: number;
+  wy: number;
+  w: number;
+  h: number;
+  seed: number;
+  /** Which way the boards run. "h" is floorboards and masonry courses (seams
+   *  are horizontal lines); "v" is wall planking stood on end. */
+  axis: "h" | "v";
+  /** Board width / course height in world px. Keep it coprime with TILE — see
+   *  the docblock above; this is the one number that must not be 2, 4, 8 or 16. */
+  course: number;
+  /** Roughly how long a board runs before it butts against the next, in world
+   *  px. `null` for planking that runs the full height of what it covers — a
+   *  wall board is one board from floor to ceiling and has no butt joint. */
+  joint: number | null;
+}
+
+/** Walk the grain marks covering a box, in box-local coordinates.
+ *
+ *  `emit(x, y, w, h, ink)` is called once per mark, all of them 1px thin in one
+ *  direction. Marks are clipped to the box, so a caller can fill them straight
+ *  into a tile without worrying about bleeding into its neighbour.
+ */
+export function forEachGrainMark(
+  spec: GrainSpec,
+  emit: (x: number, y: number, w: number, h: number, ink: GrainInk) => void,
+): void {
+  const { wx, wy, w, h, seed, axis, course, joint } = spec;
+  // Work in "along" (the direction boards run) and "across" (the direction the
+  // courses stack). Mapping back at the emit call keeps one implementation for
+  // both axes instead of two that drift apart.
+  const across0 = axis === "h" ? wy : wx;
+  const acrossLen = axis === "h" ? h : w;
+  const along0 = axis === "h" ? wx : wy;
+  const alongLen = axis === "h" ? w : h;
+
+  const put = (along: number, across: number, alongSpan: number, acrossSpan: number, ink: GrainInk) => {
+    // Clip to the box before mapping, so both axes clip identically.
+    const a0 = Math.max(along, along0);
+    const a1 = Math.min(along + alongSpan, along0 + alongLen);
+    const c0 = Math.max(across, across0);
+    const c1 = Math.min(across + acrossSpan, across0 + acrossLen);
+    if (a1 <= a0 || c1 <= c0) return;
+    if (axis === "h") emit(a0 - along0, c0 - across0, a1 - a0, c1 - c0, ink);
+    else emit(c0 - across0, a0 - along0, c1 - c0, a1 - a0, ink);
+  };
+
+  const first = Math.floor(across0 / course);
+  const last = Math.floor((across0 + acrossLen - 1) / course);
+  for (let c = first; c <= last; c++) {
+    const bandStart = c * course;
+    // The seam sits at the START of each course. Drawing it at the end instead
+    // would be identical everywhere except at the box edge, where the two
+    // conventions disagree about which tile owns the shared line.
+    put(along0, bandStart, alongLen, 1, "seam");
+    if (joint == null) continue;
+    // Butt joints, staggered per course. Without the stagger every board in a
+    // room ends on the same line and the floor reads as a checkerboard — which
+    // is the tile grid again, just at a different pitch. The hash takes the
+    // course index as one coordinate, so neighbouring courses are unrelated.
+    const jFirst = Math.floor(along0 / joint);
+    const jLast = Math.floor((along0 + alongLen - 1) / joint);
+    for (let j = jFirst; j <= jLast; j++) {
+      // Inset by 1 at each end so a jittered joint can never land exactly on
+      // the next joint's cell boundary and pair up into a straight line.
+      const off = 1 + Math.floor(decoHash(c, j, seed) * (joint - 2));
+      put(j * joint + off, bandStart, 1, course, "joint");
+    }
+  }
+}

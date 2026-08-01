@@ -142,19 +142,27 @@ stranger with radius (7a), found places as a standing category (7b), and the sky
 as a layer rather than a height (7c).
 
 **Phase 8 is the feel pass**, which the exploration phases interrupted three
-times. **8a (one vocabulary), 8b (the fold) and 8c (ground worth standing on)
-are built** — see §Phase 8. It is a pass over surfaces that already work, not a
-list of missing features, and it found what it found by driving the game and
-photographing it rather than by reading the source.
+times. **8a (one vocabulary), 8b (the fold), 8c (ground worth standing on) and
+8f (built surfaces have a grain) are built** — see §Phase 8. It is a pass over
+surfaces that already work, not a list of missing features, and it found what it
+found by driving the game and photographing it rather than by reading the source.
 
 **What is left of Phase 8, in order:**
 
-1. **8d — the biome boundary.** Region patches are straight-edged blocks; it is
+1. **8g — furniture that looks like furniture.** The largest remaining gap and
+   the cheapest to close: 8a's build-bar ICONS already draw a bed with a blanket
+   and a pillow, a shelf with books, a patterned rug, and the placed pieces are
+   flat rectangles. The art exists; it never reached the world. Mostly
+   transcription — see §8f, where photographing a room found it.
+2. **8d — the biome boundary.** Region patches are straight-edged blocks; it is
    the per-cell edges rule at region scale, and it wants what 8c did to the
    grass. Evidence captured (`shot-map`, `biome-border.png`), not started.
-2. **8e — four more counter faces.** Nub, Winifred, Derek, Aurelio. One line
+3. **8e — four more counter faces.** Nub, Winifred, Derek, Aurelio. One line
    each, plus the one open call about where the spoken line aligns.
-3. **A second survey pass, verified this time.** The first one covered the
+4. **The plaza and the water are still flat**, which 8f left alone on purpose:
+   they are terrain, so they belong to 8c's argument. The plaza now reads worse
+   than the grass beside it because 8c reached the grass and stopped.
+5. **A second survey pass, verified this time.** The first one covered the
    institution panels, night, autumn, winter and the underground, reported
    everything clean, and was wrong about the first panel anybody checked. Nobody
    has genuinely looked at the other five counters, the seasons, or the
@@ -3288,6 +3296,65 @@ staircase of tile-sized blocks. Confirmed pre-existing (shot at HEAD before the
 tone change to be sure it was not a regression). It is the same class of problem
 this step just solved for the grass and it wants the same kind of answer — a
 warped or dithered boundary rather than a cell-aligned one.
+
+### 8f — Built surfaces have a grain — **built**
+
+8c gave the ground a texture and stopped at the edge of the terrain, which is
+this phase's recurring failure mode written down two sections earlier. **A laid
+floor and a wall face were each one flat rectangle of `skin.color`.** You could
+tell walnut from pine and you could not tell what either one was *made of*, in a
+game whose whole materials model is three substances and a free appearance axis
+over them.
+
+**How it was found: by photographing a furnished room**, which nothing had done.
+The finding that reframed the job is in the same screenshot — **the build bar's
+icons are more finished than the world is.** 8a drew a bed with a blue blanket
+and a pillow, a shelf with coloured books, a patterned rug; the placed pieces are
+tan rectangles. The icon pass drew every object properly and none of it reached
+the world. That is the next step and it is mostly a transcription job, not a
+design one — the target art is already in the repo.
+
+**Built: `render/grain.ts`.** Courses and butt joints over a box, emitted through
+a callback (a few hundred calls a frame; returning arrays would allocate for
+nothing). `Renderer.drawGrain` inks them from the skin.
+
+- **The periods are COPRIME WITH TILE, and that is the entire design.** A plank
+  seam is a horizontal light-and-dark line on a continuous surface — textbook
+  per-cell edges (CLAUDE.md), and a fourth instance was one `course: 8` away. At
+  5 on a 16px tile the pattern only repeats every five tiles, which is far enough
+  that the eye reads boards. `grain.test.ts` asserts that as a number: five
+  distinct seam layouts before tile six repeats tile one. **Never pick a course
+  that divides 16.**
+- **The joint length is what separates wood from stone**, more than colour and
+  more than course height. The first version butted boards every 13px and
+  photographed as *brickwork* — a 5px course broken every 13 IS a brick bond,
+  whatever colour it is. A board is milled from a tree and runs most of a room,
+  so wood butts every 47 and flagstone every 9.
+- **A wall's face and a wall's top are grained differently, and the top is
+  turned.** Wood faces are planking stood on end (vertical, no butt joints — one
+  board per storey); stone faces are horizontal masonry courses. A SIDE run shows
+  its top surface, and grained like a floor it came out cross-planked: boards
+  laid across a one-tile-wide strip, butting at both edges of every cell, which
+  photographed as a brick course down each side of the house. **The band rule got
+  back in through the joints rather than through the seams** — worth remembering,
+  because the seams were the thing being guarded.
+- **Face courses measure from the ground, not from the world row.** Every wall
+  stands the same height, so a run's courses line up with its neighbours' instead
+  of stepping with the terrain behind it.
+- **Cloth has no grain**, and the table says so in place. A seam across a rug
+  reads as two rugs.
+
+**Knock-on, unlooked-for and good: the town centre fixed itself.** The
+institution buildings were identical tan boxes distinguishable only by footprint.
+They are built out of the same finishes the player uses, so the museum came out
+in coursed masonry and the timber ones in planking without a line of content
+being written. The buildings still have no *identity* — no signage, no roof that
+says whose it is — but they are no longer the same object.
+
+**Still flat, deliberately not touched here:** the plaza and the water. Both are
+terrain rather than built surface, so both belong to 8c's argument and not this
+one, and the plaza now reads worse than the grass beside it precisely because 8c
+reached the grass and stopped.
 
 ### Smaller, still open
 
