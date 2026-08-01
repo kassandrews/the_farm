@@ -32,8 +32,9 @@ import {
   JUNK_PILE,
   MUSHROOM,
 } from "../content/tiles";
+import type { TileDef } from "../content/tiles";
 import { skinDef } from "../content/skins";
-import type { SkinDef } from "../content/skins";
+import type { SkinDef, SkinClass } from "../content/skins";
 import {
   decoHash,
   groundTone,
@@ -415,10 +416,16 @@ function finishFor(
   id: number,
   x: number,
   y: number,
-): { name: string; color: string; top?: string; shade?: string } | null {
+): TileDef | null {
   if (!isFinishedTile(id)) return null;
   const skin = skinDef(floorFinish(world, x, y));
-  return { name: tileDef(id).name, color: skin.color, top: skin.top, shade: skin.shade };
+  // `roll` and `paving` are dropped ON PURPOSE, and this is the one place the
+  // decision lives. A laid floor is a made surface: it should be exactly as flat
+  // as it was laid, and what it has instead of a roll is a grain, drawn by the
+  // `isFinishedTile` branch further down. Spreading the tile def straight
+  // through here would give a floor both at once.
+  const { roll: _roll, paving: _paving, ...base } = tileDef(id);
+  return { ...base, color: skin.color, top: skin.top, shade: skin.shade };
 }
 
 export class Renderer {
@@ -895,9 +902,17 @@ export class Renderer {
         // continuously instead of stepping into shades. Neighbouring tiles differ
         // by well under a percent; the field has shape and no seams.
         //
-        // Grass and sand only. A laid floor is a made surface and should be
-        // exactly as flat as it was laid, so anything wearing a finish, and every
-        // built tile, keeps its colour untouched.
+        // WHICH surfaces roll, and how much, is a field on the tile (`roll`) and
+        // no longer a `name === "Grass" || name === "Sand"` check here. That
+        // check was written when grass was the only ground anybody was looking
+        // at, and it silently decided the answer for every tile added after it:
+        // the plaza came out the one major surface in the game with no texture
+        // of any kind, and nothing in the code said so.
+        //
+        // A laid floor still gets nothing. `finishFor` wins outright above and
+        // returns a skin with no `roll` on it, so a made surface stays exactly
+        // as flat as it was laid and takes a grain instead — the two halves of
+        // the same decision, as the note below says.
         // Toward BLACK, and not toward the tile's own `shade`. The obvious
         // version mixed `color` into `shade`, and `shade` is the boundary lip —
         // eight RGB units from the fill, deliberately, because it is drawn as a
@@ -908,14 +923,24 @@ export class Renderer {
         // Darken only, never lighten: mixing toward white desaturates, and grass
         // that loses its green in the bright patches reads as sun-bleach on a
         // lawn nobody has left. 14% between the lightest patch and the darkest.
-        ctx.fillStyle =
-          def.name === "Grass" || def.name === "Sand"
-            ? mixHex(def.color, {
-                color: "#000000",
-                amount: (1 - groundTone(tx, ty, world.seed)) * 0.14,
-              })
-            : def.color;
+        ctx.fillStyle = def.roll
+          ? mixHex(def.color, {
+              color: "#000000",
+              amount: (1 - groundTone(tx, ty, world.seed)) * def.roll,
+            })
+          : def.color;
         ctx.fillRect(px, py, TILE, TILE);
+        // Paving: generated ground that somebody nonetheless LAID, which is the
+        // plaza and nothing else. Same `drawGrain` and the same `GRAIN.stone`
+        // periods a flagstone floor uses, so a square and a floor are cut from
+        // the same stone; inked off the tile's own colour rather than a finish,
+        // because terrain has no finish to ink from.
+        //
+        // Courses step off the WORLD pixel (`wx`/`wy` below), which is the only
+        // reason this is allowed to exist at all — a joint drawn once per CELL
+        // is the band rule's exact trap, and an 11x9 plaza is a big enough field
+        // to have shown it off. 6 and 9 are coprime with 16 for that reason.
+        if (def.paving) this.drawPaving(px, py, tx, ty, def.paving, def.color);
         // A laid floor shows its boards or its flagstones. Only a FINISHED tile
         // gets this: `groundTone` above deliberately leaves made surfaces flat,
         // and this is the other half of that decision rather than a contradiction
@@ -966,15 +991,24 @@ export class Renderer {
         // palette accident.
         if (def.name === "Water" || def.name === "Shallow water") {
           const shallow = def.name === "Shallow water";
-          ctx.fillStyle = shallow ? "rgba(255,255,255,0.38)" : "rgba(255,255,255,0.25)";
-          const rx = px + 3 + ((Math.sin(t * 1.5 + tx * 1.7 + ty) * 0.5 + 0.5) * (TILE - 6)) | 0;
-          ctx.fillRect(rx, py + 6, 2, 1);
-          // A second, slower glint in the shallows only — off the WORLD
-          // coordinate and on its own phase, so it's texture rather than a
-          // per-cell mark that would tile the surf into squares (CLAUDE.md).
-          if (shallow) {
-            const sx = px + 2 + ((Math.sin(t * 0.9 + tx * 0.7 - ty * 1.3) * 0.5 + 0.5) * (TILE - 5)) | 0;
-            ctx.fillRect(sx, py + TILE - 7, 1, 1);
+          // SPARSE, and this is the fix rather than a tuning change. Every cell
+          // used to get a glint, all of them on the same row (`py + 6`) — which
+          // is the per-cell edges rule (CLAUDE.md) wearing a fourth disguise. A
+          // mark in every cell at a fixed height is a dotted line at the tile
+          // pitch, and a lake read as ruled paper that happened to shimmer.
+          //
+          // So: hashed on the WORLD coordinate, like the grass tuft and the sand
+          // grain, and on a row the hash also picks. Now some cells catch the
+          // light and most don't, which is what a surface does.
+          const h = decoHash(tx, ty, world.seed ^ 0x37d1);
+          // The shallows glint about half again as often as the deep, and
+          // brighter. That gap is load-bearing: "you can wade here" has to be
+          // legible without the HUD ever saying it, and a livelier surface is
+          // what stops the two blues reading as a palette accident.
+          if (h > (shallow ? 0.42 : 0.6)) {
+            ctx.fillStyle = shallow ? "rgba(255,255,255,0.38)" : "rgba(255,255,255,0.25)";
+            const rx = px + 3 + ((Math.sin(t * 1.5 + tx * 1.7 + ty) * 0.5 + 0.5) * (TILE - 6)) | 0;
+            ctx.fillRect(rx, py + 3 + Math.floor((h * 47) % 11), 2, 1);
           }
         } else if (def.name === "Grass") {
           // Stable tuft speckle so grass reads as texture, not flat paint.
@@ -2023,6 +2057,54 @@ export class Renderer {
         axis: spec.axis ?? "h",
         course: g.course,
         joint: spec.jointed === false ? null : g.joint,
+        bond: g.bond,
+      },
+      (mx, my, mw, mh, ink) => {
+        ctx.fillStyle = ink === "seam" ? seam : joint;
+        ctx.fillRect(px + mx, py + my, mw, mh);
+      },
+    );
+  }
+
+  /** Cut courses into a tile of GENERATED ground, inked off its own colour.
+   *
+   *  The sibling of `drawGrain`, and deliberately not a branch inside it: that
+   *  one takes a `SkinDef` and inks from `skin.color`, because everything it
+   *  draws is a surface somebody chose a finish for. Terrain has no finish. The
+   *  periods are the shared thing and they come from the same `GRAIN` table, so
+   *  a plaza flagstone and a floor flagstone are cut to the same size — which is
+   *  the entire claim being made, that somebody laid this square.
+   *
+   *  `jointed` is unconditional here, unlike the floor's: the one-tile-wide case
+   *  the floor has to guard against (a jetty, where a butt joint is a nick in a
+   *  plank that has nothing to butt against) cannot arise on generated paving,
+   *  which is always a field. */
+  private drawPaving(
+    px: number,
+    py: number,
+    tx: number,
+    ty: number,
+    applies: SkinClass,
+    color: string,
+  ): void {
+    const g = GRAIN[applies];
+    if (!g) return;
+    const ctx = this.ctx;
+    const seam = mixHex(color, { color: "#000000", amount: g.seam });
+    const joint = mixHex(color, { color: "#000000", amount: g.joint_ink });
+    forEachGrainMark(
+      {
+        // The WORLD pixel, not the screen pixel. Passing the screen position
+        // graining the camera instead of the ground is the mistake drawGrain's
+        // docblock warns about, and on a surface you walk across it shows up as
+        // the paving sliding under your feet.
+        wx: tx * TILE,
+        wy: ty * TILE,
+        w: TILE,
+        h: TILE,
+        axis: "h",
+        course: g.course,
+        joint: g.joint,
         bond: g.bond,
       },
       (mx, my, mw, mh, ink) => {

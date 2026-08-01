@@ -20,6 +20,37 @@ export interface TileDef {
    *  tiles (water animates its own way). */
   top?: string;
   shade?: string;
+  /** How much this ground ROLLS, as the fraction of black between the lightest
+   *  patch and the darkest. The renderer mixes `groundTone` — two-octave value
+   *  noise on the WORLD coordinate at 11- and 29-tile wavelengths — into the
+   *  fill by this much. Omitted means a flat fill.
+   *
+   *  A FIELD, and not the renderer's old `name === "Grass" || name === "Sand"`
+   *  check, because how a surface reads is a property of the surface (CLAUDE.md:
+   *  content is data, a tile is a row here and not a code path). That check is
+   *  how the plaza ended up the only major ground in the game with no texture at
+   *  all: it was neither of the two names on the list, and nobody had to decide
+   *  that — it just fell out of a condition written when grass was the only
+   *  ground anyone was looking at.
+   *
+   *  Keep it small. This is darken-only and mixes CONTINUOUSLY, never stepping
+   *  into shades; quantizing puts a visible contour back, and lightening
+   *  desaturates. 0.14 is the most any surface should want. */
+  roll?: number;
+  /** Cut stone courses into this tile, inked off its own `color`.
+   *
+   *  For GENERATED ground that was nonetheless laid by somebody — the plaza is
+   *  the only one, and is the reason this exists. It sat in the gap between two
+   *  policies: `isFinishedTile` gates the grain pass on `id === FLOOR`, and the
+   *  comment beside it says terrain has no grain and never will. Both are right
+   *  about the tiles they were written for and neither covers paving somebody
+   *  swept every morning for a hundred years.
+   *
+   *  Names a `SkinClass` so the periods come from the renderer's one `GRAIN`
+   *  table rather than a second copy of them — a flagstone is a flagstone
+   *  whether it is a floor, a wall, or a square, and those periods are already
+   *  chosen coprime with the tile (see grain.ts, which is entirely about that). */
+  paving?: SkinClass;
   /** Can the shovel turn this into dug dirt? (grass → dirt) */
   diggable?: boolean;
   /** Can a crop be planted here? Planting first tills it to farmland. */
@@ -173,6 +204,7 @@ export const TILES: Record<TileId, TileDef> = {
     // a field of grass draws none of it, so this is the lip at a path's edge.
     top: "#92c561",
     shade: "#83b352",
+    roll: 0.14,
     diggable: true,
     tillable: true,
   },
@@ -203,11 +235,34 @@ export const TILES: Record<TileId, TileDef> = {
     color: "#b8b2a6",
     top: "#c0bab0",
     shade: "#aaa498",
+    // The plaza is eleven by nine and, until now, every cell of it was one flat
+    // rectangle with not a single mark inside it — only the outer ring got a
+    // 1px lip, because that is the one thing drawn where the material changes.
+    // Standing on it next to grass that rolls and carries three shapes of tuft,
+    // it read as a hole in the world.
+    //
+    // Half the roll grass gets. Stone is already low-saturation grey and the
+    // full 0.14 photographs as grime rather than as weather — a square somebody
+    // neglected, which is the opposite of what a town square is for.
+    roll: 0.07,
+    // And it is PAVED. Somebody laid these, so they break every nine world px in
+    // a running bond, exactly like the flagstones of a laid floor — one table of
+    // periods, one look, whether you are standing on a floor or a square.
+    paving: "stone",
   },
   [WATER]: {
     id: WATER,
     name: "Water",
     color: "#4f8fd0",
+    // A bay was one uniform slab of this blue from shore to shore. The ripple
+    // was doing all the work and it is two pixels wide.
+    //
+    // MORE roll than any land tile, because on water the noise reads as DEPTH —
+    // the shelf under a lake is not flat and the colour over it should not be
+    // either — and because there is no tuft or grain here to carry the surface
+    // if the tone doesn't. Still darken-only: water that brightens in patches
+    // reads as glare, and glare belongs to the ripple.
+    roll: 0.18,
     solid: true,
   },
   [FARMLAND]: {
@@ -366,6 +421,7 @@ export const TILES: Record<TileId, TileDef> = {
     color: "#ddca97",
     top: "#e9d7a6",
     shade: "#c7b483",
+    roll: 0.14,
     diggable: true,
     tillable: true,
   },
@@ -377,6 +433,10 @@ export const TILES: Record<TileId, TileDef> = {
     // against the deep blue that "I can wade here" is legible at a glance
     // WITHOUT a HUD ever saying so — the colour is the affordance.
     color: "#7cc3de",
+    // Less than the deep. The shallows ARE the shelf, so there is less depth
+    // left to vary, and this blue is the affordance — "you may wade here" has to
+    // survive the darkest patch of it still reading as the pale water.
+    roll: 0.1,
     // NOT solid. That is the feature, and the thing every `solid` check nearby
     // has had to be taught about.
     //
