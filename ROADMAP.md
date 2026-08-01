@@ -3590,6 +3590,74 @@ A grid is exactly the box the fallback draws plus its rise, so the table convert
   like, so a chair rotated to face away never visibly changed. Any piece with a
   front needs `n` authored; `mirrorW` genuinely is free.
 
+### 8h — The furnishing pass — **built**
+
+Nineteen pieces, all drawn as themselves. The brief was *the trees and the
+rocks*: less rectangles and planes, more looking like the object.
+
+**Eleven new rows** — stool, bench, sofa, coffee table, desk, nightstand, cot,
+wardrobe, chest, dresser, desk lamp — plus a painting, plus art for the four that
+were still boxes (bed, table, shelf, rug).
+
+**Twenty-five char grids**, and the sizes are the part that could have gone
+silently wrong. A 2x1 table turned east is 1 wide and 2 deep: a different
+drawing, not a rotation, so eight pieces carry two grids. Authored through a
+generator that asserts every row length and count against `rise + h * TILE +
+height` before emitting anything; the file still holds literal rows. A row one
+character short slides a piece a pixel off its own tile, and that survives a
+screenshot.
+
+The rule that made them read: **draw the thing, not a shaded rectangle.** Legs
+with floor showing between them, a cornice on the wardrobe, a kneehole under the
+desk, coloured spines in the bookshelf, a fringe on the rug. A grid that fills
+its own box is the box with extra steps, which is exactly what the procedural
+path was.
+
+**`light` is a field**, not `id === "lamp"` in the renderer. Being a light is a
+property of the object — the same argument `speed` on a tile makes about how
+ground feels underfoot — and the desk lamp is what proved it. It also caught a
+rule that was quietly about a ROW rather than a category: *"nothing you could
+NEED costs ore"* skipped `lamp` by name. It skips lights now, and a new test
+asserts the exemption runs **both** ways, or a row could buy itself one by
+declaring `light: true`.
+
+**`mount: "wall"`** is the painting, and it inverts the placement rule rather
+than relaxing it: every other piece refuses a cell holding a wall, and this one
+requires it. A door is not a wall — a picture over the doorway sits across the
+one cell you walk through. It needs no new draw pass, because a wall-mounted
+piece sorts at the same y and bias as its own wall and is pushed after it, so a
+stable sort does the layering.
+
+**The build bar grew tabs**, because twenty-two tools do not fit a phone — the
+row runs off the side and half the game becomes unreachable. Grouped by what the
+thing IS, not by cost or finish, because that is the question you arrive with.
+An empty tab hides itself, so the underground still shows exactly the two tools
+the rock allows.
+
+> **The bug worth remembering: the tab followed the tool on every SYNC.** So
+> tapping a tab was overwritten the same frame — the bar refused to change, and
+> the only reachable tools were the ones in the held tool's own group. It has to
+> follow the tool only when the tool actually CHANGES. Found by the screenshot
+> harness timing out on an invisible button, which is precisely what a thumb
+> would have found.
+
+`scripts/shot-showroom.mjs` puts one of every piece on screen at once. It SEEDS
+rather than clicking: placing through the bar fought `safeArea` (which drops
+clicks near the HUD and looks exactly like a broken tool). The UI path was worth
+walking once — it found the bug above — but it is the wrong instrument for
+looking at pictures.
+
+#### Still open here
+
+- **The wooden pieces read a little samey.** Table, bench, coffee table and
+  nightstand are all a tan top on legs, which is honest — they ARE similar
+  objects — but only the desk has a feature that names it. Interior detail on the
+  large flat tops (plank lines, a visible joint) is the obvious next pass.
+- **`n` is authored for four pieces only** — chair, bench, sofa, bed. Everything
+  else falls through to `s`, which is right for a chest and wrong for a desk.
+- **The sofa in undyed cloth is very pale** against a pine floor. It is the one
+  piece whose default finish works against its silhouette.
+
 ### Smaller, still open
 
 - ~~**The rectangular pond**~~ **There is no pond bug — it is the biome
