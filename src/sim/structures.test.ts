@@ -15,6 +15,7 @@ import {
   CONNECT_W,
   doorApproaches,
   blockedDoorsteps,
+  shellFinish,
 } from "./structures";
 import { placeFurniture } from "./furniture";
 import { gather, updateRegrowth } from "./gather";
@@ -276,5 +277,43 @@ describe("doorsteps", () => {
     house(w);
     expect(doorApproaches(w, 20, 23)).toBeNull();
     expect(blockedDoorsteps(w, 20, 23)).toEqual([]);
+  });
+});
+
+describe("what a door's shell is built from", () => {
+  // content/structures.ts says of the stone finishes: "they reach the wall it
+  // sits in; they stop at the door itself." Nothing implemented it, so a
+  // doorway in a granite wall drew its own lintel and both jambs in pine and
+  // every stone house had a plank of timber let into it at the front door.
+  it("takes the finish of the wall it is cut into, not its own", () => {
+    const w = world();
+    for (let x = 19; x <= 22; x++) clear(w, x, 20);
+    placeStructure(w, 19, 20, "wall", "granite");
+    placeStructure(w, 20, 20, "wall", "granite");
+    // The door is wood BY CONSTRUCTION — door.finishes is ["wood"], so this is
+    // the ordinary case and not a contrived one.
+    placeStructure(w, 21, 20, "door", "pine");
+    placeStructure(w, 22, 20, "wall", "granite");
+    expect(shellFinish(w, 21, 20)).toBe("granite");
+    // The door itself still knows what it is made of — the frame is drawn in it.
+    expect(structureAt(w, 21, 20)!.finish).toBe("pine");
+  });
+
+  it("leaves a plain wall wearing its own finish", () => {
+    const w = world();
+    clear(w, 20, 20);
+    placeStructure(w, 20, 20, "wall", "slate");
+    expect(shellFinish(w, 20, 20)).toBe("slate");
+  });
+
+  it("falls back to its own finish for a door with no wall to belong to", () => {
+    const w = world();
+    clear(w, 20, 20);
+    placeStructure(w, 20, 20, "door", "walnut");
+    expect(shellFinish(w, 20, 20)).toBe("walnut");
+  });
+
+  it("is null where nothing is built", () => {
+    expect(shellFinish(world(), 20, 20)).toBe(null);
   });
 });

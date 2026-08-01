@@ -48,7 +48,15 @@ import {
 } from "../sim/world";
 import { dayNumber } from "../sim/found";
 import { letterFor } from "../content/found";
-import { wallMask, blockedDoorsteps, CONNECT_N, CONNECT_E, CONNECT_S, CONNECT_W } from "../sim/structures";
+import {
+  wallMask,
+  blockedDoorsteps,
+  shellFinish,
+  CONNECT_N,
+  CONNECT_E,
+  CONNECT_S,
+  CONNECT_W,
+} from "../sim/structures";
 import { furnitureDef, footprint } from "../content/furniture";
 import { plinthRuns } from "../sim/museum";
 import type { PlinthRun } from "../sim/museum";
@@ -1995,7 +2003,10 @@ export class Renderer {
 
   private drawWall(world: WorldState, tx: number, ty: number, cell: BuildCell): void {
     const ctx = this.ctx;
-    const skin = skinDef(cell.finish);
+    // The shell — face, cap, grain, corners — is the WALL's material. `leaf` is
+    // the door's own, and reaches only the frame around the opening.
+    const skin = skinDef(shellFinish(world, tx, ty) ?? cell.finish);
+    const leaf = skinDef(cell.finish);
     const mask = wallMask(world, tx, ty);
     const px = Math.round(this.sceneX(tx) - TILE / 2);
     const base = Math.round(this.sceneY(ty) + TILE / 2);
@@ -2080,7 +2091,21 @@ export class Renderer {
     }
 
     if (cell.id === "door") {
-      ctx.fillStyle = "#3a2620";
+      // The frame first, in the DOOR's own finish, then the opening cut out of
+      // it. This is what keeps a door's finish meaningful now that the shell
+      // around it belongs to the wall: without a frame the wood would paint
+      // nothing at all, since the opening itself is a hole and holes have no
+      // material. It is also what structures.ts describes a door as — "a made
+      // object rather than a surface… the one part of a wall you touch" — set
+      // into whatever the wall happens to be built of.
+      const frame = (x: number, y: number, w: number, h: number) => {
+        ctx.fillStyle = leaf.color;
+        ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
+        ctx.fillStyle = leaf.top;
+        ctx.fillRect(x - 1, y - 1, w + 2, 1); // the lit head of the frame
+        ctx.fillStyle = "#3a2620";
+        ctx.fillRect(x, y, w, h);
+      };
       if (sideOn) {
         // A door in a SIDE run. The run shows its top surface, not its face, so
         // there is no face to cut a doorway into — which is why a door on an
@@ -2091,11 +2116,13 @@ export class Renderer {
         // Read it as a gap in the top surface instead: the run's band is the
         // wall seen from above, so the opening spans the full THICKNESS (x) and
         // is inset in y, leaving a jamb of wall at each side of the doorway.
-        ctx.fillRect(px, top + DOOR_JAMB, TILE, TILE - DOOR_JAMB * 2);
+        // Inset by one at each end, so the frame it carries stays inside the
+        // run's own band instead of overhanging the cell into its neighbours.
+        frame(px + 1, top + DOOR_JAMB, TILE - 2, TILE - DOOR_JAMB * 2);
       } else {
         // A hole in the wall, with the wall carried over it as a lintel — so a
         // doorway reads as cut INTO a run rather than as a gap in it.
-        ctx.fillRect(px + 4, top + WALL_CAP + 3, TILE - 8, STOREY - WALL_CAP - 3);
+        frame(px + 4, top + WALL_CAP + 3, TILE - 8, STOREY - WALL_CAP - 3);
       }
     }
 

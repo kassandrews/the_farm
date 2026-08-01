@@ -3356,6 +3356,24 @@ nothing). `Renderer.drawGrain` inks them from the skin.
   of stepping with the terrain behind it.
 - **Cloth has no grain**, and the table says so in place. A seam across a rug
   reads as two rugs.
+- **A door's shell is the WALL's material; only its frame is its own**
+  (`shellFinish`, sim/structures.ts). content/structures.ts already said this in
+  the note explaining why a door is wood-only — "the stone finishes reach the
+  wall it sits in; they stop at the door itself" — and nothing implemented it. A
+  door carries a wood finish *by construction*, so a doorway cut into a granite
+  wall drew its lintel and both jambs in pine: **every stone house in the game
+  had a plank of timber let into it at the front door.** Pre-existing, invisible
+  until the walls had a grain to be interrupted, and reported by Kass off a
+  screenshot.
+
+  The door still shows its own finish, as a 1px frame around the opening — added
+  with the fix, because otherwise a door's finish would paint nothing at all (the
+  opening is a hole, and holes have no material). It reads as what structures.ts
+  calls a door: a made object set into whatever the wall is built of.
+
+  **In sim, not in the renderer, and tested.** It is a question about the build
+  layer — which run does this door belong to — and it is exactly the class of bug
+  this phase keeps finding: obvious on screen, invisible in the source.
 
 **Paint shipped with it, and paint is three table rows.** Sage green, ox-blood
 and bone, `applies: "wood"`, off the Gremlin's heap.

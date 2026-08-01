@@ -136,6 +136,44 @@ function joinsAt(world: WorldState, x: number, y: number): boolean {
   return cell !== null && joinsWallRun(cell.id);
 }
 
+/** The finish of the WALL a cell's shell is built from — which for a door is
+ *  its neighbours' finish rather than its own.
+ *
+ *  The note on `door.finishes` in content/structures.ts already states this:
+ *  "the stone finishes reach the wall it sits in; they stop at the door itself."
+ *  Nothing implemented it. A door carries a wood finish by construction
+ *  (`finishes: ["wood"]`), so a doorway cut into a granite wall drew its lintel
+ *  and both jambs — the whole cell — in pine, and every stone house in the game
+ *  had a plank of timber let into it at the front door.
+ *
+ *  It lives in sim rather than in the renderer because it is a question about
+ *  the build layer ("which run does this door belong to"), and because it is
+ *  worth a test: it was invisible in the source and obvious in a screenshot,
+ *  which is this project's whole argument for looking.
+ *
+ *  Deterministic west-east-north-south. That only matters for a doorway between
+ *  two runs finished differently, where there is no right answer — and a stable
+ *  wrong one beats one that changes with iteration order.
+ */
+export function shellFinish(world: WorldState, x: number, y: number): SkinId | null {
+  const cell = structureAt(world, x, y);
+  if (!cell) return null;
+  if (cell.id !== "door") return cell.finish;
+  for (const [dx, dy] of [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+  ]) {
+    const n = structureAt(world, x + dx, y + dy);
+    if (n && n.id === "wall") return n.finish;
+  }
+  // A door standing on its own is its own wall, and wears what it was placed
+  // in. Rare, legal, and the only case where a door's finish paints anything
+  // larger than the frame around its opening.
+  return cell.finish;
+}
+
 // --- Doorsteps ----------------------------------------------------------------
 // A door's doorstep is its only way in (ROADMAP §"A door needs a south wall and
 // a doorstep"): the diagonals are blocked by the door's own wall run, and the
