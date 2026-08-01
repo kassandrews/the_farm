@@ -3494,7 +3494,54 @@ finish among that room's own walls, through `shellFinish` so a door votes with
 the wall it is set into. In `render/roof.ts`, because it is pure logic over sim
 state and can therefore be tested.
 
-**The museum is now the only masonry building in town** — and until the roof fix
+**The museum is now the only masonry building in town** — in MARBLE, which is a
+new stone row and the only pale one, the list having stopped at granite. It was
+cobble first, for about an hour: the biggest footprint in town, in the darkest
+grey available, under a roof that takes its material from its own walls, with no
+opening but the door. It read as a jail. **Being distinctive is not the same as
+being welcoming**, and that is the lesson worth keeping — the cobble version
+passed every test the brief set and failed the one nobody had written down.
+
+**Windows are a third structure** (`content/structures.ts`), and almost
+everything they needed already existed:
+
+- `solid` AND `encloses`. Solid is the whole difference from a door — a door is a
+  hole you may walk through, a window one you may only look through — and it
+  makes windows the first structure that is solid and has an opening, which is
+  why neither existing draw path could be reused.
+- `shellFinish` now asks *is this a wall* rather than *is this not a door*, so
+  the next such piece inherits the right answer instead of the old one. As
+  written it would have let a wooden sash paint a marble cell pine, which is the
+  exact bug that function was added to fix, one structure later.
+- **No glass material.** DESIGN's rule is that placing a thing IS making it.
+  Glass would have been an inventory line, a barter row, a save field and a gate,
+  to make one existing thing slightly more literal.
+
+**A RUN OF WINDOWS IS ONE WINDOW**, and this is the actual answer to "jail" —
+the per-cell edges rule in its fifth disguise. Three cells each drawing their own
+jambs is a row of little windows, which is a barracks; one opening with mullions
+between the panes is a gallery. The same answer `content/town.ts` already gives
+for the museum's display cases. The rake of light is world-stepped at a 40px
+period for the same reason: wrapped against the pane's own height it restarted
+every six pixels and photographed as scratches on the glass.
+
+**A lit window is the player's own house.** No town building has a lamp — lamps
+cost ore and are the player's sink — so the warm pane only ever appears over
+something they lit themselves. Two things a screenshot found and no test would
+have:
+
+- The pane is repainted in the ADDITIVE pass. Painted warm during the wall pass
+  it went under the night wash like everything else and came out a muddy tan
+  barely distinct from the planks around it. `drawLampGlow`'s own docblock
+  already said why — a source has to be the brightest thing in its own light —
+  and from outside, the window IS the source.
+- **An indoor lamp no longer shines through its own roof.** Nobody had called
+  that a bug while houses were sealed boxes; windows make it indefensible,
+  because the whole claim a lit window makes is that the light got out THERE,
+  through the glass. Keyed on the roof's own fade, so walking inside lights the
+  lamp up as the cutaway opens.
+
+**The old cobble note, kept because the argument still holds:** — and until the roof fix
 that would not have been worth doing, since a stone building would have had a
 pine-hearted roof. Every town building was wood, so the one material distinction
 the renderer has was doing nothing at all. `TownBuilding.walls` overrides the
@@ -3526,10 +3573,18 @@ A grid is exactly the box the fallback draws plus its rise, so the table convert
   paths. The system is proven, the rest is authoring — and table and rug are the
   ones that cost more, because a 2x1 footprint turned east is a different grid
   SIZE, not a different grid.
-- **The museum roof is dark.** Cobble's shade darkened 10% makes the largest
-  building on screen a heavy grey slab. It is legibly the stone one, which was
-  the goal, but if it reads as gloomy rather than as institutional the answer is
-  a lighter stone, not a lighter roof — the roof is derived on purpose.
+- ~~**The museum roof is dark.**~~ **Fixed by marble** — and the fix was the one
+  the note predicted, a lighter STONE rather than a lighter roof. The roof stayed
+  derived.
+- **Only the museum has windows.** Every other town building is still blank-walled,
+  and now that windows exist that reads as an omission rather than as restraint.
+  The town hall is the obvious next one. Each is a table row plus a rung on the
+  migration ladder, so the cost is known.
+- **A window in a SIDE run shows almost nothing** — a thin bright band in the
+  top surface, because a wall seen edge-on has no face to cut into. That is the
+  honest amount there is to show, and it is the same geometry that forces every
+  town door onto a south wall. If side windows ever need to read properly, the
+  answer is the door's roof-notch trick, not a bigger band.
 - **`n` was the facing that proved the fallback is not free.** Falling through to
   `s` puts the backrest at the far edge, which is what a chair facing YOU looks
   like, so a chair rotated to face away never visibly changed. Any piece with a
