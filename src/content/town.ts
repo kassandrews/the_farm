@@ -46,9 +46,24 @@ export interface TownBuilding {
    *  exactly one: a resident who can't find the door is a bug you only notice
    *  at 3am game-time, and one door makes "did they use it" observable. */
   door: { x: number; y: number };
-  /** Finish for the walls and door. Per-cell since v5, so the town's buildings
-   *  can differ from each other and from yours. */
+  /** Finish for the building's JOINERY — the door leaf and the furniture — and
+   *  for the walls too unless `walls` overrides them. Per-cell since v5, so the
+   *  town's buildings can differ from each other and from yours. */
   finish: SkinId;
+  /** A masonry shell, when the walls are made of something the door and the
+   *  chairs are not.
+   *
+   *  Needed the moment any building wanted stone, because `finish` reaches three
+   *  different things and only one of them can be stone: a door leaf is wood
+   *  (`STRUCTURES.door.finishes`) and so is a chair. A single field would have
+   *  stamped a granite door and a granite table, which is not a strictness the
+   *  type system catches — it is a table row that quietly renders nonsense.
+   *
+   *  This is the same split the player already lives with. A stone house built
+   *  by hand takes a wood door because the door tool only offers wood, and the
+   *  door's SHELL picks the wall's material up from its neighbour at draw time
+   *  (`shellFinish`). The town table now says the same thing out loud. */
+  walls?: SkinId;
   /** Who the town housed here when you arrived, if anyone. This is the ONLY
    *  authored link between a person and a place, and it is a starting
    *  condition, not a fact: the villager claims this building's bed once, at
@@ -223,6 +238,26 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // camera has no face to draw a doorway on (see margfrom_house).
     door: { x: -10, y: -7 },
     finish: "whitewash",
+    // THE ONLY MASONRY BUILDING IN TOWN, and that is the whole of its identity.
+    //
+    // It was the largest footprint and a wall colour shared with the shop, which
+    // from outside makes it a pale rectangle of vertical planks with one south
+    // door — the same object as the heap. Size alone does not read as purpose at
+    // this scale; the title screen's own note says so (`content/props.ts`: the
+    // roof is what tells two buildings apart long before their doors do), and
+    // now that a roof takes the material of the walls holding it up, one field
+    // changes the walls, the courses and the roof together.
+    //
+    // Cobble rather than granite, which is the obvious grand choice and is byte
+    // for byte the plaza's own `#b8b2a6` — a museum that matched the paving in
+    // front of it would have been a worse problem than the one being fixed.
+    // Cobble is darker and older, which suits the building in town whose job is
+    // keeping things.
+    //
+    // Deliberately NOT given to the town hall as well. Two civic buildings in
+    // the same stone is a category, not an identity, and the museum stops being
+    // the one that looks built to last the moment something else looks like it.
+    walls: "cobble",
     furniture: [
       // Corrigal's desk, in the lobby by the door rather than at the far end.
       // Donating is the one act the museum asks of you and walking the length

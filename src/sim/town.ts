@@ -76,7 +76,14 @@ export function stampBuilding(t: StampTarget, b: TownBuilding, probe?: TerrainPr
   for (const c of cells) {
     if (!isPerimeter(b, c.x, c.y)) continue;
     const isDoor = c.x === b.door.x && c.y === b.door.y;
-    t.build[tileKey(c.x, c.y)] = { id: isDoor ? "door" : "wall", finish: b.finish };
+    // The door keeps `finish` while the walls may take `walls`: a leaf is
+    // joinery and joinery is wood, even in a stone building. The door's SHELL —
+    // the frame around the opening — picks the masonry up from its neighbouring
+    // wall at draw time and needs nothing stored here.
+    t.build[tileKey(c.x, c.y)] = {
+      id: isDoor ? "door" : "wall",
+      finish: isDoor ? b.finish : (b.walls ?? b.finish),
+    };
   }
 
   for (const f of b.furniture) {

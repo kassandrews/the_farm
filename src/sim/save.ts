@@ -19,7 +19,7 @@ import type { CharId, AuthoredId } from "../content/cast";
 import { CAST, MOLE, GHOST, COSMOS } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 
-export const SCHEMA_VERSION = 27;
+export const SCHEMA_VERSION = 28;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -29,6 +29,12 @@ export const SCHEMA_VERSION = 27;
 // adding one (`skins.selected` goes from per-class to per-tool) and the first
 // that rewrites persisted note kinds (`built_plank` → `built_floor`). Both are
 // spelled out at the migration itself.
+//
+// 28 adds NO field at all — it repaints the museum's walls in stone. Like v15
+// (which existed only to re-stamp the town), a content change to a STAMPED
+// building cannot reach a deployed save any other way: the walls were written
+// into `build` at world creation and nothing revisits them. Unlike v15 it edits
+// rather than re-stamps, so a wall the player has repainted survives.
 //
 // Note what 25 does NOT add: anything about which forms the town hall is
 // offering. A batch of forms is a total function of how long you have lived
@@ -687,6 +693,45 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
         ? { villagers: villagers.map((v) => ({ ...v, memory: renameNotes(v.memory) })) }
         : {}),
     };
+  },
+  // v27 → v28: the museum is masonry.
+  //
+  // A content change that cannot reach a live save on its own, for the reason
+  // v15 spells out at length — the town is STAMPED into `build` at world
+  // creation, so every deployed save already has eight-by-ten of whitewashed
+  // plank walls and would keep them forever.
+  //
+  // NOT a re-stamp, unlike v15. `stampInto` rewrites every perimeter cell of
+  // every building from the table, which would also undo any wall the player has
+  // repainted since paint shipped. This touches only cells that are still
+  // exactly what the old table put there: a wall, on the museum's ring, still
+  // reading `whitewash`. A repainted cell fails that test and is left alone,
+  // which is the correct answer — the player's choice outranks ours.
+  //
+  // Bounds and the old finish are LITERALS, per the note on V12_MUSEUM below:
+  // a migration that asked content/town.ts what the museum used to look like
+  // would get today's answer and edit the wrong cells.
+  27: (raw) => {
+    const V27_MUSEUM = { x0: -13, y0: -16, x1: -6, y1: -7 };
+    const V27_WAS = "whitewash";
+    const V27_NOW = "cobble";
+
+    const build = { ...((raw.build ?? {}) as Record<string, { id?: string; finish?: string }>) };
+    for (let y = V27_MUSEUM.y0; y <= V27_MUSEUM.y1; y++) {
+      for (let x = V27_MUSEUM.x0; x <= V27_MUSEUM.x1; x++) {
+        const onRing =
+          x === V27_MUSEUM.x0 || x === V27_MUSEUM.x1 || y === V27_MUSEUM.y0 || y === V27_MUSEUM.y1;
+        if (!onRing) continue;
+        const key = `${x},${y}`;
+        const cell = build[key];
+        // Walls only. The door keeps its leaf: joinery is wood even in a stone
+        // building, and its frame picks the masonry up from the wall beside it
+        // at draw time.
+        if (cell?.id !== "wall" || cell.finish !== V27_WAS) continue;
+        build[key] = { ...cell, finish: V27_NOW };
+      }
+    }
+    return { ...raw, schemaVersion: 28, build };
   },
 };
 

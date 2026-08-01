@@ -928,3 +928,54 @@ describe("v26 → v27: floors carry their own finish", () => {
     expect(migrated.skins.unlocked).toEqual(["pine", "walnut", "granite", "undyed"]);
   });
 });
+
+describe("v27 → v28: the museum is masonry", () => {
+  /** A v27 save with the museum's walls as the old table stamped them. Built by
+   *  taking a fresh world (whose museum is already cobble) back to whitewash,
+   *  which is what every deployed save actually holds. */
+  function v27Save(repaint?: Record<string, string>): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const build = { ...(w.build as Record<string, { id: string; finish: string }>) };
+    for (const [key, cell] of Object.entries(build)) {
+      if (cell.id === "wall" && cell.finish === "cobble") build[key] = { ...cell, finish: "whitewash" };
+    }
+    for (const [key, finish] of Object.entries(repaint ?? {})) {
+      build[key] = { ...build[key], finish };
+    }
+    return { ...w, schemaVersion: 27, build };
+  }
+
+  /** The museum's north-west corner — on the ring, and a wall rather than the
+   *  door, which sits in the middle of the south side at (-10,-7). */
+  const CORNER = "-13,-16";
+  const DOOR = "-10,-7";
+
+  it("turns the museum's plank walls to stone", () => {
+    const migrated = migrateSave(v27Save())!;
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated.build[CORNER].finish).toBe("cobble");
+  });
+
+  it("leaves the door leaf alone", () => {
+    // Joinery is wood even in a stone building. The door's FRAME picks the
+    // masonry up from the wall beside it at draw time and stores nothing.
+    const migrated = migrateSave(v27Save())!;
+    expect(migrated.build[DOOR].id).toBe("door");
+    expect(migrated.build[DOOR].finish).toBe("whitewash");
+  });
+
+  it("does not touch a wall the player has repainted", () => {
+    // The reason this edits instead of re-stamping the town the way v15 did.
+    // A re-stamp rewrites every perimeter cell from the table and would undo
+    // the player's choice, which outranks ours.
+    const migrated = migrateSave(v27Save({ [CORNER]: "oxblood" }))!;
+    expect(migrated.build[CORNER].finish).toBe("oxblood");
+  });
+
+  it("leaves every other building's walls as they were", () => {
+    // The museum alone. Two civic buildings in the same stone is a category,
+    // not an identity — the town hall's south-west corner stays ash.
+    const migrated = migrateSave(v27Save())!;
+    expect(migrated.build["-3,-9"].finish).toBe("ash");
+  });
+});
