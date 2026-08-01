@@ -3050,11 +3050,35 @@ export class Renderer {
     alpha = 1,
     look?: LookDef,
   ): void {
+    const ctx = this.ctx;
     const cx = this.sceneX(wx);
     const feetY = this.sceneY(wy) + TILE / 2 + 1;
     // Walk bob: a small vertical hop + squash while moving; a slow breathe idle.
     const bob = moving ? -Math.abs(Math.sin(t * 9)) * 1.5 : Math.sin(t * 1.6) * 0.3;
     const squash = moving ? Math.max(0, Math.sin(t * 9)) * 0.08 : 0;
+
+    // Contact shadow, same 2px band every standing thing in the world gets — the
+    // movers were the only ones without one, so the player and the whole town
+    // floated over ground that trees and rocks were sitting on.
+    //
+    // It does NOT take the bob. A shadow that hops with the sprite is attached
+    // to the creature rather than to the ground, which is the opposite of what a
+    // contact shadow is for; leaving it on the floor is what makes the hop read
+    // as a hop. It DOES take `alpha`, so the Ghost's shadow is as faint at night
+    // as the Ghost.
+    //
+    // WIDER THAN THE FEET, and that is the whole of why it reads. The first
+    // version copied the tree's 9px band, which is the same mistake 8c made
+    // reaching for `shade`: a creature is a teardrop, ~9px across at the base
+    // and wider above, so a 9px shadow lands entirely BEHIND the body and the
+    // change was invisible on screen. A contact shadow is only legible where it
+    // spills past the silhouette.
+    const prevAlpha = ctx.globalAlpha;
+    ctx.globalAlpha = prevAlpha * alpha;
+    ctx.fillStyle = "rgba(0,0,0,0.16)";
+    ctx.fillRect(cx - 7, feetY - 2, 14, 2);
+    ctx.globalAlpha = prevAlpha;
+
     const sprite = this.cache.frame(key, mood, frame, look);
     drawSpriteQuantized(this.ctx, this.cache, sprite, cx, feetY + bob, SPRITE, SPRITE, facing, squash, alpha);
   }
