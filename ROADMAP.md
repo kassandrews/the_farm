@@ -3456,6 +3456,85 @@ terrain rather than built surface, so both belong to 8c's argument and not this
 one, and the plaza now reads worse than the grass beside it precisely because 8c
 reached the grass and stopped.
 
+### 8g — Surfaces, roofs and furniture that are not rectangles — **built**
+
+Three gaps found by photographing the game rather than reading it, and each one
+turned out to be a rule the codebase already had, applied one place short.
+
+**The plaza had no texture of any kind.** Not "too little" — none. The base
+ground fill was gated on `def.name === "Grass" || def.name === "Sand"`, a
+condition written when grass was the only ground anyone was looking at, which
+then silently decided the answer for every tile added after it. The grain pass
+was no help either: it is gated on `isFinishedTile`, which is `id === FLOOR`, and
+the plaza is generated terrain. It fell in the gap between "terrain has no grain
+and never will" and "built surfaces have grain", and in the interior of an 11x9
+square there was not one mark.
+
+- `roll` and `paving` are **fields on TileDef** now. How a surface reads is a
+  property of the surface, not a name check in the renderer — that is the whole
+  content-is-data argument, and the name check is exactly how this happened.
+- The plaza gets half the roll grass does (stone at 0.14 photographs as grime,
+  not weather) and flagstone courses through the existing `forEachGrainMark`, at
+  the same `GRAIN.stone` periods a laid floor uses. A square and a floor are cut
+  from the same stone.
+- Water gets **more** roll than any land tile: there the noise reads as depth,
+  and there is no tuft or grain to carry the surface if tone doesn't. The
+  shallows get less, because that blue is the affordance.
+- **The ripple was the per-cell edges rule in a fourth disguise.** Every cell got
+  a glint, all of them on the same row — a dotted line at the tile pitch. Hashed
+  on the world coordinate now, like the grass tuft, on a row the hash picks.
+
+**Every roof in the game was a picture frame,** and nothing had seen it because
+the roof cutaway means every interior screenshot is of a building with its roof
+taken off. `drawRoofCell` read the finish per CELL, which works over a wall and
+has nothing to read over the interior, so those fell back to the default pine: a
+rim in the wall's colour around a pale middle. The whitewashed shop read as a
+courtyard. A roof is ONE material, so it is asked once per ROOM — the commonest
+finish among that room's own walls, through `shellFinish` so a door votes with
+the wall it is set into. In `render/roof.ts`, because it is pure logic over sim
+state and can therefore be tested.
+
+**The museum is now the only masonry building in town** — and until the roof fix
+that would not have been worth doing, since a stone building would have had a
+pine-hearted roof. Every town building was wood, so the one material distinction
+the renderer has was doing nothing at all. `TownBuilding.walls` overrides the
+shell only: `finish` reaches the door leaf and the furniture too, and a single
+field would have stamped a granite door and a granite table. Cobble, not granite
+— granite is byte for byte the plaza's own `#b8b2a6`. **Not** given to the town
+hall as well: two civic buildings in the same stone is a category, not an
+identity.
+
+**Furniture is drawn from char grids** (`content/furnishings.ts` +
+`render/furnishings.ts`) — the build bar's own authoring format at world scale.
+Not the icons themselves, which are 12x12, orthographic, one view, frozen hexes.
+Two things the icon format lacks:
+
+- `c`/`t`/`s` are **questions, not colours**, resolved against the SkinDef at
+  raster time, so one grid serves thirteen finishes. Literals stay literal, which
+  is how brass stays brass in a walnut room.
+- `rise`. `height` is where a piece's top SURFACE sits and the old path had
+  nothing above it, so a chair's back could only be a band painted on the far
+  edge of its own seat. Kept under the half-tile `hides()` fades on.
+
+A grid is exactly the box the fallback draws plus its rise, so the table converts
+**one row at a time** and anything unconverted keeps the box.
+
+#### Still open here
+
+- **Only chair and cushion are authored.** Bed, table, shelf and rug are still
+  boxes; the two town fixtures and the lamp are deliberately staying on their own
+  paths. The system is proven, the rest is authoring — and table and rug are the
+  ones that cost more, because a 2x1 footprint turned east is a different grid
+  SIZE, not a different grid.
+- **The museum roof is dark.** Cobble's shade darkened 10% makes the largest
+  building on screen a heavy grey slab. It is legibly the stone one, which was
+  the goal, but if it reads as gloomy rather than as institutional the answer is
+  a lighter stone, not a lighter roof — the roof is derived on purpose.
+- **`n` was the facing that proved the fallback is not free.** Falling through to
+  `s` puts the backrest at the far edge, which is what a chair facing YOU looks
+  like, so a chair rotated to face away never visibly changed. Any piece with a
+  front needs `n` authored; `mirrorW` genuinely is free.
+
 ### Smaller, still open
 
 - ~~**The rectangular pond**~~ **There is no pond bug — it is the biome
