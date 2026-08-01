@@ -19,7 +19,7 @@ import type { CharId, AuthoredId } from "../content/cast";
 import { CAST, MOLE, GHOST, COSMOS } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 
-export const SCHEMA_VERSION = 28;
+export const SCHEMA_VERSION = 29;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -35,6 +35,12 @@ export const SCHEMA_VERSION = 28;
 // building cannot reach a deployed save any other way: the walls were written
 // into `build` at world creation and nothing revisits them. Unlike v15 it edits
 // rather than re-stamps, so a wall the player has repainted survives.
+//
+// 29 corrects 28's choice of stone and glazes the façade. Kept as a SECOND
+// migration rather than by editing 28, which is the rule: 28 has shipped, so
+// some saves are already sitting on it, and a ladder rung may never be rewritten
+// once anything has climbed it. A v27 save now goes whitewash → cobble → marble
+// and lands where a fresh world starts, which is what the ladder is for.
 //
 // Note what 25 does NOT add: anything about which forms the town hall is
 // offering. A batch of forms is a total function of how long you have lived
@@ -732,6 +738,46 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       }
     }
     return { ...raw, schemaVersion: 28, build };
+  },
+  // v28 → v29: the museum is marble, and it has windows.
+  //
+  // v28 made it the one stone building and picked the wrong stone. The biggest
+  // footprint in town, in the darkest grey the palette had, under a roof that
+  // takes its material from its own walls, with no opening anywhere but the
+  // door: it read as a jail rather than as a gallery. Being distinctive is not
+  // the same as being welcoming.
+  //
+  // Two edits on the same ring, and the same rule as v28 about not clobbering a
+  // repaint — only a wall still reading `cobble` becomes marble. The windows are
+  // stricter still: a cell only becomes a window if it is currently a WALL, so a
+  // player who knocked the façade through and put something else there keeps it.
+  //
+  // Literals again, per the standing note: a migration must never ask the
+  // current tables to describe the past.
+  28: (raw) => {
+    const V28_MUSEUM = { x0: -13, y0: -16, x1: -6, y1: -7 };
+    const V28_WAS = "cobble";
+    const V28_NOW = "marble";
+    // The façade openings, flanking the door at (-10,-7).
+    const V28_WINDOWS = ["-12,-7", "-11,-7", "-9,-7", "-8,-7"];
+    // What a window's own finish paints: the frame, which is joinery and so is
+    // wood. The museum's is whitewash, the same as its door leaf.
+    const V28_SASH = "whitewash";
+
+    const build = { ...((raw.build ?? {}) as Record<string, { id?: string; finish?: string }>) };
+    for (let y = V28_MUSEUM.y0; y <= V28_MUSEUM.y1; y++) {
+      for (let x = V28_MUSEUM.x0; x <= V28_MUSEUM.x1; x++) {
+        const onRing =
+          x === V28_MUSEUM.x0 || x === V28_MUSEUM.x1 || y === V28_MUSEUM.y0 || y === V28_MUSEUM.y1;
+        if (!onRing) continue;
+        const key = `${x},${y}`;
+        const cell = build[key];
+        if (cell?.id !== "wall") continue;
+        if (V28_WINDOWS.includes(key)) build[key] = { id: "window", finish: V28_SASH };
+        else if (cell.finish === V28_WAS) build[key] = { ...cell, finish: V28_NOW };
+      }
+    }
+    return { ...raw, schemaVersion: 29, build };
   },
 };
 

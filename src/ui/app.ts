@@ -135,6 +135,10 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string 
   { id: "floor", icon: "plank", label: "Floor", hint: "Lay a floor. Boards or flagstones — pick the finish below." },
   { id: "wall", icon: "wall", label: "Wall", hint: "Raise a wall. Close a shape and it gets a roof." },
   { id: "door", icon: "door", label: "Door", hint: "Cut a doorway. Put it on a south wall so it shows." },
+  // Beside the door, because it is the other opening and the two are chosen
+  // against each other. The hint says the thing you cannot see from the icon:
+  // a window is still wall, and a row of them is one window.
+  { id: "window", icon: "window", label: "Window", hint: "Still a wall — you just see through it. Side by side, they join up." },
   { id: "bed", icon: "bed", label: "Bed", hint: "A bed makes a room somewhere to live." },
   { id: "table", icon: "table", label: "Table", hint: "Place a table. Press R to turn it." },
   { id: "chair", icon: "chair", label: "Chair", hint: "Place a chair. Press R to turn it." },

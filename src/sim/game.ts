@@ -1386,8 +1386,13 @@ export function buildAt(
   return { changed: true, message: buildFlavour(tool), broke: false };
 }
 
-function buildFlavour(tool: "wall" | "door"): string {
-  return tool === "wall" ? "A wall goes up. It holds." : "A door. Now it's somewhere you go into.";
+function buildFlavour(tool: "wall" | "door" | "window"): string {
+  if (tool === "wall") return "A wall goes up. It holds.";
+  if (tool === "door") return "A door. Now it's somewhere you go into.";
+  // About the object, not about you (§Tone), and about the one thing a window
+  // does that a wall doesn't — which is not "let light in" but "let the room be
+  // seen having light in it".
+  return "A window. The room can be looked into now, which is most of the point.";
 }
 
 /** Deadpan, brief, and about the object rather than about you (§Tone). */

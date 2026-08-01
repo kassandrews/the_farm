@@ -231,6 +231,23 @@ const STEP_INSET = 3; // margin at each end, so it's a step and not a full edge
 /** Wall left standing either side of a doorway cut into a side run's top
  *  surface, so the opening reads as a gap in the wall rather than as the run
  *  simply stopping. */
+/** Glass. Cool and sky-coloured by day: a pane you cannot see through reads as a
+ *  hole, and one you CAN see through would need an interior drawn behind it, so
+ *  what a window shows is the sky it reflects. Warm when a lamp burns in the room
+ *  behind it — the only thing in the game that reports on a room from outside it.
+ *
+ *  Hardcoded rather than taken from the frame's finish, on the lamp's argument
+ *  (see BRASS): glass is its own material, and a finish that recoloured it would
+ *  make "what my windows are made of" a thing to shop for. */
+const GLASS = "#7fa8cc";
+const GLASS_LIT = "#a9cbe4";
+const GLASS_WARM = "#e0a860";
+const GLASS_WARM_LIT = "#f6d79b";
+/** How far a rake of light travels across the glass before it starts again, in
+ *  WORLD px. Coprime with the 16px tile and much longer than it, for the reason
+ *  grain.ts is entirely about — a highlight whose period divides the tile is a
+ *  per-cell mark wearing a diagonal. */
+const GLASS_RAKE = 40;
 const DOOR_JAMB = 3;
 /** How far the roof is pulled back over a side doorway. */
 const DOOR_NOTCH = 4;
@@ -482,6 +499,21 @@ export class Renderer {
   private roofCover = new Map<string, Set<string>>();
   /** Room id → what its roof is MADE of. See `roofFinish`. */
   private roofSkin = new Map<string, SkinId>();
+  /** Room id → does a lamp burn inside it. What makes a window read as somebody
+   *  being home rather than as a hole: the glass goes warm and spills a pool.
+   *
+   *  Per ROOM and not per window, because a window has no light of its own —
+   *  it shows you the light of the room behind it, and every window in that room
+   *  shows the same one. */
+  private roomLit = new Map<string, boolean>();
+  /** How dark the night wash is about to be, read at the top of the frame. */
+  private darkness = 0;
+  /** Lit window panes, for the glow pass — the cell, and the pane's rectangle in
+   *  SCENE px so the glow can repaint the glass itself after the night wash has
+   *  gone over it. Carrying the rect rather than recomputing it keeps the merge
+   *  arithmetic (which cells share a pane) in the one place that does it. */
+  private litWindows: { x: number; y: number; gx: number; gy: number; gw: number; gh: number }[] =
+    [];
   /** Room id → current roof opacity, eased toward 0 while you're inside. Kept
    *  across frames so walking through a door FADES the roof rather than
    *  snapping it, which is the whole feel of the cutaway. */
@@ -656,6 +688,13 @@ export class Renderer {
     // screenshot harness, which pins the page clock to a fixed afternoon. Two
     // clocks for one fact is how a flag ends up up on a box that is empty.
     this.now = now;
+    // Read UP HERE, not down at the night wash where it is used to light the
+    // lamps. Walls are drawn hundreds of lines before that overlay goes on, and
+    // a lit window has to paint its glass warm rather than sky-blue while it is
+    // being drawn — so the value has to exist before the pass that needs it,
+    // not after. Taking it from the same `now` as everything else keeps the one
+    // clock this file argues so hard for.
+    this.darkness = tintAt(now).darkness;
     const phase = skyPhaseAt(now);
     const night = isNight(phase);
     // Which world we are drawing. Below, nearly every pass in this method is a
@@ -693,6 +732,7 @@ export class Renderer {
     this.blockedSteps.length = 0;
     this.litShafts.length = 0;
     this.litLamps.length = 0;
+    this.litWindows.length = 0;
     this.drawTiles(world, t, night, layer);
     if (this.buildView && ground) this.drawBuildGrid();
     if (ground) {
@@ -863,7 +903,18 @@ export class Renderer {
             bias: BIAS_TERRAIN,
             draw: () => this.drawFurniture(ax, ay, piece),
           });
-          if (piece.id === "lamp") this.litLamps.push({ x: tx, y: ty });
+          // A lamp under a SOLID roof lights the room, not the street. Its
+          // pool and its flame are both drawn after the night wash, so an
+          // indoor lamp used to paint a bright spot straight through the roof
+          // over it — which nobody had called a bug while houses were sealed
+          // boxes, and which windows make indefensible: the whole claim a lit
+          // window makes is that the light got out THERE, through the glass.
+          //
+          // Keyed on the roof's own fade, so walking inside lights the lamp up
+          // as the roof comes off. That is the cutaway already doing the work.
+          if (piece.id === "lamp" && !this.underSolidRoof(tx, ty)) {
+            this.litLamps.push({ x: tx, y: ty });
+          }
         }
         // Roofs are derived, not stored, so they come from the room index
         // rather than from the build layer.
@@ -1458,6 +1509,7 @@ export class Renderer {
    *  which is the banding rule (CLAUDE.md) in a new costume, and light that steps
    *  in tile-sized rings reads as a bug in a way a soft falloff never does. */
   private drawLampGlow(strength: number): void {
+    if (strength > 0.02) this.drawWindowGlow(strength);
     if (this.litLamps.length === 0 || strength <= 0.02) return;
     const ctx = this.ctx;
     const prev = ctx.globalCompositeOperation;
@@ -1588,10 +1640,21 @@ export class Renderer {
       this.roofIndex.clear();
       this.roofCover.clear();
       this.roofSkin.clear();
+      this.roomLit.clear();
       for (const room of list) {
         const covered = new Set<string>([...room.interior, ...room.shell]);
         this.roofCover.set(room.id, covered);
         this.roofSkin.set(room.id, roofFinish(world, room));
+        // Interior only: a lamp standing in the wall is not a thing, and a lamp
+        // OUTSIDE a lit window is the street lighting the room, backwards.
+        let lit = false;
+        for (const key of room.interior) {
+          if (world.furniture[key]?.id === "lamp") {
+            lit = true;
+            break;
+          }
+        }
+        this.roomLit.set(room.id, lit);
         for (const key of covered) this.roofIndex.set(key, room);
       }
       // Forget fade state for rooms that no longer exist, so the map doesn't
@@ -2242,6 +2305,10 @@ export class Renderer {
       if (!(mask & CONNECT_S)) ctx.fillRect(px, base - 1, TILE, 1);
     }
 
+    if (cell.id === "window") {
+      this.drawWindow(world, tx, ty, px, top, base, sideOn, leaf, skin);
+    }
+
     if (cell.id === "door") {
       // The frame first, in the DOOR's own finish, then the opening cut out of
       // it. This is what keeps a door's finish meaningful now that the shell
@@ -2279,6 +2346,161 @@ export class Renderer {
     }
 
     ctx.globalAlpha = prev;
+  }
+
+  /** Is this cell under a roof that is currently drawn solid? Used to keep
+   *  indoor light indoors; the threshold is the fade, not a boolean, so the
+   *  answer changes smoothly as the cutaway opens. */
+  private underSolidRoof(tx: number, ty: number): boolean {
+    const room = this.roofIndex.get(tileKey(tx, ty));
+    if (!room) return false;
+    return (this.roofAlpha.get(room.id) ?? 1) > 0.6;
+  }
+
+  /** The light a lit window throws onto the ground outside it.
+   *
+   *  Half a lamp's reach and a third of its strength, on purpose. A window is
+   *  not a source — it is a lamp seen through glass, one wall further away — and
+   *  a room with three windows would otherwise light its whole street brighter
+   *  than the lamp actually doing it. The pool also sits SOUTH of the cell,
+   *  because the face the glass is cut into looks that way and light does not
+   *  come out of the back of a wall.
+   *
+   *  Additive, through the same "lighter" pass the lamps use, so a window under
+   *  a lamp's own pool adds to it rather than washing a pale rectangle over it. */
+  private drawWindowGlow(strength: number): void {
+    if (this.litWindows.length === 0) return;
+    const ctx = this.ctx;
+    const prev = ctx.globalCompositeOperation;
+    ctx.globalCompositeOperation = "lighter";
+    const r = (LAMP_GLOW_R * TILE) / 2;
+    for (const w of this.litWindows) {
+      const cx = this.sceneX(w.x);
+      const cy = this.sceneY(w.y) + TILE / 2;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, `rgba(255,196,110,${(LAMP_GLOW * strength * 0.34).toFixed(3)})`);
+      g.addColorStop(1, "rgba(255,160,80,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+
+      // AND THE GLASS ITSELF, brightened back through the wash it just went
+      // under. This is the lamp's own lesson one object along: the night overlay
+      // falls over the window's art like everything else, so a pane painted warm
+      // during the wall pass came out a muddy tan barely distinguishable from
+      // the planks around it — a lit window that did not read as lit. A source
+      // has to be the brightest thing in its own light, and from outside, the
+      // window IS the source.
+      ctx.fillStyle = `rgba(255,206,132,${(0.5 * strength).toFixed(3)})`;
+      ctx.fillRect(w.gx, w.gy, w.gw, w.gh);
+    }
+    ctx.globalCompositeOperation = prev;
+  }
+
+  /** A window: an opening cut into a wall face, with glass in it.
+   *
+   *  A RUN OF WINDOWS IS ONE WINDOW. This is the per-cell edges rule (CLAUDE.md)
+   *  in its fifth disguise and the reason this method takes its neighbours: three
+   *  adjacent window cells each drawing their own jambs is a row of three little
+   *  windows, which is a barracks. Drawn as one opening with mullions between the
+   *  panes, it is a gallery — and "the museum looks like a jail" is precisely the
+   *  difference between those two pictures.
+   *
+   *  The same answer `content/town.ts` already gives for the museum's display
+   *  cases ("cells in the same ROW render as one continuous case"), which is the
+   *  nearest thing in the codebase to this problem.
+   */
+  private drawWindow(
+    world: WorldState,
+    tx: number,
+    ty: number,
+    px: number,
+    top: number,
+    base: number,
+    sideOn: boolean,
+    leaf: SkinDef,
+    shell: SkinDef,
+  ): void {
+    const ctx = this.ctx;
+    const isWindow = (dx: number, dy: number) =>
+      world.build[tileKey(tx + dx, ty + dy)]?.id === "window";
+
+    // Is the room behind this glass lit, and is it dark enough outside to tell?
+    // Both, or the pane stays sky-coloured: a warm window at noon reads as
+    // orange paint, not as a lamp.
+    const room = this.roofIndex.get(tileKey(tx, ty));
+    const lit = Boolean(room && this.roomLit.get(room.id)) && this.darkness > 0.12;
+
+    if (sideOn) {
+      // A window in a SIDE run has no face to cut into — the same geometry
+      // problem the door has, and it gets a quieter version of the door's
+      // answer. Not a full gap: a doorway in a side wall must be findable
+      // because you have to walk through it, and a window must not be mistaken
+      // for one. A thin bright band inset in the run's top surface says "there
+      // is an opening here" without saying "come in".
+      ctx.fillStyle = lit ? GLASS_WARM : GLASS;
+      ctx.fillRect(px + 3, top + 5, TILE - 6, TILE - 10);
+      ctx.fillStyle = leaf.color;
+      ctx.fillRect(px + 3, top + 4, TILE - 6, 1);
+      ctx.fillRect(px + 3, top + TILE - 5, TILE - 6, 1);
+      return;
+    }
+
+    // The opening runs to the cell edge wherever a window continues, and stops
+    // short of it wherever the run ends. That single pair of booleans is what
+    // merges neighbours into one window.
+    const openW = isWindow(-1, 0);
+    const openE = isWindow(1, 0);
+    const x0 = px + (openW ? 0 : 3);
+    const x1 = px + TILE - (openE ? 0 : 3);
+    const y0 = top + WALL_CAP + 3;
+    const y1 = base - 5;
+
+    // The glass. Cool and sky-coloured by day — a window you cannot see through
+    // reads as a hole, and one you CAN see through would need an interior, so
+    // what it shows instead is the sky it reflects.
+    ctx.fillStyle = lit ? GLASS_WARM : GLASS;
+    ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    if (lit) this.litWindows.push({ x: tx, y: ty, gx: x0, gy: y0, gw: x1 - x0, gh: y1 - y0 });
+    // A rake of brighter glass, stepped off the WORLD column so a long run gets
+    // one continuous diagonal across it rather than the same highlight stamped
+    // in every cell — the band rule again, at pane scale.
+    //
+    // THE PERIOD IS THE WHOLE OF IT. Wrapped against the pane's own HEIGHT the
+    // streak restarted every six pixels and photographed as hatching — glass
+    // that looked scratched rather than shiny. Forty world px is about two and a
+    // half cells, so a two-cell window carries one rake and a long gallery gets
+    // a few, evenly, and neither of them agrees with the tile grid.
+    const paneH = y1 - y0;
+    ctx.fillStyle = lit ? GLASS_WARM_LIT : GLASS_LIT;
+    for (let i = 0; i < x1 - x0; i++) {
+      const wx = tx * TILE + (x0 + i - px);
+      const t = (((wx % GLASS_RAKE) + GLASS_RAKE) % GLASS_RAKE) / GLASS_RAKE;
+      // `paneH - 2` keeps the 2px-tall mark off the sill at the bottom of its
+      // travel; without it the last column of each rake paints over the ledge.
+      ctx.fillRect(x0 + i, y0 + Math.floor(t * (paneH - 2)), 1, 2);
+    }
+
+    // The frame, in the WINDOW's own finish — the same division of labour a door
+    // has, and the reason a wooden sash can sit in a marble wall without
+    // painting the wall pine (see shellFinish).
+    ctx.fillStyle = leaf.color;
+    ctx.fillRect(x0, y0 - 1, x1 - x0, 1); // head
+    ctx.fillStyle = leaf.top;
+    ctx.fillRect(x0, y1, x1 - x0, 2); // the sill, catching the light
+    if (!openW) ctx.fillRect(x0 - 1, y0 - 1, 1, y1 - y0 + 2);
+    if (!openE) ctx.fillRect(x1, y0 - 1, 1, y1 - y0 + 2);
+    // The mullion between two panes. Drawn on the WEST edge only, so a shared
+    // boundary gets exactly one bar rather than two cells each drawing their own
+    // and doubling it into a post.
+    if (openW) {
+      ctx.fillStyle = leaf.shade;
+      ctx.fillRect(px, y0, 1, y1 - y0);
+    }
+    // A drip course under the sill, in the WALL's material — the little ledge
+    // that tells you the opening is set into something thick. Skipped where the
+    // run continues, or it would band along the bottom of a long window.
+    ctx.fillStyle = shell.shade;
+    ctx.fillRect(x0 - (openW ? 0 : 1), y1 + 2, x1 - x0 + (openW ? 0 : 1) + (openE ? 0 : 1), 1);
   }
 
   /** A tree: trunk, layered crown, contact shadow. Two and a half tiles tall,

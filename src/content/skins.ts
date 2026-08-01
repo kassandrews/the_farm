@@ -52,6 +52,7 @@ export type SkinId =
   | "bone"
   | "slate"
   | "cobble"
+  | "marble"
   // Cloth
   | "undyed"
   | "madder";
@@ -197,6 +198,31 @@ export const SKINS: Record<SkinId, SkinDef> = {
     top: "#c0bab0",
     shade: "#aaa498",
     starter: true,
+  },
+  marble: {
+    id: "marble",
+    name: "Marble",
+    applies: "stone",
+    // THE ONLY PALE STONE, and it exists because the stone list stopped at
+    // granite. The museum was given cobble to make it the one masonry building
+    // in town and came out a heavy grey slab — correct about the material and
+    // wrong about the mood, which is a jail rather than a gallery.
+    //
+    // COOL, and that is the whole colour decision. The nearest thing in the
+    // palette is whitewash (`#e8e2d6`), which is a WOOD, and the two are told
+    // apart mostly by their grain — masonry runs in horizontal courses, planking
+    // stands on end. Warming this to match the rest of the town would have made
+    // colour do nothing and left the grain doing all of it. A faint blue cast
+    // costs nothing and separates them at a glance.
+    //
+    // Light enough that the courses read as thin grey lines on near-white rather
+    // than as mortar in a wall, which is what makes a big building of it read as
+    // airy instead of massive.
+    color: "#e4e6e4",
+    top: "#f1f2f0",
+    shade: "#c8ccc9",
+    starter: false,
+    hint: "The Museum is built of it. Winifred knows where the quarry was.",
   },
   slate: {
     id: "slate",

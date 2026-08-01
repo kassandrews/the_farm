@@ -182,7 +182,14 @@ export function showsTop(mask: number): boolean {
 export function shellFinish(world: WorldState, x: number, y: number): SkinId | null {
   const cell = structureAt(world, x, y);
   if (!cell) return null;
-  if (cell.id !== "door") return cell.finish;
+  // Only a WALL is its own shell. Everything else here is a made object set into
+  // a run — a door, a window — and takes the run's material for the masonry
+  // around its opening while its own finish paints just the frame. Written as
+  // "is a wall" rather than "is not a door" so the next such piece inherits the
+  // right answer instead of the old one: when windows arrived, a `!== "door"`
+  // test would have let a wooden sash paint a marble cell pine, which is exactly
+  // the bug this function was written to fix, one structure later.
+  if (cell.id === "wall") return cell.finish;
   for (const [dx, dy] of [
     [-1, 0],
     [1, 0],

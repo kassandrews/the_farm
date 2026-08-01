@@ -937,7 +937,9 @@ describe("v27 → v28: the museum is masonry", () => {
     const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
     const build = { ...(w.build as Record<string, { id: string; finish: string }>) };
     for (const [key, cell] of Object.entries(build)) {
-      if (cell.id === "wall" && cell.finish === "cobble") build[key] = { ...cell, finish: "whitewash" };
+      if (cell.id === "wall" && cell.finish === "marble") build[key] = { ...cell, finish: "whitewash" };
+      // A v27 museum had no windows either — they were plain wall.
+      if (cell.id === "window") build[key] = { id: "wall", finish: "whitewash" };
     }
     for (const [key, finish] of Object.entries(repaint ?? {})) {
       build[key] = { ...build[key], finish };
@@ -953,7 +955,9 @@ describe("v27 → v28: the museum is masonry", () => {
   it("turns the museum's plank walls to stone", () => {
     const migrated = migrateSave(v27Save())!;
     expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(migrated.build[CORNER].finish).toBe("cobble");
+    // Through v28 (cobble) and out the far side of v29 (marble). Asserted at
+    // the END of the ladder, not at 28, because that is where a real save lands.
+    expect(migrated.build[CORNER].finish).toBe("marble");
   });
 
   it("leaves the door leaf alone", () => {
@@ -977,5 +981,63 @@ describe("v27 → v28: the museum is masonry", () => {
     // not an identity — the town hall's south-west corner stays ash.
     const migrated = migrateSave(v27Save())!;
     expect(migrated.build["-3,-9"].finish).toBe("ash");
+  });
+});
+
+describe("v28 → v29: marble, and windows in the façade", () => {
+  /** A v28 save: the museum in cobble, with a solid wall where the windows go. */
+  function v28Save(repaint?: Record<string, { id: string; finish: string }>): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const build = { ...(w.build as Record<string, { id: string; finish: string }>) };
+    for (const [key, cell] of Object.entries(build)) {
+      if (cell.id === "wall" && cell.finish === "marble") build[key] = { ...cell, finish: "cobble" };
+      if (cell.id === "window") build[key] = { id: "wall", finish: "cobble" };
+    }
+    for (const [key, cell] of Object.entries(repaint ?? {})) build[key] = cell;
+    return { ...w, schemaVersion: 28, build };
+  }
+
+  const CORNER = "-13,-16";
+  const PANE = "-12,-7"; // one of the four façade cells
+  const SOLID = "-7,-7"; // south wall, deliberately left unglazed
+
+  it("turns cobble to marble", () => {
+    const migrated = migrateSave(v28Save())!;
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated.build[CORNER].finish).toBe("marble");
+  });
+
+  it("cuts the four façade cells into windows", () => {
+    const migrated = migrateSave(v28Save())!;
+    for (const key of ["-12,-7", "-11,-7", "-9,-7", "-8,-7"]) {
+      expect(migrated.build[key].id, key).toBe("window");
+    }
+  });
+
+  it("leaves the corners and the far end of the south wall solid", () => {
+    // Glazing to the edge reads as a shed with the walls missing. A corner of
+    // plain masonry is what says the building is holding itself up.
+    const migrated = migrateSave(v28Save())!;
+    expect(migrated.build[SOLID].id).toBe("wall");
+    expect(migrated.build[CORNER].id).toBe("wall");
+  });
+
+  it("gives the sash a wood finish, not the wall's stone", () => {
+    // A window's own finish paints the frame; the masonry around the opening
+    // comes from the run via shellFinish. A marble sash would be an arrow slit.
+    const migrated = migrateSave(v28Save())!;
+    expect(migrated.build[PANE].finish).toBe("whitewash");
+  });
+
+  it("does not glaze a cell the player has already changed", () => {
+    // Stricter than v28's repaint check: the cell must still be a WALL. Somebody
+    // who knocked the façade through and put a door there keeps their door.
+    const migrated = migrateSave(v28Save({ [PANE]: { id: "door", finish: "walnut" } }))!;
+    expect(migrated.build[PANE].id).toBe("door");
+  });
+
+  it("does not repaint a wall the player has repainted", () => {
+    const migrated = migrateSave(v28Save({ [CORNER]: { id: "wall", finish: "oxblood" } }))!;
+    expect(migrated.build[CORNER].finish).toBe("oxblood");
   });
 });

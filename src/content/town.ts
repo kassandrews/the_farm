@@ -64,6 +64,19 @@ export interface TownBuilding {
    *  door's SHELL picks the wall's material up from its neighbour at draw time
    *  (`shellFinish`). The town table now says the same thing out loud. */
   walls?: SkinId;
+  /** Cells on the wall ring that are WINDOWS rather than wall.
+   *
+   *  Adjacent entries merge into one window when drawn — sill, head and glass
+   *  run straight through, with a mullion at each cell boundary — so a run here
+   *  is a big window and not a row of little ones. That is the whole difference
+   *  between a gallery and a barracks, and it is the per-cell edges rule
+   *  (CLAUDE.md) wearing its fifth disguise.
+   *
+   *  Put them on a SOUTH wall, like doors, and for the same reason: a run
+   *  travelling north–south is seen edge-on and has no face to cut an opening
+   *  into. A window on a side wall renders as a thin bright band, which is the
+   *  honest amount of nothing there is to show. */
+  windows?: { x: number; y: number }[];
   /** Who the town housed here when you arrived, if anyone. This is the ONLY
    *  authored link between a person and a place, and it is a starting
    *  condition, not a fact: the villager claims this building's bed once, at
@@ -248,16 +261,36 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // now that a roof takes the material of the walls holding it up, one field
     // changes the walls, the courses and the roof together.
     //
-    // Cobble rather than granite, which is the obvious grand choice and is byte
-    // for byte the plaza's own `#b8b2a6` — a museum that matched the paving in
-    // front of it would have been a worse problem than the one being fixed.
-    // Cobble is darker and older, which suits the building in town whose job is
-    // keeping things.
+    // MARBLE, and it was cobble for about an hour. Cobble was right that the
+    // museum should be the stone one and wrong about which stone: the biggest
+    // building in town, in the darkest grey available, under a roof that takes
+    // its material from the walls, came out a windowless slab. It read as a
+    // jail. Being distinctive is not the same as being welcoming, and a museum
+    // has to be both.
+    //
+    // Not granite either, which is the obvious grand choice and is byte for byte
+    // the plaza's own `#b8b2a6` — a museum that matched the paving in front of
+    // it would have been a worse problem than the one being fixed.
     //
     // Deliberately NOT given to the town hall as well. Two civic buildings in
     // the same stone is a category, not an identity, and the museum stops being
     // the one that looks built to last the moment something else looks like it.
-    walls: "cobble",
+    walls: "marble",
+    // Two big windows on the façade, flanking the door. The south wall runs
+    // x -13..-6 with the door at -10 and the corners at either end, so this is
+    // -12/-11 on one side and -9/-8 on the other: each pair merges into one
+    // two-cell window, and -13, -7 and -6 stay solid.
+    //
+    // THE CORNERS ARE LEFT ALONE ON PURPOSE. Glazing right up to the edge of a
+    // building reads as a shed with the walls missing; a corner of plain masonry
+    // is what says the thing is holding itself up. Same instinct as leaving the
+    // sill in: the openings have to be set INTO something.
+    windows: [
+      { x: -12, y: -7 },
+      { x: -11, y: -7 },
+      { x: -9, y: -7 },
+      { x: -8, y: -7 },
+    ],
     furniture: [
       // Corrigal's desk, in the lobby by the door rather than at the far end.
       // Donating is the one act the museum asks of you and walking the length

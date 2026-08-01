@@ -7,6 +7,7 @@ import { findPath } from "./path";
 import { stampBuilding, stampTown, stampFixtures } from "./town";
 import type { StampTarget } from "./town";
 import { TOWN_BUILDINGS, allTownBuildings, footprintCells, isPerimeter, TOWN_FIXTURES } from "../content/town";
+import { structureDef } from "../content/structures";
 import { AUDIENCE } from "../content/festivals";
 import { cellsFor } from "./furniture";
 import { stopTarget } from "./housing";
@@ -83,20 +84,46 @@ describe("the town's own buildings", () => {
     }
   });
 
-  it("place a wall on every perimeter cell except the doorway", () => {
+  it("place a wall on every perimeter cell except the doorway and the windows", () => {
     const w = world();
     for (const b of allTownBuildings()) {
+      const glazed = new Set((b.windows ?? []).map((p) => `${p.x},${p.y}`));
       for (const c of footprintCells(b)) {
         const cell = w.build[tileKey(c.x, c.y)];
         if (!isPerimeter(b, c.x, c.y)) {
           expect(cell).toBeUndefined(); // interiors stay clear
         } else if (c.x === b.door.x && c.y === b.door.y) {
           expect(cell).toMatchObject({ id: "door" });
+        } else if (glazed.has(`${c.x},${c.y}`)) {
+          expect(cell).toMatchObject({ id: "window" });
         } else {
           expect(cell).toMatchObject({ id: "wall" });
         }
       }
     }
+  });
+
+  it("puts every authored window ON the wall ring, and never on the door", () => {
+    // A window listed off the perimeter would be silently dropped by the stamp —
+    // `stampBuilding` only writes ring cells — and would look like the table
+    // being ignored rather than the coordinate being wrong.
+    for (const b of allTownBuildings()) {
+      for (const p of b.windows ?? []) {
+        expect(isPerimeter(b, p.x, p.y), `${b.id} window ${p.x},${p.y}`).toBe(true);
+        expect(p.x === b.door.x && p.y === b.door.y).toBe(false);
+      }
+    }
+  });
+
+  it("a window seals its room and blocks the way in", () => {
+    // The whole difference from a door. If a window ever stopped enclosing, the
+    // museum would silently lose its roof; if it stopped being solid, the
+    // façade would become four more front doors.
+    const w = world();
+    const museum = allTownBuildings().find((b) => b.id === "museum")!;
+    const pane = museum.windows![0];
+    expect(structureDef(w.build[tileKey(pane.x, pane.y)]!.id).encloses).toBe(true);
+    expect(isWalkable(w, pane.x, pane.y)).toBe(false);
   });
 
   it("can be walked into through the door and not through the walls", () => {

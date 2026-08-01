@@ -438,4 +438,4 @@ export type Tool = "dig" | "gather" | "plant" | "water";
 /** A tool BUILD MODE applies, to a tapped tile. `erase` takes back whatever is
  *  there and refunds it — building and un-building must never quietly drain
  *  you. */
-export type BuildTool = "floor" | "wall" | "door" | "erase" | FurnitureId;
+export type BuildTool = "floor" | "wall" | "door" | "window" | "erase" | FurnitureId;

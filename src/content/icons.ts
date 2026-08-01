@@ -172,6 +172,26 @@ const FARM_ICONS = {
     ],
     palette: { k: K, d: WOOD, p: WOOD_DARK, y: "#e0c060" },
   },
+  // Two panes with a mullion between them, because a run of windows joins into
+  // one window and the icon should say so before the hint has to. Deep sill,
+  // which is the one line that reads as "set into something thick" at 12px.
+  window: {
+    rows: [
+      "............",
+      ".kkkkkkkkkk.",
+      ".kdddddddddk",
+      ".kdggkggggdk",
+      ".kdggkggggdk",
+      ".kdggkggggdk",
+      ".kdddkddddek",
+      ".kdggkggggdk",
+      ".kdggkggggdk",
+      ".kdddddddddk",
+      ".kkkkkkkkkk.",
+      "..kkkkkkkk..",
+    ],
+    palette: { k: K, d: WOOD, g: "#7fa8cc", e: "#a9cbe4" },
+  },
   bed: {
     rows: [
       "............",

@@ -76,13 +76,18 @@ export function stampBuilding(t: StampTarget, b: TownBuilding, probe?: TerrainPr
   for (const c of cells) {
     if (!isPerimeter(b, c.x, c.y)) continue;
     const isDoor = c.x === b.door.x && c.y === b.door.y;
+    const isWindow = !isDoor && (b.windows ?? []).some((w) => w.x === c.x && w.y === c.y);
     // The door keeps `finish` while the walls may take `walls`: a leaf is
     // joinery and joinery is wood, even in a stone building. The door's SHELL —
     // the frame around the opening — picks the masonry up from its neighbouring
     // wall at draw time and needs nothing stored here.
+    // A window is joinery like a door: its own finish paints the frame, and the
+    // masonry around the opening comes from the run via `shellFinish`. So both
+    // openings take `finish` and only plain wall takes `walls`.
+    const joinery = isDoor || isWindow;
     t.build[tileKey(c.x, c.y)] = {
-      id: isDoor ? "door" : "wall",
-      finish: isDoor ? b.finish : (b.walls ?? b.finish),
+      id: isDoor ? "door" : isWindow ? "window" : "wall",
+      finish: joinery ? b.finish : (b.walls ?? b.finish),
     };
   }
 

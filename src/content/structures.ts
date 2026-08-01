@@ -22,7 +22,7 @@
 import type { BuildPrice } from "./items";
 import type { SkinClass } from "./skins";
 
-export type StructureId = "wall" | "door";
+export type StructureId = "wall" | "door" | "window";
 
 export interface StructureDef {
   id: StructureId;
@@ -76,6 +76,34 @@ export const STRUCTURES: Record<StructureId, StructureDef> = {
     // finishes reach the wall it sits in; they stop at the door itself.
     finishes: ["wood"],
   },
+  window: {
+    id: "window",
+    name: "Window",
+    // A door's price. A window is the same kind of thing — a made object set
+    // into a wall, not more wall — and pricing it under a door would say it was
+    // the lesser piece of joinery, which it is not.
+    //
+    // NO GLASS MATERIAL, deliberately. DESIGN's rule is that placing a thing IS
+    // making it, with no recipe tree, and every buildable costs N of its own
+    // material. Glass would have been a new inventory line, a new barter row at
+    // the Menace, a save field, and a gate on building windows at all — four
+    // new things to make one existing thing slightly more literal.
+    cost: 4,
+    // SOLID, and this is the whole difference from a door. A door is a hole you
+    // may walk through; a window is a hole you may only look through. It is the
+    // first structure that is solid AND has an opening, which is why the
+    // renderer cannot simply reuse either of the paths it already had.
+    solid: true,
+    // Obviously. A room does not stop being a room because it has a window, and
+    // a house that lost its roof when you glazed it would be a bad joke.
+    encloses: true,
+    // Wood only, on exactly the door's argument: a window is a made object
+    // rather than a surface, and a sash cut from granite is an arrow slit. The
+    // stone finishes reach the wall it is set into and stop at the frame — which
+    // is what `shellFinish` already arranges, and why the museum's marble runs
+    // right up to a wooden window and no further.
+    finishes: ["wood"],
+  },
 };
 
 export function structureDef(id: StructureId): StructureDef {
@@ -85,7 +113,8 @@ export function structureDef(id: StructureId): StructureDef {
 /** Does this structure form part of a wall RUN, for autotiling purposes? A door
  *  does: a doorway in the middle of a wall should leave the wall reading as one
  *  continuous line with a hole in it, not as two walls that happen to be near
- *  each other. */
+ *  each other. So does a window, for the same reason and more strongly — you can
+ *  see straight through the fact that a window is still wall. */
 export function joinsWallRun(id: StructureId): boolean {
-  return id === "wall" || id === "door";
+  return id === "wall" || id === "door" || id === "window";
 }
