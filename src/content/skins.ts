@@ -47,6 +47,9 @@ export type SkinId =
   | "salvage"
   // Stone
   | "granite"
+  | "sage"
+  | "oxblood"
+  | "bone"
   | "slate"
   | "cobble"
   // Cloth
@@ -125,6 +128,55 @@ export const SKINS: Record<SkinId, SkinDef> = {
     shade: "#7b6a53",
     starter: false,
     hint: "The Gremlin has a facility. He would like you to call it a facility.",
+  },
+  // --- Wood, painted ------------------------------------------------------
+  // PAINT IS NOT A NEW AXIS. It was nearly built as one — a `paint` field on
+  // every BuildCell, so you could paint walnut sage — and that is a stored field
+  // on every built tile in every live save, a migration, and a second row of
+  // swatches in the build bar, to express something these five rows express for
+  // nothing. A painted board is a board that is a different colour, which is
+  // exactly what a finish already is (DESIGN §Materials: appearance is a free
+  // property WITHIN a material).
+  //
+  // They read as paint rather than as timber because of their `shade`, not their
+  // hue: a stain follows the grain and a paint sits on top of it, so these carry
+  // a shallower shade than the bare woods do and the grain shows through them
+  // faintly instead of stripily (render/grain.ts inks the seams off `color`).
+  // Whitewash was already this and was the model for it.
+  //
+  // All three come off the heap. Paint is the most junk-shaped thing in the
+  // game — it is half a tin somebody else opened — and the Gremlin's counter
+  // was two rows deep and exhaustible, which made the one counter you can empty
+  // the one with least in it. See content/shop.ts §"The heap".
+  sage: {
+    id: "sage",
+    name: "Sage green",
+    applies: "wood",
+    color: "#8a9c7e",
+    top: "#98a98b",
+    shade: "#748670",
+    starter: false,
+    hint: "The Gremlin has tins. Some of them still have paint in.",
+  },
+  oxblood: {
+    id: "oxblood",
+    name: "Ox-blood",
+    applies: "wood",
+    color: "#8e4f45",
+    top: "#9e5b50",
+    shade: "#78423a",
+    starter: false,
+    hint: "The Gremlin has tins. Some of them still have paint in.",
+  },
+  bone: {
+    id: "bone",
+    name: "Bone",
+    applies: "wood",
+    color: "#ded6c4",
+    top: "#ebe4d4",
+    shade: "#c4bcaa",
+    starter: false,
+    hint: "The Gremlin has tins. Some of them still have paint in.",
   },
   // --- Stone --------------------------------------------------------------
   cobble: {

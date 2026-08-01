@@ -3344,6 +3344,26 @@ nothing). `Renderer.drawGrain` inks them from the skin.
 - **Cloth has no grain**, and the table says so in place. A seam across a rug
   reads as two rugs.
 
+**Paint shipped with it, and paint is three table rows.** Sage green, ox-blood
+and bone, `applies: "wood"`, off the Gremlin's heap.
+
+- **It was nearly built as a second axis** — a `paint` field on every
+  `BuildCell`, so you could paint walnut sage — and that is a stored field on
+  every built tile in every live save, a v24 migration, and a second row of
+  swatches in the build bar, to express something three rows express for nothing.
+  A painted board is a board that is a different colour, which is what a finish
+  already is. **As non-starters they touch no save at all**: `skins.unlocked`
+  gains them the ordinary way, so there is no migration and no schema bump.
+- **They read as paint rather than as stain because of `shade`, not hue.** A
+  stain follows the grain and a paint sits on it, so a paint carries a shallower
+  shade and 8f's seams show through faintly instead of stripily. Whitewash was
+  already this, and was the model.
+- **The heap was the right counter and this was overdue there.** It is the one
+  counter in the game you can EMPTY, and it was two rows deep — so running the
+  Gremlin dry was the fastest thing a player could do to him. Five rows is a
+  pile. A tin is also the most junk-shaped object there is; nobody throws away a
+  full one.
+
 **Knock-on, unlooked-for and good: the town centre fixed itself.** The
 institution buildings were identical tan boxes distinguishable only by footprint.
 They are built out of the same finishes the player uses, so the museum came out

@@ -140,4 +140,27 @@ export const HEAP: HeapRow[] = [
     cost: 12,
     line: "Sorted stone. I sorted it. ... Don't ask by what.",
   },
+  // The three paints. A tin is the most junk-shaped object there is — nobody
+  // throws away a full one — and this counter was two rows deep and the only
+  // one in the game you can EMPTY, which made running him dry the fastest thing
+  // a player could do to him. Five rows is a pile.
+  //
+  // Costed above the two woods and in ascending order, so the pile has a far
+  // end. Still finishes, so §"The heap"'s load-bearing constraint holds and
+  // sim/heap.test.ts's assertion about it does not need relaxing.
+  {
+    gives: "sage",
+    cost: 14,
+    line: "Green. ... Half a tin. The other half is a matter for the archive.",
+  },
+  {
+    gives: "oxblood",
+    cost: 18,
+    line: "Red. It is called ox-blood. ... No ox was consulted.",
+  },
+  {
+    gives: "bone",
+    cost: 24,
+    line: "Off-white. ... It was white. Things happen to white.",
+  },
 ];
