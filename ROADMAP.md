@@ -3330,14 +3330,27 @@ nothing). `Renderer.drawGrain` inks them from the skin.
   photographed as *brickwork* — a 5px course broken every 13 IS a brick bond,
   whatever colour it is. A board is milled from a tree and runs most of a room,
   so wood butts every 47 and flagstone every 9.
-- **A wall's face and a wall's top are grained differently, and the top is
-  turned.** Wood faces are planking stood on end (vertical, no butt joints — one
-  board per storey); stone faces are horizontal masonry courses. A SIDE run shows
-  its top surface, and grained like a floor it came out cross-planked: boards
-  laid across a one-tile-wide strip, butting at both edges of every cell, which
-  photographed as a brick course down each side of the house. **The band rule got
-  back in through the joints rather than through the seams** — worth remembering,
-  because the seams were the thing being guarded.
+- **A wall's face is grained and a wall's TOP IS FLAT.** Wood faces are planking
+  stood on end (vertical, no butt joints — one board per storey); stone faces are
+  horizontal masonry courses. A side run shows its top surface and gets nothing.
+
+  **The rule that came out of it: grain the surfaces the player looks AT, and
+  leave the ones they look ACROSS alone.** The side cap is the one part of a
+  house seen from above, so a texture there is a third one competing with the
+  face and the floor across a single object — and the house stops reading as a
+  structure and starts reading as a mashup of materials meeting. Flat, the cap
+  is what holds the two grained surfaces together. Same instinct as confining the
+  ground bevel to material boundaries: texture where it says something, nowhere
+  it merely fills.
+
+  Two wrong answers preceded it, and the first is the instructive one. Grained
+  ACROSS the run it was cross-planking — 16px boards butting at both edges of
+  every cell, photographing as a brick course down each side of the house.
+  **That is the band rule getting back in through the JOINTS rather than through
+  the seams**, which is a route CLAUDE.md does not name and which the whole of
+  grain.ts was written watching the other door. Turning the boards to run along
+  the run fixed the grid and left the surface still too busy; flat was the
+  answer, and it was a taste call made by looking, not a bug.
 - **Face courses measure from the ground, not from the world row.** Every wall
   stands the same height, so a run's courses line up with its neighbours' instead
   of stepping with the terrain behind it.

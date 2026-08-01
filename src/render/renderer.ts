@@ -2025,22 +2025,25 @@ export class Renderer {
       // the tile bevel used to stripe open ground.
       ctx.fillStyle = skin.top;
       ctx.fillRect(px, top, TILE, TILE);
-      // The top of a side run is a surface you look down on, so it takes a
-      // floor's grain — but turned. A side run is always north–south (that is
-      // what having run-mates fore and aft MEANS), so its boards run north–south
-      // too, along the length of the wall.
+      // AND IT STAYS FLAT — no grain on a side run, deliberately.
       //
-      // Grained the other way it was cross-planking: boards laid across a
-      // one-tile-wide strip, butting at both edges of every cell, which
-      // photographed as a brick course down each side of the house. A wall is
-      // not built out of 16px stubs, and the grid it drew was the band rule
-      // sneaking back in through the joints rather than through the seams.
-      this.drawGrain(px, top, TILE, TILE, skin, {
-        wx: tx * TILE,
-        wy: ty * TILE,
-        seed: world.seed,
-        axis: "v",
-      });
+      // It was grained first, as boards running north–south along the run, and
+      // that is the correct answer to the wrong question. The side cap is the
+      // one part of a house you see from ABOVE, so a texture there is a third
+      // one competing with the face and the floor across a single object, and
+      // what should read as a solid mass of wall reads as a mashup of surfaces.
+      // Flat, it holds the two grained surfaces together and the house reads as
+      // a structure rather than as three materials meeting.
+      //
+      // The general rule, worth having: grain the surfaces the player looks AT,
+      // and leave the ones they look ACROSS alone. This is the same instinct
+      // that keeps the bevel at material boundaries only (see the ground pass) —
+      // texture where it says something, nowhere it merely fills.
+      //
+      // (Grained ACROSS the run, the earlier bug, it was worse than either: 16px
+      // boards butting at every cell edge, which photographed as a brick course
+      // down each side of the house. That was the band rule getting in through
+      // the joints rather than the seams. Both roads led back here.)
     } else {
       ctx.fillStyle = skin.color;
       ctx.fillRect(px, top, TILE, STOREY);
