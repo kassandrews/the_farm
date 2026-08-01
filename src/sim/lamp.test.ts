@@ -61,10 +61,27 @@ describe("ore is an alternative, never a requirement", () => {
         expect(buildCost(def.id, defaultSkin(cls)).ore).toBeUndefined();
       }
     }
-    for (const [id, def] of Object.entries(FURNITURE)) {
-      if (id === "lamp") continue;
+    for (const def of Object.values(FURNITURE)) {
+      // LIGHTS are the exemption, not "the lamp" — the rule was written when
+      // there was one of them and read as a hardcoded id, which is a rule about
+      // a row rather than about a category. A light is the thing ore buys, and
+      // a second one arriving should not have needed this test edited at all.
+      if (def.light) continue;
       for (const cls of def.finishes) {
         expect(buildCost(def.id, defaultSkin(cls)).ore).toBeUndefined();
+      }
+    }
+  });
+
+  it("and every ore cost buys a light — the exemption runs both ways", () => {
+    // The other half of the rule above, which nothing asserted while `lamp` was
+    // spelled out by name. Without this, any row could quietly cost ore by
+    // adding `light: true` to itself, and the invariant would wave it through.
+    for (const def of Object.values(FURNITURE)) {
+      for (const cls of def.finishes) {
+        if (buildCost(def.id, defaultSkin(cls)).ore !== undefined) {
+          expect(def.light, `${def.id} costs ore but is not a light`).toBe(true);
+        }
       }
     }
   });

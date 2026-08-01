@@ -1429,6 +1429,33 @@ function furnitureFlavour(id: FurnitureId, layer: Layer): string {
     // becomes a compile error instead of a silent blank.
     case "noticeboard":
       return "A board, for notices. It is not yours, and it is already up.";
+    // --- The furnishing pass. Same rules: about the object, never about you,
+    // and one idea each. A line that needs two sentences to land usually wanted
+    // to be a different object.
+    case "stool":
+      return "A stool. A chair that gave up on the whole back question.";
+    case "bench":
+      return "A bench. Seats several, or one person several times.";
+    case "sofa":
+      return "A sofa. It has an opinion about how long you meant to stay.";
+    case "coffeetable":
+      return "A coffee table. Too low to eat at, too large for nothing. Correct.";
+    case "desk":
+      return "A desk. Paperwork will find it. Paperwork finds everything.";
+    case "nightstand":
+      return "A nightstand. For whatever has to be within reach of unconscious.";
+    case "cot":
+      return "A cot. It folds, which is the entirety of its argument.";
+    case "wardrobe":
+      return "A wardrobe. Taller than you. So is most furniture, in fairness.";
+    case "chest":
+      return "A chest. Shut. It arrived that way and has not been asked.";
+    case "dresser":
+      return "A dresser. Drawers, stacked, which is the whole of the idea.";
+    case "desklamp":
+      return layer === "under"
+        ? "A desk lamp, in the rock. Small, and enough."
+        : "A desk lamp. One corner of the evening, argued with.";
   }
 }
 

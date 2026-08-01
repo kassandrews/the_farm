@@ -30,6 +30,21 @@ export type FurnitureId =
   | "cushion"
   | "rug"
   | "lamp"
+  // --- The furnishing pass ---------------------------------------------------
+  // Seating, surfaces, storage and light, so a room can be a KIND of room rather
+  // than a room with a bed in it. Grouped the way the build bar groups them,
+  // because that is the only order anybody will ever meet them in.
+  | "stool"
+  | "bench"
+  | "sofa"
+  | "coffeetable"
+  | "desk"
+  | "nightstand"
+  | "cot"
+  | "wardrobe"
+  | "chest"
+  | "dresser"
+  | "desklamp"
   | "noticeboard"
   | "stage";
 
@@ -58,6 +73,14 @@ export interface FurnitureDef {
    *  could plausibly render in either timber or stone. The list buys one code
    *  path in the picker, not an open axis. */
   finishes: SkinClass[];
+  /** Does it burn? A FIELD rather than `id === "lamp"` in the renderer, which is
+   *  what it was until a second light existed. Lit pieces pool warm light at
+   *  night and make the room they stand in read as occupied from outside, which
+   *  is what a window shows (see render/roof.ts and drawWindowGlow).
+   *
+   *  Being a light is a property of the object, so it belongs here — the same
+   *  argument `speed` on a tile makes about how ground feels underfoot. */
+  light?: boolean;
 }
 
 export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
@@ -162,14 +185,171 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   // version of this whole feature (ROADMAP §"Ore's sink").
   lamp: {
     id: "lamp",
-    name: "Lamp",
+    // "Floor lamp" now that a desk one exists. The ID stays `lamp` — it is
+    // written into every save that has ever placed one, and a name is not an id.
+    name: "Floor lamp",
     cost: { ore: 2 },
     w: 1,
     h: 1,
     solid: false,
     height: 18,
     finishes: ["wood"],
+    light: true,
   },
+  // --- Seating ---------------------------------------------------------------
+  // ALL OF IT WALK-THROUGH, which is the chair rule applied consistently rather
+  // than case by case: rooms here are exactly as big as you built them, and a
+  // seat you have to path around turns a 4x3 room into a maze. The sofa is the
+  // one exception and earns it by being 2x1 and waist-high — you do not step
+  // over a sofa, and one is never the only way across a room.
+  stool: {
+    id: "stool",
+    name: "Stool",
+    cost: { wood: 2 },
+    w: 1,
+    h: 1,
+    solid: false,
+    // Lower than a chair (14) because that difference IS the object. A stool is
+    // a chair with the back taken off, and if it stood as tall it would just be
+    // a chair drawn worse.
+    height: 10,
+    finishes: ["wood"],
+  },
+  bench: {
+    id: "bench",
+    name: "Bench",
+    cost: { wood: 3 },
+    w: 2,
+    h: 1,
+    solid: false,
+    height: 11,
+    finishes: ["wood"],
+  },
+  sofa: {
+    id: "sofa",
+    name: "Sofa",
+    // The one row that costs two materials, and the only place the frame and
+    // the covering are priced separately. A sofa is genuinely both, and the
+    // cloth half keeps it behind the Menace's counter where soft goods belong.
+    cost: { wood: 3, cloth: 4 },
+    w: 2,
+    h: 1,
+    solid: true,
+    height: 16,
+    // CLOTH, so the finish picker offers the upholstery. The frame and feet are
+    // drawn in a literal timber and take no finish at all — the lamp's brass
+    // argument (see skins/BRASS): a thing made of two materials wears the one
+    // you would actually choose, and the other stays itself.
+    finishes: ["cloth"],
+  },
+
+  // --- Tables and surfaces ---------------------------------------------------
+  coffeetable: {
+    id: "coffeetable",
+    name: "Coffee table",
+    cost: { wood: 3 },
+    w: 2,
+    h: 1,
+    // Low enough to step over, so it is not solid — same reasoning as the
+    // cushion, applied to the one table that sits in the middle of a floor
+    // rather than against a wall.
+    solid: false,
+    height: 7,
+    finishes: ["wood"],
+  },
+  desk: {
+    id: "desk",
+    name: "Desk",
+    cost: { wood: 5 },
+    w: 2,
+    h: 1,
+    solid: true,
+    height: 12,
+    finishes: ["wood"],
+  },
+  nightstand: {
+    id: "nightstand",
+    name: "Nightstand",
+    cost: { wood: 2 },
+    w: 1,
+    h: 1,
+    solid: false,
+    height: 10,
+    finishes: ["wood"],
+  },
+
+  // --- Sleeping --------------------------------------------------------------
+  cot: {
+    id: "cot",
+    name: "Cot",
+    // Cheap, and cheap is the whole character of it: a bed costs 6 wood, this
+    // costs 2 and 2. It is what you put in a room you have only just walled in.
+    cost: { wood: 2, cloth: 2 },
+    w: 1,
+    h: 2,
+    // NOT SOLID, unlike a bed. A cot is canvas slung on a frame at shin height,
+    // and a spare one shoved against a wall should never be the reason somebody
+    // cannot get to the door.
+    solid: false,
+    height: 6,
+    finishes: ["cloth"],
+  },
+
+  // --- Storage ---------------------------------------------------------------
+  wardrobe: {
+    id: "wardrobe",
+    name: "Wardrobe",
+    cost: { wood: 6 },
+    w: 1,
+    h: 1,
+    solid: true,
+    // The tallest thing you can put in a room, and deliberately two short of
+    // the notice board's 22 so that the tallest object in the game stays a
+    // piece of town furniture standing outdoors.
+    height: 20,
+    finishes: ["wood"],
+  },
+  chest: {
+    id: "chest",
+    name: "Chest",
+    cost: { wood: 3 },
+    w: 1,
+    h: 1,
+    solid: false,
+    height: 9,
+    finishes: ["wood"],
+  },
+  dresser: {
+    id: "dresser",
+    name: "Dresser",
+    cost: { wood: 4 },
+    w: 2,
+    h: 1,
+    solid: true,
+    height: 12,
+    finishes: ["wood"],
+  },
+
+  // --- Light -----------------------------------------------------------------
+  // The lamp above is the FLOOR lamp; this is the one that stands on a desk.
+  desklamp: {
+    id: "desklamp",
+    name: "Desk lamp",
+    // Half the floor lamp's ore, because it is half the lamp. Ore alone is
+    // allowed for a placement cost — see the long note on `lamp`, which is
+    // about barter rows and not about this.
+    cost: { ore: 1 },
+    w: 1,
+    h: 1,
+    solid: false,
+    // Short, and it should be: this is the light you put ON something. Standing
+    // on a desk (12) it reaches 21, which is about where the floor lamp's head
+    // is on its own — two lights at one height, arrived at two ways.
+    height: 9,
+    finishes: ["wood"],
+    light: true,
+  },
+
   // --- Town furniture, which is not for sale -------------------------------
   // The errands board. It is a row here because it is a thing standing in a
   // cell with a footprint, a height and a finish, and that is exactly what this

@@ -912,7 +912,7 @@ export class Renderer {
           //
           // Keyed on the roof's own fade, so walking inside lights the lamp up
           // as the roof comes off. That is the cutaway already doing the work.
-          if (piece.id === "lamp" && !this.underSolidRoof(tx, ty)) {
+          if (furnitureDef(piece.id).light && !this.underSolidRoof(tx, ty)) {
             this.litLamps.push({ x: tx, y: ty });
           }
         }
@@ -1317,7 +1317,7 @@ export class Renderer {
         bias: BIAS_TERRAIN,
         draw: () => this.drawFurniture(ax, ay, piece),
       });
-      if (piece.id === "lamp") this.litLamps.push({ x: tx, y: ty });
+      if (furnitureDef(piece.id).light) this.litLamps.push({ x: tx, y: ty });
     }
   }
 
@@ -1649,7 +1649,8 @@ export class Renderer {
         // OUTSIDE a lit window is the street lighting the room, backwards.
         let lit = false;
         for (const key of room.interior) {
-          if (world.furniture[key]?.id === "lamp") {
+          const piece = world.furniture[key];
+          if (piece && furnitureDef(piece.id).light) {
             lit = true;
             break;
           }
