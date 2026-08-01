@@ -69,6 +69,8 @@ import { scenePalette, seasonSkin, biomeSkin, mixHex, type ScenePalette } from "
 import { zoomLadder } from "./zoom";
 import { forEachGrainMark } from "./grain";
 import { roofFinish } from "./roof";
+import { gridFor, pieceCanvas } from "./furnishings";
+import { FURNITURE_ART } from "../content/furnishings";
 import { BROADLEAF } from "../content/biomes";
 import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
@@ -1771,6 +1773,26 @@ export class Renderer {
     // a column, not a light. So it draws itself and returns.
     if (cell.id === "lamp") {
       this.drawLamp(px, base, pw, skin);
+      ctx.globalAlpha = prev;
+      return;
+    }
+
+    // Art, where a piece has been given some. The grid occupies exactly the box
+    // the fallback below draws — `pw` by `h * TILE + H` — plus its own `rise`,
+    // so the two paths are interchangeable per piece and the table can be
+    // converted one row at a time rather than all at once.
+    const art = FURNITURE_ART[cell.id];
+    if (art) {
+      const { grid, mirror } = gridFor(art, cell.facing);
+      const rise = art.rise ?? 0;
+      // Keyed on the finish as well as the piece and facing: one grid serves
+      // thirteen finishes precisely because `c`/`t`/`s` are resolved at raster
+      // time, which means a walnut chair and a pine one are different pixels.
+      const raster = pieceCanvas(`${cell.id}:${cell.facing}:${cell.finish}`, grid, skin, mirror);
+      // Integer coordinates and no scale factor — the grid is authored at scene
+      // px, so this is a 1:1 blit. Anything else resamples pixel art off the
+      // grid, which CLAUDE.md forbids outright.
+      ctx.drawImage(raster, px, py - H - rise);
       ctx.globalAlpha = prev;
       return;
     }
