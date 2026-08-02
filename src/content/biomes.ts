@@ -619,7 +619,16 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // what it is called, and that is a thing only a page showing all nine at once
     // can tell you.
     motes: {
-      density: 0.22,
+      // HALVED WHEN THE GLITTER ARRIVED, and that is cause and effect rather than
+      // a second opinion about the number. 0.22 was tuned when these faded slowly
+      // over an eleven-second cycle — mostly-lit specks that read as texture, and
+      // a fifth of every cell carrying one was fine for texture. A glint is an
+      // EVENT: the same count that sat quietly now goes off forty times a screen
+      // and the region reads as static. Fewer rather than smaller, because the
+      // spark is already a 1px core and the arms are what make it read as glitter
+      // at all. A THIRD off rather than half: at 0.11 a frame held two glints and
+      // the region went quiet, which is the opposite failure and just as wrong.
+      density: 0.15,
       color: "#d8fff6",
       drift: 20,
       sway: 3,

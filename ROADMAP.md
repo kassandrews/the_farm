@@ -4107,6 +4107,16 @@ halo and the pass order did not.
   its own phase offset per cell so a patch doesn't glitter in unison (that's
   tinsel), and a floor of 0.2 because a flicker reaching zero is the mote
   blinking out, which is a flasher and reads as a firefly.
+- **And then the glimmer's density had to come down with it: 0.22 → 0.15.** Not a
+  second opinion about the number — a consequence of the line above. 0.22 was
+  tuned when these faded slowly over an eleven-second cycle, and mostly-lit
+  specks read as TEXTURE, where a fifth of the cells carrying one is fine. A
+  glint is an EVENT, and the same count that sat quietly went off eight times a
+  frame and read as static. Fewer rather than smaller: the spark is already a 1px
+  core, and its arms are what make it read as glitter at all. Half (0.11) was too
+  far — two glints in a frame and the region goes quiet, which is the opposite
+  failure. **Any change to how a mote BEHAVES re-opens its density**, because
+  what was tuned was never the count on its own.
 - **The flash is short.** The pulse window went 3.4 → 8, about a second and a
   half of every six with most of that arriving and leaving. At 3.4 a firefly was
   lit for half its cycle, which is a lamp with a dimmer on it. This costs
