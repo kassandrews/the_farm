@@ -478,6 +478,9 @@ export class Renderer {
   private buildView = false;
   /** Mirrors the HUD's held ACT tool, for the reticle. */
   private tool: Tool = "dig";
+  /** Whether to draw the player-facing furniture of the view — currently the
+   *  reticle. True in the game, always; see `setChrome`. */
+  private chrome = true;
   /** Doorsteps nothing can stand on, collected during the flat pass while build
    *  mode is open — see drawBlockedSteps. */
   private blockedSteps: { x: number; y: number }[] = [];
@@ -552,6 +555,17 @@ export class Renderer {
       x: (this.sw / TILE) * PAN_LIMIT_SCREENS,
       y: (this.sh / TILE) * PAN_LIMIT_SCREENS,
     };
+  }
+
+  /** Turn off the view's player-facing furniture. FOR THE PREVIEW PAGE ONLY, and
+   *  it defaults on so nothing has to remember to ask for it.
+   *
+   *  Not a display option and not a setting: hiding the reticle in the GAME
+   *  would take away the one thing that says which tile ACT lands on, which
+   *  ROADMAP calls the promise. A contact sheet has no ACT button to promise
+   *  anything about. */
+  setChrome(on: boolean): void {
+    this.chrome = on;
   }
 
   panBy(dx: number, dy: number): void {
@@ -756,7 +770,11 @@ export class Renderer {
     // own lamp is worse than no promise — it's the button pointing somewhere
     // you have to guess about.
     if (under) this.drawDark(world, now);
-    this.drawTargetTile(world);
+    // Off only for the region preview page, which is a still life of GROUND: the
+    // reticle promises what ACT will touch, and a promise made to nobody, in the
+    // middle of nine swatches at once, is just a white box over the thing you
+    // came to look at. Never turned off in the game — see setChrome.
+    if (this.chrome) this.drawTargetTile(world);
     if (ground) {
       this.drawBlockedSteps(t);
       this.drawHomeCandidates(t);

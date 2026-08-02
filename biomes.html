@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Farm — regions</title>
+    <!-- Dev-only contact sheet for src/content/biomes.ts. Not part of the game
+         build; it exists so the regions can be judged as a SET while they are
+         being edited, which is the one thing nine separate screenshots cannot
+         do and half the decisions here are relative. -->
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #efe9dc;
+        --panel: #2b2540;
+        --bg: #1d1930;
+      }
+      body {
+        margin: 0;
+        padding: 16px 20px 40px;
+        background: var(--bg);
+        color: var(--ink);
+        font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      h1 {
+        font-size: 15px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+      p.blurb {
+        margin: 0 0 16px;
+        opacity: 0.6;
+        max-width: 62ch;
+      }
+      #bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        padding: 10px 0 12px;
+        background: linear-gradient(var(--bg) 78%, transparent);
+      }
+      #bar label {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      #bar span {
+        opacity: 0.6;
+      }
+      select,
+      input,
+      button {
+        font: inherit;
+        color: var(--ink);
+        background: var(--panel);
+        border: 1px solid #453c66;
+        border-radius: 6px;
+        padding: 4px 8px;
+      }
+      button {
+        cursor: pointer;
+      }
+      input[type="number"] {
+        width: 8ch;
+      }
+      #sheet {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        align-items: flex-start;
+      }
+      .card {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      /* Pixel art, never resampled: the canvas is upscaled by a whole number and
+         nothing here is allowed to smooth it (CLAUDE.md §Sprite rendering). */
+      canvas.swatch {
+        image-rendering: pixelated;
+        border-radius: 8px;
+        display: block;
+        background: var(--panel);
+      }
+      figcaption {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .note {
+        opacity: 0.45;
+      }
+      .absent canvas.swatch {
+        width: 120px;
+        height: 120px;
+        opacity: 0.25;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>The Farm — regions</h1>
+    <p class="blurb">
+      Every region at once, drawn by the game's own renderer over the game's own
+      generator. Edit <code>src/content/biomes.ts</code> and save; this reloads.
+      A region that isn't on the current seed says so rather than showing you the
+      wrong ground under the right name.
+    </p>
+    <div id="bar"></div>
+    <div id="sheet"></div>
+    <script type="module" src="/src/tools/biome-preview.ts"></script>
+  </body>
+</html>

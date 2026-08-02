@@ -3847,6 +3847,47 @@ the meadow by choice). The far rows are the interesting ones — a kit is the
 cheapest strangeness there is, and it is the one place §Biomes' "stranger, never
 richer" has to be checked mark by mark.
 
+### 8l — A page that shows every region at once — **built**
+
+`/biomes.html` + `src/tools/biome-preview.ts`, the sibling of `/looks.html`, and
+dev-only for the same reason (`npm run build` bundles `index.html` alone —
+checked, `dist/` has one page in it).
+
+**It runs the real `Renderer` over the real generator**, so it cannot drift from
+the game — the same argument `shot-biomes.mts` already makes about not
+reimplementing the field to find a fen. What it adds over that script is the
+thing a screenshot cannot do: **nine regions side by side.** Half the decisions
+in `biomes.ts` are relative — the pines are dark *against the birches*, the scrub
+is parched *against the meadow* — and photographing one region per run could
+never show a relation. Controls for season/hour (one knob, because the renderer
+takes both from `now`), zoom, seed, and a reroll, since a row that only looks
+right on one seed isn't right.
+
+**It paid for itself on the first run**, twice:
+
+- **The three far rows read as ordinary green woods.** True and useless: their
+  tints come UP with distance, so the NEAREST dusk is the faintest one that
+  exists, and the page was sampling exactly that. Far rows are searched from the
+  plateau now (`STRANGE_TO`, 900) and the swatch says `far`. They were working
+  the whole time and nothing could see it.
+- **The meadow swatch was the plaza** — paving, the noticeboard, two villagers —
+  because the town's own region is meadow and the honest nearest instance of it
+  is the town. There is a `TOWN_CLEAR` now.
+
+Also: blossom reported "not on this seed" for something at a known coordinate,
+because it is a disc of radius 9 and the general search asks a region to clear a
+margin wider than that. A landmark is sited rather than rolled, so it is asked
+where it is.
+
+**Two API notes.** `Renderer.snapCamera` already existed and was re-added by
+mistake before the compiler caught it — the game code diff for this page is one
+new method, `setChrome(false)`, which drops the reticle. That is not a display
+option and must not become one: in the game the reticle is the promise about
+which tile ACT lands on, and a contact sheet has no ACT button to promise
+anything about. The player sprite stays, deliberately — it is the page's only
+scale reference and the fastest way to see a region has gone too dark to read a
+resident against.
+
 ### 8i — The town stops floating — **built**
 
 Every standing thing in the world already had a contact shadow. The things that
