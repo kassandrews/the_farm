@@ -305,14 +305,18 @@ const ROCK_SHAPES: Record<
   // A SLAB lies down. Two rows and wide: the flattest thing that still catches a
   // lit row, for country where the ground is sinking rather than breaking.
   slab: { rows: [4, 5, 5] },
-  // A SHARD stands. Narrow, and it barely tapers — which is the whole of the
-  // difference between this and a boulder, and it took a correction: [1,1,2,3,3,4]
-  // widens smoothly from tip to base and renders as a little PYRAMID, which reads
-  // as a heap of rock rather than a piece of it. A near-column reads as something
-  // that GREW out of the ground rather than something that fell onto it, and that
-  // is why this belongs to the far country and must never turn up near town,
-  // where stone is just stone.
-  shard: { rows: [1, 1, 2, 2, 2, 3] },
+  // A SHARD stands, and it took three goes to stop it looking aggressive.
+  // [1,1,2,3,3,4] widens smoothly tip to base and renders as a little PYRAMID —
+  // a heap of rock rather than a piece of it. [1,1,2,2,2,3] fixed the heap and
+  // was POINTY: a narrow tip over a widening body is a triangle however you
+  // step it, and a triangle at this size reads as a spike somebody could fall on.
+  //
+  // Two broad masses instead. No tip at all — the top row is as wide as the
+  // second — so it reads as something that stands rather than something that
+  // stabs, which is all "grew out of the ground" ever needed. Wider than a
+  // column, too: a narrow flat-topped one came out a headstone, which is exactly
+  // the failure CUBE_H already records for the cube.
+  shard: { rows: [2, 2, 2, 3, 3, 3] },
 };
 /** Taller than a rock, shorter than a tree. It should read as built rather than
  *  grown, and as somebody's, without being tall enough to hide behind. Its width
@@ -1033,7 +1037,7 @@ export class Renderer {
             y,
             bias: BIAS_TERRAIN,
             draw: () => {
-              if (id === ROCK) this.drawRock(world, x, y, night);
+              if (id === ROCK) this.drawRock(world, x, y, t, night);
               else if (id === SHRUB) this.drawShrub(world, x, y, night);
               else if (id === HUM_CUBE) this.drawCube(world, x, y, night);
               else if (id === POLE) this.drawPole(world, x, y, night);
@@ -3424,7 +3428,7 @@ export class Renderer {
    *  WHICH SILHOUETTES ARE AVAILABLE is the region's, like its tuft marks and its
    *  crown rows. A region says which of them its ground breaks into; the shapes
    *  themselves live up in ROCK_SHAPES, because a silhouette is a drawing. */
-  private drawRock(world: WorldState, tx: number, ty: number, night: boolean): void {
+  private drawRock(world: WorldState, tx: number, ty: number, t: number, night: boolean): void {
     const ctx = this.ctx;
     /** Apply the region's weathering, or leave the stone alone. */
     const mix = (hex: string, t: Tint | undefined): string => (t ? mixHex(hex, t) : hex);
@@ -3459,10 +3463,10 @@ export class Renderer {
     // carries a TINT rather than a palette: weathering is one decision, and a
     // region that had to restate the lighting to change the colour would drift
     // out of step with the rock everywhere else the first time either moved.
-    const t = stone?.tint;
-    const body = mix(night ? "#5e6068" : "#8d8a84", t);
-    const lit = mix(night ? "#74767e" : "#a8a49c", t);
-    const foot = mix(night ? "#4a4c54" : "#6f6c66", t);
+    const weather = stone?.tint;
+    const body = mix(night ? "#5e6068" : "#8d8a84", weather);
+    const lit = mix(night ? "#74767e" : "#a8a49c", weather);
+    const foot = mix(night ? "#4a4c54" : "#6f6c66", weather);
     const top = base - height;
     ctx.fillStyle = body;
     for (let r = 0; r < rows.length; r++) {
@@ -3477,6 +3481,45 @@ export class Renderer {
     }
     ctx.fillStyle = foot;
     ctx.fillRect(cx - low, base - 2, low * 2, 1); // it sits ON the ground
+
+    // The facet. One pixel at the top of the lit shoulder — the same upper-left
+    // the lit rows already assume, so the glint sits where the light was always
+    // coming from rather than announcing a second light source.
+    //
+    // FLAT, NOT ADDITIVE, and that is the correction that made it champagne. Run
+    // through the additive pass — the way the sparks, the orbs and the fireflies
+    // all go — it lands on a lit row that is already pale and CLIPS: red
+    // saturates first, so the one thing the pixel loses is its hue. It came out
+    // white, which is a source's colour and a gem's, and a gem is a material
+    // claim this does not get to make (it still gathers plain `stone`).
+    //
+    // Additive is for things that EMIT. A caught highlight is simply the colour
+    // of the light that fell on it, so it is painted: the hex arrives intact and
+    // the stone stays a stone with the region's light on it.
+    //
+    // TWO PIXELS DOWN THE FACE, not one on it. A single lit pixel is a POINT —
+    // it reads as a bright speck sitting on the stone, and at this size a speck
+    // is what a firefly is. A highlight on a faceted rock runs along the EDGE
+    // of a face, so a short run down the same face says "this side is turned to
+    // the light" where a dot says "something small is glowing here".
+    //
+    // The lower one is dimmer, which is the whole reason two is better than one
+    // and not merely bigger: a run of equal pixels is a stripe, and the falloff
+    // is what makes it a surface catching light at an angle. Same lesson the
+    // sparkle's arms taught a few passes back.
+    if (stone?.glint) {
+      const g = stone.glint;
+      const breath = g.twinkle
+        ? 0.58 + 0.24 * (0.5 + 0.5 * Math.sin((t / g.twinkle + h * 6.3) * Math.PI * 2))
+        : 0.8;
+      const gx = cx - rows[1] + 1;
+      ctx.fillStyle = g.color;
+      ctx.globalAlpha = prev * breath;
+      ctx.fillRect(gx, top + 1, 1, 1);
+      ctx.globalAlpha = prev * breath * 0.5;
+      ctx.fillRect(gx, top + 2, 1, 1);
+      ctx.globalAlpha = prev;
+    }
 
     // The piece that came off it: body and one lit row, and NO dark foot of its
     // own. At two rows tall a foot line is half the object, and the first version

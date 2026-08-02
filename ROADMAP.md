@@ -4359,6 +4359,35 @@ far-country only and there is a test: near town, stone is just stone.
 shapes. Every other region is a departure from it, and a departure needs
 somewhere to depart from. Also tested.
 
+**A glint on the glimmer's stone, and it is CAUGHT rather than emitted.** That
+line is the one the region has been drawing all along: sparks, orbs and fireflies
+are SOURCES — additive, white-cored, brighter than the palette. A rock is an
+OBJECT. The first cut ran the glint through the same additive pass and it came
+out **white**: over an already-lit row red saturates first, so the one thing the
+pixel loses is its hue. Painted flat instead, the hex arrives intact. It also
+keeps a promise — a stone with a hot white centre is a *gem*, and a gem is a
+material claim this does not get to make, since it still gathers plain `stone`.
+
+**Two pixels down the face, the lower at half alpha.** One lit pixel is a POINT,
+and at this size a point is what a firefly is; a highlight on a faceted rock runs
+along the EDGE of a face. The falloff is doing the work rather than the length —
+two *equal* pixels would be a stripe. Same lesson the sparkle's arms taught.
+
+Affordable here for a reason that would not hold elsewhere: **about one rock a
+screen** in the glimmer, so a mark on every one still lands rarely. On the
+scrub's 17.5 a screen the identical idea would be a field of blinking, which is
+what "competing instead of coalescing" meant on the tuft.
+
+**The shard took three goes to stop looking aggressive.** `[1,1,2,3,3,4]` is a
+pyramid (a heap of rock, not a piece of one); `[1,1,2,2,2,3]` fixed the heap and
+was POINTY — a narrow tip over a widening body is a triangle however you step it,
+and a triangle at this size reads as a spike. `[2,2,2,3,3,3]` is two broad masses
+with no tip at all: it stands rather than stabs, which is all "grew out of the
+ground" ever needed. A narrow flat-topped column was tried and came out a
+**headstone** — the failure `CUBE_H` already records for the cube. A per-row
+`lean` was built and cut: at this size the staircase reads as a block sliding off
+another block, and unused capability is worse than none.
+
 Glimmer mushrooms 0.075 → **0.045**. Pale caps on a floor that quiet were still
 the thing you noticed first, which for a region whose name is about *light* is the
 wrong first thing.

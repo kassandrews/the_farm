@@ -242,7 +242,24 @@ export interface BiomeDef {
    *  a different material. It gathers into `stone` wherever it stands, and a
    *  region that wanted its own mineral would be the yield promise broken exactly
    *  as a puffball mushroom would break it. */
-  stone?: { tint?: Tint; shapes?: StoneShape[] };
+  stone?: {
+    tint?: Tint;
+    shapes?: StoneShape[];
+    /** A facet catching the light: one pixel, on the stone's lit shoulder.
+     *
+     *  IT CATCHES, IT DOES NOT EMIT, and that is the line this region has been
+     *  drawing all along. A spark, an orb and a firefly are SOURCES — additive,
+     *  white-cored, brighter than the palette. A rock is an OBJECT. So this is a
+     *  highlight in the region's own warm colour rather than a light with a hot
+     *  centre, and it breathes at a third of what the orbs do: the stone is not
+     *  doing anything, the air around it is.
+     *
+     *  Affordable here for a reason that would not hold anywhere else in the
+     *  region — there is about ONE ROCK A SCREEN in the glimmer, so a mark on
+     *  every one of them still lands rarely. The same idea on the tuft, at a
+     *  third of all cells, is what "competing instead of coalescing" meant. */
+    glint?: { color: string; twinkle?: number };
+  };
 
   /** The cap colour where this region's mushrooms come up. Optional; the default
    *  red lives in the renderer and is what every other region gets.
@@ -870,7 +887,14 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         // rather than fell, which is the nearest this gets to saying "crystal"
         // without claiming a material it does not give. It still gathers into plain
         // `stone`, exactly as the champagne mushroom still gives a mushroom.
-    stone: { tint: { color: "#2f7078", amount: 0.36 }, shapes: ["shard", "shard", "boulder"] },
+    stone: {
+      tint: { color: "#2f7078", amount: 0.36 },
+      shapes: ["shard", "shard", "boulder"],
+      // The champagne again, for the fourth and last thing in the region — air,
+      // trees, mushrooms, and now the ground. One pixel, so the stone is a stone
+      // that caught the light rather than a stone made of it.
+      glint: { color: "#ffeec4", twinkle: 4.5 },
+    },
     // PUFFY, and lumpy on purpose. Still close-topped — the canopy has to close
     // over you or the floor has nothing to be the brighter thing than — but wider
     // than a tile now and no longer a smooth taper.
