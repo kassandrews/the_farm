@@ -4035,6 +4035,15 @@ gone. Warm yellow in the near regions; **orange in the dusk**, because that
 country's palette is violet and a warm light in it should read as the wrong kind
 of warm — an ember rather than a summer evening.
 
+**A firefly is a SOURCE, and that is what finally made it bright.** Brightening
+the hex did nothing useful — one flat pixel reads as paint however high its
+value. It draws through the same additive pass the lamps and lit windows use: a
+glow in the kit's colour, with an opaque near-white `core` inside it. Both lamp
+rules from 5a apply unchanged and are the reason the numbers are what they are:
+**a source must be the brightest thing in its own light** (hence two inks), and
+**additive light needs to be much dimmer than it feels like it should** (hence a
+0.3 halo rather than the 0.8 that felt right).
+
 **Tuning note worth keeping.** A flasher needs roughly double a fader's density
 for the same read: it is dark for most of its cycle, so instantaneous coverage is
 density × the flash window. At 0.14 the dusk had two specks in a swatch and they

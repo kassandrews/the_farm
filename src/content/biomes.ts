@@ -176,6 +176,15 @@ export interface MoteKit {
   /** Pixels square. 1 unless the thing is meant to be seen individually. */
   size?: number;
 
+  /** The hot centre of a light, drawn opaque inside the additive glow that
+   *  `color` provides. Only meaningful with `flash`.
+   *
+   *  Two inks because a firefly is a SOURCE, and ROADMAP's lamp rule applies:
+   *  "a source must be the brightest thing in its own light." One flat dot,
+   *  however bright the hex, reads as paint; a near-white core sitting in a
+   *  coloured glow reads as something switched on. */
+  core?: string;
+
   /** How it is drawn. `dot` (the default) is a square — a petal, a seed.
    *
    *  `spark` is a four-armed burst whose arms grow and shrink over the cycle,
@@ -291,7 +300,8 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // table.
     motes: {
       density: 0.09,
-      color: "#ffe98c",
+      color: "#ffe23a",
+      core: "#fffce4",
       // BARELY MOVING. A firefly that travels reads as a spark blowing past; one
       // that hangs and swells reads as a firefly. The drift is a tile and a bit
       // over six seconds, which at this size is a slow lift rather than a path.
@@ -329,7 +339,8 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // cannot see far in should not be the one with the most light in it.
     motes: {
       density: 0.06,
-      color: "#ffe98c",
+      color: "#ffe23a",
+      core: "#fffce4",
       drift: 3,
       sway: 1,
       period: 7,
@@ -521,7 +532,8 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       // ORANGE HERE, YELLOW IN THE NEAR REGIONS. The twilight country's whole
       // palette is violet, and a warm light in it should read as the wrong kind
       // of warm — an ember rather than a summer evening.
-      color: "#f2a95e",
+      color: "#ff8c1a",
+      core: "#ffe6bc",
       drift: 2,
       sway: 1,
       period: 6,

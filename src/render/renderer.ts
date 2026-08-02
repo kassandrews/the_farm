@@ -1963,10 +1963,31 @@ export class Renderer {
           ? pulse * pulse * (3 - 2 * pulse)
           : Math.min(1, Math.min(p, 1 - p) * 5);
         if (fade <= 0) continue;
-        ctx.globalAlpha = 0.8 * fade;
-        ctx.fillStyle = kit.color;
         const rx = Math.round(x);
         const ry = Math.round(y);
+        if (kit.flash) {
+          // A LIGHT, NOT A DOT. The same additive pass the lamps and lit windows
+          // use — a glow in the kit's colour, with an opaque near-white core
+          // inside it, because ROADMAP's lamp rule holds here too: a source must
+          // be the brightest thing in its own light. A single flat pixel reads as
+          // paint however bright the hex is.
+          //
+          // The glow is LOW, and that is the other lamp lesson: additive light
+          // needs to be much dimmer than it feels like it should, or three of
+          // them together saturate the ground to flat cream.
+          const prevOp = ctx.globalCompositeOperation;
+          ctx.globalCompositeOperation = "lighter";
+          ctx.globalAlpha = 0.3 * fade;
+          ctx.fillStyle = kit.color;
+          ctx.fillRect(rx - 1, ry - 1, size + 2, size + 2);
+          ctx.globalCompositeOperation = prevOp;
+          ctx.globalAlpha = fade;
+          ctx.fillStyle = kit.core ?? kit.color;
+          ctx.fillRect(rx, ry, size, size);
+          continue;
+        }
+        ctx.globalAlpha = 0.8 * fade;
+        ctx.fillStyle = kit.color;
         if (kit.shape === "spark") {
           // A burst that OPENS AND CLOSES rather than a square that fades. Arms
           // on the four axes only: a diagonal one would be a 1px stair and read
