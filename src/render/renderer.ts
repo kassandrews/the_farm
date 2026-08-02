@@ -305,18 +305,23 @@ const ROCK_SHAPES: Record<
   // A SLAB lies down. Two rows and wide: the flattest thing that still catches a
   // lit row, for country where the ground is sinking rather than breaking.
   slab: { rows: [4, 5, 5] },
-  // A SHARD stands, and it took three goes to stop it looking aggressive.
+  // A SHARD stands, and it took four goes to stop looking aggressive.
   // [1,1,2,3,3,4] widens smoothly tip to base and renders as a little PYRAMID —
   // a heap of rock rather than a piece of it. [1,1,2,2,2,3] fixed the heap and
-  // was POINTY: a narrow tip over a widening body is a triangle however you
-  // step it, and a triangle at this size reads as a spike somebody could fall on.
+  // was POINTY: a narrow tip over a widening body is a triangle however you step
+  // it, and a triangle at this size reads as a spike somebody could fall on.
+  // [2,2,2,3,3,3] removed the tip and stood six rows tall, which is most of a
+  // tree trunk — a monument, and this region already has enough standing in it.
   //
-  // Two broad masses instead. No tip at all — the top row is as wide as the
-  // second — so it reads as something that stands rather than something that
-  // stabs, which is all "grew out of the ground" ever needed. Wider than a
-  // column, too: a narrow flat-topped one came out a headstone, which is exactly
-  // the failure CUBE_H already records for the cube.
-  shard: { rows: [2, 2, 2, 3, 3, 3] },
+  // Four rows, two masses, no tip. LOW is what finally settled it: at this height
+  // it reads as a block of stone the ground pushed up, which is the honest far-
+  // country note, where anything taller starts making a claim about who put it
+  // there. It is still the tallest silhouette of the five and still nothing like
+  // a boulder, which is all the shape ever had to do.
+  //
+  // A narrow flat-topped column was tried too and came out a HEADSTONE, the
+  // failure CUBE_H already records for the cube.
+  shard: { rows: [2, 2, 3, 3] },
 };
 /** Taller than a rock, shorter than a tree. It should read as built rather than
  *  grown, and as somebody's, without being tall enough to hide behind. Its width

@@ -4381,12 +4381,18 @@ what "competing instead of coalescing" meant on the tuft.
 **The shard took three goes to stop looking aggressive.** `[1,1,2,3,3,4]` is a
 pyramid (a heap of rock, not a piece of one); `[1,1,2,2,2,3]` fixed the heap and
 was POINTY — a narrow tip over a widening body is a triangle however you step it,
-and a triangle at this size reads as a spike. `[2,2,2,3,3,3]` is two broad masses
-with no tip at all: it stands rather than stabs, which is all "grew out of the
-ground" ever needed. A narrow flat-topped column was tried and came out a
-**headstone** — the failure `CUBE_H` already records for the cube. A per-row
-`lean` was built and cut: at this size the staircase reads as a block sliding off
-another block, and unused capability is worse than none.
+and a triangle at this size reads as a spike. `[2,2,2,3,3,3]` removed the tip and stood six
+rows tall, which is most of a trunk — a monument, and this region already has
+enough standing in it. `[2,2,3,3]` is where it landed: four rows, two masses, no
+tip. **Low is what settled it.** At that height it reads as a block of stone the
+ground pushed up, where anything taller starts making a claim about who put it
+there — and it is still the tallest of the five silhouettes and still nothing
+like a boulder, which is all the shape ever had to do.
+
+Two more that were tried and cut: a narrow flat-topped column came out a
+**headstone** (the failure `CUBE_H` already records for the cube), and a per-row
+`lean` was built and removed — at this size the staircase reads as a block
+sliding off another block, and unused capability is worse than none.
 
 Glimmer mushrooms 0.075 → **0.045**. Pale caps on a floor that quiet were still
 the thing you noticed first, which for a region whose name is about *light* is the
