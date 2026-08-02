@@ -4286,6 +4286,46 @@ No trunk: at seven rows a stem is a third of the sprite, and it stops reading as
 a bush and starts reading as a very small tree — the one thing it must not be,
 being solid and worth a quarter of the wood.
 
+### 8s — Every region grows its own grass — **built**
+
+`BiomeDef.tufts`, a list naming which marks a region's speckle is drawn from,
+and four marks to draw from: `cluster` (three points round a gap), `sprout` (two
+leaves off a stem), `blades` (two uprights of unequal height), `dot` (one pixel).
+
+**The tuft shapes had been global since they existed** — one table of three, in
+the draw call, tinted per region but identical in form everywhere. Adding a
+fourth made the problem visible rather than causing it: four shapes at equal odds
+read as CHAOS. *Every cell a different plant is not a meadow, it is a seed
+catalogue.* Same fix `crownRows` made for trees — the shape is content, so it
+belongs in the row.
+
+**Which two is most of what a region's floor says about it.** The scrub has no
+sprouts because nothing there is sprouting; the fen has no bare dots because
+there is no patch of it that is merely dirt with a speck on it; the pines have no
+sprouts under a closed conifer canopy; the glimmer has no blades, because it is
+the one region with lights in the air AND in the trees and its ground has the
+least room of anywhere to be busy.
+
+**Weights are repetition, not a second field.** A region lists a shape twice to
+draw it twice as often, so the mix is legible in the row rather than in a table
+of numbers kept in step with it somewhere else.
+
+**The hard region, like a crown and a mushroom cap.** A shape has no in-between,
+so a border dithers WHICH plant grows rather than smearing one into another —
+which is the honest version anyway: two kinds of ground meeting is two kinds of
+thing growing.
+
+Three shape notes worth keeping. The old L was a **corner**, and a corner is the
+one thing that never occurs in a meadow — it read as a chip out of something
+built. The old two-stack-with-a-pixel-beside-it was **one pixel away from a
+sprout** and never resolved into a plant until it got it. And blades of EQUAL
+height read as a gate; unequal reads as grass.
+
+**Known and left alone: the scrub's set is currently theoretical.** Its tuft is
+`#bcb26c` at 0.6 over already-bleached ground, so the marks barely register — the
+"dry blades and grit" idea is right and invisible. Either the scrub is meant to
+read that bare, or its tuft wants contrast before the shapes can do any work.
+
 ### 8l — A page that shows every region at once — **built**
 
 `/biomes.html` + `src/tools/biome-preview.ts`, the sibling of `/looks.html`, and

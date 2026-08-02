@@ -31,6 +31,29 @@
 
 import type { SeasonId } from "./seasons";
 
+/** The marks a region's grass speckle is drawn from — the smallest content in
+ *  the game and the one there is most of.
+ *
+ *  - `cluster` — three points around a gap. A plant seen from above.
+ *  - `sprout`  — two leaves off a stem. The smallest mark that reads as foliage
+ *                (content/nodes.ts found this first, for the pinewood's decor).
+ *  - `blades`  — two uprights of unequal height. Equal ones read as a gate.
+ *  - `dot`     — one pixel. What stops the others being a set.
+ *
+ *  WEIGHTS ARE REPETITION, not a second field. A region lists a shape twice to
+ *  draw it twice as often, so the mix is legible in the row itself rather than
+ *  in a table of numbers somewhere else that has to be kept in step with it.
+ *
+ *  Four shapes everywhere at equal odds was the first cut and it read as CHAOS —
+ *  every cell a different plant is not a meadow, it is a seed catalogue. Two or
+ *  three per region, and which two is most of what a region's floor says about
+ *  it: the scrub has no sprouts because nothing is sprouting, the fen has no bare
+ *  dots because everything there is growing. */
+export type TuftShape = "cluster" | "sprout" | "blades" | "dot";
+
+/** What grass is drawn from where a region hasn't said. Ordinary lawn. */
+export const TUFTS_DEFAULT: TuftShape[] = ["cluster", "cluster", "blades"];
+
 /** A pull toward a colour. `amount` is 0 (leave it alone) to 1 (become this). */
 export interface Tint {
   color: string;
@@ -88,6 +111,10 @@ export interface BiomeDef {
   /** The grass speckle, which wants to travel with the ground or the texture
    *  detaches from the surface it is meant to be texture ON. */
   tuft: Tint;
+  /** Which marks that speckle is drawn from. Optional; TUFTS_DEFAULT otherwise.
+   *  Takes the HARD region like a crown does — a shape cannot be blended, so a
+   *  border dithers WHICH plant grows rather than smearing one into another. */
+  tufts?: TuftShape[];
   /** Tree crowns. The largest colour mass on screen, so this is the one that
    *  actually says which biome you are standing in. */
   crown: Tint;
@@ -365,6 +392,8 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     water: 0,
     ground: { color: "#000000", amount: 0 },
     tuft: { color: "#000000", amount: 0 },
+    // Ordinary lawn, and the town's own. Nothing to say about itself.
+    tufts: ["cluster", "cluster", "blades"],
     crown: { color: "#000000", amount: 0 },
     trunk: { color: "#000000", amount: 0 },
     crownRows: BROADLEAF,
@@ -411,6 +440,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     water: 0,
     ground: { color: "#7d8f5e", amount: 0.35 }, // needle-dulled turf
     tuft: { color: "#6d7f52", amount: 0.4 },
+    // A needle floor. Blades and litter, and NO sprouts: nothing much
+        // germinates under a closed conifer canopy, which is the same fact the
+        // sparse decor density below is already about.
+    tufts: ["blades", "dot", "dot"],
     // The hardest tint in the file, and the reason `amount` exists: at a gentler
     // pull the pines turned orange in October, which conifers do not do. High
     // enough that the season is a whisper here and a shout everywhere else.
@@ -469,6 +502,9 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // the crowns stay a clear step below it.
     ground: { color: "#b4cd82", amount: 0.55 },
     tuft: { color: "#c3d894", amount: 0.5 },
+    // Thin and airy, so the light reaches the floor and things grow in it.
+        // Sprouts and clusters, no bare dots.
+    tufts: ["sprout", "cluster", "cluster"],
     // Gentle, so autumn lands here properly — birches turn, and turning is the
     // best thing they do.
     crown: { color: "#cfe08a", amount: 0.35 },
@@ -533,6 +569,9 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // rather than merely lighter than one.
     ground: { color: "#cbc47e", amount: 0.66 },
     tuft: { color: "#bcb26c", amount: 0.6 },
+    // PARCHED, and the shape list says so more plainly than the tint does:
+        // dry blades and grit, and not one sprout. Nothing here is sprouting.
+    tufts: ["blades", "dot", "dot", "dot"],
     crown: { color: "#8a9152", amount: 0.35 },
     trunk: { color: "#7a6248", amount: 0.3 },
     // Squat and wind-flattened: wide, low, and wider at the shoulders than at the
@@ -566,6 +605,9 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // and the ponds were doing all the work alone. Settled on screen.
     ground: { color: "#5c7247", amount: 0.5 },
     tuft: { color: "#4e6440", amount: 0.5 },
+    // Everything is growing. Sprouts and clusters, and no bare dots at all —
+        // there is no patch of this region that is merely dirt with a speck on it.
+    tufts: ["sprout", "sprout", "cluster"],
     crown: { color: "#2f4a34", amount: 0.45 },
     trunk: { color: "#3d3226", amount: 0.35 },
     // Weeping: broad at the top and narrowing all the way down, so the mass hangs
@@ -616,6 +658,9 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // colour it started.
     ground: { color: "#4a4570", amount: 0.85 },
     tuft: { color: "#7a76a8", amount: 0.8 }, // 0.6 left green flecks on violet ground
+    // Dim. Little grows under that light, and what does is small — mostly
+        // specks, with the occasional plant that managed.
+    tufts: ["dot", "dot", "cluster"],
     crown: { color: "#2a2740", amount: 0.7 },
     trunk: { color: "#3a3348", amount: 0.45 },
     // The meadow's silhouette exactly. Colour carries this one alone, deliberately:
@@ -698,6 +743,13 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // the brightest grass in the game — and finally texture the lights sit on
     // rather than a third thing shining.
     tuft: { color: "#48879a", amount: 0.85 },
+    // CALM, AND DELIBERATELY WITHOUT BLADES. Four shapes at equal odds read as
+        // chaos on this floor in particular — it is the one region with lights in
+        // the air and in the trees, so its ground has the least room of anywhere to
+        // be busy. Sprouts and clusters, both of which are round, with a dot in
+        // five to keep them from marching. The two-blade grass is saved for the
+        // regions above, where an upright mark has nothing to compete with.
+    tufts: ["sprout", "sprout", "cluster", "cluster", "dot"],
     // Spores that GLITTER, going UP — which is the whole difference between here
     // and the blossom rows: one region's air falls and the other's rises.
     //
@@ -824,6 +876,8 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // value and blue enough that the result finally has b above g.
     ground: { color: "#7fa8c4", amount: 0.85 },
     tuft: { color: "#b9d6e8", amount: 0.8 }, // ditto: the speckle is the last thing to stop reading as grass
+    // Bleached and thin, like everything else here.
+    tufts: ["dot", "blades"],
     // The palest crown in the table by a long way. Nearly white with a blue cast,
     // which at this size reads as translucent rather than as snow — snow would be
     // a season, and a season is not something a place gets to have on its own.
@@ -853,6 +907,8 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     water: 0,
     ground: { color: "#b9d180", amount: 0.2 },
     tuft: { color: "#cfe0a0", amount: 0.3 },
+    // Kept ground under an orchard: mown, ordinary, tidy.
+    tufts: ["cluster", "blades"],
     crown: { color: "#e8a8c4", amount: 0.8 }, // pink, and unmistakably so
     trunk: { color: "#5a3a30", amount: 0.25 },
     // Wider than anything else here, and BEAN-shaped rather than round: full

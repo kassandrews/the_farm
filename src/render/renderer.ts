@@ -81,7 +81,14 @@ import { forEachGrainMark } from "./grain";
 import { roofFinish } from "./roof";
 import { gridFor, pieceCanvas } from "./furnishings";
 import { FURNITURE_ART } from "../content/furnishings";
-import { BROADLEAF, type BiomeDef, type DecorKit, type MoteKit, type Tint } from "../content/biomes";
+import {
+  BROADLEAF,
+  TUFTS_DEFAULT,
+  type BiomeDef,
+  type DecorKit,
+  type MoteKit,
+  type Tint,
+} from "../content/biomes";
 import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
 import { lookFor } from "../content/looks";
@@ -1255,18 +1262,51 @@ export class Renderer {
             // clump, a taller blade, a pair. All within the 2px the original
             // occupied, so nothing here can reach a neighbouring cell and start
             // pairing edges across the grid.
-            const shape = Math.floor((h * 311) % 3);
-            if (shape === 0) {
-              ctx.fillRect(gx, gy, 2, 1);
-              ctx.fillRect(gx + 1, gy - 1, 1, 1);
-            } else if (shape === 1) {
-              ctx.fillRect(gx + 1, gy, 1, 1);
-              ctx.fillRect(gx + 1, gy - 1, 1, 1);
-              ctx.fillRect(gx, gy - 2, 1, 1);
-            } else {
+            // WHICH PLANTS GROW HERE, from the region's own list. Four shapes
+            // everywhere at equal odds was chaos — every cell a different plant
+            // is not a meadow, it is a seed catalogue — and the fix is the same
+            // one `crownRows` made for trees: the shape is content, so it belongs
+            // in the row rather than in the draw call.
+            //
+            // The HARD region, like a crown and a mushroom cap. A shape has no
+            // in-between, so a border dithers WHICH plant grows rather than
+            // smearing one into another, which is the honest version anyway: two
+            // kinds of ground meeting is two kinds of thing growing.
+            //
+            // Weights are repetition (see TuftShape), so this is a plain index —
+            // a region wanting a dot one time in five lists four other things.
+            const kinds = regionSkin(world.seed, world.homestead.spot, tx, ty)?.tufts ?? TUFTS_DEFAULT;
+            const kind = kinds[Math.floor((h * 311) % kinds.length)];
+            if (kind === "cluster") {
+              // The cluster. Three points around a gap — the one that most reads
+              // as a plant seen from above rather than a mark on the ground.
               ctx.fillRect(gx, gy, 1, 1);
               ctx.fillRect(gx + 2, gy, 1, 1);
               ctx.fillRect(gx + 1, gy - 1, 1, 1);
+            } else if (kind === "sprout") {
+              // A SPROUT: two leaves off a stem, which content/nodes' pinewood
+              // decor already found to be the smallest mark that reads as
+              // foliage. This was a two-stack with a pixel off to one side —
+              // three pixels that never resolved into a plant — and it is one
+              // pixel away from the thing it was trying to be.
+              ctx.fillRect(gx + 1, gy, 1, 1);
+              ctx.fillRect(gx + 1, gy - 1, 1, 1);
+              ctx.fillRect(gx, gy - 2, 1, 1);
+              ctx.fillRect(gx + 2, gy - 2, 1, 1);
+            } else if (kind === "blades") {
+              // TWO BLADES OF UNEQUAL HEIGHT, replacing the L. The L was a
+              // corner, and a corner is the one thing that never occurs in a
+              // meadow — it read as a chip out of something built. Blades of the
+              // same height would be a gate; different heights are grass.
+              ctx.fillRect(gx, gy, 1, 1);
+              ctx.fillRect(gx, gy - 1, 1, 1);
+              ctx.fillRect(gx + 2, gy, 1, 1);
+            } else {
+              // A single seed, and what stops the others being a set: a texture
+              // whose every mark has structure reads as a pattern, and the dot is
+              // the rest. Regions ration it by how much of their ground is bare —
+              // the fen lists none, the scrub lists three.
+              ctx.fillRect(gx + 1, gy, 1, 1);
             }
           }
 
