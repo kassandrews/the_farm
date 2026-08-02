@@ -630,7 +630,20 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       // at all. A THIRD off rather than half: at 0.11 a frame held two glints and
       // the region went quiet, which is the opposite failure and just as wrong.
       density: 0.15,
-      color: "#d8fff6",
+      // CHAMPAGNE, AND GOLD IS NOT AVAILABLE HERE — which is a fact about the
+      // ground rather than a preference. A spark is additive over teal, and teal
+      // already has green and blue near the top of their range, so a warm ink has
+      // headroom in RED ONLY: the arms come out khaki. Rendered against the real
+      // region at four points from mint to saturated amber, the amber read olive
+      // and slightly swampy, and the frank gold went sage where its arms met the
+      // grass.
+      //
+      // This stays close enough to white that the ground cannot drag it green,
+      // and lands where the warmth was actually wanted — it reads as white gold
+      // more convincingly than the gold did. The lesson generalises to any mote
+      // over a saturated ground: pick the tint by what SURVIVES the additive
+      // pass, not by what the hex looks like in the file.
+      color: "#ffeec4",
       // The hot centre. Same two inks as a firefly and for the same reason — the
       // additive core clips to white while the cool green survives in the arms,
       // so a spark reads as a glint of light rather than a pale cross laid on

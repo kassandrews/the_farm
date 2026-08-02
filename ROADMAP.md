@@ -4143,6 +4143,16 @@ halo and the pass order did not.
   fireflies. Checked on screen rather than argued: dimmed white sparkles on dark
   blue read as a starry field and look right. Revisit if the glimmer ever gets a
   night of its own.
+- **Champagne, because GOLD IS NOT AVAILABLE OVER TEAL.** Worth knowing before
+  the next warm mote on a saturated ground. A spark is additive, and the
+  glimmer's ground already has green and blue near the top of their range, so a
+  warm ink has headroom in RED ONLY and the arms come out khaki. Rendered at four
+  points from mint to saturated amber against the real region: the amber read
+  olive and slightly swampy, and a frank `#ffd98a` gold went sage where its arms
+  met the grass. `#ffeec4` stays close enough to white that the ground cannot
+  drag it green and lands where the warmth was wanted — it reads as white gold
+  more convincingly than the gold did. **Pick a mote's tint by what survives the
+  additive pass, not by what the hex looks like in the file.**
 - **Measure churn and it lies to you.** Frame-to-frame pixel change went UP after
   the calming pass, because sparks that stay open are bigger and drift — the
   metric was counting motion as agitation. A filmstrip at 120ms answered it in
