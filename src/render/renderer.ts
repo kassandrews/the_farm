@@ -3314,10 +3314,15 @@ export class Renderer {
     // row) shrank to nothing along with it. Real undergrowth is widest low down
     // where the branches come out of the ground.
     //
-    // So the taper is spent at the TOP and the base stays broad — five rows at
-    // full width running to a base three half-widths across, against a crown that
-    // is two. It sits.
-    const rows = [1, peak - 3, peak - 1, peak, peak, peak, peak, peak - 1, peak - 2].map((w) =>
+    // So the base stays broad — five rows at full width running to a base three
+    // half-widths across. It sits.
+    //
+    // The taper it saves goes on the top, and the top ROUNDS rather than points.
+    // Spending all of it there gave a 1 as the first row: a three-pixel cap over
+    // an eleven-pixel body, which is a spike, and a bush is not a conifer. Two
+    // shallow steps (5px, then 9px, then full) turn the same saved width into a
+    // dome — the shape closes without ever coming to a point.
+    const rows = [peak - 3, peak - 1, peak, peak, peak, peak, peak, peak - 1, peak - 2].map((w) =>
       Math.max(1, w),
     );
 
