@@ -3847,6 +3847,55 @@ the meadow by choice). The far rows are the interesting ones — a kit is the
 cheapest strangeness there is, and it is the one place §Biomes' "stranger, never
 richer" has to be checked mark by mark.
 
+### 8m — Chimneys, and the first thing in the game that is in the air — **built**
+
+**The old note was about the TITLE SCREEN, and it does not transfer.** §*Title
+screen* deleted a cabin because its chimney floated at the join — a stack rising
+off the slope of a pitched roof has to meet a diagonal, and it didn't. That is a
+fact about a SIDE ELEVATION. Seen from above there is no slope to meet: a roof is
+a flat plane and a chimney is a small raised box standing on it, which is a shape
+this renderer draws a dozen times. Nobody had tried it in the game's own view.
+
+- **Derived, never placed**, like the roof it stands on. `chimneyCell` is a total
+  function of the room, on the room's stable id. Extend the house and it may
+  move, which is correct rather than unfortunate — a building has no identity
+  here (§*A place keeps a history*), rooms are derived from whatever walls are
+  standing, and nothing is stored that could disagree.
+- **A shed gets none.** `CHIMNEY_MIN` is 12 interior cells. A chimney on
+  everything says nothing; the point of one is that somebody lives under it.
+- **Biased to the back third.** On the near edge it stands in front of the roof's
+  own eave and reads as a crate on the gutter. Against the far edge it breaks the
+  silhouette where the roof meets the sky, which is where it is legible — the
+  same argument that moved the door cue to a roof notch.
+- **Drawn from inside `drawRoofCell`, so it inherits the cutaway fade** — walk
+  indoors and the stack goes with the roof it stands on, which it must, or it
+  would be left hanging over an open room.
+
+**IT DOES NOT BREAK THE ONE-STOREY RULE, and the distinction is worth keeping.**
+DESIGN §Structures: *"if you can see something hovering over a ground tile, that
+is a height and it is wrong."* What that forbids is ALTITUDE — a thing at a
+height you could occupy, which is a second storey by implication. The stack sits
+ON the roof plane the way a rock sits on the grass, and the smoke is air rather
+than altitude: there is no height in it anyone could stand on. The test to apply
+to anything else in the air is **"could you imagine standing on it, or walking
+under it?"**
+
+**The smoke is stateless, and that is the rule it had to satisfy.**
+`content/seasons.ts` refuses weather in writing because snow that melted would be
+the first weather in the game with STATE. A puff whose height and drift are a
+sine of the clock stores nothing and accumulates nothing — it is the water
+ripple's trick, one axis up. Keyed off the stack's own position so two chimneys
+never puff in time; synchronised smoke reads as a machine.
+
+**Two bugs, both invisible in the source.** `py` inside `drawRoofCell` is ALREADY
+lifted by `STOREY`, so subtracting it again put the stack a storey above its own
+roof, where the next row north painted over it — indistinguishable from not
+drawing at all. And once it was in the right place it was still invisible: built
+in `skin.color` on a roof drawn in `skin.shade` darkened a tenth, one step apart
+on the same ramp. **A chimney is the same material as its roof, so it can never
+win on hue** — it takes the dark silhouette outline `drawFurniture` already uses,
+and is separated by an edge instead. A magenta test block found both in one shot.
+
 ### 8l — A page that shows every region at once — **built**
 
 `/biomes.html` + `src/tools/biome-preview.ts`, the sibling of `/looks.html`, and

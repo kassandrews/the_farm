@@ -34,6 +34,7 @@ import {
 } from "../content/tiles";
 import type { TileDef } from "../content/tiles";
 import { skinDef } from "../content/skins";
+import { hash2 } from "../sim/rng";
 import type { SkinDef, SkinClass, SkinId } from "../content/skins";
 import {
   decoHash,
@@ -374,6 +375,46 @@ function rockIdOf(id: number): number {
   return id === ORE_VEIN ? BEDROCK : id;
 }
 
+/** The smallest room that gets a chimney, in interior cells.
+ *
+ *  A shed is not a house. Without a floor here every four-tile store cupboard in
+ *  the town grows a stack, and a chimney on everything says nothing — the point
+ *  of one is that somebody lives under it. Twelve is about a room you could put
+ *  a bed and a table in. */
+const CHIMNEY_MIN = 12;
+
+/** Which roof cell carries the stack. DERIVED, like the roof itself.
+ *
+ *  Roofs are derived and never placed (DESIGN §Structures), and a chimney you
+ *  positioned by hand would be the first placed thing on one — so it is a total
+ *  function of the room, on the room's own stable id. Extend the house and it
+ *  may move, which is correct rather than unfortunate: a building has no
+ *  identity in this game (DESIGN §"A place keeps a history"), rooms are derived
+ *  from whatever walls are standing, and nothing is stored that could disagree.
+ *
+ *  BIASED TO THE BACK HALF. A stack on the near edge stands in front of the
+ *  roof's own eave and reads as a crate sitting on the gutter; against the far
+ *  edge it breaks the silhouette where the roof meets the sky, which is where a
+ *  chimney is legible. Same reason the door cue moved to a roof notch.
+ *
+ *  Exported for its test — the choice has to be stable and inside the room, and
+ *  neither is visible in a screenshot of one house. */
+export function chimneyCell(room: Room): string | null {
+  if (room.interior.size < CHIMNEY_MIN) return null;
+  const cells = [...room.interior].map((k) => k.split(",").map(Number));
+  const ys = cells.map((c) => c[1]);
+  const y0 = Math.min(...ys);
+  const y1 = Math.max(...ys);
+  const back = y0 + Math.floor((y1 - y0) / 3);
+  // Sorted so the choice cannot depend on Set iteration order, which is stable
+  // in practice and not something to build a look on.
+  const cand = cells.filter((c) => c[1] <= back).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (!cand.length) return null;
+  const h = hash2(y0, y1, room.id.length * 2654435761) / 4294967296;
+  const pick = cand[Math.min(cand.length - 1, Math.floor(h * cand.length))];
+  return tileKey(pick[0], pick[1]);
+}
+
 /** What the FLAT layer actually paints for a tile id. Resource nodes stand up
  *  in the raised pass, so the flat layer shows the ground they're rooted in —
  *  and neighbour comparisons have to agree, or every tree gets a bevel drawn
@@ -506,6 +547,10 @@ export class Renderer {
   private roomsRef: Room[] | null = null;
   /** Cell key → the room whose roof covers it. */
   private roofIndex = new Map<string, Room>();
+  /** Room id → the roof cell carrying its chimney, or null for rooms too small
+   *  to have one. Derived with the rest of the roof, so it is recomputed only
+   *  when the sim hands back a different rooms array. */
+  private chimney = new Map<string, string | null>();
   /** Room id → every cell it roofs, for drawing edges only where a roof ends. */
   private roofCover = new Map<string, Set<string>>();
   /** Room id → what its roof is MADE of. See `roofFinish`. */
@@ -998,7 +1043,16 @@ export class Renderer {
             this.raised.push({
               y,
               bias: BIAS_ROOF,
-              draw: () => this.drawRoofCell(world, x, y, covered, roofing, alpha),
+              draw: () =>
+                this.drawRoofCell(
+                  world,
+                  x,
+                  y,
+                  covered,
+                  roofing,
+                  alpha,
+                  this.chimney.get(roofRoom.id) === tileKey(x, y),
+                ),
             });
           }
         }
@@ -1774,6 +1828,7 @@ export class Renderer {
           }
         }
         this.roomLit.set(room.id, lit);
+        this.chimney.set(room.id, chimneyCell(room));
         for (const key of covered) this.roofIndex.set(key, room);
       }
       // Forget fade state for rooms that no longer exist, so the map doesn't
@@ -1858,6 +1913,7 @@ export class Renderer {
     covered: Set<string>,
     roofing: SkinId,
     alpha: number,
+    chimney = false,
   ): void {
     const ctx = this.ctx;
     // The whole ROOM's material, decided once by `roofFinish`, not read off the
@@ -1922,7 +1978,97 @@ export class Renderer {
       }
     }
 
+    // `py` is ALREADY lifted by STOREY (see above) — it is the roof plane, not
+    // the ground. Subtracting it again here put the stack a storey above its own
+    // roof, where the next row north painted straight over it and the whole
+    // thing read as not having been drawn at all.
+    if (chimney) this.drawChimney(px, py, skin);
+
     ctx.globalAlpha = prev;
+  }
+
+  /** The stack, and what comes out of it.
+   *
+   *  A BLOCK ON A PLANE, WHICH IS WHY THIS WORKS TOP-DOWN AT ALL. The one
+   *  chimney this project drew before was on the TITLE screen, which is a side
+   *  elevation, and it was deleted for floating at the join — a stack rising off
+   *  the slope of a pitched roof has to meet a diagonal, and it didn't. Seen from
+   *  above there is no slope to meet: the roof is a flat surface and a chimney is
+   *  a small raised box standing on it, which is a shape this renderer already
+   *  draws a dozen times (DESIGN §Structures — the overhang is the height cue).
+   *
+   *  It does NOT break the one-storey rule. Nothing here hovers over a ground
+   *  tile — the stack sits ON the roof plane the way a rock sits on the grass,
+   *  and the smoke is air rather than altitude: there is no height in it you
+   *  could stand on. That distinction is the whole of what §Structures forbids.
+   *
+   *  Drawn from inside `drawRoofCell` so it inherits the cutaway fade for free —
+   *  walk indoors and the chimney goes with the roof it stands on, which it must,
+   *  or a stack would be left hanging over an open room. */
+  private drawChimney(px: number, py: number, skin: SkinDef): void {
+    const ctx = this.ctx;
+    const cx = px + 8;
+    const base = py + 11; // stood a little back from the cell's near edge
+    const w = 6;
+    const h = 9;
+
+    // Its own contact shadow ON THE ROOF, cast down-right like every other one
+    // in the game. Without it the block reads as printed on the surface rather
+    // than standing on it — the same two pixels that stopped the trees floating.
+    ctx.fillStyle = "rgba(0,0,0,0.16)";
+    ctx.fillRect(cx - w / 2 + 1, base - 1, w + 1, 2);
+
+    // A SILHOUETTE FIRST, which is what makes it read at all. The stack was
+    // built in `skin.color` standing on a roof drawn in `skin.shade` darkened a
+    // tenth — one step apart on the same ramp, so the first version was invisible
+    // and looked exactly like nothing being drawn. It was drawing the whole time;
+    // a magenta test block found it in one shot.
+    //
+    // The fix is the convention `drawFurniture` already uses for the same job:
+    // a dark outline under the object, so it is separated from its ground by an
+    // edge rather than by a value it happens to differ from. A chimney is the
+    // same material as its roof, so it can never win on hue.
+    ctx.fillStyle = "rgba(0,0,0,0.38)";
+    ctx.fillRect(cx - w / 2 - 1, base - h - 1, w + 2, h + 1);
+
+    ctx.fillStyle = skin.color;
+    ctx.fillRect(cx - w / 2, base - h, w, h);
+    ctx.fillStyle = skin.shade; // the right cheek, away from the light
+    ctx.fillRect(cx + w / 2 - 1, base - h, 1, h);
+    ctx.fillStyle = skin.top; // the cap, catching the sky
+    ctx.fillRect(cx - w / 2, base - h, w, 2);
+    ctx.fillStyle = "#2f2620"; // the flue, so it is a chimney and not a post
+    ctx.fillRect(cx - w / 2 + 2, base - h, w - 4, 1);
+
+    this.drawSmoke(cx, base - h);
+  }
+
+  /** Smoke: three puffs on one rising cycle, offset by a third each.
+   *
+   *  STATELESS, and that is the rule it has to satisfy rather than a shortcut.
+   *  `content/seasons.ts` refuses weather in writing because snow that melted
+   *  would be the first weather in the game with STATE — terrain is a total
+   *  function of the seed plus stored edits, and anything that accumulates
+   *  breaks that. A puff whose height and drift are a sine of the clock stores
+   *  nothing and accumulates nothing; it is the water ripple's trick, one axis
+   *  up. Nothing here is saved, simulated, or asked about by anything.
+   *
+   *  Keyed off the stack's own position so two chimneys in a row never puff in
+   *  time with each other — synchronised smoke reads as a machine. */
+  private drawSmoke(cx: number, top: number): void {
+    const ctx = this.ctx;
+    const t = (performance.now() - this.t0) / 1000;
+    const phase0 = (cx * 0.37) % 1;
+    for (let i = 0; i < 3; i++) {
+      const p = (t * 0.22 + phase0 + i / 3) % 1;
+      const rise = p * 13;
+      // Widening and fading as it goes, which is most of what says "smoke"
+      // rather than "dots": a puff that keeps its size is a bead on a string.
+      const size = 1 + Math.floor(p * 2.4);
+      const drift = Math.sin(p * 3.1 + phase0 * 6.3) * 2.5;
+      ctx.fillStyle = `rgba(226,222,214,${(0.34 * (1 - p)).toFixed(3)})`;
+      ctx.fillRect(Math.round(cx + drift - size / 2), Math.round(top - 1 - rise), size, size);
+    }
   }
 
   /** A piece of furniture, drawn from its anchor across its whole footprint.
