@@ -4201,6 +4201,17 @@ sixteen-pixel crown is a quarter of the tree. The reference picture answers it b
 ratio — an orb there is about a twelfth of the crown — and a twelfth of this
 crown is under two pixels. A 2×2 with one bright pixel in it.
 
+**AND THEN IT SHOULD NOT HAVE BEEN A SCATTER AT ALL.** `orbs.spots` is now a
+table of `[dx, row]` offsets — one arrangement, used by every tree that has
+orbs. Two generations of distribution came first (independent hashes, which
+clumped; then even angles with jitter inside each slice, which fixed the
+clumping) and both read as unsettled. **The problem was never the distribution:**
+three lights whose relationship changes from tree to tree hand the eye a
+composition to re-solve at every trunk. Pixel art at this size is drawn, not
+generated — same house style as ROCK_SHAPES and the decor `marks`. The hash still
+picks WHICH trees are lit, which is where variety belongs: a mixed stand of trees
+that agree about where light sits.
+
 **Three orbs off one hash is not three hashes.** Multiplying a single value by
 different constants gives numbers that look independent and are not: the first
 cut put three orbs in a neat evenly-spaced row on the same crown, which reads as
@@ -4257,9 +4268,17 @@ region's own crown, scaled and closed at both ends. That is what makes a shrub
 look like it belongs where it grows for free: puffy under the glimmer's puffy
 crowns, and narrow and tiered if the pines ever ask. A second silhouette table
 would let the two drift until a region's bushes were a different species from its
-trees. Two corrections while fitting it: **seven rows at 0.45, not five at 0.6**
-(eleven across by five tall is a barrel lying on the grass — a bush has to be
-about as tall as it is wide), and **proportionally more lit rows than a tree
+trees. Three corrections while fitting it. **Size, twice:** five rows at 0.6 is eleven
+across by five tall, a barrel lying on the grass; seven at 0.45 fixed the
+proportion and undershot, reading as a tuft rather than a bush you walk around.
+Nine rows at 0.6 of the widest crown row is about two thirds of the tree above
+it, and solid enough to be the obstacle it actually is. **And it inherits the
+crown's WIDTH, not its PROFILE** — copying the middle rows verbatim also copies
+their per-row wobble, and the glimmer's crown wobbles on purpose: widen, narrow a
+pixel, widen again reads as lobes at fourteen rows and as a bite out of the side
+at nine. *Detail does not scale down.* One number comes from the region (how wide
+its foliage gets) and the dome is the sprite's own, so a pinewood bush still comes
+out narrower — which is the whole point of inheriting anything. Also **proportionally more lit rows than a tree
 gets** (a crown lights 6 of 14; lighting 2 of 7 left a dark lump that read as a
 HOLE in this region's bright floor).
 

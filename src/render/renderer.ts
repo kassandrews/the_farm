@@ -3212,38 +3212,24 @@ export class Renderer {
       if (oh < orbs.chance) {
         const prevOp = ctx.globalCompositeOperation;
         ctx.globalCompositeOperation = "lighter";
-        // SPACED, NOT SCATTERED — and the two are different problems with
-        // different fixes. Independent hashes solved orbs that were CORRELATED
-        // (three in a neat row off one number); they cannot solve orbs that
-        // CLUMP, because independent draws land on top of each other regularly.
-        // Three uniform picks in a crown put two of them touching about a third
-        // of the time, which reads as one lumpy light and a spare.
+        // PLACED, NOT SCATTERED — see BiomeDef.orbs.spots. Two generations of
+        // this were distributions (independent hashes, then even angles with
+        // jitter) and both read as unsettled, because the problem was never how
+        // evenly they spread: three lights whose relationship changes from tree
+        // to tree give the eye a composition to re-solve at every trunk. The
+        // arrangement is now a drawn thing, the same as ROCK_SHAPES.
         //
-        // So they are placed AROUND the crown at even angles instead: orb `i`
-        // gets its own third of the circle, and the jitter moves it within that
-        // third rather than anywhere. Even spacing is then structural — nothing
-        // to reject or retry — and the whole ring is rotated by the tree's own
-        // hash so no two trees wear the same arrangement.
-        const midRow = (rows.length - 1) / 2;
-        const spin = oh * Math.PI * 2;
-        for (let i = 0; i < orbs.count; i++) {
-          const a = decoHash(tx + i * 37, ty - i * 17, world.seed ^ 0x3b19);
-          const b = decoHash(tx - i * 53, ty + i * 29, world.seed ^ 0x77c1);
-          // Its own slice, plus up to two-thirds of a slice of wobble — enough
-          // that the ring never looks stamped, not enough for two to meet.
-          const ang = spin + ((i + 0.15 + a * 0.7) / orbs.count) * Math.PI * 2;
-          // Out from the middle, never to the rim: an orb ON the edge is half in
-          // the sky, and one at the centre is buried where no light would be.
-          const reach = 0.45 + b * 0.3;
-          const r = Math.round(midRow + Math.sin(ang) * reach * midRow);
-          if (r < 1 || r >= rows.length) continue;
+        // The hash still chooses WHICH trees are lit, which is where the variety
+        // belongs: a mixed stand of trees that agree about where light sits.
+        for (const [dx, row] of orbs.spots) {
+          const r = Math.max(0, Math.min(rows.length - 1, row));
           const half = rows[r];
-          if (half < 2) continue;
-          // Clamped to this ROW's own width, so a slice pointing sideways at a
-          // narrow row lands inside the foliage rather than beside it.
-          const reachX = Math.round(Math.cos(ang) * reach * half);
-          const ox = cx + Math.max(-(half - 1), Math.min(half - 2, reachX));
+          // Clamped to the row it landed on, so a spots table written against one
+          // region's crown cannot hang a bead in the sky if it is reused on a
+          // narrower one.
+          const ox = cx + Math.max(-(half - 1), Math.min(half - 1, dx));
           const oy = top + r;
+          const a = (dx * 0.13 + row * 0.29) % 1;
           // A BEAD. Two goes to get here and both were about SIZE rather than
           // taste. First it reused the spark's geometry — 1px arms on the four
           // axes — which is a sparkle by construction, so the orbs read as
@@ -3303,23 +3289,28 @@ export class Renderer {
     // The widest stretch of the crown, scaled to a bush. The ends of a crown are
     // its taper — a shrub is all middle.
     //
-    // SEVEN ROWS AT 0.45, and both numbers are a correction: five rows at 0.6
-    // came out eleven pixels across and five tall, which is a barrel lying on the
-    // grass rather than a bush. A shrub has to be about as tall as it is wide or
-    // the silhouette has no dome in it, and the only way to buy height from a
-    // half-width table is to take more rows and scale them harder.
-    const mid = Math.floor(src.length / 2);
-    const rows: number[] = [];
-    for (let r = -3; r <= 3; r++) {
-      const w = src[Math.max(0, Math.min(src.length - 1, mid + r))];
-      rows.push(Math.max(1, Math.round(w * 0.45)));
-    }
-    // Both ends pulled in hard, so it closes top and bottom instead of ending on
-    // its widest row — that flat cut is most of what made the first one a slab.
-    rows[0] = 1;
-    rows[1] = Math.max(1, rows[1] - 1);
-    rows[rows.length - 1] = 1;
-    rows[rows.length - 2] = Math.max(1, rows[rows.length - 2] - 1);
+    // IT INHERITS THE CROWN'S WIDTH, NOT THE CROWN'S PROFILE — which is the third
+    // correction and the one that mattered. Copying the middle rows verbatim also
+    // copies their per-row wobble, and the glimmer's crown deliberately wobbles:
+    // widen, narrow a pixel, widen again, which reads as lobes of foliage at
+    // fourteen rows and as a BITE OUT OF THE SIDE at nine. Detail does not scale
+    // down; at this size a one-pixel lump is a defect rather than a lump.
+    //
+    // So one number comes from the region — how wide its foliage gets — and the
+    // dome is this sprite's own. A pinewood bush would still come out narrower
+    // than a glimmer one, which is the whole point of inheriting anything.
+    //
+    // The size took two goes before that: five rows at 0.6 was eleven across by
+    // five tall, a barrel lying on the grass; seven at 0.45 fixed the proportion
+    // and undershot, reading as a tuft rather than a bush you walk around. Nine
+    // rows at 0.6 of the widest crown row is about two thirds of the tree above
+    // it, and solid enough to be the obstacle it actually is.
+    let peak = 0;
+    for (const w of src) peak = Math.max(peak, w);
+    peak = Math.max(3, Math.round(peak * 0.6));
+    const rows = [1, peak - 2, peak - 1, peak, peak, peak, peak - 1, peak - 2, 1].map((w) =>
+      Math.max(1, w),
+    );
 
     const height = rows.length + 1;
     const prev = ctx.globalAlpha;
@@ -3344,7 +3335,7 @@ export class Renderer {
     // a HOLE in the ground rather than a plant on it. Half the height, so the
     // dome is legible as a dome.
     ctx.fillStyle = crownLit;
-    for (let r = 1; r <= Math.min(3, rows.length - 3); r++) {
+    for (let r = 1; r <= Math.min(4, rows.length - 3); r++) {
       ctx.fillRect(cx - rows[r] + 1, top + r, Math.max(1, rows[r] - 1), 1);
     }
     void night; // the palette already carries the hour; the flag is the signature

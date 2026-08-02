@@ -154,8 +154,22 @@ export interface BiomeDef {
     core?: string;
     /** Fraction of this region's trees carrying any. */
     chance: number;
-    /** How many on a tree that has them. */
-    count: number;
+    /** WHERE THEY HANG, as `[dx, row]` from the crown's own top-centre. One
+     *  arrangement, used by every tree that has orbs — authored, not rolled.
+     *
+     *  THIS WAS A SCATTER TWICE AND BOTH TIMES IT LOOKED WRONG. First
+     *  independent hashes, which clumped; then even angles around the crown with
+     *  jitter inside each slice, which fixed the clumping and still read as
+     *  unsettled. The lesson is that the problem was never the DISTRIBUTION —
+     *  random-but-even is still random, and three lights whose relationship
+     *  changes tree to tree give the eye a pattern to keep re-solving.
+     *
+     *  A composition is a thing you place. Same house style as ROCK_SHAPES and
+     *  the decor `marks`: pixel art at this size is drawn, not generated. Trees
+     *  repeating an arrangement reads as a species having a habit, which is what
+     *  they are — while the hash still decides WHICH trees are lit, so a stand is
+     *  mixed without any two lit trees disagreeing about where light sits. */
+    spots: [number, number][];
     /** Seconds per breath. Optional; omitted, an orb is perfectly still.
      *
      *  A FIFTH of the swing the sparks get, and deliberately slower than nothing
@@ -755,7 +769,22 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // The region's own light, snagged in the branches — same champagne as the
     // sparks, and the same two inks. A third of the trees, three apiece: enough
     // that a stand glows and few enough that you notice which ones.
-    orbs: { color: "#ffeec4", core: "#ffffff", chance: 0.34, count: 3, twinkle: 3.5 },
+    orbs: {
+      color: "#ffeec4",
+      core: "#ffffff",
+      chance: 0.34,
+      // A triangle, hung off-centre. Read against `crownRows` above: row 4 is 7
+      // half-widths, row 7 is 8, row 10 is 7, so all three sit well inside the
+      // foliage with room for the bead. Weighted to the LIT side up top and
+      // trailing down to the right, which is the direction the crown's own
+      // highlight already runs — light collecting where light already is.
+      spots: [
+        [-4, 4],
+        [5, 7],
+        [-1, 10],
+      ],
+      twinkle: 3.5,
+    },
     // Undergrowth, and the first region to ask for any. A wood you cannot see far
     // in wants something at knee height — and the puffy crowns above have nothing
     // to rhyme with until there is a smaller version of them on the floor.
