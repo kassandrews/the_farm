@@ -335,17 +335,23 @@ const ROCK_SHAPES: Record<
  *      k  the speck — the fly agaric's white fleck, and ONLY the dome's.
  *         A bell that wore one would be a fly agaric that had grown tall.
  *
- *  THREE STATES, AND THEY ARE AGES RATHER THAN SPECIES. `open` is the one you
- *  picture, `button` has not opened yet, `over` has gone past it and its rim has
- *  lifted. That distinction is the whole licence this table operates under (see
- *  MushroomShape): the same organism at three points in a week gathers into
- *  `mushroom` without argument, where three different fungi would not.
+ *  STATES ARE AGES RATHER THAN SPECIES. `open` is the one you picture, `button`
+ *  has not opened yet. That distinction is the whole licence this table operates
+ *  under (see MushroomShape): the same organism at two points in a week gathers
+ *  into `mushroom` without argument, where two different fungi would not.
+ *
+ *  A THIRD STATE, `over`, WAS BUILT AND PULLED. A cap gone past its best — rim
+ *  lifted, crown sunk. It drew correctly and it read as DECAY, and a wood with
+ *  rotting things in it is a wood going bad rather than a wood growing, which is
+ *  not this game's register. Kept in the history rather than in the table:
+ *  unused art rots faster than anything it depicts, and it is one commit back if
+ *  a reason for it turns up.
  *
  *  Grids are bottom-anchored when drawn, so a taller state stands ON the same
  *  ground rather than hanging above it — the bell is two rows taller than the
  *  dome and has to grow upward from the same soil.
  */
-export type MushroomState = "open" | "button" | "over";
+export type MushroomState = "open" | "button";
 export const MUSHROOM_ART: Record<MushroomShape, Record<MushroomState, string[]>> = {
   // THE ORIGINAL ART, pixel for pixel — this is what every region drew before the
   // table existed, and the meadow's mushroom must not move (the same promise the
@@ -355,15 +361,6 @@ export const MUSHROOM_ART: Record<MushroomShape, Record<MushroomState, string[]>
     // The companion in a two-mushroom cell. Kept small so a patch reads as one
     // kind at two ages rather than as two objects sharing a tile.
     button: ["clc", "ggg", ".s."],
-    // Gone over: the rim has lifted and the crown of the cap has sunk between,
-    // so the top is a shallow dish instead of a dome. `ll.ll` — one pixel of dip.
-    //
-    // IT WAS `l...l` AND THAT DREW HORNS. Two lit pixels with three of air
-    // between them stop belonging to the same object at this size; they read as
-    // two things standing behind the cap rather than as its own rim. One pixel of
-    // gap is a dip, three is a pair of ears — the same distance problem the
-    // birch's notch had, at a fifth of the scale.
-    over: ["ll.ll", "ccccc", "gg.gg", "..s..", "..s.."],
   },
   // Tall, narrow, and notched. The notch is the same move the birch's crown makes
   // — foliage parting around its trunk — at a twentieth of the size: the cap's
@@ -382,11 +379,6 @@ export const MUSHROOM_ART: Record<MushroomShape, Record<MushroomState, string[]>
     open: ["..l..", ".llc.", "llccc", "llccc", "gg.gg", "..s..", "..s.."],
     // Still closed, and an egg on a stick is exactly what a young one is.
     button: [".l.", ".c.", ".s."],
-    // Deliquescing — an inkcap's whole trick is dissolving from the rim down, so
-    // its old age is the one state in this table that is a genuinely different
-    // silhouette rather than a modified one. Four rows against the open one's
-    // seven: it has SETTLED, and the height difference is what says so.
-    over: [".lcc.", "gg.gg", "..s..", "..s.."],
   },
 };
 /** Taller than a rock, shorter than a tree. It should read as built rather than
@@ -1630,11 +1622,7 @@ export class Renderer {
     const mx = px + 3 + Math.floor(h * 4);
     // The BASE line rather than the top one, since the grids stand on it now.
     const my = py + 10 + Math.floor((h * 29) % 4);
-    // Which age the big one is. Its own slice of the hash, and gone-over is the
-    // minority: a patch where half the mushrooms had collapsed would read as a
-    // place going bad rather than as a place growing.
-    const age = (h * 37) % 1;
-    one(mx, my, age > 0.78 ? "over" : "open");
+    one(mx, my, "open");
     // Whether there are two, on a fraction of the hash that isn't the one
     // placing the first — otherwise the crowded cells would all be the ones
     // where the big cap sits high and left.

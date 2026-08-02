@@ -4360,11 +4360,20 @@ a puffball that hands back `puffball` breaks the item-sprawl rule from the other
 looks"). Two families, `cap` and `bell`, and a new one needs the same argument the
 fen made — an *ecological* reason the region cannot grow the other.
 
-**Three states per family, and they are AGES rather than species** — `open`,
-`button`, `over`. That distinction is the whole licence: the same organism at
-three points in a week gathers into `mushroom` without argument, where three
-different fungi would not. Drawn as grids, bottom-anchored, so a seven-row bell
-and a five-row dome stand on the same soil instead of hanging at the same height.
+**States are AGES rather than species** — `open` and `button`. That distinction is
+the whole licence: the same organism at two points in a week gathers into
+`mushroom` without argument, where two different fungi would not. Drawn as grids,
+bottom-anchored, so a seven-row bell and a five-row dome stand on the same soil
+instead of hanging at the same height.
+
+**A third state, `over`, was built and pulled — and the reason is tone, not
+drawing.** A cap past its best, rim lifted and crown sunk. It rendered exactly as
+drawn and it read as **decay**, and a wood with rotting things in it is a wood
+going bad rather than a wood growing. That is not this game's register. It is one
+commit back (`281038b`) if a reason for it ever turns up — a season, or somewhere
+deliberately past its best — and the state machine has room for it. It is not
+sitting unused in the table, because unused art rots faster than anything it
+depicts.
 
 Two things found by looking, both about **distance between pixels**:
 
@@ -4373,9 +4382,10 @@ Two things found by looking, both about **distance between pixels**:
   came out a standing stone. Height is not what makes a tall mushroom — the
   **shoulder** is. The cap has to reach five wide somewhere so the stem has
   something to be thin underneath.
-- The dome's `over` state drew **horns**. Two lit rim pixels with three of air
-  between them stop belonging to the same object at this size. One pixel of gap is
-  a dip; three is a pair of ears. The birch's notch, at a fifth of the scale.
+- The `over` state drew **horns** before it was pulled, and the lesson outlived
+  it. Two lit rim pixels with three of air between them stop belonging to the same
+  object at this size. One pixel of gap is a dip; three is a pair of ears. The
+  birch's notch, at a fifth of the scale.
 
 ### 8r — Shrubs — **built, glimmer only**
 
