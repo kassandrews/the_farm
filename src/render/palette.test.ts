@@ -230,22 +230,27 @@ describe("crown silhouettes", () => {
     expect(tall("scrub")).toBeLessThan(tall("meadow"));
   });
 
-  it("keeps a notched crown one crown, dipping only at the bottom", () => {
-    // A gap in the top rows would saw a tree in half rather than scoop out its
-    // underside, and a gap as wide as its row is a hole where foliage should be.
+  it("keeps every gap in a crown OPEN, so none of them is a hole", () => {
+    // The rule the shapes actually obey (see BiomeDef.crownGaps): a gap has to
+    // reach the outside. Open downward against the trunk it is an underside and
+    // shows bark; open upward from row 0 it is a cleft and shows sky. Enclosed by
+    // foliage top and bottom it is a square of grass punched into the canopy, and
+    // it reads as exactly that — the failure this asserts against.
     for (const b of Object.values(BIOMES)) {
       if (!b.crownGaps) continue;
       expect(b.crownGaps.length, b.id).toBe(b.crownRows.length);
-      // The dip has to reach the trunk to read as a dip around it.
       const overlap = b.crownOverlap ?? 0;
+      // The dip has to reach the trunk to read as a dip around it.
       expect(overlap, b.id).toBeGreaterThan(0);
       const firstTrunkRow = b.crownRows.length - overlap;
+      // How far the cleft runs down from the top: row 0 gapped, and every row
+      // after it that is also gapped. The first solid row closes it.
+      let cleft = 0;
+      while (cleft < b.crownGaps.length && b.crownGaps[cleft] > 0) cleft++;
       b.crownGaps.forEach((g, r) => {
         expect(Number.isInteger(g), b.id).toBe(true);
         expect(g, b.id).toBeLessThan(b.crownRows[r]);
-        // A gap on a row that clears the trunk shows GRASS, not bark — which is
-        // a hole in the foliage rather than the underside of a crown.
-        if (g > 0) expect(r, b.id).toBeGreaterThanOrEqual(firstTrunkRow);
+        if (g > 0) expect(r < cleft || r >= firstTrunkRow, `${b.id} row ${r}`).toBe(true);
       });
     }
   });

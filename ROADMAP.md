@@ -2449,6 +2449,16 @@ alternation that fine is texture, and texture on a silhouette is noise. Filling
 the dents in turns five rows into one shoulder, which is what "puffy" wanted all
 along — it is the step that HOLDS that reads as a clump, not the stepping.
 
+**The crown ended up symmetric, and that opened a second legal place for a gap.**
+The row list reads the same upside down, so the cleft at the top and the notch at
+the bottom are the same shape — the canopy parts the way it gathers. The top gap
+shows sky where the bottom one shows bark, and the rule that makes both fine (and
+that `crownGaps` and its test now state) is that **a gap has to be open to the
+outside**: open downward against the trunk it is an underside, open upward from
+row 0 it is a cleft, enclosed by foliage either way it is a square of grass
+punched into the canopy. The old test forbade any gap above the trunk, which was
+the right guard drawn one case too tight.
+
 **The correction worth remembering: the first crown widened all the way down, and
 came out a narrow white-trunked spruce.** That silhouette is the pinewood's, four
 rows up the same table. A birch is broadest at the shoulders with its lowest

@@ -208,9 +208,21 @@ export interface BiomeDef {
    *  solid rows only, every tree here tapered to a tip on the way down, which
    *  is a shrub's outline and not a cherry's.
    *
-   *  Only meaningful on the rows that OVERLAP the trunk: a gap up top would
-   *  split one crown into two, which is a different tree rather than a dip, and
-   *  a gap one row above the trunk punches a square of grass into the crown. */
+   *  TWO PLACES A GAP IS LEGAL, and the rule behind both is that it must be OPEN
+   *  to the outside. A gap with foliage above it and foliage below it is a square
+   *  of grass punched into the crown — a hole, and it reads as one:
+   *
+   *  - On the rows that OVERLAP the trunk, where the gap is open downward and
+   *    what shows through it is bark. This is the underside of a crown.
+   *  - On a run of rows starting at row 0, where the gap is open upward and what
+   *    shows through it is sky. This is a CLEFT — the parting between two boughs
+   *    at the top of a canopy, and it is why the birch's crown can mirror itself
+   *    top to bottom. It does not split the crown: the first ungapped row below
+   *    joins the two halves.
+   *
+   *  Anywhere else is the hole. `crownGaps` is checked for this in
+   *  render/palette.test.ts, because it is invisible in a swatch and obvious at
+   *  size. */
   crownGaps?: number[];
 
   /** How many of the bottom crown rows sit ALONGSIDE the trunk instead of above
@@ -720,64 +732,47 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Pale, and mostly whole. The lightest stone in the game, which is the same
         // note the trunks and the ground are already singing.
     stone: { tint: { color: "#cfd2c4", amount: 0.22 }, shapes: ["boulder", "broken"] },
-    // NARROW, TALL, AND LUMPY — three separate things, and the shape only works
-    // with all three.
+    // A SYMMETRIC CROWN: sixteen rows across thirteen pixels, and the row list
+    // reads the same upside down. That is deliberate rather than tidy — it makes
+    // the cleft at the top and the notch at the bottom the SAME shape, so the
+    // canopy parts the same way it gathers. Read it against `crownGaps` below;
+    // the two ends are a reflection and neither works alone.
     //
-    // Narrow: 11px across where it used to be 13, on a trunk three pixels
-    // longer. Slenderness is a RATIO, and the old crown was as wide as it was
-    // because every region's was; against the pines it read as "a paler tree",
-    // never as a different build of tree.
+    // Length is height and 16 rows on a 13px trunk is taller than it is wide,
+    // which is the whole brief. At fourteen rows it came out round — a ball on a
+    // stick, the shape a child draws.
     //
-    // Tall: it widens on the way DOWN rather than being a symmetric blob. A
-    // birch's leading shoot is a whip — the top of one comes to a point, and the
-    // mass is in the lower half of the crown.
+    // Width was 11 first and it was one step too thin: a crown that narrow has to
+    // close on its trunk in two or three steps, so the silhouette went full width
+    // to bare bark almost at once. Two more pixels buy the rows to come down
+    // gently, at 4, 4, 4, 3.
     //
-    // Puffy: the widths hold and then step, so the outline swells and settles.
-    // It is the STEP THAT HOLDS that reads as a clump — a crown whose edge is a
-    // clean curve is a balloon, and one that steps in and out every other row is
-    // a comb.
+    // THE SHOULDERS ARE ONE HOLD, NOT A WOBBLE, and that was the correction that
+    // taught the most. They ran 6,5,6,5,6 — three single pixels standing off each
+    // side with a dent between each, every one a legible notch at this size, so
+    // the crown read serrated. It is the per-cell edges band rule (CLAUDE.md) in
+    // a different hat: alternation that fine is texture, and texture on a
+    // silhouette is noise. It is the step that HOLDS that reads as a clump.
     //
-    // THE COMB IS THE MISTAKE THIS ROW HAS ALREADY MADE, and it is the per-cell
-    // edges band rule (CLAUDE.md) wearing a different hat: the widest part ran
-    // 6,5,6,5,6, which is three single pixels standing off each side with a dent
-    // between each. Every one of them is a legible notch at this scale, so the
-    // shoulders read as serrated rather than as leaves. Alternation that fine is
-    // texture, and texture on a silhouette is noise. Fill it in and the same five
-    // rows become one shoulder.
+    // AND IT IS AN EGG, NOT A CONE. The first version widened all the way down —
+    // which is the PINE's silhouette four rows up in this file, and a narrow
+    // white-trunked spruce is what it came out as.
+    crownRows: [3, 4, 4, 4, 5, 5, 6, 6, 6, 6, 5, 5, 4, 4, 4, 3],
+    // BOTH ENDS OF THE CROWN PART, and they part the same amount: one row, one
+    // pixel of gap either side of the middle. The bottom notch is open downward
+    // and shows BARK — the underside where the branches leave the stem, and the
+    // cheapest detail on this tree by a distance, because bark inside leaves is
+    // most of what says "birch" from across a field. The top cleft is open upward
+    // and shows SKY — the parting between two boughs. Same shape, opposite ends,
+    // which is what makes the crown read as one grown thing rather than as a
+    // silhouette with a bite taken out of the bottom.
     //
-    // AND IT IS AN EGG, NOT A CONE, which is the correction that cost a go. The
-    // first version widened all the way down — which is the PINE's silhouette
-    // four rows up in this file, and a narrow white-trunked spruce is what it
-    // came out as. A birch is broadest around its shoulders and its lowest
-    // branches are the SHORTEST; the outline has to come back in at the bottom
-    // or the species reads as a conifer no matter what colour the bark is.
-    //
-    // SIXTEEN ROWS ACROSS THIRTEEN PIXELS, and the count is doing as much as the
-    // widths. At fourteen rows the crown came out round — a ball on a stick,
-    // which is the shape a child draws and the one this was meant to stop being.
-    // Taller than it is wide is the entire brief.
-    //
-    // Eleven pixels wide was the first answer and it was one narrower than the
-    // tree wanted: a crown that thin has to close on the trunk in two or three
-    // steps, and the silhouette went from full width to bare bark almost at once.
-    // Two more pixels buy the rows to come down GENTLY.
-    crownRows: [1, 3, 4, 5, 5, 6, 6, 6, 6, 6, 5, 5, 4, 4, 4, 3],
-    // The bottom four rows come down BESIDE the trunk, and the last three of
-    // them part around it, so a stripe of white bark stands inside the foliage.
-    // It is the cheapest thing on this tree and does the most: bark showing
-    // through leaves is most of what tells you a wood is birch from a distance.
-    //
-    // THE NOTCH IS TWO ROWS DEEP, AND IT WAS SIX, which is a different tree.
-    // Six meant the foliage arrived at the trunk's sides half a crown below
-    // where it crossed over the top of it — so the eye read a long white channel
-    // driven up into the canopy rather than a stem the leaves happen to part
-    // around. A notch says "the branches leave from here" only while it stays
-    // shallow enough to be an underside; any deeper and it is a gap.
-    //
-    // Two is the floor rather than a taste: one row is a dent, and the bark
-    // inside the leaves — the thing the notch is FOR — needs a second pixel to
-    // read as a stripe rather than as a stray light pixel in the canopy.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    // THE NOTCH WAS SIX ROWS DEEP ONCE, which is a different tree: the foliage
+    // arrived at the trunk's sides half a crown below where it crossed over the
+    // top of it, and the eye read a long white channel driven up into the canopy.
+    // A notch says "the branches leave from here" only while it stays shallow
+    // enough to be an underside; any deeper and it is a gap.
+    crownGaps: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     crownOverlap: 4,
     // Thin pale grass and small white flowers — the airy opposite of the pines,
     // and the reason the two rows sit next to each other.
