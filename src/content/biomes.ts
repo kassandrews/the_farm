@@ -216,9 +216,11 @@ export interface BiomeDef {
    *    what shows through it is bark. This is the underside of a crown.
    *  - On a run of rows starting at row 0, where the gap is open upward and what
    *    shows through it is sky. This is a CLEFT — the parting between two boughs
-   *    at the top of a canopy, and it is why the birch's crown can mirror itself
-   *    top to bottom. It does not split the crown: the first ungapped row below
-   *    joins the two halves.
+   *    at the top of a canopy. It does not split the crown: the first ungapped
+   *    row below joins the two halves. NOTHING USES ONE at present; the birch
+   *    tried it, mirroring its own underside, and a divot in the top of a tree
+   *    turns out to read as damage rather than as a parting. Kept legal because
+   *    the rule is about enclosure, not about which end of the crown you are at.
    *
    *  Anywhere else is the hole. `crownGaps` is checked for this in
    *  render/palette.test.ts, because it is invisible in a swatch and obvious at
@@ -732,11 +734,18 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Pale, and mostly whole. The lightest stone in the game, which is the same
         // note the trunks and the ground are already singing.
     stone: { tint: { color: "#cfd2c4", amount: 0.22 }, shapes: ["boulder", "broken"] },
-    // A SYMMETRIC CROWN: sixteen rows across thirteen pixels, and the row list
-    // reads the same upside down. That is deliberate rather than tidy — it makes
-    // the cleft at the top and the notch at the bottom the SAME shape, so the
-    // canopy parts the same way it gathers. Read it against `crownGaps` below;
-    // the two ends are a reflection and neither works alone.
+    // A SYMMETRIC CROWN, CAPPED: thirteen pixels across, and the middle sixteen
+    // rows read the same upside down. That is deliberate rather than tidy — the
+    // outline gathers at the bottom exactly as it closes at the top, which is
+    // what stops a crown looking like a blob that has been trimmed to fit its
+    // trunk. Only the widths mirror; see `crownGaps` for the end that parts.
+    //
+    // The 2 on the front is the cap, and it is the one row that breaks the
+    // reflection on purpose. Mirrored exactly, the crown ended on a flat 7px lid
+    // — a shape that has been cut off rather than one that has finished, because
+    // the bottom's matching row does not have to close (the trunk continues out
+    // of it and the eye reads the tree as carrying on downward). The top has
+    // nothing below it to lean on, so it needs the extra step.
     //
     // Length is height and 16 rows on a 13px trunk is taller than it is wide,
     // which is the whole brief. At fourteen rows it came out round — a ball on a
@@ -757,22 +766,24 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // AND IT IS AN EGG, NOT A CONE. The first version widened all the way down —
     // which is the PINE's silhouette four rows up in this file, and a narrow
     // white-trunked spruce is what it came out as.
-    crownRows: [3, 4, 4, 4, 5, 5, 6, 6, 6, 6, 5, 5, 4, 4, 4, 3],
-    // BOTH ENDS OF THE CROWN PART, and they part the same amount: one row, one
-    // pixel of gap either side of the middle. The bottom notch is open downward
-    // and shows BARK — the underside where the branches leave the stem, and the
-    // cheapest detail on this tree by a distance, because bark inside leaves is
-    // most of what says "birch" from across a field. The top cleft is open upward
-    // and shows SKY — the parting between two boughs. Same shape, opposite ends,
-    // which is what makes the crown read as one grown thing rather than as a
-    // silhouette with a bite taken out of the bottom.
+    crownRows: [2, 3, 4, 4, 4, 5, 5, 6, 6, 6, 6, 5, 5, 4, 4, 4, 3],
+    // ONE ROW, AT THE BOTTOM ONLY. The notch is open downward and shows BARK —
+    // the underside where the branches leave the stem, and the cheapest detail on
+    // this tree by a distance, because bark inside leaves is most of what says
+    // "birch" from across a field.
+    //
+    // The crown's WIDTHS still mirror, and only its widths: the silhouette is the
+    // same shape at both ends, which is what keeps it reading as one grown thing.
+    // Cutting the matching cleft into the top as well was one step too literal —
+    // a dip in the underside of a canopy is a parting, and the same dip in the
+    // TOP of one is damage. Symmetry of outline, not of holes.
     //
     // THE NOTCH WAS SIX ROWS DEEP ONCE, which is a different tree: the foliage
     // arrived at the trunk's sides half a crown below where it crossed over the
     // top of it, and the eye read a long white channel driven up into the canopy.
     // A notch says "the branches leave from here" only while it stays shallow
     // enough to be an underside; any deeper and it is a gap.
-    crownGaps: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     crownOverlap: 4,
     // Thin pale grass and small white flowers — the airy opposite of the pines,
     // and the reason the two rows sit next to each other.

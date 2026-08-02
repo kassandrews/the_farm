@@ -2449,15 +2449,23 @@ alternation that fine is texture, and texture on a silhouette is noise. Filling
 the dents in turns five rows into one shoulder, which is what "puffy" wanted all
 along — it is the step that HOLDS that reads as a clump, not the stepping.
 
-**The crown ended up symmetric, and that opened a second legal place for a gap.**
-The row list reads the same upside down, so the cleft at the top and the notch at
-the bottom are the same shape — the canopy parts the way it gathers. The top gap
-shows sky where the bottom one shows bark, and the rule that makes both fine (and
-that `crownGaps` and its test now state) is that **a gap has to be open to the
-outside**: open downward against the trunk it is an underside, open upward from
+**The crown ended up symmetric — in its WIDTHS, and only those.** The middle
+sixteen rows read the same upside down, so the outline gathers at the bottom
+exactly as it closes at the top, which is what stops a crown looking like a blob
+trimmed to fit its trunk. Mirroring the *notch* onto the top as well was one step
+too literal and got taken out again: a dip in the underside of a canopy is a
+parting, and the same dip in the top of one is damage.
+
+It leaves behind a better rule, though. `crownGaps` used to forbid any gap above
+the trunk outright; the real invariant is that **a gap has to be open to the
+outside** — open downward against the trunk it is an underside, open upward from
 row 0 it is a cleft, enclosed by foliage either way it is a square of grass
-punched into the canopy. The old test forbade any gap above the trunk, which was
-the right guard drawn one case too tight.
+punched into the canopy. The test checks that now. No biome uses a cleft.
+
+Last row on: a **cap** narrower than the mirror calls for. Mirrored exactly, the
+crown ends on a flat 7px lid — cut off rather than finished. The bottom's matching
+row gets away with it because the trunk continues out of it and the eye reads the
+tree as carrying on downward; the top has nothing below it to lean on.
 
 **The correction worth remembering: the first crown widened all the way down, and
 came out a narrow white-trunked spruce.** That silhouette is the pinewood's, four
