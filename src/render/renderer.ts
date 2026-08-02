@@ -1924,7 +1924,13 @@ export class Renderer {
         if (!kit || h > kit.density) continue;
         // Read off the same darkness the lamps light by, so "after dark" means
         // one thing in this game rather than two.
-        if (kit.night && this.darkness < 0.3) continue;
+        //
+        // THE THRESHOLD HAS TO CLEAR THE DUSK HOUR, and the first one didn't.
+        // `tintAt` gives day 0, dusk 0.18, night 0.5, dawn 0.34 — so a cut at 0.3
+        // lit the fireflies at night and at DAWN while leaving the hour between
+        // seven and eight, the one everybody means by "at dusk", completely dark.
+        // Fireflies come out as the light goes, not an hour after it has gone.
+        if (kit.night && this.darkness < 0.15) continue;
 
         // A THIRD HASH FOR WHERE AND WHEN, independent of the one that just
         // passed `< density`. Deriving them from `h` is the decor kit's bug over

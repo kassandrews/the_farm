@@ -3961,6 +3961,12 @@ at once can tell you, and an argument for 8l existing.
   one thing in this game rather than two: by day the twilight country has no air
   at all, which is most of why it is now worth walking into at an hour you would
   otherwise be indoors.
+- **The threshold has to clear the DUSK HOUR, and the first one didn't.** `tintAt`
+  gives day 0, dusk 0.18, night 0.5, dawn 0.34 — so a cut at 0.3 lit them at
+  night and at DAWN while leaving 19:00–20:00, the hour everybody means by "at
+  dusk", completely dark. Caught by being asked whether it was time-gated, which
+  is worth noting: the bug was in a number nobody had put beside the table it
+  reads from. 0.15 now.
 
 **AND THE FAUNA RULE GOT WRITTEN DOWN, BECAUSE IT NEVER HAD BEEN.** "There are no
 animals in this game" was true and lived in a TEST COMMENT and nowhere else —
