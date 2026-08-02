@@ -43,6 +43,7 @@ import {
   CHUNK,
   tileKey,
   regionSkin,
+  regionParts,
   foundAt,
   floorFinish,
 } from "../sim/world";
@@ -65,13 +66,20 @@ import { rooms } from "../sim/rooms";
 import type { Room } from "../sim/rooms";
 import { tintAt, isNight, skyPhaseAt } from "../sim/time";
 import { seasonAt } from "../sim/seasons";
-import { scenePalette, seasonSkin, biomeSkin, mixHex, type ScenePalette } from "./palette";
+import {
+  scenePalette,
+  seasonSkin,
+  biomeSkin,
+  blendRegions,
+  mixHex,
+  type ScenePalette,
+} from "./palette";
 import { zoomLadder } from "./zoom";
 import { forEachGrainMark } from "./grain";
 import { roofFinish } from "./roof";
 import { gridFor, pieceCanvas } from "./furnishings";
 import { FURNITURE_ART } from "../content/furnishings";
-import { BROADLEAF } from "../content/biomes";
+import { BROADLEAF, type BiomeDef } from "../content/biomes";
 import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
 import { lookFor } from "../content/looks";
@@ -808,6 +816,21 @@ export class Renderer {
     }
   }
 
+  /** The turf's region here, blended across any border it is near.
+   *
+   *  GROUND AND TUFT ONLY. `regionSkin` is still the answer for a tree, and the
+   *  two must not be swapped: a crown is an object and takes the hard region, so
+   *  the treeline stays crisp while the grass under it fades. A blended crown
+   *  would be a pine that is partly a birch, which is not a thing.
+   *
+   *  Deliberately NOT memoized. The ground fill and the tuft both ask, so a cache
+   *  looks free — but it would be a per-frame map keyed by a built string, and
+   *  allocating a thousand of those costs more than walking nine sites twice.
+   *  Same reasoning `biomeAt` gives for having no cache of its own. */
+  private turf(world: WorldState, tx: number, ty: number): BiomeDef {
+    return blendRegions(regionParts(world.seed, world.homestead.spot, tx, ty));
+  }
+
   /** Draw the on-screen tiles of one chunk. */
   private drawChunkTiles(
     world: WorldState,
@@ -951,7 +974,7 @@ export class Renderer {
           biomeSkin(
             seasonSkin(tileDef(groundId), groundId, this.palette),
             groundId,
-            regionSkin(world.seed, world.homestead.spot, tx, ty),
+            this.turf(world, tx, ty),
           );
         const px = Math.round(this.sceneX(tx) - TILE / 2);
         const py = Math.round(this.sceneY(ty) - TILE / 2);
@@ -1082,10 +1105,7 @@ export class Renderer {
             // Tinted with the region, because the speckle is texture ON the
             // ground and a tuft that stayed meadow-green over bleached scrub
             // detaches from the surface it belongs to.
-            ctx.fillStyle = mixHex(
-              this.palette.tuft,
-              regionSkin(world.seed, world.homestead.spot, tx, ty).tuft,
-            );
+            ctx.fillStyle = mixHex(this.palette.tuft, this.turf(world, tx, ty).tuft);
             const gx = px + 2 + Math.floor(h * 9);
             const gy = py + 4 + Math.floor((h * 53) % 9);
             // THREE tufts, not one. Every blade in the world used to be the same

@@ -103,6 +103,45 @@ export function mixHex(base: string, tint: Tint): string {
   return `#${a.map((c, i) => toHex(c + (b[i] - c) * t)).join("")}`;
 }
 
+/** Collapse a tile's region shares into the one region its turf looks like.
+ *
+ *  EXACT, not an approximation, and that is why it is a tint rather than a
+ *  colour. Applying tint (c, a) to a base is `b + (c - b)·a`, so the weighted
+ *  average of several is `b + Σ wᵢaᵢ(cᵢ - b)` — which is itself one tint, with
+ *  amount `Σ wᵢaᵢ` and colour the `wᵢaᵢ`-weighted average of the colours. The
+ *  base cancels, so the blend is the same whatever ground it lands on and
+ *  composes with the season exactly as a single region already did.
+ *
+ *  Everything except `ground` and `tuft` comes from the heaviest part untouched:
+ *  crowns and trunks belong to flora, and flora takes the hard answer.
+ *
+ *  Returns the sole part unchanged when there is one, which is the common case
+ *  and has to be bit-identical — most of the world is nowhere near a border, and
+ *  a blend that rounded the meadow's zeroes would repaint the whole map. */
+export function blendRegions(parts: { def: BiomeDef; w: number }[]): BiomeDef {
+  if (parts.length === 1) return parts[0].def;
+
+  let heaviest = parts[0];
+  for (const p of parts) if (p.w > heaviest.w) heaviest = p;
+
+  const blend = (pick: (d: BiomeDef) => Tint): Tint => {
+    let amount = 0;
+    const acc = [0, 0, 0];
+    for (const p of parts) {
+      const t = pick(p.def);
+      const k = p.w * t.amount;
+      if (k <= 0) continue;
+      amount += k;
+      const c = parseHex(t.color);
+      if (c) for (let i = 0; i < 3; i++) acc[i] += c[i] * k;
+    }
+    if (amount <= 0) return { color: pick(heaviest.def).color, amount: 0 };
+    return { color: `#${acc.map((v) => toHex(v / amount)).join("")}`, amount };
+  };
+
+  return { ...heaviest.def, ground: blend((d) => d.ground), tuft: blend((d) => d.tuft) };
+}
+
 /** The only tiles a region is allowed to recolour: the living ground it grew.
  *
  *  THE SAME LIST THE SEASON USES, and that is the point rather than a

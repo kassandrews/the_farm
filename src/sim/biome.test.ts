@@ -10,14 +10,18 @@ import { describe, it, expect } from "vitest";
 import {
   biomeAt,
   blossomCentre,
+  BLOSSOM_RADIUS,
   generatedTile,
   homesteadOrigin,
   PLAZA,
   HOME_REGION_REACH,
   regionStrangeness,
+  regionParts,
   rollRegion,
 } from "./world";
 import { BIOMES, FIELD_WEIGHTS } from "../content/biomes";
+import { GRASS, tileDef } from "../content/tiles";
+import { biomeSkin, blendRegions } from "../render/palette";
 import { ROCK, WATER, SHALLOW, SAND } from "../content/tiles";
 import type { HomesteadSpot } from "./types";
 
@@ -382,5 +386,101 @@ describe("rocks never touch", () => {
       }
     }
     expect(diagonals).toBeGreaterThan(0);
+  });
+});
+
+// The turf blend (8d). The staircase these exist to prevent is a picture, not a
+// number — but both bugs found while building it WERE numbers underneath, and a
+// screenshot is not something CI can take.
+describe("the turf blends across a region border", () => {
+  // The forest spot, because it is the one with the clearing in it.
+  const SPOT = "forest" as const;
+
+  /** The blended ground colour at a tile, as three channels. */
+  const turf = (seed: number, x: number, y: number): number[] => {
+    const skin = biomeSkin(tileDef(GRASS), GRASS, blendRegions(regionParts(seed, SPOT, x, y)));
+    return [1, 3, 5].map((i) => parseInt(skin.color.slice(i, i + 2), 16));
+  };
+
+  it("never steps, anywhere", () => {
+    // THE TEST THAT CAUGHT THE CLEARING SEAM, which a screenshot had found and
+    // nothing could have located: the forest wood was overlaid on the whole mix
+    // and gated on "is the nearest site the home one", a hard Voronoi test, so it
+    // switched off in the width of one tile. This measured it at 18.
+    //
+    // THE NUMBER SITS BETWEEN TWO MEASUREMENTS rather than being picked. 18 was
+    // the seam; 9 is the steepest LEGITIMATE step, which is the largest ground
+    // tint in the table spread over `2 * BIOME_BLEND` tiles at smoothstep's peak
+    // slope. A gradient has to be allowed to have a gradient; what it may not
+    // have is a cliff.
+    //
+    // Same shape as 8c's ground-field assertion and the same reasoning: a field
+    // whose neighbours can differ by a visible amount has a contour in it, and a
+    // contour is the staircase again.
+    let worst = 0;
+    for (const seed of [3, 17, 93]) {
+      for (let x = -200; x <= 200; x += 1) {
+        for (let y = -200; y <= 200; y += 13) {
+          const a = turf(seed, x, y);
+          for (const b of [turf(seed, x + 1, y), turf(seed, x, y + 1)]) {
+            worst = Math.max(worst, ...a.map((v, i) => Math.abs(v - b[i])));
+          }
+        }
+      }
+    }
+    expect(worst).toBeLessThanOrEqual(12);
+  });
+
+  it("still says what region it is, at the middle of one", () => {
+    // The blend may not dissolve the regions: they are the wayfinding system
+    // (DESIGN §Biomes), and a world that is everywhere a gradient is a world you
+    // cannot say you are anywhere in. Away from every border the answer has to be
+    // the region's own row, bit for bit — most of the map is this case.
+    let single = 0;
+    for (let x = -300; x <= 300; x += 7) {
+      for (let y = -300; y <= 300; y += 7) {
+        const parts = regionParts(3, SPOT, x, y);
+        if (parts.length === 1) {
+          single++;
+          expect(parts[0].def.id).toBe(biomeAt(3, SPOT, x, y));
+        }
+      }
+    }
+    expect(single).toBeGreaterThan(1000);
+  });
+
+  it("centres each soft edge on the hard one", () => {
+    // The fade may not SHIFT a border, only smudge it — the trees take the hard
+    // answer, so an off-centre fade would put the grass boundary a few tiles from
+    // the treeline standing on it.
+    //
+    // Not "the heaviest part is `biomeAt`", which was the first version of this
+    // test and is false on purpose: where three regions meet, the tile's own
+    // region can hold the largest single share and still be under half, and
+    // forcing it otherwise would mean refusing to blend at exactly the junctions
+    // that need it most.
+    const b = blossomCentre(3, SPOT);
+    const share = (x: number, y: number): number => {
+      const parts = regionParts(3, SPOT, x, y);
+      return parts.filter((p) => p.def.id === "blossom").reduce((a, p) => a + p.w, 0);
+    };
+    // A hair inside the radius and a hair outside, along several bearings.
+    for (const a of [0, 1, 2, 3, 4, 5]) {
+      const ux = Math.cos((a * Math.PI) / 3);
+      const uy = Math.sin((a * Math.PI) / 3);
+      const inner = share(b.x + ux * (BLOSSOM_RADIUS - 3), b.y + uy * (BLOSSOM_RADIUS - 3));
+      const outer = share(b.x + ux * (BLOSSOM_RADIUS + 3), b.y + uy * (BLOSSOM_RADIUS + 3));
+      expect(inner).toBeGreaterThan(0.5);
+      expect(outer).toBeLessThan(0.5);
+    }
+  });
+
+  it("leaves the blossom disc a middle", () => {
+    // The failure the `span` parameter exists to stop: fading a radius-9 disc
+    // over 5 tiles either side means it is never fully itself anywhere.
+    const b = blossomCentre(3, SPOT);
+    const parts = regionParts(3, SPOT, Math.round(b.x), Math.round(b.y));
+    expect(parts).toHaveLength(1);
+    expect(parts[0].def.id).toBe("blossom");
   });
 });

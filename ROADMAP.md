@@ -3712,12 +3712,12 @@ looking at pictures.
   is a two-to-four-tile pond seen at 40 tiles across — at that size a warped
   outline has nowhere to warp — sitting next to the thing that IS rectilinear.
 
-  **The biome patches are straight-edged blocks.** Obvious at map scale and
-  visible in `biome-border.png` as a staircase of tile-sized steps in the
-  meadow/birch tint. Confirmed pre-existing (shot at HEAD while checking 8c was
-  not the cause). It is the per-cell edges rule at region scale, and it wants the
-  answer 8c used on the grass: warp or dither the boundary so it stops agreeing
-  with the lattice. **This is the next piece of the feel pass.**
+  ~~**The biome patches are straight-edged blocks.**~~ **Fixed in 8d below, and
+  not by either answer this note proposed.** It guessed warp-or-dither; the
+  measurement said neither. The warp was already working — photographed at 200
+  tiles the regions come out lobed and irregular, with no straight bisector
+  anywhere — and the staircase was quantization, which no amount of bending
+  removes. What removes a step is not having one.
 
   Worth keeping as method: the close-up said "pond", the map said "biomes". The
   screenshot found something real and named it wrong, which is the argument for
@@ -3725,6 +3725,72 @@ looking at pictures.
 - ~~**The `E 6 · S 6` chip.**~~ **Settled: it stays.** §*Every overlay is the
   same chip* says to cut a HUD label naming something already visible, and
   coordinates are not visible — the rule does not reach it.
+
+### 8d — The turf blends across a region border — **built**
+
+The staircase where two biomes meet. Measured before a line was written, which
+changed what got built: **the shape was never the problem.** At 200 tiles the
+regions are lobed and irregular — `BIOME_WARP` is doing its job — and the seam is
+QUANTIZATION, a hard one-tile step between two flat tints. A wandering line drawn
+on a tile grid still steps, so bending it harder buys nothing.
+
+The second measurement decided the size. The two greens either side of the
+scrub/pinewood border are **a few RGB units apart and the seam was still the
+loudest thing in the frame** — it is not the colour gap that reads, it is the
+discontinuity. So the fade is 5 tiles either side and does not need to be more.
+
+- **`regionParts` returns the regions a tile's turf is made of**, with weights;
+  `blendRegions` collapses them to one row. Away from any border it is a single
+  part returned untouched, which is most of the map and has to stay bit-identical.
+- **The blend is EXACT because a biome states a tint, not a colour.** Applying
+  (c, a) is `b + (c − b)·a`, so a weighted average of several is itself one tint —
+  amount `Σ wᵢaᵢ`, colour the `wᵢaᵢ`-weighted mean. The base cancels, so it
+  composes with the season exactly as a single region already did.
+- **Ground and tuft only. Flora takes the hard answer.** A tree asks `regionSkin`
+  and a pine is never half a birch. That split is the design: turf carries mood,
+  flora carries identity, and the treeline stays crisp while the grass under it
+  fades. Interleaving the TREES is a separate job that changes generation.
+- **It spends none of `HOME_REGION_REACH`.** The blend never moves a border and
+  never changes `biomeAt` — it mixes colour near one. The town guarantee is about
+  which region a tile IS in, and nothing here is asked during generation.
+- **Weights run over all NINE candidates, not the nearest two.** Blending first
+  against second puts a seam through every triple point: the second and third swap
+  exactly where the partner's weight is highest.
+- **Five by five, where `nearestSite` needs three.** A bound, and a close one —
+  `d1` can reach ~76, the cutoff ~86, and a site two cells out is at least 81
+  away. Measured never to have mattered in a 480k-tile sweep; it is there because
+  the arithmetic says it can.
+
+**Two bugs, and neither was the one the note predicted.**
+
+- **The far country was faded by the TILE's strangeness, not each part's own.**
+  `regionStrangeness(x, y)` is the strangeness of whichever region the tile is
+  nearest, so it jumps the instant the tile crosses a border and drags the fade
+  with it. `strangeness`'s own docblock already said why — measured off the site,
+  so a region has one character all the way across.
+- **The forest clearing was an overlay gated on "is the nearest site the home
+  one", which is a hard Voronoi test** — so the wood switched off in the width of
+  one tile and left an 18-unit cliff. **The seam is inherited, not new:** past the
+  clearing `biomeAt` has always said pinewood inside that boundary and
+  `wooded(site)` outside it, and on seeds where the neighbour rolled birch that
+  was already a hard line nobody had photographed. The fix is that the clearing
+  recolours **the town's own share** rather than overlaying everything, and that
+  share fades out like every other.
+
+**A fade may not be wide relative to what it edges**, which is why `edgeMix` takes
+a span. The blossom rows are a disc of radius 9; fading them over a border's 5
+tiles leaves a core of 4 and dissolves the thing the edge was drawn around. It
+gets a third of its radius.
+
+**The test is the shape 8c used, and the number sits between two measurements.**
+18 was the clearing cliff; 9 is the steepest legitimate step — the largest ground
+tint in the table spread over the fade at smoothstep's peak slope. It asserts 12.
+A gradient is allowed to have a gradient; what it may not have is a cliff.
+
+**Still open:** interleaving the flora — a hash-dithered treeline so pines thin
+out into the scrub instead of stopping on a line. That one DOES change generation
+and DOES spend the `HOME_REGION_REACH` margin, so it needs the thousand-seed test
+re-run and is deliberately not folded in here.
 
 ### 8i — The town stops floating — **built**
 
@@ -3782,9 +3848,10 @@ palette swap.
   room's own walls (`render/roof.ts`). The dark-museum bug was fixed by a
   lighter STONE, not a lighter roof, and §8f says so explicitly. Building
   identity comes through wall material and (still unbuilt) signage.
-- **Transition tiles between biome pairs.** The staircase is real and is 8d, but
-  the settled method is to warp or dither the BOUNDARY, not to author edge
-  tiles — same answer `biomeWarp` and `coastWarp` already give.
+- **Transition tiles between biome pairs.** The staircase was real; 8d fixed it
+  by blending the tint across the border, not by authoring edge tiles. The brief
+  was right about the symptom and wrong about the mechanism, and so was this
+  file's own note, which guessed warp-or-dither.
 - **A `{material, paint, weathering}` finish model.** A `paint` axis was nearly
   built and killed by name in 8f (a stored field on every built tile, a
   migration, a second swatch row — for something a finish already is). DESIGN's

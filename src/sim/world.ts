@@ -875,8 +875,11 @@ function originSite(): { mx: number; my: number } {
 const BLOSSOM_RING = 72;
 
 /** How wide. Big enough to be a place you live in rather than a photograph:
- *  several houses' worth of pink, with room for a garden. */
-const BLOSSOM_RADIUS = 9;
+ *  several houses' worth of pink, with room for a garden.
+ *
+ *  Exported for the turf-blend test, which has to assert that softening this
+ *  edge did not consume the disc behind it (see `edgeMix`). */
+export const BLOSSOM_RADIUS = 9;
 
 /** Where the cherry trees are. Sited, not rolled — see BIOMES.blossom. Runs
  *  through `onLand` like every landmark, because an orchard standing in the sea
@@ -941,32 +944,40 @@ export function biomeAt(seed: number, spot: HomesteadSpot, x: number, y: number)
   // actually see: meadow to `FOREST_CLEARING`, wood past it. The ring is a
   // single kind — it is one wood, the town's own — and it meets whatever the
   // neighbouring regions turned out to be further out.
-  const wooded = (mx: number, my: number): BiomeId =>
-    hash2(mx, my, seed ^ 0x7ee5) % 2 === 0 ? "pinewood" : "birch";
-
-  if (spot === "forest") {
-    if (atHome) {
-      // Measured from the ORIGIN, not from the homestead plot, so the clearing
-      // is the town's and not the player's — you live at its edge, like
-      // everybody else does.
-      // THE RING IS ALWAYS PINES, and that is not a missed chance for variety.
-      // The coin flip `wooded` does elsewhere decides between 2.2× trees on a
-      // needle-dark floor and 1.4× on a pale one, and on the seeds that came up
-      // birch the treeline of a town chosen FOR its treeline was a faint speckle
-      // you had to be told about — seed 31, found by looking. The wood you can
-      // see from your own door is the whole promise of the spot, so it does not
-      // get to be the sparse one. Past the clearing the flip resumes, so walking
-      // out still finds birches; they are just not what the promise rests on.
-      if (Math.hypot(x, y) > clearingRadius(seed, Math.atan2(y, x))) return "pinewood";
-    } else if (Math.max(Math.abs(site.mx - home.mx), Math.abs(site.my - home.my)) === 1) {
-      return wooded(site.mx, site.my);
-    }
+  if (spot === "forest" && atHome) {
+    // Measured from the ORIGIN, not from the homestead plot, so the clearing
+    // is the town's and not the player's — you live at its edge, like
+    // everybody else does.
+    // THE RING IS ALWAYS PINES, and that is not a missed chance for variety.
+    // The coin flip `siteRegion` does elsewhere decides between 2.2× trees on a
+    // needle-dark floor and 1.4× on a pale one, and on the seeds that came up
+    // birch the treeline of a town chosen FOR its treeline was a faint speckle
+    // you had to be told about — seed 31, found by looking. The wood you can
+    // see from your own door is the whole promise of the spot, so it does not
+    // get to be the sparse one. Past the clearing the flip resumes, so walking
+    // out still finds birches; they are just not what the promise rests on.
+    if (Math.hypot(x, y) > clearingRadius(seed, Math.atan2(y, x))) return "pinewood";
   }
 
-  if (atHome) return "meadow";
+  return siteRegion(seed, spot, site.mx, site.my);
+}
 
-  const roll = hash2(site.mx, site.my, seed ^ 0x30de) / 4294967296;
-  return rollRegion(roll, strangeness(seed, site.mx, site.my));
+/** The region a SITE stands for, with no per-tile rule applied.
+ *
+ *  Split out of `biomeAt` so the blend below can ask the same question of a
+ *  site that is not the nearest one. The two per-tile overrides — the blossom
+ *  disc and the forest clearing — deliberately stay in `biomeAt`, because they
+ *  are radii rather than regions and the blend gives them their own soft edge. */
+function siteRegion(seed: number, spot: HomesteadSpot, mx: number, my: number): BiomeId {
+  const home = originSite();
+  if (mx === home.mx && my === home.my) return "meadow";
+
+  if (spot === "forest" && Math.max(Math.abs(mx - home.mx), Math.abs(my - home.my)) === 1) {
+    return hash2(mx, my, seed ^ 0x7ee5) % 2 === 0 ? "pinewood" : "birch";
+  }
+
+  const roll = hash2(mx, my, seed ^ 0x30de) / 4294967296;
+  return rollRegion(roll, strangeness(seed, mx, my));
 }
 
 /** Where the world starts getting strange, and where it stops getting stranger,
@@ -1061,6 +1072,189 @@ export function regionSkin(seed: number, spot: HomesteadSpot, x: number, y: numb
     crown: fade(def.crown),
     trunk: fade(def.trunk),
   };
+}
+
+/** How far either side of a region border the TURF fades from one to the next,
+ *  in tiles.
+ *
+ *  WHY A BLEND AND NOT A WARPED BORDER. `BIOME_WARP` bends the border itself, and
+ *  photographed at 200 tiles it is doing its job — regions come out lobed and
+ *  irregular, with no straight bisector anywhere. The staircase reported at 8d is
+ *  a different bug: it is QUANTIZATION, a hard one-tile step between two flat
+ *  tints, and a wandering line drawn on a tile grid still steps. Bending harder
+ *  buys nothing. What removes a step is not having one.
+ *
+ *  Measured before it was written, which is the argument for the number being
+ *  small: the two greens either side of the scrub/pinewood border are a few RGB
+ *  units apart and the seam was still the loudest thing in the frame. It is not
+ *  the colour gap that reads, it is the discontinuity — so the fade does not have
+ *  to be wide to erase it, and a wide one would start dissolving the regions
+ *  themselves, which are the wayfinding system (DESIGN §Biomes).
+ *
+ *  THIS SPENDS NONE OF `HOME_REGION_REACH`. The blend never moves a border and
+ *  never changes `biomeAt`; it only mixes colour near one. What the town
+ *  guarantee protects is which region a tile IS in — the failure that grows a
+ *  tree inside a finished house — and nothing here is asked during generation. */
+const BIOME_BLEND = 5;
+
+/** A region's share of a tile's turf. One entry away from any border. */
+export interface RegionPart {
+  def: BiomeDef;
+  w: number;
+}
+
+/** 1 well inside an edge, 0 well outside, 0.5 exactly on it. `d` is signed
+ *  distance outside the edge and `span` how far either side it fades, both in
+ *  tiles.
+ *
+ *  Smoothstepped rather than linear because a linear ramp lands its slope
+ *  discontinuity on a contour line, and 8c already paid for that lesson on the
+ *  ground field: a gradient that steps anywhere is the staircase again, wearing
+ *  a softer coat.
+ *
+ *  `span` IS A PARAMETER BECAUSE A FADE MAY NOT BE WIDE RELATIVE TO WHAT IT
+ *  EDGES. The blossom rows are a disc of radius 9; fading them over the same 5
+ *  tiles a region border gets leaves a core of 4 and dissolves the thing the
+ *  edge was drawn around. Softening a border must not cost you the region. */
+function edgeMix(d: number, span: number): number {
+  const t = Math.min(1, Math.max(0, 0.5 - d / (2 * span)));
+  return t * t * (3 - 2 * t);
+}
+
+/** Fold one region in over the others at weight `w`, the way an override wins. */
+function overlay(parts: RegionPart[], id: BiomeId, w: number): RegionPart[] {
+  if (w <= 0) return parts;
+  const def = biomeDef(id);
+  if (w >= 1) return [{ def, w: 1 }];
+  return [...parts.map((p) => ({ def: p.def, w: p.w * (1 - w) })), { def, w }];
+}
+
+/** What a tile's TURF is made of — its region, plus any neighbour close enough to
+ *  bleed into it. Ground and tuft only; see the note on flora below.
+ *
+ *  THE WEIGHTS RUN OVER ALL NINE CANDIDATE SITES, not just the nearest two. The
+ *  obvious version blends the nearest against the second-nearest, and it puts a
+ *  seam through every place three regions meet: at a triple point the second and
+ *  third swap, so the partner's colour changes discontinuously at exactly the
+ *  spot where its weight is highest. Weighting the whole neighbourhood has no
+ *  such moment — a site that is about to become the runner-up is already
+ *  contributing.
+ *
+ *  `d - d1` is roughly TWICE the distance to the bisector between two sites, so
+ *  the cutoff is `2 * BIOME_BLEND` to fade over `BIOME_BLEND` tiles either side.
+ *
+ *  FLORA IS DELIBERATELY NOT BLENDED. A tree takes the hard `biomeAt` answer, so
+ *  a pine is a pine and never half a birch. Softening a treeline is a different
+ *  job with a different answer — interleave the trees themselves — and it
+ *  changes generation, where this does not. */
+export function regionParts(
+  seed: number,
+  spot: HomesteadSpot,
+  x: number,
+  y: number,
+): RegionPart[] {
+  const w = biomeWarp(seed, x, y);
+  const cx = biomeCell(w.x);
+  const cy = biomeCell(w.y);
+
+  // Same loop order and same strict comparison as `nearestSite`, so the heaviest
+  // part is always the region `biomeAt` reports. If those two ever disagree the
+  // ground says one thing and the trees standing on it say another.
+  // FIVE BY FIVE, WHERE `nearestSite` NEEDS ONLY THREE. Three is enough to find
+  // the NEAREST site and not enough to find every site close enough to bleed, and
+  // a contributor that appears the moment the block shifts would be a
+  // discontinuity locked to the macro grid — the per-cell edges rule at the scale
+  // of the cell that owns the region.
+  //
+  // It is a bound rather than a guess, and it is close: the query point sits at
+  // most 34 tiles from its cell centre plus BIOME_WARP, and a site wanders 17
+  // inside its own, so `d1` can reach ~76 and the cutoff `d1 + 2 * BIOME_BLEND`
+  // ~86 — while a site two cells out is at least 136 − 17 − 38 = 81 away. 81 is
+  // inside 86, so the outer ring can matter. Only just, and measured never to
+  // have: swapping 3×3 for 5×5 moved no pixel in a 480k-tile sweep. It is here
+  // because the arithmetic says it can, not because a screenshot caught it — the
+  // seam that WAS photographed was the forest clearing, below.
+  const cand: { mx: number; my: number; d: number }[] = [];
+  let d1 = Infinity;
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      const s = biomeSite(seed, cx + dx, cy + dy);
+      const d = Math.hypot(s.x - w.x, s.y - w.y);
+      cand.push({ mx: cx + dx, my: cy + dy, d });
+      if (d < d1) d1 = d;
+    }
+  }
+
+  const weighed: { id: BiomeId; mx: number; my: number; k: number }[] = [];
+  let total = 0;
+  for (const c of cand) {
+    const u = 1 - (c.d - d1) / (2 * BIOME_BLEND);
+    if (u <= 0) continue;
+    const k = u >= 1 ? 1 : u * u * (3 - 2 * u);
+    weighed.push({ id: siteRegion(seed, spot, c.mx, c.my), mx: c.mx, my: c.my, k });
+    total += k;
+  }
+
+  // THE FOREST CLEARING RECOLOURS THE TOWN'S OWN SHARE, and nothing else's.
+  //
+  // Written first as an overlay over the whole mix, gated on "is the nearest site
+  // the home one" — which is a hard Voronoi test, so the wood switched off in the
+  // space of one tile and left an 18-unit cliff along the edge of the home
+  // region. The seam is INHERITED rather than new: `biomeAt` has always answered
+  // pinewood inside that boundary and `wooded(site)` outside it, and on the seeds
+  // where the neighbour rolled birch that was already a hard line.
+  //
+  // Past the clearing it is the town's own region that is wooded, so it is the
+  // town's own share that turns — and that share fades out smoothly like every
+  // other, which is the whole reason there is nothing to step over.
+  const home = originSite();
+  const split: typeof weighed = [];
+  for (const p of weighed) {
+    if (spot === "forest" && p.mx === home.mx && p.my === home.my) {
+      const wood = 1 - edgeMix(Math.hypot(x, y) - clearingRadius(seed, Math.atan2(y, x)), BIOME_BLEND);
+      if (wood > 0) split.push({ ...p, id: "pinewood", k: p.k * wood });
+      if (wood < 1) split.push({ ...p, k: p.k * (1 - wood) });
+      continue;
+    }
+    split.push(p);
+  }
+
+  let parts: RegionPart[] = split.map(({ id, mx, my, k }) => {
+    const def = biomeDef(id);
+    if (!FAR_ROWS.has(id)) return { def, w: k / total };
+    // The far country's tints come up with the drift exactly as `regionSkin`
+    // fades them, or a dusk region would bleed full violet into its neighbour
+    // while its own middle was still pale.
+    //
+    // FADED BY ITS OWN SITE, not by the tile's. Asking `regionStrangeness(x, y)`
+    // is the same number for a single part and WRONG for a blended one: it is the
+    // strangeness of whichever region the tile is nearest, so it jumps the
+    // instant the tile crosses a border, and the fade it scales jumps with it.
+    // The docblock on `strangeness` already says why — measured off the site, so
+    // a region has one character all the way across it.
+    const t = strangeness(seed, mx, my);
+    return {
+      def: {
+        ...def,
+        ground: { color: def.ground.color, amount: def.ground.amount * t },
+        tuft: { color: def.tuft.color, amount: def.tuft.amount * t },
+      },
+      w: k / total,
+    };
+  });
+
+  // The blossom disc goes over everything, which is the order `biomeAt` resolves
+  // it in: it is the first thing that function asks. Unlike the clearing it is
+  // not a property of one region — it is a landmark sited on a ring, and it may
+  // straddle a border — so it really is an overlay, and a radial one is smooth
+  // wherever it lands.
+  const b = blossomCentre(seed, spot);
+  // A third of the radius, by the rule on `edgeMix`: the disc is nine tiles and
+  // has to still have a middle.
+  const bd = Math.hypot(x - b.x, y - b.y);
+  parts = overlay(parts, "blossom", edgeMix(bd - BLOSSOM_RADIUS, BLOSSOM_RADIUS / 3));
+
+  return parts;
 }
 
 /** Pick a region from a roll in [0,1) and a strangeness in [0,1].
