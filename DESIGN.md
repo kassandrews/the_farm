@@ -869,9 +869,10 @@ below exists to prevent, one axis over.
 
 This survives seasons intact, and the survival is deliberate. A crop that is
 prettier in its own month is not a better crop: nothing anywhere may read the
-season to decide a price, a yield, or a growth time. The season reaches exactly
-two things — one draw flourish and one line of dialogue — and neither of them
-is a number.
+season to decide a price, a yield, or a growth time. The season reaches nothing
+but **appearance and one line of dialogue** — a flourish on a ripe crop, fireflies
+over a meadow on a summer night — and **not one of them is a number**. That last
+clause is the rule; the list is only as long as the things it has been applied to.
 
 **The counter is barter, not money** — settled, not open. You hand over
 something you have and she hands over cloth; there is no currency, no

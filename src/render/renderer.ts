@@ -1931,6 +1931,10 @@ export class Renderer {
         // seven and eight, the one everybody means by "at dusk", completely dark.
         // Fireflies come out as the light goes, not an hour after it has gone.
         if (kit.night && this.darkness < 0.15) continue;
+        // `palette.season` is null underground, which is correct without a
+        // special case: a cave has no month, and a seasonal mote in one would be
+        // weather where §Seasons says there is none.
+        if (kit.season && this.palette.season?.id !== kit.season) continue;
 
         // A THIRD HASH FOR WHERE AND WHEN, independent of the one that just
         // passed `< density`. Deriving them from `h` is the decor kit's bug over

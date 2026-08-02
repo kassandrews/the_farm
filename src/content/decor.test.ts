@@ -86,10 +86,15 @@ describe("motes", () => {
   });
 
   it("is rare across the table", () => {
-    // Air that moves everywhere is air nobody notices. This is a restraint
-    // assertion rather than a correctness one, and it is here so that adding a
-    // fourth or fifth kit is a decision somebody takes on purpose.
-    expect(kits.length).toBeLessThanOrEqual(3);
+    // Air that moves everywhere is air nobody notices. A restraint assertion
+    // rather than a correctness one, here so that adding another is a decision
+    // somebody takes on purpose.
+    //
+    // Raised from three when the meadow and the pines got fireflies. The count
+    // is a weaker guard than it was and the reason is in the test above: two of
+    // these five are dark for nine months of the year, so what is actually rare
+    // is a region with air in it TONIGHT.
+    expect(kits.length).toBeLessThanOrEqual(5);
   });
 
   it("actually moves", () => {
@@ -99,11 +104,25 @@ describe("motes", () => {
     }
   });
 
-  it("only flashes after dark", () => {
-    // "Fireflies at noon are moths, and there are no moths either." A blink is
-    // read as a light source, and a light source in daylight is just a dot.
+  it("only flashes after dark, unless the light there is already wrong", () => {
+    // A blink reads as a light source, and a light source in daylight is a dot.
+    // The dusk is the single exception and it earns it: that region's premise is
+    // that its light is wrong at NOON (see its `ground` tint and the note on it),
+    // so fireflies over it at midday are the point rather than a mistake.
+    //
+    // Named rather than allowed generally, so a second all-day flasher has to
+    // come here and argue for itself.
     for (const [id, kit] of kits) {
-      if (kit.flash) expect(kit.night, `${id} flashes by day`).toBe(true);
+      if (kit.flash && !kit.night) expect(id, `${id} flashes by day`).toBe("dusk");
+    }
+  });
+
+  it("keeps the near regions to one season", () => {
+    // Air everywhere is air nobody notices. The near regions get it only on a
+    // summer night, which is what keeps "most regions have no air" true in the
+    // way that matters — most of the TIME, rather than most of the table.
+    for (const [id, kit] of kits) {
+      if (kit.night) expect(kit.season ?? "summer", `${id}`).toBe("summer");
     }
   });
 

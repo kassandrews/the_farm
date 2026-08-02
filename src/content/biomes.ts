@@ -29,6 +29,8 @@
 // tint fell out of it. `amount` is where the argument lives — see Pinewood, which
 // resists autumn hard on purpose because conifers do.
 
+import type { SeasonId } from "./seasons";
+
 /** A pull toward a colour. `amount` is 0 (leave it alone) to 1 (become this). */
 export interface Tint {
   color: string;
@@ -187,9 +189,24 @@ export interface MoteKit {
    *  briefly not; a smooth fade reads as a floating lamp. */
   flash?: boolean;
 
-  /** Only when it is dark enough. Fireflies at noon are moths, and there are no
-   *  moths either. */
+  /** Only when it is dark enough, read off the same darkness the lamps light by.
+   *
+   *  The DUSK region deliberately omits this. Its whole premise is that its light
+   *  is wrong at noon, so fireflies over it at midday are the point rather than a
+   *  mistake — everywhere else they are an evening. */
   night?: boolean;
+
+  /** Only in this season.
+   *
+   *  Allowed because a season reaches appearance and never a number (DESIGN
+   *  §Materials): a firefly is weather and light, which is exactly what §Seasons
+   *  says a season IS. It may never become the model for anything with a value
+   *  on it — no seasonal yield, no seasonal price, no seasonal growth time.
+   *
+   *  It is also what lets the near regions have air at all without the world
+   *  becoming busy: the meadow and the pines are empty for nine months and on a
+   *  summer night they are not. */
+  season?: SeasonId;
 }
 
 /** A region's ground decor — its ferns, reeds, litter and small flowers.
@@ -256,6 +273,26 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     crown: { color: "#000000", amount: 0 },
     trunk: { color: "#000000", amount: 0 },
     crownRows: BROADLEAF,
+    // THE ONE THING THE TOWN'S OWN REGION GETS, and it is worth the exception it
+    // makes. The meadow has no decor on purpose — leaving town is when the ground
+    // starts having things in it — but a summer night over your own plot is the
+    // beat this whole pass was for, and it costs the promise above nothing:
+    // motes are render-only, so nothing here can re-landscape anybody's home.
+    //
+    // Empty for nine months. That is what keeps "most regions have no air" true
+    // in the way that matters, which is most of the time rather than most of the
+    // table.
+    motes: {
+      density: 0.22,
+      color: "#f2f7a8",
+      drift: 6,
+      sway: 4,
+      period: 6,
+      size: 2,
+      flash: true,
+      night: true,
+      season: "summer",
+    },
   },
 
   /** Cold, close, and quiet. Densest trees in the game, which is most of the
@@ -278,6 +315,19 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // step-backs every third row are the whole trick — a clean triangle reads as
     // an arrowhead, and the little shelves are what say "branches" at 1px.
     crownRows: [1, 2, 3, 2, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6],
+    // Fewer than the meadow's: this canopy closes over you, and a wood you
+    // cannot see far in should not be the one with the most light in it.
+    motes: {
+      density: 0.16,
+      color: "#e6f0a0",
+      drift: 5,
+      sway: 3,
+      period: 7,
+      size: 2,
+      flash: true,
+      night: true,
+      season: "summer",
+    },
     // Needle litter and the odd fern, which is what a conifer floor actually
     // is. Sparse: the pines are already the densest trees in the game and the
     // ground here is mostly in shade.
@@ -454,14 +504,16 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // an hour you would otherwise be indoors: by day this region has no air at
     // all. Barely drifting, because a firefly hangs.
     motes: {
-      density: 0.3,
+      // SPARSE, AND ALL DAY. You have to be looking for them — which is the
+      // right amount for the one region that has them permanently, and the
+      // reason it does is that this country's light is already wrong at noon.
+      density: 0.16,
       color: "#f2f7a8",
       drift: 5,
       sway: 4,
       period: 6,
       size: 2,
       flash: true,
-      night: true,
     },
   },
 

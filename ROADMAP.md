@@ -3989,6 +3989,27 @@ there. **The fish stay out permanently** — the poled pond's joke is the absenc
 false. A firefly is absent from that list because a firefly is now somewhere you
 can go and see one.
 
+**Where they ended up, after the place question was put properly.** The dusk
+keeps them **all day and sparse** — you have to be looking — and it is the one
+region allowed to flash at noon, because its whole premise is that its light is
+already wrong then. The **meadow and the pines** get them **only on a summer
+night**, which is a SEASONAL gate and therefore a design call:
+
+> A season reaches appearance and never a number (DESIGN §Materials). A firefly
+> is weather and light, which is what §Seasons says a season IS.
+
+The sentence in §Materials used to read "the season reaches exactly two things"
+and now names the rule instead of counting the instances — *not one of them is a
+number* was always the load-bearing half.
+
+**And the meadow gets the one exception to its own emptiness.** 8k gave the
+town's region no decor on purpose, so that leaving town is when the ground starts
+having things in it. A summer night over your own plot is worth breaking that
+for, and it costs the meadow's real promise nothing: that promise is about
+GENERATION, and motes are render-only. Empty for nine months is what keeps "most
+regions have no air" true in the way that matters — most of the TIME rather than
+most of the table, which is now what the test asserts.
+
 **Tuning note worth keeping.** A flasher needs roughly double a fader's density
 for the same read: it is dark for most of its cycle, so instantaneous coverage is
 density × the flash window. At 0.14 the dusk had two specks in a swatch and they
