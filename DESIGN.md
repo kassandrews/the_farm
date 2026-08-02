@@ -478,6 +478,22 @@ Every colour is a **tint, not a value** — a direction and how far to go — wh
 is what lets biome and season compose instead of fighting. Autumn still turns the
 world; the fen is a murkier autumn and the blossom rows stay stubbornly pink.
 
+**What grows in a region is DECOR, and the gathered things are not part of it.**
+Ferns, reeds, tussocks, fallen logs, pebbles, a biome's own flowers — a region
+may have as much of its own as it likes, because none of it is worth anything.
+Decor gates nothing, costs nothing, is picked up by nobody, and no acceptance
+test can see it, which is precisely what makes the kits free to be extravagant.
+
+The gathered scatter is the mushroom, and it stays **one item with one density
+rule**: a region may change what its mushrooms look like and may never have more
+of them for being far out. That is the same sentence §Materials makes about
+depth, one axis over — the far country is stranger, never richer — and it is the
+line the first draft of the far regions crossed and had to be pulled back from.
+
+So the test for anything added to a kit is not "does it fit the palette" but
+**"can you carry it home?"** If you can, it is the mushroom wearing a hat and it
+answers to the mushroom's rules. If you can't, it is free.
+
 Biomes are a **total function of (seed, x, y)** and are stored nowhere. The
 town's own region is always the ordinary meadow, whose every number is an
 identity, so ground people have already built on generates exactly what it always

@@ -79,7 +79,7 @@ import { forEachGrainMark } from "./grain";
 import { roofFinish } from "./roof";
 import { gridFor, pieceCanvas } from "./furnishings";
 import { FURNITURE_ART } from "../content/furnishings";
-import { BROADLEAF, type BiomeDef } from "../content/biomes";
+import { BROADLEAF, type BiomeDef, type DecorKit } from "../content/biomes";
 import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
 import { lookFor } from "../content/looks";
@@ -831,6 +831,34 @@ export class Renderer {
     return blendRegions(regionParts(world.seed, world.homestead.spot, tx, ty));
   }
 
+  /** Which region's decor kit this cell draws — its own, or a neighbour's.
+   *
+   *  THE UNDERSTORY INTERLEAVES WHERE THE CANOPY CANNOT, YET. 8d blended the
+   *  turf's colour and left flora on the hard answer, because softening a
+   *  treeline means changing which cells grow a tree, and that is generation:
+   *  it moves solidity, it spends the `HOME_REGION_REACH` margin, and it wants
+   *  the thousand-seed test re-run.
+   *
+   *  Decor is not generation. It owns no cell, blocks nobody and is stored
+   *  nowhere, so it can be dithered for free — the cell rolls against the same
+   *  region weights the tint is blended from, and ferns thin out into the
+   *  birches on exactly the border the ground is already fading across. When the
+   *  canopy dither lands it should use these same weights, and then the whole
+   *  border moves together.
+   *
+   *  Picked off the mark's OWN hash, so a cell's kit never changes between
+   *  frames and never correlates with which mark it drew. */
+  private decorKit(world: WorldState, tx: number, ty: number, h: number): DecorKit | undefined {
+    const parts = regionParts(world.seed, world.homestead.spot, tx, ty);
+    if (parts.length === 1) return parts[0].def.decor;
+    let r = h;
+    for (const p of parts) {
+      r -= p.w;
+      if (r <= 0) return p.def.decor;
+    }
+    return parts[parts.length - 1].def.decor;
+  }
+
   /** Draw the on-screen tiles of one chunk. */
   private drawChunkTiles(
     world: WorldState,
@@ -1130,6 +1158,58 @@ export class Renderer {
               ctx.fillRect(gx, gy, 1, 1);
               ctx.fillRect(gx + 2, gy, 1, 1);
               ctx.fillRect(gx + 1, gy - 1, 1, 1);
+            }
+          }
+
+          // The region's own decor, ON TOP of the tuft rather than instead of
+          // it: the tuft is what makes grass read as grass everywhere, and a
+          // region that replaced it would be a different SURFACE rather than the
+          // same one with its own plants in it.
+          //
+          // Its own hash, so tuning a kit's density never reshuffles where that
+          // region's tufts stand — the same reasoning `generatedTile` gives for
+          // rolling ground clutter separately from trees.
+          const dh = decoHash(tx, ty, world.seed ^ 0x2b19);
+          // A THIRD HASH FOR THE REGION PICK, and it has to be independent of
+          // `dh`. Passing `dh` looks free and is not: by the time the kit is
+          // asked for, `dh` has already passed `< density`, so it only ever
+          // holds values from the bottom tenth of its range — and a cumulative
+          // walk over the weights fed a number that small hands the first part
+          // the cell every time. The dither would have been dead code that
+          // measured as working.
+          const kit = this.decorKit(world, tx, ty, decoHash(tx, ty, world.seed ^ 0x51ab));
+          if (kit && dh < kit.density) {
+            // A SECOND, INDEPENDENT HASH picks the mark and places it. Reusing
+            // `dh` would tie both to the same number that just passed a `<`
+            // test, so every mark would come from the low end of the range —
+            // one shape, in one corner, forever.
+            const p = decoHash(tx, ty, world.seed ^ 0x77c3);
+            const mark = kit.marks[Math.floor(p * kit.marks.length) % kit.marks.length];
+            const mh = mark.length;
+            const mw = Math.max(...mark.map((r) => r.length));
+            // INSET BY A PIXEL on every side, which is what the band rule needs
+            // here: two marks in adjacent cells can then never touch, so they
+            // cannot pair edges into a lattice however densely they land.
+            const ox = px + 1 + Math.floor(((p * 97) % 1) * (TILE - mw - 1));
+            const oy = py + 1 + Math.floor(((p * 883) % 1) * (TILE - mh - 1));
+            // FOLIAGE INK, NOT THE TUFT'S. The first cut drew decor in the tuft
+            // colour and was invisible on screen — which is 8c's own mistake
+            // repeated: reaching for the nearest existing colour, when the tuft
+            // is a speckle deliberately a few units off the grass it sits on.
+            // A fern is a small plant, so it takes the colour the region's
+            // CANOPY takes, and it seasons with it for free.
+            //
+            // Stated rather than inherited from `ctx.fillStyle`, which holds the
+            // tuft colour only on cells that happened to draw a tuft and
+            // whatever the last call left behind on the rest.
+            const stem = mixHex(this.palette.crown, this.turf(world, tx, ty).crown);
+            for (let r = 0; r < mh; r++) {
+              for (let c = 0; c < mark[r].length; c++) {
+                const ch = mark[r][c];
+                if (ch === ".") continue;
+                ctx.fillStyle = ch === "o" ? (kit.accent ?? stem) : stem;
+                ctx.fillRect(ox + c, oy + r, 1, 1);
+              }
             }
           }
         } else if (def.name === "Sand") {

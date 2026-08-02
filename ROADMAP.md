@@ -3792,6 +3792,61 @@ out into the scrub instead of stopping on a line. That one DOES change generatio
 and DOES spend the `HOME_REGION_REACH` margin, so it needs the thousand-seed test
 re-run and is deliberately not folded in here.
 
+### 8k — Regions grow their own things — **four kits built**
+
+Biome character was tree silhouette, tree tint and density, and nothing on the
+ground. Kits add an understory: needle litter and sprouts in the pines, pale
+blades and white flowers in the birches, reeds in the fen, twigs and grit in the
+scrub. The meadow deliberately gets none, so walking out of town is when the
+ground starts having things in it.
+
+**DECOR IS NOT A TILE, and that is the whole design.** A tile is exclusive per
+cell, so a fern would compete with the trees for ground and could never stand
+under one — and it would need a solidity, a walkability, a `groundIdOf` entry and
+a place in the flat fill, the last of which has painted a square across a cell
+three times (the poles, the mailbox, the junk pile). Decor is drawn the way the
+grass tuft is: a mark placed by a hash on the world coordinate, owning nothing,
+stored nowhere, blocking no one. **Marks are content** — `DecorKit.marks`, rows
+of `.`/`x`/`o` — not a draw path, so a new plant is a table row.
+
+**The doc question it settled first.** DESIGN §Biomes now says the test for
+anything in a kit is **"can you carry it home?"** If you can, it is the mushroom
+wearing a hat and answers to the mushroom's density rule — the far country is
+stranger, never richer, which is the line Glimmer's mushrooms crossed in 7a. If
+you can't, it is worth nothing and a region may have as much of it as it likes.
+That is why the kits are free to be extravagant, and it is one paragraph rather
+than the design pass this nearly became: the "nothing else" in §Biomes is a fence
+around MECHANICS, and a fern is not a mechanic.
+
+**THE UNDERSTORY INTERLEAVES, AND THE CANOPY STILL DOESN'T.** The cell rolls its
+kit against the same region weights 8d blends the tint from, so ferns thin out
+into the birches on exactly the border the ground is already fading across. This
+is free precisely because decor is not generation — no solidity moves, no
+`HOME_REGION_REACH` is spent, no thousand-seed test is owed. **The tree dither
+still owes all three**, and when it lands it should read these same weights.
+
+**8c's mistake, twice more, both found on screen and neither by a test.**
+
+- **Decor drawn in the tuft's ink was invisible.** The tuft is deliberately a few
+  units off the grass it speckles; a plant needs to read AS a plant. Decor takes
+  the region's CROWN colour now — a fern is foliage — and it seasons for free.
+- **A one-pixel flower head is dust on the lawn.** Heads are two.
+
+And one that would have measured as working: the region pick was fed the same
+hash that had just passed `< density`, so it only ever saw the bottom tenth of
+its range and the cumulative walk handed the first part every cell. **The dither
+would have been dead code.** Three independent hashes now — one to place, one to
+choose the mark, one to choose the region.
+
+Also: `.x.`/`xxx`/`.x.` is the obvious 3×3 fern and it draws a **cross**, which
+at this size reads as a sparkle lying on the lawn. Two leaves off a stem is the
+smallest mark that reads as growing out of it.
+
+**Still open:** five regions have no kit (blossom, and the three far rows, and
+the meadow by choice). The far rows are the interesting ones — a kit is the
+cheapest strangeness there is, and it is the one place §Biomes' "stranger, never
+richer" has to be checked mark by mark.
+
 ### 8i — The town stops floating — **built**
 
 Every standing thing in the world already had a contact shadow. The things that

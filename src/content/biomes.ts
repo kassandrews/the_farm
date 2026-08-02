@@ -124,6 +124,47 @@ export interface BiomeDef {
    *  shortens the tree by the same amount it drops, and the renderer takes the
    *  height from the same sum, so occlusion stays honest. */
   crownOverlap?: number;
+
+  /** What else grows here. Optional, and the meadow deliberately has none. */
+  decor?: DecorKit;
+}
+
+/** A region's ground decor — its ferns, reeds, litter and small flowers.
+ *
+ *  IT IS NOT A TILE, AND THAT IS THE WHOLE DESIGN. A tile is exclusive per cell,
+ *  so a fern would compete with the trees for ground and could never stand under
+ *  one; it would also need a solidity, a walkability, a `groundIdOf` entry and a
+ *  place in the flat-fill, and the last of those has produced a square painted
+ *  across a cell three times now (the poles, the mailbox, the junk pile). Decor
+ *  is drawn the way the grass tuft is drawn: a mark placed by a hash on the world
+ *  coordinate, owning nothing, stored nowhere, blocking no one.
+ *
+ *  IT IS ALSO WHY THE KITS CAN BE EXTRAVAGANT. DESIGN §Biomes: the test is "can
+ *  you carry it home?" Nothing here can be, so none of it is worth anything, and
+ *  a region may have as much of its own as it likes. The gathered scatter is the
+ *  mushroom and it stays where it is, on its own density rule. */
+export interface DecorKit {
+  /** Fraction of open grass carrying a mark. Read against the tuft's own 38%:
+   *  this is the layer ON TOP of that, so it wants to be a good deal sparser or
+   *  the ground stops being ground and becomes pattern. */
+  density: number;
+  /** The ink for `o` cells — a flower head, a berry, a pale stone. Left out when
+   *  a kit is all stem. Unlike `x` it does NOT travel with the season: a marsh
+   *  reed browns with the turf, and a white flower is white in October. */
+  accent?: string;
+  /** The marks themselves, one string per row, top row first. `.` is empty, `x`
+   *  takes the region's tuft colour, `o` takes `accent`.
+   *
+   *  MORE THAN ONE, ALWAYS — 8c's finding, and it is the reason this is a list
+   *  rather than a shape: the eye finds a repeated glyph long before it notices
+   *  that the placement underneath is random, so a single mark scattered
+   *  perfectly randomly still reads as a printed repeat.
+   *
+   *  Keep them small. The renderer insets a mark by a pixel inside its own cell,
+   *  so anything up to about 5×5 is guaranteed a clear pixel on every side and
+   *  can never touch its neighbour — which is the band rule (CLAUDE.md), and the
+   *  reason 8c held every tuft shape inside the 2px the first one occupied. */
+  marks: string[][];
 }
 
 /** The ordinary broadleaf, and the shape the game has always drawn.
@@ -174,6 +215,21 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // step-backs every third row are the whole trick — a clean triangle reads as
     // an arrowhead, and the little shelves are what say "branches" at 1px.
     crownRows: [1, 2, 3, 2, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6],
+    // Needle litter and the odd fern, which is what a conifer floor actually
+    // is. Sparse: the pines are already the densest trees in the game and the
+    // ground here is mostly in shade.
+    decor: {
+      density: 0.09,
+      marks: [
+        ["x..", ".x.", "..x"], // a fallen needle
+        ["..x", ".x.", "x.."], // and one the other way
+        // A SPROUT, NOT A PLUS. `.x.`/`xxx`/`.x.` was the obvious 3×3 fern and
+        // it draws a cross — which at this size reads as a sparkle sitting on
+        // the lawn, not as a plant growing out of it. Two leaves off a stem is
+        // the smallest mark that reads as foliage.
+        ["x.x", ".x.", ".x."],
+      ],
+    },
   },
 
   /** Bright, thin, airy — the opposite of the pines, and deliberately adjacent
@@ -195,6 +251,19 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // showing, which is what makes a birch read as slender — the shape does the
     // work the trunk tint can only half do.
     crownRows: [2, 4, 5, 6, 6, 6, 5, 5, 4, 3, 2],
+    // Thin pale grass and small white flowers — the airy opposite of the pines,
+    // and the reason the two rows sit next to each other.
+    decor: {
+      density: 0.13,
+      accent: "#f7f4e8",
+      marks: [
+        // Heads are TWO pixels. At one they are dust on the lawn rather than
+        // flowers — found on screen, and the same lesson as the decor ink.
+        ["oo.", ".x.", ".x."],
+        [".oo", "xx.", "x.."],
+        ["..x", ".x.", "x.."], // a bare blade, so it is not all flowers
+      ],
+    },
   },
 
   /** Dry and open. Where the stone is, so it earns a walk without a single
@@ -232,6 +301,17 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Squat and wind-flattened: wide, low, and wider at the shoulders than at the
     // crown. Barely taller than the rocks it stands among, which is the point.
     crownRows: [2, 4, 5, 5, 6, 5, 5, 4, 3],
+    // Dry twigs and pale grit. No flowers: this is the row that reads as
+    // parched, and a bloom would undo it.
+    decor: {
+      density: 0.10,
+      accent: "#c2b795",
+      marks: [
+        ["oo", "oo"], // a pebble
+        ["x..", ".xx", "..x"],
+        [".oo", "oo."],
+      ],
+    },
   },
 
   /** Low and murky. The only common biome that generates WATER, which is why its
@@ -255,6 +335,16 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // rather than sits. The tallest crown in the table — a fen tree leans over
     // the water it grew out of.
     crownRows: [4, 6, 7, 7, 7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2],
+    // Reeds, standing in clumps. The tallest marks in the file at four rows,
+    // which is what says "this ground is wet" without a single new tile.
+    decor: {
+      density: 0.16,
+      marks: [
+        ["x.x", "x.x", "x.x", ".x."],
+        [".x.", "x.x", "x.x", "x.x"],
+        ["..x", ".x.", ".x.", ".x."],
+      ],
+    },
   },
 
   // --- The far country (Phase 7a) ---------------------------------------------
