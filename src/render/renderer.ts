@@ -824,7 +824,10 @@ export class Renderer {
     // trunk it fell from. Not in the raised pass — that sorts on a FOOTPRINT y,
     // and a mote has no footprint to sort on, which is the same statement as it
     // having no height (see MoteKit).
-    if (ground) this.drawMotes(world, t);
+    // The ones that are OBJECTS — petals, spores, the glimmer's sparks. Night
+    // falls on them like it falls on a leaf, so they belong under the wash. The
+    // flashers are drawn further down, after it (see `drawMotes`).
+    if (ground) this.drawMotes(world, t, false);
 
     // The dark goes over the scene but UNDER the reticle. The reticle is the
     // promise (ROADMAP), and a promise you can't read at the far edge of your
@@ -868,7 +871,21 @@ export class Renderer {
       // argument means is "how much light to add", and above ground at midnight
       // the answer is all of it. Clamped, so dusk and dawn stay hints of warmth.
       this.drawLampGlow(Math.min(1, tint.darkness * 2));
+      // AND THE FIREFLIES, for exactly the reason the lamps are here.
+      //
+      // They were drawn with the petals, under this fill — so the wash went over
+      // them and every firefly on screen peaked at the same clamped (139,137,154)
+      // whatever its own phase or hex was. That is the measurement that found
+      // this: four motes at four different points in their cycles cannot land on
+      // one colour unless something downstream is flattening all of them.
+      //
+      // A firefly is a SOURCE. Night does not fall on a light, it is what the
+      // light is seen against, and the wash is the night. Above it, the additive
+      // dot lands on the darkened scene instead of being darkened with it, which
+      // is the whole of "make them brighter" — no hex could have bought it from
+      // underneath.
     }
+    if (ground) this.drawMotes(world, t, true);
   }
 
   // --- Tilemap ----------------------------------------------------------------
@@ -1903,7 +1920,11 @@ export class Renderer {
    *  The region is sampled through `regionParts` like the ground decor, so
    *  petals thin out across the blossom rows' edge rather than stopping on a
    *  line — the same free dither, for the same reason (see `decorKit`). */
-  private drawMotes(world: WorldState, t: number): void {
+  /** @param sources draw only the flashers (true) or only everything else
+   *  (false). Two passes because they sit on opposite sides of the night wash —
+   *  a petal is an object the dark falls on, a firefly is a light the dark is
+   *  seen against. Same walk, same hashes, one branch. */
+  private drawMotes(world: WorldState, t: number, sources: boolean): void {
     const ctx = this.ctx;
     const x0 = Math.floor(this.cam.x - this.sw / (2 * TILE)) - 1;
     const x1 = Math.ceil(this.cam.x + this.sw / (2 * TILE)) + 1;
@@ -1922,6 +1943,7 @@ export class Renderer {
         if (h > MOTE_MAX) continue;
         const kit = this.moteKit(world, tx, ty, decoHash(tx, ty, world.seed ^ 0x1c77));
         if (!kit || h > kit.density) continue;
+        if (!!kit.flash !== sources) continue;
         // THE PHASE, NOT THE BRIGHTNESS, and the two earlier versions of this
         // line are the argument for it. `tintAt` gives day 0, dusk 0.18, night
         // 0.5 and dawn 0.34: a cut at 0.3 lit the fireflies at night and at DAWN
@@ -1958,7 +1980,18 @@ export class Renderer {
         // arrived and left at full slope, which is what a bulb does and not what
         // a firefly does. Smoothstepping the same window makes it swell and go
         // out, which is the whole of the effect once the drifting is gone.
-        const pulse = Math.max(0, 1 - Math.abs(p - 0.5) * 3.4);
+        //
+        // THE WINDOW IS SHORT, and shorter than it reads as a number: 8 spans
+        // 2/8 of the cycle, about a second and a half out of six, and the
+        // smoothstep spends most of that arriving and leaving. A real firefly is
+        // dark nearly all the time and briefly not — at 3.4 this one was lit for
+        // three seconds in every six, which is a lamp with a dimmer on it.
+        //
+        // It costs coverage, and that is the trade rather than a bug: a flasher's
+        // instantaneous count is density × window (§8o), so halving the window
+        // halves how many are alight at once. Densities stay where they were
+        // measured — the answer to "too few" is more of them, not longer blinks.
+        const pulse = Math.max(0, 1 - Math.abs(p - 0.5) * 8);
         const fade = kit.flash
           ? pulse * pulse * (3 - 2 * pulse)
           : Math.min(1, Math.min(p, 1 - p) * 5);
@@ -1966,24 +1999,34 @@ export class Renderer {
         const rx = Math.round(x);
         const ry = Math.round(y);
         if (kit.flash) {
-          // A LIGHT, NOT A DOT. The same additive pass the lamps and lit windows
-          // use — a glow in the kit's colour, with an opaque near-white core
-          // inside it, because ROADMAP's lamp rule holds here too: a source must
-          // be the brightest thing in its own light. A single flat pixel reads as
-          // paint however bright the hex is.
+          // BRIGHT WITHOUT A HALO, which is a narrower target than it sounds and
+          // the reason this is two rects instead of one.
           //
-          // The glow is LOW, and that is the other lamp lesson: additive light
-          // needs to be much dimmer than it feels like it should, or three of
-          // them together saturate the ground to flat cream.
+          // It used to spill a low additive glow one pixel past the mote on every
+          // side (§8o, "a firefly is a SOURCE"). That is how a lamp works and it
+          // is not how this should look: the halo softened every firefly into a
+          // smudge on the grass, and the thing it was buying — brightness the
+          // palette cannot otherwise reach — is available without it.
+          //
+          // So the DOT ITSELF goes through the additive pass. A near-white core
+          // over an additive body clips to white at the centre and keeps the
+          // kit's hue at the rim, so the mark is hotter than anything else on
+          // screen while staying exactly `size` wide. Nothing outside the mote is
+          // touched, which is the whole of the request.
+          //
+          // The lamp rule survives, just at one-pixel scale: a source is still
+          // the brightest thing in its own light, and the core is still what says
+          // so — it is now inside the dot rather than around it.
           const prevOp = ctx.globalCompositeOperation;
           ctx.globalCompositeOperation = "lighter";
-          ctx.globalAlpha = 0.3 * fade;
-          ctx.fillStyle = kit.color;
-          ctx.fillRect(rx - 1, ry - 1, size + 2, size + 2);
-          ctx.globalCompositeOperation = prevOp;
           ctx.globalAlpha = fade;
-          ctx.fillStyle = kit.core ?? kit.color;
+          ctx.fillStyle = kit.color;
           ctx.fillRect(rx, ry, size, size);
+          if (kit.core && size > 1) {
+            ctx.fillStyle = kit.core;
+            ctx.fillRect(rx, ry, size - 1, size - 1);
+          }
+          ctx.globalCompositeOperation = prevOp;
           continue;
         }
         ctx.globalAlpha = 0.8 * fade;

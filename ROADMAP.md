@@ -4069,12 +4069,38 @@ of warm — an ember rather than a summer evening.
 
 **A firefly is a SOURCE, and that is what finally made it bright.** Brightening
 the hex did nothing useful — one flat pixel reads as paint however high its
-value. It draws through the same additive pass the lamps and lit windows use: a
-glow in the kit's colour, with an opaque near-white `core` inside it. Both lamp
-rules from 5a apply unchanged and are the reason the numbers are what they are:
-**a source must be the brightest thing in its own light** (hence two inks), and
-**additive light needs to be much dimmer than it feels like it should** (hence a
-0.3 halo rather than the 0.8 that felt right).
+value. It draws through the same additive pass the lamps and lit windows use,
+with an opaque near-white `core` inside the kit's colour. **A source must be the
+brightest thing in its own light** (hence two inks) — that rule is unchanged and
+is why there are still two.
+
+**AMENDED IN 8p, AND ONE HALF OF IT WAS WRONG.** The rule above survived; the
+halo and the pass order did not.
+
+- **The wash was over them the whole time.** `drawMotes` ran before the day/night
+  overlay, which is a flat `fillRect` across the viewport — so night was painted
+  *on top of* every firefly. Four motes at four different points in their cycles
+  all peaked at exactly `(139,137,154)`, which is the measurement that found it:
+  no per-mote phase can produce one colour unless something downstream is
+  flattening all of them. The flashers now draw **after** the wash, next to
+  `drawLampGlow`, for the identical reason the lamps are there — night does not
+  fall on a light, it is what the light is seen against. Petals, spores and the
+  glimmer's sparks stay *under* it: those are objects, and the dark does fall on
+  them. Two passes, one branch on `kit.flash`.
+- **No halo.** The 0.3 additive spill one pixel out softened every firefly into a
+  smudge on the grass. The brightness it was buying is available without it: put
+  the *dot itself* through the additive pass and a near-white core clips the
+  middle to white while the hue survives at the rim. Hotter than the old glow
+  ever was, and exactly `size` wide.
+- **The hexes go past the palette.** `#fff04a` / white in the near regions,
+  `#ffa022` / `#fff0d8` in the dusk. Everything else in `biomes.ts` is soft
+  because it is a surface; these are lights, and a light inside the game's range
+  reads as a pale speck.
+- **The flash is short.** The pulse window went 3.4 → 8, about a second and a
+  half of every six with most of that arriving and leaving. At 3.4 a firefly was
+  lit for half its cycle, which is a lamp with a dimmer on it. This costs
+  instantaneous coverage on the rule below and the densities were left alone
+  anyway: the answer to "too few" is more of them, not longer blinks.
 
 **THE PREVIEW PAGE IS THE WRONG INSTRUMENT FOR DENSITY, and that is worth knowing
 before the next kit.** A swatch is 13 tiles — about 170 cells. Full screen at the

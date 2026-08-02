@@ -300,8 +300,14 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // table.
     motes: {
       density: 0.028,
-      color: "#ffe23a",
-      core: "#fffce4",
+      // HOTTER THAN THE PALETTE, on purpose. Every other colour in this file is
+      // soft because it is a surface; a firefly is a light, and a light that
+      // sits politely inside the game's range reads as a pale speck on the
+      // grass — which is what these were. The core is flat white and the body is
+      // a yellow with nothing left in the red, so the additive pass clips the
+      // middle to white and leaves the hue only at the rim.
+      color: "#fff04a",
+      core: "#ffffff",
       // BARELY MOVING. A firefly that travels reads as a spark blowing past; one
       // that hangs and swells reads as a firefly. The drift is a tile and a bit
       // over six seconds, which at this size is a slow lift rather than a path.
@@ -339,8 +345,8 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // cannot see far in should not be the one with the most light in it.
     motes: {
       density: 0.018,
-      color: "#ffe23a",
-      core: "#fffce4",
+      color: "#fff04a",
+      core: "#ffffff",
       drift: 3,
       sway: 1,
       period: 7,
@@ -550,8 +556,12 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       // ORANGE HERE, YELLOW IN THE NEAR REGIONS. The twilight country's whole
       // palette is violet, and a warm light in it should read as the wrong kind
       // of warm — an ember rather than a summer evening.
-      color: "#ff8c1a",
-      core: "#ffe6bc",
+      // Orange, and now an ember rather than a hint of one — the dusk's whole
+      // palette is violet, so this is the only warm thing in the country and it
+      // should be the brightest. Same two-ink trick as the near regions: the
+      // white core clips, the orange survives at the rim.
+      color: "#ffa022",
+      core: "#fff0d8",
       drift: 2,
       sway: 1,
       period: 6,
