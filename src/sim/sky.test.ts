@@ -173,10 +173,22 @@ describe("the staircase that goes somewhere", () => {
     expect(Math.abs(back.x - at.x) <= 1 && Math.abs(back.y - at.y) <= 1).toBe(true);
   });
 
-  it("does nothing at all at the top of a flight that goes nowhere", () => {
-    // The decoys, and the reason they shipped a phase early. Standing at the
-    // foot of one with ACT lit does exactly what standing in any other field
-    // does — which is what makes finding the real one mean anything.
+  it("takes you nowhere from the foot of a flight that goes nowhere", () => {
+    // The decoys, and the reason they shipped a phase early. Finding the real one
+    // means something because these do not work.
+    //
+    // THIS TEST USED TO ASSERT THE OPPOSITE OF ITS LAST LINE, and the change is
+    // deliberate. It required `actionTarget` NOT to offer a decoy, so the held
+    // tool took the button and pressing ACT at the foot of one dug the grass you
+    // were standing on — which is indistinguishable from the button being broken,
+    // and was reported as exactly that. The mechanic is "find out by trying"
+    // (DESIGN §The sky); a try the button will not let you make is not a try, and
+    // an affordance that differs between the two kinds answers the question
+    // before you have asked it.
+    //
+    // What must NOT change is below it: the decoy still refuses to climb, still
+    // moves nobody, and still stores nothing. It gains a line about itself and
+    // nothing else.
     const w = freshWorld();
     const def = FOUND.stair;
     let found: { x: number; y: number } | null = null;
@@ -194,7 +206,16 @@ describe("the staircase that goes somewhere", () => {
     w.player.heading = "n";
     expect(canClimb(w)).toBe(false);
     expect(useStair(w)).toBe(false);
-    expect(actionTarget(w, "dig").kind).not.toBe("stair");
+    expect(w.player.layer).toBe("surface");
+    // The button offers the steps, exactly as the real one does.
+    expect(actionTarget(w, "dig").kind).toBe("stair");
+    // And pressing it says something about THESE steps, changes nothing, and
+    // names nothing to do or to look for.
+    const r = contextAction(w, "dig", Date.now());
+    expect(r.changed).toBe(false);
+    expect(w.player.layer).toBe("surface");
+    expect(r.message).toBeTruthy();
+    expect(r.message).not.toMatch(/other|another|somewhere else|real|this one|elsewhere/i);
   });
 });
 

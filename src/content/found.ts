@@ -201,6 +201,43 @@ const LETTER_CHANCE = 0.35;
  *
  *  `day` is a whole number of days, so the letter changes at midnight and holds all
  *  day: a letter that changed while you stood there would be a slot machine. */
+/** What you notice when you climb a flight of steps and nothing happens.
+ *
+ *  THE DECOY HAS TO ANSWER, and this is the whole of what it says. Before this,
+ *  trying a staircase that goes nowhere did nothing at all — the shovel took the
+ *  button and you turned over the grass at the foot of it — which is
+ *  indistinguishable from the game having ignored you, and the first player to
+ *  meet one filed it as a bug. The mechanic is "you find out which one is real by
+ *  standing at the bottom of it and trying" (DESIGN §The sky), and a try that
+ *  produces no answer is not a try.
+ *
+ *  EVERY LINE DESCRIBES THIS STAIRCASE AND NOTHING ELSE. None of them says the
+ *  steps are fake, that another flight might not be, or that there is anything
+ *  to look for — "long abandoned" is a fact about the object in front of you, and
+ *  a player who has met only decoys has been told nothing they could act on. That
+ *  is the line between a mood and a hint (§Found places: it holds a mood, or
+ *  nothing), and it is why none of these contains the words "this one".
+ *
+ *  Past tense or plain present about a thing that is simply true, which is the
+ *  same discipline the errands board's notices keep: no line here names anything
+ *  to do.
+ *
+ *  A FUNCTION OF WHICH STAIRCASE, so one flight always says the same thing. A
+ *  line that changed each time you tried would be the game shuffling in front of
+ *  you, and these are meant to be old. */
+const STAIR_NOTES = [
+  "Long abandoned. Moss has got into the joints.",
+  "Weathered smooth. Whoever wore them down is not here.",
+  "Solid enough underfoot. They simply stop.",
+  "Somebody cut these. There is no sign of what for.",
+  "The top step is the top step.",
+];
+
+export function stairNote(seed: number, index: number): string {
+  const h = mix(seed ^ (index * 2654435761 + 0x57a1)) / 4294967296;
+  return STAIR_NOTES[Math.floor(h * STAIR_NOTES.length) % STAIR_NOTES.length];
+}
+
 export function letterFor(seed: number, index: number, day: number): string | null {
   // Two independent hashes: whether there IS one today, and which one. Sharing a
   // hash would tie "the box is full" to "it is the fourth letter", so one letter in

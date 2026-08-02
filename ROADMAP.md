@@ -3942,6 +3942,38 @@ drawn correctly and could not be seen, because it was given a value one step fro
 whatever it sat on. Three of the four were found by drawing the thing in magenta
 at double size, which is now the first move rather than the fourth.
 
+### A staircase that goes nowhere says so — **built**
+
+Reported as a bug: "when I get to the stairs, I can't interact with them." It was
+a decoy (ring 163), and the mechanism was working — but **the report is the
+finding.** DESIGN §The sky says you find out which flight is real "by standing at
+the bottom of it and trying", and trying was not something the button let you do:
+`actionTarget` offered a decoy nothing, so the held tool took the tile and ACT
+dug the grass at the foot of the steps. That is indistinguishable from a broken
+button, and it was correctly filed as one.
+
+- **Every flight claims ACT now**, real or not. Two reasons and the second is the
+  better one: a try you cannot make is not a try, and an *affordance that differs
+  between the two kinds answers the question before you have asked it* — the old
+  behaviour leaked which staircase was real to anyone who noticed their shovel
+  had stopped working.
+- **The decoy answers with a line about itself** (`stairNote`, a total function of
+  which staircase, so one flight always says the same thing — these are meant to
+  be old). Nothing is stored, nobody moves, no memory and no journal entry.
+- **NO LINE MENTIONS ANOTHER STAIRCASE.** "Long abandoned. Moss has got into the
+  joints." is a fact about the object in front of you; a player who has met only
+  decoys has been told nothing they could act on. That is the line between a mood
+  and a hint (§Found places), and the test asserts none of them contains
+  "other", "another", "real" or "this one".
+- **The cost noted at `climbTarget` now applies to every staircase**: facing any
+  steps, you cannot dig the tile you are on. There is a great deal of grass and
+  very few staircases.
+
+**A test asserted the opposite and was rewritten rather than deleted.**
+`sky.test.ts` required `actionTarget` NOT to offer a decoy — it encoded the old
+call, and the comment now records why the call changed and what must still hold
+(the decoy still refuses to climb, still moves nobody, still stores nothing).
+
 ### 8o — The glimmer glitters, and the dusk has fireflies — **built**
 
 **The name was a promise the region wasn't keeping.** A place called the glimmer

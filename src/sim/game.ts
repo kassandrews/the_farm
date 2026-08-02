@@ -60,7 +60,7 @@ import {
   MAILBOX,
   FLOOR_BUILD,
 } from "../content/tiles";
-import { letterFor } from "../content/found";
+import { letterFor, stairNote } from "../content/found";
 import { dayNumber } from "./found";
 import { foundAt } from "./world";
 import { digWithFind, carveWithFind, findLine } from "./junk";
@@ -314,6 +314,19 @@ export function climbTarget(world: WorldState): { x: number; y: number } | null 
 
 export function canClimb(world: WorldState): boolean {
   return climbTarget(world) !== null;
+}
+
+/** The step ahead of you, real or not — what ACT aims at.
+ *
+ *  Deliberately a DIFFERENT question from `climbTarget`, which still answers only
+ *  about the staircase that goes somewhere. Keeping them apart is what lets the
+ *  button behave identically at both while the outcome differs. */
+export function stepsAhead(world: WorldState): { x: number; y: number } | null {
+  if (world.player.layer !== "surface") return null;
+  const ahead = aheadOf(world);
+  if (climbTarget(world)) return ahead;
+  const site = foundAt(world.seed, world.homestead.spot, ahead.x, ahead.y);
+  return site && site.kind === "stair" ? ahead : null;
 }
 
 /** And the way back down: standing on the head of the steps, up in the sky. */
@@ -699,8 +712,20 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
   // real staircase and facing it, you cannot dig that tile. Facing any other
   // flight of steps in the world, you still can — this branch declines, because
   // there is nothing up there to go to.
-  const up = climbTarget(world);
-  if (up) return { ...up, kind: "stair" };
+  // ANY flight of steps claims the button, not only the one that works.
+  //
+  // It used to be `climbTarget` alone, so a decoy left the tile to the held tool
+  // and pressing ACT at the foot of one dug the grass you were standing on. That
+  // is indistinguishable from the button being broken, and it was reported as
+  // exactly that. The secret is "find out by trying" (DESIGN §The sky) — so
+  // trying has to be a thing the button lets you do, and it has to be the same
+  // gesture at both kinds or the affordance itself gives the answer away.
+  //
+  // The cost noted above now applies to every staircase rather than one: facing
+  // any steps, you cannot dig the tile you are on. That is the smaller price —
+  // there is a great deal of grass and very few staircases.
+  const steps = stepsAhead(world);
+  if (steps) return { ...steps, kind: "stair" };
 
   // The way down, and it can sit this high in the ladder safely. A shaft cell
   // holds nothing else by construction: `canSink` refuses a cell with a crop, a
@@ -968,7 +993,15 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
     // Same shape as the shaft, same reason: the button offers no choice of
     // direction, because there is only ever one to go in.
     const up = world.player.layer === "surface";
-    if (!useStair(world)) return { kind: "none", changed: false, message: "" };
+    if (!useStair(world)) {
+      // A flight that goes nowhere. It says what it is and changes nothing —
+      // no memory, no journal entry, nothing stored. You looked at some steps.
+      const site = foundAt(world.seed, world.homestead.spot, target.x, target.y);
+      if (site && site.kind === "stair") {
+        return { kind: "stair", changed: false, message: stairNote(world.seed, site.index) };
+      }
+      return { kind: "none", changed: false, message: "" };
+    }
     return {
       kind: "stair",
       changed: true,
