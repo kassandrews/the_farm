@@ -732,11 +732,18 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // birch's leading shoot is a whip — the top of one comes to a point, and the
     // mass is in the lower half of the crown.
     //
-    // Lumpy: the widths step in and out by a pixel instead of running smoothly,
-    // so the outline scallops. That is the "puffy" — foliage arrives in clumps,
-    // and a crown whose edge is a clean curve is a balloon. The wobble is SLOW
-    // (a step, then a hold) because alternating every row reads as a zigzag,
-    // which is a texture rather than a shape.
+    // Puffy: the widths hold and then step, so the outline swells and settles.
+    // It is the STEP THAT HOLDS that reads as a clump — a crown whose edge is a
+    // clean curve is a balloon, and one that steps in and out every other row is
+    // a comb.
+    //
+    // THE COMB IS THE MISTAKE THIS ROW HAS ALREADY MADE, and it is the per-cell
+    // edges band rule (CLAUDE.md) wearing a different hat: the widest part ran
+    // 6,5,6,5,6, which is three single pixels standing off each side with a dent
+    // between each. Every one of them is a legible notch at this scale, so the
+    // shoulders read as serrated rather than as leaves. Alternation that fine is
+    // texture, and texture on a silhouette is noise. Fill it in and the same five
+    // rows become one shoulder.
     //
     // AND IT IS AN EGG, NOT A CONE, which is the correction that cost a go. The
     // first version widened all the way down — which is the PINE's silhouette
@@ -745,8 +752,8 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // branches are the SHORTEST; the outline has to come back in at the bottom
     // or the species reads as a conifer no matter what colour the bark is.
     //
-    // SEVENTEEN ROWS ACROSS THIRTEEN PIXELS, and the count is doing as much as
-    // the widths. At fourteen rows the crown came out round — a ball on a stick,
+    // SIXTEEN ROWS ACROSS THIRTEEN PIXELS, and the count is doing as much as the
+    // widths. At fourteen rows the crown came out round — a ball on a stick,
     // which is the shape a child draws and the one this was meant to stop being.
     // Taller than it is wide is the entire brief.
     //
@@ -754,7 +761,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // tree wanted: a crown that thin has to close on the trunk in two or three
     // steps, and the silhouette went from full width to bare bark almost at once.
     // Two more pixels buy the rows to come down GENTLY.
-    crownRows: [1, 3, 4, 5, 5, 6, 5, 6, 5, 6, 5, 5, 4, 4, 4, 3],
+    crownRows: [1, 3, 4, 5, 5, 6, 6, 6, 6, 6, 5, 5, 4, 4, 4, 3],
     // The bottom four rows come down BESIDE the trunk, and the last three of
     // them part around it, so a stripe of white bark stands inside the foliage.
     // It is the cheapest thing on this tree and does the most: bark showing
@@ -770,7 +777,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Two is the floor rather than a taste: one row is a dent, and the bark
     // inside the leaves — the thing the notch is FOR — needs a second pixel to
     // read as a stripe rather than as a stray light pixel in the canopy.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     crownOverlap: 4,
     // Thin pale grass and small white flowers — the airy opposite of the pines,
     // and the reason the two rows sit next to each other.

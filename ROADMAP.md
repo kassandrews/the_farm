@@ -2440,9 +2440,14 @@ Widening it also tempted a deeper notch, which was the wrong lever and got put
 back. **A notch has to stay shallow enough to read as an underside.** At six rows
 the foliage reached the trunk's sides half a crown below where it crossed over the
 top, and the eye read a long white channel driven up into the canopy rather than a
-stem the leaves part around. Two rows; the crown sits back where it was. Two is
-the floor, not a taste — one row is a dent, and the bark inside the leaves needs a
-second pixel to read as a stripe rather than as a stray light pixel in the canopy.
+stem the leaves part around. One row; the crown sits back where it was.
+
+**And the shoulders were a comb.** The widest part ran 6, 5, 6, 5, 6 — three
+single pixels standing off each side with a dent between each, every one of them
+a legible notch at this scale. That is §Per-cell edges band in a different hat:
+alternation that fine is texture, and texture on a silhouette is noise. Filling
+the dents in turns five rows into one shoulder, which is what "puffy" wanted all
+along — it is the step that HOLDS that reads as a clump, not the stepping.
 
 **The correction worth remembering: the first crown widened all the way down, and
 came out a narrow white-trunked spruce.** That silhouette is the pinewood's, four
