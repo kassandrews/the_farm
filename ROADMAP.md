@@ -4326,6 +4326,43 @@ height read as a gate; unequal reads as grass.
 "dry blades and grit" idea is right and invisible. Either the scrub is meant to
 read that bare, or its tuft wants contrast before the shapes can do any work.
 
+### 8t — Every region weathers its own stone — **built**
+
+`BiomeDef.stone = { tint?, shapes? }`, and two new silhouettes (`slab`, `shard`)
+beside the original three.
+
+**The rock was the LAST object stating its colour outright.** Crowns, trunks,
+tufts and mushroom caps all take the region; `drawRock` said `#8d8a84` everywhere,
+so the glimmer's teal floor had one warm grey thing lying on it — the identical
+complaint that got the mushrooms recoloured, and less obvious only because it is
+about **one stone a screen** out there rather than a scatter. Measured, per
+175-cell screen: scrub 17.5, meadow 4.3, dusk 2.3, pines 1.9, birch 1.6, glass
+1.2, glimmer 1.2, fen 0.8.
+
+**A tint and a shape list, never a palette.** The stone keeps its day/night greys
+and its lit, body and shaded rows; the region pulls all of them the same
+direction. A region that had to restate the lighting to change the colour would
+drift out of step with the rock everywhere else the first time either moved.
+
+**Shape says more than colour here.** The scrub is the only region with enough
+stones for a shape list to do real work, and it gets the three dry silhouettes
+and none of the round one: *that ground cracked, it did not wear.* The fen gets
+slabs — anything that stood up there went under long ago. The pines get rounded
+shapes only, because nothing sharp survives that long in shade.
+
+**A shard is a near-column, not a pyramid.** `[1,1,2,3,3,4]` widens smoothly from
+tip to base and renders as a little heap of rock; `[1,1,2,2,2,3]` reads as
+something that GREW out of the ground. That distinction is why shards are
+far-country only and there is a test: near town, stone is just stone.
+
+**The meadow has no `stone` row on purpose** — default grey, original three
+shapes. Every other region is a departure from it, and a departure needs
+somewhere to depart from. Also tested.
+
+Glimmer mushrooms 0.075 → **0.045**. Pale caps on a floor that quiet were still
+the thing you noticed first, which for a region whose name is about *light* is the
+wrong first thing.
+
 ### 8l — A page that shows every region at once — **built**
 
 `/biomes.html` + `src/tools/biome-preview.ts`, the sibling of `/looks.html`, and

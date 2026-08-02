@@ -54,6 +54,26 @@ export type TuftShape = "cluster" | "sprout" | "blades" | "dot";
 /** What grass is drawn from where a region hasn't said. Ordinary lawn. */
 export const TUFTS_DEFAULT: TuftShape[] = ["cluster", "cluster", "blades"];
 
+/** The silhouettes a region's stone is cut from. Named here, drawn in the
+ *  renderer, exactly as the tuft marks are — a region says WHICH, the draw call
+ *  knows what each one looks like.
+ *
+ *  - `boulder` — round, sat down in the grass. The ordinary stone.
+ *  - `crag`    — narrower, and it stands up.
+ *  - `broken`  — a flat stone that split, with the piece beside it.
+ *  - `slab`    — low and wide, lying flat. Sunken country.
+ *  - `shard`   — narrow, tall and stepped. Reads as something that grew rather
+ *                than something that fell, which is why it belongs to the far
+ *                country and nowhere near town.
+ *
+ *  Weights are repetition, same as `tufts`. */
+export type StoneShape = "boulder" | "crag" | "broken" | "slab" | "shard";
+
+/** What stone looks like where a region hasn't said: the original three, and
+ *  untinted. This is what the meadow and the town get, and it is why walking
+ *  home always looks like walking home. */
+export const STONES_DEFAULT: StoneShape[] = ["boulder", "crag", "broken"];
+
 /** A pull toward a colour. `amount` is 0 (leave it alone) to 1 (become this). */
 export interface Tint {
   color: string;
@@ -205,6 +225,24 @@ export interface BiomeDef {
      *  catching a facet, so it wants to be noticed only if you look. */
     twinkle?: number;
   };
+
+  /** What the stone here is made of, and what it was cut into.
+   *
+   *  THE LAST OBJECT STATING ITS COLOUR OUTRIGHT. Crowns, trunks, tufts and
+   *  mushroom caps all take the region; a rock was `#8d8a84` everywhere, so the
+   *  glimmer's teal floor had one warm grey thing lying on it — the identical
+   *  complaint that got the mushrooms recoloured, and less obvious only because
+   *  there is about one stone a screen out there rather than a scatter.
+   *
+   *  A TINT AND A SHAPE LIST, NOT A PALETTE. The stone keeps its day and night
+   *  greys and its lit and shaded rows; the region pulls all three the same
+   *  direction, so nothing here has to restate the lighting to change the colour.
+   *
+   *  Stone is still stone: this is weathering and what the ground broke into, not
+   *  a different material. It gathers into `stone` wherever it stands, and a
+   *  region that wanted its own mineral would be the yield promise broken exactly
+   *  as a puffball mushroom would break it. */
+  stone?: { tint?: Tint; shapes?: StoneShape[] };
 
   /** The cap colour where this region's mushrooms come up. Optional; the default
    *  red lives in the renderer and is what every other region gets.
@@ -383,6 +421,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
    *  containing the origin is always this one (see sim/world.ts), so a town that
    *  existed before biomes did generates exactly the terrain it always did.
    *  Change a number in this row and you re-landscape everybody's home. */
+  // NO `stone` ROW, deliberately: the meadow keeps the default grey and the
+  // original three silhouettes, so the ground you already know looks exactly as
+  // it did. Every other region is a departure FROM this one, and a departure
+  // needs somewhere to depart from.
   meadow: {
     id: "meadow",
     name: "the meadow",
@@ -449,6 +491,9 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // enough that the season is a whisper here and a shout everywhere else.
     crown: { color: "#23402c", amount: 0.75 },
     trunk: { color: "#4a3324", amount: 0.3 },
+    // Damp and mossed over, the way stone goes under a canopy that never lets
+        // it dry. Rounded shapes only — nothing sharp survives that long in shade.
+    stone: { tint: { color: "#4c5a4a", amount: 0.26 }, shapes: ["boulder", "boulder", "broken"] },
     // A conifer: narrow, tall, and TIERED rather than smoothly tapered. The
     // step-backs every third row are the whole trick — a clean triangle reads as
     // an arrowhead, and the little shelves are what say "branches" at 1px.
@@ -513,6 +558,9 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // concrete bollard with a crown on it, obvious at swatch size and invisible
     // in the numbers. Bark is nearly white or it is not bark.
     trunk: { color: "#f4f1e6", amount: 0.94 },
+    // Pale, and mostly whole. The lightest stone in the game, which is the same
+        // note the trunks and the ground are already singing.
+    stone: { tint: { color: "#cfd2c4", amount: 0.22 }, shapes: ["boulder", "broken"] },
     // Small and high. A short crown on the same 10px trunk leaves more pale bark
     // showing, which is what makes a birch read as slender — the shape does the
     // work the trunk tint can only half do.
@@ -574,6 +622,12 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     tufts: ["blades", "dot", "dot", "dot"],
     crown: { color: "#8a9152", amount: 0.35 },
     trunk: { color: "#7a6248", amount: 0.3 },
+    // SUN-BLEACHED AND BROKEN UP, and the region with by far the most of it —
+        // seventeen stones a screen against everywhere else's one or two, so this is
+        // the one row where the shape list does real work. All three of the dry
+        // silhouettes and none of the round one: this ground cracked, it did not
+        // wear.
+    stone: { tint: { color: "#c9b98c", amount: 0.3 }, shapes: ["crag", "broken", "broken", "slab"] },
     // Squat and wind-flattened: wide, low, and wider at the shoulders than at the
     // crown. Barely taller than the rocks it stands among, which is the point.
     crownRows: [2, 4, 5, 5, 6, 5, 5, 4, 3],
@@ -610,6 +664,9 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     tufts: ["sprout", "sprout", "cluster"],
     crown: { color: "#2f4a34", amount: 0.45 },
     trunk: { color: "#3d3226", amount: 0.35 },
+    // Sunk, wet and dark. Slabs and low boulders — anything that stood up here
+        // went under a long time ago.
+    stone: { tint: { color: "#41504a", amount: 0.32 }, shapes: ["slab", "slab", "boulder"] },
     // Weeping: broad at the top and narrowing all the way down, so the mass hangs
     // rather than sits. The tallest crown in the table — a fen tree leans over
     // the water it grew out of.
@@ -663,6 +720,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     tufts: ["dot", "dot", "cluster"],
     crown: { color: "#2a2740", amount: 0.7 },
     trunk: { color: "#3a3348", amount: 0.45 },
+    // Violet, like everything under this light, and it STANDS. The first region
+        // to get shards: out here the ground has started doing things it does not do
+        // at home, and that is the whole premise of the far country.
+    stone: { tint: { color: "#463d5e", amount: 0.34 }, shapes: ["crag", "shard", "boulder"] },
     // The meadow's silhouette exactly. Colour carries this one alone, deliberately:
     // it is the shape you know, which is what makes the colour unsettling instead
     // of merely decorative.
@@ -721,7 +782,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // every one of these, and at the old density a swatch reads as a mushroom
     // patch that happens to glitter. Punctuation, which is what the note above
     // always said they were.
-    mushrooms: 0.075,
+    // Fewer again. 0.075 was already the thinned number, and with pale caps on a
+    // floor this quiet they still read as the thing you notice first — which for
+    // a region whose name is about LIGHT is the wrong first thing.
+    mushrooms: 0.045,
     water: 0,
     ground: { color: "#1e5a72", amount: 0.8 },
     // THE SPECKLE WAS THE GLOW, AND IT ISN'T ANY MORE — which is a promotion for
@@ -802,6 +866,11 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     },
     crown: { color: "#16303a", amount: 0.75 }, // near-black, so the floor reads bright
     trunk: { color: "#243a42", amount: 0.5 },
+    // The teal the whole region is dyed in, and mostly SHARDS — stone that grew
+        // rather than fell, which is the nearest this gets to saying "crystal"
+        // without claiming a material it does not give. It still gathers into plain
+        // `stone`, exactly as the champagne mushroom still gives a mushroom.
+    stone: { tint: { color: "#2f7078", amount: 0.36 }, shapes: ["shard", "shard", "boulder"] },
     // PUFFY, and lumpy on purpose. Still close-topped — the canopy has to close
     // over you or the floor has nothing to be the brighter thing than — but wider
     // than a tile now and no longer a smooth taper.
@@ -883,6 +952,9 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // a season, and a season is not something a place gets to have on its own.
     crown: { color: "#dfeaf2", amount: 0.8 },
     trunk: { color: "#9fb6c6", amount: 0.6 },
+    // Bleached to nearly the colour of the air. Shards and slabs: everything in
+        // this wood is either standing very straight or lying very flat.
+    stone: { tint: { color: "#c3dbe8", amount: 0.38 }, shapes: ["shard", "slab"] },
     // Narrow, upright, and sparse-shouldered: closer to the birch than to anything
     // else here, because the one ordinary region it should remind you of is the
     // pale one. A far biome that recalls a near one is what keeps the drift
@@ -911,6 +983,8 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     tufts: ["cluster", "blades"],
     crown: { color: "#e8a8c4", amount: 0.8 }, // pink, and unmistakably so
     trunk: { color: "#5a3a30", amount: 0.25 },
+    // Old orchard stone, warmed by the same light everything else here is.
+    stone: { tint: { color: "#c8b2ac", amount: 0.18 }, shapes: ["boulder", "slab"] },
     // Wider than anything else here, and BEAN-shaped rather than round: full
     // width held for most of the crown, then two lobes hanging down either side
     // of a dip over the trunk. Cherry blossom's character is too much of it at

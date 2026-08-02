@@ -540,3 +540,40 @@ describe("shrubs", () => {
     expect(nodeForTile(SHRUB, "surface")).toBe("shrub");
   });
 });
+
+// Stone. Each region weathers its own, which is appearance — but two of the
+// promises it could break are not.
+describe("stone", () => {
+  it("leaves the meadow's alone", () => {
+    // The town's own region says nothing about stone, so it keeps the default
+    // grey and the original three silhouettes. Every other region is a departure
+    // FROM this one, and a departure needs somewhere to depart from — a tinted
+    // rock in the meadow would re-landscape the view from everybody's porch.
+    expect(BIOMES.meadow.stone).toBeUndefined();
+  });
+
+  it("keeps shards out in the far country", () => {
+    // A shard reads as stone that GREW rather than fell. That is a statement
+    // about how strange somewhere is, so it may only be made where strangeness
+    // is the premise — near town, stone is just stone.
+    const near = new Set(
+      FIELD_WEIGHTS.filter(([, w]) => w.near > 0).map(([id]) => id),
+    );
+    for (const def of Object.values(BIOMES)) {
+      if (!def.stone?.shapes?.includes("shard")) continue;
+      expect(near.has(def.id)).toBe(false);
+    }
+  });
+
+  it("never turns stone into a different material", () => {
+    // Every region gathers plain `stone`, whatever colour it is standing there —
+    // the same promise the champagne mushroom keeps. A tint and a silhouette are
+    // appearance; a yield would be the far country paying better for the walk.
+    expect(NODES.rock.drop).toBe("stone");
+    for (const def of Object.values(BIOMES)) {
+      // A tint is a DIRECTION and an amount, never a replacement: at 1.0 the
+      // stone would stop being stone-coloured at all.
+      if (def.stone?.tint) expect(def.stone.tint.amount).toBeLessThan(0.5);
+    }
+  });
+});

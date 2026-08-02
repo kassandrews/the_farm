@@ -84,6 +84,8 @@ import { FURNITURE_ART } from "../content/furnishings";
 import {
   BROADLEAF,
   TUFTS_DEFAULT,
+  STONES_DEFAULT,
+  type StoneShape,
   type BiomeDef,
   type DecorKit,
   type MoteKit,
@@ -293,11 +295,25 @@ const TRUNK_H = 10;
  *  A rock's height above its base is `rows.length + 2`, which is what `hides`
  *  is asked about — the same rule as a tree's TRUNK_H + crown, so nothing here
  *  assumes a constant. */
-const ROCK_SHAPES: readonly { readonly rows: readonly number[]; readonly chip?: number }[] = [
-  { rows: [2, 4, 5, 5, 4] }, // a boulder, sat down in the grass
-  { rows: [1, 3, 4, 4, 4, 3] }, // a crag: narrower, and it stands up
-  { rows: [3, 4, 4, 3], chip: 5 }, // a flat stone that broke, with the piece beside it
-];
+const ROCK_SHAPES: Record<
+  StoneShape,
+  { readonly rows: readonly number[]; readonly chip?: number }
+> = {
+  boulder: { rows: [2, 4, 5, 5, 4] }, // sat down in the grass
+  crag: { rows: [1, 3, 4, 4, 4, 3] }, // narrower, and it stands up
+  broken: { rows: [3, 4, 4, 3], chip: 5 }, // it split, with the piece beside it
+  // A SLAB lies down. Two rows and wide: the flattest thing that still catches a
+  // lit row, for country where the ground is sinking rather than breaking.
+  slab: { rows: [4, 5, 5] },
+  // A SHARD stands. Narrow, and it barely tapers — which is the whole of the
+  // difference between this and a boulder, and it took a correction: [1,1,2,3,3,4]
+  // widens smoothly from tip to base and renders as a little PYRAMID, which reads
+  // as a heap of rock rather than a piece of it. A near-column reads as something
+  // that GREW out of the ground rather than something that fell onto it, and that
+  // is why this belongs to the far country and must never turn up near town,
+  // where stone is just stone.
+  shard: { rows: [1, 1, 2, 2, 2, 3] },
+};
 /** Taller than a rock, shorter than a tree. It should read as built rather than
  *  grown, and as somebody's, without being tall enough to hide behind. Its width
  *  is a whole tile: it is a CUBE, and the first draft was eleven pixels wide and
@@ -3400,14 +3416,25 @@ export class Renderer {
   /** A rock: low enough to see over, tall enough to sit in the world rather
    *  than on the floor plan.
    *
-   *  Which of the three (see ROCK_SHAPES) comes off a fraction of the tile hash
-   *  that isn't the one nudging it sideways — the same reason the mushrooms use a
-   *  second fraction. Sharing one would tie shape to position and every crag in
-   *  the world would stand a pixel left of centre. */
+   *  Which silhouette comes off a fraction of the tile hash that isn't the one
+   *  nudging it sideways — the same reason the mushrooms use a second fraction.
+   *  Sharing one would tie shape to position and every crag in the world would
+   *  stand a pixel left of centre.
+   *
+   *  WHICH SILHOUETTES ARE AVAILABLE is the region's, like its tuft marks and its
+   *  crown rows. A region says which of them its ground breaks into; the shapes
+   *  themselves live up in ROCK_SHAPES, because a silhouette is a drawing. */
   private drawRock(world: WorldState, tx: number, ty: number, night: boolean): void {
     const ctx = this.ctx;
+    /** Apply the region's weathering, or leave the stone alone. */
+    const mix = (hex: string, t: Tint | undefined): string => (t ? mixHex(hex, t) : hex);
     const h = decoHash(tx, ty, world.seed);
-    const shape = ROCK_SHAPES[Math.floor(((h * 43) % 1) * ROCK_SHAPES.length) % ROCK_SHAPES.length];
+    // The HARD region, for the third time and the same reason: a stone is an
+    // object and takes a side. Half a shard fading into half a boulder is not a
+    // rock anybody could name.
+    const stone = regionSkin(world.seed, world.homestead.spot, tx, ty)?.stone;
+    const kinds = stone?.shapes ?? STONES_DEFAULT;
+    const shape = ROCK_SHAPES[kinds[Math.floor(((h * 43) % 1) * kinds.length) % kinds.length]];
     const rows = shape.rows;
     const jx = Math.floor(h * 3) - 1;
     const cx = Math.round(this.sceneX(tx)) + jx;
@@ -3427,9 +3454,15 @@ export class Renderer {
     ctx.fillStyle = "rgba(0,0,0,0.16)";
     ctx.fillRect(cx - low - 1, base - 2, (low + 1) * 2, 2);
 
-    const body = night ? "#5e6068" : "#8d8a84";
-    const lit = night ? "#74767e" : "#a8a49c";
-    const foot = night ? "#4a4c54" : "#6f6c66";
+    // The greys stay stated here — day and night, lit, body and shaded — and the
+    // region pulls all four the same direction. That is the whole reason `stone`
+    // carries a TINT rather than a palette: weathering is one decision, and a
+    // region that had to restate the lighting to change the colour would drift
+    // out of step with the rock everywhere else the first time either moved.
+    const t = stone?.tint;
+    const body = mix(night ? "#5e6068" : "#8d8a84", t);
+    const lit = mix(night ? "#74767e" : "#a8a49c", t);
+    const foot = mix(night ? "#4a4c54" : "#6f6c66", t);
     const top = base - height;
     ctx.fillStyle = body;
     for (let r = 0; r < rows.length; r++) {
