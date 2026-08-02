@@ -4298,6 +4298,10 @@ wood's light. Regions without `mushroomCap` keep the red, which stays stated
 outright in the renderer — and night is a `Tint` over the region's own cap rather
 than a second table of hexes to keep in step with the first.
 
+> **SUPERSEDED, and read the paragraph above first — it is still most of the
+> rule.** The line moved once the fen needed a shape and not just a colour. See
+> §The mushroom shape below.
+
 **Crowns take the HARD region, not the blended one** — `regionSkin`'s existing
 argument, now applying to mushrooms too. Half a champagne cap fading back to red
 across a border is a mushroom caught between two minds.
@@ -4329,10 +4333,49 @@ there would be the region joining in.
 **Recoloured, never thinned.** Density is the one field in `biomes.ts` that
 touches yield — mushrooms barter for cloth, for seed, and for every crop variety
 at 8 a row — so fixing the fen by moving numbers would have made foraging
-measurably worse somewhere for a reason no player could see. A tint costs nothing
-and does the whole job. Red now means birch or pine, which is what it means
-outdoors. `palette.test.ts` holds the whitelist, so a new region that grows
-mushrooms has to decide which way it went.
+measurably worse somewhere for a reason no player could see. Red now means birch
+or pine, which is what it means outdoors. `palette.test.ts` holds the whitelist,
+so a new region that grows mushrooms has to decide which way it went.
+
+### The mushroom shape, and where the line actually is
+
+Recolouring the fen was not enough, and the reason is the one the pinewood taught
+two hundred lines earlier: **at this size the outline is most of what a thing is.**
+The dome IS the fly agaric. Grey paint on a dome left the fen with the right
+colour on the wrong plant.
+
+So `mushroomShape` exists, and the settled rule above had to move — **but only as
+far as `stone` had already gone.** A shard and a boulder look nothing alike and
+both gather into `stone`, because they are the same material in a different state.
+The mushroom had been living under a stricter rule than its neighbour for no
+stated reason. The line is now:
+
+> **The shape may vary. The ITEM may not.** What breaks the yield promise is a
+> second item id, not a second outline.
+
+That is also why puffballs are still out, and it is a genuine pincer rather than
+taste: a puffball that hands back `mushroom` breaks the promise from one end, and
+a puffball that hands back `puffball` breaks the item-sprawl rule from the other
+(DESIGN.md §Materials — "item count is the number of *materials*, not materials ×
+looks"). Two families, `cap` and `bell`, and a new one needs the same argument the
+fen made — an *ecological* reason the region cannot grow the other.
+
+**Three states per family, and they are AGES rather than species** — `open`,
+`button`, `over`. That distinction is the whole licence: the same organism at
+three points in a week gathers into `mushroom` without argument, where three
+different fungi would not. Drawn as grids, bottom-anchored, so a seven-row bell
+and a five-row dome stand on the same soil instead of hanging at the same height.
+
+Two things found by looking, both about **distance between pixels**:
+
+- The bell was a **column** first. A three-wide cap over a one-wide stalk is two
+  pixels of difference; at seven rows it stopped reading as a cap on a stem and
+  came out a standing stone. Height is not what makes a tall mushroom — the
+  **shoulder** is. The cap has to reach five wide somewhere so the stem has
+  something to be thin underneath.
+- The dome's `over` state drew **horns**. Two lit rim pixels with three of air
+  between them stop belonging to the same object at this size. One pixel of gap is
+  a dip; three is a pair of ears. The birch's notch, at a fifth of the scale.
 
 ### 8r — Shrubs — **built, glimmer only**
 

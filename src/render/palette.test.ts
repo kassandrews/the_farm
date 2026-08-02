@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { scenePalette, seasonSkin, biomeSkin, mixHex } from "./palette";
+import { MUSHROOM_ART } from "./renderer";
 import { BIOMES, BROADLEAF } from "../content/biomes";
 import { SEASONS, seasonOn } from "../content/seasons";
 import { TILES, tileDef, GRASS, MUSHROOM, WATER, FARMLAND, FARMLAND_WET, FLOOR, STONE, BEDROCK, CAVE_FLOOR, ORE_VEIN, SHAFT, DARK_TREE } from "../content/tiles";
@@ -282,6 +283,36 @@ describe("crown silhouettes", () => {
       if (b.mushroomCap) continue;
       expect(REDS.has(b.id), `${b.id} keeps the red cap — is it a fly agaric host?`).toBe(true);
     }
+  });
+
+  it("keeps the mushroom grids rectangular, legal, and standing on their stalks", () => {
+    // The grids are indexed straight into a rect, so a short row silently drops
+    // its last pixels and an unknown letter draws the SPECK — the fallback in the
+    // draw path is `k`, which means a typo comes out as a white dot in the gills
+    // rather than as a crash.
+    for (const [shape, states] of Object.entries(MUSHROOM_ART)) {
+      for (const [state, g] of Object.entries(states)) {
+        const where = `${shape}/${state}`;
+        const w = g[0].length;
+        for (const row of g) {
+          expect(row.length, `${where}: "${row}"`).toBe(w);
+          for (const ch of row) expect("lcgsk.", `${where}: "${ch}"`).toContain(ch);
+        }
+        // It stands on something. A grid whose last row has no stalk is a cap
+        // lying on the grass, which is a different object.
+        expect(g[g.length - 1], `${where} floats`).toContain("s");
+        // THE SPECK IS THE FLY AGARIC'S AND NOTHING ELSE WEARS IT. A bell with a
+        // white fleck on it is a fly agaric that has grown tall, which is the one
+        // thing the recolour was done to stop.
+        if (shape !== "cap") expect(g.join(""), `${where} wears the speck`).not.toContain("k");
+      }
+    }
+    // The bell is what it is by being TALLER than the dome, not just narrower —
+    // if that ever stops being true the fen is drawing a squashed toadstool.
+    expect(MUSHROOM_ART.bell.open.length).toBeGreaterThan(MUSHROOM_ART.cap.open.length);
+    expect(MUSHROOM_ART.bell.open[0].replace(/\./g, "").length).toBeLessThanOrEqual(
+      MUSHROOM_ART.cap.open[0].replace(/\./g, "").length,
+    );
   });
 
   it("keeps bark marks on the bark", () => {

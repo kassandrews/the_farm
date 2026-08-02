@@ -86,6 +86,7 @@ import {
   TUFTS_DEFAULT,
   STONES_DEFAULT,
   type StoneShape,
+  type MushroomShape,
   type BiomeDef,
   type DecorKit,
   type MoteKit,
@@ -322,6 +323,71 @@ const ROCK_SHAPES: Record<
   // A narrow flat-topped column was tried too and came out a HEADSTONE, the
   // failure CUBE_H already records for the cube.
   shard: { rows: [2, 2, 3, 3] },
+};
+
+/** The mushrooms, drawn rather than generated — same house style as ROCK_SHAPES
+ *  and the decor kit's `marks`, because pixel art at this size is placed.
+ *
+ *  One grid per state, `.` for nothing and a letter per material:
+ *
+ *      l  the lit top of the cap        g  the gills under it
+ *      c  the cap                       s  the stalk
+ *      k  the speck — the fly agaric's white fleck, and ONLY the dome's.
+ *         A bell that wore one would be a fly agaric that had grown tall.
+ *
+ *  THREE STATES, AND THEY ARE AGES RATHER THAN SPECIES. `open` is the one you
+ *  picture, `button` has not opened yet, `over` has gone past it and its rim has
+ *  lifted. That distinction is the whole licence this table operates under (see
+ *  MushroomShape): the same organism at three points in a week gathers into
+ *  `mushroom` without argument, where three different fungi would not.
+ *
+ *  Grids are bottom-anchored when drawn, so a taller state stands ON the same
+ *  ground rather than hanging above it — the bell is two rows taller than the
+ *  dome and has to grow upward from the same soil.
+ */
+export type MushroomState = "open" | "button" | "over";
+export const MUSHROOM_ART: Record<MushroomShape, Record<MushroomState, string[]>> = {
+  // THE ORIGINAL ART, pixel for pixel — this is what every region drew before the
+  // table existed, and the meadow's mushroom must not move (the same promise the
+  // meadow's crown makes).
+  cap: {
+    open: [".lll.", "ckccc", "ggggg", "..s..", "..s.."],
+    // The companion in a two-mushroom cell. Kept small so a patch reads as one
+    // kind at two ages rather than as two objects sharing a tile.
+    button: ["clc", "ggg", ".s."],
+    // Gone over: the rim has lifted and the crown of the cap has sunk between,
+    // so the top is a shallow dish instead of a dome. `ll.ll` — one pixel of dip.
+    //
+    // IT WAS `l...l` AND THAT DREW HORNS. Two lit pixels with three of air
+    // between them stop belonging to the same object at this size; they read as
+    // two things standing behind the cap rather than as its own rim. One pixel of
+    // gap is a dip, three is a pair of ears — the same distance problem the
+    // birch's notch had, at a fifth of the scale.
+    over: ["ll.ll", "ccccc", "gg.gg", "..s..", "..s.."],
+  },
+  // Tall, narrow, and notched. The notch is the same move the birch's crown makes
+  // — foliage parting around its trunk — at a twentieth of the size: the cap's
+  // edge lifts away from the stem and you see the stem through it. It is what
+  // stops a tall dome reading as a dome that has been stretched.
+  bell: {
+    // IT WAS A COLUMN FIRST, and that is the trap in drawing a tall mushroom. A
+    // three-wide cap over a one-wide stalk is only two pixels of difference, so
+    // at seven rows it stopped reading as a cap on a stem at all and came out a
+    // standing stone. What fixes it is not height, it is the SHOULDER: the cap
+    // has to reach five wide somewhere, so there is a visible overhang for the
+    // stem to be thin underneath.
+    //
+    // `gg.gg` is the notch, and it needs the full five to work — at `.g.g.` the
+    // gills were one pixel each and the parting had nothing to part.
+    open: ["..l..", ".llc.", "llccc", "llccc", "gg.gg", "..s..", "..s.."],
+    // Still closed, and an egg on a stick is exactly what a young one is.
+    button: [".l.", ".c.", ".s."],
+    // Deliquescing — an inkcap's whole trick is dissolving from the rim down, so
+    // its old age is the one state in this table that is a genuinely different
+    // silhouette rather than a modified one. Four rows against the open one's
+    // seven: it has SETTLED, and the height difference is what says so.
+    over: [".lcc.", "gg.gg", "..s..", "..s.."],
+  },
 };
 /** Taller than a rock, shorter than a tree. It should read as built rather than
  *  grown, and as somebody's, without being tall enough to hide behind. Its width
@@ -1525,46 +1591,55 @@ export class Renderer {
         : "#a34c3c";
     const stalk = night ? "#bdb0a0" : "#f0e3d0";
 
-    // One mushroom. `big` gets the full overhang; the companion is a button that
-    // hasn't opened yet, so a two-mushroom cell reads as a patch of one kind
-    // rather than as two objects that happen to share a tile.
-    const one = (x: number, y: number, big: boolean): void => {
+    // How they are built here — the dome unless a region says otherwise. The HARD
+    // region again, for the same reason the cap colour takes it: a silhouette
+    // cannot be half-way between two, so a border has to pick a side.
+    const art = MUSHROOM_ART[skin?.mushroomShape ?? "cap"];
+
+    /** One mushroom, from a grid, standing on (x, y) — BOTTOM-anchored, so a bell
+     *  seven rows tall and a dome five rows tall put their stalks on the same
+     *  soil instead of their caps at the same height. */
+    const one = (x: number, y: number, state: MushroomState): void => {
+      const g = art[state];
+      const w = g[0].length;
+      const top = y - g.length;
       ctx.fillStyle = "rgba(0,0,0,0.14)"; // it stands ON the grass
-      ctx.fillRect(x, y + (big ? 5 : 3), big ? 5 : 3, 1);
-      if (big) {
-        ctx.fillStyle = lit;
-        ctx.fillRect(x + 1, y, 3, 1);
-        ctx.fillStyle = cap;
-        ctx.fillRect(x, y + 1, 5, 1);
-        ctx.fillStyle = gills;
-        ctx.fillRect(x, y + 2, 5, 1);
-        ctx.fillStyle = stalk;
-        ctx.fillRect(x + 2, y + 3, 1, 2);
-        ctx.fillStyle = "#f7efe2"; // one speck, so the cap has a highlight
-        ctx.fillRect(x + 1, y + 1, 1, 1);
-      } else {
-        ctx.fillStyle = lit;
-        ctx.fillRect(x + 1, y, 1, 1);
-        ctx.fillStyle = cap;
-        ctx.fillRect(x, y, 1, 1);
-        ctx.fillRect(x + 2, y, 1, 1);
-        ctx.fillStyle = gills;
-        ctx.fillRect(x, y + 1, 3, 1);
-        ctx.fillStyle = stalk;
-        ctx.fillRect(x + 1, y + 2, 1, 1);
+      ctx.fillRect(x, y, w, 1);
+      for (let r = 0; r < g.length; r++) {
+        const row = g[r];
+        for (let c = 0; c < w; c++) {
+          const ch = row[c];
+          if (ch === ".") continue;
+          ctx.fillStyle =
+            ch === "l"
+              ? lit
+              : ch === "c"
+                ? cap
+                : ch === "g"
+                  ? gills
+                  : ch === "s"
+                    ? stalk
+                    : "#f7efe2"; // `k` — the speck, so the cap has a highlight
+          ctx.fillRect(x + c, top + r, 1, 1);
+        }
       }
     };
 
     // Kept inside the cell on purpose: the flat pass paints in row order, so a
     // cap that overhung would be half painted over by the tile drawn next.
     const mx = px + 3 + Math.floor(h * 4);
-    const my = py + 5 + Math.floor((h * 29) % 4);
-    one(mx, my, true);
+    // The BASE line rather than the top one, since the grids stand on it now.
+    const my = py + 10 + Math.floor((h * 29) % 4);
+    // Which age the big one is. Its own slice of the hash, and gone-over is the
+    // minority: a patch where half the mushrooms had collapsed would read as a
+    // place going bad rather than as a place growing.
+    const age = (h * 37) % 1;
+    one(mx, my, age > 0.78 ? "over" : "open");
     // Whether there are two, on a fraction of the hash that isn't the one
     // placing the first — otherwise the crowded cells would all be the ones
     // where the big cap sits high and left.
     const second = (h * 61) % 1;
-    if (second > 0.42) one(mx + 6, my + (second > 0.7 ? 3 : 2), false);
+    if (second > 0.42) one(mx + 6, my - (second > 0.7 ? 1 : 0), "button");
   }
 
   /** Whatever the Gremlin dropped in your grass, lying in it.

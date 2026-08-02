@@ -69,6 +69,32 @@ export const TUFTS_DEFAULT: TuftShape[] = ["cluster", "cluster", "blades"];
  *  Weights are repetition, same as `tufts`. */
 export type StoneShape = "boulder" | "crag" | "broken" | "slab" | "shard";
 
+/** How the mushrooms here are BUILT — not which species they are.
+ *
+ *  THE RULE THIS RESTATES. It used to read "a tint and not a species": one
+ *  silhouette everywhere, because a mushroom is gatherable and hands back a plain
+ *  `mushroom`, so a second shape would say "different thing" and give you the
+ *  same item. That was stricter than the rule `stone` had been living under all
+ *  along — a shard and a boulder look nothing alike and both gather into `stone`,
+ *  because they are the same material in a different state.
+ *
+ *  So the line moves to where it always was for stone: **the shape may vary, the
+ *  ITEM may not.** What breaks the promise is a second item id, not a second
+ *  outline. A region grows its mushrooms tall or squat the way it grows its rock
+ *  into shards or slabs, and every one of them gathers into `mushroom`.
+ *
+ *  It is still a short list on purpose. Two families, and the reason the fen got
+ *  the second one is that a grey toadstool was a fly agaric wearing paint: at
+ *  this size the DOME is the fly agaric, so recolouring alone left the fen with
+ *  the right colour on the wrong plant. */
+export type MushroomShape =
+  /** The dome on a stalk — the mushroom everyone draws, and the one every region
+   *  had. Wide, low, and with the fly agaric's white speck on it. */
+  | "cap"
+  /** Tall, narrow, and notched over the stem where the cap's edge lifts away
+   *  from it. What comes up on wet ground; the fen's, and nobody else's yet. */
+  | "bell";
+
 /** What stone looks like where a region hasn't said: the original three, and
  *  untinted. This is what the meadow and the town get, and it is why walking
  *  home always looks like walking home. */
@@ -322,6 +348,11 @@ export interface BiomeDef {
    *  which is the yield promise broken in a subtler way than a locked material.
    *  Recoloured, it reads as the same mushroom standing in this wood's light. */
   mushroomCap?: { cap: string; lit: string; gills: string };
+
+  /** How they are built here. Optional; `"cap"` — the dome — otherwise, which is
+   *  what every region but the fen grows. See MushroomShape for why this is
+   *  allowed to exist at all, and what it is still not allowed to do. */
+  mushroomShape?: MushroomShape;
 
   /** What else grows here. Optional, and the meadow deliberately has none. */
   decor?: DecorKit;
@@ -941,20 +972,25 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // double the birches'), so the region least likely to have a fly agaric had
     // the most of them, eight patches to a screen.
     //
-    // Recoloured rather than reshaped, and rather than moved: density is the one
-    // field here that touches YIELD (mushrooms barter for cloth, for seed, and
-    // for every crop variety at 8 a row), so thinning the fen would make foraging
-    // measurably worse in a place for a reason nobody could see. A tint costs
-    // nothing and does the whole job — red now means birch or pine, which is what
-    // red means outdoors.
+    // Recoloured and reshaped, but NOT thinned: density is the one field here
+    // that touches YIELD (mushrooms barter for cloth, for seed, and for every
+    // crop variety at 8 a row), so fixing this by moving numbers would have made
+    // foraging measurably worse in a place for a reason nobody could see. Red now
+    // means birch or pine, which is what red means outdoors.
     //
-    // Grey, not brown: a damp-ground fungus that reads papery and about to
-    // deliquesce, which is what an inkcap does. Cool, so it cannot be confused
-    // with the glimmer's warm champagne, and pale, so it still reads on the
-    // murkiest floor in the game — the same legibility argument the champagne
-    // made. It also stays clear of the kingcups a few lines down: the fen already
-    // has one yellow thing in spring and does not need a second.
+    // THE COLOUR ALONE WAS NOT ENOUGH, and that is the whole argument for
+    // `mushroomShape` existing. At this size the DOME is the fly agaric — grey
+    // paint on it left the fen with the right colour on the wrong plant, which is
+    // exactly the complaint that got the pinewood its own crown silhouette two
+    // hundred lines up. Bell here: tall, narrow, notched over the stem.
+    //
+    // Grey, not brown: papery and about to deliquesce, which is what these do.
+    // Cool, so it cannot be confused with the glimmer's warm champagne, and pale,
+    // so it still reads on the murkiest floor in the game — the same legibility
+    // argument the champagne made. It also stays clear of the kingcups a few
+    // lines down: the fen already has one yellow thing in spring.
     mushroomCap: { cap: "#b3aab0", lit: "#d5cdd0", gills: "#857a80" },
+    mushroomShape: "bell",
     // Weeping: broad at the top and narrowing all the way down, so the mass hangs
     // rather than sits. The tallest crown in the table — a fen tree leans over
     // the water it grew out of.
