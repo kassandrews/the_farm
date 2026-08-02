@@ -785,9 +785,9 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       // half-belonged to the trunk. Rows 3, 6 and 9 are 8, 8 and 8 half-widths,
       // so all three still have foliage to spare on either side.
       spots: [
-        [-4, 3],
-        [5, 6],
-        [-1, 9],
+        [-5, 3],
+        [4, 6],
+        [-2, 9],
       ],
       twinkle: 3.5,
     },
