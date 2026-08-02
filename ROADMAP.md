@@ -2431,6 +2431,12 @@ three things moved together and none of them works alone:
 - The crown is a tall lobed **egg** with `crownGaps`/`crownOverlap` parting its
   bottom rows around the trunk, so bark shows *inside* the foliage.
 
+A second look widened it from 11px to 13 and doubled the overlap from three rows
+to six. **A crown too narrow has to close on its trunk in two or three steps**,
+and the silhouette went full-width to bare bark almost at once — the canopy ended
+and then there was a stick. The extra width buys the rows to step down 4, 4, 3, 3,
+3, 2 instead.
+
 **The correction worth remembering: the first crown widened all the way down, and
 came out a narrow white-trunked spruce.** That silhouette is the pinewood's, four
 rows up the same table. A birch is broadest at the shoulders with its lowest

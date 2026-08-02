@@ -745,17 +745,27 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // branches are the SHORTEST; the outline has to come back in at the bottom
     // or the species reads as a conifer no matter what colour the bark is.
     //
-    // SIXTEEN ROWS ACROSS ELEVEN PIXELS, and the count is doing as much as the
-    // widths. At fourteen the crown came out round — a ball on a stick, which is
-    // the shape a child draws and the one this was meant to stop being. Taller
-    // than it is wide is the entire brief.
-    crownRows: [1, 3, 4, 4, 5, 4, 4, 5, 4, 5, 4, 4, 3, 3, 2, 2],
-    // The bottom three rows come down BESIDE the trunk and part around it, so a
+    // SEVENTEEN ROWS ACROSS THIRTEEN PIXELS, and the count is doing as much as
+    // the widths. At fourteen rows the crown came out round — a ball on a stick,
+    // which is the shape a child draws and the one this was meant to stop being.
+    // Taller than it is wide is the entire brief.
+    //
+    // Eleven pixels wide was the first answer and it was one narrower than the
+    // tree wanted: a crown that thin has to close on the trunk in two or three
+    // steps, and the silhouette went from full width to bare bark almost at once.
+    // Two more pixels buy the rows to come down GENTLY.
+    crownRows: [1, 3, 4, 5, 5, 6, 5, 6, 5, 6, 5, 5, 5, 4, 4, 4, 3],
+    // The bottom SIX rows come down BESIDE the trunk and part around it, so a
     // stripe of white bark stands inside the foliage. It is the cheapest thing
     // on this tree and does the most: bark showing through leaves is most of
     // what tells you a wood is birch from a distance.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
-    crownOverlap: 4,
+    //
+    // Six rather than four because four made the join abrupt — the crown ended,
+    // and then there was a stick. Six lets the lobes step 4, 4, 3, 3, 3, 2 on
+    // their way down, which is a canopy settling onto its stem rather than a
+    // silhouette changing its mind.
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+    crownOverlap: 6,
     // Thin pale grass and small white flowers — the airy opposite of the pines,
     // and the reason the two rows sit next to each other.
     // ITS FLOWERS MOVED TO SPRING, and what is left all year is grass. The white
