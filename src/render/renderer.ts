@@ -3159,14 +3159,24 @@ export class Renderer {
     ctx.fillStyle = crown;
     for (let r = 0; r < rows.length; r++) {
       const g = gaps?.[r] ?? 0;
+      // ODD WIDTH, AND IT WAS EVEN FOR A LONG TIME. The trunk is three pixels at
+      // cx-1..cx+1, so its centre is the COLUMN cx; a crown of `rows[r] * 2` spans
+      // cx-h..cx+h-1, whose centre is the seam at cx-0.5. Every tree in the game
+      // was half a pixel of canopy heavier on its left, which is invisible in a
+      // silhouette and obvious the moment something bright hangs in it.
+      //
+      // `rows[r] * 2 + 1` is also what the crownRows doc always claimed: half-
+      // widths, "one fillRect rows[r] wide EITHER SIDE of the trunk" — which needs
+      // the trunk's own column in the middle to be true. Every crown is a pixel
+      // wider than it was; none of them moved.
       if (g > 0) {
         // Two lobes with the trunk between them. The gap is centred on the
         // trunk's own column (cx - g .. cx + g), so foliage sized to it meets
         // the bark rather than leaving a stripe of grass either side.
         ctx.fillRect(cx - rows[r], top + r, rows[r] - g, 1);
-        ctx.fillRect(cx + g + 1, top + r, rows[r] - g - 1, 1);
+        ctx.fillRect(cx + g + 1, top + r, rows[r] - g, 1);
       } else {
-        ctx.fillRect(cx - rows[r], top + r, rows[r] * 2, 1);
+        ctx.fillRect(cx - rows[r], top + r, rows[r] * 2 + 1, 1);
       }
     }
     // Light from the upper left, as everywhere else. Bounded by the crown's own
@@ -3198,21 +3208,37 @@ export class Renderer {
       if (oh < orbs.chance) {
         const prevOp = ctx.globalCompositeOperation;
         ctx.globalCompositeOperation = "lighter";
+        // SPACED, NOT SCATTERED — and the two are different problems with
+        // different fixes. Independent hashes solved orbs that were CORRELATED
+        // (three in a neat row off one number); they cannot solve orbs that
+        // CLUMP, because independent draws land on top of each other regularly.
+        // Three uniform picks in a crown put two of them touching about a third
+        // of the time, which reads as one lumpy light and a spare.
+        //
+        // So they are placed AROUND the crown at even angles instead: orb `i`
+        // gets its own third of the circle, and the jitter moves it within that
+        // third rather than anywhere. Even spacing is then structural — nothing
+        // to reject or retry — and the whole ring is rotated by the tree's own
+        // hash so no two trees wear the same arrangement.
+        const midRow = (rows.length - 1) / 2;
+        const spin = oh * Math.PI * 2;
         for (let i = 0; i < orbs.count; i++) {
-          // A HASH PER ORB, not fractions milked off one. Multiplying a single
-          // value by different constants gives numbers that look independent and
-          // are not: the first cut put three orbs in a neat horizontal row on the
-          // same crown, evenly spaced, which reads as a decoration somebody hung
-          // there rather than as light in a tree. Offsetting the tile is free and
-          // gives each orb its own draw from the same stable stream.
           const a = decoHash(tx + i * 37, ty - i * 17, world.seed ^ 0x3b19);
           const b = decoHash(tx - i * 53, ty + i * 29, world.seed ^ 0x77c1);
-          // Somewhere in the crown's WIDE middle: the top rows are two pixels
-          // across and an orb there hangs off the edge into the sky.
-          const r = 2 + Math.floor(a * Math.max(1, rows.length - 4));
+          // Its own slice, plus up to two-thirds of a slice of wobble — enough
+          // that the ring never looks stamped, not enough for two to meet.
+          const ang = spin + ((i + 0.15 + a * 0.7) / orbs.count) * Math.PI * 2;
+          // Out from the middle, never to the rim: an orb ON the edge is half in
+          // the sky, and one at the centre is buried where no light would be.
+          const reach = 0.45 + b * 0.3;
+          const r = Math.round(midRow + Math.sin(ang) * reach * midRow);
+          if (r < 1 || r >= rows.length) continue;
           const half = rows[r];
           if (half < 2) continue;
-          const ox = cx - half + 2 + Math.floor(b * (half * 2 - 4));
+          // Clamped to this ROW's own width, so a slice pointing sideways at a
+          // narrow row lands inside the foliage rather than beside it.
+          const reachX = Math.round(Math.cos(ang) * reach * half);
+          const ox = cx + Math.max(-(half - 1), Math.min(half - 2, reachX));
           const oy = top + r;
           // A BEAD. Two goes to get here and both were about SIZE rather than
           // taste. First it reused the spark's geometry — 1px arms on the four

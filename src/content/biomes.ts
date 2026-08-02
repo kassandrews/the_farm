@@ -646,10 +646,34 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // So the glow is the TUFT, which is where it belonged anyway. The speckle is
     // on every cell of grass; the mushrooms were only ever going to be scattered
     // punctuation, and a floor that glows has to glow everywhere.
-    mushrooms: 0.12,
+    // THINNED ONCE THE REGION HAD REAL LIGHTS IN IT. 0.12 was set when the
+    // mushrooms were the only pale thing on the floor and had to carry it; now
+    // there are sparks in the air, orbs in the crowns and a champagne cap on
+    // every one of these, and at the old density a swatch reads as a mushroom
+    // patch that happens to glitter. Punctuation, which is what the note above
+    // always said they were.
+    mushrooms: 0.075,
     water: 0,
     ground: { color: "#1e5a72", amount: 0.8 },
-    tuft: { color: "#7cf0dc", amount: 0.8 }, // the speckle is the glow
+    // THE SPECKLE WAS THE GLOW, AND IT ISN'T ANY MORE — which is a promotion for
+    // the region rather than a retreat. When it was written the tuft was the only
+    // way the floor could shine, so it went to 0.8 of a bright mint and shouted.
+    // The glow is now made of actual light: sparks, orbs, pale caps. A speckle
+    // still shouting next to them is a THIRD bright thing competing for the same
+    // job, and the eye reads competition as clutter — the grass stopped being
+    // texture the lights sit on and became more lights.
+    //
+    // So it recedes toward its own GROUND, and the amount has to be high to get
+    // there — measured, after a gentler pull went wrong in a new way. At 0.42 the
+    // speckle stayed half-green over a teal floor: flecks of (110,182,121) on
+    // (51,108,107), which is not competing light any more but is a different
+    // region's grass showing through this one's. The tint is a direction and a
+    // distance, and stopping half way leaves you half way.
+    //
+    // 0.85 lands it near (79,140,142): teal, a step lighter than the floor, still
+    // the brightest grass in the game — and finally texture the lights sit on
+    // rather than a third thing shining.
+    tuft: { color: "#48879a", amount: 0.85 },
     // Spores that GLITTER, going UP — which is the whole difference between here
     // and the blossom rows: one region's air falls and the other's rises.
     //
