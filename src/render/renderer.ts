@@ -978,15 +978,30 @@ export class Renderer {
    *
    *  Picked off the mark's OWN hash, so a cell's kit never changes between
    *  frames and never correlates with which mark it drew. */
-  private decorKit(world: WorldState, tx: number, ty: number, h: number): DecorKit | undefined {
+  private decorKit(
+    world: WorldState,
+    tx: number,
+    ty: number,
+    h: number,
+    slot: (d: BiomeDef) => DecorKit | undefined = (d) => d.decor,
+  ): DecorKit | undefined {
     const parts = regionParts(world.seed, world.homestead.spot, tx, ty);
-    if (parts.length === 1) return parts[0].def.decor;
+    if (parts.length === 1) return slot(parts[0].def);
     let r = h;
     for (const p of parts) {
       r -= p.w;
-      if (r <= 0) return p.def.decor;
+      if (r <= 0) return slot(p.def);
     }
-    return parts[parts.length - 1].def.decor;
+    return slot(parts[parts.length - 1].def);
+  }
+
+  /** Is this kit's month the one we are in?
+   *
+   *  `palette.season` is null underground, which is correct without a special
+   *  case and for the mote's exact reason: a cave has no month, so a seasonal
+   *  thing in one would be weather where §Seasons says there is none. */
+  private inSeason(kit: DecorKit): boolean {
+    return !kit.season || this.palette.season?.id === kit.season;
   }
 
   /** Draw the on-screen tiles of one chunk. */
@@ -1352,7 +1367,7 @@ export class Renderer {
           // the cell every time. The dither would have been dead code that
           // measured as working.
           const kit = this.decorKit(world, tx, ty, decoHash(tx, ty, world.seed ^ 0x51ab));
-          if (kit && dh < kit.density) {
+          if (kit && dh < kit.density && this.inSeason(kit)) {
             // A SECOND, INDEPENDENT HASH picks the mark and places it. Reusing
             // `dh` would tie both to the same number that just passed a `<`
             // test, so every mark would come from the low end of the range —
@@ -1382,6 +1397,37 @@ export class Renderer {
                 const ch = mark[r][c];
                 if (ch === ".") continue;
                 ctx.fillStyle = ch === "o" ? (kit.accent ?? stem) : stem;
+                ctx.fillRect(ox + c, oy + r, 1, 1);
+              }
+            }
+          }
+
+          // THE SECOND KIT, on its own four hashes throughout. Sharing any of
+          // them with the block above would pin a bloom to the same cells, the
+          // same marks and the same corners the year-round decor already uses —
+          // spring would arrive as a recolouring of the ferns rather than as
+          // something new coming up between them.
+          const bh = decoHash(tx, ty, world.seed ^ 0x6c41);
+          const bkit = this.decorKit(
+            world,
+            tx,
+            ty,
+            decoHash(tx, ty, world.seed ^ 0x9d17),
+            (d) => d.bloom,
+          );
+          if (bkit && bh < bkit.density && this.inSeason(bkit)) {
+            const p = decoHash(tx, ty, world.seed ^ 0x3ac9);
+            const mark = bkit.marks[Math.floor(p * bkit.marks.length) % bkit.marks.length];
+            const mh = mark.length;
+            const mw = Math.max(...mark.map((r) => r.length));
+            const ox = px + 1 + Math.floor(((p * 97) % 1) * (TILE - mw - 1));
+            const oy = py + 1 + Math.floor(((p * 883) % 1) * (TILE - mh - 1));
+            const stem = mixHex(this.palette.crown, this.turf(world, tx, ty).crown);
+            for (let r = 0; r < mh; r++) {
+              for (let c = 0; c < mark[r].length; c++) {
+                const ch = mark[r][c];
+                if (ch === ".") continue;
+                ctx.fillStyle = ch === "o" ? (bkit.accent ?? stem) : stem;
                 ctx.fillRect(ox + c, oy + r, 1, 1);
               }
             }

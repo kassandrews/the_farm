@@ -274,6 +274,16 @@ export interface BiomeDef {
   /** What else grows here. Optional, and the meadow deliberately has none. */
   decor?: DecorKit;
 
+  /** A SECOND kit, for something that comes and goes. Same shape as `decor` and
+   *  drawn the same way, on its own hashes so a bloom never lands where the
+   *  year-round marks stand.
+   *
+   *  Two slots rather than a list, because every region that has both uses them
+   *  for exactly these two things: what is always here, and what is here now. A
+   *  list would invite a third and a fourth, and the ground has room for about
+   *  two kinds of small thing before it stops reading as ground. */
+  bloom?: DecorKit;
+
   /** What drifts in the air here. Optional, and MOST REGIONS HAVE NONE — see
    *  MoteKit. */
   motes?: MoteKit;
@@ -401,6 +411,21 @@ export interface MoteKit {
  *  a region may have as much of its own as it likes. The gathered scatter is the
  *  mushroom and it stays where it is, on its own density rule. */
 export interface DecorKit {
+  /** Only during this season. Optional; omitted, it grows all year.
+   *
+   *  The same field `MoteKit` has and for the same reason: a season reaches
+   *  APPEARANCE and never a number (DESIGN §Materials), so a thing that is only
+   *  there for three months is allowed exactly as long as nothing counts it,
+   *  picks it or waits for it. Decor is drawn and nothing else — it has no tile,
+   *  no solidity and no yield — which is what makes this the cheapest true
+   *  seasonal event in the game.
+   *
+   *  WHY IT EXISTS AT ALL: spring was the only season with no signature. Summer
+   *  has fireflies, autumn has the largest crown swing in `seasons.ts`, winter
+   *  has bare branch-coloured crowns, and spring was a slightly different green.
+   *  A season you cannot see from the ground is a season that only the palette
+   *  knows about. */
+  season?: SeasonId;
   /** Fraction of open grass carrying a mark. Read against the tuft's own 38%:
    *  this is the layer ON TOP of that, so it wants to be a good deal sparser or
    *  the ground stops being ground and becomes pattern. */
@@ -515,6 +540,19 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // step-backs every third row are the whole trick — a clean triangle reads as
     // an arrowhead, and the little shelves are what say "branches" at 1px.
     crownRows: [1, 2, 3, 2, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6],
+    // WOOD ANEMONES, and they are the reason this field exists in a shaded
+    // region at all: the flowers that bloom under conifers do it in the weeks
+    // before the canopy closes, which is exactly a spring event and nothing else.
+    // Sparse — this is a floor that spends most of the year in the dark.
+    bloom: {
+      season: "spring",
+      density: 0.05,
+      accent: "#eef0e6",
+      marks: [
+        ["oo.", ".x.", ".x."],
+        [".o.", ".x.", "x.."],
+      ],
+    },
     // Fewer than the meadow's: this canopy closes over you, and a wood you
     // cannot see far in should not be the one with the most light in it.
     motes: {
@@ -648,6 +686,22 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Squat and wind-flattened: wide, low, and wider at the shoulders than at the
     // crown. Barely taller than the rocks it stands among, which is the point.
     crownRows: [2, 4, 5, 5, 6, 5, 5, 4, 3],
+    // THE PARCHED ROW FLOWERS, and it is the best beat this field buys. The scrub
+    // is written everywhere else as dry — no sprouts in its tuft list, grit in
+    // its decor, bleached in every tint — so three months of small hard yellow
+    // is the exception that makes the other nine months mean something. Dry
+    // country blooms harder and briefer than green country, which is the whole
+    // reason its density is the highest here and its season the only one it gets.
+    bloom: {
+      season: "spring",
+      density: 0.11,
+      accent: "#e8c25a",
+      marks: [
+        [".o.", "oxo", ".x."],
+        ["o..", ".x.", ".x."],
+        [".oo", ".x.", ".x."],
+      ],
+    },
     // Dry twigs and pale grit. No flowers: this is the row that reads as
     // parched, and a bloom would undo it.
     decor: {
@@ -688,6 +742,18 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // rather than sits. The tallest crown in the table — a fen tree leans over
     // the water it grew out of.
     crownRows: [4, 6, 7, 7, 7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2],
+    // Marsh flowers, and violet rather than the obvious yellow: the fen's whole
+    // palette is murk, and a warm bloom in it would read as the scrub's spring
+    // having wandered in. Cool and slightly wrong is what this region is for.
+    bloom: {
+      season: "spring",
+      density: 0.09,
+      accent: "#9d86c6",
+      marks: [
+        [".o.", ".x.", ".x."],
+        ["o.o", ".x.", ".x."],
+      ],
+    },
     // Reeds, standing in clumps. The tallest marks in the file at four rows,
     // which is what says "this ground is wet" without a single new tile.
     decor: {
@@ -1019,6 +1085,21 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // fourteen rows the same 16px of width came out as a tall pink box with a
     // slot cut in it. Wide is a ratio, not a number.
     crownRows: [4, 7, 8, 8, 8, 8, 8, 8, 8, 7, 6],
+    // FALLEN PETALS, which closes a loop this row has had open since it was
+    // written: it has petals falling through the AIR and, until now, nothing on
+    // the ground for them to have landed on. No stems — the `x` ink is foliage,
+    // and a petal on the grass has no stalk. Densest of the four blooms, because
+    // an orchard in flower is the one place a carpet is the right answer.
+    bloom: {
+      season: "spring",
+      density: 0.14,
+      accent: "#f0c4d6",
+      marks: [
+        ["oo", "o."],
+        [".o", "oo"],
+        ["o."],
+      ],
+    },
     crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
     crownOverlap: 3,
     // Falling petals, and they fall all year because these trees are stubbornly

@@ -4398,6 +4398,49 @@ Glimmer mushrooms 0.075 → **0.045**. Pale caps on a floor that quiet were stil
 the thing you noticed first, which for a region whose name is about *light* is the
 wrong first thing.
 
+### 8u — Spring gets a signature — **built**
+
+`DecorKit.season` (the field `MoteKit` already had) plus a second slot,
+`BiomeDef.bloom`, and four regions that flower.
+
+**Spring was the only season you could not see from the ground.** Summer has
+fireflies, autumn has the largest crown swing in `seasons.ts`, winter has bare
+branch-coloured crowns — and spring was a slightly different green. A season only
+the palette knows about is not much of a season.
+
+**Why it is allowed:** decor is drawn and nothing else — no tile, no solidity, no
+yield — so a thing that is only there for three months costs nothing that DESIGN
+protects. *A season reaches appearance and never a number.* It is the cheapest
+true seasonal event the game can have, and there is a test that a bloom without a
+season is a mistake: a permanent `bloom` is just a second `decor`, and two
+permanent kits on one floor is the clutter the slot exists to avoid.
+
+**TWO SLOTS, NOT A LIST.** Every region that has both uses them for exactly two
+things: what is always here, and what is here *now*. A list would invite a third
+and a fourth, and the ground has room for about two kinds of small thing before it
+stops reading as ground. The bloom runs on **four private hashes** — cell, region
+pick, mark, and corner — because sharing any of them with the year-round decor
+would pin flowers to the ferns, and spring would arrive as a recolouring rather
+than as something coming up between them.
+
+**The scrub is the best beat this buys.** It is written as dry everywhere else —
+no sprouts in its tuft list, grit in its decor, bleached in every tint — so three
+months of small hard yellow is the exception that makes the other nine mean
+something. Dry country blooms harder and briefer than green country, which is why
+it has the highest bloom density of the four.
+
+The fen is violet rather than the obvious yellow (a warm bloom there reads as the
+scrub's spring having wandered in). The pines get wood anemones, which really do
+flower in the weeks before a conifer canopy closes. The blossom rows get **fallen
+petals with no stems** — the `x` ink is foliage and a petal on the grass has no
+stalk — which closes a loop that row has had open since it was written: it had
+petals falling through the air and nothing on the ground for them to land on.
+
+**The meadow and the far country stay out, both tested.** The meadow's rule is
+that leaving town is when the ground starts having things in it; a bloom would be
+that rule with an asterisk for three months a year. The dusk, glimmer and glass
+carry their strangeness in the air and the canopy, and their floors have enough.
+
 ### 8l — A page that shows every region at once — **built**
 
 `/biomes.html` + `src/tools/biome-preview.ts`, the sibling of `/looks.html`, and

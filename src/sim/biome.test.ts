@@ -577,3 +577,43 @@ describe("stone", () => {
     }
   });
 });
+
+// Spring. The first thing in the game that is only there for part of the year
+// and is not weather — which is allowed because it is drawn and nothing else.
+describe("blooms", () => {
+  it("always declare a season", () => {
+    // A `bloom` without one is just a second decor kit, and two permanent kits on
+    // one floor is the clutter this slot exists to avoid. The slot means "what is
+    // here NOW" — if it is here always, it belongs in `decor`.
+    for (const def of Object.values(BIOMES)) {
+      if (!def.bloom) continue;
+      expect(def.bloom.season).toBeDefined();
+    }
+  });
+
+  it("leave the town's own ground bare", () => {
+    // The meadow has no decor on purpose — leaving town is when the ground starts
+    // having things in it (see its row). A bloom would be that rule with an
+    // asterisk on it for three months a year.
+    expect(BIOMES.meadow.decor).toBeUndefined();
+    expect(BIOMES.meadow.bloom).toBeUndefined();
+  });
+
+  it("gives spring the signature it lacked", () => {
+    // Summer has fireflies, autumn the largest crown swing in seasons.ts, winter
+    // bare crowns. This asserts the gap stays closed: if every spring bloom were
+    // ever deleted, spring would go back to being a slightly different green and
+    // nothing on the ground would know what month it was.
+    const springs = Object.values(BIOMES).filter((d) => d.bloom?.season === "spring");
+    expect(springs.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("never grows on ground that is already busy with the same colour", () => {
+    // The far country is left out deliberately, and this is the reason written
+    // down: those regions carry their strangeness in the air and the canopy, and
+    // a bloom is one more small bright thing on floors that have enough.
+    for (const id of ["dusk", "glimmer", "glass"] as const) {
+      expect(BIOMES[id].bloom).toBeUndefined();
+    }
+  });
+});
