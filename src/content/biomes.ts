@@ -760,13 +760,17 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // It is the cheapest thing on this tree and does the most: bark showing
     // through leaves is most of what tells you a wood is birch from a distance.
     //
-    // THE NOTCH IS THREE ROWS DEEP, AND IT WAS SIX, which is a different tree.
+    // THE NOTCH IS TWO ROWS DEEP, AND IT WAS SIX, which is a different tree.
     // Six meant the foliage arrived at the trunk's sides half a crown below
     // where it crossed over the top of it — so the eye read a long white channel
     // driven up into the canopy rather than a stem the leaves happen to part
     // around. A notch says "the branches leave from here" only while it stays
     // shallow enough to be an underside; any deeper and it is a gap.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
+    //
+    // Two is the floor rather than a taste: one row is a dent, and the bark
+    // inside the leaves — the thing the notch is FOR — needs a second pixel to
+    // read as a stripe rather than as a stray light pixel in the canopy.
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
     crownOverlap: 4,
     // Thin pale grass and small white flowers — the airy opposite of the pines,
     // and the reason the two rows sit next to each other.

@@ -2440,7 +2440,9 @@ Widening it also tempted a deeper notch, which was the wrong lever and got put
 back. **A notch has to stay shallow enough to read as an underside.** At six rows
 the foliage reached the trunk's sides half a crown below where it crossed over the
 top, and the eye read a long white channel driven up into the canopy rather than a
-stem the leaves part around. Three rows; the crown sits back where it was.
+stem the leaves part around. Two rows; the crown sits back where it was. Two is
+the floor, not a taste — one row is a dent, and the bark inside the leaves needs a
+second pixel to read as a stripe rather than as a stray light pixel in the canopy.
 
 **The correction worth remembering: the first crown widened all the way down, and
 came out a narrow white-trunked spruce.** That silhouette is the pinewood's, four
