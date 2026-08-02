@@ -255,6 +255,35 @@ describe("crown silhouettes", () => {
     }
   });
 
+  it("keeps the red cap where a red cap would actually grow", () => {
+    // The default cap is red, and at this size with a white speck on it that is a
+    // fly agaric — which is ectomycorrhizal and grows with BIRCH, pine and spruce
+    // and nowhere else. So "no mushroomCap" is a claim about the region, not a
+    // blank field, and the fen failing this was a real bug on screen: the wettest
+    // region carried the game's heaviest mushroom density in the one habitat the
+    // species avoids.
+    //
+    // Asserted as a whitelist rather than per-region, so a NEW region that grows
+    // mushrooms has to say which way it went. Regions with no mushrooms at all
+    // are exempt — there is nothing to be wrong about.
+    //
+    // THE DUSK IS ON THE LIST AND ITS TREES ARE BROADLEAF, which is the exception
+    // that says what the list is for. Fly agaric does partner beech and oak, so
+    // it is not a false entry — but the real reason is that the dusk's whole idea
+    // is a wood where the shapes are the ones you know and only the light is
+    // wrong. A recoloured cap there would be the region joining in.
+    //
+    // The GLASS WOOD went the other way on the same evidence: its crown is the
+    // birch's, so ecology allowed the red, and the palette overruled it. Both are
+    // judgement calls; the point of the whitelist is that they have to be made.
+    const REDS = new Set(["birch", "pinewood", "dusk"]);
+    for (const b of Object.values(BIOMES)) {
+      if (b.mushrooms <= 0) continue;
+      if (b.mushroomCap) continue;
+      expect(REDS.has(b.id), `${b.id} keeps the red cap — is it a fly agaric host?`).toBe(true);
+    }
+  });
+
   it("keeps bark marks on the bark", () => {
     // A trunk is three pixels wide and `trunkHeight` tall, and the renderer
     // indexes the grid straight into that rect. A row of the wrong width would

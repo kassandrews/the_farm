@@ -4302,6 +4302,38 @@ than a second table of hexes to keep in step with the first.
 argument, now applying to mushrooms too. Half a champagne cap fading back to red
 across a border is a mushroom caught between two minds.
 
+**Later: the red cap became a claim, and two regions had to withdraw it.** At this
+size, with a white speck on it, the default red is a fly agaric and nothing else —
+and *Amanita muscaria* is ectomycorrhizal, so it grows with **birch**, pine and
+spruce and nowhere without a host. That made "no `mushroomCap`" a statement about
+the region rather than a blank field, and two rows were making a false one:
+
+- **The fen** carried the game's heaviest mushroom density (0.12, double the
+  birches') in the one habitat the species avoids — eight patches of fly agaric to
+  a screen, standing in a bog. Now inkcap grey: damp, papery, cool enough not to
+  be confused with the glimmer's warm champagne, and clear of the kingcups that
+  already give the fen its one yellow thing in spring.
+- **The glass wood** could have kept it on ecology — its crown *is* the birch's —
+  and lost on palette, which is the glimmer's argument word for word: red was the
+  one warm-blooded thing in a region built of cold blue and near-white. The glass
+  wood is a birch wood with the colour drained out; a cap that kept its red would
+  be the one thing that hadn't been drained. Bleached, and paler than its floor,
+  because a gathered thing has to stay findable.
+
+**The dusk keeps the red, and that is the exception that explains the rule.** Its
+trees are `BROADLEAF` and fly agaric does partner beech and oak, so it is not a
+false entry — but the real reason is that the dusk's whole idea is a wood where
+the shapes are the ones you know and only the light is wrong. A recoloured cap
+there would be the region joining in.
+
+**Recoloured, never thinned.** Density is the one field in `biomes.ts` that
+touches yield — mushrooms barter for cloth, for seed, and for every crop variety
+at 8 a row — so fixing the fen by moving numbers would have made foraging
+measurably worse somewhere for a reason no player could see. A tint costs nothing
+and does the whole job. Red now means birch or pine, which is what it means
+outdoors. `palette.test.ts` holds the whitelist, so a new region that grows
+mushrooms has to decide which way it went.
+
 ### 8r — Shrubs — **built, glimmer only**
 
 The first node that exists in one region and nowhere else. A `SHRUB` tile, a

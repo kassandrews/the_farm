@@ -929,6 +929,32 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Sunk, wet and dark. Slabs and low boulders — anything that stood up here
         // went under a long time ago.
     stone: { tint: { color: "#41504a", amount: 0.32 }, shapes: ["slab", "slab", "boulder"] },
+    // INKCAP GREY, AND THE REASON IS ECOLOGY RATHER THAN PALETTE — the first row
+    // in this file to be settled by what actually grows somewhere.
+    //
+    // The default cap is red, which at this size and with a white speck on it is
+    // a fly agaric and nothing else. Amanita muscaria is ectomycorrhizal: it
+    // cannot grow without a tree's roots to partner, and its partners are BIRCH
+    // first, then pine and spruce. It wants well-drained acid soil under those
+    // hosts. A fen is the one habitat in this table it would never appear in —
+    // and the fen was carrying the heaviest mushroom density in the game (0.12,
+    // double the birches'), so the region least likely to have a fly agaric had
+    // the most of them, eight patches to a screen.
+    //
+    // Recoloured rather than reshaped, and rather than moved: density is the one
+    // field here that touches YIELD (mushrooms barter for cloth, for seed, and
+    // for every crop variety at 8 a row), so thinning the fen would make foraging
+    // measurably worse in a place for a reason nobody could see. A tint costs
+    // nothing and does the whole job — red now means birch or pine, which is what
+    // red means outdoors.
+    //
+    // Grey, not brown: a damp-ground fungus that reads papery and about to
+    // deliquesce, which is what an inkcap does. Cool, so it cannot be confused
+    // with the glimmer's warm champagne, and pale, so it still reads on the
+    // murkiest floor in the game — the same legibility argument the champagne
+    // made. It also stays clear of the kingcups a few lines down: the fen already
+    // has one yellow thing in spring and does not need a second.
+    mushroomCap: { cap: "#b3aab0", lit: "#d5cdd0", gills: "#857a80" },
     // Weeping: broad at the top and narrowing all the way down, so the mass hangs
     // rather than sits. The tallest crown in the table — a fen tree leans over
     // the water it grew out of.
@@ -1260,6 +1286,20 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // pale one. A far biome that recalls a near one is what keeps the drift
     // continuous.
     crownRows: [2, 3, 5, 5, 6, 6, 5, 5, 4, 3, 2],
+    // Bleached, like everything else here — and the argument is the glimmer's
+    // word for word: red was the one warm-blooded thing in a region built out of
+    // cold blue and near-white, and it read as an object from somewhere else
+    // lying on the floor.
+    //
+    // Ecology would have allowed the red. This wood's crown is the birch's, and
+    // a fly agaric partners birch — but the glass wood is what a birch wood looks
+    // like with the colour drained out of it, and a cap that kept its red would
+    // be the one thing in the region that hadn't been drained. The palette wins
+    // here because the palette IS the place.
+    //
+    // Paler than the floor rather than darker: a gathered thing has to be findable,
+    // and this is the one region whose ground is already mid-toned.
+    mushroomCap: { cap: "#cfe0ea", lit: "#eef5fa", gills: "#a3bcc9" },
   },
 
   /** The one you go and find. Not rolled from the field like the others — it is
