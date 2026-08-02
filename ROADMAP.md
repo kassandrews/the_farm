@@ -3974,6 +3974,16 @@ at once can tell you, and an argument for 8l existing.
   showing night the whole time. 19:30 now, and **dawn earned a row of its own**,
   because a phase no control can show is a phase no bug can be caught in.
 
+  **Knock-on worth knowing, because it looked like a regression and wasn't.** With
+  the clock corrected, the dusk hour was on screen for the first time — and
+  `tintAt` lays `rgba(255,132,58,0.18)` over the WHOLE scene in that hour, so every
+  region goes warm between seven and eight exactly as everything goes blue after
+  it. That wash has shipped since the vertical slice and nothing touched it; it had
+  simply never been photographed, because the one control that could show it was
+  set half an hour late. Checked against `palette.ts`, `seasons.ts` and `time.ts`
+  (all untouched by this phase) and kept. **A mislabelled control does not only
+  hide bugs — it makes correct behaviour look like a new one.**
+
 **AND THE FAUNA RULE GOT WRITTEN DOWN, BECAUSE IT NEVER HAD BEEN.** "There are no
 animals in this game" was true and lived in a TEST COMMENT and nowhere else —
 folklore rather than a decision, and quietly wider than anything anybody had
