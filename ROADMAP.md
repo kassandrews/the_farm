@@ -4044,6 +4044,15 @@ rules from 5a apply unchanged and are the reason the numbers are what they are:
 **additive light needs to be much dimmer than it feels like it should** (hence a
 0.3 halo rather than the 0.8 that felt right).
 
+**THE PREVIEW PAGE IS THE WRONG INSTRUMENT FOR DENSITY, and that is worth knowing
+before the next kit.** A swatch is 13 tiles — about 170 cells. Full screen at the
+far zoom is nearer 900. So a density tuned until a swatch looks right puts five
+times too many on the screen the game is actually played on, which is exactly
+what happened here: 0.09 read as "a few" in the sheet and as a swarm at full
+size. The page is for COLOUR, SHAPE and SIDE-BY-SIDE comparison; density is
+settled in the game, at the size somebody plays it. Fireflies are 0.028 / 0.018 /
+0.022 now, a third of what the sheet suggested.
+
 **Tuning note worth keeping.** A flasher needs roughly double a fader's density
 for the same read: it is dark for most of its cycle, so instantaneous coverage is
 density × the flash window. At 0.14 the dusk had two specks in a swatch and they

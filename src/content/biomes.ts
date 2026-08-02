@@ -299,7 +299,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // in the way that matters, which is most of the time rather than most of the
     // table.
     motes: {
-      density: 0.09,
+      density: 0.028,
       color: "#ffe23a",
       core: "#fffce4",
       // BARELY MOVING. A firefly that travels reads as a spark blowing past; one
@@ -338,7 +338,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Fewer than the meadow's: this canopy closes over you, and a wood you
     // cannot see far in should not be the one with the most light in it.
     motes: {
-      density: 0.06,
+      density: 0.018,
       color: "#ffe23a",
       core: "#fffce4",
       drift: 3,
@@ -528,7 +528,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       // SPARSE, AND ALL DAY. You have to be looking for them — which is the
       // right amount for the one region that has them permanently, and the
       // reason it does is that this country's light is already wrong at noon.
-      density: 0.07,
+      density: 0.022,
       // ORANGE HERE, YELLOW IN THE NEAR REGIONS. The twilight country's whole
       // palette is violet, and a warm light in it should read as the wrong kind
       // of warm — an ember rather than a summer evening.
