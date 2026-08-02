@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { scenePalette, seasonSkin, biomeSkin, mixHex } from "./palette";
-import { MUSHROOM_ART } from "./renderer";
+import { MUSHROOM_ART, DEADWOOD_ART } from "./renderer";
 import { BIOMES, BROADLEAF } from "../content/biomes";
 import { SEASONS, seasonOn } from "../content/seasons";
 import { TILES, tileDef, GRASS, MUSHROOM, WATER, FARMLAND, FARMLAND_WET, FLOOR, STONE, BEDROCK, CAVE_FLOOR, ORE_VEIN, SHAFT, DARK_TREE } from "../content/tiles";
@@ -313,6 +313,46 @@ describe("crown silhouettes", () => {
     expect(MUSHROOM_ART.bell.open[0].replace(/\./g, "").length).toBeLessThanOrEqual(
       MUSHROOM_ART.cap.open[0].replace(/\./g, "").length,
     );
+  });
+
+  it("keeps deadwood under a tile tall, and the log wider than one", () => {
+    // Two opposite constraints, and the sprite is only right if it breaks one.
+    //
+    // HEIGHT is the rock's rule, not the tree's: `hides` fades the player off
+    // OVERHANG (artPx - TILE), so scenery at or under a tile can never make the
+    // world go see-through behind it. These are things you step around.
+    //
+    // WIDTH is the opposite, and only for the log: length is the whole read of
+    // one, and a log drawn inside its cell came out a lump. It is safe because
+    // the raised pass is flushed after all terrain — but it is exactly why
+    // deadwood cells may not touch (sim/world.ts §deadIsLoneliest), so if this
+    // ever stops being wider than a tile, that rule has lost its reason.
+    for (const [name, g] of Object.entries(DEADWOOD_ART)) {
+      const w = g[0].length;
+      for (const row of g) {
+        expect(row.length, `${name}: "${row}"`).toBe(w);
+        for (const ch of row) expect("trbdm.", `${name}: "${ch}"`).toContain(ch);
+      }
+      expect(g.length, `${name} is taller than a tile`).toBeLessThanOrEqual(16);
+      // Moss is the pixel doing the most work on these: wood with moss on it is
+      // wood nobody tries to pick up, which is the whole affordance argument.
+      expect(g.join(""), `${name} has no moss`).toContain("m");
+    }
+    expect(DEADWOOD_ART.log[0].length).toBeGreaterThan(16);
+    expect(DEADWOOD_ART.stump[0].length).toBeLessThan(16);
+  });
+
+  it("only grows deadwood where something could have fallen", () => {
+    // Wood on the ground says a wood is OLD. A region with no trees and fallen
+    // timber in it is a clearance site, which is a different and much sadder
+    // place — so the field is only allowed where there is a canopy to lose.
+    for (const b of Object.values(BIOMES)) {
+      if (!b.deadwood) continue;
+      expect(b.trees, `${b.id} has deadwood but no trees`).toBeGreaterThan(0);
+    }
+    // The identity row, asserted rather than assumed: the meadow is the town's
+    // own ground and walking home has to keep looking like walking home.
+    expect(BIOMES.meadow.deadwood).toBeUndefined();
   });
 
   it("keeps bark marks on the bark", () => {

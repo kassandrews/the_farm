@@ -19,10 +19,10 @@ import {
   regionParts,
   rollRegion,
 } from "./world";
-import { BIOMES, FIELD_WEIGHTS } from "../content/biomes";
+import { BIOMES, FIELD_WEIGHTS, type BiomeId } from "../content/biomes";
 import { GRASS, tileDef } from "../content/tiles";
 import { biomeSkin, blendRegions } from "../render/palette";
-import { ROCK, WATER, SHALLOW, SAND, SHRUB, DIRT } from "../content/tiles";
+import { ROCK, WATER, SHALLOW, SAND, SHRUB, DIRT, STUMP, LOG } from "../content/tiles";
 import { NODES, nodeForTile } from "../content/nodes";
 import type { HomesteadSpot } from "./types";
 
@@ -373,6 +373,54 @@ describe("rocks never touch", () => {
     }
     expect(tiles).toBeGreaterThan(200); // the sample is worth something
     expect(rocks / tiles).toBeGreaterThan(0.1); // and it is still strewn with them
+  });
+
+  it("never generates two pieces of deadwood edge-on either, and it matters more", () => {
+    // Same arithmetic, its own salt (sim/world.ts §deadIsLoneliest). It matters
+    // MORE here than for rocks: a log's art is twenty pixels wide on a sixteen
+    // pixel tile, so two of these adjacent would genuinely overlap rather than
+    // merely abut, and the overlap would be a hard seam through both sprites.
+    for (const seed of [21, 99, 4242]) {
+      for (const spot of SPOTS) {
+        for (let y = -70; y <= 70; y++) {
+          for (let x = -70; x <= 70; x++) {
+            const here = generatedTile(seed, spot, x, y);
+            if (here !== STUMP && here !== LOG) continue;
+            for (const n of [generatedTile(seed, spot, x + 1, y), generatedTile(seed, spot, x, y + 1)]) {
+              expect(n === STUMP || n === LOG, `${x},${y}`).toBe(false);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  it("keeps deadwood rare, and out of the regions that never asked", () => {
+    // Rare is the whole spec ("pretty rare but occasional"). It is also the only
+    // guard on a field that is decor: nothing counts deadwood, nothing picks it
+    // up, and no other test in the suite can see it — so if the density were
+    // fat-fingered upward, the first anyone would know is a screenshot.
+    let dead = 0;
+    let land = 0;
+    const seen = new Set<string>();
+    for (let y = -200; y <= 200; y++) {
+      for (let x = -200; x <= 200; x++) {
+        const t = generatedTile(21, "forest", x, y);
+        if (t === WATER || t === SHALLOW || t === SAND) continue;
+        land++;
+        if (t !== STUMP && t !== LOG) continue;
+        dead++;
+        seen.add(biomeAt(21, "forest", x, y));
+      }
+    }
+    expect(land).toBeGreaterThan(10000); // the sample is worth something
+    expect(dead).toBeGreaterThan(0); // it does actually happen
+    expect(dead / land).toBeLessThan(0.01); // and stays something you come across
+    // Only where a region asked. The meadow is the town's own ground and the one
+    // row that must never change: a stump on the walk home is the whole
+    // "walking home looks like walking home" promise broken.
+    for (const id of seen) expect(BIOMES[id as BiomeId].deadwood, id).toBeTruthy();
+    expect(seen.has("meadow")).toBe(false);
   });
 
   it("leaves diagonals alone — corner to corner is a pair of rocks, not a seam", () => {

@@ -143,6 +143,22 @@ export interface BiomeDef {
   shrubs?: number;
   /** Chance a bare cell carries a patch of mushrooms. */
   mushrooms: number;
+
+  /** Stumps and fallen logs, ×DEADWOOD_DENSITY. Optional, and absent means NONE
+   *  — the second field here that is off by default, and for a better reason
+   *  than the shrub's: deadwood on the ground says a wood is OLD, and most of
+   *  these regions are not making that claim.
+   *
+   *  THE ONE FIELD IN THIS TABLE THAT CANNOT TOUCH YIELD EVEN IF IT WANTED TO.
+   *  `shrubs` is allowed to exist despite being a gathered node because wood is
+   *  not scarce and four shrubs are four fellings against one tree; this needs no
+   *  such argument, because a stump hands back nothing at all. It is decor with a
+   *  tile — see tiles.ts §STUMP, and DESIGN.md §Biomes for the rule it is under.
+   *
+   *  RARE ON PURPOSE. The base is a third of the rock's, so a log is something you
+   *  come across rather than something a wood is made of. Turn it up and a region
+   *  stops reading as woodland and starts reading as a clearance site. */
+  deadwood?: number;
   /** How wet it is — roughly the fraction of ground standing under water. Fen
    *  only, and low: water is solid, and a region you cannot cross is a wall
    *  rather than a place.
@@ -612,6 +628,11 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     rocks: 0.5,
     mushrooms: 0.02,
     water: 0,
+    // Deadfall. A pine wood is the one that manufactures this without being old
+    // — the lower branches die in the shade of the upper ones and come down all
+    // year, which is why the floor of a plantation is a mess of sticks. The
+    // heaviest here, and still rare.
+    deadwood: 1.2,
     ground: { color: "#7d8f5e", amount: 0.35 }, // needle-dulled turf
     tuft: { color: "#6d7f52", amount: 0.4 },
     // A needle floor. Blades and litter, and NO sprouts: nothing much
@@ -722,6 +743,11 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     rocks: 0.4,
     mushrooms: 0.06,
     water: 0,
+    // Birch is the fastest-rotting timber of any tree in this table — a fallen
+    // one is soft inside within a couple of years, which is exactly the reading
+    // these want. Lighter than the pines: this is an airy wood and a floor
+    // strewn with wood is not.
+    deadwood: 0.8,
     // AIRY IS THE GROUND'S JOB, NOT THE CROWN'S — measured, after trying it the
     // other way. Lifting the crown to meet the meadow's green did make the
     // region brighter, and it cost the trees their silhouette: crown (129,168,98)
@@ -947,6 +973,11 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     rocks: 0.2,
     mushrooms: 0.12, // the mushroomiest place there is
     water: 0.06,
+    // Wet ground is where wood goes soft, and a fen tree stands in the thing
+    // that undermines it. The most legible deadwood in the game and the least
+    // like timber — nobody looks at a log in a bog and thinks "firewood", which
+    // is the affordance argument in tiles.ts §STUMP handed to us for free.
+    deadwood: 1,
     // Pushed darker and browner than first drafted, for the reason autumn's
     // ground was: at #6f8a5e it was still plainly meadow-green beside the meadow
     // and the ponds were doing all the work alone. Settled on screen.

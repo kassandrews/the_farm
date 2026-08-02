@@ -4337,6 +4337,57 @@ measurably worse somewhere for a reason no player could see. Red now means birch
 or pine, which is what it means outdoors. `palette.test.ts` holds the whitelist,
 so a new region that grows mushrooms has to decide which way it went.
 
+### Deadwood — stumps and fallen logs
+
+**Decor with a tile, and the doc had already settled it.** DESIGN.md §Biomes names
+fallen logs in its DECOR list and states the test: *"can you carry it home?"* If
+you can, it is the mushroom wearing a hat and answers to the mushroom's density
+rules; if you can't, it is free. So these have **no `NODES` row** — no yield, no
+drop, no regrow timer, no away-sim, no balance argument. That deleted most of the
+work before any was done.
+
+`BiomeDef.deadwood` is a multiplier that **defaults to none**, like `shrubs`, and
+three regions ask: pinewood (deadfall is what a plantation floor is made of),
+birch (the fastest-rotting timber in the table) and fen (wet ground is where wood
+goes soft). The meadow stays untouched — walking home has to keep looking like
+walking home, and that is now asserted rather than assumed.
+
+**Zero save work, and this is worth knowing for the next tile.** Terrain is
+regenerated from the seed and `setTile` deletes an override that matches
+generation, so a new *generated* id never lands in a save. The sky layer shipped
+three ids at unchanged `schemaVersion` for the same reason. The real cost is
+different and should be said out loud: **generated terrain is re-evaluated on
+every read, so this appears in already-visited ground on live towns.** Anything
+the player has edited is safe. That is how SHRUB shipped too.
+
+**The art carries the rule.** A log is visibly wood and this is the first
+wood-looking thing that hands back nothing, so if it reads as felled TIMBER the
+doc rule breaks on screen whatever it says on paper. Three passes were wrong:
+
+- **A plank.** Square ends, a flat lit stripe, heartwood the same value as the
+  body — it came out a bench. Both ends taper now, the rings are an ellipse at
+  *one* end (rings at both ends is a log that was cut twice), and the moss sits
+  IN the top row instead of floating above it, where it read as grass behind.
+- **A T-shaped crack.** The stump's heartwood drawn as `rrr` over `r` makes a T,
+  and a T at seven pixels wide is a split face, not a cut one. Three by two is the
+  smallest mark that reads as heartwood; real rings do not survive this size.
+- **A bollard.** The stump's left side now runs one pixel wider than its right —
+  the only asymmetry in the sprite, and it is there because a stump flares where
+  its roots leave it and a cylinder is a bollard.
+
+**A log is 20px wide on a 16px tile, and both halves of that matter.** Length is
+the whole read of one; drawn inside its cell it was a lump. Safe because the
+raised pass is flushed after all terrain (a tree's crown already overhangs by
+more). It is also exactly why deadwood cells **may not touch** — two adjacent logs
+would genuinely overlap, not merely abut — so `deadIsLoneliest` borrows
+`rockIsLoneliest`'s arithmetic on its own salt. Height stays under a tile, which
+is the rock's rule and not the tree's: `hides` fades off overhang, so scenery at
+or under a tile never makes the world go see-through behind it.
+
+`scripts/shot-deadwood.mts` exists because rare content needs an aimed camera or
+it does not get looked at — all three art failures above were invisible to 1536
+tests and obvious in one photograph.
+
 ### The mushroom shape, and where the line actually is
 
 Recolouring the fen was not enough, and the reason is the one the pinewood taught

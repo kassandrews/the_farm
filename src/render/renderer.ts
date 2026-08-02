@@ -19,6 +19,8 @@ import {
   GRASS,
   TREE,
   SHRUB,
+  STUMP,
+  LOG,
   ROCK,
   BEDROCK,
   ORE_VEIN,
@@ -351,6 +353,57 @@ const ROCK_SHAPES: Record<
  *  ground rather than hanging above it — the bell is two rows taller than the
  *  dome and has to grow upward from the same soil.
  */
+/** The deadwood, drawn. Same grid convention as MUSHROOM_ART — `.` for nothing,
+ *  a letter per material:
+ *
+ *      t  the cut face          b  the body
+ *      r  heartwood, the rings  d  its shaded underside
+ *      m  moss
+ *
+ *  BOTH STAY UNDER 16px TALL. That is the rock's rule and not the tree's: `hides`
+ *  keys off overhang (`artPx - TILE`), so anything at or under a tile can never
+ *  fade the player standing behind it. These are things you step around.
+ *
+ *  NOTHING IN EITHER SHAPE IS SQUARE, and that is deliberate rather than
+ *  decorative — see drawDeadwood. A flat end or a straight edge reads as SAWN,
+ *  and sawn wood is wood somebody cut, which is wood you would expect to be able
+ *  to pick up. Both ends of the log are rounded and its heartwood is off-centre.
+ */
+export const DEADWOOD_ART: Record<"stump" | "log", string[]> = {
+  // Six rows: three of cut face, three of side. A stump seen from this angle is
+  // mostly its top — the game looks down at about that much of a tree's trunk.
+  //
+  // THE HEART IS A BLOCK, NOT A TAPER. Drawn as `rrr` over `r` it makes a T, and
+  // a T at seven pixels wide reads as a CRACK down the face rather than as the
+  // dark middle of a cut. Three by two is the smallest mark that reads as
+  // heartwood — a real ring pattern does not survive this size at all.
+  //
+  // The left side runs one pixel wider than the right, which is the only
+  // asymmetry in the sprite and is there to stop it reading as turned on a lathe.
+  // A stump flares where its roots leave it; a cylinder is a bollard.
+  stump: ["..ttttt..", ".ttrrrtt.", ".ttrrrtt.", "tbbbbbbb.", ".mbbbbbm.", "..ddddd.."],
+  // Twenty wide on a sixteen-pixel tile.
+  //
+  // THE FIRST DRAFT WAS A PLANK, and it is worth recording why: square ends, a
+  // flat lit stripe, and heartwood the same value as the body. It came out a
+  // bench. Three things fixed it, all of them about the log being a CYLINDER
+  // that fell over rather than a bar lying down —
+  //
+  //   • Both ends taper (16, 18, 19, 18, 16), so neither is a cut.
+  //   • The rings are an ellipse at ONE end only, four wide and rounded, not a
+  //     stripe. A log showing rings at both ends was cut twice, which is sawn
+  //     timber and exactly the read this is avoiding.
+  //   • The moss sits IN the top row instead of floating above it. It was two
+  //     pixels of green hanging over the log before, which read as grass behind.
+  log: [
+    ".rr.tttmmttttmttt...",
+    "rrrrtttttttmttttttt.",
+    "rrrrbbbbbbbbbbbbbbbb",
+    ".rrbbbbbbbbbbbbbbbb.",
+    "....ddddddddddddd...",
+  ],
+};
+
 export type MushroomState = "open" | "button";
 export const MUSHROOM_ART: Record<MushroomShape, Record<MushroomState, string[]>> = {
   // THE ORIGINAL ART, pixel for pixel — this is what every region drew before the
@@ -552,6 +605,8 @@ function groundIdOf(id: number): number {
     id === HUM_CUBE ||
     id === JUNK_PILE ||
     id === MUSHROOM ||
+    id === STUMP ||
+    id === LOG ||
     id === POLE ||
     id === MAILBOX ||
     id === STAIR
@@ -1103,6 +1158,8 @@ export class Renderer {
           id === TREE ||
           id === SHRUB ||
           id === ROCK ||
+          id === STUMP ||
+          id === LOG ||
           id === DARK_TREE ||
           id === HUM_CUBE ||
           id === POLE ||
@@ -1117,6 +1174,7 @@ export class Renderer {
             draw: () => {
               if (id === ROCK) this.drawRock(world, x, y, t, night);
               else if (id === SHRUB) this.drawShrub(world, x, y, night);
+              else if (id === STUMP || id === LOG) this.drawDeadwood(world, x, y, night, id === LOG);
               else if (id === HUM_CUBE) this.drawCube(world, x, y, night);
               else if (id === POLE) this.drawPole(world, x, y, night);
               else if (id === MAILBOX) this.drawMailbox(world, x, y, night);
@@ -3598,6 +3656,82 @@ export class Renderer {
    *  WHICH SILHOUETTES ARE AVAILABLE is the region's, like its tuft marks and its
    *  crown rows. A region says which of them its ground breaks into; the shapes
    *  themselves live up in ROCK_SHAPES, because a silhouette is a drawing. */
+  /** A stump, and a log lying in the grass. Old wood, and the only standing
+   *  things in the game you cannot gather (content/tiles.ts §STUMP).
+   *
+   *  THE ART CARRIES THE RULE HERE. Everything else on this floor that looks like
+   *  wood hands you wood, so these have to say "already gone back to the ground"
+   *  in their own drawing or the affordance breaks whatever DESIGN.md says. Three
+   *  things do it: the grey (weathered, never fresh), the moss, and the fact that
+   *  nothing is square — no cut ends, no stacking, no straight edges.
+   *
+   *  A LOG IS WIDER THAN ITS TILE, at 21px on a 16px cell, and that is the point
+   *  rather than an accident: length is the whole read of a log, and one drawn
+   *  inside its cell came out a lump. Safe because the raised pass is queued and
+   *  flushed after ALL terrain — a tree's crown already overhangs by more than
+   *  this. It is also why deadwood cells may not touch (sim/world.ts
+   *  §deadIsLoneliest): two of these side by side would genuinely overlap. */
+  private drawDeadwood(
+    world: WorldState,
+    tx: number,
+    ty: number,
+    night: boolean,
+    isLog: boolean,
+  ): void {
+    const ctx = this.ctx;
+    const h = decoHash(tx, ty, world.seed);
+    const grid = isLog ? DEADWOOD_ART.log : DEADWOOD_ART.stump;
+    const w = grid[0].length;
+    // Half a pixel of jitter is not available, so the log gets the wider swing:
+    // a row of them all centred on their cells would read as a grid however
+    // irregular the scatter that placed them.
+    const jx = Math.floor(h * (isLog ? 5 : 3)) - (isLog ? 2 : 1);
+    const cx = Math.round(this.sceneX(tx)) + jx;
+    const base = Math.round(this.sceneY(ty) + TILE / 2);
+    const left = cx - Math.floor(w / 2);
+    const top = base - grid.length;
+
+    const prev = ctx.globalAlpha;
+    if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
+
+    // The region's own timber, at HALF the pull its standing trunks get. A fallen
+    // birch really is the pale thing on that floor and a fen log really is nearly
+    // black, so taking the region is right — but taking all of it would draw
+    // fresh bark, and every one of these has been down for years.
+    const trunk = regionSkin(world.seed, world.homestead.spot, tx, ty)?.trunk;
+    const weather: Tint | undefined = trunk
+      ? { color: trunk.color, amount: trunk.amount * 0.5 }
+      : undefined;
+    const mix = (hex: string): string => (weather ? mixHex(hex, weather) : hex);
+
+    // Grey-brown and stated outright, the same way the rock's greys are: the
+    // region pulls all of them one direction, so weathering stays one decision.
+    const ink: Record<string, string> = {
+      t: mix(night ? "#6b6055" : "#a2937f"), // the cut face, catching the light
+      r: mix(night ? "#574d44" : "#8a7c69"), // heartwood, a shade under it
+      b: mix(night ? "#4e463d" : "#7d7060"), // the body
+      d: mix(night ? "#3a342d" : "#5f554a"), // and its underside
+      // MOSS IS NOT WEATHERED — it is the living thing on top of the dead one, so
+      // it takes none of the region's timber tint. It is also the single pixel
+      // doing the most work on this sprite: wood with moss on it is wood nobody
+      // is going to try to pick up.
+      m: night ? "#3f5a3a" : "#6d9455",
+    };
+
+    ctx.fillStyle = "rgba(0,0,0,0.16)"; // it lies ON the grass
+    ctx.fillRect(left + 1, base - 1, w - 2, 2);
+    for (let r = 0; r < grid.length; r++) {
+      const row = grid[r];
+      for (let c = 0; c < w; c++) {
+        const ch = row[c];
+        if (ch === ".") continue;
+        ctx.fillStyle = ink[ch];
+        ctx.fillRect(left + c, top + r, 1, 1);
+      }
+    }
+    ctx.globalAlpha = prev;
+  }
+
   private drawRock(world: WorldState, tx: number, ty: number, t: number, night: boolean): void {
     const ctx = this.ctx;
     /** Apply the region's weathering, or leave the stone alone. */

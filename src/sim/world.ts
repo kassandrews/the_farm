@@ -21,6 +21,8 @@ import {
   MUSHROOM,
   TREE,
   SHRUB,
+  STUMP,
+  LOG,
   ROCK,
   BEDROCK,
   ORE_VEIN,
@@ -381,6 +383,25 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     if (rockRoll(seed, x, y) < NODES.rock.density * biome.rocks && rockIsLoneliest(seed, x, y)) {
       return ROCK;
     }
+    // Deadwood, after everything that grows: a cell that grew a tree stays a
+    // tree, so a region's stumps come out of its open ground rather than out of
+    // its canopy. Zero in every region that doesn't ask (content/biomes.ts).
+    //
+    // LONELIEST, on the rock's own argument and its own salt. Two logs sharing an
+    // edge read as one long lumpy object with a seam down it, and a log is
+    // already the widest thing on the floor — welded to a stump it looks like a
+    // rendering bug rather than like a wood.
+    if (
+      biome.deadwood &&
+      deadRoll(seed, x, y) < DEADWOOD_DENSITY * biome.deadwood &&
+      deadIsLoneliest(seed, x, y)
+    ) {
+      // Which of the two, on a hash that is NOT the placement roll. Sharing it
+      // would tie "is there deadwood here" to "which kind", so every stump would
+      // be the marginal roll and every log the comfortable one — the decor kit's
+      // old bug, which this file is not going to make again.
+      return hash2(x, y, seed ^ 0x6dd1) / 4294967296 < 0.45 ? STUMP : LOG;
+    }
 
     // Ground clutter, on its own hashes so turning it up somewhere doesn't
     // reshuffle where that region's trees stand.
@@ -395,6 +416,39 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
  *  below has to ask the same question about the neighbours. */
 function rockRoll(seed: number, x: number, y: number): number {
   return hash2(x, y, seed ^ 0x20c4) / 4294967296;
+}
+
+/** How much deadwood a region with `deadwood: 1` would have.
+ *
+ *  A THIRD OF THE ROCK'S, and it lives here rather than in content/nodes.ts
+ *  because a stump is not a node — there is nothing to gather, nothing to drop
+ *  and nothing to regrow, so it has no row to hang a density on. It sits beside
+ *  the roll that uses it, the same way RECLAIM_MS sits beside `dig`.
+ *
+ *  Rare is the point. A log is something you come across; a wood MADE of fallen
+ *  wood is a clearance site. */
+const DEADWOOD_DENSITY = 0.012;
+
+/** This tile's roll for deadwood, and the neighbours' — see deadIsLoneliest. */
+function deadRoll(seed: number, x: number, y: number): number {
+  return hash2(x, y, seed ^ 0x1b7f) / 4294967296;
+}
+
+/** Does no deadwood touch this one edge-on? The rock's rule exactly, on its own
+ *  salt, and read `rockIsLoneliest` above for why it is arithmetic rather than a
+ *  check: two adjacent tiles can never both have the strictly lower roll.
+ *
+ *  It matters MORE here than it does for rocks. A log's art is wider than its
+ *  tile — it has to be, or it reads as a lump rather than as something long — so
+ *  two of them side by side would actually overlap, not merely abut. */
+function deadIsLoneliest(seed: number, x: number, y: number): boolean {
+  const r = deadRoll(seed, x, y);
+  return (
+    r < deadRoll(seed, x + 1, y) &&
+    r < deadRoll(seed, x - 1, y) &&
+    r < deadRoll(seed, x, y + 1) &&
+    r < deadRoll(seed, x, y - 1)
+  );
 }
 
 /** Do no rocks touch this one edge-on?

@@ -210,6 +210,32 @@ export const CLOUD_THIN: TileId = 24;
  *  pock a wood with dirt patches for two wood apiece. */
 export const SHRUB: TileId = 25;
 
+/** Deadwood: a stump, and a fallen log. Old wood that has gone back to the
+ *  ground, and the first standing things in the game you cannot gather.
+ *
+ *  NOT A NODE, AND THAT IS THE WHOLE DESIGN. DESIGN.md §Biomes names fallen logs
+ *  in its DECOR list and sets the test for anything in a region's kit: "can you
+ *  carry it home?" If you can, it is the mushroom wearing a hat and it answers to
+ *  the mushroom's density rules; if you can't, it is free. These cost nothing,
+ *  gate nothing and yield nothing, which is exactly what lets a region have as
+ *  much of its own as it likes.
+ *
+ *  SO THE ART HAS TO DO THE ARGUING. A log is visibly wood, and this is the first
+ *  wood-looking thing that hands back nothing — if it reads as felled TIMBER, the
+ *  doc rule breaks on screen whatever it says on paper. They have to read as
+ *  returned to the ground: grey, split, mossy, soft. Not stacked, not cut, not
+ *  square. Nobody tries to pick up a rotten log.
+ *
+ *  SOLID, like the rock and the shrub, on the shrub's own argument — something
+ *  the same size and shape as a thing you walk around, that you walk through
+ *  instead, teaches you to distrust every silhouette in the game.
+ *
+ *  Both keep their art UNDER 16px, which is the rock's rule and not the tree's:
+ *  `hides` keys off overhang, so scenery at or under a tile never fades the
+ *  player. These are things you step around, not things you get behind. */
+export const STUMP: TileId = 26;
+export const LOG: TileId = 27;
+
 export const TILES: Record<TileId, TileDef> = {
   [GRASS]: {
     id: GRASS,
@@ -316,6 +342,26 @@ export const TILES: Record<TileId, TileDef> = {
     color: "#9a958c",
     top: "#a8a39a",
     shade: "#827e76",
+    solid: true,
+  },
+  // Grass's colours again, for the fourth documented time, and the reason has not
+  // changed: deadwood LIES IN the lawn, so the flat layer under it must stay lawn
+  // or the bevel rings every stump (renderer §groundIdOf, CLAUDE.md §per-cell
+  // edges). The wood itself is drawn in the raised pass.
+  [STUMP]: {
+    id: STUMP,
+    name: "Stump",
+    color: "#8bbf5a",
+    top: "#98cc63",
+    shade: "#76a54a",
+    solid: true,
+  },
+  [LOG]: {
+    id: LOG,
+    name: "Fallen log",
+    color: "#8bbf5a",
+    top: "#98cc63",
+    shade: "#76a54a",
     solid: true,
   },
   [MUSHROOM]: {
