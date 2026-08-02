@@ -49,7 +49,11 @@ const OUT = process.argv[2] ?? ".";
  *  need a much longer spiral to find. See findBiome. */
 const FAR = new Set<BiomeId>(["dusk", "glimmer", "glass"]);
 
-const d = await drive({ seed: { wood: 500 } });
+// TIME=2026-07-24T23:00:00 to shoot the same regions after dark. Half of what a
+// region is made of has a night value — bark, crowns, motes, orbs — and the
+// default midday pin means none of it was ever photographed. Falls through to
+// drive.mjs's own pin when unset.
+const d = await drive({ seed: { wood: 500 }, ...(process.env.TIME ? { time: process.env.TIME } : {}) });
 const save = await d.save();
 const seed: number = save.seed;
 const spot: HomesteadSpot = save.homestead.spot;

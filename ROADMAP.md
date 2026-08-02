@@ -2417,6 +2417,34 @@ a different plant.
 including how far up it reaches to occlude the player, so a taller tree stays
 correct without a second constant to forget. `TREE_H` is gone.
 
+**The birch was redrawn later, and it took the whole species to fix.** "A short
+crown on the same trunk" got the bark showing and still read as a lollipop, so
+three things moved together and none of them works alone:
+
+- `trunkHeight` (new, per biome, default 10) — the birch stands at 13. Height is a
+  species trait, and until this existed the only way to make a tree taller was to
+  grow its crown, which makes it *bushier*.
+- `bark` (new, per biome) — dark dashes as 3-wide grids read from the top of the
+  trunk down, several variants, picked by the tile's own salted hash. A white
+  trunk with nothing on it is a bollard, and the lenticels are the one detail of
+  this tree everybody can name.
+- The crown is a tall lobed **egg** with `crownGaps`/`crownOverlap` parting its
+  bottom rows around the trunk, so bark shows *inside* the foliage.
+
+**The correction worth remembering: the first crown widened all the way down, and
+came out a narrow white-trunked spruce.** That silhouette is the pinewood's, four
+rows up the same table. A birch is broadest at the shoulders with its lowest
+branches shortest — the outline has to come back in at the bottom or the bark
+colour cannot save it.
+
+Redrawing it also found that the crown's lit side was a flat six rows, which was
+most of a ten-row crown and a third of a sixteen-row one — the birch's lower half
+was one unshaded mass, which is what made the cone read as solid. It is now a
+fraction (0.6, floored at 6), so light falls across a proportion of a shape rather
+than a constant number of pixels of it. The pines and the blossom rows gained
+depth from the same change; 0.7 was tried first and left blossom crowns more lit
+than shaded, which inverts what a highlight is.
+
 ### Borders are warped, because a Voronoi edge is a straight line
 
 Found at the edge of the blossom rows: a clean vertical seam the full height of

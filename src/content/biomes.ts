@@ -140,6 +140,44 @@ export interface BiomeDef {
   crown: Tint;
   /** Trunks. Mostly left alone — except birch, which is nothing without it. */
   trunk: Tint;
+
+  /** How tall the bare trunk stands, in pixels. Optional; the renderer's TRUNK_H
+   *  (10) otherwise, which is what every region but the birches uses.
+   *
+   *  HEIGHT IS A SPECIES TRAIT AND IT WAS ONLY HALF EXPRESSIBLE. `crownRows`
+   *  already carried how tall the FOLIAGE is, so a taller tree could only be
+   *  made by growing its crown — which is a bushier tree, not a taller one. A
+   *  birch is tall the way a birch is: bare white stem for most of its height,
+   *  with the leaves gathered near the top. That needs the trunk to move.
+   *
+   *  The renderer takes the sprite's height from this plus the crown, so
+   *  occlusion stays honest for free. Keep it near 10: a trunk much longer
+   *  leaves the crown floating above where the tile actually is. */
+  trunkHeight?: number;
+
+  /** Dark marks on the bark. Optional, and the birches are the only species so
+   *  far that has any — every other trunk here is a plain three-pixel post.
+   *
+   *  WHAT IT IS FOR: a white trunk with nothing on it is a bollard. The dashes
+   *  are what makes it read as a birch rather than as a painted pole, and they
+   *  are the one detail of this tree everybody can name without being asked.
+   *
+   *  A grid per variant, three characters wide (the trunk's own columns) and read
+   *  from the TOP of the trunk down; `x` is a mark, anything else is bark. Rows
+   *  past the end of a grid are blank, so a grid written for one trunk height
+   *  still works on a shorter one.
+   *
+   *  SEVERAL VARIANTS, PICKED BY THE TILE — the same argument as ROCK_SHAPES and
+   *  the opposite of the orbs'. An orb arrangement repeats because three lights
+   *  agreeing tree to tree reads as a species having a habit; bark does not have
+   *  a habit, and one scar pattern down a whole stand reads as wallpaper the
+   *  moment two trunks stand side by side. */
+  bark?: {
+    /** The mark colour by day. Darkened for night by the renderer. */
+    color: string;
+    marks: string[][];
+  };
+
   /** The crown's SILHOUETTE: half-widths in pixels, one per row, top row first.
    *
    *  Colour alone wasn't enough. With one shape everywhere, the pines were "a
@@ -659,13 +697,65 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // concrete bollard with a crown on it, obvious at swatch size and invisible
     // in the numbers. Bark is nearly white or it is not bark.
     trunk: { color: "#f4f1e6", amount: 0.94 },
+    // Three pixels taller than everything else in the world, which is the whole
+    // difference between a tree that is tall and a tree that is big. The crown
+    // below got NARROWER at the same time; growing one without the other just
+    // makes a lollipop on a longer stick.
+    trunkHeight: 13,
+    // The dashes. Charcoal rather than black — a true black mark on a near-white
+    // trunk is a hole punched through the tree, and at this scale the eye reads
+    // the hole before it reads the bark.
+    //
+    // Read from the top of the trunk down, so the marks gather where the crown
+    // hangs and the stem is plainer near the ground — which is the right way
+    // round for a birch, whose lower bark is the smoothest part of it.
+    bark: {
+      color: "#4a443c",
+      marks: [
+        ["...", "xx.", "...", "...", "..x", "...", ".x.", "...", "...", "..."],
+        ["..x", "...", ".xx", "...", "...", "x..", "...", "...", ".x.", "..."],
+        [".x.", "...", "...", "xx.", "...", "...", "..x", "...", "...", "..."],
+      ],
+    },
     // Pale, and mostly whole. The lightest stone in the game, which is the same
         // note the trunks and the ground are already singing.
     stone: { tint: { color: "#cfd2c4", amount: 0.22 }, shapes: ["boulder", "broken"] },
-    // Small and high. A short crown on the same 10px trunk leaves more pale bark
-    // showing, which is what makes a birch read as slender — the shape does the
-    // work the trunk tint can only half do.
-    crownRows: [2, 4, 5, 6, 6, 6, 5, 5, 4, 3, 2],
+    // NARROW, TALL, AND LUMPY — three separate things, and the shape only works
+    // with all three.
+    //
+    // Narrow: 11px across where it used to be 13, on a trunk three pixels
+    // longer. Slenderness is a RATIO, and the old crown was as wide as it was
+    // because every region's was; against the pines it read as "a paler tree",
+    // never as a different build of tree.
+    //
+    // Tall: it widens on the way DOWN rather than being a symmetric blob. A
+    // birch's leading shoot is a whip — the top of one comes to a point, and the
+    // mass is in the lower half of the crown.
+    //
+    // Lumpy: the widths step in and out by a pixel instead of running smoothly,
+    // so the outline scallops. That is the "puffy" — foliage arrives in clumps,
+    // and a crown whose edge is a clean curve is a balloon. The wobble is SLOW
+    // (a step, then a hold) because alternating every row reads as a zigzag,
+    // which is a texture rather than a shape.
+    //
+    // AND IT IS AN EGG, NOT A CONE, which is the correction that cost a go. The
+    // first version widened all the way down — which is the PINE's silhouette
+    // four rows up in this file, and a narrow white-trunked spruce is what it
+    // came out as. A birch is broadest around its shoulders and its lowest
+    // branches are the SHORTEST; the outline has to come back in at the bottom
+    // or the species reads as a conifer no matter what colour the bark is.
+    //
+    // SIXTEEN ROWS ACROSS ELEVEN PIXELS, and the count is doing as much as the
+    // widths. At fourteen the crown came out round — a ball on a stick, which is
+    // the shape a child draws and the one this was meant to stop being. Taller
+    // than it is wide is the entire brief.
+    crownRows: [1, 3, 4, 4, 5, 4, 4, 5, 4, 5, 4, 4, 3, 3, 2, 2],
+    // The bottom three rows come down BESIDE the trunk and part around it, so a
+    // stripe of white bark stands inside the foliage. It is the cheapest thing
+    // on this tree and does the most: bark showing through leaves is most of
+    // what tells you a wood is birch from a distance.
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+    crownOverlap: 4,
     // Thin pale grass and small white flowers — the airy opposite of the pines,
     // and the reason the two rows sit next to each other.
     // ITS FLOWERS MOVED TO SPRING, and what is left all year is grass. The white

@@ -250,6 +250,26 @@ describe("crown silhouettes", () => {
     }
   });
 
+  it("keeps bark marks on the bark", () => {
+    // A trunk is three pixels wide and `trunkHeight` tall, and the renderer
+    // indexes the grid straight into that rect. A row of the wrong width would
+    // silently drop its last mark; a grid taller than the trunk would author
+    // dashes nobody ever sees. Both are the kind of miss that survives a suite
+    // and shows up as "the birches look plain" three sessions later.
+    for (const b of Object.values(BIOMES)) {
+      if (!b.bark) continue;
+      const trunkH = b.trunkHeight ?? 10;
+      // More than one, or a stand is the same tree printed twice — the argument
+      // ROCK_SHAPES already had, and bark is far more visible than a rock.
+      expect(b.bark.marks.length, b.id).toBeGreaterThan(1);
+      for (const grid of b.bark.marks) {
+        expect(grid.length, b.id).toBeLessThanOrEqual(trunkH);
+        expect(grid.join("").includes("x"), b.id).toBe(true);
+        for (const row of grid) expect(row.length, `${b.id}: "${row}"`).toBe(3);
+      }
+    }
+  });
+
   it("never overhangs so far that a crown covers its neighbours' trunks", () => {
     // 8 half-widths is 16px, exactly one tile. Past that a tree starts drawing
     // over the tile beside it, and a stand becomes a smear.

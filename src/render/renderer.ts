@@ -3243,7 +3243,11 @@ export class Renderer {
     // legible. Both default to "solid crown, perched on top".
     const gaps = biome?.crownGaps;
     const overlap = biome?.crownOverlap ?? 0;
-    const height = TRUNK_H + rows.length - overlap;
+    // How much bare stem there is under all that. Per-region (content/biomes.ts)
+    // because tallness is a species trait and the crown could only ever express
+    // bushiness: the birches stand three pixels higher than anything else here.
+    const trunkH = biome?.trunkHeight ?? TRUNK_H;
+    const height = trunkH + rows.length - overlap;
 
     const prev = ctx.globalAlpha;
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
@@ -3260,9 +3264,33 @@ export class Renderer {
     const bark = dark ? (night ? "#2b1d16" : "#3f2a1e") : night ? "#4a3628" : "#6b4a33";
     const barkDark = dark ? (night ? "#1f150f" : "#2f1e15") : night ? "#3a2a1e" : "#573a28";
     ctx.fillStyle = biome ? mixHex(bark, biome.trunk) : bark;
-    ctx.fillRect(cx - 1, base - TRUNK_H, 3, TRUNK_H);
+    ctx.fillRect(cx - 1, base - trunkH, 3, trunkH);
     ctx.fillStyle = biome ? mixHex(barkDark, biome.trunk) : barkDark;
-    ctx.fillRect(cx + 1, base - TRUNK_H, 1, TRUNK_H);
+    ctx.fillRect(cx + 1, base - trunkH, 1, trunkH);
+
+    // The birches' dashes. Drawn BEFORE the crown, so the rows that hang beside
+    // the trunk cover the marks they would overlap rather than leaving scars
+    // floating in the foliage.
+    //
+    // Which grid a trunk wears comes off its own salted hash, not `h` — `h`
+    // already chose the sideways jitter, and sharing it would tie a tree's bark
+    // to which way it leans. That is the decor kit's old bug, and this file has
+    // now made it twice.
+    const barkArt = biome?.bark;
+    if (barkArt) {
+      const bh = decoHash(tx, ty, world.seed ^ 0x5c07);
+      const grid = barkArt.marks[Math.floor(bh * barkArt.marks.length) % barkArt.marks.length];
+      // Night pulls the mark toward the trunk rather than toward black: bark is
+      // one material in two lights, and a dash that stayed charcoal while the
+      // stem went blue would read as a hole in the tree after dark.
+      ctx.fillStyle = night ? mixHex(barkArt.color, { color: "#2a3140", amount: 0.45 }) : barkArt.color;
+      for (let r = 0; r < grid.length && r < trunkH; r++) {
+        const row = grid[r];
+        for (let c = 0; c < 3; c++) {
+          if (row[c] === "x") ctx.fillRect(cx - 1 + c, base - trunkH + r, 1, 1);
+        }
+      }
+    }
 
     // Crown as per-row half-widths from the region's own silhouette: an
     // integer-rect blob, no ellipse maths and nothing off the pixel grid
@@ -3313,8 +3341,20 @@ export class Renderer {
     // Light from the upper left, as everywhere else. Bounded by the crown's own
     // length rather than by a literal 6: the scrub's is nine rows tall, and a lit
     // side that ran past the end read off the end of the array.
+    //
+    // A FRACTION OF THE CROWN, NOT SIX ROWS. It was a flat 6 while every crown
+    // here was nine or ten rows tall, so six was most of one. The birches are
+    // fourteen, and a fixed six left the bottom eight rows a single flat green
+    // mass — which is what made the first pass read as a solid cone rather than
+    // as foliage. Light falls across a proportion of a shape, not across a
+    // constant number of pixels of it.
+    //
+    // Floored at 6 so nothing that looked right under the old rule moved, and
+    // clamped to the array so the shortest crowns can't run off the end. The
+    // fraction is UNDER A HALF-AND-A-BIT on purpose: at 0.7 the blossom's crowns
+    // came out more lit than shaded, which inverts what a highlight is.
     ctx.fillStyle = crownLit;
-    const litRows = Math.min(6, rows.length - 1);
+    const litRows = Math.min(rows.length - 1, Math.max(6, Math.round(rows.length * 0.6)));
     for (let r = 1; r <= litRows; r++) {
       // Light lands on the LEFT lobe when a row is split — the lit side is the
       // upper left of the mass, not the upper left of each piece of it.
