@@ -754,18 +754,20 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // tree wanted: a crown that thin has to close on the trunk in two or three
     // steps, and the silhouette went from full width to bare bark almost at once.
     // Two more pixels buy the rows to come down GENTLY.
-    crownRows: [1, 3, 4, 5, 5, 6, 5, 6, 5, 6, 5, 5, 5, 4, 4, 4, 3],
-    // The bottom SIX rows come down BESIDE the trunk and part around it, so a
-    // stripe of white bark stands inside the foliage. It is the cheapest thing
-    // on this tree and does the most: bark showing through leaves is most of
-    // what tells you a wood is birch from a distance.
+    crownRows: [1, 3, 4, 5, 5, 6, 5, 6, 5, 6, 5, 5, 4, 4, 4, 3],
+    // The bottom four rows come down BESIDE the trunk, and the last three of
+    // them part around it, so a stripe of white bark stands inside the foliage.
+    // It is the cheapest thing on this tree and does the most: bark showing
+    // through leaves is most of what tells you a wood is birch from a distance.
     //
-    // Six rather than four because four made the join abrupt — the crown ended,
-    // and then there was a stick. Six lets the lobes step 4, 4, 3, 3, 3, 2 on
-    // their way down, which is a canopy settling onto its stem rather than a
-    // silhouette changing its mind.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
-    crownOverlap: 6,
+    // THE NOTCH IS THREE ROWS DEEP, AND IT WAS SIX, which is a different tree.
+    // Six meant the foliage arrived at the trunk's sides half a crown below
+    // where it crossed over the top of it — so the eye read a long white channel
+    // driven up into the canopy rather than a stem the leaves happen to part
+    // around. A notch says "the branches leave from here" only while it stays
+    // shallow enough to be an underside; any deeper and it is a gap.
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
+    crownOverlap: 4,
     // Thin pale grass and small white flowers — the airy opposite of the pines,
     // and the reason the two rows sit next to each other.
     // ITS FLOWERS MOVED TO SPRING, and what is left all year is grass. The white
