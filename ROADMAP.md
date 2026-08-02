@@ -4227,6 +4227,46 @@ than a second table of hexes to keep in step with the first.
 argument, now applying to mushrooms too. Half a champagne cap fading back to red
 across a border is a mushroom caught between two minds.
 
+### 8r — Shrubs — **built, glimmer only**
+
+The first node that exists in one region and nowhere else. A `SHRUB` tile, a
+`NODES.shrub` row, and `BiomeDef.shrubs` as a multiplier that **defaults to
+none** — so a shrub exists only where a row asks, and adding it to a region is a
+number rather than a change to the generator. Rolled after the trees, so turning
+it up thickens undergrowth instead of thinning canopy.
+
+**Two wood against a tree's eight, and that ratio is the whole balance
+argument.** Shrubs start in the far country, and the far country must never pay
+better than home — the same refusal the glimmer's own mushroom density is
+written against. Four shrubs to a tree means four fellings for one tree's worth,
+so undergrowth is something you clear on the way past rather than a reason to
+walk out. It is the one field in `biomes.ts` that touches yield at all; it is
+allowed because wood is not scarce anywhere. **Keep it that way when this
+spreads to other regions.**
+
+**Solid, like a tree**, because half a rule is worse than either: something the
+same size and shape as a thing you walk around, that you walk through instead,
+teaches you to distrust every silhouette in the game.
+
+**It fells to GRASS, not DIRT** — the one place it parts company with the tree.
+A tree leaves bare earth because a tree was bare earth's worth of trunk; a shrub
+that scarred the ground would pock a wood with dirt patches for two wood apiece.
+
+**It reuses `crownRows` rather than carrying its own shape** — the middle of the
+region's own crown, scaled and closed at both ends. That is what makes a shrub
+look like it belongs where it grows for free: puffy under the glimmer's puffy
+crowns, and narrow and tiered if the pines ever ask. A second silhouette table
+would let the two drift until a region's bushes were a different species from its
+trees. Two corrections while fitting it: **seven rows at 0.45, not five at 0.6**
+(eleven across by five tall is a barrel lying on the grass — a bush has to be
+about as tall as it is wide), and **proportionally more lit rows than a tree
+gets** (a crown lights 6 of 14; lighting 2 of 7 left a dark lump that read as a
+HOLE in this region's bright floor).
+
+No trunk: at seven rows a stem is a third of the sprite, and it stops reading as
+a bush and starts reading as a very small tree — the one thing it must not be,
+being solid and worth a quarter of the wood.
+
 ### 8l — A page that shows every region at once — **built**
 
 `/biomes.html` + `src/tools/biome-preview.ts`, the sibling of `/looks.html`, and

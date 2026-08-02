@@ -20,6 +20,7 @@ import {
   FARMLAND_WET,
   MUSHROOM,
   TREE,
+  SHRUB,
   ROCK,
   BEDROCK,
   ORE_VEIN,
@@ -368,6 +369,15 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     const treeRoll = hash2(x, y, seed ^ 0x7a11) / 4294967296;
     const density = NODES.tree.density * biome.trees;
     if (treeRoll < density) return TREE;
+    // Shrubs, on their own hash and AFTER the trees — a cell that grew a tree
+    // stays a tree, so turning shrubs up in a region thickens its undergrowth
+    // instead of thinning its canopy. Zero in every region that doesn't ask.
+    if (
+      biome.shrubs &&
+      hash2(x, y, seed ^ 0x5e2b) / 4294967296 < NODES.shrub.density * biome.shrubs
+    ) {
+      return SHRUB;
+    }
     if (rockRoll(seed, x, y) < NODES.rock.density * biome.rocks && rockIsLoneliest(seed, x, y)) {
       return ROCK;
     }

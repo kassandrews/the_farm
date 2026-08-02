@@ -22,7 +22,8 @@ import {
 import { BIOMES, FIELD_WEIGHTS } from "../content/biomes";
 import { GRASS, tileDef } from "../content/tiles";
 import { biomeSkin, blendRegions } from "../render/palette";
-import { ROCK, WATER, SHALLOW, SAND } from "../content/tiles";
+import { ROCK, WATER, SHALLOW, SAND, SHRUB, DIRT } from "../content/tiles";
+import { NODES, nodeForTile } from "../content/nodes";
 import type { HomesteadSpot } from "./types";
 
 const SPOTS: HomesteadSpot[] = ["riverside", "forest", "lakeside", "coast"];
@@ -482,5 +483,60 @@ describe("the turf blends across a region border", () => {
     const parts = regionParts(3, SPOT, Math.round(b.x), Math.round(b.y));
     expect(parts).toHaveLength(1);
     expect(parts[0].def.id).toBe("blossom");
+  });
+});
+
+// The shrub — the first node that exists in one region and nowhere else, which
+// is a promise with two halves. It has to BE there, and it has to be absent
+// everywhere that didn't ask, including the town's own ground.
+describe("shrubs", () => {
+  it("grow only where a biome asks for them", () => {
+    // Every region without a `shrubs` number must produce none, over enough
+    // ground that a rare roll would have shown up. The meadow matters most: it
+    // is the town's own region and its terrain is a promise to live saves.
+    const seed = 7;
+    for (const spot of SPOTS) {
+      let meadowShrubs = 0;
+      for (let x = -40; x <= 40; x++) {
+        for (let y = -40; y <= 40; y++) {
+          if (biomeAt(seed, spot, x, y) !== "meadow") continue;
+          if (generatedTile(seed, spot, x, y) === SHRUB) meadowShrubs++;
+        }
+      }
+      expect(meadowShrubs).toBe(0);
+    }
+  });
+
+  it("actually appear in the glimmer", () => {
+    // Ring-sampled rather than walked: the far country starts around 200 tiles
+    // out, and the point is that a region asking for shrubs gets a useful number
+    // of them rather than a token one.
+    const seed = 7;
+    const spot = "riverside" as const;
+    let cells = 0;
+    let shrubs = 0;
+    for (let x = -600; x <= 600; x += 3) {
+      for (let y = -600; y <= 600; y += 3) {
+        if (biomeAt(seed, spot, x, y) !== "glimmer") continue;
+        cells++;
+        if (generatedTile(seed, spot, x, y) === SHRUB) shrubs++;
+      }
+    }
+    expect(cells).toBeGreaterThan(500);
+    // Some, and not most: undergrowth you walk around, not a hedge maze.
+    expect(shrubs / cells).toBeGreaterThan(0.01);
+    expect(shrubs / cells).toBeLessThan(0.12);
+  });
+
+  it("is worth a quarter of a tree and clears to grass, not dirt", () => {
+    // The yield is the balance argument in DESIGN §Biomes: shrubs live in the far
+    // country, so they must never make the walk pay. Four fellings to a tree's
+    // one, and no bare patch left behind to scar a wood for two wood.
+    expect(NODES.shrub.drop).toBe(NODES.tree.drop);
+    expect(NODES.shrub.yield * 4).toBe(NODES.tree.yield);
+    expect(NODES.shrub.felled).toBe(GRASS);
+    expect(NODES.tree.felled).toBe(DIRT);
+    // And it is reachable by the generic gathering path — no second code path.
+    expect(nodeForTile(SHRUB, "surface")).toBe("shrub");
   });
 });

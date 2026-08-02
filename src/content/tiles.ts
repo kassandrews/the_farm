@@ -195,6 +195,21 @@ export const SKY_STAIR: TileId = 23; // the head of the steps, seen from above
  *  than a three-tile speck on an unbounded plain (sim/found.ts §SKY_PARTING). */
 export const CLOUD_THIN: TileId = 24;
 
+/** A shrub — a small resource node, and the first one that is not the whole
+ *  reason a tile exists.
+ *
+ *  SOLID, LIKE A TREE, because half a rule is worse than either rule: something
+ *  the same size and shape as a thing you walk around, that you walk through
+ *  instead, teaches you to distrust every silhouette in the game. It fells like
+ *  a tree too, and gives a fraction of the wood, which is what makes it worth
+ *  clearing rather than worth farming.
+ *
+ *  It fells to GRASS and not to DIRT, which is the one place it deliberately
+ *  parts company with the tree. A tree leaves bare earth because a tree WAS
+ *  bare earth's worth of trunk; a shrub that scarred the ground behind it would
+ *  pock a wood with dirt patches for two wood apiece. */
+export const SHRUB: TileId = 25;
+
 export const TILES: Record<TileId, TileDef> = {
   [GRASS]: {
     id: GRASS,
@@ -282,6 +297,17 @@ export const TILES: Record<TileId, TileDef> = {
     color: "#6fa04a", // canopy; the renderer draws a trunk and crown over it
     top: "#7cb054",
     shade: "#5d8a3e",
+    solid: true,
+  },
+  // Grass's own colours, on purpose and for the third documented time: a shrub is
+  // something growing IN the lawn, so the flat layer under it must stay lawn or
+  // the bevel rings every bush (renderer §groundIdOf, CLAUDE.md §per-cell edges).
+  [SHRUB]: {
+    id: SHRUB,
+    name: "Shrub",
+    color: "#8bbf5a",
+    top: "#98cc63",
+    shade: "#76a54a",
     solid: true,
   },
   [ROCK]: {

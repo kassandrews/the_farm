@@ -18,6 +18,7 @@ import {
   FLOOR,
   GRASS,
   TREE,
+  SHRUB,
   ROCK,
   BEDROCK,
   ORE_VEIN,
@@ -455,6 +456,7 @@ function groundIdOf(id: number): number {
   // painted flat across the cell it stands in. A rod stuck in a bank has not ended
   // the bank.
   return id === TREE ||
+    id === SHRUB ||
     id === ROCK ||
     id === DARK_TREE ||
     id === HUM_CUBE ||
@@ -994,6 +996,7 @@ export class Renderer {
         // a tree is trapped inside its own 16px cell and the world reads flat.
         if (
           id === TREE ||
+          id === SHRUB ||
           id === ROCK ||
           id === DARK_TREE ||
           id === HUM_CUBE ||
@@ -1008,6 +1011,7 @@ export class Renderer {
             bias: BIAS_TERRAIN,
             draw: () => {
               if (id === ROCK) this.drawRock(world, x, y, night);
+              else if (id === SHRUB) this.drawShrub(world, x, y, night);
               else if (id === HUM_CUBE) this.drawCube(world, x, y, night);
               else if (id === POLE) this.drawPole(world, x, y, night);
               else if (id === MAILBOX) this.drawMailbox(world, x, y, night);
@@ -3270,6 +3274,80 @@ export class Renderer {
         ctx.globalAlpha = prev;
       }
     }
+
+    ctx.globalAlpha = prev;
+  }
+
+  /** A shrub: the same plant as the region's trees, without the tree.
+   *
+   *  IT REUSES `crownRows` RATHER THAN CARRYING ITS OWN SHAPE, taking the middle
+   *  of the array and squashing the ends. That is what keeps a shrub looking like
+   *  it belongs where it grows for free: puffy under the glimmer's puffy crowns,
+   *  and if the pines ever ask for undergrowth it will come out narrow and
+   *  tiered without a number being written. A second silhouette table would let
+   *  the two drift until a region's bushes were a different species from its
+   *  trees.
+   *
+   *  No trunk. At five rows a stem is a third of the sprite and it stops reading
+   *  as a bush and starts reading as a very small tree — which is the one thing
+   *  it must not be, since it is solid and gives a quarter of the wood. It sits
+   *  straight on the ground with its own contact shadow, like a rock does. */
+  private drawShrub(world: WorldState, tx: number, ty: number, night: boolean): void {
+    const ctx = this.ctx;
+    const h = decoHash(tx, ty, world.seed);
+    const cx = Math.round(this.sceneX(tx)) + Math.floor(h * 3) - 1;
+    const base = Math.round(this.sceneY(ty) + TILE / 2);
+    const biome = regionSkin(world.seed, world.homestead.spot, tx, ty);
+    const src = biome ? biome.crownRows : BROADLEAF;
+
+    // The widest stretch of the crown, scaled to a bush. The ends of a crown are
+    // its taper — a shrub is all middle.
+    //
+    // SEVEN ROWS AT 0.45, and both numbers are a correction: five rows at 0.6
+    // came out eleven pixels across and five tall, which is a barrel lying on the
+    // grass rather than a bush. A shrub has to be about as tall as it is wide or
+    // the silhouette has no dome in it, and the only way to buy height from a
+    // half-width table is to take more rows and scale them harder.
+    const mid = Math.floor(src.length / 2);
+    const rows: number[] = [];
+    for (let r = -3; r <= 3; r++) {
+      const w = src[Math.max(0, Math.min(src.length - 1, mid + r))];
+      rows.push(Math.max(1, Math.round(w * 0.45)));
+    }
+    // Both ends pulled in hard, so it closes top and bottom instead of ending on
+    // its widest row — that flat cut is most of what made the first one a slab.
+    rows[0] = 1;
+    rows[1] = Math.max(1, rows[1] - 1);
+    rows[rows.length - 1] = 1;
+    rows[rows.length - 2] = Math.max(1, rows[rows.length - 2] - 1);
+
+    const height = rows.length + 1;
+    const prev = ctx.globalAlpha;
+    if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
+    else if (this.hides(world, tx, ty, height)) ctx.globalAlpha = prev * HIDDEN_FADE;
+
+    ctx.fillStyle = "rgba(0,0,0,0.16)";
+    ctx.fillRect(cx - rows[rows.length - 1] - 1, base - 2, (rows[rows.length - 1] + 1) * 2, 2);
+
+    const crown = mixHex(this.palette.crown, biome!.crown);
+    const crownLit = mixHex(this.palette.crownLit, biome!.crown);
+    const top = base - height;
+    // Odd widths, centred on cx — the same fix the crowns needed, and made here
+    // at the same time so a bush is never the one thing sitting half a pixel off.
+    ctx.fillStyle = crown;
+    for (let r = 0; r < rows.length; r++) {
+      ctx.fillRect(cx - rows[r], top + r, rows[r] * 2 + 1, 1);
+    }
+    // MORE LIT ROWS, PROPORTIONALLY, than a tree gets. A crown is fourteen rows
+    // and shows its light on the top six; a shrub is seven, and lighting two of
+    // them left it a dark lump on a bright floor — which in this region reads as
+    // a HOLE in the ground rather than a plant on it. Half the height, so the
+    // dome is legible as a dome.
+    ctx.fillStyle = crownLit;
+    for (let r = 1; r <= Math.min(3, rows.length - 3); r++) {
+      ctx.fillRect(cx - rows[r] + 1, top + r, Math.max(1, rows[r] - 1), 1);
+    }
+    void night; // the palette already carries the hour; the flag is the signature
 
     ctx.globalAlpha = prev;
   }

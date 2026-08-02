@@ -12,11 +12,11 @@
 
 import type { ItemId } from "./items";
 import type { TileId } from "./tiles";
-import { TREE, ROCK, ORE_VEIN, DIRT, CAVE_FLOOR, DARK_TREE } from "./tiles";
+import { TREE, ROCK, ORE_VEIN, DIRT, CAVE_FLOOR, DARK_TREE, SHRUB, GRASS } from "./tiles";
 
 const HOUR = 3_600_000;
 
-export type NodeId = "tree" | "rock" | "vein" | "darktree";
+export type NodeId = "tree" | "rock" | "vein" | "darktree" | "shrub";
 
 export interface NodeDef {
   id: NodeId;
@@ -58,6 +58,33 @@ export const NODES: Record<NodeId, NodeDef> = {
     line: "Timber.",
     yield: 8, // a floor's worth from one tree
     regrowMs: 8 * HOUR,
+    density: 0.1,
+  },
+  // A tree's little sibling, and the first node whose density is ZERO almost
+  // everywhere. Its `density` is a base that every region multiplies by
+  // `BiomeDef.shrubs`, which defaults to nothing — so a shrub exists only where a
+  // biome row asks for one, and adding it to a region is a number rather than a
+  // change here.
+  //
+  // TWO WOOD, against a tree's eight. Enough that clearing one on your way past
+  // is not an insult, far too little to be a reason to walk anywhere — which is
+  // the whole balance question this raises, since shrubs start in the far country
+  // and the far country must never pay better than home (DESIGN §Biomes, and the
+  // glimmer's own mushroom note). Four shrubs to a tree, and you have to fell
+  // four things instead of one.
+  //
+  // It comes back FAST — a shrub is a season's growth, not a decade's — which
+  // also keeps a wood you walked through from staying visibly mown.
+  shrub: {
+    id: "shrub",
+    name: "Shrub",
+    tile: SHRUB,
+    felled: GRASS,
+    layer: "surface",
+    drop: "wood",
+    line: "Cut back.",
+    yield: 2,
+    regrowMs: 3 * HOUR,
     density: 0.1,
   },
   rock: {

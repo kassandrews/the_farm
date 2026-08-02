@@ -62,6 +62,16 @@ export interface BiomeDef {
   trees: number;
   /** Rocks, ×NODES.rock.density. */
   rocks: number;
+  /** Undergrowth, ×NODES.shrub.density. Optional, and absent means NONE — the
+   *  only node in the game that is off by default.
+   *
+   *  Rolled after the trees, so raising it thickens a region's undergrowth
+   *  rather than thinning its canopy. It is a gathered node (two wood against a
+   *  tree's eight), which makes it the one field here that touches yield at all
+   *  — allowed only because wood is not scarce anywhere and four shrubs are
+   *  four fellings against one. Keep it that way: this must never become a
+   *  reason to walk somewhere, only a thing you find there. */
+  shrubs?: number;
   /** Chance a bare cell carries a patch of mushrooms. */
   mushrooms: number;
   /** How wet it is — roughly the fraction of ground standing under water. Fen
@@ -746,6 +756,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // sparks, and the same two inks. A third of the trees, three apiece: enough
     // that a stand glows and few enough that you notice which ones.
     orbs: { color: "#ffeec4", core: "#ffffff", chance: 0.34, count: 3, twinkle: 3.5 },
+    // Undergrowth, and the first region to ask for any. A wood you cannot see far
+    // in wants something at knee height — and the puffy crowns above have nothing
+    // to rhyme with until there is a smaller version of them on the floor.
+    shrubs: 0.55,
     // Champagne caps, same mushroom. The red was the one warm-blooded thing in a
     // region built entirely out of teal and pale gold, and it read as an object
     // from somewhere else lying on the floor.
