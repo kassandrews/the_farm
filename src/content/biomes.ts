@@ -778,10 +778,16 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       // foliage with room for the bead. Weighted to the LIT side up top and
       // trailing down to the right, which is the direction the crown's own
       // highlight already runs — light collecting where light already is.
+      // Every one lifted a row from where they were first hung. The same
+      // arrangement, sitting higher in the mass — low in a crown is where the
+      // foliage is in its own shade, and a light reads best where the light
+      // already is. The lowest was also close enough to the underside that it
+      // half-belonged to the trunk. Rows 3, 6 and 9 are 8, 8 and 8 half-widths,
+      // so all three still have foliage to spare on either side.
       spots: [
-        [-4, 4],
-        [5, 7],
-        [-1, 10],
+        [-4, 3],
+        [5, 6],
+        [-1, 9],
       ],
       twinkle: 3.5,
     },
