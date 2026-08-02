@@ -4429,12 +4429,49 @@ months of small hard yellow is the exception that makes the other nine mean
 something. Dry country blooms harder and briefer than green country, which is why
 it has the highest bloom density of the four.
 
-The fen is violet rather than the obvious yellow (a warm bloom there reads as the
-scrub's spring having wandered in). The pines get wood anemones, which really do
-flower in the weeks before a conifer canopy closes. The blossom rows get **fallen
-petals with no stems** — the `x` ink is foliage and a petal on the grass has no
-stalk — which closes a loop that row has had open since it was written: it had
-petals falling through the air and nothing on the ground for them to land on.
+**Then each region got the plant that actually grows on its ground**, which is a
+better organising principle than picking colours that look nice together — the
+birches get wood anemone (*Anemone nemorosa* carpets broadleaf woods and is gone
+before the canopy closes), the pines get lupine (*Lupinus perennis* wants acid,
+sandy, half-shaded ground), the scrub gets thistle (dry, stony, overgrazed
+openings), the fen gets marsh marigold (it wants its feet in water, which no other
+row can offer). The blossom rows keep fallen petals, with **no stems** — the `x`
+ink is foliage and a petal on the grass has no stalk — which closes a loop that
+row had open since it was written.
+
+**A third ink: `DecorKit.core`, drawn for `*` in a mark.** With two inks a bloom
+is a coloured blob on a stalk; the centre is what says the petals are arranged
+AROUND something, and at three pixels wide that arrangement is the whole drawing.
+Without it the anemone's nine pixels are a pale PLUS SIGN — the mark this project
+has already thrown out twice (the tuft's old L, the spark before it tapered). It
+falls back to the petal colour, so every kit that never uses `*` is unchanged.
+
+**Contrast decided who got the flower with an eye.** Petal against that region's
+own ground: birches 1.37:1, pines 1.56:1, scrub 1.26:1, fen 1.06:1. The fen's old
+violet separated by HUE and barely by value, which is the weaker axis at nine
+pixels — going yellow took it to about 1.75:1, the best of the four. The scrub had
+to pale its petals to let an eye read at all, which spent the contrast it had
+least of; it kept a blunt bloom instead, which suits a blunt region.
+
+**THE LUPINE'S LESSON IS GAPS.** Four solid attempts failed identically — a
+zigzag, an I-beam, a cone, a slim column — because each was one MASS. A raceme is
+several flowers sharing an axis, and at this size the only way to say "several" is
+to not join them: separate dots read as separate blooms where any connected shape
+reads as one object. Then arrangement: one diagonal reads as a spike that has
+fallen over, and an arch (widest at the bottom, botanically the right way round)
+renders as a little fountain. A **V** reads as a plant at a glance, and five dots
+rather than three is what keeps it a V instead of resolving into a Y. Pale at the
+outer tips — a raceme's newest buds are its furthest out.
+
+**Five pixels wide to enclose an eye.** At three, "petals all the way round a
+centre" is a 3×3 block, and the shape reads as a TILE before it reads as a flower
+— the one thing a cup must not do. At five the corners come off and the ring
+closes. The marigold is the biggest bloom in the file, which is fair: a kingcup is
+the biggest flower any of these regions grows.
+
+**The birches' flowers moved out of `decor` and into `bloom`.** They used to stand
+there in December, and a region cannot be "the airy one" in every season by
+wearing the same flowers through all four of them.
 
 **The meadow and the far country stay out, both tested.** The meadow's rule is
 that leaving town is when the ground starts having things in it; a bloom would be

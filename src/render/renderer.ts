@@ -1396,7 +1396,15 @@ export class Renderer {
               for (let c = 0; c < mark[r].length; c++) {
                 const ch = mark[r][c];
                 if (ch === ".") continue;
-                ctx.fillStyle = ch === "o" ? (kit.accent ?? stem) : stem;
+                // Three inks: `*` the eye, `o` the petals, anything else the
+                // stem. The eye falls back to the petal colour, so a kit that
+                // never uses `*` is unchanged.
+                ctx.fillStyle =
+                  ch === "*"
+                    ? (kit.core ?? kit.accent ?? stem)
+                    : ch === "o"
+                      ? (kit.accent ?? stem)
+                      : stem;
                 ctx.fillRect(ox + c, oy + r, 1, 1);
               }
             }
@@ -1427,7 +1435,15 @@ export class Renderer {
               for (let c = 0; c < mark[r].length; c++) {
                 const ch = mark[r][c];
                 if (ch === ".") continue;
-                ctx.fillStyle = ch === "o" ? (bkit.accent ?? stem) : stem;
+                // Three inks: `*` the eye, `o` the petals, anything else the
+                // stem. The eye falls back to the petal colour, so a kit that
+                // never uses `*` is unchanged.
+                ctx.fillStyle =
+                  ch === "*"
+                    ? (bkit.core ?? bkit.accent ?? stem)
+                    : ch === "o"
+                      ? (bkit.accent ?? stem)
+                      : stem;
                 ctx.fillRect(ox + c, oy + r, 1, 1);
               }
             }

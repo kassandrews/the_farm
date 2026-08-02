@@ -411,6 +411,13 @@ export interface MoteKit {
  *  a region may have as much of its own as it likes. The gathered scatter is the
  *  mushroom and it stays where it is, on its own density rule. */
 export interface DecorKit {
+  /** The eye of a flower — the ink for `*` in a mark.
+   *
+   *  A THIRD INK, and the smallest thing that turns a shape into a flower. With
+   *  two, a bloom is a coloured blob on a stalk; the centre is what says the
+   *  petals are arranged AROUND something, and at three pixels wide that
+   *  arrangement is the entire drawing. */
+  core?: string;
   /** Only during this season. Optional; omitted, it grows all year.
    *
    *  The same field `MoteKit` has and for the same reason: a season reaches
@@ -543,14 +550,53 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // WOOD ANEMONES, and they are the reason this field exists in a shaded
     // region at all: the flowers that bloom under conifers do it in the weeks
     // before the canopy closes, which is exactly a spring event and nothing else.
-    // Sparse — this is a floor that spends most of the year in the dark.
+    // LUPINE, which really is a pine-barren plant: Lupinus perennis wants acid,
+    // sandy, half-shaded ground, and that is this row's soil described exactly.
+    //
+    // A SPIKE, NOT A FLOWER. Everything else that blooms in this file is a head
+    // on a stalk, so the lupine earns its place by silhouette rather than by
+    // colour — five rows of alternating pairs climbing a stem, which reads as a
+    // raceme at a glance and reads as nothing else. That matters more here than
+    // hue does: lavender on mid green is only about 1.2:1, so if this had to win
+    // on contrast it would lose. It wins on shape.
+    //
+    // The pale tip is the eye ink doing a second job — a raceme opens from the
+    // bottom, so the top of a real one is always the lighter, newer buds.
     bloom: {
       season: "spring",
-      density: 0.05,
-      accent: "#eef0e6",
+      density: 0.06,
+      accent: "#a08ad0",
+      core: "#cfc2ec",
+      // Stacked whorls, not alternating pairs. Offsetting left/right down the
+      // stem looked like a raceme in the table and rendered as a ZIGZAG — a
+      // staircase reads as one wandering line, where a spike has to read as
+      // several small flowers sharing an axis. Three wide, pinched every other
+      // row, so the stem stays visible through it.
+      // A CONE. Stacked whorls of even width came out an I-beam — solid, blocky,
+      // and as much a little figure as a plant. A raceme is widest at the bottom
+      // and unopened at the top, because it flowers from the ground up; drawing
+      // that taper is what finally made it read as one spike of many flowers
+      // rather than as an object standing there.
+      // A V OF SEPARATE DOTS, opening up off the stem.
+      //
+      // GAPS ARE THE WHOLE TRICK. Four solid attempts failed the same way — a
+      // zigzag, an I-beam, a cone, a slim column — and they failed because each
+      // was one MASS. A raceme is several flowers sharing an axis, and at this
+      // size the only way to say "several" is to not join them: separate dots
+      // read as separate blooms where any connected shape reads as one object.
+      //
+      // Then the arrangement. One diagonal reads as a spike leaning, which is a
+      // lupine that has fallen over; an arch (widest at the bottom) is botanically
+      // the right way round for a raceme and renders as a little fountain. The V
+      // is the one that reads as a plant at a glance, and five dots rather than
+      // three is what keeps it a V instead of resolving into a Y.
+      //
+      // Pale at the OUTER tips, and that is the true bit as well as the prettier
+      // one: a raceme's newest buds are its furthest out, so the light pixels are
+      // where the light pixels belong.
       marks: [
-        ["oo.", ".x.", ".x."],
-        [".o.", ".x.", "x.."],
+        ["*...*", ".o.o.", "..o..", "..x..", "..x.."],
+        ["*...*", ".o.o.", "..o..", "..x..", "..x.."],
       ],
     },
     // Fewer than the meadow's: this canopy closes over you, and a wood you
@@ -622,15 +668,33 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     crownRows: [2, 4, 5, 6, 6, 6, 5, 5, 4, 3, 2],
     // Thin pale grass and small white flowers — the airy opposite of the pines,
     // and the reason the two rows sit next to each other.
+    // ITS FLOWERS MOVED TO SPRING, and what is left all year is grass. The white
+    // heads used to stand here in December, which is the one month a birch wood
+    // is unmistakably bare — a region cannot be "the airy one" in every season by
+    // wearing the same flowers through all four of them.
     decor: {
       density: 0.13,
-      accent: "#f7f4e8",
       marks: [
-        // Heads are TWO pixels. At one they are dust on the lawn rather than
-        // flowers — found on screen, and the same lesson as the decor ink.
-        ["oo.", ".x.", ".x."],
-        [".oo", "xx.", "x.."],
-        ["..x", ".x.", "x.."], // a bare blade, so it is not all flowers
+        ["..x", ".x.", "x.."],
+        [".x.", ".x.", "x.."],
+        ["x..", ".x.", ".x."],
+      ],
+    },
+    // WOOD ANEMONE — Anemone nemorosa, which carpets birch and other broadleaf
+    // woods for a few weeks each spring and is gone by the time the canopy
+    // closes. The four-petal flower with an eye was built for the pines and lands
+    // here instead, on the plant's own authority: a conifer floor is the one
+    // place this species does not grow.
+    //
+    // Denser than the rest, because a carpet is what it does.
+    bloom: {
+      season: "spring",
+      density: 0.15,
+      accent: "#f4f2ea",
+      core: "#e8c25a",
+      marks: [
+        [".o.", "o*o", ".o.", ".x."],
+        [".o.", "o*o", ".o.", ".x.", ".x."],
       ],
     },
   },
@@ -691,15 +755,23 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // its decor, bleached in every tint — so three months of small hard yellow
     // is the exception that makes the other nine months mean something. Dry
     // country blooms harder and briefer than green country, which is the whole
-    // reason its density is the highest here and its season the only one it gets.
+    // THISTLE, and it frees the yellow for the fen. A dry, stony, overgrazed
+    // opening is where thistles win, so this is the scrub's plant on the same
+    // grounds the marigold is the fen's.
+    //
+    // Read from the TOP DOWN, which is how a thistle is built and why it works at
+    // this size: a splayed tuft, a tighter head under it, then a long bare stem.
+    // Nothing else in the file is tall and empty in its lower half, so a thistle
+    // is recognisable here even where its colour is not — which matters, since
+    // the scrub is the one ground that fights every bloom it is given.
     bloom: {
       season: "spring",
-      density: 0.11,
-      accent: "#e8c25a",
+      density: 0.1,
+      accent: "#c479ae",
+      core: "#e4a6d2",
       marks: [
-        [".o.", "oxo", ".x."],
-        ["o..", ".x.", ".x."],
-        [".oo", ".x.", ".x."],
+        ["o.o", ".*.", ".o.", ".x.", ".x."],
+        ["o.o", "o*o", ".o.", ".x.", ".x."],
       ],
     },
     // Dry twigs and pale grit. No flowers: this is the row that reads as
@@ -744,14 +816,33 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     crownRows: [4, 6, 7, 7, 7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2],
     // Marsh flowers, and violet rather than the obvious yellow: the fen's whole
     // palette is murk, and a warm bloom in it would read as the scrub's spring
-    // having wandered in. Cool and slightly wrong is what this region is for.
+    // MARSH MARIGOLD — kingcup, the one flower everybody who has stood at the edge
+    // of a fen has seen. It wants its feet in water, which no other row here can
+    // offer, so this is the least arguable match in the file.
+    //
+    // A FULL HEAD, not a cross: a kingcup is a cup, so the petals close over the
+    // top instead of leaving gaps at the corners. That also fixes what the violet
+    // could never fix — yellow on this murk measures about 1.75:1, the best
+    // contrast of any bloom here, where the old violet managed 1.06 and separated
+    // by hue alone.
     bloom: {
       season: "spring",
       density: 0.09,
-      accent: "#9d86c6",
+      accent: "#f0c845",
+      core: "#d99a2b",
+      // THE EYE IS ENCLOSED, and that needed five pixels of width to do without
+      // drawing a square. At three wide, "petals all the way round a centre" is a
+      // 3×3 block — the shape reads as a TILE before it reads as a flower, which
+      // is the one thing a cup must not do. At five, the corners can come off and
+      // the ring closes: yellow above, below and both sides of the amber, with a
+      // rounded edge outside that.
+      //
+      // The biggest bloom in the file, and a kingcup is the biggest flower any of
+      // these regions actually grows, so the size is the plant rather than a
+      // compromise.
       marks: [
-        [".o.", ".x.", ".x."],
-        ["o.o", ".x.", ".x."],
+        [".ooo.", "oo*oo", ".ooo.", "..x..", "..x.."],
+        [".ooo.", "oo*oo", ".ooo.", "..x.."],
       ],
     },
     // Reeds, standing in clumps. The tallest marks in the file at four rows,
