@@ -3896,6 +3896,52 @@ on the same ramp. **A chimney is the same material as its roof, so it can never
 win on hue** — it takes the dark silhouette outline `drawFurniture` already uses,
 and is separated by an edge instead. A magenta test block found both in one shot.
 
+### 8n — Two regions get air — **built**
+
+Falling petals in the blossom rows, rising spores in the glimmer. **Two, and the
+table asserts no more than three**: air that moves everywhere is air nobody
+notices, so it is worth having only where arriving somewhere should feel like
+arriving. Both of these are places you walk to on purpose.
+
+- **Stateless, which is the rule it had to satisfy.** `content/seasons.ts`
+  refuses weather in writing because snow that MELTED would be the first thing in
+  the game with state. A mote is a total function of (cell, clock) — nothing
+  spawned, no particle list, nothing stored. Mist and rain are still out; a petal
+  is not.
+- **Air, not altitude.** §Structures forbids anything hovering over a ground
+  tile and means a HEIGHT you could occupy. The test is *"could you imagine
+  standing on it, or walking under it?"*, and a speck of pollen fails it.
+- **Nothing alive.** No midges, no fireflies. There is a test.
+- **Which way the air moves is the character.** One region's falls and the
+  other's rises, off one signed number.
+- **Dithered across borders** through `regionParts`, like the ground decor and
+  for free, so petals thin out at the edge of the rows.
+- **Petals fall all year**, because these trees are stubbornly in blossom all
+  year (§*every colour is a tint*). A seasonal petal would be the only thing in
+  `biomes.ts` reading the month for something other than colour.
+
+**Three rounds of the same mistake, and the third one is the lesson.**
+
+1. Position and phase were derived from the hash that had just passed
+   `< density` — so it only spanned `[0, 0.1]`, every mote started in the same
+   corner of its cell and, worse, at the same point in its cycle. They drifted in
+   lockstep and faded together. **This is the decor kit's bug, one file later,
+   written by the same hand that had just documented it.**
+2. The tile range was extended past the BOTTOM of the screen, which is the margin
+   a riser needs and exactly the wrong end for a faller. Both ends now.
+3. And then two rounds of tuning colour when **the count was the problem**. The
+   answer came from instrumenting `drawMotes` to count what actually drew rather
+   than reasoning about what should have. **A mote is a far weaker mark than a
+   fern** — one or two pixels, moving, faded at both ends of its cycle — so a
+   density that reads as ground clutter reads as nothing in the air. Blossom is
+   0.3 where its decor would be 0.1.
+
+**The recurring failure of this whole pass, stated once:** four separate times —
+the mover shadows, the decor ink, the chimney body, and the petals — something was
+drawn correctly and could not be seen, because it was given a value one step from
+whatever it sat on. Three of the four were found by drawing the thing in magenta
+at double size, which is now the first move rather than the fourth.
+
 ### 8l — A page that shows every region at once — **built**
 
 `/biomes.html` + `src/tools/biome-preview.ts`, the sibling of `/looks.html`, and

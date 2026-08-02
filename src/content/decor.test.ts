@@ -4,6 +4,7 @@
 
 import { describe, it, expect } from "vitest";
 import { BIOMES } from "./biomes";
+import { MOTE_MAX } from "../render/renderer";
 
 const TILE = 16; // matches renderer.ts's scene px per tile
 
@@ -67,4 +68,42 @@ describe("decor kits", () => {
       });
     });
   }
+});
+
+describe("motes", () => {
+  const kits = Object.values(BIOMES)
+    .filter((b) => b.motes)
+    .map((b) => [b.id, b.motes!] as const);
+
+  it("stays under the renderer's early-out", () => {
+    // `drawMotes` tests `h > MOTE_MAX` BEFORE asking which region a cell is in,
+    // because the field costs nine sites and almost no cell has motes. A kit
+    // above that ceiling is silently capped — it would look like a density that
+    // stopped responding, which is the worst kind of bug to chase.
+    for (const [id, kit] of kits) {
+      expect(kit.density, `${id} is above MOTE_MAX`).toBeLessThanOrEqual(MOTE_MAX);
+    }
+  });
+
+  it("is rare across the table", () => {
+    // Air that moves everywhere is air nobody notices. This is a restraint
+    // assertion rather than a correctness one, and it is here so that adding a
+    // fourth or fifth kit is a decision somebody takes on purpose.
+    expect(kits.length).toBeLessThanOrEqual(3);
+  });
+
+  it("actually moves", () => {
+    for (const [id, kit] of kits) {
+      expect(kit.period, `${id} has no cycle`).toBeGreaterThan(0);
+      expect(Math.abs(kit.drift), `${id} does not drift`).toBeGreaterThan(0);
+    }
+  });
+
+  it("names no animal", () => {
+    // There is no fauna in this game (sim/notebook.test.ts guards the same rule
+    // for the Notebook). A mote is pollen, a petal, a spore — never a midge.
+    for (const [id, kit] of kits) {
+      expect(`${id} ${kit.color}`).not.toMatch(/bug|fly|midge|bee|moth|firefl/i);
+    }
+  });
 });

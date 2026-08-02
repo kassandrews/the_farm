@@ -80,7 +80,7 @@ import { forEachGrainMark } from "./grain";
 import { roofFinish } from "./roof";
 import { gridFor, pieceCanvas } from "./furnishings";
 import { FURNITURE_ART } from "../content/furnishings";
-import { BROADLEAF, type BiomeDef, type DecorKit } from "../content/biomes";
+import { BROADLEAF, type BiomeDef, type DecorKit, type MoteKit } from "../content/biomes";
 import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
 import { lookFor } from "../content/looks";
@@ -382,6 +382,17 @@ function rockIdOf(id: number): number {
  *  of one is that somebody lives under it. Twelve is about a room you could put
  *  a bed and a table in. */
 const CHIMNEY_MIN = 12;
+
+/** The most any region's air may be. `drawMotes` early-outs on this before it
+ *  asks which region a cell is in — the field costs nine sites and almost no
+ *  cell has motes — so a kit above it would be silently capped. Tested.
+ *
+ *  Generous compared to a decor density, because a mote is a much weaker mark
+ *  than a fern: one or two pixels, moving, and faded at both ends of its cycle.
+ *  A tenth of the cells reads as ground clutter and as almost nothing in the
+ *  air — measured by counting what actually drew, after three rounds of assuming
+ *  the count was fine and the colour was wrong. */
+export const MOTE_MAX = 0.4;
 
 /** Which roof cell carries the stack. DERIVED, like the roof itself.
  *
@@ -809,6 +820,11 @@ export class Renderer {
     }
     this.collectMovers(world, t, night, layer, now);
     this.flushRaised();
+    // Over everything, because it is in front of everything: a petal passes the
+    // trunk it fell from. Not in the raised pass — that sorts on a FOOTPRINT y,
+    // and a mote has no footprint to sort on, which is the same statement as it
+    // having no height (see MoteKit).
+    if (ground) this.drawMotes(world, t);
 
     // The dark goes over the scene but UNDER the reticle. The reticle is the
     // promise (ROADMAP), and a promise you can't read at the far edge of your
@@ -1869,6 +1885,79 @@ export class Renderer {
   // Everything with height, drawn back to front. Sorting on the FOOTPRINT y
   // (not the art's top edge) is what makes a 24px tree correctly hide a
   // villager standing behind it while a villager in front walks over its trunk.
+
+  /** What drifts in the air over the visible ground.
+   *
+   *  ANCHORED TO A CELL, DRAWN AWAY FROM IT. Each visible cell rolls once
+   *  against its region's density; the ones that pass carry a mote whose whole
+   *  path is a function of the clock and the cell's own hash. Nothing is stored,
+   *  nothing is spawned, and there is no particle list to keep — a mote is not
+   *  an object that exists, it is a place the air is doing something.
+   *
+   *  That is what keeps it out of the weather argument (`content/seasons.ts`
+   *  refuses weather because snow that melted would be the first thing in the
+   *  game with state). It is also why the cycle must be seamless: with no
+   *  lifetime to track, a mote that vanished at the top would pop, so alpha
+   *  fades in and out at both ends of the cycle instead.
+   *
+   *  The region is sampled through `regionParts` like the ground decor, so
+   *  petals thin out across the blossom rows' edge rather than stopping on a
+   *  line — the same free dither, for the same reason (see `decorKit`). */
+  private drawMotes(world: WorldState, t: number): void {
+    const ctx = this.ctx;
+    const x0 = Math.floor(this.cam.x - this.sw / (2 * TILE)) - 1;
+    const x1 = Math.ceil(this.cam.x + this.sw / (2 * TILE)) + 1;
+    // Reaching PAST BOTH EDGES, because a mote is drawn away from the cell that
+    // anchors it: a spore rises out of the cell below the screen and a petal
+    // falls in from the cell above it. The first cut extended the bottom only,
+    // which is the margin a riser needs and exactly the wrong end for a faller.
+    const y0 = Math.floor(this.cam.y - this.sh / (2 * TILE)) - 3;
+    const y1 = Math.ceil(this.cam.y + this.sh / (2 * TILE)) + 3;
+    for (let ty = y0; ty <= y1; ty++) {
+      for (let tx = x0; tx <= x1; tx++) {
+        const h = decoHash(tx, ty, world.seed ^ 0x6d0a);
+        // Cheapest test first: most cells are in a region with no air at all,
+        // and asking the field costs nine sites. Must stay above every kit's
+        // density or it silently caps them — there is a test.
+        if (h > MOTE_MAX) continue;
+        const kit = this.moteKit(world, tx, ty, decoHash(tx, ty, world.seed ^ 0x1c77));
+        if (!kit || h > kit.density) continue;
+
+        // A THIRD HASH FOR WHERE AND WHEN, independent of the one that just
+        // passed `< density`. Deriving them from `h` is the decor kit's bug over
+        // again, one file later: `h` is already known to be under a tenth, so
+        // every mote started at the same corner of its cell and — worse — at the
+        // same point in the cycle. They drifted in lockstep and faded together,
+        // which is not a subtle version of the effect but a different one.
+        const g = decoHash(tx, ty, world.seed ^ 0x4b31);
+        const p = (((t / kit.period + g) % 1) + 1) % 1;
+        const size = kit.size ?? 1;
+        const px = this.sceneX(tx) - TILE / 2 + 2 + Math.floor(g * (TILE - 4));
+        const py = this.sceneY(ty) - TILE / 2 + Math.floor(((g * 91) % 1) * TILE);
+        const x = px + Math.sin(p * Math.PI * 2 + g * 6.3) * kit.sway;
+        const y = py - p * kit.drift;
+        // Fade at both ends so the loop has no seam in it.
+        const fade = Math.min(1, Math.min(p, 1 - p) * 5);
+        ctx.globalAlpha = 0.8 * fade;
+        ctx.fillStyle = kit.color;
+        ctx.fillRect(Math.round(x), Math.round(y), size, size);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Which region's air this cell carries, dithered across borders exactly as
+   *  the ground decor is. */
+  private moteKit(world: WorldState, tx: number, ty: number, h: number): MoteKit | undefined {
+    const parts = regionParts(world.seed, world.homestead.spot, tx, ty);
+    if (parts.length === 1) return parts[0].def.motes;
+    let r = h;
+    for (const p of parts) {
+      r -= p.w;
+      if (r <= 0) return p.def.motes;
+    }
+    return parts[parts.length - 1].def.motes;
+  }
 
   private flushRaised(): void {
     this.raised.sort((a, b) => a.y - b.y || a.bias - b.bias);

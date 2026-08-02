@@ -127,6 +127,50 @@ export interface BiomeDef {
 
   /** What else grows here. Optional, and the meadow deliberately has none. */
   decor?: DecorKit;
+
+  /** What drifts in the air here. Optional, and MOST REGIONS HAVE NONE — see
+   *  MoteKit. */
+  motes?: MoteKit;
+}
+
+/** Something drifting in the air over a region — petals, spores, seed fluff.
+ *
+ *  MOST REGIONS GET NONE, AND THAT IS THE POINT. Air that moves everywhere is
+ *  air nobody notices; it is worth having only where arriving somewhere should
+ *  feel like arriving. The two that have it are both places you walk to on
+ *  purpose. Restraint here is the same call §Biomes makes about scatter — a
+ *  texture in every region is a texture in no region.
+ *
+ *  WHAT IT MAY NOT BE. Nothing alive: there is no fauna in this game and
+ *  `notebook.test.ts` fails on the word, so no midges, no fireflies, no
+ *  butterflies. And nothing that accumulates: `content/seasons.ts` refuses
+ *  weather in writing because snow that MELTED would be the first weather with
+ *  state. A mote is a total function of (cell, clock) and stores nothing, which
+ *  is the water ripple's trick one axis up — so mist and rain are still out, and
+ *  a petal is not.
+ *
+ *  IT IS AIR, NOT ALTITUDE. DESIGN §Structures forbids anything you can see
+ *  hovering over a ground tile, and means a HEIGHT — a thing at a level you
+ *  could occupy, which is a second storey by implication. The test to apply is
+ *  "could you imagine standing on it, or walking under it?" A speck of pollen
+ *  fails that test, which is what makes it allowed. */
+export interface MoteKit {
+  /** Fraction of visible cells carrying one. Very low on purpose: a screen holds
+   *  a few hundred cells, and a dozen specks is atmosphere while fifty is
+   *  static. */
+  density: number;
+  color: string;
+  /** Pixels travelled vertically over one cycle. NEGATIVE FALLS — a petal comes
+   *  down and a spore goes up, and which way a region's air moves is most of its
+   *  character. */
+  drift: number;
+  /** How far it swings sideways on the way. */
+  sway: number;
+  /** Seconds for one cycle. Slow: anything brisk reads as an insect, and there
+   *  are no insects. */
+  period: number;
+  /** Pixels square. 1 unless the thing is meant to be seen individually. */
+  size?: number;
 }
 
 /** A region's ground decor — its ferns, reeds, litter and small flowers.
@@ -412,6 +456,11 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     water: 0,
     ground: { color: "#1e5a72", amount: 0.8 },
     tuft: { color: "#7cf0dc", amount: 0.8 }, // the speckle is the glow
+    // Spores, going UP, which is the whole difference between here and the
+    // blossom rows: one region's air falls and the other's rises. Dimmer and
+    // rarer than the petals — the floor is already doing the glowing, and a sky
+    // full of sparks would make it a light show rather than a wood.
+    motes: { density: 0.22, color: "#c8fff2", drift: 20, sway: 3, period: 11 },
     crown: { color: "#16303a", amount: 0.75 }, // near-black, so the floor reads bright
     trunk: { color: "#243a42", amount: 0.5 },
     // Tall and close-topped: the canopy has to close over you or the floor has
@@ -485,6 +534,14 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     crownRows: [4, 7, 8, 8, 8, 8, 8, 8, 8, 7, 6],
     crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
     crownOverlap: 3,
+    // Falling petals, and they fall all year because these trees are stubbornly
+    // in blossom all year (§EVERY COLOUR IS A TINT — "Blossom Rows stay
+    // stubbornly pink"). A seasonal petal would be the one thing in this file
+    // that read the month for something other than colour.
+    // SATURATED, not pale. A petal drawn near-white sat on pale green grass as a
+    // pixel a shade off the ground and vanished; magenta found it in one shot.
+    // A mote has to win against what it FLIES OVER, and here that is a lawn.
+    motes: { density: 0.3, color: "#e79ec4", drift: -22, sway: 5, period: 9, size: 2 },
   },
 };
 
