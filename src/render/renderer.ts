@@ -3308,7 +3308,16 @@ export class Renderer {
     let peak = 0;
     for (const w of src) peak = Math.max(peak, w);
     peak = Math.max(3, Math.round(peak * 0.6));
-    const rows = [1, peak - 2, peak - 1, peak, peak, peak, peak - 1, peak - 2, 1].map((w) =>
+    // BOTTOM-HEAVY, NOT SYMMETRICAL. The first dome closed to a point at both
+    // ends, which is a berry: a plant tapering back in as it reaches the soil
+    // reads as floating just above it, and the contact shadow (sized off the last
+    // row) shrank to nothing along with it. Real undergrowth is widest low down
+    // where the branches come out of the ground.
+    //
+    // So the taper is spent at the TOP and the base stays broad — five rows at
+    // full width running to a base three half-widths across, against a crown that
+    // is two. It sits.
+    const rows = [1, peak - 3, peak - 1, peak, peak, peak, peak, peak - 1, peak - 2].map((w) =>
       Math.max(1, w),
     );
 
