@@ -2001,15 +2001,22 @@ export class Renderer {
         // same cell hash) so a patch of them does not glitter in unison, which is
         // tinsel rather than glitter.
         //
-        // It never reaches zero. A flicker that goes fully dark is the mote
-        // blinking out and back — a flasher, which is a different kit and reads
-        // as a firefly. Glitter is a bright thing getting brighter, so the floor
-        // is a fifth of full and the glint rides on top of that.
+        // IT BREATHES, IT DOES NOT BLINK, and the difference is the whole
+        // character of the effect. The first cut ran from a floor of 0.2 to full
+        // twice a second: each mote went almost dark and back, which is a strobe.
+        // "Frenetic" was the word for it and it was the right one — a screen of
+        // small things flicking hard on and off is stressful to look at however
+        // pretty each one is on its own.
+        //
+        // So the floor is HIGH. Half-lit to full is a shimmer — the mote is
+        // always there and only its brightness moves, which is what light doing
+        // something on a surface actually looks like. Glitter is a bright thing
+        // getting brighter, never a thing going out.
         const glint = kit.twinkle
           ? (() => {
               const q = (((t / kit.twinkle + g * 7.3) % 1) + 1) % 1;
-              const s = Math.max(0, 1 - Math.abs(q - 0.5) * 2.6);
-              return 0.2 + 0.8 * s * s * (3 - 2 * s);
+              const s = Math.max(0, 1 - Math.abs(q - 0.5) * 2.2);
+              return 0.5 + 0.5 * s * s * (3 - 2 * s);
             })()
           : 1;
         const fade = envelope * glint;
@@ -2053,7 +2060,18 @@ export class Renderer {
           // A burst that OPENS AND CLOSES rather than a square that fades. Arms
           // on the four axes only: a diagonal one would be a 1px stair and read
           // as a smudge at this size.
-          const arm = Math.round(fade * 2);
+          //
+          // THE ARMS ARE ON THE SLOW CLOCK. They used to be `fade`, which once
+          // there was a twinkle meant every spark snapped between a dot and a
+          // five-pixel cross twice a second — and a SHAPE changing is far louder
+          // than a brightness changing. That, more than the rate, is what made a
+          // field of these frantic: fifty little stars all jumping size at once.
+          //
+          // On the envelope they open as the spore rises and close as it goes,
+          // once over eleven seconds, so the star holds still and shimmers. The
+          // twinkle is now carried by alpha alone, which is the quiet half of
+          // what it was doing and the half that reads as light.
+          const arm = Math.round(envelope * 2);
           ctx.fillRect(rx, ry, 1, 1);
           if (arm) {
             ctx.fillRect(rx - arm, ry, arm, 1);

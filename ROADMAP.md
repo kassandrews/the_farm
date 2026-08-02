@@ -4117,6 +4117,23 @@ halo and the pass order did not.
   far — two glints in a frame and the region goes quiet, which is the opposite
   failure. **Any change to how a mote BEHAVES re-opens its density**, because
   what was tuned was never the count on its own.
+- **Then it was pretty and still stressful, and the fix was not the rate.** 0.5s a
+  glint off a floor of 0.2 gave every mote a hard on/off twice a second — and
+  `arm` ran off the same number, so each spark also snapped between a dot and a
+  five-pixel cross at that rate. **A shape changing is far louder than a
+  brightness changing**: twenty-five little stars jumping size at once is what
+  made a field of them frantic, where one at a time looked fine. Three changes
+  together — arms move on the slow `period` envelope (open as the spore rises,
+  close as it goes) so the star holds still; the floor goes 0.2 → 0.5, half-lit
+  to full, so it shimmers instead of blinking out; the rate relaxes to 1.4s,
+  still eight times quicker than the spore's own cycle.
+- **Measure churn and it lies to you.** Frame-to-frame pixel change went UP after
+  the calming pass, because sparks that stay open are bigger and drift — the
+  metric was counting motion as agitation. A filmstrip at 120ms answered it in
+  one look: before, one spark flicking in and out of existence; after, two
+  holding their shape across every frame. More of them are visible now than at
+  0.22 ever was, because they no longer go dark — and it is calmer anyway, which
+  is the whole point. Count is not business; behaviour is.
 - **The flash is short.** The pulse window went 3.4 → 8, about a second and a
   half of every six with most of that arriving and leaving. At 3.4 a firefly was
   lit for half its cycle, which is a lamp with a dimmer on it. This costs

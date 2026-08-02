@@ -634,11 +634,13 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       sway: 3,
       period: 11,
       shape: "spark",
-      // Glitter is FAST. Half a second a glint, against the eleven seconds the
-      // spore takes to rise — the drift is unchanged and only the light on it
-      // moved. The arms open and shut on the same number (see `shape`), so this
-      // is the twinkle rather than a brightness wobble underneath a static one.
-      twinkle: 0.5,
+      // Faster than the rise, slower than a flicker. Half a second read as
+      // frantic on a screen holding twenty-five of them — pretty one at a time
+      // and stressful as a field, which is the only way this is ever seen. 1.4s
+      // is still eight times quicker than the spore's own cycle, and paired with
+      // a half-lit floor and arms that no longer jump (see the renderer) it
+      // shimmers instead of strobing.
+      twinkle: 1.4,
     },
     crown: { color: "#16303a", amount: 0.75 }, // near-black, so the floor reads bright
     trunk: { color: "#243a42", amount: 0.5 },
