@@ -4180,6 +4180,53 @@ for the same read: it is dark for most of its cycle, so instantaneous coverage i
 density × the flash window. At 0.14 the dusk had two specks in a swatch and they
 looked like stray pixels rather than fireflies.
 
+### 8q — The glimmer grows into itself — **built**
+
+Puffier trees, orbs in the crowns, champagne caps. Two new `BiomeDef` fields,
+both data, both used by exactly one region so far.
+
+**The orbs are LIGHT, and that decision is the whole feature.** A round pale
+thing hanging in a tree reads as fruit, and fruit reads as pickable — so walking
+under one to find that ACT does nothing is a promise the game made and broke.
+The header rule ("a biome changes appearance and never yield") bites here in a
+subtler place than a locked material. Drawn as light instead — additive,
+white-cored, the same `#ffeec4` as the region's sparks — it reads as the wood
+glowing, which is something you look at rather than reach for. The blossom rows
+get away with blossom on the same argument.
+
+**A bead, not a splat, and proportion settled it.** Two wrong cuts first: the
+spark's own geometry (1px arms on four axes), which is a sparkle by construction
+and read as glitter stuck onto the tree; then four pixels across, which on a
+sixteen-pixel crown is a quarter of the tree. The reference picture answers it by
+ratio — an orb there is about a twelfth of the crown — and a twelfth of this
+crown is under two pixels. A 2×2 with one bright pixel in it.
+
+**Three orbs off one hash is not three hashes.** Multiplying a single value by
+different constants gives numbers that look independent and are not: the first
+cut put three orbs in a neat evenly-spaced row on the same crown, which reads as
+a decoration somebody hung there. Offsetting the tile (`tx + i*37, ty - i*17`) is
+free and gives each orb its own draw. **This is the decor kit's bug for the third
+time in this file** — see also the mote phase, which came off the density roll.
+
+**They breathe at a fifth of the sparks' swing.** A light sitting perfectly still
+in a canopy full of shimmering air reads as paint on the leaves. This is a light
+RESTING in a tree, not one catching a facet, so it wants noticing only if you
+look — 3.5s a breath against the sparks' 1.4s glint.
+
+**The mushroom is a TINT AND NOT A SPECIES.** Same silhouette everywhere — cap,
+overhang, gills, stalk — because a mushroom is gatherable and hands back a plain
+`mushroom` wherever it grew. A puffball shape was the obvious prettier answer and
+is the yield promise broken from the other end: it says "different thing" and
+gives you the same item. The red was the one warm-blooded thing in a region built
+of teal and pale gold; recoloured, it reads as the same mushroom standing in this
+wood's light. Regions without `mushroomCap` keep the red, which stays stated
+outright in the renderer — and night is a `Tint` over the region's own cap rather
+than a second table of hexes to keep in step with the first.
+
+**Crowns take the HARD region, not the blended one** — `regionSkin`'s existing
+argument, now applying to mushrooms too. Half a champagne cap fading back to red
+across a border is a mushroom caught between two minds.
+
 ### 8l — A page that shows every region at once — **built**
 
 `/biomes.html` + `src/tools/biome-preview.ts`, the sibling of `/looks.html`, and

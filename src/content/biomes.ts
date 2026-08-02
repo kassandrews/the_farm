@@ -127,6 +127,44 @@ export interface BiomeDef {
    *  height from the same sum, so occlusion stays honest. */
   crownOverlap?: number;
 
+  /** Lights caught in the crown — the glimmer's, and nobody else's so far.
+   *
+   *  NOT FRUIT, AND THE DISTINCTION IS LOAD-BEARING. A biome changes appearance
+   *  and never yield (see the header): a round pale thing hanging in a tree
+   *  reads as pickable, and walking under it to find that ACT does nothing is a
+   *  promise the game made and broke. Drawn as LIGHT — additive, white-cored,
+   *  the same champagne as the region's sparks — it reads as the wood glowing,
+   *  which is a thing you look at rather than a thing you reach for. Same reason
+   *  the blossom rows get away with blossom.
+   *
+   *  `chance` is per TREE, off the tile's own hash, so a stand is mixed rather
+   *  than uniformly lit and any given tree keeps its orbs when you walk away. */
+  orbs?: {
+    color: string;
+    core?: string;
+    /** Fraction of this region's trees carrying any. */
+    chance: number;
+    /** How many on a tree that has them. */
+    count: number;
+    /** Seconds per breath. Optional; omitted, an orb is perfectly still.
+     *
+     *  A FIFTH of the swing the sparks get, and deliberately slower than nothing
+     *  would be: a light sitting motionless in a canopy full of shimmering air
+     *  reads as paint on the leaves. This is a light RESTING in a tree, not one
+     *  catching a facet, so it wants to be noticed only if you look. */
+    twinkle?: number;
+  };
+
+  /** The cap colour where this region's mushrooms come up. Optional; the default
+   *  red lives in the renderer and is what every other region gets.
+   *
+   *  A TINT AND NOT A SPECIES. Same silhouette everywhere — cap, overhang,
+   *  gills, stalk — because a mushroom is gatherable and yields `mushroom`. A
+   *  different SHAPE would say "different thing" and hand back the same item,
+   *  which is the yield promise broken in a subtler way than a locked material.
+   *  Recoloured, it reads as the same mushroom standing in this wood's light. */
+  mushroomCap?: { cap: string; lit: string; gills: string };
+
   /** What else grows here. Optional, and the meadow deliberately has none. */
   decor?: DecorKit;
 
@@ -664,9 +702,30 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     },
     crown: { color: "#16303a", amount: 0.75 }, // near-black, so the floor reads bright
     trunk: { color: "#243a42", amount: 0.5 },
-    // Tall and close-topped: the canopy has to close over you or the floor has
-    // nothing to be the brighter thing than.
-    crownRows: [2, 4, 6, 7, 7, 7, 7, 7, 7, 6, 5, 4, 3, 2],
+    // PUFFY, and lumpy on purpose. Still close-topped — the canopy has to close
+    // over you or the floor has nothing to be the brighter thing than — but wider
+    // than a tile now and no longer a smooth taper.
+    //
+    // The lumps are the whole trick and they are not noise: a crown that widens,
+    // narrows a pixel and widens again reads as SEVERAL masses of foliage, where
+    // a clean curve reads as one balloon. Two shoulders and a broad middle, which
+    // is what a soft-canopied broadleaf actually looks like from here. 8 is past
+    // the "about a tile wide" mark in `crownRows` and allowed: overhanging its
+    // neighbours is a thing broadleaves do, and in a wood this dense the crowns
+    // touching each other is the point.
+    crownRows: [3, 6, 7, 8, 7, 8, 8, 8, 7, 8, 7, 6, 4, 3],
+    // Down beside the trunk, so the foliage sits ON the tree rather than balanced
+    // on top of it. Cheaper than a taller sprite and it reads bushier, which is
+    // what "puffier" wanted.
+    crownOverlap: 2,
+    // The region's own light, snagged in the branches — same champagne as the
+    // sparks, and the same two inks. A third of the trees, three apiece: enough
+    // that a stand glows and few enough that you notice which ones.
+    orbs: { color: "#ffeec4", core: "#ffffff", chance: 0.34, count: 3, twinkle: 3.5 },
+    // Champagne caps, same mushroom. The red was the one warm-blooded thing in a
+    // region built entirely out of teal and pale gold, and it read as an object
+    // from somewhere else lying on the floor.
+    mushroomCap: { cap: "#e8d29a", lit: "#f7ead0", gills: "#b09a68" },
   },
 
   /** The loudest, the rarest, and the end of the escalation: a wood the light

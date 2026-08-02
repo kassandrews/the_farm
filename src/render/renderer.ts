@@ -80,7 +80,7 @@ import { forEachGrainMark } from "./grain";
 import { roofFinish } from "./roof";
 import { gridFor, pieceCanvas } from "./furnishings";
 import { FURNITURE_ART } from "../content/furnishings";
-import { BROADLEAF, type BiomeDef, type DecorKit, type MoteKit } from "../content/biomes";
+import { BROADLEAF, type BiomeDef, type DecorKit, type MoteKit, type Tint } from "../content/biomes";
 import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
 import { lookFor } from "../content/looks";
@@ -1016,7 +1016,7 @@ export class Renderer {
               // a second function. It is the same tree in every other way
               // (content/nodes.ts), and two draw paths would let them drift into
               // looking like two different plants.
-              else this.drawTree(world, x, y, night, id === DARK_TREE);
+              else this.drawTree(world, x, y, t, night, id === DARK_TREE);
             },
           });
         }
@@ -1330,7 +1330,7 @@ export class Renderer {
             if (h > 0.85) ctx.fillRect(px + 4 + Math.floor(h * 6), py + 8 + Math.floor((h * 37) % 6), 1, 1);
           }
         }
-        if (id === MUSHROOM) this.drawMushrooms(tx, ty, px, py, world.seed, night);
+        if (id === MUSHROOM) this.drawMushrooms(world, tx, ty, px, py, night);
         if (id === JUNK_PILE) this.drawLoose(tx, ty, px, py, world.seed, night);
         if (id === SHAFT) this.drawShaftMouth(px, py);
         this.drawDoorstep(world, tx, ty, px, py);
@@ -1353,12 +1353,45 @@ export class Renderer {
    *  Everything comes off the tile's stable hash: how many, which way up they
    *  lean, and where in the cell they stand. A patch that arrived while you were
    *  out has to sit still once you are looking at it. */
-  private drawMushrooms(tx: number, ty: number, px: number, py: number, seed: number, night: boolean): void {
+  /** What nightfall does to a region's own cap.
+   *
+   *  The default red states its night colours outright, one hex per row, because
+   *  there is only one of them. A region that brings its own cannot — so this is
+   *  the same move `biomes.ts` makes everywhere else: a pull toward a colour
+   *  rather than a second table of hexes to keep in step with the first. Matched
+   *  by eye against the red's own day/night pair, which is the only thing it has
+   *  to agree with. */
+  private static readonly NIGHT_CAP: Tint = { color: "#2c3348", amount: 0.34 };
+
+  private drawMushrooms(
+    world: WorldState,
+    tx: number,
+    ty: number,
+    px: number,
+    py: number,
+    night: boolean,
+  ): void {
     const ctx = this.ctx;
-    const h = decoHash(tx, ty, seed);
-    const cap = night ? "#9c5348" : "#d16a56";
-    const lit = night ? "#b3695c" : "#e58a72";
-    const gills = night ? "#71392f" : "#a34c3c";
+    const h = decoHash(tx, ty, world.seed);
+    // The region's cap, where it has one. A TINT AND NOT A SPECIES — the
+    // silhouette below is the same everywhere, because this is gatherable and
+    // hands back a plain `mushroom` wherever it grew (see BiomeDef.mushroomCap).
+    //
+    // The HARD region rather than the blended one, on `regionSkin`'s own
+    // argument: a mushroom is an object and takes a side, the way a crown does.
+    // Half a champagne cap fading back to red across a border is a mushroom
+    // caught between two minds.
+    const skin = regionSkin(world.seed, world.homestead.spot, tx, ty);
+    const own = skin?.mushroomCap;
+    const cap = own ? (night ? mixHex(own.cap, Renderer.NIGHT_CAP) : own.cap) : night ? "#9c5348" : "#d16a56";
+    const lit = own ? (night ? mixHex(own.lit, Renderer.NIGHT_CAP) : own.lit) : night ? "#b3695c" : "#e58a72";
+    const gills = own
+      ? night
+        ? mixHex(own.gills, Renderer.NIGHT_CAP)
+        : own.gills
+      : night
+        ? "#71392f"
+        : "#a34c3c";
     const stalk = night ? "#bdb0a0" : "#f0e3d0";
 
     // One mushroom. `big` gets the full overhang; the companion is a button that
@@ -3044,7 +3077,14 @@ export class Renderer {
   /** A tree: trunk, layered crown, contact shadow. Two and a half tiles tall,
    *  so it overhangs the ground behind it and you can walk out of sight behind
    *  one. Jittered by the tile hash so a stand of trees isn't wallpaper. */
-  private drawTree(world: WorldState, tx: number, ty: number, night: boolean, dark = false): void {
+  private drawTree(
+    world: WorldState,
+    tx: number,
+    ty: number,
+    t: number,
+    night: boolean,
+    dark = false,
+  ): void {
     const ctx = this.ctx;
     const h = decoHash(tx, ty, world.seed);
     const jx = Math.floor(h * 3) - 1;
@@ -3140,6 +3180,69 @@ export class Renderer {
       const g = gaps?.[r] ?? 0;
       const w = g > 0 ? rows[r] - g - 1 : Math.max(2, rows[r] - 1);
       if (w > 0) ctx.fillRect(cx - rows[r] + 1, top + r, w, 1);
+    }
+
+    // Lights caught in the crown. NOT FRUIT — see BiomeDef.orbs for why that
+    // distinction is the whole design of this: drawn through the same additive
+    // pass as the sparks and the fireflies, with a white core, so an orb reads as
+    // the wood glowing rather than as something to reach for.
+    //
+    // Everything off the tile's own hash on a private salt, so a tree keeps its
+    // orbs while you walk around it and its neighbour has a different three. The
+    // salt is not `h`: `h` already picked the trunk's sideways jitter, and reusing
+    // it would tie where the lights hang to which way the tree leans — the decor
+    // kit's bug, which this file has now made twice.
+    const orbs = biome?.orbs;
+    if (orbs) {
+      const oh = decoHash(tx, ty, world.seed ^ 0x3b19);
+      if (oh < orbs.chance) {
+        const prevOp = ctx.globalCompositeOperation;
+        ctx.globalCompositeOperation = "lighter";
+        for (let i = 0; i < orbs.count; i++) {
+          // A HASH PER ORB, not fractions milked off one. Multiplying a single
+          // value by different constants gives numbers that look independent and
+          // are not: the first cut put three orbs in a neat horizontal row on the
+          // same crown, evenly spaced, which reads as a decoration somebody hung
+          // there rather than as light in a tree. Offsetting the tile is free and
+          // gives each orb its own draw from the same stable stream.
+          const a = decoHash(tx + i * 37, ty - i * 17, world.seed ^ 0x3b19);
+          const b = decoHash(tx - i * 53, ty + i * 29, world.seed ^ 0x77c1);
+          // Somewhere in the crown's WIDE middle: the top rows are two pixels
+          // across and an orb there hangs off the edge into the sky.
+          const r = 2 + Math.floor(a * Math.max(1, rows.length - 4));
+          const half = rows[r];
+          if (half < 2) continue;
+          const ox = cx - half + 2 + Math.floor(b * (half * 2 - 4));
+          const oy = top + r;
+          // A BEAD. Two goes to get here and both were about SIZE rather than
+          // taste. First it reused the spark's geometry — 1px arms on the four
+          // axes — which is a sparkle by construction, so the orbs read as
+          // glitter stuck onto the tree. Then it went four across, which at a
+          // sixteen-pixel crown is a quarter of the tree and reads as a splat.
+          //
+          // The reference picture settles it by proportion: an orb there is about
+          // a twelfth of the crown's width, and a twelfth of this crown is under
+          // two pixels. So: a 2×2 with one bright pixel in it. Small enough to
+          // hang in the foliage instead of sitting on top of it, and the highlight
+          // is what keeps it a ball rather than a square.
+          //
+          // It breathes, faintly, on the region's own glint clock — an orb that
+          // sat perfectly still next to shimmering air would read as paint on the
+          // canopy. A fifth of its brightness, where the sparks swing a half:
+          // this is a light resting in a tree, not one catching a facet.
+          const sway = orbs.twinkle
+            ? 0.8 + 0.2 * (0.5 + 0.5 * Math.sin((t / orbs.twinkle + a) * Math.PI * 2))
+            : 1;
+          ctx.globalAlpha = prev * 0.85 * sway;
+          ctx.fillStyle = orbs.color;
+          ctx.fillRect(ox, oy, 2, 2);
+          ctx.globalAlpha = prev * sway;
+          ctx.fillStyle = orbs.core ?? orbs.color;
+          ctx.fillRect(ox, oy, 1, 1);
+        }
+        ctx.globalCompositeOperation = prevOp;
+        ctx.globalAlpha = prev;
+      }
     }
 
     ctx.globalAlpha = prev;
