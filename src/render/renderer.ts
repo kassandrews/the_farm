@@ -2054,8 +2054,6 @@ export class Renderer {
           ctx.globalCompositeOperation = prevOp;
           continue;
         }
-        ctx.globalAlpha = 0.8 * fade;
-        ctx.fillStyle = kit.color;
         if (kit.shape === "spark") {
           // A burst that OPENS AND CLOSES rather than a square that fades. Arms
           // on the four axes only: a diagonal one would be a 1px stair and read
@@ -2071,15 +2069,39 @@ export class Renderer {
           // once over eleven seconds, so the star holds still and shimmers. The
           // twinkle is now carried by alpha alone, which is the quiet half of
           // what it was doing and the half that reads as light.
+          //
+          // IT IS LIGHT, SO IT IS DRAWN LIKE LIGHT — the same additive pass the
+          // fireflies and the lamps use, and the reason this stopped looking like
+          // a sparkle and started looking like a plus sign. Flat `color` at 0.8
+          // alpha over teal ground is grey PAINT in the shape of a cross: the one
+          // thing §8o already knew about a source and this path never got, since
+          // only `flash` took the additive branch.
+          //
+          // And a sparkle TAPERS. Equal-brightness arms off an equal-brightness
+          // centre is a glyph — the plus on a keyboard. Three tiers instead: a
+          // core that clips to white, an inner arm at half, an outer at a fifth.
+          // The falloff is the whole difference between a star and a symbol.
+          const prevOp = ctx.globalCompositeOperation;
+          ctx.globalCompositeOperation = "lighter";
           const arm = Math.round(envelope * 2);
-          ctx.fillRect(rx, ry, 1, 1);
-          if (arm) {
-            ctx.fillRect(rx - arm, ry, arm, 1);
-            ctx.fillRect(rx + 1, ry, arm, 1);
-            ctx.fillRect(rx, ry - arm, 1, arm);
-            ctx.fillRect(rx, ry + 1, 1, arm);
+          ctx.fillStyle = kit.color;
+          for (let d = arm; d >= 1; d--) {
+            // Dimmer the further out, so the arm fades into the ground instead of
+            // ending on a hard pixel. Drawn outermost-first: additive, so the
+            // overlap only ever adds, and the inner pixels finish brighter.
+            ctx.globalAlpha = (d === 1 ? 0.5 : 0.2) * fade;
+            ctx.fillRect(rx - d, ry, 1, 1);
+            ctx.fillRect(rx + d, ry, 1, 1);
+            ctx.fillRect(rx, ry - d, 1, 1);
+            ctx.fillRect(rx, ry + d, 1, 1);
           }
+          ctx.globalAlpha = fade;
+          ctx.fillStyle = kit.core ?? kit.color;
+          ctx.fillRect(rx, ry, 1, 1);
+          ctx.globalCompositeOperation = prevOp;
         } else {
+          ctx.globalAlpha = 0.8 * fade;
+          ctx.fillStyle = kit.color;
           ctx.fillRect(rx, ry, size, size);
         }
       }

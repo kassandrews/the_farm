@@ -176,8 +176,9 @@ export interface MoteKit {
   /** Pixels square. 1 unless the thing is meant to be seen individually. */
   size?: number;
 
-  /** The hot centre of a light, drawn opaque inside the additive glow that
-   *  `color` provides. Only meaningful with `flash`.
+  /** The hot centre of a light, drawn through the additive pass inside the arms
+   *  or body that `color` provides. Used by `flash` and by `spark` — anything
+   *  that is a SOURCE rather than an object.
    *
    *  Two inks because a firefly is a SOURCE, and ROADMAP's lamp rule applies:
    *  "a source must be the brightest thing in its own light." One flat dot,
@@ -630,6 +631,12 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       // the region went quiet, which is the opposite failure and just as wrong.
       density: 0.15,
       color: "#d8fff6",
+      // The hot centre. Same two inks as a firefly and for the same reason — the
+      // additive core clips to white while the cool green survives in the arms,
+      // so a spark reads as a glint of light rather than a pale cross laid on
+      // the grass. `core` was documented as flash-only; it is not, and never
+      // should have been — it belongs to anything that is a SOURCE.
+      core: "#ffffff",
       drift: 20,
       sway: 3,
       period: 11,

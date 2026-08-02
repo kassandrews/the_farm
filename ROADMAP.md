@@ -4127,6 +4127,22 @@ halo and the pass order did not.
   close as it goes) so the star holds still; the floor goes 0.2 → 0.5, half-lit
   to full, so it shimmers instead of blinking out; the rate relaxes to 1.4s,
   still eight times quicker than the spore's own cycle.
+- **AND THEN THEY STILL DID NOT LOOK LIKE SPARKLES, because a spark was never
+  drawn as light in the first place.** The whole additive treatment above went to
+  `flash` only; `spark` fell through to `globalAlpha = 0.8` and flat `color`,
+  which over teal ground is grey PAINT in the shape of a cross. Two fixes, and
+  they are the same two the fireflies needed a step earlier:
+  - **Additive, with a `core`.** The white centre clips and the cool green
+    survives in the arms. `core` was documented as flash-only and should never
+    have been — it belongs to anything that is a SOURCE.
+  - **A sparkle TAPERS.** Equal-brightness arms off an equal-brightness centre is
+    a glyph: the plus sign on a keyboard. Three tiers — core at full, inner arm
+    at 0.5, outer at 0.2 — and the falloff is the entire difference between a
+    star and a symbol. Peak went (178,221,214) to a clipped (255,255,255).
+  Sparks stay UNDER the night wash even though they are now sources, unlike the
+  fireflies. Checked on screen rather than argued: dimmed white sparkles on dark
+  blue read as a starry field and look right. Revisit if the glimmer ever gets a
+  night of its own.
 - **Measure churn and it lies to you.** Frame-to-frame pixel change went UP after
   the calming pass, because sparks that stay open are bigger and drift — the
   metric was counting motion as agitation. A filmstrip at 120ms answered it in
