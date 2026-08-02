@@ -1954,8 +1954,13 @@ export class Renderer {
         // Fade at both ends so the loop has no seam in it — or, for a flasher,
         // dark for most of the cycle and briefly not. A firefly that faded up
         // and down smoothly reads as a small floating lamp.
+        // A PULSE THAT EASES, not a triangle. The linear ramp was a strobe: it
+        // arrived and left at full slope, which is what a bulb does and not what
+        // a firefly does. Smoothstepping the same window makes it swell and go
+        // out, which is the whole of the effect once the drifting is gone.
+        const pulse = Math.max(0, 1 - Math.abs(p - 0.5) * 3.4);
         const fade = kit.flash
-          ? Math.max(0, 1 - Math.abs(p - 0.5) * 4.5)
+          ? pulse * pulse * (3 - 2 * pulse)
           : Math.min(1, Math.min(p, 1 - p) * 5);
         if (fade <= 0) continue;
         ctx.globalAlpha = 0.8 * fade;

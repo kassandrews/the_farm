@@ -4016,6 +4016,15 @@ GENERATION, and motes are render-only. Empty for nine months is what keeps "most
 regions have no air" true in the way that matters — most of the TIME rather than
 most of the table, which is now what the test asserts.
 
+**The art direction, second pass.** Sparser than the first cut everywhere
+(0.09 meadow, 0.06 pines, 0.07 dusk), **barely moving**, and a **pulse that
+eases** rather than a linear triangle — the ramp arrived and left at full slope,
+which is what a bulb does and not what a firefly does. Smoothstepping the same
+window makes it swell and go out, which is the whole effect once the drifting is
+gone. Warm yellow in the near regions; **orange in the dusk**, because that
+country's palette is violet and a warm light in it should read as the wrong kind
+of warm — an ember rather than a summer evening.
+
 **Tuning note worth keeping.** A flasher needs roughly double a fader's density
 for the same read: it is dark for most of its cycle, so instantaneous coverage is
 density × the flash window. At 0.14 the dusk had two specks in a swatch and they
