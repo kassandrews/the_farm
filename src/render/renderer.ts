@@ -1992,9 +1992,27 @@ export class Renderer {
         // halves how many are alight at once. Densities stay where they were
         // measured — the answer to "too few" is more of them, not longer blinks.
         const pulse = Math.max(0, 1 - Math.abs(p - 0.5) * 8);
-        const fade = kit.flash
+        const envelope = kit.flash
           ? pulse * pulse * (3 - 2 * pulse)
           : Math.min(1, Math.min(p, 1 - p) * 5);
+        // THE GLINT RUNS ON ITS OWN CLOCK, over the envelope rather than instead
+        // of it — the mote still arrives and leaves on `period`, it just catches
+        // the light on the way. Its own phase offset (a different multiple of the
+        // same cell hash) so a patch of them does not glitter in unison, which is
+        // tinsel rather than glitter.
+        //
+        // It never reaches zero. A flicker that goes fully dark is the mote
+        // blinking out and back — a flasher, which is a different kit and reads
+        // as a firefly. Glitter is a bright thing getting brighter, so the floor
+        // is a fifth of full and the glint rides on top of that.
+        const glint = kit.twinkle
+          ? (() => {
+              const q = (((t / kit.twinkle + g * 7.3) % 1) + 1) % 1;
+              const s = Math.max(0, 1 - Math.abs(q - 0.5) * 2.6);
+              return 0.2 + 0.8 * s * s * (3 - 2 * s);
+            })()
+          : 1;
+        const fade = envelope * glint;
         if (fade <= 0) continue;
         const rx = Math.round(x);
         const ry = Math.round(y);

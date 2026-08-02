@@ -198,6 +198,22 @@ export interface MoteKit {
    *  briefly not; a smooth fade reads as a floating lamp. */
   flash?: boolean;
 
+  /** Seconds per GLINT — a fast flicker multiplied over the slow cycle above.
+   *
+   *  Two clocks on purpose, because they are two different things happening. The
+   *  mote's fade-in and fade-out belong to `period`: that is the thing being born
+   *  at the bottom of its drift and gone at the top, and it has to stay slow or
+   *  the spore stops rising and starts darting. The glint is not the spore
+   *  moving at all — it is light catching on a face of it — so it may be as quick
+   *  as it likes without breaking §"anything brisk reads as an insect". That rule
+   *  is about BODIES. Nothing here travels any faster than it did.
+   *
+   *  Tied to `period` instead, glitter is unbuildable: the glimmer's spores rise
+   *  over eleven seconds, so one twinkle per cycle is one twinkle every eleven
+   *  seconds, and shortening the period to fix it fires the spore up through the
+   *  canopy like a spark off a fire. */
+  twinkle?: number;
+
   /** Only in the EVENING — the dusk hour and the night, and never the dawn.
    *
    *  A phase rather than a brightness, and that is the whole reason this field is
@@ -609,6 +625,11 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       sway: 3,
       period: 11,
       shape: "spark",
+      // Glitter is FAST. Half a second a glint, against the eleven seconds the
+      // spore takes to rise — the drift is unchanged and only the light on it
+      // moved. The arms open and shut on the same number (see `shape`), so this
+      // is the twinkle rather than a brightness wobble underneath a static one.
+      twinkle: 0.5,
     },
     crown: { color: "#16303a", amount: 0.75 }, // near-black, so the floor reads bright
     trunk: { color: "#243a42", amount: 0.5 },

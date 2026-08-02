@@ -4096,6 +4096,17 @@ halo and the pass order did not.
   `#ffa022` / `#fff0d8` in the dusk. Everything else in `biomes.ts` is soft
   because it is a surface; these are lights, and a light inside the game's range
   reads as a pale speck.
+- **The glimmer glitters on a second clock.** `twinkle` — seconds per glint,
+  multiplied over the `period` envelope rather than replacing it. The two are
+  different events: the fade in and out is the spore being born at the bottom of
+  its drift and gone at the top, and that has to stay slow, while a glint is
+  light catching on a face of it and may be as quick as it likes. §"anything
+  brisk reads as an insect" is about BODIES; nothing travels faster than before.
+  Tied to `period` the effect is unbuildable — one twinkle per eleven-second rise,
+  and shortening the period fires the spore up through the canopy. 0.5s a glint,
+  its own phase offset per cell so a patch doesn't glitter in unison (that's
+  tinsel), and a floor of 0.2 because a flicker reaching zero is the mote
+  blinking out, which is a flasher and reads as a firefly.
 - **The flash is short.** The pulse window went 3.4 → 8, about a second and a
   half of every six with most of that arriving and leaving. At 3.4 a firefly was
   lit for half its cycle, which is a lamp with a dimmer on it. This costs
