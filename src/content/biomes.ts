@@ -141,9 +141,11 @@ export interface BiomeDef {
  *  purpose. Restraint here is the same call §Biomes makes about scatter — a
  *  texture in every region is a texture in no region.
  *
- *  WHAT IT MAY NOT BE. Nothing alive: there is no fauna in this game and
- *  `notebook.test.ts` fails on the word, so no midges, no fireflies, no
- *  butterflies. And nothing that accumulates: `content/seasons.ts` refuses
+ *  WHAT IT MAY NOT BE. Nothing you can DO anything to — see DESIGN §"Living
+ *  light, and the animals that stay out". A firefly's flash is allowed because
+ *  it is light: nothing catches it, counts it, or waits for it. A creature with
+ *  a sprite, a schedule or a footprint is a resident, and residents live in
+ *  town. And nothing that accumulates: `content/seasons.ts` refuses
  *  weather in writing because snow that MELTED would be the first weather with
  *  state. A mote is a total function of (cell, clock) and stores nothing, which
  *  is the water ripple's trick one axis up — so mist and rain are still out, and
@@ -171,6 +173,23 @@ export interface MoteKit {
   period: number;
   /** Pixels square. 1 unless the thing is meant to be seen individually. */
   size?: number;
+
+  /** How it is drawn. `dot` (the default) is a square — a petal, a seed.
+   *
+   *  `spark` is a four-armed burst whose arms grow and shrink over the cycle,
+   *  which is how you twinkle without rotating anything: a pixel-art mote may
+   *  never be turned by `ctx.rotate` (CLAUDE.md §Sprite rendering resamples it
+   *  off the grid), so the glitter has to come from the SHAPE changing rather
+   *  than from the thing spinning. Same trick as the tuft's three silhouettes. */
+  shape?: "dot" | "spark";
+
+  /** Blink instead of fading in and out. A firefly is dark most of the time and
+   *  briefly not; a smooth fade reads as a floating lamp. */
+  flash?: boolean;
+
+  /** Only when it is dark enough. Fireflies at noon are moths, and there are no
+   *  moths either. */
+  night?: boolean;
 }
 
 /** A region's ground decor — its ferns, reeds, litter and small flowers.
@@ -429,6 +448,21 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // it is the shape you know, which is what makes the colour unsettling instead
     // of merely decorative.
     crownRows: BROADLEAF,
+    // Fireflies, and they are LIGHT rather than animals — nothing catches one,
+    // nothing counts them, nothing waits for them (DESIGN §Living light). Only
+    // after dark, which is what makes the twilight country worth walking into at
+    // an hour you would otherwise be indoors: by day this region has no air at
+    // all. Barely drifting, because a firefly hangs.
+    motes: {
+      density: 0.3,
+      color: "#f2f7a8",
+      drift: 5,
+      sway: 4,
+      period: 6,
+      size: 2,
+      flash: true,
+      night: true,
+    },
   },
 
   /** Light from the wrong direction. A dark canopy over a floor that glows —
@@ -456,11 +490,21 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     water: 0,
     ground: { color: "#1e5a72", amount: 0.8 },
     tuft: { color: "#7cf0dc", amount: 0.8 }, // the speckle is the glow
-    // Spores, going UP, which is the whole difference between here and the
-    // blossom rows: one region's air falls and the other's rises. Dimmer and
-    // rarer than the petals — the floor is already doing the glowing, and a sky
-    // full of sparks would make it a light show rather than a wood.
-    motes: { density: 0.22, color: "#c8fff2", drift: 20, sway: 3, period: 11 },
+    // Spores that GLITTER, going UP — which is the whole difference between here
+    // and the blossom rows: one region's air falls and the other's rises.
+    //
+    // The glitter is the NAME being kept. A region called the glimmer whose air
+    // was plain dots was the one row on the preview page that did not look like
+    // what it is called, and that is a thing only a page showing all nine at once
+    // can tell you.
+    motes: {
+      density: 0.22,
+      color: "#d8fff6",
+      drift: 20,
+      sway: 3,
+      period: 11,
+      shape: "spark",
+    },
     crown: { color: "#16303a", amount: 0.75 }, // near-black, so the floor reads bright
     trunk: { color: "#243a42", amount: 0.5 },
     // Tall and close-topped: the canopy has to close over you or the floor has

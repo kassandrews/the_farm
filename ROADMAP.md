@@ -3942,6 +3942,52 @@ drawn correctly and could not be seen, because it was given a value one step fro
 whatever it sat on. Three of the four were found by drawing the thing in magenta
 at double size, which is now the first move rather than the fourth.
 
+### 8o — The glimmer glitters, and the dusk has fireflies — **built**
+
+**The name was a promise the region wasn't keeping.** A place called the glimmer
+whose air was plain drifting dots was the one row on the preview page that did
+not look like what it is called — which is a thing only a page showing all nine
+at once can tell you, and an argument for 8l existing.
+
+- **`shape: "spark"`** — a four-armed burst whose arms grow and shrink over the
+  cycle. That is how you twinkle without rotating anything: a pixel-art mote may
+  never be turned by `ctx.rotate` (CLAUDE.md), so the glitter comes from the
+  SHAPE changing rather than the thing spinning. Same trick as the tuft's three
+  silhouettes. Arms on the four axes only — a diagonal one is a 1px stair and
+  reads as a smudge at this size.
+- **`flash` + `night`** — the dusk's fireflies. A blink rather than a fade,
+  because something that brightens and dims smoothly reads as a small floating
+  lamp. Gated on the same `darkness` the lamps light by, so "after dark" means
+  one thing in this game rather than two: by day the twilight country has no air
+  at all, which is most of why it is now worth walking into at an hour you would
+  otherwise be indoors.
+
+**AND THE FAUNA RULE GOT WRITTEN DOWN, BECAUSE IT NEVER HAD BEEN.** "There are no
+animals in this game" was true and lived in a TEST COMMENT and nowhere else —
+folklore rather than a decision, and quietly wider than anything anybody had
+settled. DESIGN §*Living light, and the animals that stay out* now states it:
+
+> The world may hold light and motion that reads as alive. It may not hold
+> animals you can do anything to.
+
+The line is **interaction, not biology.** Nothing may catch, gather, name,
+collect, count or wait for a firefly — the moment one can be caught the game has
+a bug-catching verb, and behind that a bug wing and a completion grid, which is
+Animal Crossing's skeleton picking up an organ this doc deliberately left on the
+table. What was ACTUALLY settled before is preserved exactly: fauna may not be a
+reward (9b's sanctuary filing), and content may not name wildlife that isn't
+there. **The fish stay out permanently** — the poled pond's joke is the absence
+(`content/found.ts`), and it is not where fishing gets answered.
+
+`notebook.test.ts` keeps its list unchanged and loses a comment that had become
+false. A firefly is absent from that list because a firefly is now somewhere you
+can go and see one.
+
+**Tuning note worth keeping.** A flasher needs roughly double a fader's density
+for the same read: it is dark for most of its cycle, so instantaneous coverage is
+density × the flash window. At 0.14 the dusk had two specks in a swatch and they
+looked like stray pixels rather than fireflies.
+
 ### 8l — A page that shows every region at once — **built**
 
 `/biomes.html` + `src/tools/biome-preview.ts`, the sibling of `/looks.html`, and

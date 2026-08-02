@@ -264,11 +264,19 @@ describe("the table", () => {
     }
   });
 
-  it("mentions no animal, because there are none", () => {
-    // There is no fauna in this game — the birds were removed and the poled pond
-    // is a joke about there being no fish. An entry about wildlife would be
-    // describing a different game, and it would read as a bug the first time
-    // somebody went looking.
+  it("mentions no animal you could go and look at", () => {
+    // The rule this guards is "the Notebook may not name wildlife that is not
+    // there", NOT "there is no wildlife" — which is what the comment here used to
+    // say, and which was never a decision anybody took. DESIGN §"Living light,
+    // and the animals that stay out" settles it: the world may hold light that
+    // reads as alive (the dusk has fireflies), and may not hold creatures you can
+    // do anything to.
+    //
+    // So the list below stays exactly as it was. Birds were removed, the poled
+    // pond is a joke about there being no fish, and an entry naming one of these
+    // would send the first player who went looking to find a bug. A firefly is
+    // absent from the list because a firefly is now somewhere you can actually
+    // go and see one.
     for (const o of OBSERVATIONS) {
       for (const text of [o.line, o.remark ?? ""]) {
         expect(text, `"${o.id}" mentions wildlife`).not.toMatch(

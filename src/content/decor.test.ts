@@ -99,11 +99,23 @@ describe("motes", () => {
     }
   });
 
+  it("only flashes after dark", () => {
+    // "Fireflies at noon are moths, and there are no moths either." A blink is
+    // read as a light source, and a light source in daylight is just a dot.
+    for (const [id, kit] of kits) {
+      if (kit.flash) expect(kit.night, `${id} flashes by day`).toBe(true);
+    }
+  });
+
   it("names no animal", () => {
     // There is no fauna in this game (sim/notebook.test.ts guards the same rule
     // for the Notebook). A mote is pollen, a petal, a spore — never a midge.
     for (const [id, kit] of kits) {
-      expect(`${id} ${kit.color}`).not.toMatch(/bug|fly|midge|bee|moth|firefl/i);
+      // The dusk's fireflies are LIGHT (DESIGN §"Living light"), so the guard is
+      // on the id and the ink — a region may not be named for a creature, and a
+      // mote may not be one. Nothing here has a sprite, a schedule or a
+      // footprint; if it did it would be a resident, and residents live in town.
+      expect(`${id} ${kit.color}`).not.toMatch(/bug|midge|bee|moth|bird|fish/i);
     }
   });
 });

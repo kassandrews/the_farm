@@ -494,6 +494,36 @@ So the test for anything added to a kit is not "does it fit the palette" but
 **"can you carry it home?"** If you can, it is the mushroom wearing a hat and it
 answers to the mushroom's rules. If you can't, it is free.
 
+### Living light, and the animals that stay out
+
+The world may hold **light and motion that reads as alive** — a firefly's flash
+over the twilight country, a glitter in the air where the ground glows. It may
+not hold **animals you can do anything to.**
+
+This is written down because it was never written down. "There are no animals in
+this game" was true, and it lived in a test comment and nowhere else, so it was
+folklore rather than a rule and it was quietly wider than anything anybody had
+decided. What was actually settled is narrower: fauna may not be a REWARD (a
+filing that stocks a sanctuary turns a form into an unlock, which paperwork must
+not be), and content may not mention wildlife that isn't there.
+
+The line is **interaction, not biology.** A firefly is a flash: nothing may
+catch it, gather it, name it, collect it, count it, or wait for it. The moment
+one can be caught the game has a bug-catching verb, and behind that a bug wing in
+the museum and a completion grid — which is Animal Crossing's skeleton picking up
+an organ this game deliberately left on the table.
+
+- **No creature has a sprite, a schedule, or a footprint.** If it can be stood
+  next to, it is a resident, and residents live in town.
+- **Nothing gathers, and nothing is ever required.** Same sentence as the found
+  places: no commission, room, filing or exhibit may read it.
+- **Still stateless** (§Seasons): a flash is a function of place and clock. The
+  moment something has to be *remembered* it is weather with a lifecycle.
+- **The fish stay out**, specifically and permanently. A pond with a dozen poles
+  and nothing in it is one of the town's better jokes, and the joke is the
+  absence — see `content/found.ts`. Fishing remains an open question elsewhere in
+  this doc; that pond is not the place it gets answered.
+
 Biomes are a **total function of (seed, x, y)** and are stored nowhere. The
 town's own region is always the ordinary meadow, whose every number is an
 identity, so ground people have already built on generates exactly what it always

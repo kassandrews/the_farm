@@ -1922,6 +1922,9 @@ export class Renderer {
         if (h > MOTE_MAX) continue;
         const kit = this.moteKit(world, tx, ty, decoHash(tx, ty, world.seed ^ 0x1c77));
         if (!kit || h > kit.density) continue;
+        // Read off the same darkness the lamps light by, so "after dark" means
+        // one thing in this game rather than two.
+        if (kit.night && this.darkness < 0.3) continue;
 
         // A THIRD HASH FOR WHERE AND WHEN, independent of the one that just
         // passed `< density`. Deriving them from `h` is the decor kit's bug over
@@ -1936,11 +1939,32 @@ export class Renderer {
         const py = this.sceneY(ty) - TILE / 2 + Math.floor(((g * 91) % 1) * TILE);
         const x = px + Math.sin(p * Math.PI * 2 + g * 6.3) * kit.sway;
         const y = py - p * kit.drift;
-        // Fade at both ends so the loop has no seam in it.
-        const fade = Math.min(1, Math.min(p, 1 - p) * 5);
+        // Fade at both ends so the loop has no seam in it — or, for a flasher,
+        // dark for most of the cycle and briefly not. A firefly that faded up
+        // and down smoothly reads as a small floating lamp.
+        const fade = kit.flash
+          ? Math.max(0, 1 - Math.abs(p - 0.5) * 4.5)
+          : Math.min(1, Math.min(p, 1 - p) * 5);
+        if (fade <= 0) continue;
         ctx.globalAlpha = 0.8 * fade;
         ctx.fillStyle = kit.color;
-        ctx.fillRect(Math.round(x), Math.round(y), size, size);
+        const rx = Math.round(x);
+        const ry = Math.round(y);
+        if (kit.shape === "spark") {
+          // A burst that OPENS AND CLOSES rather than a square that fades. Arms
+          // on the four axes only: a diagonal one would be a 1px stair and read
+          // as a smudge at this size.
+          const arm = Math.round(fade * 2);
+          ctx.fillRect(rx, ry, 1, 1);
+          if (arm) {
+            ctx.fillRect(rx - arm, ry, arm, 1);
+            ctx.fillRect(rx + 1, ry, arm, 1);
+            ctx.fillRect(rx, ry - arm, 1, arm);
+            ctx.fillRect(rx, ry + 1, 1, arm);
+          }
+        } else {
+          ctx.fillRect(rx, ry, size, size);
+        }
       }
     }
     ctx.globalAlpha = 1;
