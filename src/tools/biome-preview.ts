@@ -68,8 +68,14 @@ const CLOCKS: { id: string; label: string; at: string }[] = [
   { id: "summer", label: "Summer · noon", at: "2026-07-15T13:00:00" },
   { id: "autumn", label: "Autumn · noon", at: "2026-10-15T13:00:00" },
   { id: "winter", label: "Winter · noon", at: "2026-01-15T13:00:00" },
-  { id: "dusk", label: "Summer · dusk", at: "2026-07-15T20:30:00" },
+  { id: "dusk", label: "Summer · dusk", at: "2026-07-15T19:30:00" },
   { id: "night", label: "Summer · night", at: "2026-07-15T23:30:00" },
+  // DAWN EARNS ITS ROW. It is the phase nothing had a way to look at, and the
+  // firefly gate was wrong about it twice before anyone could: dawn sits between
+  // dusk and night on the darkness axis, so every threshold that admitted the
+  // evening admitted this too. A control that cannot show a phase is a control
+  // that cannot catch a bug in it.
+  { id: "dawn", label: "Summer · dawn", at: "2026-07-15T05:30:00" },
 ];
 
 const state = {

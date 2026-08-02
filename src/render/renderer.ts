@@ -1922,15 +1922,17 @@ export class Renderer {
         if (h > MOTE_MAX) continue;
         const kit = this.moteKit(world, tx, ty, decoHash(tx, ty, world.seed ^ 0x1c77));
         if (!kit || h > kit.density) continue;
-        // Read off the same darkness the lamps light by, so "after dark" means
-        // one thing in this game rather than two.
-        //
-        // THE THRESHOLD HAS TO CLEAR THE DUSK HOUR, and the first one didn't.
-        // `tintAt` gives day 0, dusk 0.18, night 0.5, dawn 0.34 — so a cut at 0.3
-        // lit the fireflies at night and at DAWN while leaving the hour between
-        // seven and eight, the one everybody means by "at dusk", completely dark.
-        // Fireflies come out as the light goes, not an hour after it has gone.
-        if (kit.night && this.darkness < 0.15) continue;
+        // THE PHASE, NOT THE BRIGHTNESS, and the two earlier versions of this
+        // line are the argument for it. `tintAt` gives day 0, dusk 0.18, night
+        // 0.5 and dawn 0.34: a cut at 0.3 lit the fireflies at night and at DAWN
+        // while leaving the dusk hour dark, and lowering it to 0.15 fixed the
+        // dusk hour and kept the dawn. There is no threshold that means
+        // "evening", because dawn sits BETWEEN dusk and night on this axis.
+        // Asking which phase it is says the thing directly.
+        if (kit.evening) {
+          const phase = skyPhaseAt(this.now);
+          if (phase !== "dusk" && phase !== "night") continue;
+        }
         // `palette.season` is null underground, which is correct without a
         // special case: a cave has no month, and a seasonal mote in one would be
         // weather where §Seasons says there is none.

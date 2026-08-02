@@ -3961,12 +3961,18 @@ at once can tell you, and an argument for 8l existing.
   one thing in this game rather than two: by day the twilight country has no air
   at all, which is most of why it is now worth walking into at an hour you would
   otherwise be indoors.
-- **The threshold has to clear the DUSK HOUR, and the first one didn't.** `tintAt`
-  gives day 0, dusk 0.18, night 0.5, dawn 0.34 — so a cut at 0.3 lit them at
-  night and at DAWN while leaving 19:00–20:00, the hour everybody means by "at
-  dusk", completely dark. Caught by being asked whether it was time-gated, which
-  is worth noting: the bug was in a number nobody had put beside the table it
-  reads from. 0.15 now.
+- **THE PHASE, NOT THE BRIGHTNESS — and it took two wrong numbers to see why.**
+  `tintAt` gives day 0, dusk 0.18, night 0.5, **dawn 0.34**. A cut at 0.3 lit the
+  fireflies at night and at dawn while leaving the dusk hour dark; dropping it to
+  0.15 fixed the dusk hour and kept the dawn. **There is no threshold that means
+  "evening", because dawn sits BETWEEN dusk and night on that axis.** The field is
+  `evening` now and asks `skyPhaseAt` directly, which says the thing rather than
+  approximating it. Both bugs were a number written nowhere near the table it
+  reads from.
+- **And the preview page had the same bug in its own clock**: its "dusk" row was
+  20:30, which is past `NIGHT_START` — so the control for looking at dusk had been
+  showing night the whole time. 19:30 now, and **dawn earned a row of its own**,
+  because a phase no control can show is a phase no bug can be caught in.
 
 **AND THE FAUNA RULE GOT WRITTEN DOWN, BECAUSE IT NEVER HAD BEEN.** "There are no
 animals in this game" was true and lived in a TEST COMMENT and nowhere else —

@@ -113,7 +113,7 @@ describe("motes", () => {
     // Named rather than allowed generally, so a second all-day flasher has to
     // come here and argue for itself.
     for (const [id, kit] of kits) {
-      if (kit.flash && !kit.night) expect(id, `${id} flashes by day`).toBe("dusk");
+      if (kit.flash && !kit.evening) expect(id, `${id} flashes by day`).toBe("dusk");
     }
   });
 
@@ -122,7 +122,7 @@ describe("motes", () => {
     // summer night, which is what keeps "most regions have no air" true in the
     // way that matters — most of the TIME, rather than most of the table.
     for (const [id, kit] of kits) {
-      if (kit.night) expect(kit.season ?? "summer", `${id}`).toBe("summer");
+      if (kit.evening) expect(kit.season ?? "summer", `${id}`).toBe("summer");
     }
   });
 

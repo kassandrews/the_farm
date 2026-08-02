@@ -189,12 +189,19 @@ export interface MoteKit {
    *  briefly not; a smooth fade reads as a floating lamp. */
   flash?: boolean;
 
-  /** Only when it is dark enough, read off the same darkness the lamps light by.
+  /** Only in the EVENING — the dusk hour and the night, and never the dawn.
+   *
+   *  A phase rather than a brightness, and that is the whole reason this field is
+   *  not called `night`. Darkness cannot express "evening": `tintAt` gives dusk
+   *  0.18, night 0.5 and dawn 0.34, so every threshold that admits the dusk hour
+   *  admits the dawn one too, and the first two versions of this were a number
+   *  fighting a table it was written nowhere near. Fireflies are a thing that
+   *  happens as the light goes, not as it comes back.
    *
    *  The DUSK region deliberately omits this. Its whole premise is that its light
    *  is wrong at noon, so fireflies over it at midday are the point rather than a
    *  mistake — everywhere else they are an evening. */
-  night?: boolean;
+  evening?: boolean;
 
   /** Only in this season.
    *
@@ -290,7 +297,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       period: 6,
       size: 2,
       flash: true,
-      night: true,
+      evening: true,
       season: "summer",
     },
   },
@@ -325,7 +332,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       period: 7,
       size: 2,
       flash: true,
-      night: true,
+      evening: true,
       season: "summer",
     },
     // Needle litter and the odd fern, which is what a conifer floor actually
