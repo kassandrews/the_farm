@@ -4435,9 +4435,15 @@ birches get wood anemone (*Anemone nemorosa* carpets broadleaf woods and is gone
 before the canopy closes), the pines get lupine (*Lupinus perennis* wants acid,
 sandy, half-shaded ground), the scrub gets thistle (dry, stony, overgrazed
 openings), the fen gets marsh marigold (it wants its feet in water, which no other
-row can offer). The blossom rows keep fallen petals, with **no stems** — the `x`
-ink is foliage and a petal on the grass has no stalk — which closes a loop that
-row had open since it was written.
+row can offer). The blossom rows were given fallen petals and then **had them taken
+away again**, which is worth recording: it closed a tidy loop — that row has had
+petals falling through the AIR since it was written, with nothing on the ground
+for them to land on — and on screen the loop was the problem. Pink in the crowns,
+pink in the air and pink on the floor is one colour doing three jobs, and the
+falling petals stopped reading as MOTION because they no longer crossed anything
+that was not already their own colour. **The bare ground is what the blossom is
+seen against.** (Those trees also flower all year, so a spring-only carpet under a
+permanently blooming orchard was never a season anybody could read.)
 
 **A third ink: `DecorKit.core`, drawn for `*` in a mark.** With two inks a bloom
 is a coloured blob on a stalk; the centre is what says the petals are arranged

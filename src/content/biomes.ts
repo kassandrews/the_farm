@@ -1176,21 +1176,17 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // fourteen rows the same 16px of width came out as a tall pink box with a
     // slot cut in it. Wide is a ratio, not a number.
     crownRows: [4, 7, 8, 8, 8, 8, 8, 8, 8, 7, 6],
-    // FALLEN PETALS, which closes a loop this row has had open since it was
-    // written: it has petals falling through the AIR and, until now, nothing on
-    // the ground for them to have landed on. No stems — the `x` ink is foliage,
-    // and a petal on the grass has no stalk. Densest of the four blooms, because
-    // an orchard in flower is the one place a carpet is the right answer.
-    bloom: {
-      season: "spring",
-      density: 0.14,
-      accent: "#f0c4d6",
-      marks: [
-        ["oo", "o."],
-        [".o", "oo"],
-        ["o."],
-      ],
-    },
+    // NO GROUND BLOOM, and this is the one region that was offered one and gives
+    // it back. Fallen petals closed a tidy loop — the row has had petals falling
+    // through the AIR since it was written, with nothing on the ground for them
+    // to land on — and on screen the loop was the problem. Pink in the crowns,
+    // pink in the air and pink on the floor is one colour doing three jobs, and
+    // the falling petals stopped reading as MOTION because they no longer crossed
+    // anything that was not already their own colour.
+    //
+    // The bare ground is what the blossom is seen against. Note also that these
+    // trees flower all year (see the motes below), so a spring-only carpet under
+    // a permanently blooming orchard was never a season anybody could have read.
     crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
     crownOverlap: 3,
     // Falling petals, and they fall all year because these trees are stubbornly
