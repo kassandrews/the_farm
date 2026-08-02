@@ -375,12 +375,23 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     rocks: 0.4,
     mushrooms: 0.06,
     water: 0,
-    ground: { color: "#a8c479", amount: 0.25 },
-    tuft: { color: "#b9d18a", amount: 0.3 },
+    // AIRY IS THE GROUND'S JOB, NOT THE CROWN'S — measured, after trying it the
+    // other way. Lifting the crown to meet the meadow's green did make the
+    // region brighter, and it cost the trees their silhouette: crown (129,168,98)
+    // against ground (138,177,94) is a wood you cannot see the trees in. So the
+    // pale goes underneath, hard enough to actually arrive (0.25 of a target
+    // this close to the base moved the ground by four points out of 255), and
+    // the crowns stay a clear step below it.
+    ground: { color: "#b4cd82", amount: 0.55 },
+    tuft: { color: "#c3d894", amount: 0.5 },
     // Gentle, so autumn lands here properly — birches turn, and turning is the
     // best thing they do.
-    crown: { color: "#cfe08a", amount: 0.3 },
-    trunk: { color: "#e6e2d8", amount: 0.85 }, // the whole point of a birch
+    crown: { color: "#cfe08a", amount: 0.35 },
+    // The whole point of a birch — and it took two goes. At 0.85 of #e6e2d8 the
+    // pull lands halfway out of the base brown and the trunk renders GREY: a
+    // concrete bollard with a crown on it, obvious at swatch size and invisible
+    // in the numbers. Bark is nearly white or it is not bark.
+    trunk: { color: "#f4f1e6", amount: 0.94 },
     // Small and high. A short crown on the same 10px trunk leaves more pale bark
     // showing, which is what makes a birch read as slender — the shape does the
     // work the trunk tint can only half do.
@@ -428,8 +439,15 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     rocks: 5,
     mushrooms: 0,
     water: 0,
-    ground: { color: "#c2bd86", amount: 0.5 }, // bleached
-    tuft: { color: "#b3ad76", amount: 0.5 },
+    // BLEACHED HAS TO OUT-DRY THE BIRCHES, which is a comparison this row could
+    // not make until the birch ground was lifted: at 0.5 of #c2bd86 the scrub
+    // measured (154,175,103) against the birches' (149,183,103) — the same wash,
+    // eight points of green apart, on the two regions that are meant to be the
+    // driest and the freshest thing in the game. The extra pull is all hue: the
+    // green leaves and the yellow stays, so this reads parched next to a wood
+    // rather than merely lighter than one.
+    ground: { color: "#cbc47e", amount: 0.66 },
+    tuft: { color: "#bcb26c", amount: 0.6 },
     crown: { color: "#8a9152", amount: 0.35 },
     trunk: { color: "#7a6248", amount: 0.3 },
     // Squat and wind-flattened: wide, low, and wider at the shoulders than at the
