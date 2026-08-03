@@ -5644,9 +5644,75 @@ Found on screen, which is the only place it was visible: at the full inter-day
 gap the first date read as a **subtitle of the panel's own title** rather than as
 the first date. It gets less air than the days get from each other.
 
+### 10i — Found is written down, given is announced — **built**
+
+Unlocks have a channel now, and which one you get is decided by **who caused it**,
+not by what it is.
+
+**Found → the Notebook, silently.** Walnut and slate write a thought into the
+journal. This needed no new machinery at all, and that is the part worth keeping:
+`NOTICED_WHEN` predicates read standing world state, and `world.skins.unlocked`
+IS standing state — so `(w) => w.skins.unlocked.includes("walnut")` is a legal
+trigger row. Two content rows and two predicates. Nothing in `gather.ts` or
+`mining.ts` learned that the Notebook exists, and no event or hook was invented.
+The entry lands within half a second of the toast that refuses to name the
+unlock: the toast is the moment, the book is the record, and neither says
+"unlocked".
+
+Most of this item turned out to be **already built**. Found places, the far
+country and the sky stair have had rows since 9c; `sweepNoticed` has been running
+every 500ms all along. Only the two finishes were missing.
+
+**The trap in the second row, and it is a content trap.** `deep-rock` fires at
+exactly `SLATE_DEPTH` — the depth slate unlocks at — and its line is already
+"the rock changes character. It splits flat here". A slate entry about flat rock
+would be the same note printed twice, adjacent, under one date heading. So the
+new rows are about **having a piece**, not about noticing the seam, which is a
+different day and a different thought. There is a test pinning that the two lines
+stay apart. Check the same thing before adding a third.
+
+**Given → a real card.** A person handing you something across a counter is not a
+secret being spoiled, and treating it as one produced the opposite bug: Gary
+discharges Form 9 and the game whispers. `handed()` is one shared card, used by
+the hall and the stall.
+
+Three things it fixed or found:
+
+1. **`.unlock` and `.quote` were being written into the DOM with no CSS rule
+   matching them.** The one unlock in the game that names itself rendered at
+   exactly the weight of the paperwork above it, and had since it shipped. Worth
+   remembering as a class of bug: a class name in a template is not a style, and
+   nothing fails when the rule is missing.
+2. **The seed variety was arriving in `flash()`** — one slot, 1.8 seconds, shared
+   with "no room in your satchel" and "that bed won't take". A permanent unlock
+   in the same channel as a refusal, deleting itself afterwards.
+3. **Found on screen, and only on screen: the card rode above the offers first.**
+   The stall is eight varieties of five prices each, so buying one leaves you
+   looking at the BOTTOM of two thousand pixels of buttons with the announcement
+   off the top. A card you have to scroll back to find is worse than the toast it
+   replaced, which at least appeared where you were already looking. It swaps the
+   view in place now, on the hall's and the museum's model — never a second modal
+   on top.
+
+**Not verified on screen: the hall's discharge card.** Reaching it for real means
+a built house, a stamped Form 9 and an assigned bed, which is a driving sequence
+nobody has scripted. An attempt to check the CSS by injecting the panel's markup
+was inconclusive and is not evidence — suspect the harness first, and that was
+the harness. `handed()` itself is verified in the stall, and `.quote` is verified
+inside a card; the untested thing is the two of them stacked. Worth a real
+`scripts/` driver, since the same sequence would also unblock anything about
+commissions.
+
 ### What is left of Phase 10, with the calls already made
 
-1. **Unlocks get a channel, and it is the Notebook.** The no-toast rule stands
+1. ~~**Unlocks get a channel, and it is the Notebook.**~~ **Built — see §10i,**
+   where most of it turned out to be built already and the real work was the
+   given half. Filing batches deliberately kept the hall notice they had: a card
+   for them would need the watch pattern plus the first thing in the save that
+   exists only to remember what the UI has already said. The original text
+   follows, because the rule it states still governs.
+
+   The no-toast rule stands
    for everything found — walnut, slate, the sky stair, the Mole, found places.
    What changes is that finding something now writes a THOUGHT into the journal
    ("saw a birch forest today, that gives me ideas...") and the finish quietly

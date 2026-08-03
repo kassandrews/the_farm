@@ -49,6 +49,9 @@ export type ObservationId =
   | "the-hum"
   | "a-busy-sky"
   | "the-cold-came"
+  // --- Noticed: what you carried back ------------------------------------------
+  | "the-dark-grain"
+  | "the-flat-sheet"
   // --- Noticed: the town ------------------------------------------------------
   | "the-datum"
   | "the-museum-is-large"
@@ -159,6 +162,34 @@ export const OBSERVATIONS: ObservationDef[] = [
     id: "the-cold-came",
     source: "noticed",
     line: "The colour went out of the field some time this week and I did not see it go. The trees have given up entirely. Nothing has died; it has all just stopped, and intends to start again.",
+  },
+
+  // --- Noticed: what you carried back ------------------------------------------
+  //
+  // THE CHANNEL FOR A FOUND UNLOCK (ROADMAP §10, item 1). Walnut and slate are
+  // not given to you by anybody — one is felled in the Ghost's grove and one is
+  // twelve tiles of tunnel down — and the rule for those has been settled since
+  // they shipped: no toast may say "you have unlocked" a secret. So the book is
+  // where it goes. You find out that you can build in it by reading a thought
+  // you had about the material, and by the picker quietly having a new colour
+  // in it. Neither of those is an announcement.
+  //
+  // BOTH LINES ARE ABOUT HAVING SOME, NOT ABOUT NOTICING IT. That is the whole
+  // reason they can coexist with what is already here: `deep-rock` fires at the
+  // exact depth slate unlocks at and its line is already "the rock splits flat
+  // here", so a second entry about flat rock would be the same note twice,
+  // landing under the same date heading, one after the other. This one is about
+  // carrying a piece of it home, which is a different day and a different
+  // thought. Check that distinction holds before adding a third.
+  {
+    id: "the-dark-grain",
+    source: "noticed",
+    line: "Kept a length of the black-grained wood. Planed flat it is very nearly the colour of a shadow. A whole wall of it would be far too much. I would like to see a whole wall of it.",
+  },
+  {
+    id: "the-flat-sheet",
+    source: "noticed",
+    line: "Carried a sheet of the flat rock up with me. It is the first thing I have taken out of the ground that was already the shape it wanted to be.",
   },
 
   // --- Noticed: the town ------------------------------------------------------

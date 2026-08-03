@@ -690,6 +690,60 @@ select {
   font-size: 15px;
 }
 
+/* Somebody's own words, quoted inside a panel that is not a conversation — the
+   resident's line as the hall discharges Form 9, the stall-holder's as he hands
+   something over. Both classes this replaces (`.quote`, `.unlock`) were being
+   written into the DOM with NO RULE MATCHING THEM, so a line in somebody's voice
+   rendered at exactly the weight of the form above it.
+
+   Indented behind a rule rather than italicised: the body font is a pixel-grid
+   monospace and its italic is a slant applied to art that was drawn on the grid,
+   which is the same resampling the sprite rule bans one layer up. */
+.panel .quote {
+  border-left: 2px solid var(--panel-edge);
+  padding-left: 10px;
+  margin: 10px 0;
+  opacity: 0.85;
+}
+
+/* The announcement card — the town handing you something (`handed()`).
+
+   It has to outweigh a paragraph, because that is the entire point: the thing it
+   replaced was a sentence in the body text, or a 1.8s toast in the same slot as
+   a refusal. And it must NOT read as a button, which the first version did —
+   accent fill, centred, rounded — because a card announcing a permanent unlock
+   that looks pressable is a control the player will hunt for and never find.
+
+   So: the accent goes on a RULE down the left and on the name, and the card's
+   own fill is a wash of the panel's paper. Left-aligned, square corners; the
+   panel's radius belongs to the panel. */
+.panel .handed {
+  border-left: 3px solid var(--accent);
+  background: rgba(201, 138, 58, 0.08);
+  padding: 10px 12px;
+  margin: 14px 0;
+}
+
+.panel .handed-what {
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--accent-ink);
+}
+
+.panel .handed-note {
+  font-size: 13px;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+/* The giver's line, inside the card. The card already has a left rule, and a
+   second one 12px inside it would be two nested brackets around one sentence. */
+.panel .handed .quote {
+  border-left: none;
+  padding-left: 0;
+  margin: 8px 0 0;
+}
+
 /* A date rule in the Notebook — "Today", "Tuesday", "Last winter".
 
    It is a DATE, not a category, and it has to read that way or the panel starts

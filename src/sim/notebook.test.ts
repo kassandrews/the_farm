@@ -181,6 +181,33 @@ describe("noticing", () => {
     sweepNoticed(w, NOW);
     expect(noticed(w, "deep-rock")).toBe(false);
   });
+
+  it("writes down a finish you found, and none you were never given", () => {
+    // The channel for a found unlock: no toast may say "you have unlocked" a
+    // secret, so the book is where it goes. `skins.unlocked` is standing state,
+    // which is why the sweep can read it with no event and no hook.
+    const w = world();
+    sweepNoticed(w, NOW);
+    expect(noticed(w, "the-dark-grain")).toBe(false);
+    expect(noticed(w, "the-flat-sheet")).toBe(false);
+
+    w.skins.unlocked.push("walnut");
+    sweepNoticed(w, NOW);
+    expect(noticed(w, "the-dark-grain")).toBe(true);
+    expect(noticed(w, "the-flat-sheet")).toBe(false);
+  });
+
+  it("does not say the same thing about flat rock twice", () => {
+    // `deep-rock` fires at the exact depth slate unlocks at, and its line is
+    // already "the rock splits flat here". The carried-back row earns its place
+    // only by being about a different thing — having a piece — so if somebody
+    // rewords either one into the other's territory, these two entries become
+    // the same note printed twice, adjacent, under one date.
+    const a = observationLine(OBSERVATIONS.find((o) => o.id === "deep-rock")!);
+    const b = observationLine(OBSERVATIONS.find((o) => o.id === "the-flat-sheet")!);
+    expect(a).not.toBe(b);
+    expect(b).not.toContain("splits");
+  });
 });
 
 describe("being told", () => {

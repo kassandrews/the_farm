@@ -367,6 +367,15 @@ export const NOTICED_WHEN: Partial<Record<ObservationId, Trigger>> = {
     seasonAt(now).id === "winter" &&
     roofRoomAt(w, Math.round(w.player.x), Math.round(w.player.y)) === null,
 
+  // The two finishes you are never handed. `skins.unlocked` is standing state,
+  // so the sweep can read it exactly like a biome — no event, no hook, and
+  // nothing in `gather.ts` or `mining.ts` needing to know the Notebook exists.
+  // The entry lands within half a second of the toast that does NOT name the
+  // unlock, which is the division of labour: the toast is the moment, the book
+  // is the record, and neither says "unlocked".
+  "the-dark-grain": (w) => w.skins.unlocked.includes("walnut"),
+  "the-flat-sheet": (w) => w.skins.unlocked.includes("slate"),
+
   "the-datum": (w) => w.player.layer === "surface" && inRect(at(w), PLAZA),
 
   "the-museum-is-large": (w) => {

@@ -949,8 +949,34 @@ export class App {
 
     this.openModal((close) => {
       const body = el("div", {});
+      // The variety he has just handed over, if any. Session-only and outside
+      // the save on purpose — it is a fact about this visit to the counter, not
+      // about the world, and the world already records that you have it.
+      let justGiven: { name: string; line: string } | null = null;
       const render = () => {
         body.replaceChildren();
+
+        // THE CARD REPLACES THE COUNTER, on the hall's and the museum's exact
+        // model — views swapped in place, never a second modal on top.
+        //
+        // It rode above the offers first, and the screenshot killed that: this
+        // panel is eight varieties of five prices each, so buying one leaves you
+        // looking at the BOTTOM of two thousand pixels of buttons with the
+        // announcement somewhere off the top. A card you have to scroll back to
+        // find is worse than the toast it replaced, which at least appeared
+        // where you were already looking.
+        if (justGiven) {
+          body.append(handed(justGiven.name, "Yours to plant, from now on.", justGiven.line));
+          body.append(
+            actionRow([
+              choiceBtn("Back to the stall", () => {
+                justGiven = null;
+                render();
+              }),
+            ]),
+          );
+          return;
+        }
 
         for (const { row, affordable } of seedOffers(world)) {
           body.append(el("div", { class: "who" }, [`${itemLabel("seed", row.givesCount)}, for any of:`]));
@@ -987,7 +1013,7 @@ export class App {
               if (!unlockVariety(world, row, price)) return;
               audio.play("place");
               this.persist();
-              this.flash(row.line);
+              justGiven = { name, line: row.line };
               render();
             });
             if (!affordable.includes(price)) {
@@ -1636,8 +1662,12 @@ export class App {
         panel(CAST.office.name, "Town hall", [
           el("p", {}, [`Form 9, discharged. ... ${who} lives at an address now.`]),
           el("p", { class: "quote" }, [`"${theirLine}"`]),
+          // The one unlock in the game that is allowed to name itself, because
+          // the town gave it to you across a counter. It said so before this
+          // too — in a bare `<p class="unlock">` that had NO CSS RULE, so the
+          // sentence rendered at exactly the weight of the paperwork above it.
           ...(unlocked
-            ? [el("p", { class: "unlock" }, [`${skinDef(unlocked).name} is available to build in.`])]
+            ? [handed(skinDef(unlocked).name, "Available to build in, from now on.")]
             : []),
           actionRow([primaryBtn("...", close)]),
         ]),
@@ -3066,6 +3096,36 @@ function counterFace(id: keyof typeof CAST): HTMLElement {
   const face = portrait(who.form, lookFor(id, who.form));
   face.classList.add("counter");
   return face;
+}
+/** The announcement card — the town HANDING you something.
+ *
+ *  THE HALF OF THE UNLOCK RULE THAT IS ALLOWED TO SPEAK (ROADMAP §10, item 1).
+ *  Everything you FIND stays silent and goes in the Notebook: no toast may name
+ *  walnut or slate, because a secret announced is a secret spoiled. But a person
+ *  handing you something across a counter is not a secret, and pretending it is
+ *  produces the opposite bug — Gary discharges Form 9 and the game whispers.
+ *  So the two channels are told apart by WHO CAUSED IT, not by what it is.
+ *
+ *  It is a card and not a toast because the toast is the wrong weight: `flash()`
+ *  is one slot for 1.8 seconds, shared with "no room in your satchel" and "that
+ *  bed won't take". A permanent unlock arriving in the same channel as a refusal,
+ *  and then deleting itself, was the actual defect here.
+ *
+ *  It is a card and not a modal because both callers ALREADY have a panel open —
+ *  the hall's discharge and the stall's counter — and stacking a second one on
+ *  top is refused everywhere else in this file for the same reason (see
+ *  `openMuseum`). It appears inside the panel you were already reading.
+ *
+ *  `said` is the giver's own line, when they have one. It goes UNDER the plain
+ *  statement, not over it: what you now have is the news, and their remark about
+ *  it is the flavour. The hall passes nothing, because the resident's line is
+ *  already quoted directly above and two quotes would be a conversation. */
+function handed(what: string, note: string, said?: string): HTMLElement {
+  return el("div", { class: "handed" }, [
+    el("div", { class: "handed-what" }, [what]),
+    el("div", { class: "handed-note" }, [note]),
+    ...(said ? [el("p", { class: "quote" }, [`"${said}"`])] : []),
+  ]);
 }
 function actionRow(buttons: HTMLElement[]): HTMLElement {
   return el("div", { class: "row" }, buttons);
