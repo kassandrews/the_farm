@@ -231,7 +231,7 @@ Recorded in full in DESIGN.md §Materials. The short version and *why*:
   rocks are 3% of tiles, so a hundred tiles square holds ~300 of them and ~3,600
   stone in a world with no edge. What the exemption actually bought was an
   inconsistency: the axe could make a lasting clearing and the pick could not.
-  **And the clocks all slowed down.** Shrub 3h, tree 8h→**24h**, deadwood
+  **And the clocks all slowed down.** Shrub 3h→**12h**, tree 8h→**24h**, deadwood
   24h→**48h**, rock 10h→**72h**. Eight hours had a tree closing the edge of a
   clearing while you were still standing in it, which is the world undoing your
   afternoon in front of you — the same thing `RECLAIM_MS` was tuned to avoid. That

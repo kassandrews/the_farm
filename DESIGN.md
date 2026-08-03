@@ -989,7 +989,7 @@ Materials are required but never rationed:
   also shaping. The world still tidies up after you either way — ground that
   forfeits its node grasses over like any other bare earth, so the axe never
   leaves permanent brown squares.
-- **Nothing out there hurries.** A shrub is hours, a tree is a day, deadwood
+- **Nothing out there hurries.** A shrub is half a day, a tree a day, deadwood
   two, a rock three. The pace is deliberate: at eight hours a tree closed
   the edge of a clearing while you were still standing in it deciding what
   to build, which is the world undoing your afternoon in front of you. You

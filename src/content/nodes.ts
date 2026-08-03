@@ -131,8 +131,9 @@ export const NODES: Record<NodeId, NodeDef> = {
   // glimmer's own mushroom note). Four shrubs to a tree, and you have to fell
   // four things instead of one.
   //
-  // It comes back FAST — a shrub is a season's growth, not a decade's — which
-  // also keeps a wood you walked through from staying visibly mown.
+  // It comes back FASTEST of anything here — a shrub is a season's growth, not a
+  // decade's — which also keeps a wood you walked through from staying visibly
+  // mown.
   shrub: {
     id: "shrub",
     name: "Shrub",
@@ -142,9 +143,13 @@ export const NODES: Record<NodeId, NodeDef> = {
     drop: "wood",
     line: "Cut back.",
     yield: 2,
-    // Still hours where a tree is a day, and the gap is the point: undergrowth
-    // IS fast, and a wood you walked through should not stay visibly mown.
-    regrowMs: 3 * HOUR,
+    // HALF A DAY, and it was three hours. Three was left behind when everything
+    // else slowed down, and it made the shrub the odd one out twice over: it was
+    // the only node that could come back inside a sitting — the thing the whole
+    // retune was to stop — and at an eighth of a tree's clock the gap had stopped
+    // reading as "undergrowth is quicker" and started reading as a different kind
+    // of object. Half a tree is a gap you can feel without it being a category.
+    regrowMs: 12 * HOUR,
     seedRadius: 2, // same as the tree: undergrowth spreads from undergrowth
     density: 0.1,
   },
