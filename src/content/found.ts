@@ -34,7 +34,7 @@
 // logic is normal. Nobody explains them. Nothing comments on them. You walk into a
 // perfectly circular grove, stand in it, and leave.
 
-export type FoundKind = "ringgrove" | "poledpond" | "mailbox" | "stair" | "skystair";
+export type FoundKind = "ringgrove" | "fairyring" | "poledpond" | "mailbox" | "stair" | "skystair";
 
 export interface FoundDef {
   id: FoundKind;
@@ -78,6 +78,34 @@ export const FOUND: Record<FoundKind, FoundDef> = {
     // without turning, which is what makes it read as a place rather than as a
     // shape. At radius 4 it was a bush with a hole in it.
     radius: 7,
+  },
+
+  /** A ring of mushrooms, closed all the way round. The ringgrove's annulus with
+   *  `MUSHROOM` for `TREE` (Phase 11), and it inherits the same joke on smaller
+   *  legs: the mushrooms are the ordinary gatherable kind, wearing whatever cap
+   *  the region wears, arranged with a precision nothing else out here has.
+   *
+   *  A real thing, for once — a fairy ring is one fungus spreading outward
+   *  underground, fruiting at its own rim — which is why this one gets to be
+   *  PERFECT where the poles are deliberately uneven: nobody measured this. It
+   *  measured itself.
+   *
+   *  Picking a hole in the circle is yours to do and yours to keep: a gathered
+   *  mushroom is a stored edit, exactly like a chopped ringgrove tree. The game
+   *  does not regrow it and does not comment. */
+  fairyring: {
+    id: "fairyring",
+    note: "a circle of mushrooms, nobody's doing",
+    // Outside 96 (the grove is 44, the cube 58, the blossom rows 72, the first
+    // ringgrove 96), on its own spacing sharing no number with any other row.
+    ring: 109,
+    spacing: 239,
+    // Smaller than the ringgrove, because the thing itself is: a fairy ring is
+    // a circle you stand IN and look down at, not a room you stand in and turn
+    // around. The ringgrove's 7 is sized so you cannot see the whole ring
+    // without turning; this one is sized so you can, because seeing the whole
+    // circle at once is what makes a circle of small things read as deliberate.
+    radius: 4,
   },
 
   /** A pond with a dozen rods already stuck in the bank and nobody holding them.

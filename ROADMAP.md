@@ -5859,7 +5859,9 @@ is. Combining-elements crafting is already on the not-taken list twice.
 
 ---
 
-## Phase 11 — The terrain pass — **planned, nothing built**
+## Phase 11 — The terrain pass — **mostly built**: the freeze, the plaza, the
+## kits and all of tranche 2 are in; tranche 1's flower kinds and the mushroom
+## variation remain open
 
 The plan Phase 10 item 4 said this owed before code. Read it before touching
 `generatedTile`, `biomeAt`, or anything under `sim/world.ts`'s water section.
@@ -6102,9 +6104,10 @@ members today and only the fen uses `bell`.
 
 ### Tranche 2 — the ones that move ground, and what each owes
 
-None of these may land before the freeze is live.
+None of these may land before the freeze is live. **All three are built** — the
+records follow the original items below.
 
-4. **Water routed clear of town buildings.** This is the only DEFECT on the list;
+4. ~~**Water routed clear of town buildings.**~~ This is the only DEFECT on the list;
    the rest are additions. `TOWN_DRY = 46` already keeps the sea and lakes off
    town, and rivers are *deliberately* allowed through — a river is a good thing
    for a town to have, and generated bridges exist for it. The actual bug is that
@@ -6113,12 +6116,12 @@ None of these may land before the freeze is live.
    two houses. So the fix is a clearance term on channels near town footprints,
    not a ban on rivers. Owes: the 1,000-seed treatment, and it must not break the
    existing guarantee that riverside towns get a river and a bridge.
-5. **A fairy ring, as a found place.** Structurally the cheapest new kind there
+5. ~~**A fairy ring, as a found place.**~~ Structurally the cheapest new kind there
    is: the same annulus test `ringgrove` already uses, with `MUSHROOM` instead of
    `TREE`. No new tile id, no water, so it inherits siting, memoisation and town
    clearance for free. Must sit outside ring 96 to clear the grove, the cube and
    the blossom rows. Owes a Notebook entry, because every other kind has one.
-6. **Islands.** The genuinely hard one, and the only item here that is a new
+6. ~~**Islands.**~~ The genuinely hard one, and the only item here that is a new
    field rather than a term on an existing one. Depth is monotone-decreasing from
    a centre, so an island is a positive term subtracted inside a body. It must be
    a total function of `(seed, x, y)`; it must not produce single-cell islands
@@ -6127,6 +6130,64 @@ None of these may land before the freeze is live.
    nobody can reach, because nothing in this game crosses deep water. Consider
    whether an unreachable island is a feature — you can fill water forever, so it
    is reachable by work — or a bug.
+
+**The tranche 2 record.** One idea ended up carrying all three items: **a cap on
+a depth field** — `min(field, limit)` — which can only ever LOWER water, never
+conjure it (`min(x, −∞) = −∞`), and whose bands stay the same few tiles wide
+whatever the field underneath is doing.
+
+- **Item 4 (`townChannelCap`): a cap, not a subtraction, and the riverside
+  anchor is why.** The anchor sits three tiles from Prudence's west wall, so a
+  clearance term SUBTRACTED from channel depth would have dried the town's own
+  promised river exactly at the town on pinched seeds. Capped, water near a wall
+  gets shallower, never absent: no standing water within two tiles of any
+  authored building, sand allowed (the floor of −1.5 sits just above the
+  river's beach at −2, so a wall the river used to lap gets a BANK, not a
+  deletion — while streams, beach 0, go honestly dry). Sea and lake are not
+  capped: `TOWN_DRY` already answers for them, and a second opinion about the
+  same fact is where drift lives. Two new tests: the 1,000-seed ring sweep
+  (Euclidean, because the cap measures Euclidean — the diagonal cell off a
+  corner is 2.83 out and may legitimately hold shallow water), and a wet-river
+  assertion, because `waterKindAt` counts the beach as river, so the old
+  promise test literally cannot see the difference between a river and a
+  promise kept in sand.
+- **Item 5 (fairy ring): the ringgrove's annulus in `MUSHROOM`,** ring 109,
+  spacing 239, radius 4 — sized so you can see the whole circle at once, which
+  is what makes a circle of small things read as deliberate. The rim is 1.0
+  against the grove's 1.2 because a mushroom is a point where a tree is a mass.
+  CLOSED all the way round, where the poles are deliberately jittered: the
+  poles are a committee, this is one organism fruiting at its own edge — which
+  is also the Notebook entry, a real nature fact in the house deadpan
+  ("...the circle is the shape of it getting wider. It started before the town
+  did."). Picking a hole in it is a stored edit, yours to keep, exactly like
+  chopping a ringgrove tree. The existing 1,000-seed found-place sweeps picked
+  the new kind up without a line changing.
+- **Item 6 (islands, `isleCap`): the cap trick is load-bearing here, not
+  convenient.** The roadmap sketch said "a positive term subtracted inside a
+  body", and that version aliases: the sea's raw depth runs to sixty tiles in a
+  big interior, so a dome subtracted from it compresses the island's shore
+  bands (sand is a 3-tile window) to a fraction of a tile — the per-cell edges
+  failure this very section predicted. Capping (`min(raw, RIM − h·slope)`)
+  gives every island the same few-tile halo/sand/top profile over any abyss.
+  Decisions taken and settled: **unreachable by default** (no generated shallow
+  bar — you may fill water forever, so an island is reachable by WORK, which is
+  the no-caps spirit), and **seas only** (lakes stay mirrors). The invariant
+  that matters most is invisible: **siting reads the sea RAW** — the cap is
+  applied in `waterAt` alone, so an island's dry top still counts as sea to
+  `onLand` and no landmark can ever be sited on ground nobody can reach. The
+  gate (an island exists only where the raw sea holds its footprint plus a
+  six-tile moat) is evaluated once per candidate at its centre, memoised, in
+  the `siteMemo` style. Minimum radius 7 is derived, not tasted: dry ground
+  starts (RIM + beach) / slope = 4 tiles inside the edge, so anything smaller
+  is a shoal that never surfaces — legal, but the no-single-cell guarantee is
+  about the dry top, and the test asserts every dry island cell has a dry
+  orthogonal neighbour.
+
+  **The find of the pass:** the first draft of the island test asserted dry
+  tops are dry and failed on seed 2 at (56,149) — a POND, on an island, in a
+  fen. Other water on an island is legal and good (the island inherits its
+  region, and the region was wet); the sea is the only kind the cap answers
+  for, and the test now says exactly that.
 
 ### What the whole pass owes, procedurally
 

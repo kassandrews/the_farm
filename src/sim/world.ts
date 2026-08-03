@@ -57,6 +57,7 @@ import { structureDef } from "../content/structures";
 import { defaultSkin } from "../content/skins";
 import type { SkinId } from "../content/skins";
 import { furnitureDef, covers, MAX_SPAN } from "../content/furniture";
+import { allTownBuildings } from "../content/town";
 import type { WorldState, HomesteadSpot, Layer } from "./types";
 import { hash2 } from "./rng";
 
@@ -1690,6 +1691,122 @@ function townSeaDepth(seed: number, spot: HomesteadSpot, x: number, y: number): 
   );
 }
 
+// --- Islands (Phase 11) --------------------------------------------------------
+// Land inside the sea — the one item on the terrain pass that is a new field
+// rather than a term on an existing one, and the decisions that shaped it:
+//
+// AN ISLAND IS A CAP, NOT A SUBTRACTION — the town's dry banks' trick
+// (`townChannelCap`), reused one field over, and here it is load-bearing rather
+// than convenient. The sea's raw depth in a big body's interior runs to sixty
+// tiles; a dome SUBTRACTED from that has to climb sixty deep before it can
+// surface, so its shore bands (sand is a 3-tile window on the depth) compress to
+// a fraction of a tile and alias into checkerboard — the per-cell edges rule
+// arriving by the door the roadmap predicted. Capping instead (`min(raw, RIM −
+// h·SLOPE)`) means the island's profile is ITS OWN, whatever the abyss under it:
+// the halo, the sand ring and the dry top are always the same few tiles wide.
+//
+// UNREACHABLE BY DEFAULT, AND ON PURPOSE (the decided question). Nothing in this
+// game crosses deep water, and no shallow bar is generated to any island: an
+// island is a thing you see across the water, and reaching one is a PROJECT —
+// you may fill water forever, so it is reachable by work, which keeps the
+// no-caps spirit. The world never hands it to you and never forbids it.
+//
+// SEAS ONLY (the other half of the decision). Lakes stay clean mirrors, rivers
+// stay channels; the island reads as a sea's own kind of thing.
+//
+// SITING USES THE RAW FIELD, and this is the subtle invariant: `bigWaterDepth`
+// and every landmark gate keep reading the sea WITHOUT the cap, so an island's
+// dry top still counts as sea to `onLand` — otherwise a ringgrove could be
+// sited on ground nobody can reach, which breaks the found places' whole
+// premise. The cap is applied in exactly one place, `waterAt`, the single door
+// every tile goes through.
+
+const ISLE_CELL = 96;
+/** The minimum is set by the profile, not by taste: dry ground begins where the
+ *  dome passes (RIM + beach) / SLOPE = 4 tiles inside the edge, so a radius
+ *  under ~6 is a shoal that never surfaces — and a shoal is fine, but the
+ *  guarantee "no single-cell islands" is about the DRY top. At 7, the worst
+ *  wobble still leaves a top two-plus tiles across. */
+const ISLE_MIN_RADIUS = 7;
+const ISLE_MAX_RADIUS = 16;
+const ISLE_CHANCE = 0.45;
+/** The sea's depth at the island's own edge — under the shelf (5), so every
+ *  island wears a shallow halo before its sand. */
+const ISLE_RIM = 3;
+/** Tiles of depth lost per tile climbed. The band widths are this number's
+ *  reciprocal times the thresholds, all comfortably over a tile. */
+const ISLE_SLOPE = 1.5;
+/** Water the gate demands past the island's worst-case reach, so an island
+ *  never merges with a coastline into a peninsula-shaped smear — the lake's
+ *  `LAKE_SEA_MARGIN` argument, pointed the other way. */
+const ISLE_MOAT = 6;
+/** An island's own wobble fraction. Bigger than the sea's 0.1: a small shape
+ *  needs proportionally more irregularity before it stops reading as a coin. */
+const ISLE_WOBBLE = 0.18;
+
+/** Per-island salt, so no two islands share a lobe pattern. Mixed from the
+ *  lattice cell the way the channel families mix theirs. */
+function isleSalt(mx: number, my: number): number {
+  return 0x151e ^ (mx * 0x9e37) ^ (my * 0x51ed);
+}
+
+/** The gate, memoised per candidate: an island exists only where the RAW sea is
+ *  deep enough to hold its whole footprint plus a moat. Evaluated at the centre
+ *  once rather than per tile, because the answer is a fact about the island. */
+const isleGateMemo = new Map<string, boolean>();
+function isleAllowed(
+  seed: number,
+  spot: HomesteadSpot,
+  mx: number,
+  my: number,
+  cx: number,
+  cy: number,
+  r: number,
+): boolean {
+  const key = `${seed}:${spot}:${mx}:${my}`;
+  let ok = isleGateMemo.get(key);
+  if (ok === undefined) {
+    if (isleGateMemo.size > 16384) isleGateMemo.clear();
+    ok = seaDepth(seed, spot, cx, cy) > r * (1 + ISLE_WOBBLE) + COAST_WARP + ISLE_MOAT;
+    isleGateMemo.set(key, ok);
+  }
+  return ok;
+}
+
+/** The deepest the sea may run at this tile, given the islands — Infinity almost
+ *  everywhere. The same 3×3 lattice walk as `scatteredDepth`, but returning a
+ *  CAP rather than a depth, which is why it is its own loop rather than a kind.
+ *
+ *  Exported for tests, which otherwise cannot tell an island's dry top from
+ *  ordinary far-country ground: below −beach (−3) the cap alone proves the cell
+ *  is land CARVED FROM sea, because the gate only lets an island exist where the
+ *  raw field is deep. */
+export function isleCap(seed: number, spot: HomesteadSpot, x: number, y: number): number {
+  let cap = Infinity;
+  const gx = Math.floor(x / ISLE_CELL);
+  const gy = Math.floor(y / ISLE_CELL);
+  const reach = ISLE_MAX_RADIUS * (1 + ISLE_WOBBLE) + COAST_WARP + 8;
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const mx = gx + dx;
+      const my = gy + dy;
+      if (hash2(mx, my, seed ^ 0x151e) / 4294967296 >= ISLE_CHANCE) continue;
+      const centre = scatterCentre(seed, 0x151e, ISLE_CELL, mx, my);
+      if (Math.abs(x - centre.x) > reach || Math.abs(y - centre.y) > reach) continue;
+      const r =
+        ISLE_MIN_RADIUS +
+        (hash2(mx, my, seed ^ 0x151e ^ 0x6a3c) / 4294967296) * (ISLE_MAX_RADIUS - ISLE_MIN_RADIUS);
+      if (!isleAllowed(seed, spot, mx, my, centre.x, centre.y, r)) continue;
+      const salt = isleSalt(mx, my);
+      // How far inside the island this tile is — its own warp and wobble, so an
+      // island's coast frets like any other body's.
+      const h = roundDepth(seed, salt, centre, r, r * ISLE_WOBBLE, coastWarp(seed, salt, x, y));
+      cap = Math.min(cap, ISLE_RIM - h * ISLE_SLOPE);
+    }
+  }
+  return cap;
+}
+
 /** The lakes.
  *
  *  A cell of 130 keeps roughly the cadence the single lake had — it used to sit
@@ -1952,6 +2069,68 @@ function channelKindDepth(
   return best;
 }
 
+// --- The town's dry banks -----------------------------------------------------
+// Channels stay clear of the town's own walls (Phase 11, tranche 2 item 4).
+//
+// THE DEFECT, not an addition: `TOWN_DRY` keeps the sea and the lakes off town,
+// and rivers are deliberately allowed through — but `stampBuilding` paves FLOOR
+// under its own footprint, so a channel that crossed a building simply vanished
+// under it and could still lap against the outside of a wall or run in the slot
+// between two houses. A river past a town is a landmark; a river against a
+// bedroom wall is a plumbing problem.
+//
+// A CAP, NOT A SUBTRACTION, and the difference is what it does to the promised
+// river. Subtracting a clearance term DRIES the channel near buildings — and the
+// riverside anchor sits three tiles from Prudence's west wall, so on pinched
+// seeds the town's own promised river would have gone dry exactly at the town.
+// Capping instead means water near a wall gets SHALLOWER, never absent: the
+// course survives, the banks widen to sand against the wall, and full depth
+// returns within about five tiles.
+//
+// The floor of −1.5 is what turns "no water" into "a sandy bank": a river's
+// beach is 2, so a cap clamped just above −2 leaves SAND against a wall the
+// river used to lap, which reads as the bank being wider there rather than as
+// the water having been deleted. (Streams have no beach, so a capped stream
+// goes honestly dry — a brook does not get a beach by standing near a shed.)
+
+/** No water within this of a wall; full depth returns at about
+ *  `CHANNEL_CLEAR + halfMax / CHANNEL_CLEAR_SLOPE`. */
+const CHANNEL_CLEAR = 2;
+const CHANNEL_CLEAR_SLOPE = 1.5;
+
+/** The rectangles, hoisted once — content, so they are the same six on every
+ *  seed, which is what lets this stay a total function of (x, y) alone. */
+const TOWN_RECTS = allTownBuildings().map((b) => ({ x0: b.x0, y0: b.y0, x1: b.x1, y1: b.y1 }));
+/** A bounding box past which the cap cannot bite, so the whole check is two
+ *  comparisons for almost every tile in the world. Reach is where the cap
+ *  clears the deepest channel there is (halfMax 4.6): 2 + 4.6 / 1.5 ≈ 5.1. */
+const CLEAR_REACH = 6;
+const CLEAR_BOX = TOWN_RECTS.reduce(
+  (b, r) => ({
+    x0: Math.min(b.x0, r.x0 - CLEAR_REACH),
+    y0: Math.min(b.y0, r.y0 - CLEAR_REACH),
+    x1: Math.max(b.x1, r.x1 + CLEAR_REACH),
+    y1: Math.max(b.y1, r.y1 + CLEAR_REACH),
+  }),
+  { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity },
+);
+
+/** The deepest a channel may run at this tile, given the town's buildings.
+ *  Infinity almost everywhere. */
+function townChannelCap(x: number, y: number): number {
+  if (x < CLEAR_BOX.x0 || x > CLEAR_BOX.x1 || y < CLEAR_BOX.y0 || y > CLEAR_BOX.y1) {
+    return Infinity;
+  }
+  let d = Infinity;
+  for (const r of TOWN_RECTS) {
+    const dx = Math.max(r.x0 - x, 0, x - r.x1);
+    const dy = Math.max(r.y0 - y, 0, y - r.y1);
+    d = Math.min(d, Math.hypot(dx, dy));
+  }
+  if (d >= CLEAR_REACH) return Infinity;
+  return Math.max((d - CHANNEL_CLEAR) * CHANNEL_CLEAR_SLOPE, -1.5);
+}
+
 /** The whole water field: the deepest answer any body gives for this tile, and
  *  which body gave it. Null on ground no water has an opinion about — which is
  *  most of the world, and the reason this returns null rather than a sentinel
@@ -1989,10 +2168,16 @@ function waterAt(
       best = { d, kind };
     }
   };
-  consider(seaDepth(seed, spot, x, y), "sea");
+  // The islands cap the sea here and ONLY here — siting and gating callers read
+  // `seaDepth` raw, so an island's dry top still counts as sea to `onLand` and
+  // nothing can ever be sited on ground nobody can reach (see §Islands).
+  consider(Math.min(seaDepth(seed, spot, x, y), isleCap(seed, spot, x, y)), "sea");
   consider(lakeDepth(seed, spot, x, y), "lake");
-  consider(channelKindDepth(seed, spot, "river", 0x21be, x, y), "river");
-  consider(channelKindDepth(seed, spot, "stream", 0x57e4, x, y), "stream");
+  // Channels only. The sea and the lakes are already held off by TOWN_DRY, and
+  // capping them here would be a second opinion about the same fact.
+  const cap = townChannelCap(x, y);
+  consider(Math.min(cap, channelKindDepth(seed, spot, "river", 0x21be, x, y)), "river");
+  consider(Math.min(cap, channelKindDepth(seed, spot, "stream", 0x57e4, x, y)), "stream");
   if (wet > 0) consider(pondDepth(seed, x, y, wet), "pond");
   return best;
 }

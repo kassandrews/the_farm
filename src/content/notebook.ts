@@ -43,6 +43,7 @@ export type ObservationId =
   | "the-sea"
   | "poled-pond"
   | "ring-grove"
+  | "fairy-ring"
   | "stair-to-nothing"
   | "deep-rock"
   | "above-the-cloud"
@@ -127,6 +128,14 @@ export const OBSERVATIONS: ObservationDef[] = [
     id: "ring-grove",
     source: "noticed",
     line: "A suspiciously round cluster of trees, all facing in. Trees do not face. These do.",
+  },
+  {
+    // A real nature fact wearing the house deadpan (§10k's rule): a fairy ring
+    // is one fungus, spreading underground, fruiting at its own edge. The entry
+    // states the true thing and declines to be moved by it.
+    id: "fairy-ring",
+    source: "noticed",
+    line: "Mushrooms in a perfect circle. Under the ground they are all one thing, and the circle is the shape of it getting wider. It started before the town did.",
   },
   {
     id: "stair-to-nothing",

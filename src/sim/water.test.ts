@@ -19,6 +19,7 @@ import {
   waterKindAt,
   cubeSite,
   homesteadOrigin,
+  isleCap,
 } from "./world";
 import { newWorld, contextAction, playerTile, tick } from "./game";
 import { canPlaceStructure } from "./structures";
@@ -27,6 +28,7 @@ import { updateReclaim } from "./gather";
 import { findPath } from "./path";
 import { WATER, SHALLOW, SAND, GRASS, FLOOR, TREE } from "../content/tiles";
 import { WATER_KINDS } from "../content/water";
+import { allTownBuildings } from "../content/town";
 import type { HomesteadSpot } from "./types";
 
 const SPOTS: HomesteadSpot[] = ["riverside", "forest", "lakeside", "coast"];
@@ -247,6 +249,64 @@ describe("the sea is finite", () => {
           }
         }
       }
+    }
+  });
+
+  it("keeps standing water off the town's walls, on a thousand seeds", () => {
+    // The Phase 11 clearance (`townChannelCap`), and the bug it exists for:
+    // rivers are allowed through town on purpose, but `stampBuilding` paves
+    // FLOOR under its own footprint, so a channel could vanish under a building
+    // and still lap against the outside of its walls or run in the slot between
+    // two houses. Sand is allowed — a wide bank against a wall reads as a bank —
+    // but standing water is not, within two tiles of any authored building.
+    //
+    // The full thousand, because this is the tile-level kind of check the
+    // 1,000-seed precedent is about (biome.test.ts, found.test.ts) — no world is
+    // built, just the generator asked. Two spots rather than four keeps it to
+    // the same budget the others run on: riverside because its anchor forces a
+    // river NEAR the walls on every seed (the hard case), forest because it is
+    // the plain unanchored field.
+    // Euclidean distance, because the cap measures Euclidean: the diagonal cell
+    // off a corner is 2.83 out, not 2, and may legitimately hold shallow water.
+    const ring: { x: number; y: number }[] = [];
+    for (const b of allTownBuildings()) {
+      for (let y = b.y0 - 2; y <= b.y1 + 2; y++) {
+        for (let x = b.x0 - 2; x <= b.x1 + 2; x++) {
+          const d = Math.hypot(Math.max(b.x0 - x, 0, x - b.x1), Math.max(b.y0 - y, 0, y - b.y1));
+          if (d > 0 && d <= 2) ring.push({ x, y });
+        }
+      }
+    }
+    for (const spot of ["riverside", "forest"] as HomesteadSpot[]) {
+      for (let seed = 1; seed <= 1000; seed++) {
+        for (const c of ring) {
+          const k = waterKindAt(seed, spot, c.x, c.y);
+          if (k !== "river" && k !== "stream") continue;
+          const t = generatedTile(seed, spot, c.x, c.y);
+          if (t === WATER || t === SHALLOW) {
+            expect([seed, spot, c.x, c.y, t]).toBe("dry");
+          }
+        }
+      }
+    }
+  });
+
+  it("still gives a riverside town WET river, not a promise kept in sand", () => {
+    // The clearance is a cap, not a subtraction, precisely so this stays true:
+    // the anchor sits three tiles from Prudence's west wall, and a subtraction
+    // would have dried the promised river exactly at the town on pinched seeds.
+    // `waterKindAt` counts the beach as river, so the test two describes up
+    // cannot see the difference — this one asks for actual water on the bridge
+    // row, which is also what the bridge needs a deck over.
+    for (let seed = 1; seed <= 200; seed++) {
+      let wet = false;
+      for (let x = -1; x > -40 && !wet; x--) {
+        const t = generatedTile(seed, "riverside", x, -1);
+        if ((t === WATER || t === SHALLOW || t === FLOOR) && waterKindAt(seed, "riverside", x, -1) === "river") {
+          wet = true;
+        }
+      }
+      expect([seed, wet]).toEqual([seed, true]);
     }
   });
 });
@@ -558,6 +618,79 @@ describe("what water will and will not take", () => {
     const w = newWorld({ name: "T", form: "dog", spot: "forest", seed: 7 });
     setTile(w, 32, 32, SHALLOW);
     expect(canPlaceFurniture(w, 32, 32, "bed", "s")).toBe(false);
+  });
+});
+
+describe("islands", () => {
+  // `isleCap` below −3 (the sea's beach) proves a cell is dry land carved from
+  // the sea: the gate only lets an island exist where the raw field is deep, so
+  // the cap alone is the island detector — see its docblock.
+  const DRY = -3;
+
+  it("exist, and no dry cell of one stands alone", () => {
+    // The two halves of the roadmap's own requirement in one sweep. Existence,
+    // because a field tuned too shy would pass every safety test by generating
+    // nothing; and no single cells, because a one-tile island is the per-cell
+    // edges failure wearing a beach, and `canStep` refuses diagonals past it so
+    // it is a pathing hazard besides. Every dry island cell must have a dry
+    // orthogonal neighbour.
+    let tops = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      for (let y = -480; y <= 480; y += 2) {
+        for (let x = -480; x <= 480; x += 2) {
+          if (isleCap(seed, "forest", x, y) >= DRY) continue;
+          tops++;
+          const alone =
+            isleCap(seed, "forest", x + 1, y) >= DRY &&
+            isleCap(seed, "forest", x - 1, y) >= DRY &&
+            isleCap(seed, "forest", x, y + 1) >= DRY &&
+            isleCap(seed, "forest", x, y - 1) >= DRY;
+          if (alone) expect([seed, x, y]).toBe("not alone");
+        }
+      }
+    }
+    expect(tops).toBeGreaterThan(0);
+  });
+
+  it("puts real ground on a dry top — the SEA never wets it", () => {
+    // The whole point of the field: where the cap says land, the sea has no
+    // say. Other water may — a fen pond on an island, a stream across one, are
+    // both legal and neither is this field's business — so the assertion is
+    // about the kind, not about wetness. The first draft asserted total dryness
+    // and failed on seed 2 at (56,149): a pond, on an island, in a fen. Which
+    // is a place worth having found, and not a bug.
+    let checked = 0;
+    outer: for (let seed = 1; seed <= 60; seed++) {
+      for (let y = -400; y <= 400; y += 3) {
+        for (let x = -400; x <= 400; x += 3) {
+          if (isleCap(seed, "forest", x, y) >= DRY - 1) continue;
+          const t = generatedTile(seed, "forest", x, y);
+          if (t === WATER || t === SHALLOW) {
+            expect([seed, x, y, waterKindAt(seed, "forest", x, y)]).not.toContain("sea");
+          }
+          checked++;
+          if (checked >= 25) break outer;
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it("puts no island land near the town, on a thousand seeds", () => {
+    // Not `Infinity` — a legal island can live in a sea whose near shore is
+    // sixty tiles out, close enough that its cap VALUE reaches the box while
+    // never biting. What must be true is that no island puts LAND (or even its
+    // sand) on ground near town: the cap stays at or above the waterline here.
+    // This is the consequence that re-landscapes somebody's home if the gate's
+    // arithmetic ever changes out from under it.
+    for (let seed = 1; seed <= 1000; seed++) {
+      for (let y = -40; y <= 40; y += 4) {
+        for (let x = -40; x <= 40; x += 4) {
+          expect(isleCap(seed, "forest", x, y)).toBeGreaterThanOrEqual(0);
+          expect(isleCap(seed, "riverside", x, y)).toBeGreaterThanOrEqual(0);
+        }
+      }
+    }
   });
 });
 

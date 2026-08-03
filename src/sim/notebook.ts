@@ -330,6 +330,7 @@ export const NOTICED_WHEN: Partial<Record<ObservationId, Trigger>> = {
   "the-sea": (w) => beside(w, "sea"),
   "poled-pond": (w) => standingIn(w, "poledpond"),
   "ring-grove": (w) => standingIn(w, "ringgrove"),
+  "fairy-ring": (w) => standingIn(w, "fairyring"),
   "stair-to-nothing": (w) => standingIn(w, "stair"),
 
   // `depthAt` returns Infinity when the town has no shaft at all, which is

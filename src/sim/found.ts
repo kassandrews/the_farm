@@ -24,7 +24,7 @@
 // sentence, and it is the one this category is built on.
 
 import { FOUND, FOUND_KINDS, type FoundDef, type FoundKind } from "../content/found";
-import { GRASS, MAILBOX, POLE, SHALLOW, STAIR, TREE, type TileId } from "../content/tiles";
+import { GRASS, MAILBOX, MUSHROOM, POLE, SHALLOW, STAIR, TREE, type TileId } from "../content/tiles";
 import type { HomesteadSpot } from "./types";
 import { hash2 } from "./rng";
 
@@ -45,6 +45,7 @@ export interface FoundSite {
  *  grove and the cube; it is the same rule with more members). */
 const SALT: Record<FoundKind, number> = {
   ringgrove: 0x9a31,
+  fairyring: 0x6b2d,
   poledpond: 0x4c7f,
   mailbox: 0x2be6,
   stair: 0x71d4,
@@ -139,6 +140,15 @@ export function foundTile(site: FoundSite, x: number, y: number): TileId | null 
      *  and there are copses everywhere. */
     case "ringgrove":
       return d > def.radius - 1.2 ? TREE : GRASS;
+
+    /** The same annulus, in mushrooms — one fungus fruiting at its own rim, so
+     *  unlike the poles (jittered, because a dozen people each did one thing
+     *  once) this ring is CLOSED: the precision is the organism's, not a
+     *  committee's. The rim is thinner than the ringgrove's because a mushroom
+     *  is a point where a tree is a mass — a two-deep ring of caps reads as a
+     *  heap, not a line. */
+    case "fairyring":
+      return d > def.radius - 1.0 ? MUSHROOM : GRASS;
 
     /** SHALLOW ALL THE WAY ACROSS, and a test is what settled that.
      *
