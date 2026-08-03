@@ -5694,7 +5694,16 @@ Three things it fixed or found:
    view in place now, on the hall's and the museum's model — never a second modal
    on top.
 
-**Not verified on screen: the hall's discharge card.** Reaching it for real means
+~~**Not verified on screen: the hall's discharge card.**~~ **Verified 3 Aug 2026
+— `scripts/shot-discharge.mts`**, which drives the real sequence (a commissioned
+newcomer, an injected qualifying house, the bed assigned through the real UI so
+`settleCommission` actually fires) and ASSERTS rather than photographs: the
+discharge text, the `.quote`'s left rule, the `handed()` card's accent rule, and
+the whitewash unlock by name, all read from computed style in the live modal.
+The original note follows, because its diagnosis was right — the injected-markup
+attempt was the harness testing itself:
+
+Reaching it for real means
 a built house, a stamped Form 9 and an assigned bed, which is a driving sequence
 nobody has scripted. An attempt to check the CSS by injecting the panel's markup
 was inconclusive and is not evidence — suspect the harness first, and that was
@@ -5702,6 +5711,15 @@ the harness. `handed()` itself is verified in the stall, and `.quote` is verifie
 inside a card; the untested thing is the two of them stacked. Worth a real
 `scripts/` driver, since the same sequence would also unblock anything about
 commissions.
+
+**The gotcha the driver found, worth keeping:** a homeless newcomer is not "at
+the tent" — `charDef` hands newcomers a NEWCOMER_RINGS schedule, so at any given
+hour he is at a ring stop ("out by the fields"), and a script that stands him
+somewhere else watches him walk away mid-scene. The driver computes the stop
+with the game's own `scheduledStop` at the harness's pinned clock and builds the
+whole scene around that. Also: a villager cloned from a resident must have
+`fixed` forced false, or the tick derives phantom authored stops for an id the
+CAST has never heard of.
 
 ### 10k — Three more arrivals, and four things that are true — **built**
 
@@ -5859,9 +5877,8 @@ is. Combining-elements crafting is already on the not-taken list twice.
 
 ---
 
-## Phase 11 — The terrain pass — **mostly built**: the freeze, the plaza, the
-## kits and all of tranche 2 are in; tranche 1's flower kinds and the mushroom
-## variation remain open
+## Phase 11 — The terrain pass — **done** (two items withdrawn from scope,
+## see the note under tranche 1)
 
 The plan Phase 10 item 4 said this owed before code. Read it before touching
 `generatedTile`, `biomeAt`, or anything under `sim/world.ts`'s water section.
@@ -5991,10 +6008,14 @@ a prerequisite for any of it.
    glimmer, glass and blossom**. §8k already calls the far rows the interesting
    ones — "a kit is the cheapest strangeness there is, and it is the one place
    §Biomes' *stranger, never richer* has to be checked mark by mark."
-3. **More flower kinds.** Flowers are `bloom` kits — four exist, all
+3. **More flower kinds — WITHDRAWN from the phase, 3 Aug 2026.** Flowers are
+   `bloom` kits — four exist, all
    `season: "spring"`, two marks each. Autumn and the far country are both open.
    The rule they are under: a mark is texture and yields nothing, so a flower may
-   never become pickable.
+   never become pickable. Withdrawn along with the mushroom variation (see the
+   note below the mushroom paragraph): both are open-ended content authoring
+   that anybody can add later under the rules recorded here, and the phase does
+   not wait on them. The phase closes with them out of scope, not half-done.
 
 **The plaza paving is built (item 1 done)**, and it took most of a day of
 on-screen rounds to converge, so the record here is long on purpose — the wrong
@@ -6107,6 +6128,10 @@ gathered material, and the glimmer precedent is the warning: 0.4 was cut to 0.04
 because "3.3× the record makes foraging measurably better". **Vary the shape and
 the tint, never the density, and never the item.** `MushroomShape` has two
 members today and only the fen uses `bell`.
+
+**Withdrawn from the phase, 3 Aug 2026, together with item 3's flower kinds:**
+the shape/tint rules above stay as written and govern whoever picks this up;
+the phase itself does not wait on it.
 
 ### Tranche 2 — the ones that move ground, and what each owes
 
