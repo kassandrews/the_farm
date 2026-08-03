@@ -1033,6 +1033,7 @@ export class Renderer {
     // middle of nine swatches at once, is just a white box over the thing you
     // came to look at. Never turned off in the game — see setChrome.
     if (this.chrome) this.drawTargetTile(world);
+    if (this.chrome) this.drawWalkTarget(world, t);
     if (ground) {
       this.drawBlockedSteps(t);
       this.drawHomeCandidates(t);
@@ -4316,6 +4317,49 @@ export class Renderer {
    *  fix the tile exactly. Drawing it under the raised pass instead does nothing
    *  for this (the sprite never crossed the line) and hides the gather reticle
    *  behind the tree it's pointing at — measured, both times. */
+  /** Where you tapped, while you are still on your way there.
+   *
+   *  Tap-to-move has been the primary verb since the vertical slice and has
+   *  never drawn anything: you tapped open ground, the sprite started walking,
+   *  and whether it understood you was something you found out by watching. On a
+   *  phone, with a thumb over the spot you just touched, that is the one piece of
+   *  feedback the whole control scheme was missing.
+   *
+   *  A DIAMOND, so it cannot be confused with either overlay it shares the screen
+   *  with — the reticle's corner ticks say "ACT reaches here" and the bed
+   *  candidates' closed square says "pick one of these". This says neither; it is
+   *  a place you are going.
+   *
+   *  It is not a map pin and does not survive arrival: it exists only while
+   *  `player.target` does, so it vanishes the moment you get there rather than
+   *  leaving a mark on the world. Nothing is stored and nothing else reads it.
+   *  One pixel, no fill, no glow — the interface has no circles, gradients or
+   *  blur in it (ROADMAP §8a). */
+  private drawWalkTarget(world: WorldState, t: number): void {
+    const target = world.player.target;
+    if (!target) return;
+    const ctx = this.ctx;
+    const cx = this.sceneX(target.x);
+    const cy = this.sceneY(target.y);
+    // Shrinks as you close on it, so the mark reads as being consumed by your
+    // arrival rather than switching off. Distance in tiles, capped so a walk
+    // across the map doesn't start out enormous.
+    const away = Math.min(6, Math.hypot(target.x - world.player.x, target.y - world.player.y));
+    const r = Math.round(2 + (TILE * 0.28 - 2) * (away / 6));
+    if (r < 2) return;
+    // A slow breath, the same idle the other overlays use, so it reads as UI
+    // rather than as something standing in the field.
+    ctx.strokeStyle = `rgba(255,255,255,${(0.45 + 0.2 * Math.sin(t / 260)).toFixed(3)})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(Math.round(cx) + 0.5, Math.round(cy - r) + 0.5);
+    ctx.lineTo(Math.round(cx + r) + 0.5, Math.round(cy) + 0.5);
+    ctx.lineTo(Math.round(cx) + 0.5, Math.round(cy + r) + 0.5);
+    ctx.lineTo(Math.round(cx - r) + 0.5, Math.round(cy) + 0.5);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
   private drawTargetTile(world: WorldState): void {
     const ctx = this.ctx;
     const target = actionTarget(world, this.tool);

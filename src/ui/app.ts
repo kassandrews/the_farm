@@ -223,6 +223,8 @@ export class App {
   /** Non-null means BUILD MODE: the view flattens and canvas taps place instead
    *  of walking. Null means the normal 3/4 living view. */
   private buildTool: BuildTool | null = null;
+  /** Whether the shaft has already said what going down is like this session. */
+  private saidShaftLine = false;
   /** A node you tapped and are walking over to deal with. UI state, never the
    *  save: an errand you were on when you closed the tab is not one the town
    *  should still be holding you to when you come back. */
@@ -2619,7 +2621,22 @@ export class App {
     // The cue follows what actually happened, so a refused action sounds
     // different from a successful one without needing to read the message.
     audio.play(res.changed ? ACTION_CUES[res.kind] : "deny");
-    this.flash(res.message);
+    // THE LADDER SAYS ITS PIECE ONCE.
+    //
+    // "Down. The air goes cool and stops moving." is a good line the first time
+    // and furniture by the twentieth, and a shaft is a thing you go up and down
+    // repeatedly while working one tunnel. It is the same argument mining
+    // already makes against a toast per swing: a notification on the quietest
+    // verb in the game turns it into a stream.
+    //
+    // The CUE still plays every time, because that is feedback about the world
+    // changing rather than a sentence to read. Session-scoped and not stored:
+    // once-ever would want a save flag, which is a schema bump and a migration
+    // for a flavour line, and once per sitting is where nearly all the noise
+    // was. Same shape as `announcedArrival`.
+    const repeatedShaftLine = res.kind === "shaft" && this.saidShaftLine;
+    if (res.kind === "shaft") this.saidShaftLine = true;
+    if (!repeatedShaftLine) this.flash(res.message);
     this.persist();
   }
 
