@@ -856,6 +856,96 @@ export const RESIDENT_WARM: Partial<Record<AdultForm, Partial<Record<"familiar" 
   },
 };
 
+// --- Absence greetings (Phase 12) ---------------------------------------------
+// What somebody says when you talk to them after being genuinely gone — the
+// "haven't seen you in a while" the game never had. Two gaps only, "days" and
+// "weeks": a greeting that named the exact number would be a login screen with
+// a face on it, and the thresholds live in sim/dialogue.ts where the clock is.
+//
+// Voice rule: an absence is noticed, never billed. Nobody may guilt, tally, or
+// ask where you were as an accusation — AC's cockroaches are the exact thing
+// DESIGN §4 refuses ("absence as story, not punishment"). The Dog misses you
+// because he is the Dog; the Menace noticed, which should flatter you.
+export const RESIDENT_ABSENCE: Partial<Record<AdultForm, { days: string[]; weeks?: string[] }>> = {
+  scholar: {
+    days: [
+      "You've been elsewhere. The data thinned. It's back now.",
+      "Ah — returned. The fence held. I have the readings somewhere.",
+    ],
+    weeks: [
+      "You were gone a while. I filed you under 'pending'. Reopening the file.",
+      ". ... Weeks. I counted, obviously. Counting is free.",
+    ],
+  },
+  office: {
+    days: ["You've been away. Nothing required your signature. Retirement is astonishing.", "Back, I see. I didn't file the absence. There's nowhere to file it. Wonderful."],
+    weeks: ["Gone long enough that I nearly opened a ledger. Nearly. I lay back down.", ". ... A long one, that. The calendar stayed blank the whole time. I checked twice."],
+  },
+  dog: {
+    days: ["You were GONE and now you're BACK. Okay. Okay. We're okay.", "There you are! I checked the good spots. You weren't in any of them. You're here!"],
+    weeks: ["You were gone SO LONG. I re-smelled everything. It's all still here. So are you!", "I kept your stick. The whole time. It's a very kept stick now."],
+  },
+  blob: {
+    days: ["You missed several of my finest moments. I shall reprise them. Sit anywhere.", "Returned! The scene resumes."],
+    weeks: ["An extended absence. The stage felt it. I performed to the gap, and the gap was moved.", ". ... You were gone a long time. I rehearsed a welcome. This is it. There was more."],
+  },
+  menace: {
+    days: ["You were elsewhere. I noticed, which should flatter you.", "Back, are we. The town managed. Barely. Don't do it again soon."],
+    weeks: ["Weeks, was it. I had opinions about it. They've mellowed into this greeting.", "You've been gone an age. I redecorated my expectations. You've exceeded the new ones already."],
+  },
+  gremlin: {
+    days: ["You were gone. I touched nothing. ... Two things. I touched two things.", "Back already? Good. Things stay where they are when you're around. Mostly."],
+    weeks: ["You were gone AGES. Your fences are fine. Don't check the gate. The gate is a long story.", "Long trip. I kept an eye on your stuff. Both eyes, some nights."],
+  },
+  carrot: {
+    days: ["... Back, then."],
+    weeks: ["... It's been quiet. Good quiet. Better now."],
+  },
+};
+
+// --- In-the-middle-of remarks (Phase 12) --------------------------------------
+// A neighbour noticing what you're visibly in the middle of: three fells or
+// three harvests inside the window (sim/dialogue.ts §tryMidstLine) is a
+// morning's work, and a town this small talks about a morning's work. `v` is
+// the last carried value for harvests ("a pumpkin", "some peas"); the gathered
+// templates take the same argument and ignore it, so the two banks stay one
+// shape.
+//
+// Nothing in here may ever suggest what to do NEXT — "you've been busy" is a
+// neighbour, "you should clear the north field" is a foreman, and this game
+// employs nobody.
+export const RESIDENT_MIDST: Partial<Record<AdultForm, Partial<Record<"gathered" | "harvested", ((v: string) => string)[]>>>> = {
+  scholar: {
+    gathered: [
+      () => "That's the third one this morning. I've been logging the thumps. Rigorous work, whichever kind it is.",
+      () => "Still at it, I see. The treeline is developing a hypothesis about you.",
+    ],
+    harvested: [
+      (v) => `More produce. That was ${v}, just now. The plot yields under observation, which is good science and better luck.`,
+    ],
+  },
+  office: {
+    gathered: [() => "You've been at that all morning. In my day it would have needed a permit per swing. Enjoy yourself."],
+    harvested: [(v) => `A productive morning, I hear. ${v.charAt(0).toUpperCase() + v.slice(1)}, again. Undocumented. Glorious.`],
+  },
+  dog: {
+    gathered: [() => "You keep KNOCKING things DOWN. It's the best noise. Do another one.", () => "I've been watching you work. I supervised. From here. With my whole heart."],
+    harvested: [(v) => `You pulled up ${v} AGAIN. The ground just keeps HAVING things.`],
+  },
+  blob: {
+    gathered: [() => "The felling! The crash of it! I've been narrating from a distance. You're very good in this role."],
+    harvested: [(v) => `A harvest montage. ${v.charAt(0).toUpperCase() + v.slice(1)}, and before that more. I approve of the spectacle.`],
+  },
+  menace: {
+    gathered: [() => "Still at it? The racket is very industrious. I've decided to admire it from here."],
+    harvested: [(v) => `That's ${v} on top of everything else this morning. You do keep busy. How agricultural.`],
+  },
+  gremlin: {
+    gathered: [() => "Heard you working all morning. I left the woodpile alone. You're welcome.", () => "Lot of falling-down noises today. Good haul? Asking for the heap."],
+    harvested: [(v) => `That's a proper pile you're building. ${v.charAt(0).toUpperCase() + v.slice(1)} and counting. Piles attract me. Fair warning.`],
+  },
+};
+
 /** Warm lines a villager has unlocked at a given tier, pooled with everything
  *  below it — a close friend can still say a merely-familiar line. */
 export function warmLines(form: AdultForm, tier: "new" | "familiar" | "friend" | "close"): string[] {

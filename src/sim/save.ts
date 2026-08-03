@@ -19,7 +19,7 @@ import type { CharId, AuthoredId } from "../content/cast";
 import { CAST, MOLE, GHOST, COSMOS } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 
-export const SCHEMA_VERSION = 31;
+export const SCHEMA_VERSION = 32;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -858,6 +858,27 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
    *  Rekeys nothing and drops nothing, so a save that came from v30 reads
    *  identically until the first thing is built on it. */
   30: (raw) => ({ ...raw, schemaVersion: 31, frozen: {} }),
+  // v32: the said ring (Phase 12). `lastLine` becomes `said` — the last few
+  // lines a villager spoke, so selection can dodge more than an immediate
+  // repeat. The one remembered line seeds the ring rather than being dropped:
+  // it is the only piece of conversation history the old save has, and
+  // throwing it away would let the very next tap repeat it.
+  //
+  // `lastTalkedAt` is deliberately NOT backfilled. A pre-v32 save cannot say
+  // when you last spoke to anybody, and seeding it with `now` would be the
+  // game inventing a conversation that never happened — the field stays absent
+  // and the absence greeting waits for a real conversation to time against.
+  31: (raw) => {
+    const villagers = Array.isArray(raw.villagers) ? raw.villagers : [];
+    return {
+      ...raw,
+      schemaVersion: 32,
+      villagers: villagers.map((entry) => {
+        const { lastLine, ...v } = entry as Record<string, unknown>;
+        return { ...v, said: typeof lastLine === "string" && lastLine !== "" ? [lastLine] : [] };
+      }),
+    };
+  },
 };
 
 /** The name the tables now give an authored character, or null for anyone the

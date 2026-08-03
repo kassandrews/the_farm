@@ -34,6 +34,8 @@ import {
   COMPANY_IDLE,
   COMPANY_YES,
   COMPANY_BYE,
+  RESIDENT_ABSENCE,
+  RESIDENT_MIDST,
   residentIdle,
   warmLines,
 } from "../content/dialogue";
@@ -76,6 +78,82 @@ const DISSENT_CHANCE = 0.5;
 // than anything else that has a rung. Below HOME_CHANCE deliberately: somebody
 // who leads with the season every time you meet them is a lift, not a person.
 const SEASON_CHANCE = 0.22;
+
+/** How many spoken lines a villager keeps in the said ring. Eight, because the
+ *  smallest pools this has to be honest about are the 2-line idle stubs: the
+ *  ring may never be allowed to silence a pool (see `fresh`), only to steer a
+ *  pool bigger than itself. Deep banks are what Phase 12 exists to add; this is
+ *  what makes them READ deep instead of thumbing the same three cards. */
+const SAID_MAX = 8;
+
+/** The pool with everything they've recently said removed — unless that empties
+ *  it, in which case the whole pool comes back. A villager must always be able
+ *  to speak; running a two-line voice dry and going silent would punish exactly
+ *  the forms whose banks nobody has written yet. */
+function fresh(pool: string[], v: Villager): string[] {
+  const left = pool.filter((t) => !v.said.includes(t));
+  return left.length > 0 ? left : pool;
+}
+
+/** Record a spoken line into the ring. Every path out of `speak` goes through
+ *  this, so the ring is the one record of what was recently said. */
+function spoke(v: Villager, text: string): void {
+  v.said = [...v.said, text].slice(-SAID_MAX);
+}
+
+/** How long you must be gone before anybody says so, and how long before "a few
+ *  days" becomes "weeks". Real time, like everything here — the town measures
+ *  your absence on the same clock the crops grow on. Three days rather than
+ *  one, because a daily check-in is the intended rhythm (DESIGN §Platform) and
+ *  greeting a routine as an absence would nag the player for having a life. */
+const ABSENCE_DAYS = 3 * 24 * 3600_000;
+const ABSENCE_WEEKS = 14 * 24 * 3600_000;
+
+/** No chance roll on the greeting, and that is the design: a "haven't seen you
+ *  in a while" that usually fails to fire reads as the game not noticing you
+ *  were gone, which is worse than not having the feature. It self-limits —
+ *  `speak` stamps `lastTalkedAt` on every conversation, so the greeting fires
+ *  once per absence and the clock resets behind it. */
+function tryAbsenceLine(v: Villager, away: number | null, rng: Rng): string | null {
+  if (away === null || away < ABSENCE_DAYS) return null;
+  const bank = RESIDENT_ABSENCE[v.form];
+  if (!bank) return null;
+  const pool = away >= ABSENCE_WEEKS ? (bank.weeks ?? bank.days) : bank.days;
+  if (!pool || pool.length === 0) return null;
+  return rng.pick(fresh(pool, v));
+}
+
+/** The in-the-middle-of rung: a remark about what you are visibly in the middle
+ *  of doing. It reads the memory log's REPEATABLE work kinds — three fells or
+ *  three harvests inside the window is a morning's work, and a morning's work
+ *  is something the town would mention. The one-shot kinds (`dug`,
+ *  `built_floor`, `planted`) can't be counted this way on purpose: `remember`
+ *  de-duplicates them, so their single entry says "this ever happened", not
+ *  "this is happening", and counting it would call a three-week-old hole a
+ *  busy morning. */
+const MIDST_WINDOW = 45 * 60_000;
+const MIDST_MIN = 3;
+/** Between HOME_CHANCE and MEMORY_CHANCE: livelier than a remark about a shelf
+ *  because it is about RIGHT NOW, but not certain, because somebody narrating
+ *  your every third swing is a commentator rather than a neighbour. */
+const MIDST_CHANCE = 0.5;
+/** Harvest first: it has a value ("a pumpkin") and the more specific true thing
+ *  wins, the same argument MEMORY_PRIORITY runs on. */
+const MIDST_KINDS: ("harvested" | "gathered")[] = ["harvested", "gathered"];
+
+function tryMidstLine(v: Villager, rng: Rng, now: number): string | null {
+  const banks = RESIDENT_MIDST[v.form];
+  if (!banks) return null;
+  for (const kind of MIDST_KINDS) {
+    const recent = v.memory.filter((m) => m.kind === kind && now - m.at <= MIDST_WINDOW);
+    if (recent.length < MIDST_MIN) continue;
+    const templates = banks[kind];
+    if (!templates || templates.length === 0) continue;
+    const value = recent[recent.length - 1].value ?? "";
+    return rng.pick(fresh(templates.map((t) => t(value)), v));
+  }
+  return null;
+}
 
 /** Which memories a form is inclined to bring up, richest first. The selector
  *  walks this list and uses the first kind the villager actually remembers. */
@@ -216,59 +294,62 @@ export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Sp
   // First overall is right anyway: these are one-shot, gated on somebody
   // actually knowing you, and there are seven of them in the whole game. A line
   // that can be said once beats a line that can be said every day.
+  // How long since the last conversation, measured BEFORE the stamp below
+  // resets it. Null means the game doesn't know (a fresh villager, or a save
+  // from before v32 tracked it), and an absence the game never measured is an
+  // absence it doesn't get to remark on.
+  const away = v.lastTalkedAt === undefined ? null : now - v.lastTalkedAt;
+  v.lastTalkedAt = now;
+  const say = (text: string): Speech => {
+    spoke(v, text);
+    return { who: displayName(v), text };
+  };
+
   const telling = tryTellLine(world, v, now);
-  if (telling) {
-    v.lastLine = telling;
-    return { who: displayName(v), text: telling };
-  }
+  if (telling) return say(telling);
 
   const secret = trySecretLine(world, v, now);
-  if (secret) {
-    let text = rng.pick(secret);
-    if (text === v.lastLine && secret.length > 1) text = rng.pick(secret);
-    v.lastLine = text;
-    return { who: displayName(v), text };
-  }
+  if (secret) return say(rng.pick(fresh(secret, v)));
+
+  // The greeting, above everything a resident could otherwise open with: being
+  // gone a while is the most specific true thing about THIS conversation, and
+  // a "haven't seen you" that arrives three taps in has stopped being a
+  // greeting. Below the secrets on purpose — the three of them speak only from
+  // their own banks (see above), and a generic greeting in the Mole's mouth
+  // would be the resident machinery claiming somebody it has no claim on.
+  const absence = tryAbsenceLine(v, away, rng);
+  if (absence) return say(absence);
 
   // The house goes first when it has something to say. It's the most specific
   // true thing about them right now, and the only one the player can act on.
   const home = tryHomeLine(world, v, rng);
-  if (home && rng.next() < home.chance) {
-    v.lastLine = home.text;
-    return { who: displayName(v), text: home.text };
-  }
+  if (home && rng.next() < home.chance) return say(home.text);
 
   // Then the museum quarrel, if this is a scholar and there is anything in it.
   const dissent = tryDissentLine(world, v, rng);
-  if (dissent && rng.next() < DISSENT_CHANCE) {
-    v.lastLine = dissent;
-    return { who: displayName(v), text: dissent };
-  }
+  if (dissent && rng.next() < DISSENT_CHANCE) return say(dissent);
+
+  // What you are visibly in the middle of. Above the memory rung because it is
+  // about right now, and the ladder is a specificity ladder: this morning's
+  // third fell beats last month's afternoon underground.
+  const midst = tryMidstLine(v, rng, now);
+  if (midst && rng.next() < MIDST_CHANCE) return say(midst);
 
   const memoryLine = tryMemoryLine(v, rng);
-  if (memoryLine && rng.next() < MEMORY_CHANCE) {
-    v.lastLine = memoryLine;
-    return { who: displayName(v), text: memoryLine };
-  }
+  if (memoryLine && rng.next() < MEMORY_CHANCE) return say(memoryLine);
 
   // Then the room you're both standing in. Below memory and above the season,
   // which is exactly where it belongs on the same specificity ladder: something
   // you and this person did together beats something that happened in this
   // room, and something that happened in this room beats the weather.
   const historyLine = tryHistoryLine(world, v, rng, now);
-  if (historyLine && rng.next() < HISTORY_CHANCE) {
-    v.lastLine = historyLine;
-    return { who: displayName(v), text: historyLine };
-  }
+  if (historyLine && rng.next() < HISTORY_CHANCE) return say(historyLine);
 
   // The month, which is the least specific true thing anybody can say and so
   // goes last before idle. Below memory on purpose: something you and this
   // person did together is always more specific than the weather.
   const seasonLine = trySeasonLine(world, v, now, rng);
-  if (seasonLine && rng.next() < SEASON_CHANCE) {
-    v.lastLine = seasonLine;
-    return { who: displayName(v), text: seasonLine };
-  }
+  if (seasonLine && rng.next() < SEASON_CHANCE) return say(seasonLine);
 
   // Idle voice, plus whatever warmth this villager has unlocked. Pooling rather
   // than replacing keeps their baseline personality intact — a close friend is
@@ -284,13 +365,7 @@ export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Sp
     ...warmLines(v.form, friendshipTier(v)),
     ...(isCompanion(world, v.id) ? (COMPANY_IDLE[v.form] ?? []) : []),
   ];
-  let text = rng.pick(pool);
-  if (text === v.lastLine && pool.length > 1) {
-    // one re-roll to dodge an immediate repeat
-    text = rng.pick(pool);
-  }
-  v.lastLine = text;
-  return { who: displayName(v), text };
+  return say(rng.pick(fresh(pool, v)));
 }
 
 /** A line about the month, or null if this villager shouldn't be saying one.
@@ -312,12 +387,10 @@ function trySeasonLine(world: WorldState, v: Villager, now: number, rng: Rng): s
   const note = describeSeason(world, now);
   const bank = seasonLines(v.form, note.season);
   if (note.kind === "in_season_crop" && bank.crop && bank.crop.length > 0) {
-    return rng.pick(bank.crop)(note.value);
+    return rng.pick(fresh(bank.crop.map((t) => t(note.value)), v));
   }
   if (bank.season.length === 0) return null;
-  const text = rng.pick(bank.season);
-  // One re-roll to dodge an immediate repeat, as every other rung does.
-  return text === v.lastLine && bank.season.length > 1 ? rng.pick(bank.season) : text;
+  return rng.pick(fresh(bank.season, v));
 }
 
 /** Find a line about where they live, or null. Returns the odds along with it,
@@ -339,7 +412,7 @@ function tryHomeLine(world: WorldState, v: Villager, rng: Rng): { text: string; 
     const templates = bank[kind];
     if (!templates || templates.length === 0) continue;
     return {
-      text: rng.pick(templates)(note.value),
+      text: rng.pick(fresh(templates.map((t) => t(note.value)), v)),
       chance: URGENT.includes(kind) ? URGENT_HOME_CHANCE : HOME_CHANCE,
     };
   }
@@ -396,7 +469,7 @@ function tryDissentLine(world: WorldState, v: Villager, rng: Rng): string | null
   if (v.form !== "scholar" || v.id === "museum") return null;
   const reading = rivalReading(world, v.id);
   if (!reading) return null;
-  return rng.pick(SCHOLAR_DISSENT)(reading.def.title, reading.rival);
+  return rng.pick(fresh(SCHOLAR_DISSENT.map((t) => t(reading.def.title, reading.rival)), v));
 }
 
 /** Something this character has privately concluded and will now say out loud,
@@ -443,7 +516,7 @@ function tryHistoryLine(world: WorldState, v: Villager, rng: Rng, now: number): 
     if (note.who === displayName(v)) continue;
     const templates = banks[note.kind];
     if (!templates || templates.length === 0) continue;
-    return rng.pick(templates)(note.who);
+    return rng.pick(fresh(templates.map((t) => t(note.who)), v));
   }
   return null;
 }
@@ -461,8 +534,7 @@ function tryMemoryLine(v: Villager, rng: Rng): string | null {
     if (!ev) continue;
     const templates = banks[kind];
     if (!templates || templates.length === 0) continue;
-    const tmpl = rng.pick(templates);
-    return tmpl(ev.value ?? "");
+    return rng.pick(fresh(templates.map((t) => t(ev.value ?? "")), v));
   }
   return null;
 }

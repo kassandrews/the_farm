@@ -157,8 +157,19 @@ export interface Villager {
   /** Friendship, grown by talking/doing things together (DESIGN §"Company"). */
   friendship: number;
   memory: MemoryLog;
-  /** Last idle line shown, so it doesn't immediately repeat. */
-  lastLine: string;
+  /** The last few lines they said, newest last — a bounded ring
+   *  (sim/dialogue.ts §SAID_MAX). Replaced `lastLine` at v32: one remembered
+   *  line can only dodge an immediate repeat, and a two-line bank was a coin
+   *  flip between the same two sentences forever. Selection prefers a line
+   *  that isn't in here; a pool smaller than the ring falls back to itself
+   *  rather than going quiet. */
+  said: string[];
+  /** ms epoch of the last conversation with the player. Absent means the game
+   *  doesn't know — a pre-v32 save can't say when you last spoke, and greeting
+   *  an absence it never measured would read as the game guessing. Set on
+   *  every `speak`, so it self-limits: the greeting fires once, then the clock
+   *  has reset. */
+  lastTalkedAt?: number;
   /** Anchor key ("x,y") of THEIR bed, or null if they haven't got one.
    *
    *  This single field is the whole housing model (sim/housing.ts): a home is

@@ -40,7 +40,7 @@ export function makeVillager(def: CharDef, now: number, memorySeed: MemoryLog = 
     facing: 1,
     friendship: 0,
     memory,
-    lastLine: "",
+    said: [],
     // No bed yet — there may not be a world to hold one. The town hands out its
     // authored beds after it is stamped (housing.ts settleResidents), which is
     // also what moves everyone off this fallback position and into their homes.

@@ -1107,6 +1107,39 @@ describe("v29 → v30: the farming memories stop naming the carrot", () => {
   });
 });
 
+describe("v31 → v32: the said ring", () => {
+  /** A v31 save: villagers carry `lastLine` and have never heard of `said`. */
+  function v31Save(): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const villagers = (w.villagers as Record<string, unknown>[]).map((v, i) => {
+      const { said: _said, lastTalkedAt: _at, ...rest } = v;
+      return { ...rest, lastLine: i === 0 ? "It's nice here. Quietly." : "" };
+    });
+    return { ...w, schemaVersion: 31, villagers };
+  }
+
+  it("seeds the ring with the one line the old save remembered", () => {
+    // That line is the only conversation history a v31 save has; dropping it
+    // would let the very next tap repeat it.
+    const migrated = migrateSave(v31Save())!;
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated.villagers[0].said).toEqual(["It's nice here. Quietly."]);
+    expect(migrated.villagers[0]).not.toHaveProperty("lastLine");
+  });
+
+  it("an empty lastLine becomes an empty ring, not a ring holding nothing", () => {
+    const migrated = migrateSave(v31Save())!;
+    for (const v of migrated.villagers.slice(1)) expect(v.said).toEqual([]);
+  });
+
+  it("does not invent a lastTalkedAt the old save never measured", () => {
+    // Absent means "the game doesn't know", and the absence greeting stays
+    // quiet until a real conversation starts the clock (sim/dialogue.ts).
+    const migrated = migrateSave(v31Save())!;
+    for (const v of migrated.villagers) expect(v).not.toHaveProperty("lastTalkedAt");
+  });
+});
+
 describe("a save that went wrong can come back", () => {
   it("drops a duplicate villager, keeping the first", () => {
     // Routes are keyed by character id, so two villagers sharing one read each

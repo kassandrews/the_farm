@@ -136,6 +136,131 @@ describe("a scholar resident disagrees with the curator", () => {
   });
 });
 
+// --- The said ring, the absence greeting, and the in-the-middle-of rung -------
+// Phase 12 step 1. These use a hand-rolled Rng rather than makeRng: `next` at a
+// fixed value decides exactly which chance rolls pass, and `pick` at "first
+// element" makes the ring's steering the only variable in the test.
+
+import { speak as speakFn } from "./dialogue";
+import { RESIDENT_IDLE, RESIDENT_ABSENCE } from "../content/dialogue";
+import type { Villager } from "./types";
+
+function stubRng(nextValue: number) {
+  return {
+    next: () => nextValue,
+    int: () => 0,
+    pick: <T,>(arr: readonly T[]): T => arr[0],
+  };
+}
+
+/** The world's own first resident, stripped to a bare scholar: no memories, no
+ *  home, no friendship — so the only rungs that can speak are the ones the test
+ *  hands it. A real id, because `displayName` consults the character tables. */
+function bareScholar(w: ReturnType<typeof newWorld>): Villager {
+  const v = w.villagers.find((x) => x.id === "resident1")!;
+  Object.assign(v, { form: "scholar", friendship: 0, memory: [], said: [], homeBed: null });
+  delete v.lastTalkedAt;
+  return v;
+}
+
+describe("the said ring", () => {
+  it("walks a whole bank before repeating, instead of coin-flipping two lines", () => {
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
+    const v = bareScholar(w);
+    const rng = stubRng(0.99); // every chance roll fails → idle voice every time
+    const idle = RESIDENT_IDLE.scholar!;
+    const heard = Array.from({ length: idle.length }, () => speakFn(w, v, rng, Date.now()).text);
+    // pick() always takes the first candidate, so distinctness here is the ring
+    // doing the steering — without it this would be idle[0] six times.
+    expect(new Set(heard).size).toBe(idle.length);
+    // The pool exhausted, the whole pool comes back: spoken, never silent.
+    expect(speakFn(w, v, rng, Date.now()).text).toBe(heard[0]);
+  });
+
+  it("keeps at most the last eight lines", () => {
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
+    const v = bareScholar(w);
+    const rng = stubRng(0.99);
+    for (let i = 0; i < 20; i++) speakFn(w, v, rng, Date.now());
+    expect(v.said.length).toBeLessThanOrEqual(8);
+  });
+});
+
+describe("the absence greeting", () => {
+  const DAY = 24 * 3600_000;
+  const now = Date.parse("2026-06-10T12:00:00Z");
+
+  function greetAfter(gap: number | null): string {
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
+    const v = bareScholar(w);
+    if (gap !== null) v.lastTalkedAt = now - gap;
+    return speakFn(w, v, stubRng(0.99), now).text;
+  }
+
+  it("greets a few days away with the days bank, weeks with the weeks bank", () => {
+    expect(greetAfter(4 * DAY)).toBe(RESIDENT_ABSENCE.scholar!.days[0]);
+    expect(greetAfter(20 * DAY)).toBe(RESIDENT_ABSENCE.scholar!.weeks![0]);
+  });
+
+  it("says nothing about a gap it never measured, or one too small to be one", () => {
+    // Absent lastTalkedAt is a pre-v32 save: the game can't know, so it can't say.
+    expect(greetAfter(null)).toBe(RESIDENT_IDLE.scholar![0]);
+    expect(greetAfter(2 * DAY)).toBe(RESIDENT_IDLE.scholar![0]);
+  });
+
+  it("fires once per absence — the conversation itself resets the clock", () => {
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
+    const v = bareScholar(w);
+    v.lastTalkedAt = now - 4 * DAY;
+    const rng = stubRng(0.99);
+    expect(speakFn(w, v, rng, now).text).toBe(RESIDENT_ABSENCE.scholar!.days[0]);
+    expect(speakFn(w, v, rng, now + 60_000).text).not.toBe(RESIDENT_ABSENCE.scholar!.days[1]);
+  });
+});
+
+describe("the in-the-middle-of rung", () => {
+  const now = Date.parse("2026-06-10T12:00:00Z");
+  const MIN = 60_000;
+
+  it("remarks on a morning of felling once three recent events say so", () => {
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
+    const v = bareScholar(w);
+    v.memory = [
+      { kind: "gathered", at: now - 30 * MIN },
+      { kind: "gathered", at: now - 12 * MIN },
+      { kind: "gathered", at: now - 2 * MIN },
+    ];
+    // 0.4 fails the home roll (0.35), passes the midst roll (0.5).
+    expect(speakFn(w, v, stubRng(0.4), now).text).toContain("thumps");
+  });
+
+  it("prefers the harvest, which knows what came out of the ground", () => {
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
+    const v = bareScholar(w);
+    v.memory = [
+      { kind: "gathered", at: now - 20 * MIN },
+      { kind: "gathered", at: now - 15 * MIN },
+      { kind: "gathered", at: now - 10 * MIN },
+      { kind: "harvested", at: now - 9 * MIN, value: "a pumpkin" },
+      { kind: "harvested", at: now - 6 * MIN, value: "a pumpkin" },
+      { kind: "harvested", at: now - 3 * MIN, value: "a pumpkin" },
+    ];
+    expect(speakFn(w, v, stubRng(0.4), now).text).toContain("a pumpkin");
+  });
+
+  it("does not call a three-week-old afternoon a busy morning", () => {
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
+    const v = bareScholar(w);
+    const old = now - 21 * 24 * 3600_000;
+    v.memory = [
+      { kind: "gathered", at: old },
+      { kind: "gathered", at: old + MIN },
+      { kind: "gathered", at: old + 2 * MIN },
+    ];
+    expect(speakFn(w, v, stubRng(0.4), now).text).not.toContain("thumps");
+  });
+});
+
 // --- Seasons ----------------------------------------------------------------------
 
 describe("the town remarks on the month", () => {
