@@ -184,8 +184,12 @@ describe("undo knows which layer the stroke was on", () => {
     add(w.inventory, "ore", 2);
     add(w.inventory, "wood", 20);
 
-    // Something of yours on the surface at the same coordinate.
+    // Something of yours on the surface at the same coordinate. Step off the
+    // tile first: nothing solid goes down on the cell you are standing on
+    // (sim/game.ts), and this test is about layers, not about where you stand.
     w.player.layer = "surface";
+    w.player.x = at.x + 3;
+    w.player.y = at.y + 3;
     expect(buildAt(w, "wall", at.x, at.y, Date.now()).changed).toBe(true);
     const wallBefore = { ...w.build[`${at.x},${at.y}`] };
 

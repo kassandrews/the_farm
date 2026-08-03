@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { newWorld, moveTo, tick } from "./game";
+import { newWorld, moveTo, tick, buildAt } from "./game";
 import { isWalkable, setTile, tileKey } from "./world";
 import { WATER, DIRT, GRASS } from "../content/tiles";
 import {
@@ -210,6 +210,53 @@ describe("walls stop you", () => {
     moveTo(w, 21, 19);
     for (let i = 0; i < 400; i++) tick(w, 1 / 60, 1000);
     expect(w.player.y).toBeCloseTo(19, 1);
+  });
+});
+
+describe("you cannot build yourself into a solid tile", () => {
+  /** Open ground under your feet, and enough stuff to build with. */
+  function standing(x: number, y: number) {
+    const w = world();
+    for (let j = y - 1; j <= y + 1; j++) for (let i = x - 1; i <= x + 1; i++) clear(w, i, j);
+    w.player.x = x;
+    w.player.y = y;
+    w.inventory.wood = 500;
+    w.inventory.stone = 500;
+    return w;
+  }
+
+  it("refuses a wall on the tile you are standing on", () => {
+    const w = standing(21, 21);
+    const before = w.inventory.wood;
+
+    const r = buildAt(w, "wall", 21, 21, 1000);
+
+    // Nothing placed, nothing charged, and it says so rather than failing mute.
+    expect(r.changed).toBe(false);
+    expect(r.message).toMatch(/standing/i);
+    expect(structureAt(w, 21, 21)).toBeNull();
+    expect(w.inventory.wood).toBe(before);
+    expect(isWalkable(w, 21, 21)).toBe(true);
+  });
+
+  it("refuses solid furniture on the tile you are standing on", () => {
+    const w = standing(21, 21);
+    expect(buildAt(w, "table", 21, 21, 1000).changed).toBe(false);
+    expect(isWalkable(w, 21, 21)).toBe(true);
+  });
+
+  it("still lets you lay a floor under your own feet", () => {
+    // The guard asks the PIECE whether it is solid, not the tool's category —
+    // a floor goes down underfoot constantly and must keep doing so, or the fix
+    // costs more than the bug did.
+    const w = standing(21, 21);
+    expect(buildAt(w, "floor", 21, 21, 1000).changed).toBe(true);
+    expect(isWalkable(w, 21, 21)).toBe(true);
+  });
+
+  it("still lets you build a wall on the tile in front of you", () => {
+    const w = standing(21, 21);
+    expect(buildAt(w, "wall", 21, 20, 1000).changed).toBe(true);
   });
 });
 

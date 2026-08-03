@@ -204,6 +204,25 @@ export function playerTile(world: WorldState): { x: number; y: number } {
   return { x: Math.round(world.player.x), y: Math.round(world.player.y) };
 }
 
+/** Is the player standing on this cell, on this layer? The layer matters: the
+ *  same coordinate exists on the surface and in the rock, and a wall going up
+ *  over your head while you are underneath it is `fillShaft`'s problem, not
+ *  this one. */
+function standingOn(world: WorldState, x: number, y: number, layer: Layer): boolean {
+  if (world.player.layer !== layer) return false;
+  const at = playerTile(world);
+  return at.x === x && at.y === y;
+}
+
+/** Would this build tool put down something you cannot walk through? Asked of
+ *  the piece rather than the tool's category, so a rug and a bed get different
+ *  answers even though both are furniture. */
+function placingSomethingSolid(tool: BuildTool): boolean {
+  if (isFurnitureTool(tool)) return furnitureDef(tool).solid;
+  if (tool === "floor" || tool === "erase") return false;
+  return structureDef(tool).solid;
+}
+
 /** One step along a heading. The one place the compass becomes arithmetic, so
  *  nothing downstream can disagree about which way "n" is. */
 export function headingStep(h: Heading): { dx: number; dy: number } {
@@ -1395,6 +1414,27 @@ export function buildAt(
       message: refinishing ? "Refinished." : "A board goes down. The house begins.",
       broke: false,
     };
+  }
+
+  // NOTHING SOLID GOES DOWN ON THE TILE YOU ARE STANDING ON.
+  //
+  // Placement asked the ground about itself and never asked where the player
+  // was, so a wall or a table would happily close over your own cell and leave
+  // you inside a solid tile with `isWalkable` false in every direction. Erase
+  // still reaches it, so it was recoverable — but it reads as the game breaking,
+  // and "you can always take it back" is a promise about the arrangement, not a
+  // rescue you should need to work out under a wall.
+  //
+  // A refusal rather than shoving the player aside, matching `fillShaft`, which
+  // is the same shape of mistake seen from below and answers it the same way:
+  // the world does not move you, it declines. Walling yourself into a 1x1 room
+  // is still allowed — that is a room you built, and you can erase your way out
+  // of it facing any direction.
+  //
+  // Solidity is asked of the piece, not assumed from the tool: floors, rugs and
+  // cushions are placed under your feet all the time and must stay that way.
+  if (standingOn(world, x, y, layer) && placingSomethingSolid(tool)) {
+    return { changed: false, message: "Not while you're standing there.", broke: false };
   }
 
   if (isFurnitureTool(tool)) {
