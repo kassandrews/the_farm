@@ -420,10 +420,12 @@ function rockRoll(seed: number, x: number, y: number): number {
 
 /** How much deadwood a region with `deadwood: 1` would have.
  *
- *  A THIRD OF THE ROCK'S, and it lives here rather than in content/nodes.ts
- *  because a stump is not a node — there is nothing to gather, nothing to drop
- *  and nothing to regrow, so it has no row to hang a density on. It sits beside
- *  the roll that uses it, the same way RECLAIM_MS sits beside `dig`.
+ *  A THIRD OF THE ROCK'S, and it lives here rather than in content/nodes.ts for a
+ *  reason that outlived its original one: deadwood IS a node now (it gathers into
+ *  wood), but it is placed by ONE roll that then picks stump or log, so neither
+ *  row has a density of its own to carry. Both are `density: 0` there, the dark
+ *  tree's precedent. It sits beside the roll that uses it, the same way RECLAIM_MS
+ *  sits beside `dig`.
  *
  *  Rare is the point. A log is something you come across; a wood MADE of fallen
  *  wood is a clearance site. */
@@ -2523,12 +2525,18 @@ export function fill(world: WorldState, x: number, y: number): boolean {
 
 /** How long dug earth lies bare before the grass closes over it.
  *
- *  Longer than either node's regrowMs (8h and 10h, content/nodes.ts), and that
- *  ordering is the point rather than a tuning accident: you should never watch the
- *  world undo a hole while you are standing over it deciding what to put there.
- *  You come back and it has closed. It also leaves bare dirt usable as a working
- *  surface for a whole build session, which is why it isn't the four hours real
- *  grass would suggest.
+ *  It used to be longer than every node's regrowMs and is now shorter than most
+ *  of them, and the RULE it was written to serve survived the change: you should
+ *  never watch the world undo your afternoon while you are standing over it
+ *  deciding what to put there. Twelve hours is still well past a session. When the
+ *  nodes were retuned (a tree went from 8h to a day, a rock from 10h to three) it
+ *  was the nodes that were too fast, not this that was too slow — and a hole you
+ *  dug is not a wood, so there is no reason the two numbers must stay in order.
+ *
+ *  A pending node beats the grass anyway: `updateReclaim` skips tiles something
+ *  is coming back to, so a felled tree's dirt is never quietly turned to lawn out
+ *  from under it. It also leaves bare dirt usable as a working surface for a whole
+ *  build session, which is why it isn't the four hours real grass would suggest.
  *
  *  The firing rule is in sim/gather.ts beside the one for felled nodes, because
  *  the two have to agree about what "you've claimed this" means. Only the booking

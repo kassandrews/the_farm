@@ -213,16 +213,36 @@ Recorded in full in DESIGN.md §Materials. The short version and *why*:
   in the same tiles eight hours later, for ever — which is precisely the tidying
   job the bullet below forbids. So a felled tree returns only if one of its eight
   neighbours is still a tree, and otherwise forfeits exactly as claimed ground
-  does. **Radius one, not two**: a neighbour rule always lets the wood take back
-  the ring it can still reach, so the radius *is* the depth of that encroachment —
-  at two you clear a 7×7 and keep 3×3, at one you keep 5×5. One ring reads as a
-  wood closing in a little at its edge and then stopping.
-  **Rock, ore and the dark tree are exempt, and that is the point of the flag.**
-  Stone does not spread, and rocks are placed so no two ever touch
-  (`rockIsLoneliest`) — a seeded rock could never come back and stone would
-  quietly become scarce, which DESIGN §Materials forbids. The grove is a place
-  rather than a wood, and a player who cleared it would have deleted a secret
-  permanently. Deadwood is exempt for the duller version of the rock's reason.
+  does. **The radius is per node and it was measured, not guessed** — over 271k
+  tiles of the real generator, 76% of trees have another tree within 1 and 97%
+  within 2; rocks, a third as dense and never adjacent, manage 27% at 1, 69% at 2
+  and 91% at 4. Trees shipped at 1 for a day, which meant a quarter of ordinary
+  fellings never came back: a silent, permanent thinning of the world nobody asked
+  for, and far worse than losing another ring of a clearing you dug on purpose.
+  **The radius IS the depth of the encroachment** — the world always takes back
+  the ring it can still reach — so the trade is reliability of healing against how
+  much of your clearing survives. Trees and shrubs 2, rocks 4.
+  **Ore and the dark tree are exempt.** Ore never regrows at all; the grove is a
+  place rather than a wood, and a player who cleared it would have deleted a
+  secret permanently. Deadwood is exempt because at one cell in a thousand there
+  is no scatter to seed from at any radius worth writing.
+  **Rocks were exempt too, on an argument that was simply wrong.** The claim was
+  that seeding them would make stone scarce — asserted without the arithmetic, and
+  rocks are 3% of tiles, so a hundred tiles square holds ~300 of them and ~3,600
+  stone in a world with no edge. What the exemption actually bought was an
+  inconsistency: the axe could make a lasting clearing and the pick could not.
+  **And the clocks all slowed down.** Shrub 3h, tree 8h→**24h**, deadwood
+  24h→**48h**, rock 10h→**72h**. Eight hours had a tree closing the edge of a
+  clearing while you were still standing in it, which is the world undoing your
+  afternoon in front of you — the same thing `RECLAIM_MS` was tuned to avoid. That
+  broke the old "reclaim is longer than any node" ordering, which turned out never
+  to have been the point; the property is that reclaim outlasts a *sitting*, and a
+  hole you dug is not a wood.
+  **A forfeited node hands its tile to the grass**, which only became necessary
+  once nodes could forfeit. Before, every felled tree came back, so its DIRT was
+  always temporary — afterwards a cleared wood would have been a field of
+  permanent brown squares, which is the shovel's old "only verb you have to tidy
+  up after" arriving through the axe.
   **Found while writing the test: decide first, then plant.** A single loop that
   wrote as it went filled a whole clearing in one pass, because each tree it
   restored became a neighbour for the next entry it looked at — the wood marched

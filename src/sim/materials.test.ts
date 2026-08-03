@@ -174,11 +174,12 @@ describe("gathering", () => {
     const w = freshWorld();
     const { x, y } = findNode(w, TREE);
     // Clear its whole neighbourhood first, so there is provably nothing to seed
-    // from. This is the hole the seeded rule exists to close: before it, a player
-    // who cleared a wood and left it as lawn got every tree back in the same tile
-    // eight hours later, for ever, which is the tidying job ROADMAP forbids.
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dx = -1; dx <= 1; dx++) setTile(w, x + dx, y + dy, GRASS);
+    // from. This is the hole the rule exists to close: before it, a player who
+    // cleared a wood and left it as lawn got every tree back in the same tile
+    // hours later, for ever, which is the tidying job ROADMAP forbids.
+    const rad = NODES.tree.seedRadius!;
+    for (let dy = -rad; dy <= rad; dy++) {
+      for (let dx = -rad; dx <= rad; dx++) setTile(w, x + dx, y + dy, GRASS);
     }
     setTile(w, x, y, TREE);
     gather(w, x, y, 1000);
@@ -187,42 +188,74 @@ describe("gathering", () => {
     expect(pendingRegrowth(w)).toBe(0); // and it stopped nagging, like a claim
   });
 
-  it("keeps the middle of a clearing but lets the wood take back one ring", () => {
-    // The behaviour the radius actually buys, asserted so a future change to it
-    // is a decision rather than a surprise: at radius 1 a 7x7 felled out of a
-    // solid stand keeps its 5x5 middle, because only the ring touching the
-    // standing trees has anything to grow from.
+  it("keeps the middle of a clearing and lets the wood take back exactly the radius", () => {
+    // The behaviour the radius actually buys, asserted against the radius itself
+    // so a future retune is a decision rather than a surprise. The wood can only
+    // reach `rad` tiles into what you felled; everything further in has nothing
+    // to grow from and is yours.
     const w = freshWorld();
     const { x, y } = findNode(w, TREE);
-    for (let dy = -4; dy <= 4; dy++) {
-      for (let dx = -4; dx <= 4; dx++) setTile(w, x + dx, y + dy, TREE);
+    const rad = NODES.tree.seedRadius!;
+    const half = rad + 3; // a felled block comfortably wider than the reach
+    for (let dy = -half - 1; dy <= half + 1; dy++) {
+      for (let dx = -half - 1; dx <= half + 1; dx++) setTile(w, x + dx, y + dy, TREE);
     }
-    for (let dy = -3; dy <= 3; dy++) {
-      for (let dx = -3; dx <= 3; dx++) gather(w, x + dx, y + dy, 1000);
+    for (let dy = -half; dy <= half; dy++) {
+      for (let dx = -half; dx <= half; dx++) gather(w, x + dx, y + dy, 1000);
     }
     updateRegrowth(w, 1000 + NODES.tree.regrowMs! + 1);
-    // The outer ring of the felled block touches the standing wood, so it closes.
-    expect(tileAt(w, x + 3, y)).toBe(TREE);
-    expect(tileAt(w, x, y + 3)).toBe(TREE);
-    // Everything inside that ring had no tree beside it and stays cleared.
-    for (let dy = -2; dy <= 2; dy++) {
-      for (let dx = -2; dx <= 2; dx++) {
+    // The outermost felled ring is within reach of the standing wood, so it closes.
+    expect(tileAt(w, x + half, y)).toBe(TREE);
+    expect(tileAt(w, x, y + half)).toBe(TREE);
+    // The middle had nothing within `rad` and stays cleared.
+    const keep = half - rad;
+    for (let dy = -keep; dy <= keep; dy++) {
+      for (let dx = -keep; dx <= keep; dx++) {
         expect(tileAt(w, x + dx, y + dy), `${dx},${dy}`).toBe(DIRT);
       }
     }
     expect(pendingRegrowth(w)).toBe(0); // nothing left pending either way
   });
 
-  it("still brings rocks back, because stone does not spread", () => {
-    // The exemption is the point of the flag rather than an oversight. Rocks are
-    // generated so that no two ever touch (world.ts §rockIsLoneliest), so a
-    // seeded rock could NEVER return and stone would quietly become scarce —
-    // which DESIGN §Materials forbids outright.
+  it("brings a rock back too, on its own much wider radius", () => {
+    // Rocks were exempt at first on the claim that seeding them would make stone
+    // scarce. That was asserted without the arithmetic and it is wrong — rocks
+    // are 3% of tiles in a world with no edge — and the exemption bought only an
+    // inconsistency: the axe could make a lasting clearing and the pick could not.
     const w = freshWorld();
     const { x, y } = findNode(w, ROCK);
+    // Stated rather than hoped for: rocks are generated so no two ever touch, so
+    // whether one has kin in range is a question about the scatter, not this test.
+    setTile(w, x + NODES.rock.seedRadius!, y, ROCK);
     gather(w, x, y, 1000);
     updateRegrowth(w, 1000 + NODES.rock.regrowMs! + 1);
     expect(tileAt(w, x, y)).toBe(ROCK);
+  });
+
+  it("leaves a rock cleared when there is no stone left near it", () => {
+    const w = freshWorld();
+    const { x, y } = findNode(w, ROCK);
+    const rad = NODES.rock.seedRadius!;
+    for (let dy = -rad; dy <= rad; dy++) {
+      for (let dx = -rad; dx <= rad; dx++) setTile(w, x + dx, y + dy, GRASS);
+    }
+    setTile(w, x, y, ROCK);
+    gather(w, x, y, 1000);
+    updateRegrowth(w, 1000 + NODES.rock.regrowMs! * 10);
+    expect(tileAt(w, x, y)).toBe(DIRT);
+    expect(pendingRegrowth(w)).toBe(0);
+  });
+
+  it("orders the clocks: undergrowth, wood, deadwood, stone", () => {
+    // The pace of the world, in one assertion. A shrub is a season's growth and a
+    // fallen tree is a decade's; a rock is not growing at all. These were 3h, 8h,
+    // 24h and 10h, which had a rock back in a yard before you had finished
+    // clearing the yard and a wood closing over while you stood in it.
+    expect(NODES.shrub.regrowMs!).toBeLessThan(NODES.tree.regrowMs!);
+    expect(NODES.tree.regrowMs!).toBeLessThan(NODES.stump.regrowMs!);
+    expect(NODES.stump.regrowMs!).toBeLessThan(NODES.rock.regrowMs!);
+    // And the grove keeps pace with the wood it is a strange version of.
+    expect(NODES.darktree.regrowMs).toBe(NODES.tree.regrowMs);
   });
 
   it("NEVER regrows on ground you've claimed — the clearing stays yours", () => {
@@ -288,9 +321,35 @@ describe("grass closes over what you dug", () => {
     expect(tileAt(w, x, y)).toBe(GRASS);
   });
 
-  it("takes longer than either node regrows — you never watch it happen", () => {
-    expect(RECLAIM_MS).toBeGreaterThan(NODES.tree.regrowMs!);
-    expect(RECLAIM_MS).toBeGreaterThan(NODES.rock.regrowMs!);
+  it("is longer than a sitting, which is the property that actually mattered", () => {
+    // This used to assert RECLAIM_MS > every node's regrowMs, and that ordering
+    // broke when the nodes were slowed (a tree went 8h -> 24h, a rock 10h -> 72h).
+    // The ordering was never the point: the rule is that you should not watch the
+    // world undo your afternoon while standing over it deciding what to put there.
+    // Twelve hours is well past any sitting. A hole you dug is not a wood, and
+    // there is no reason the two clocks must stay in order.
+    expect(RECLAIM_MS).toBeGreaterThan(4 * HOUR);
+  });
+
+  it("grasses over a tree that forfeited, so clearing leaves no brown squares", () => {
+    // The bug the seeded rule introduced and this closes. Before it, every felled
+    // tree came back, so the DIRT it left was always temporary. A tree that
+    // forfeits leaves bare earth nothing was watching — and a cleared wood would
+    // have been a field of permanent brown squares, which is the shovel's old
+    // "only verb you have to tidy up after" arriving through the axe.
+    const w = freshWorld();
+    const { x, y } = findGrass(w);
+    const rad = NODES.tree.seedRadius!;
+    for (let dy = -rad; dy <= rad; dy++) {
+      for (let dx = -rad; dx <= rad; dx++) setTile(w, x + dx, y + dy, GRASS);
+    }
+    setTile(w, x, y, TREE);
+    gather(w, x, y, 1000);
+    const forfeit = 1000 + NODES.tree.regrowMs! + 1;
+    updateRegrowth(w, forfeit);
+    expect(tileAt(w, x, y)).toBe(DIRT); // it did not come back
+    updateReclaim(w, forfeit + RECLAIM_MS + 1);
+    expect(tileAt(w, x, y)).toBe(GRASS); // and the ground closed over anyway
   });
 
   it("leaves tilled, paved and built ground alone, and stops tracking it", () => {

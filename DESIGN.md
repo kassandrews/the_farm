@@ -979,6 +979,21 @@ Materials are required but never rationed:
   and pave, till, or build there and it's yours for good. The world heals
   where you aren't invested and stays exactly as you shaped it where you
   are. **Filled water is the one exception** and §Water argues it.
+- **And it heals from what is still there, so a CLEARING is a claim too.**
+  A felled tree comes back only if a tree is still standing within a couple
+  of tiles; a rock only if there is stone left nearby. A wood closes over a
+  gap, which is what a wood does; it does not march back across ground you
+  emptied. This was missing at first and the omission had a shape: *claimed*
+  meant BUILT ON, so a player who felled a wood to make a lawn and left it
+  as a lawn got every tree back in the same tiles, for ever. Clearing is
+  also shaping. The world still tidies up after you either way — ground that
+  forfeits its node grasses over like any other bare earth, so the axe never
+  leaves permanent brown squares.
+- **Nothing out there hurries.** A shrub is hours, a tree is a day, deadwood
+  two, a rock three. The pace is deliberate: at eight hours a tree closed
+  the edge of a clearing while you were still standing in it deciding what
+  to build, which is the world undoing your afternoon in front of you. You
+  should come back to a changed wood, never watch one change.
 - **Ore veins do not come back, and that is the same rule and not an
   exception to it.** Underground there is no unclaimed ground: every open
   cell down there is one you cut, so a vein regrowing would re-block a

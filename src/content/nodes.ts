@@ -44,8 +44,14 @@ export interface NodeDef {
    *  same rule underground: see the vein below. */
   regrowMs: number | null;
 
-  /** Does this come back only where its own kind still stands beside it?
-   *  Optional; absent means it returns wherever it was felled, on the timer alone.
+  /** How far away its own kind may be and still seed this tile back. Optional;
+   *  absent means it returns wherever it was felled, on the timer alone.
+   *
+   *  A RADIUS AND NOT A FLAG, because the right distance is a property of the
+   *  SCATTER and the scatters differ by a lot. Measured off the real generator
+   *  over 271k tiles: 76% of trees have another tree within 1 and 97% within 2;
+   *  rocks, which are sparser and generated so that no two ever touch, manage
+   *  27% at 1, 69% at 2 and 91% at 4. One number could not serve both.
    *
    *  THIS IS WHAT MAKES A CLEARING STICK, and it exists because the regrow rule
    *  had a hole in it that only shows up if you terraform. "The world heals where
@@ -57,25 +63,37 @@ export interface NodeDef {
    *  become a tidying job, and that was one.
    *
    *  A wood closes over a GAP because the trees beside it seed into it. It does not
-   *  march back across open ground. So a felled tree returns if one of its eight
-   *  neighbours is still a tree, and otherwise forfeits exactly as a built-on tile
-   *  does. Fell one in a wood: it closes. Clear a patch: the middle has nothing to
-   *  heal from and stays yours.
+   *  march back across open ground. So a felled tree returns if one of its own kind
+   *  is still standing within this radius, and otherwise forfeits exactly as a
+   *  built-on tile does. Fell one in a wood: it closes. Clear a patch: the middle
+   *  has nothing to heal from and stays yours.
    *
-   *  ROCK AND ORE ARE NOT SEEDED, and that is the point of the flag rather than an
-   *  oversight. Stone does not spread — and rocks are placed so that no two ever
-   *  touch (sim/world.ts §rockIsLoneliest), so a neighbour rule would mean a rock
-   *  could NEVER come back and stone would quietly become scarce. DESIGN §Materials:
-   *  materials are required but never rationed.
+   *  THE RADIUS IS THE DEPTH OF THE ENCROACHMENT, and that is the whole trade. A
+   *  neighbour rule always lets the world take back the ring it can still reach,
+   *  so a bigger radius means more reliable healing AND a deeper bite out of what
+   *  you cleared. Trees shipped at 1 before anyone measured, which left a quarter
+   *  of ordinary fellings never coming back — a silent, permanent thinning of the
+   *  world that nobody asked for, and much worse than losing another ring of a
+   *  clearing you dug on purpose.
+   *
+   *  ORE IS NOT SEEDED because it never regrows at all — see the vein. ROCK IS,
+   *  at four, and an earlier version of this comment claimed it could not be
+   *  without making stone scarce. That was asserted without the arithmetic and it
+   *  is wrong: rocks are 3% of tiles, so a hundred tiles square holds about three
+   *  hundred of them and some three and a half thousand stone, in a world with no
+   *  edge. Scarcity was never on the table. What the exemption actually bought was
+   *  an inconsistency — the axe could make a lasting clearing and the pick could
+   *  not.
    *
    *  NOR IS THE DARK TREE. The grove is a place, not a wood (sim/world.ts), and a
    *  player who cleared it would have deleted a secret permanently. It regrows on
    *  the timer alone, which is the one case where "the world heals" outranks "your
    *  land is yours".
    *
-   *  NOR IS DEADWOOD, for a duller reason: stumps and logs are generated so that no
-   *  two ever touch either, so seeding them would mean none of them ever returns. */
-  seeded?: boolean;
+   *  NOR IS DEADWOOD, for a duller reason: it is one cell in a thousand, so there
+   *  is no scatter to seed from at any radius worth writing — and nobody is
+   *  terraforming around a log. */
+  seedRadius?: number;
 
   /** Roughly what fraction of eligible ground carries one, at generation. */
   density: number;
@@ -91,8 +109,13 @@ export const NODES: Record<NodeId, NodeDef> = {
     drop: "wood",
     line: "Timber.",
     yield: 8, // a floor's worth from one tree
-    regrowMs: 8 * HOUR,
-    seeded: true, // a wood closes its gaps; it does not retake a clearing
+    // A DAY, and it was eight hours. Eight meant the rim of a clearing filled
+    // back in while you were still standing in it deciding what to build — you
+    // watched the world undo your afternoon, which is the one thing the reclaim
+    // timer was already tuned to avoid. A day is "come back tomorrow and the wood
+    // has closed", which is the pace everything else here keeps.
+    regrowMs: 24 * HOUR,
+    seedRadius: 2, // a wood closes its gaps; it does not retake a clearing
     density: 0.1,
   },
   // A tree's little sibling, and the first node whose density is ZERO almost
@@ -119,8 +142,10 @@ export const NODES: Record<NodeId, NodeDef> = {
     drop: "wood",
     line: "Cut back.",
     yield: 2,
+    // Still hours where a tree is a day, and the gap is the point: undergrowth
+    // IS fast, and a wood you walked through should not stay visibly mown.
     regrowMs: 3 * HOUR,
-    seeded: true, // same as the tree: undergrowth spreads from undergrowth
+    seedRadius: 2, // same as the tree: undergrowth spreads from undergrowth
     density: 0.1,
   },
   rock: {
@@ -142,7 +167,17 @@ export const NODES: Record<NodeId, NodeDef> = {
     // which leaves stone the more deliberate material without making it a chore
     // (DESIGN §Materials: deliberately not tuned to parity).
     yield: 12,
-    regrowMs: 10 * HOUR,
+    // THREE DAYS, and it was ten hours. They are rocks. Ten hours put a stone
+    // back in a yard you cleared before you had finished clearing the yard, and
+    // nothing about a rock suggests that pace — this is the slowest thing in the
+    // table by a distance and it should be.
+    regrowMs: 72 * HOUR,
+    // FOUR, where a tree gets two, because rocks are a third as dense and never
+    // adjacent: at two only 69% of them have a neighbour to come back from, and
+    // a third of every rock you split would be gone for good. Four measures 91%.
+    // The cost is the deeper encroachment ring, and three days between rings is
+    // what makes that bearable.
+    seedRadius: 4,
     density: 0.035,
   },
   // The third gathered class, and the only one you have to go somewhere for.
@@ -193,7 +228,10 @@ export const NODES: Record<NodeId, NodeDef> = {
     // would be the toast a secret is not allowed to have.
     line: "Timber. Darker at the heart.",
     yield: 8,
-    regrowMs: 8 * HOUR,
+    // It follows the tree, as it follows the tree in everything else — this row
+    // differs from that one in ONE number and no logic, and the day that stops
+    // being true the grove has become a better wood rather than a stranger one.
+    regrowMs: 24 * HOUR,
     density: 0,
   },
   // DEADWOOD, and it shipped one day NOT being a node, which was the mistake.
@@ -221,11 +259,15 @@ export const NODES: Record<NodeId, NodeDef> = {
   // bar `shrubs` already cleared. It is something you come across, never a reason
   // to walk anywhere.
   //
-  // The SLOWEST regrowth in the table, and that is the point: a shrub is a
-  // season's growth and a fallen tree is a decade's. It comes back because the
-  // world heals where you are not invested (ROADMAP §regrow-unless-claimed), and
-  // it comes back slowly because a wood that restocked its deadwood overnight
-  // would read as a supply rather than as age.
+  // TWO DAYS: slower than anything that grows, faster than the rock. A shrub is
+  // a season's growth and a fallen tree is a decade's, so a wood that restocked
+  // its deadwood overnight would read as a supply rather than as age. It comes
+  // back at all because the world heals where you are not invested (ROADMAP
+  // §regrow-unless-claimed).
+  //
+  // NOT SEEDED, unlike the tree and the rock: this is one cell in a thousand and
+  // no two are ever generated adjacent, so there is no scatter to seed from at
+  // any radius worth writing — and nobody is terraforming around a log.
   //
   // Felled to GRASS, not DIRT, on the shrub's reasoning: a stump that scarred the
   // ground behind it would pock a wood with dirt patches for three wood apiece.
@@ -238,7 +280,7 @@ export const NODES: Record<NodeId, NodeDef> = {
     drop: "wood",
     line: "Levered it out.",
     yield: 3,
-    regrowMs: 24 * HOUR,
+    regrowMs: 48 * HOUR,
     density: 0,
   },
   log: {
@@ -250,7 +292,7 @@ export const NODES: Record<NodeId, NodeDef> = {
     drop: "wood",
     line: "Broken up.",
     yield: 5, // more than a stump, still under a standing tree's eight
-    regrowMs: 24 * HOUR,
+    regrowMs: 48 * HOUR,
     density: 0,
   },
 };

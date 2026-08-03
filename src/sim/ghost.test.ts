@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { NODES } from "../content/nodes";
 import { newWorld, tick, contextAction, buildAt } from "./game";
 import { migrateSave } from "./save";
 import { meetGhost, ghostMet, ghost, groveCut } from "./ghost";
@@ -186,8 +187,11 @@ describe("the dark wood", () => {
     contextAction(w, "gather", NOON);
     expect(tileAt(w, target!.x, target!.y)).not.toBe(DARK_TREE);
 
-    // Nine hours later (regrowMs is eight), on unclaimed ground.
-    tick(w, 1 / 60, NOON + 9 * 3600_000);
+    // Past its regrowth, on unclaimed ground. Read off the table rather than
+    // written as a number: the tree's clock moved from eight hours to a day when
+    // the world was slowed down, and a literal here would have made that retune
+    // look like a bug in the grove.
+    tick(w, 1 / 60, NOON + NODES.darktree.regrowMs! + 3600_000);
     expect(nodeAt(w, target!.x, target!.y)).toBe("darktree");
     expect(tileAt(w, target!.x, target!.y)).toBe(DARK_TREE);
   });

@@ -22,7 +22,7 @@ import type { WorldState, Layer } from "./types";
 import type { NodeId } from "../content/nodes";
 import { nodeDef, nodeForTile } from "../content/nodes";
 import type { ItemId } from "../content/items";
-import { tileAt, setTile, tileKey, healsTo } from "./world";
+import { tileAt, setTile, tileKey, healsTo, RECLAIM_MS } from "./world";
 import { GRASS, DIRT } from "../content/tiles";
 import { add } from "./inventory";
 import { furnitureAt } from "./furniture";
@@ -127,22 +127,16 @@ function isClaimed(world: WorldState, x: number, y: number): boolean {
   return t !== DIRT && t !== GRASS;
 }
 
-/** Is one of this tile's eight neighbours still the same node standing?
+/** Is one of this tile's own kind still standing within `rad`?
  *
- *  The other half of "your land is actually yours" — see NodeDef.seeded for why
- *  it exists and why rock, ore and the grove are exempt. Eight and not four: a
- *  wood closes diagonally as readily as it does square, and the four-neighbour
- *  version left odd single holes in dense stands that never filled.
- *
- *  RADIUS ONE, not two, and the difference is how much of a clearing survives.
- *  A neighbour rule always lets the wood take back the ring it can still reach,
- *  so radius is exactly the depth of that encroachment: at two you clear a 7×7
- *  and keep 3×3, at one you keep 5×5. One ring is a wood closing in a little at
- *  its edge, which is true to life and stops; two is enough of a bite to feel
- *  like the clearing failed. */
-function hasKinBeside(world: WorldState, x: number, y: number, tile: number): boolean {
-  for (let dy = -1; dy <= 1; dy++) {
-    for (let dx = -1; dx <= 1; dx++) {
+ *  The other half of "your land is actually yours" — see NodeDef.seedRadius for
+ *  why it exists, why the distance is per node, and why ore and the grove are
+ *  exempt. Square and not circular: a wood closes diagonally as readily as it
+ *  does square, and a round window at these radii differs by a handful of cells
+ *  while costing a distance test per neighbour. */
+function hasKinNear(world: WorldState, x: number, y: number, tile: number, rad: number): boolean {
+  for (let dy = -rad; dy <= rad; dy++) {
+    for (let dx = -rad; dx <= rad; dx++) {
       if (dx === 0 && dy === 0) continue;
       if (tileAt(world, x + dx, y + dy) === tile) return true;
     }
@@ -177,14 +171,27 @@ export function updateRegrowth(world: WorldState, now: number): number {
     if (now < entry.at) continue;
     const def = nodeDef(entry.node);
     // Nothing left to seed from. Forfeits exactly as claimed ground does, and for
-    // the same reason: you shaped this, and clearing is shaping (NodeDef.seeded).
+    // the same reason: you shaped this, and clearing is shaping (§seedRadius).
     //
     // Checked HERE rather than at felling time, so the answer is about what the
     // wood looks like when the tree would actually have come back. Fell a stand
     // over an afternoon and the whole stand stays down; fell one and put it off,
     // and the neighbours that were there when you swung are still there.
-    if (def.seeded && !hasKinBeside(world, x, y, def.tile)) {
+    if (def.seedRadius !== undefined && !hasKinNear(world, x, y, def.tile, def.seedRadius)) {
       delete world.regrow[key];
+      // AND HAND THE TILE TO THE GRASS, which the seeded rule made necessary and
+      // nothing else did. Until it existed every felled tree came back, so the
+      // DIRT it left was always temporary; a tree that forfeits leaves bare earth
+      // that nothing was watching, and a cleared wood would have become a field
+      // of permanent brown squares. That is the exact bug the reclaim record was
+      // built for — "the shovel was the only verb you had to tidy up after"
+      // (ROADMAP) — arriving through the axe instead of the shovel.
+      //
+      // Only where it actually left dirt: a shrub fells to grass and has nothing
+      // to heal, and a tile the player has since made something of is theirs.
+      if (tileAt(world, x, y) === DIRT && !isClaimed(world, x, y)) {
+        world.reclaim[tileKey(x, y)] = now + RECLAIM_MS;
+      }
       continue;
     }
     planting.push([key, x, y, def]);
