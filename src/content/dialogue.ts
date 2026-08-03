@@ -64,7 +64,26 @@ export const RESIDENT_IDLE: Partial<Record<AdultForm, string[]>> = {
     "I retired. I still check a calendar. It's blank. It's glorious.",
     "Following up on my previous sigh.",
   ],
-  dog: ["You're here! You're HERE. Okay. Okay. Where are we going.", "I found a stick. It's the best one. So far."],
+  dog: [
+    "You're here! You're HERE. Okay. Okay. Where are we going.",
+    "I found a stick. It's the best one. So far.",
+    "I smelled you coming! I was right!",
+    "Today I found three smells. One of them was NEW.",
+    "I sat by the plaza all morning. Things HAPPENED. I saw most of them.",
+    "The ground's good today. I checked a lot of it.",
+    "I ran to the water and back. Nobody asked me to. Best kind of run.",
+    "You have a good face. I've compared.",
+    "I was going to nap. Then I didn't! This is better.",
+    "Somebody walked past earlier and I got SO excited. It wasn't even you. Imagine now.",
+    "I've been practising sitting still. This is it. This is the practice.",
+    "There's a spot behind the stage where the sun lands all afternoon. I'm not telling anyone else. I'm telling you.",
+    "I counted the trees on the way here. I lost count. They're all still there though.",
+    "Okay so. I have a plan for today. The plan is this. It's going great.",
+    "I barked at a rock yesterday. We're fine now.",
+    "Sometimes I stand where the most people will walk past. It's called a strategy.",
+    "I dug a small hole earlier. Professional interest.",
+    "It's a good day. I decided early.",
+  ],
   blob: ["This town lacks drama. I have brought some.", "I am reclining meaningfully."],
   menace: ["How rustic. I suppose it will do.", "You may remain."],
   gremlin: ["I moved a fence. Statistically, one of them is wrong now.", "Finders keepers. Everything is findable."],
@@ -158,14 +177,17 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     hum: [
       () => "The BOX! The humming box! I felt it in my feet! I still feel it in my feet!",
       () => "We went to the hum. I didn't bark at it. I thought about it and I chose not to.",
+      () => "Sometimes I hum now. Quietly. It's a tribute.",
     ],
     company: [
       () => "We went TOGETHER. I think about it constantly. Constantly.",
       () => "You took me with you. Best decision anyone has made. Ever. Including me.",
+      () => "Our walk! I've rewalked bits of it since. It's not the same. It needs both of us.",
     ],
     delved: [
       () => "We went UNDER. Under the ground! There was no sky and I was fine because you were there.",
       () => "The tunnel! I remember the tunnel. It smelled like everything.",
+      () => "Down there it's all ground. Walls of ground! CEILING of ground! I still think about the ceiling.",
     ],
     climbed: [
       () => "UP! We went UP! I have been in the sky and the sky is FLOOR now and I love it!",
@@ -174,6 +196,33 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     errand: [
       (v) => `The ${v}! I carried it! I carried it the whole way and I did not eat it!`,
       () => "I delivered. Everyone was pleased. I have thought about it several times since.",
+      (v) => `Remember the ${v}? I remember the ${v}. We're a good team, me and you and the ${v}.`,
+    ],
+    // Imported raising history from The Meadow (see meadow_import.ts).
+    raised_by: [
+      (v) => `${v} raised me! Back before! I still turn around sometimes expecting them. Then it's here instead, and that's good too.`,
+      (v) => `I remember ${v}. I remember EVERYTHING about ${v}. Mostly the food. And everything.`,
+    ],
+    raised_favorite: [
+      (v) => `They used to give me ${v}. I can taste it if I think hard. I'm thinking hard right now.`,
+      (v) => `${v}! That was mine! It's still mine. Flavours stay yours forever. I've decided.`,
+    ],
+    // Events witnessed here on the Farm.
+    built_floor: [
+      () => "You BUILT that! I watched the whole time! I only got distracted twice!",
+      () => "Boards! Down! Because of you! I walked on them immediately. Somebody had to be first.",
+    ],
+    planted: [
+      (v) => `You put ${v} in the ground on purpose! And the ground is going to give it BACK. That's the deal! What a deal!`,
+      () => "I saw the planting. I sat very still for it. It felt important.",
+    ],
+    harvested: [
+      (v) => `You pulled up ${v}! Out of the GROUND! Where it was HIDING!`,
+      (v) => `${v}, straight out of the dirt. I sniffed the hole after. Good hole.`,
+    ],
+    dug: [
+      () => "You dug a hole! I have NEVER been so proud of anyone.",
+      () => "The digging! I remember the digging. I supervised. Closely. From inside the hole, briefly.",
     ],
   },
   blob: {
@@ -304,6 +353,7 @@ const FESTIVAL_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
   dog: [
     (v) => `${v}! I was there! Everyone was there! It was the best one, and so was the last one!`,
     (v) => `I think about ${v} a lot. Several times a day. Is that a lot?`,
+    (v) => `${v}! I sat at the FRONT! I checked all the spots first. The front won!`,
   ],
   blob: [
     (v) => `${v} moved me. ... I say that every year and every year it is true again.`,
@@ -365,6 +415,7 @@ const SHOWER_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
   dog: [
     (v) => `${v}! The sky was DOING things! I looked up the whole time! My neck hurt after and it was WORTH IT!`,
     () => "We stood outside in the dark and nothing was wrong. Nothing! I checked twice!",
+    () => "The lights went ACROSS the sky and I ran under them! I kept up for a bit!",
   ],
   blob: [
     (v) => `${v}. ... An entire performance, no stage, no notes, and not one of them took a bow.`,
@@ -396,6 +447,7 @@ const FAR_OUT_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
   dog: [
     () => "We went SO far. Past everything! There was nothing there and it was the BEST nothing!",
     () => "I couldn't smell the town any more. Not at ALL. And I was still fine, because you were there.",
+    () => "Past the edge of everything! My legs are still proud.",
   ],
   blob: [
     () => "We walked until there was no audience. ... I performed anyway. You were very kind about it.",
@@ -428,6 +480,7 @@ const WINTER_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
   dog: [
     () => "It went COLD and we were OUTSIDE! The ground was hard and it made a NOISE when I ran on it!",
     () => "All the leaves went and nobody took them anywhere. Where do they GO. I have theories.",
+    () => "The cold came and you were there and I ran a circle around the whole moment.",
   ],
   blob: [
     () => "The colour left. ... I have been trying to do that on purpose for years, and the field did it while we watched.",
@@ -625,7 +678,10 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
       (v) => `A ${v}! For me! I've been sitting on it. Near it. Both.`,
       (v) => `You remembered about the ${v}. You REMEMBERED.`,
     ],
-    homeless: [() => "Where's my bed? Where's my BED. Okay. Okay. It's fine. Is it fine?"],
+    homeless: [
+      () => "Where's my bed? Where's my BED. Okay. Okay. It's fine. Is it fine?",
+      () => "My bed's gone. I'm not worried. I'm a LITTLE worried. Where do I point myself at night?",
+    ],
     roofless: [
       () => "The roof went! I can see stars. Is that good? ... It's a bit good.",
       () => "It's open at the top now. I've been looking up. For ages.",
@@ -634,16 +690,26 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
       () => "There's no door. I've been sitting outside it. I'm very good at that.",
       () => "I can't get in! It's fine. I'll wait. I'm SO good at waiting.",
     ],
-    bare: [() => "It's got a bed! That's the important one. That's the main one."],
-    grand: [() => "It's SO big. I ran a lap. I'm going to run another one."],
+    bare: [
+      () => "It's got a bed! That's the important one. That's the main one.",
+      () => "One bed, one me. That's the maths done. It's a home.",
+    ],
+    grand: [
+      () => "It's SO big. I ran a lap. I'm going to run another one.",
+      () => "There's an echo in it! It's mine! The echo and the room, both!",
+    ],
     snug: [
       (v) => `${v} tiles. I can see all of it from the bed. ALL of it.`,
       () => "It's just the right amount of room. I checked by lying down in the middle.",
     ],
-    furnished: [(v) => `There's a ${v}! I sit near it. It's a good ${v}.`],
+    furnished: [
+      (v) => `There's a ${v}! I sit near it. It's a good ${v}.`,
+      (v) => `The ${v} is my favourite. Everything's my favourite. The ${v} first, though.`,
+    ],
     finish: [
       (v) => `It's ${v}! I don't know what that means. I love it.`,
       (v) => `${v}, the whole way round. I've smelled all of it.`,
+      (v) => `The walls are ${v} now. I showed everyone. They'd already seen. I showed them again.`,
     ],
   },
   blob: {
@@ -774,10 +840,12 @@ export const RESIDENT_HISTORY: Partial<
     met: [
       (w) => `This is where ${w} came from! Not FROM. But where they were. First!`,
       (w) => `${w}! In this room! That happened! I was so pleased. I'm still pleased.`,
+      (w) => `I remember ${w} in here. I'm very good at remembering rooms. It's mostly the smell.`,
     ],
     built_floor: [
       () => "You made this floor. With your HANDS. I've been lying on it thinking about that.",
       () => "These are your boards! I sleep on them. It's the best floor.",
+      () => "Your floor! Still here! Still the best one!",
     ],
   },
   blob: {
@@ -840,9 +908,24 @@ export const RESIDENT_WARM: Partial<Record<AdultForm, Partial<Record<"familiar" 
     close: ["You may consider yourself my favourite. Tell no one. ... Tell everyone.", "I have standards. You've met most of them now."],
   },
   dog: {
-    familiar: ["You came back! I hoped. I always hope.", "Hi. Hi. Okay. Hi."],
-    friend: ["You're my person. I've made it official. In my head.", "I saved you the good stick."],
-    close: ["I'd follow you anywhere. I have, mostly. You didn't notice.", "Best day. Every day you're here is best day."],
+    familiar: [
+      "You came back! I hoped. I always hope.",
+      "Hi. Hi. Okay. Hi.",
+      "I know your footsteps now! Yours are the good ones.",
+      "You're on my rounds. You didn't ask to be. You are.",
+    ],
+    friend: [
+      "You're my person. I've made it official. In my head.",
+      "I saved you the good stick.",
+      "I told the fence about you. Good things. The fence agrees.",
+      "When something good happens I look for you first. That's just true now.",
+    ],
+    close: [
+      "I'd follow you anywhere. I have, mostly. You didn't notice.",
+      "Best day. Every day you're here is best day.",
+      ". ... You're my whole list of favourite people. There were other names on it. I lost them on purpose.",
+      "Wherever you're going, that's the good direction. That's how I navigate now.",
+    ],
   },
   blob: {
     familiar: ["You've returned. The scene improves.", "Ah, an audience I actually like."],
@@ -882,8 +965,17 @@ export const RESIDENT_ABSENCE: Partial<Record<AdultForm, { days: string[]; weeks
     weeks: ["Gone long enough that I nearly opened a ledger. Nearly. I lay back down.", ". ... A long one, that. The calendar stayed blank the whole time. I checked twice."],
   },
   dog: {
-    days: ["You were GONE and now you're BACK. Okay. Okay. We're okay.", "There you are! I checked the good spots. You weren't in any of them. You're here!"],
-    weeks: ["You were gone SO LONG. I re-smelled everything. It's all still here. So are you!", "I kept your stick. The whole time. It's a very kept stick now."],
+    days: [
+      "You were GONE and now you're BACK. Okay. Okay. We're okay.",
+      "There you are! I checked the good spots. You weren't in any of them. You're here!",
+      "Three sleeps! I count in sleeps. You weren't in any of them and now you're HERE.",
+      "You're back! The town kept happening. I'll catch you up. Most of it was smells.",
+    ],
+    weeks: [
+      "You were gone SO LONG. I re-smelled everything. It's all still here. So are you!",
+      "I kept your stick. The whole time. It's a very kept stick now.",
+      "I saved up SO much news. Ready? ... I forgot all of it. It's fine. New news is happening right now.",
+    ],
   },
   blob: {
     days: ["You missed several of my finest moments. I shall reprise them. Sit anywhere.", "Returned! The scene resumes."],
@@ -929,8 +1021,16 @@ export const RESIDENT_MIDST: Partial<Record<AdultForm, Partial<Record<"gathered"
     harvested: [(v) => `A productive morning, I hear. ${v.charAt(0).toUpperCase() + v.slice(1)}, again. Undocumented. Glorious.`],
   },
   dog: {
-    gathered: [() => "You keep KNOCKING things DOWN. It's the best noise. Do another one.", () => "I've been watching you work. I supervised. From here. With my whole heart."],
-    harvested: [(v) => `You pulled up ${v} AGAIN. The ground just keeps HAVING things.`],
+    gathered: [
+      () => "You keep KNOCKING things DOWN. It's the best noise. Do another one.",
+      () => "I've been watching you work. I supervised. From here. With my whole heart.",
+      () => "Third one today! I heard all three! THUMP. It's my favourite word now.",
+    ],
+    harvested: [
+      (v) => `You pulled up ${v} AGAIN. The ground just keeps HAVING things.`,
+      (v) => `More ${v}! The pile got bigger! I've been guarding it. Loosely.`,
+      () => "You keep pulling things up and the ground keeps letting you! What a day!",
+    ],
   },
   blob: {
     gathered: [() => "The felling! The crash of it! I've been narrating from a distance. You're very good in this role."],
@@ -985,7 +1085,11 @@ export const COMPANY_YES: Partial<Record<AdultForm, string[]>> = {
     "Fieldwork. Excellent. I'll bring the notebook and most of my objectivity.",
     "Yes. I've been meaning to see what you actually do all day.",
   ],
-  dog: ["YES. Where. Doesn't matter. Yes.", "I was already coming. I just hadn't been asked yet."],
+  dog: [
+    "YES. Where. Doesn't matter. Yes.",
+    "I was already coming. I just hadn't been asked yet.",
+    "Yes! Wait, what was the question. Doesn't matter. Yes!",
+  ],
   blob: ["A tour. With me in it. Very well.", "I accept. I'll need no direction. I never do."],
   menace: ["I shall accompany you. Don't make it strange.", "Fine. But I'm not carrying anything."],
   gremlin: ["Ooh. Where are we going. Is it somewhere with things in it.", "Yes. I'll be good. Mostly good."],
@@ -1001,7 +1105,12 @@ export const COMPANY_IDLE: Partial<Record<AdultForm, string[]>> = {
     "This counts as a transect. I've decided it counts as a transect.",
     "Lead on. I'll say something insightful within the hour.",
   ],
-  dog: ["Are we still going? We're still going. Good.", "Best walk. Ongoing. Best walk.", "I'm right here. I checked."],
+  dog: [
+    "Are we still going? We're still going. Good.",
+    "Best walk. Ongoing. Best walk.",
+    "I'm right here. I checked.",
+    "I'm matching your steps. Are you matching mine? Somebody's matching.",
+  ],
   blob: ["I am accompanying you. It's a supporting role. I'm elevating it.", "The scenery has improved since I entered it."],
   menace: ["I'm still here. Nobody need know why.", "Carry on. I'm observing. Judgementally, but present."],
   gremlin: ["I haven't taken anything. Recently.", "Ooh, what's that. No, keep going. But ooh."],
@@ -1014,7 +1123,11 @@ export const COMPANY_IDLE: Partial<Record<AdultForm, string[]>> = {
  *  they have a life, and the invitation is always open. */
 export const COMPANY_BYE: Partial<Record<AdultForm, string[]>> = {
   scholar: ["That's the light gone. I'll write it up. ... Good day's work.", "I'm off. The notebook is fuller than it was."],
-  dog: ["Is it over? It's over. It was the best one.", "Going home. I'll be at the board. Come and get me."],
+  dog: [
+    "Is it over? It's over. It was the best one.",
+    "Going home. I'll be at the board. Come and get me.",
+    "That was the best one so far. The next one is also going to be the best one.",
+  ],
   blob: ["I must retire. The performance requires rest.", "Exit, mine. ... You were a serviceable co-star."],
   menace: ["I'm going in. This was tolerable. Extremely tolerable.", "That's enough of that. Same again sometime."],
   gremlin: ["I'm off. Check your pockets. ... They're fine. Check anyway.", "Home. I found four things. You saw two of them."],
@@ -1212,19 +1325,39 @@ export const RESIDENT_SEASON: Partial<Record<AdultForm, Partial<Record<string, S
   },
   dog: {
     spring: {
-      season: ["It's SPRING! Everything smells like six things at once!", "Green! All of it! Look!"],
+      season: [
+        "It's SPRING! Everything smells like six things at once!",
+        "Green! All of it! Look!",
+        "Everything's coming up out of the ground. I say hello to all of it.",
+        "New leaves! Small ones! I'm being SO careful around them.",
+      ],
       crop: [(v) => `The ${v}! It's their month! I've been telling everyone! I'll tell you again later!`],
     },
     summer: {
-      season: ["It stays light SO LATE. I keep forgetting to stop.", "Warm ground. Best ground. I have opinions about ground."],
+      season: [
+        "It stays light SO LATE. I keep forgetting to stop.",
+        "Warm ground. Best ground. I have opinions about ground.",
+        "I found the shadiest spot in town. I'll show you. It's a good secret.",
+        "Long days! More day per day! Best deal there is.",
+      ],
       crop: [(v) => `${v}! In the right month! I don't know why that's better but it IS!`],
     },
     autumn: {
-      season: ["Everything's crunchy! The whole outside is crunchy!", "Leaves. ... Sorry. I got distracted by leaves."],
+      season: [
+        "Everything's crunchy! The whole outside is crunchy!",
+        "Leaves. ... Sorry. I got distracted by leaves.",
+        "A leaf landed ON me earlier. Just landed there! Best hat I've ever had.",
+        "It smells like the ground is putting everything away.",
+      ],
       crop: [(v) => `The ${v} are in! It's their turn! Everyone gets a turn!`],
     },
     winter: {
-      season: ["Cold nose! Doesn't bother me! Mentioning it anyway!", "The trees went bare and I check on them daily."],
+      season: [
+        "Cold nose! Doesn't bother me! Mentioning it anyway!",
+        "The trees went bare and I check on them daily.",
+        "My breath does the cloud thing! Look! LOOK.",
+        "It gets dark early and the lamps come on. I like both parts.",
+      ],
       crop: [(v) => `${v}! In the COLD! It doesn't even mind!`],
     },
   },

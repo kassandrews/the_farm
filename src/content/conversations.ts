@@ -101,6 +101,45 @@ export const CONVERSATIONS: Partial<
           { text: "...", then: { line: "A mystery day! Even better. I love not knowing things." } },
         ],
       },
+      {
+        line: "I found something today. Guess. You'll never guess. Guess anyway.",
+        replies: [
+          {
+            text: "A stick?",
+            then: {
+              line: "A STICK. How did you— you KNOW me. It's the best one so far. I buried it. I'll show you the general area.",
+            },
+          },
+          {
+            text: "A smell?",
+            variants: { dog: "A smell. It's always a smell." },
+            then: { line: "A smell! Yes! Also a stick. It was a big day." },
+          },
+          { text: "...", then: { line: "It was a stick. I couldn't wait. It's a very good stick." } },
+        ],
+      },
+    ],
+    absence_days: [
+      {
+        line: "You're BACK! Okay. Tell me one thing. The best thing from while you were gone.",
+        replies: [
+          {
+            text: "Nothing much.",
+            then: {
+              line: "Nothing much is my FAVOURITE. That's a whole day of small good things, that's what that is.",
+            },
+          },
+          {
+            text: "Working, mostly.",
+            variants: { menace: "Being magnificent, mostly.", gremlin: "Finding things, mostly." },
+            then: { line: "I KNEW it. I could tell by the walk. You have a very busy walk." },
+          },
+          {
+            text: "...",
+            then: { line: "Saving it? Okay. Okay! Trade you mine when you're ready. Mine involves a stick." },
+          },
+        ],
+      },
     ],
     absence_weeks: [
       {
