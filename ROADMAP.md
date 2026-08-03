@@ -6268,23 +6268,22 @@ you trip over them:
   stool does not. Rendering cost is not the constraint — grids rasterize once
   and cache per id/facing/finish — authoring is.
 
-- **The Meadow's `flowers` prop has a miscounted row, and the vendored copy
-  corrects it.** Its bottom row is twelve cells where the other four are eleven;
+- ~~**The Meadow's `flowers` prop has a miscounted row, and the vendored copy
+  corrects it.**~~ **Fixed in The Meadow on 3 Aug 2026** (its commit `b0306d1`),
+  at the user's direction — the one sanctioned exception to "never modify" the
+  sibling repo, done in that repo on its own terms with its tests run. The
+  history: its bottom row was twelve cells where the other four are eleven;
   its rasterizer sizes the canvas off the first row and silently drops the
   overflow, so the bug never showed there. `content/props.test.ts` caught it on
-  its first run. Same situation as the Menace below — the copy is no longer
-  byte-identical, the fix has to be made by hand in the other repo, and nobody
-  should "restore" the twelfth cell here.
-- **The Farm's Menace is one pixel different from The Meadow's, on purpose, and
-  The Meadow has not been fixed yet.** Its bottom outline ran cols 4–9 under
-  sides sitting at 4 and 10, so the bottom-left corner stacked two dark pixels
-  and the bottom-right stacked none — the body read as leaning. It's cols 5–9
-  now and both corners taper. **This is the first edit to vendored canon art
-  rather than to a Farm-side seam** (`LookPatch`, `mouthDy`), so the rule that
-  `canon/` is a copy still holds, but the copy is no longer byte-identical. The
-  same fix is meant to go into The Meadow later; nothing here writes to that
-  repo (CLAUDE.md), so it has to be done there by hand. Until it is, treat the
-  divergence as intentional and don't "restore" it.
+  its first run in the vendored copy. The two repos' rows match again.
+- ~~**The Farm's Menace is one pixel different from The Meadow's, on purpose,
+  and The Meadow has not been fixed yet.**~~ **Fixed in The Meadow on
+  3 Aug 2026, same commit as the flowers.** The history: its bottom outline ran
+  cols 4–9 under sides sitting at 4 and 10, so the bottom-left corner stacked
+  two dark pixels and the bottom-right stacked none — the body read as leaning.
+  Cols 5–9 lets both corners taper. It was the first edit to vendored canon art
+  rather than to a Farm-side seam (`LookPatch`, `mouthDy`); with the Meadow
+  side landed, the copies agree pixel for pixel again and nothing is owed.
 
 - ~~**The rotate button sits on top of the build palette.**~~ **Fixed by the
   build-mode pass.** It was one symptom of a bigger layout problem, and the fix
