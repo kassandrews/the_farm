@@ -6050,10 +6050,16 @@ rather than the map's grid restated in grey. Top stones are 176/5 = 35.2, so
 four at 35 and the remainder in the last: a mason's cut, not an error. Side
 stones 108/3 = 36, exact.
 
-**Loose end, deliberate:** the resize hands the old bottom row (y = 3) back to
-the generator, which on some seeds grows trees or water hard against the south
-border. Fine on the seeds looked at; tranche 2's 1,000-seed sweep should check
-it properly when it lands.
+**Loose end, deliberate — now checked:** the resize hands the old bottom row
+(y = 3) back to the generator, which on some seeds grows trees or water hard
+against the south border. Fine on the seeds looked at, and `water.test.ts`
+("never seals the plaza's south edge") now sweeps it on a thousand seeds ×
+four spots. The invariant it settled on is the honest one: trees and water on
+the row are allowed — a tree by the square is a tree, a river through town is
+paid for by the bridges — but the row may never come out solid or deep END TO
+END, a wall along the south of the square. Some cell is always standable
+ground, wadeable shallows, or the bridge deck (the bridge column crosses this
+row at x 0, so even a channel running lengthwise along it leaves a crossing).
 
 **The four kits are built (item 2 done)**, each one derived from what its
 region's row already said about itself rather than from a fresh idea — which is

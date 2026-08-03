@@ -252,6 +252,28 @@ describe("the sea is finite", () => {
     }
   });
 
+  it("never seals the plaza's south edge, on a thousand seeds", () => {
+    // The debt the plaza resize left (ROADMAP §Phase 11 tranche 1): shrinking
+    // PLAZA to 11×8 handed the old bottom row (y = 3) back to the generator,
+    // which on some seeds grows trees or water hard against the south border.
+    // Both are FINE — a tree by the square is a tree, a river through town is
+    // paid for by the bridges — so this does not assert the row is clear. What
+    // must never happen is the whole row coming out solid or deep at once, a
+    // wall along the south of the square. Some cell is always standable ground
+    // or a bridge deck (the bridge column crosses this row at x 0, so even a
+    // channel running along it leaves a crossing).
+    for (const spot of SPOTS) {
+      for (let seed = 1; seed <= 1000; seed++) {
+        let open = false;
+        for (let x = -5; x <= 5 && !open; x++) {
+          const t = generatedTile(seed, spot, x, 3);
+          if (t === GRASS || t === SAND || t === SHALLOW || t === FLOOR) open = true;
+        }
+        expect([seed, spot, open]).toEqual([seed, spot, true]);
+      }
+    }
+  });
+
   it("keeps standing water off the town's walls, on a thousand seeds", () => {
     // The Phase 11 clearance (`townChannelCap`), and the bug it exists for:
     // rivers are allowed through town on purpose, but `stampBuilding` paves
