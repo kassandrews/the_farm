@@ -6238,6 +6238,105 @@ whatever the field underneath is doing.
 
 ---
 
+## Phase 12 — the conversation pass (fable-generated content) — **planned**
+
+The project the user's list called "fable generated content", defined 4 Aug
+2026. The itch, verbatim: *"right now, if i click on someone standing in the
+town square, they're going to say the same thing to me over and over. and
+that's not what i want."* The target feeling is Animal Crossing's "I haven't
+seen you in a while" — a town whose people keep having something to say —
+without the dialogue going stale.
+
+### What this phase is not, settled before it started
+
+The original bullet asked whether we implement SDV-style **stories advanced by
+tasks**. The answer is no, and it was already settled three times over in the
+doc's bones: the Notebook may never name a thing to do, the notices column is
+structurally unable to set a task, and nothing may gate on festival attendance.
+A story that advances on task completion is a quest log with a plot. What SDV's
+stories are FOR — the town keeps unfolding — is delivered here by **time and
+memory**, the two axes the game already runs on.
+
+Also ruled out: **runtime generation.** The game never calls a model while
+running. It would break the deterministic sim, the client-only PWA, and the
+voice control, and cost money per player forever. All generated content is
+authored at generation time, reviewed, and shipped as ordinary table rows —
+content is data, so "constantly new content" is a cadence of reviewed drops,
+and the pipeline that produced the first drop is the one that produces the
+next.
+
+### The diagnosis, measured
+
+The selection architecture is already right and already sees real context —
+`speak()` (`sim/dialogue.ts`) is a priority ladder over secrets, home remarks,
+museum dissent, the memory log, room history, season, idle. What is starved is
+everything else:
+
+- **The banks are tiny.** The Menace has 2 idle lines. The generic idle
+  fallback — what every form without its own bank says — is 3 lines. The
+  Blessed Carrot owns roughly a dozen lines in the whole game. Most memory
+  kinds have exactly ONE template per form, so the best system in the game
+  repeats its one sentence about your one fence forever. Only the scholar is
+  reference-complete.
+- **Anti-repetition is one re-roll.** The only history is `lastLine`; a 2-line
+  bank is a coin flip between the same two sentences.
+- **Nothing tracks when you last talked to anyone.** The away sim changes
+  what's in the log, but nobody greets your absence. The Dog's "You came back!
+  I hoped." reads absence-aware and is actually friendship-tier-gated.
+- **Every conversation is one line deep.** The speech panel already has choice
+  buttons ("There's a room for you", the company invite) and they are already
+  phrased as things you say — but the villager never speaks back.
+
+### The build order
+
+1. **Selection mechanics.** A per-villager **recently-said ring** (last ~8
+   lines, replacing the single `lastLine`); a **`lastTalkedAt`** timestamp and
+   an absence-greeting rung at the top of the ladder (per-form, per-gap — "a
+   few days" and "weeks" are different greetings); and an **in-the-middle-of**
+   rung that reads recent witnessed events by timestamp ("you've been digging
+   all morning"). Schema bump, tested migration. Mechanics land FIRST because
+   generated content is worthless while selection keeps thumbing the same
+   three cards.
+2. **The conversation tree runtime.** A typed `ConversationDef` node table in
+   content; any ladder rung may return a tree instead of a line; the reply UI
+   is the speech panel's existing button row. Rules, all settled:
+   - **Shallow, always.** Two or three exchanges, then it lets go. Most taps
+     still produce a single line — a tree firing every time is homework.
+   - **Choices are tone, never strategy.** No reply pays more friendship than
+     another, none gates anything, none is wrong. The whole conversation pays
+     what a single line pays today, once.
+   - **`"..."` is always a valid reply**, and villagers answer silence
+     in-character. The Ghost approves; the Blob is wounded; the Menace fills
+     it.
+   - **Replies may flavor by the PLAYER's form** — approved. Variant text is a
+     light layer with a shared default, written only where the form earns it,
+     never a separate 11-wide matrix.
+3. **The fable-generated bank.** Form by form, each steeped in that form's
+   existing lines, to the scholar's standard and past it: idle depth (15–25
+   lines, not 2), 3–5 templates per memory kind, warm lines at every tier,
+   seasons, the new absence and in-the-middle-of banks, and trees where the
+   context earns one. On the order of 1,500–3,000 lines. **Review is every
+   line, a form at a sitting** (a few hundred lines each) — the bank is only
+   as good as its worst line, and the voice rules (per-form voice, brevity,
+   `. ... Capital`, deadpan that never winks) are the hard constraint.
+4. **Tranche 2 — replies are remembered.** What you answer becomes a
+   `MemoryEvent`, and three weeks later she brings it up. Approved, and
+   deliberately LAST: it needs new memory kinds, reply metadata, a migration,
+   and generated content that reads the memories back — and it should be built
+   against trees that are already alive on screen.
+
+### What the phase owes, procedurally
+
+- Every schema change ships a tested migration; the game is live.
+- Selection stays pure and RNG-injectable — line choice reproducible in tests.
+- The speech panel's reply flow is an interaction change: verify with
+  `scripts/drive.mjs` on screen, not only in tests, and on touch — every panel
+  needs a door, and a mid-conversation close must not strand `modalOpen`.
+- Generated lines never reference fauna or weather (neither exists), never
+  instruct, never spoil a secret, and every one is reviewed before it ships.
+
+---
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
