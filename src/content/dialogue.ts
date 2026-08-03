@@ -87,6 +87,22 @@ export const RESIDENT_IDLE: Partial<Record<AdultForm, string[]>> = {
   blob: ["This town lacks drama. I have brought some.", "I am reclining meaningfully."],
   menace: ["How rustic. I suppose it will do.", "You may remain."],
   gremlin: ["I moved a fence. Statistically, one of them is wrong now.", "Finders keepers. Everything is findable."],
+  // Reachable through a Meadow IMPORT housed next door (no arrival and no
+  // hatching offers the form), so the bank exists and stays in his register:
+  // short, settled, and disinclined to elaborate. "..." is a complete line
+  // (Tone), and his more than anyone's.
+  carrot: [
+    "...",
+    "... Morning. Or thereabouts.",
+    "The soil's good here. I checked when I arrived. I check ongoing.",
+    "Things grow whether you watch or not. ... I watch anyway.",
+    "I was standing here before you came. I'll be here after. It's a good spot.",
+    "... You can stand here too. There's room.",
+    "Quiet today. ... That's not a complaint.",
+    "I looked at the sky earlier. Still up there. Good.",
+    "Some things need saying. ... Not many.",
+    "Blessed, thanks. ... You didn't ask. You were going to.",
+  ],
 };
 
 // Memory-referencing lines: only offered when the log holds the matching event.
@@ -293,20 +309,39 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
   },
   carrot: {
     hum: [
-      () => "I heard it before I saw it. ... I have not decided what I think. It has been some time."
+      () => "I heard it before I saw it. ... I have not decided what I think. It has been some time.",
+      () => "The hum. ... Still going, I expect. Some things just hold a note.",
     ],
     company: [
       () => "We walked out. The stall kept. Nothing was lost. ... It was a good day.",
+      () => ". ... We walked. It was enough.",
     ],
     delved: [
       () => "I went below the soil. Voluntarily. I have thoughts I am not ready to share.",
+      () => "It's all patience down there. ... I fit right in.",
     ],
     climbed: [
       () => "I have been above the soil. Well above. ... Nothing grows there. I checked. Twice.",
     ],
     errand: [
       (v) => `The ${v}. ... Yes. That's the one I asked for. Thank you. We're not going to discuss it further.`,
+      (v) => `The ${v} arrived. ... I still think about that. Briefly. Warmly.`,
     ],
+    // An imported carrot has a raising to remember and eyes for a day's work.
+    raised_by: [
+      (v) => `${v} raised me. ... I came up well. That's them, mostly.`,
+    ],
+    raised_favorite: [
+      (v) => `They fed me ${v}, back then. ... I have no comment beyond that it was excellent.`,
+    ],
+    built_floor: [() => "You laid a floor. I watched. ... Level. Good."],
+    planted: [
+      (v) => `You planted ${v}. ... Correctly, too. I said nothing. I didn't need to.`,
+    ],
+    harvested: [
+      (v) => `${v}, out of the ground. ... Clean pull. I notice these things.`,
+    ],
+    dug: [() => "You dug. ... The ground doesn't mind. I asked."],
   },
   office: {
     hum: [
@@ -836,6 +871,10 @@ export const RESIDENT_HISTORY: Partial<
       () => "Your boards. Every one. I've walked the whole thing checking. They held.",
     ],
   },
+  carrot: {
+    met: [(w) => `${w} was in here first. ... It shows, if you know how to look.`],
+    built_floor: [() => "Your boards. ... Laid well. The room agrees."],
+  },
   dog: {
     met: [
       (w) => `This is where ${w} came from! Not FROM. But where they were. First!`,
@@ -937,6 +976,17 @@ export const RESIDENT_WARM: Partial<Record<AdultForm, Partial<Record<"familiar" 
     friend: ["I only move YOUR fences a little. That's respect.", "I found something. You can have it. Probably."],
     close: ["I'd never take anything of yours. ... I'd borrow it dramatically and return it.", "You're my favourite. Don't check your fences."],
   },
+  carrot: {
+    familiar: ["... You again. Good.", "I've started expecting you. ... That's all."],
+    friend: [
+      "You're one of the quiet good things here. ... Don't make it strange.",
+      "When you're about, the day goes easier. ... I've noticed. That's all.",
+    ],
+    close: [
+      ". ... I don't bless much on purpose. You're on the list.",
+      "You're welcome at my patch any hour. ... That's as warm as I get. It's quite warm.",
+    ],
+  },
 };
 
 // --- Absence greetings (Phase 12) ---------------------------------------------
@@ -990,8 +1040,11 @@ export const RESIDENT_ABSENCE: Partial<Record<AdultForm, { days: string[]; weeks
     weeks: ["You were gone AGES. Your fences are fine. Don't check the gate. The gate is a long story.", "Long trip. I kept an eye on your stuff. Both eyes, some nights."],
   },
   carrot: {
-    days: ["... Back, then."],
-    weeks: ["... It's been quiet. Good quiet. Better now."],
+    days: ["... Back, then.", "... There you are."],
+    weeks: [
+      "... It's been quiet. Good quiet. Better now.",
+      "... A while, that. The ground didn't move. Neither did I. Much.",
+    ],
   },
 };
 
@@ -1039,6 +1092,16 @@ export const RESIDENT_MIDST: Partial<Record<AdultForm, Partial<Record<"gathered"
   menace: {
     gathered: [() => "Still at it? The racket is very industrious. I've decided to admire it from here."],
     harvested: [(v) => `That's ${v} on top of everything else this morning. You do keep busy. How agricultural.`],
+  },
+  carrot: {
+    gathered: [
+      () => "That noise all morning was you, then. ... Thought so.",
+      () => "Busy day. ... The stumps say so.",
+    ],
+    harvested: [
+      (v) => `${v}, and more before it. ... The ground's having a generous day.`,
+      () => "A proper harvest morning. ... Don't let me slow it.",
+    ],
   },
   gremlin: {
     gathered: [() => "Heard you working all morning. I left the woodpile alone. You're welcome.", () => "Lot of falling-down noises today. Good haul? Asking for the heap."],
@@ -1094,7 +1157,11 @@ export const COMPANY_YES: Partial<Record<AdultForm, string[]>> = {
   menace: ["I shall accompany you. Don't make it strange.", "Fine. But I'm not carrying anything."],
   gremlin: ["Ooh. Where are we going. Is it somewhere with things in it.", "Yes. I'll be good. Mostly good."],
   office: ["I'll come. I'm not filing it. That's the treat.", "Out of office. Genuinely, for once."],
-  carrot: ["I shall walk with you. The stall keeps.", "Blessed. Also free until evening."],
+  carrot: [
+    "I shall walk with you. The stall keeps.",
+    "Blessed. Also free until evening.",
+    "... All right. Walk slow.",
+  ],
 };
 
 /** While they are with you — the idle bank, pooled with their ordinary one so a
@@ -1115,7 +1182,7 @@ export const COMPANY_IDLE: Partial<Record<AdultForm, string[]>> = {
   menace: ["I'm still here. Nobody need know why.", "Carry on. I'm observing. Judgementally, but present."],
   gremlin: ["I haven't taken anything. Recently.", "Ooh, what's that. No, keep going. But ooh."],
   office: ["No agenda. No minutes. I'm coping.", "This is the longest I've been away from the desk. It's fine. It's fine."],
-  carrot: ["The soil changes underfoot. I notice these things.", "..."],
+  carrot: ["The soil changes underfoot. I notice these things.", "...", "Still here. ... Still walking."],
 };
 
 /** And the goodbye, when their own day takes them back (sim/company.ts
@@ -1132,7 +1199,11 @@ export const COMPANY_BYE: Partial<Record<AdultForm, string[]>> = {
   menace: ["I'm going in. This was tolerable. Extremely tolerable.", "That's enough of that. Same again sometime."],
   gremlin: ["I'm off. Check your pockets. ... They're fine. Check anyway.", "Home. I found four things. You saw two of them."],
   office: ["Back to the desk. It missed me. It says nothing, but it missed me.", "That's me clocked off. From nothing. Wonderful."],
-  carrot: ["I return to the stall. Go well.", "Evening. ... Blessings, and so on."],
+  carrot: [
+    "I return to the stall. Go well.",
+    "Evening. ... Blessings, and so on.",
+    "That's my light gone. ... It was a good one.",
+  ],
 };
 
 // --- The Maverick Mole --------------------------------------------------------
@@ -1380,10 +1451,28 @@ export const RESIDENT_SEASON: Partial<Record<AdultForm, Partial<Record<string, S
     },
   },
   carrot: {
-    spring: { season: ["It's spring. ... Things grow. That's the arrangement."], crop: [(v) => `${v}. ... It's the month for them. That is the whole of what that means.`] },
-    summer: { season: ["Warm. ... Fine."], crop: [(v) => `${v}. ... Right month. Doesn't make them better. Just makes it the month.`] },
-    autumn: { season: ["Going gold. ... It does that."], crop: [(v) => `${v}, now. ... Yes. I'm aware of the timing. We're not discussing it.`] },
-    winter: { season: ["Cold. ... The ground doesn't stop. People think it does."], crop: [(v) => `${v}. In this. ... Sensible of them.`] },
+    spring: {
+      season: [
+        "It's spring. ... Things grow. That's the arrangement.",
+        "Everything's up early this year. Or on time. ... One of those.",
+      ],
+      crop: [(v) => `${v}. ... It's the month for them. That is the whole of what that means.`],
+    },
+    summer: {
+      season: ["Warm. ... Fine.", "Long light. The green makes the most of it. ... So do I, quietly."],
+      crop: [(v) => `${v}. ... Right month. Doesn't make them better. Just makes it the month.`],
+    },
+    autumn: {
+      season: ["Going gold. ... It does that.", "The gold comes in on its own schedule. ... Always has."],
+      crop: [(v) => `${v}, now. ... Yes. I'm aware of the timing. We're not discussing it.`],
+    },
+    winter: {
+      season: [
+        "Cold. ... The ground doesn't stop. People think it does.",
+        "Cold. ... The roots are fine. I checked on them.",
+      ],
+      crop: [(v) => `${v}. In this. ... Sensible of them.`],
+    },
   },
   menace: {
     spring: { season: ["Everything's growing. Prices don't care."] },

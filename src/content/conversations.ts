@@ -131,7 +131,11 @@ export const CONVERSATIONS: Partial<
           },
           {
             text: "Working, mostly.",
-            variants: { menace: "Being magnificent, mostly.", gremlin: "Finding things, mostly." },
+            variants: {
+              menace: "Being magnificent, mostly.",
+              gremlin: "Finding things, mostly.",
+              carrot: "Growing things, mostly.",
+            },
             then: { line: "I KNEW it. I could tell by the walk. You have a very busy walk." },
           },
           {
@@ -155,6 +159,34 @@ export const CONVERSATIONS: Partial<
             then: { line: "I checked both! ... You're sneaky. I respect it enormously." },
           },
           { text: "...", then: { line: "You know what — fair. Mystery walk. I'm just glad you're back." } },
+        ],
+      },
+    ],
+  },
+  carrot: {
+    idle: [
+      {
+        line: "You keep busy. ... Does it help?",
+        replies: [
+          { text: "It does.", then: { line: ". ... Good. Carry on, then. Quietly." } },
+          {
+            text: "Not always.",
+            then: { line: "No. Not always. ... Stand here a minute. This helps more than people expect." },
+          },
+          { text: "...", then: { line: ". ... That's the right answer, mostly." } },
+        ],
+      },
+    ],
+    absence_weeks: [
+      {
+        line: "... You were gone a while. The ground mentioned it.",
+        replies: [
+          { text: "The ground?", then: { line: "We talk. ... It noticed the lighter footsteps. So did I." } },
+          {
+            text: "I'm back now.",
+            then: { line: "So you are. ... That's the part that matters. The rest composts." },
+          },
+          { text: "...", then: { line: ". ... Fair. It's none of the ground's business either." } },
         ],
       },
     ],
