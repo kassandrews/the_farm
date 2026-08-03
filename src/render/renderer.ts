@@ -420,16 +420,54 @@ export const MUSHROOM_ART: Record<MushroomShape, Record<MushroomState, string[]>
   // edge lifts away from the stem and you see the stem through it. It is what
   // stops a tall dome reading as a dome that has been stretched.
   bell: {
-    // IT WAS A COLUMN FIRST, and that is the trap in drawing a tall mushroom. A
-    // three-wide cap over a one-wide stalk is only two pixels of difference, so
-    // at seven rows it stopped reading as a cap on a stem at all and came out a
-    // standing stone. What fixes it is not height, it is the SHOULDER: the cap
-    // has to reach five wide somewhere, so there is a visible overhang for the
-    // stem to be thin underneath.
+    // STRAIGHT-SIDED AND TALL, which is the second correction and the one the
+    // reference photograph settled. Drawn as a shoulder that widens on the way
+    // down — 3, 5, 5 — it reads as a CONE, and a cone is a parasol or a young
+    // fly agaric, not this. A shaggy inkcap is a cylinder with a domed top: the
+    // cap holds one width for its whole height and the only flare is the rim.
     //
-    // `gg.gg` is the notch, and it needs the full five to work — at `.g.g.` the
-    // gills were one pixel each and the parting had nothing to part.
-    open: ["..l..", ".llc.", "llccc", "llccc", "gg.gg", "..s..", "..s.."],
+    // So the sides run parallel for five rows and the SKIRT does the widening in
+    // a single row. That row is also what carries the species — an inkcap
+    // dissolves from the rim upward, so the dark edge hanging below a pale cap is
+    // the thing anyone who has seen one recognises. It wants the fen's darkest
+    // ink, which is why `mushroomCap.gills` there is nearly black.
+    //
+    // (The first draft of all this was a COLUMN — a three-wide cap over a
+    // one-wide stalk is two pixels of difference, and at seven rows it read as a
+    // standing stone. The rim is what fixed that too: it is the overhang that
+    // tells you the stem is thin, and it does the job in one row where a
+    // widening shoulder took three and cost the silhouette.)
+    // IT CAME OUT A DAGGER at three wide, and that is worth recording because
+    // every single element was individually right: pale straight cap, dark rim
+    // one pixel proud either side, pale stem below. Together they are a blade, a
+    // crossguard and a grip, and the eye takes the whole before it takes the
+    // parts. The fix is PROPORTION, not elements — a five-wide cap is a body
+    // where a three-wide one is an edge, and a rim that overhangs a wide cap
+    // reads as an overhang instead of as a guard.
+    //
+    // THE DRIPS ARE GONE AND THE RIM TAPERS INSTEAD, which is the third go and
+    // the last of three different objects this sprite has accidentally been. Two
+    // pixels hanging under a wide dark bar are LEGS, and a wide dark bar with
+    // legs under a pale block is a table — the same failure as the dagger, one
+    // element further along: any two symmetric marks below a horizontal are read
+    // as supports before they are read as anything else.
+    //
+    // So the dark goes 7, 3 and straight into the stem. That is a rim seen from
+    // above, curling under and running out — one mass narrowing, with nothing
+    // detached from it for the eye to reassign. It also gets the species across
+    // better than the drips did: what you recognise in an inkcap is the dark
+    // underside eating up into a pale cap, not the drops it sheds.
+    open: [
+      "..ccc..",
+      ".lcccc.",
+      ".lcccc.",
+      ".lcccc.",
+      ".lcccc.",
+      "ggggggg",
+      "..ggg..",
+      "...s...",
+      "...s...",
+    ],
     // Still closed, and an egg on a stick is exactly what a young one is.
     button: [".l.", ".c.", ".s."],
   },

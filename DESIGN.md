@@ -479,10 +479,25 @@ is what lets biome and season compose instead of fighting. Autumn still turns th
 world; the fen is a murkier autumn and the blossom rows stay stubbornly pink.
 
 **What grows in a region is DECOR, and the gathered things are not part of it.**
-Ferns, reeds, tussocks, fallen logs, pebbles, a biome's own flowers — a region
-may have as much of its own as it likes, because none of it is worth anything.
-Decor gates nothing, costs nothing, is picked up by nobody, and no acceptance
-test can see it, which is precisely what makes the kits free to be extravagant.
+Ferns, reeds, tussocks, pebbles, a biome's own flowers — a region may have as much
+of its own as it likes, because none of it is worth anything. Decor gates nothing,
+costs nothing, is picked up by nobody, and no acceptance test can see it, which is
+precisely what makes the kits free to be extravagant.
+
+**A TILE IS AN OBJECT AND YIELDS ITS MATERIAL; A MARK IS TEXTURE AND YIELDS
+NOTHING.** That is the line, and it is drawn where it is because it is the only
+version a player can read off the screen. Decor is *paint on the grass* — there is
+no object there to take, which is why nobody expects to pocket a tussock or a
+flower. Anything that occupies a whole tile, stands up, and stops you walking
+through it has announced itself as a thing, and a thing made of wood that gives
+back no wood is a promise broken.
+
+Fallen logs used to be in the list above, and were moved out after they were
+built: a solid, tile-sized, obviously-wooden object standing next to a shrub that
+pays two wood for the same swing does not read as decor whatever a doc says. They
+gather like everything else made of wood now. The carve-out is for things somebody
+PUT there — a mailbox, a signpost, the cube — which are tiles and yield nothing
+because they are not material, they are somebody's.
 
 The gathered scatter is the mushroom, and it stays **one item with one density
 rule**: a region may change what its mushrooms look like and may never have more

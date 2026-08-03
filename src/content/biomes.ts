@@ -1020,7 +1020,13 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // so it still reads on the murkiest floor in the game — the same legibility
     // argument the champagne made. It also stays clear of the kingcups a few
     // lines down: the fen already has one yellow thing in spring.
-    mushroomCap: { cap: "#b3aab0", lit: "#d5cdd0", gills: "#857a80" },
+    // THE GILLS ARE NEARLY BLACK HERE, which is a bigger jump than any other row
+    // makes between cap and gills — and it is carrying the species rather than
+    // the lighting. An inkcap dissolves from the rim upward, so what you actually
+    // recognise is a dark edge hanging under a pale cap. `mushroomShape: "bell"`
+    // gives that edge a whole row of its own (renderer §MUSHROOM_ART); a mid-grey
+    // in it would draw a shadow under the cap instead of the thing itself.
+    mushroomCap: { cap: "#b3aab0", lit: "#d5cdd0", gills: "#4a4450" },
     mushroomShape: "bell",
     // Weeping: broad at the top and narrowing all the way down, so the mass hangs
     // rather than sits. The tallest crown in the table — a fen tree leans over

@@ -12,11 +12,11 @@
 
 import type { ItemId } from "./items";
 import type { TileId } from "./tiles";
-import { TREE, ROCK, ORE_VEIN, DIRT, CAVE_FLOOR, DARK_TREE, SHRUB, GRASS } from "./tiles";
+import { TREE, ROCK, ORE_VEIN, DIRT, CAVE_FLOOR, DARK_TREE, SHRUB, GRASS, STUMP, LOG } from "./tiles";
 
 const HOUR = 3_600_000;
 
-export type NodeId = "tree" | "rock" | "vein" | "darktree" | "shrub";
+export type NodeId = "tree" | "rock" | "vein" | "darktree" | "shrub" | "stump" | "log";
 
 export interface NodeDef {
   id: NodeId;
@@ -158,6 +158,63 @@ export const NODES: Record<NodeId, NodeDef> = {
     line: "Timber. Darker at the heart.",
     yield: 8,
     regrowMs: 8 * HOUR,
+    density: 0,
+  },
+  // DEADWOOD, and it shipped one day NOT being a node, which was the mistake.
+  //
+  // The argument for leaving it alone was DESIGN.md's DECOR list, which names
+  // fallen logs outright and sets the test "can you carry it home?". The trouble
+  // is that the test describes the DECISION rather than a reason for it, and the
+  // shape it actually took on screen was: a solid, tile-sized, obviously-wooden
+  // object standing next to a shrub that gives you two wood for the same swing.
+  // Nobody was ever going to read that as a rule.
+  //
+  // So the line moved to where it can be stated without circling: **a TILE is an
+  // object and yields its material; a MARK is texture and yields nothing.** That
+  // is why flowers and tussocks stay unpickable — there is no object there, only
+  // paint on the grass — and why these two now behave like every other piece of
+  // wood in the world. See DESIGN.md §Biomes, which was amended to match.
+  //
+  // `density: 0` for the same reason the dark tree's is, and it is not a stub:
+  // deadwood is placed by one roll in sim/world.ts that then picks which of the
+  // two it is, exactly as a rock picks a silhouette. Nothing rolls against these.
+  //
+  // THE NUMBERS ARE THE SHRUB'S ARGUMENT AGAIN. Under a tree's eight, both of
+  // them, so felling a tree is never the worse move — and at about one cell in a
+  // thousand this is a fifth as common as a shrub, which puts it well under the
+  // bar `shrubs` already cleared. It is something you come across, never a reason
+  // to walk anywhere.
+  //
+  // The SLOWEST regrowth in the table, and that is the point: a shrub is a
+  // season's growth and a fallen tree is a decade's. It comes back because the
+  // world heals where you are not invested (ROADMAP §regrow-unless-claimed), and
+  // it comes back slowly because a wood that restocked its deadwood overnight
+  // would read as a supply rather than as age.
+  //
+  // Felled to GRASS, not DIRT, on the shrub's reasoning: a stump that scarred the
+  // ground behind it would pock a wood with dirt patches for three wood apiece.
+  stump: {
+    id: "stump",
+    name: "Stump",
+    tile: STUMP,
+    felled: GRASS,
+    layer: "surface",
+    drop: "wood",
+    line: "Levered it out.",
+    yield: 3,
+    regrowMs: 24 * HOUR,
+    density: 0,
+  },
+  log: {
+    id: "log",
+    name: "Fallen log",
+    tile: LOG,
+    felled: GRASS,
+    layer: "surface",
+    drop: "wood",
+    line: "Broken up.",
+    yield: 5, // more than a stump, still under a standing tree's eight
+    regrowMs: 24 * HOUR,
     density: 0,
   },
 };

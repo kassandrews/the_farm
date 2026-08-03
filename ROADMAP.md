@@ -4339,12 +4339,33 @@ so a new region that grows mushrooms has to decide which way it went.
 
 ### Deadwood — stumps and fallen logs
 
-**Decor with a tile, and the doc had already settled it.** DESIGN.md §Biomes names
-fallen logs in its DECOR list and states the test: *"can you carry it home?"* If
-you can, it is the mushroom wearing a hat and answers to the mushroom's density
-rules; if you can't, it is free. So these have **no `NODES` row** — no yield, no
-drop, no regrow timer, no away-sim, no balance argument. That deleted most of the
-work before any was done.
+**They shipped for one day with no yield, on DESIGN.md's authority, and that was
+wrong.** §Biomes named fallen logs in its DECOR list and set the test *"can you
+carry it home?"* — which describes the decision rather than giving a reason for
+it, and reasons are what a player reads off a screen. What actually shipped was a
+solid, tile-sized, obviously-wooden object standing next to a shrub that pays two
+wood for the same swing. Nobody was ever going to read that as a rule.
+
+So the line moved to somewhere it can be stated without circling, and DESIGN.md
+was amended to match:
+
+> **A TILE is an object and yields its material. A MARK is texture and yields
+> nothing.**
+
+That is why flowers and tussocks stay unpickable — decor is paint on the grass,
+there is no object there to take — and why deadwood now gathers like every other
+piece of wood in the world. The carve-out is for things somebody PUT there (a
+mailbox, a signpost, the cube): tiles that yield nothing because they are not
+material, they are somebody's.
+
+`NODES` rows at **3 wood for a stump and 5 for a log**, both under a standing
+tree's eight, so felling a tree is never the worse move. At about one cell in a
+thousand this is a fifth as common as a shrub, which puts it well under the bar
+`shrubs` already cleared: something you come across, never a reason to walk.
+Felled to GRASS not DIRT, on the shrub's reasoning, and the **slowest regrowth in
+the table** at 24h — a shrub is a season's growth and a fallen tree is a decade's,
+so a wood that restocked its deadwood overnight would read as a supply rather than
+as age.
 
 `BiomeDef.deadwood` is a multiplier that **defaults to none**, like `shrubs`, and
 three regions ask: pinewood (deadfall is what a plantation floor is made of),
@@ -4426,17 +4447,31 @@ deliberately past its best — and the state machine has room for it. It is not
 sitting unused in the table, because unused art rots faster than anything it
 depicts.
 
-Two things found by looking, both about **distance between pixels**:
+**The bell was four different objects before it was a mushroom**, and the run is
+worth keeping because every failure was the same kind: the eye takes the WHOLE
+before it takes the parts, and each fix was proportion rather than elements.
 
-- The bell was a **column** first. A three-wide cap over a one-wide stalk is two
-  pixels of difference; at seven rows it stopped reading as a cap on a stem and
-  came out a standing stone. Height is not what makes a tall mushroom — the
-  **shoulder** is. The cap has to reach five wide somewhere so the stem has
-  something to be thin underneath.
-- The `over` state drew **horns** before it was pulled, and the lesson outlived
-  it. Two lit rim pixels with three of air between them stop belonging to the same
-  object at this size. One pixel of gap is a dip; three is a pair of ears. The
-  birch's notch, at a fifth of the scale.
+1. **A standing stone.** A three-wide cap over a one-wide stalk is two pixels of
+   difference; at seven rows there was no cap left to see.
+2. **A cone.** Widened on the way down (3, 5, 5) it became a parasol or a young
+   fly agaric. A shaggy inkcap is a *cylinder with a domed top* — the reference
+   photograph settled it. Sides parallel for five rows; the only flare is the rim.
+3. **A dagger.** Pale straight cap, dark rim one pixel proud, pale stem — every
+   element right, and together a blade, a crossguard and a grip. Fixed by width:
+   a five-wide cap is a body where a three-wide one is an edge.
+4. **A table.** The rim's two drips, hanging under a wide dark bar, are LEGS. Any
+   two symmetric marks below a horizontal read as supports before anything else.
+
+The rim now goes 7, 3 and straight into the stem — one mass narrowing, nothing
+detached for the eye to reassign. It also carries the species better than the
+drips did: what you recognise in an inkcap is the dark underside eating up into a
+pale cap, not the drops it sheds. The fen's `mushroomCap.gills` went nearly black
+to match, which is a bigger cap-to-gill jump than any other row makes.
+
+And the `over` state drew **horns** before it was pulled, and the lesson outlived
+it. Two lit rim pixels with three of air between them stop belonging to the same
+object at this size. One pixel of gap is a dip; three is a pair of ears. The
+birch's notch, at a fifth of the scale.
 
 ### 8r — Shrubs — **built, glimmer only**
 

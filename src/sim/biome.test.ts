@@ -589,6 +589,36 @@ describe("shrubs", () => {
   });
 });
 
+describe("deadwood", () => {
+  it("gathers like everything else made of wood", () => {
+    // The rule these exist to keep honest, and they shipped for one day breaking
+    // it: A TILE IS AN OBJECT AND YIELDS ITS MATERIAL (DESIGN §Biomes). A solid,
+    // tile-sized, obviously-wooden thing that hands back nothing, standing next
+    // to a shrub that pays two wood for the same swing, is not a rule anybody can
+    // read off a screen.
+    for (const id of ["stump", "log"] as const) {
+      expect(NODES[id].drop).toBe(NODES.tree.drop);
+      // Never the better move. A standing tree has to stay the best wood in the
+      // world, or deadwood becomes a reason to walk somewhere — which is the one
+      // thing DESIGN §Biomes forbids a region's contents to be.
+      expect(NODES[id].yield).toBeLessThan(NODES.tree.yield);
+      // Grass, not dirt — the shrub's argument. A wood pocked with bare patches
+      // for three wood apiece is a tidying job.
+      expect(NODES[id].felled).toBe(GRASS);
+      // The slowest in the table: a shrub is a season's growth, a fallen tree is
+      // a decade's, and a wood that restocks its deadwood overnight is a supply.
+      expect(NODES[id].regrowMs).toBeGreaterThan(NODES.tree.regrowMs!);
+      // Placed by the deadwood roll in world.ts, never rolled against here — the
+      // dark tree's `density: 0` precedent.
+      expect(NODES[id].density).toBe(0);
+    }
+    expect(NODES.log.yield).toBeGreaterThan(NODES.stump.yield); // a log is more wood
+    // Reachable by the generic path, so ACT finds them with no second code path.
+    expect(nodeForTile(STUMP, "surface")).toBe("stump");
+    expect(nodeForTile(LOG, "surface")).toBe("log");
+  });
+});
+
 // Stone. Each region weathers its own, which is appearance — but two of the
 // promises it could break are not.
 describe("stone", () => {

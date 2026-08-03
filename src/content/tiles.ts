@@ -210,21 +210,14 @@ export const CLOUD_THIN: TileId = 24;
  *  pock a wood with dirt patches for two wood apiece. */
 export const SHRUB: TileId = 25;
 
-/** Deadwood: a stump, and a fallen log. Old wood that has gone back to the
- *  ground, and the first standing things in the game you cannot gather.
+/** Deadwood: a stump, and a fallen log. Old wood, gone soft and grey.
  *
- *  NOT A NODE, AND THAT IS THE WHOLE DESIGN. DESIGN.md §Biomes names fallen logs
- *  in its DECOR list and sets the test for anything in a region's kit: "can you
- *  carry it home?" If you can, it is the mushroom wearing a hat and it answers to
- *  the mushroom's density rules; if you can't, it is free. These cost nothing,
- *  gate nothing and yield nothing, which is exactly what lets a region have as
- *  much of its own as it likes.
- *
- *  SO THE ART HAS TO DO THE ARGUING. A log is visibly wood, and this is the first
- *  wood-looking thing that hands back nothing — if it reads as felled TIMBER, the
- *  doc rule breaks on screen whatever it says on paper. They have to read as
- *  returned to the ground: grey, split, mossy, soft. Not stacked, not cut, not
- *  square. Nobody tries to pick up a rotten log.
+ *  NODES, and they shipped for one day NOT being nodes — see content/nodes.ts
+ *  §stump for why that was wrong and what rule replaced it. Short version: a
+ *  solid, tile-sized, obviously-wooden object standing next to a shrub that pays
+ *  two wood for the same swing was never going to read as a rule, however it was
+ *  worded in a doc. **A tile is an object and yields its material; a mark is
+ *  texture and yields nothing.**
  *
  *  SOLID, like the rock and the shrub, on the shrub's own argument — something
  *  the same size and shape as a thing you walk around, that you walk through
@@ -232,7 +225,13 @@ export const SHRUB: TileId = 25;
  *
  *  Both keep their art UNDER 16px, which is the rock's rule and not the tree's:
  *  `hides` keys off overhang, so scenery at or under a tile never fades the
- *  player. These are things you step around, not things you get behind. */
+ *  player. These are things you step around, not things you get behind.
+ *
+ *  The art still says OLD rather than sawn — grey, split, mossy, both ends of a
+ *  log rounded, rings at one end only. That was written to argue you out of
+ *  picking them up and it survives being wrong about that: what it actually does
+ *  is say how long this wood has been lying here, which is the thing a region
+ *  with deadwood in it is claiming about itself. */
 export const STUMP: TileId = 26;
 export const LOG: TileId = 27;
 
