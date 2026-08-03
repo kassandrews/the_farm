@@ -89,9 +89,23 @@ export function arrivalDue(world: WorldState, now: number): boolean {
   if (openCommission(world)) return false; // one at a time
   const all = commissions(world);
   if (!nextArrival(all.length)) return false; // the queue is empty
-  const last = all.length === 0 ? world.createdAt : all[all.length - 1].arrivedAt;
-  const gap = all.length === 0 ? FIRST_ARRIVAL_MS : ARRIVAL_GAP_MS;
-  return now - last >= gap;
+  if (all.length === 0) return now - world.createdAt >= FIRST_ARRIVAL_MS;
+  // THE GAP IS MEASURED FROM BOTH ENDS OF THE LAST STORY.
+  //
+  // It used to run from the previous arrival alone, which made the pacing depend
+  // on how fast you built rather than on the calendar. Take thirty hours over
+  // somebody's house and the next neighbour was due the instant you stamped it —
+  // you finished a gift and the town immediately asked for another, which is the
+  // queue this file exists to prevent, arriving by a side door.
+  //
+  // So both clocks have to have run out: a day since they turned up, AND a day
+  // since you handed them their keys. Build fast and the arrival clock still
+  // governs, exactly as before; build slow and you get the same breathing space
+  // afterwards that a fast builder got. The quiet spell after finishing a house
+  // is part of the beat rather than dead time to be optimised away.
+  const prev = all[all.length - 1];
+  const since = Math.min(now - prev.arrivedAt, now - (prev.stampedAt ?? prev.arrivedAt));
+  return since >= ARRIVAL_GAP_MS;
 }
 
 /** Let the next arrival into town: a villager, a tent, and a form to fill in.
