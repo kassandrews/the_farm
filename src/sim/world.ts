@@ -2271,8 +2271,17 @@ export function tileAt(
   y: number,
   layer: Layer = "surface",
 ): TileId {
-  const edit = editsFor(world, layer)[tileKey(x, y)];
+  const key = tileKey(x, y);
+  const edit = editsFor(world, layer)[key];
   if (edit !== undefined) return edit;
+  // Ground you built on, pinned when you built (types.ts §frozen). Surface only,
+  // because rooms are. It sits BELOW an edit — digging up your own floor still
+  // works — and ABOVE generation, which is the whole point: past here the
+  // generator can no longer answer for this cell.
+  if (layer === "surface") {
+    const held = world.frozen[key];
+    if (held !== undefined) return held;
+  }
   return baseTileAt(world, x, y, layer);
 }
 

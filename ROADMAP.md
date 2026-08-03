@@ -5892,7 +5892,7 @@ A solid cell inside a room breaks the room, the roof derived from it, and the
 villager's route to the bed in it — and a villager who cannot path does not walk
 slowly, it snaps, so it reads as teleporting rather than as a broken house.
 
-### The freeze — settled, and it is the prerequisite for tranche 2
+### The freeze — **built (v31)**, and it is the prerequisite for tranche 2
 
 **Building a room freezes its ground.** When a room closes, write the
 currently-generated tile into `overrides` for every cell of its interior and
@@ -5927,6 +5927,43 @@ change because the generator got better — but it does mean the freeze is a
 one-way ratchet, and a bug that freezes the wrong cells is unfixable in place.
 So: freeze the room, not a radius, and test that a frozen cell equals what
 generation said at the moment it froze.
+
+**What it turned into, building it.** Four things were decided by the code rather
+than by the plan:
+
+1. **`frozen` is its own record, and that is not tidiness.** The first design
+   wrote the freeze into `overrides`, and `setTile` **deletes an edit whose value
+   equals the generated base** — which is every cell the freeze touches. Routed
+   through the ordinary door it would have been a loop that stored nothing; and
+   written in directly it would mean the save holds values the codebase's own
+   sparse-storage rule says must not exist, so any later pass compacting
+   redundant edits would unfreeze every town at once. Separate records for a
+   separate meaning is the argument `under` and `finishes` already make.
+2. **Read order is `overrides`, then `frozen`, then generation.** An edit still
+   wins, or building a house would make its floor permanent. The nice consequence
+   is that undoing an edit falls back to the frozen ground rather than to live
+   generation — the cell returns to what it was when you built, which is a better
+   meaning than the one we were aiming for.
+3. **The catch-up runs on load, not in the migration.** v31 adds an empty object
+   and nothing else. The obvious version walks `rooms()` inside the migration,
+   and that couples every old save to whatever `rooms()` later becomes — a
+   migration is frozen in time by contract. Running `freezeBuilt` from
+   `beginWorld` instead is self-healing: it re-runs at every version, for every
+   save, and is idempotent.
+4. **`buildAt` is wrapped rather than edited at each `return`.** There are a
+   dozen exit points and the one that gets forgotten is the one that leaves a
+   room generating its own floor for ever. The condition is `changed`, which is
+   already "the build layer moved" — deliberately not the narrower "moved in a
+   way I believe affects rooms", which is the rule that is wrong invisibly.
+
+It also freezes the **authored town**, which is a consequence and not a decision:
+the town's buildings are ordinary built cells. A brand-new world therefore
+acquires a few hundred frozen cells on its first load before the player has built
+anything — 236, measured in the browser.
+
+Verified on screen, because no unit test sees the real load path: schema 31, no
+page errors, 236 cells pinned on load, and building a closed 3×3 room added
+exactly nine — eight shell and one interior.
 
 ### Tranche 1 — cosmetic, and the finding is that it needs no freeze at all
 

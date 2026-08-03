@@ -211,6 +211,46 @@ export interface WorldState {
    *  Digging and placing write here; generation supplies everything else. */
   overrides: Record<string, TileId>;
 
+  /** Ground the player has BUILT ON, pinned to whatever generation said at the
+   *  moment they built (v31). Keyed "x,y", surface only — the rock is not
+   *  somewhere you build a room.
+   *
+   *  WHY THIS EXISTS. Generated chunks are never saved, so an unedited cell is
+   *  recomputed from (seed, x, y) every load — which means a change to the
+   *  generator re-landscapes towns people are living in. `HOME_REGION_REACH`
+   *  answers that for the TOWN by making the meadow row an identity; it does
+   *  nothing for the house somebody built five hundred tiles out, and the ground
+   *  inside that house is not stored anywhere. Measured: 23% of open country is
+   *  solid, and adding one percent of solid decor would give a 25-cell interior a
+   *  22% chance of growing a tree inside it. A solid cell in a room breaks the
+   *  room, the roof derived from it, and the villager's route to the bed.
+   *
+   *  So closing a room freezes its ground, and after that the generator cannot
+   *  reach it. Paid once: no future terrain change owes a migration, because no
+   *  future terrain change can touch a cell anybody built on. It also makes
+   *  Pillar 4 true in the data — your land is yours, rather than being a function
+   *  of the seed that happens to agree with you so far.
+   *
+   *  ITS OWN RECORD RATHER THAN ENTRIES IN `overrides`, AND THAT IS NOT TIDINESS.
+   *  A frozen cell holds exactly what generation says, and `setTile` DELETES an
+   *  edit whose value equals the generated base — that is the sparse-storage
+   *  invariant, and it is right. Writing the freeze into `overrides` would mean
+   *  storing values the codebase's own rule says must not exist, and any later
+   *  pass that compacted redundant edits would silently unfreeze every town in
+   *  the world. Separate records for a separate meaning is the same argument
+   *  `under` and `finishes` already make, and it rekeys nothing: v31 adds an
+   *  empty object.
+   *
+   *  READ ORDER IS `overrides` THEN THIS THEN GENERATION. An edit still wins, so
+   *  digging up your own floor works. Undoing that edit falls back to the frozen
+   *  ground rather than to live generation, which is the better meaning anyway:
+   *  it returns the cell to what it was when you built here.
+   *
+   *  NOTHING EVER REMOVES AN ENTRY. The freeze is a one-way ratchet — a cell that
+   *  froze wrong cannot be fixed in place — which is why it freezes the ROOM
+   *  (interior and shell, from `rooms()`) and never a radius. */
+  frozen: Record<string, TileId>;
+
   /** The same thing one layer down: sparse edits over the generated rock, keyed
    *  "x,y". Its own record rather than a prefix on `overrides` so that adding
    *  the underground rekeyed nothing in a live save — v17 adds an empty object

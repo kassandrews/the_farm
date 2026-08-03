@@ -19,7 +19,7 @@ import type { CharId, AuthoredId } from "../content/cast";
 import { CAST, MOLE, GHOST, COSMOS } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 
-export const SCHEMA_VERSION = 30;
+export const SCHEMA_VERSION = 31;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -843,6 +843,21 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
         : {}),
     };
   },
+
+  /** v31 — the freeze (ROADMAP §Phase 11, types.ts §frozen).
+   *
+   *  ADDS AN EMPTY OBJECT AND NOTHING ELSE, on purpose. The obvious version of
+   *  this migration walks `rooms()` and pins every existing house here, and it
+   *  is the wrong place: a migration is frozen in time by contract — it has to
+   *  keep meaning what it meant when it shipped — and calling live sim code from
+   *  one couples every old save to whatever `rooms()` becomes. The catch-up for
+   *  towns that already exist runs on load instead (`freezeBuilt`, called from
+   *  the app's world-start path), which is also self-healing: it re-runs for
+   *  every save at every version rather than once at a version boundary.
+   *
+   *  Rekeys nothing and drops nothing, so a save that came from v30 reads
+   *  identically until the first thing is built on it. */
+  30: (raw) => ({ ...raw, schemaVersion: 31, frozen: {} }),
 };
 
 /** The name the tables now give an authored character, or null for anyone the
@@ -996,6 +1011,7 @@ function isWellFormed(obj: Record<string, unknown>): boolean {
     typeof obj.player === "object" &&
     obj.player !== null &&
     typeof obj.overrides === "object" &&
+    typeof obj.frozen === "object" &&
     typeof obj.under === "object" &&
     typeof obj.crops === "object" &&
     Array.isArray(obj.villagers)

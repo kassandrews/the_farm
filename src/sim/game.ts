@@ -39,6 +39,7 @@ import {
 } from "./world";
 import { placeStructure, removeStructure, structureAt } from "./structures";
 import { rooms } from "./rooms";
+import { freezeBuilt } from "./freeze";
 import { roomRemembers, historyLine } from "./history";
 import { stampTown, ensureFixedCast } from "./town";
 import { newErrands, errandDue, postErrand, boardNear } from "./errands";
@@ -151,6 +152,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     player,
     homestead: { spot: opts.spot, originX: origin.x, originY: origin.y },
     overrides: {},
+    frozen: {},
     under: {}, // solid rock until you cut into it
     finishes: {}, // empty means every floor is pale pine — see WorldState.finishes
     build: {},
@@ -1293,7 +1295,37 @@ export function toolAllowedOn(tool: BuildTool, layer: Layer): boolean {
   return allowed === "all" ? true : allowed.includes(tool);
 }
 
+/** Place or remove something, and then pin the ground under whatever that
+ *  closed (ROADMAP §Phase 11).
+ *
+ *  A WRAPPER RATHER THAN A LINE AT EACH `return`, because there are a dozen of
+ *  them and the one that gets forgotten is the one that leaves a room generating
+ *  its own floor for ever. `changed` is the whole condition: it is already the
+ *  signal that the build layer moved, and `freezeBuilt` is idempotent, so the
+ *  worst a spurious call does is walk a memoised room list and write nothing.
+ *
+ *  Furniture counts too, even though a table encloses nothing. Placement bumps
+ *  the same revision the rooms cache keys on (§5b), so the list is recomputed
+ *  regardless and the extra work here is a map lookup per cell. Paying that to
+ *  keep the condition "the build layer changed" — rather than "the build layer
+ *  changed in a way I believe affects rooms" — is the same trade `buildRevision`
+ *  itself already made, and for the same reason: the narrower rule is the one
+ *  that is wrong invisibly. */
 export function buildAt(
+  world: WorldState,
+  tool: BuildTool,
+  x: number,
+  y: number,
+  now: number,
+  facing: Facing = "s",
+  layer: Layer = "surface",
+): BuildResult {
+  const res = placeOrRemove(world, tool, x, y, now, facing, layer);
+  if (res.changed) freezeBuilt(world);
+  return res;
+}
+
+function placeOrRemove(
   world: WorldState,
   tool: BuildTool,
   x: number,

@@ -38,6 +38,7 @@ import { makeRng } from "../sim/rng";
 import type { Rng } from "../sim/rng";
 import { clockLabel } from "../sim/time";
 import { surveyLabel } from "../sim/survey";
+import { freezeBuilt } from "../sim/freeze";
 import { STANDARD_FORMS, FORMS } from "../content/canon/forms";
 import type { AdultForm } from "../content/canon/forms";
 import { importFromMeadow } from "../sim/meadow_import";
@@ -319,6 +320,13 @@ export class App {
     this.titleScene = null;
     this.world = world;
     this.rng = makeRng(world.seed);
+    // The catch-up for towns built before the freeze existed (ROADMAP §Phase 11).
+    // Here rather than in the v31 migration, because a migration is frozen in
+    // time by contract and this one would have had to call live `rooms()` code —
+    // and because running on EVERY load at every version makes it self-healing
+    // rather than a single moment that either worked or did not. Idempotent, so
+    // the second load does nothing.
+    freezeBuilt(world);
     this.renderer.snapCamera(world);
     this.hud.root.style.display = "";
     this.loop();
