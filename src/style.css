@@ -690,43 +690,6 @@ select {
   font-size: 15px;
 }
 
-/* The survey sheet — the regional map, under the reference it belongs to.
-
-   POINTER-EVENTS NONE, like every other chip in this corner. It is 144px square
-   sitting over the world, and the one thing worse than not having a map is a map
-   that silently eats every tap on the top-right quarter of the field.
-
-   `image-rendering: pixelated` and a WHOLE-NUMBER scale (72 source px at 2× =
-   144). The sheet is not sprite art, but it is one pixel per eight tiles and a
-   fractional scale would resample the region edges into the mush the whole thing
-   exists to avoid — same rule, one layer out.
-
-   Bordered like the chips above it rather than floated bare: it is an instrument
-   the same institution issued, and an unframed rectangle of green over the world
-   reads as a rendering fault. */
-.sheet {
-  position: absolute;
-  pointer-events: none;
-  top: 58px;
-  right: 14px;
-  width: 144px;
-  height: 144px;
-  image-rendering: pixelated;
-  background: var(--panel);
-  border: 2px solid var(--panel-edge);
-  border-radius: 8px;
-  box-shadow: 0 2px 0 var(--shadow);
-}
-
-/* On a phone the field is the game and 144px of chrome is a quarter of the
-   width. Halved rather than hidden — still a whole-number scale (72 at 1×). */
-@media (max-width: 560px) {
-  .sheet {
-    width: 72px;
-    height: 72px;
-  }
-}
-
 /* Somebody's own words, quoted inside a panel that is not a conversation — the
    resident's line as the hall discharges Form 9, the stall-holder's as he hands
    something over. Both classes this replaces (`.quote`, `.unlock`) were being

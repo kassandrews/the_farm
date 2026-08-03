@@ -982,38 +982,6 @@ export function skyStairSiteAt(
   return skyStairAt(seed, spot, x, y, onLand);
 }
 
-/** The region a tile belongs to, for the SURVEY SHEET and nothing else.
- *
- *  THIS IS NOT `biomeAt`, AND THE DIFFERENCE IS THE WHOLE SAFETY ARGUMENT.
- *  A map is only allowed to exist because the thing it is drawn from cannot
- *  contain a secret (DESIGN §"The plaza is the datum"): this takes a seed, a
- *  spot and a coordinate, finds the nearest region site, and asks `siteRegion`
- *  what that site stands for. It has no access to props, nodes, structures,
- *  found places, the grove or the cube, so a sheet rendered from it *cannot*
- *  draw one — the same structural defence as handing the notices column a view
- *  that cannot hold the thing it must not show.
- *
- *  `biomeAt` WOULD LEAK ONE, which is why it is not used and must never be
- *  substituted here to "keep the map honest". Its first line returns "blossom"
- *  for a nine-tile disc that is a landmark, has its own Notebook entry, and is
- *  found by walking into it — on a sheet that is a coloured dot marking a
- *  secret, which is exactly the refusal this feature had to answer.
- *
- *  So the sheet disagrees with the ground in two places, on purpose: the blossom
- *  disc and the forest clearing are per-tile radii rather than regions, and the
- *  survey did not record them. A regional map being confidently incomplete is
- *  the correct amount of wrong for the institution that drew it. */
-export function sheetRegionAt(
-  seed: number,
-  spot: HomesteadSpot,
-  x: number,
-  y: number,
-): BiomeId {
-  const w = biomeWarp(seed, x, y);
-  const site = nearestSite(seed, w.x, w.y);
-  return siteRegion(seed, spot, site.mx, site.my);
-}
-
 /** Which biome a tile is in.
  *
  *  Cheap enough to ask per visible tile per frame — nine squared distances and
