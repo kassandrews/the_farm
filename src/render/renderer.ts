@@ -50,6 +50,7 @@ import {
   regionParts,
   foundAt,
   floorFinish,
+  PLAZA,
 } from "../sim/world";
 import { dayNumber } from "../sim/found";
 import { letterFor } from "../content/found";
@@ -105,6 +106,14 @@ import { SpriteCache, drawSpriteQuantized } from "./sprites";
 const clamp01 = (n: number): number => (n < 0 ? 0 : n > 1 ? 1 : n);
 
 const TILE = 16; // scene px per world tile (matches sprite CELL)
+
+/** Is this tile part of the town square? The rectangle is inclusive and lives in
+ *  sim/world.ts, where generation reads it — asked here rather than re-derived,
+ *  so the paving the renderer decorates is exactly the paving the generator
+ *  laid. */
+function inPlaza(x: number, y: number): boolean {
+  return x >= PLAZA.x0 && x <= PLAZA.x1 && y >= PLAZA.y0 && y <= PLAZA.y1;
+}
 const SPRITE = 16; // sprite draw size
 
 /** Reticle colour per action kind — the colour is the promise. Faint white means
@@ -1375,6 +1384,10 @@ export class Renderer {
         // is the band rule's exact trap, and an 11x9 plaza is a big enough field
         // to have shown it off. 6 and 9 are coprime with 16 for that reason.
         if (def.paving) this.drawPaving(px, py, tx, ty, def.paving, def.color);
+        // The peg in the plaza. Drawn and stored nowhere — the decor precedent,
+        // one layer down — and it is one cell, so it is cheaper to ask the
+        // rectangle first than to ask every tile in the world about the datum.
+        if (inPlaza(tx, ty)) this.drawDatum(px, py, tx, ty, def.color);
         // A laid floor shows its boards or its flagstones. Only a FINISHED tile
         // gets this: `groundTone` above deliberately leaves made surfaces flat,
         // and this is the other half of that decision rather than a contradiction
@@ -3079,6 +3092,43 @@ export class Renderer {
    *  the floor has to guard against (a jetty, where a butt joint is a nick in a
    *  plank that has nothing to butt against) cannot arise on generated paving,
    *  which is always a field. */
+  /** The peg — the survey datum, drawn where it actually is.
+   *
+   *  THE DATUM IS NOT THE MIDDLE, AND THAT IS THE POINT. The plaza runs x −5..5
+   *  and y −5..3, so its centre is (0, −1) — while the survey reads zero at
+   *  (0, 0), one row south of it. The joke was already written and had never been
+   *  drawn: the Notebook's `the-datum` says "the plaza is eleven across and nine
+   *  deep, and the zero is not in the middle of it", and the Office Creature
+   *  files as though he has seen a peg he has never seen. **Do not centre it.**
+   *
+   *  A mark on the ground and not a marker: no pin, no icon, nothing that reads
+   *  as UI pointing at something. A brass plug set into paving, seven pixels
+   *  across — the largest that still leaves stone visible around it, and past
+   *  which the cell reads as an object standing on the ground rather than as
+   *  something set into it.
+   *
+   *  THERE WAS A KERB HERE AND IT WAS DELETED, which is worth writing down so
+   *  nobody adds it a second time. Giving the square an edge is already done, by
+   *  the boundary bevel below (`def.top` north, `def.shade` south, drawn only
+   *  where `groundIdOf` changes). A kerb drawn here landed BEFORE that bevel and
+   *  was overpainted by it on exactly the two sides they shared, so all it
+   *  actually contributed was left and right verticals — and the ground bevel is
+   *  horizontal by convention, so the result was an edge treatment that appeared
+   *  on two sides of the square and not the other two. Found by cropping the
+   *  corner at 4×; at 1× it read as "a bit subtle" rather than as wrong. */
+  private drawDatum(px: number, py: number, tx: number, ty: number, color: string): void {
+    if (tx !== 0 || ty !== 0) return;
+    const ctx = this.ctx;
+    const ink = mixHex(color, { color: "#000000", amount: 0.34 });
+    const head = mixHex(color, { color: "#ffffff", amount: 0.4 });
+    const mid = TILE / 2;
+    ctx.fillStyle = ink;
+    ctx.fillRect(px + mid - 3, py + mid, 7, 1);
+    ctx.fillRect(px + mid, py + mid - 3, 1, 7);
+    ctx.fillStyle = head;
+    ctx.fillRect(px + mid, py + mid, 1, 1);
+  }
+
   private drawPaving(
     px: number,
     py: number,

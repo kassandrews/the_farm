@@ -5973,7 +5973,8 @@ nobody. So everything below changes what the world LOOKS like without changing a
 single generated tile — no migration, no risk to any build, and the freeze is not
 a prerequisite for any of it.
 
-1. **The plaza gets its own paving.** Today the whole square is one `STONE` tile
+1. **The plaza gets its own paving.** *(The peg is built; the bond is not — see
+   the note under this list.)* Today the whole square is one `STONE` tile
    with one `roll` and the shared `paving: "stone"` period table, and §8c already
    flags that it "reads worse than the grass beside it". Two ways to fix it, and
    **take the render-side one**: a variation keyed on `PLAZA` membership, which is
@@ -5991,6 +5992,32 @@ a prerequisite for any of it.
    `season: "spring"`, two marks each. Autumn and the far country are both open.
    The rule they are under: a mark is texture and yields nothing, so a flower may
    never become pickable.
+
+**The peg is built, and a kerb was built and deleted.** The datum is drawn on the
+ground at (0, 0) — a small survey plug, seven pixels across, set between courses
+so it reads as an inlay rather than as part of the brick pattern. It is
+deliberately **not** in the middle of the square: the plaza runs x −5..5 and
+y −5..3, so its centre is (0, −1), and the Notebook has been making that joke in
+text since 9c ("the zero is not in the middle of it") with nothing drawing it.
+`survey.test.ts` now pins the asymmetry, because a tidy-minded change to `PLAZA`
+would delete the joke in two places at once.
+
+The kerb went in and came straight out, which is worth recording so nobody adds
+it again. **The square already has an edge**: the boundary bevel draws `def.top`
+north and `def.shade` south, only where `groundIdOf` changes, and it runs AFTER
+this — so a kerb here was overpainted on exactly the two sides they shared and
+contributed only left and right verticals. The ground bevel is horizontal by
+convention, so the result was an edge treatment present on two sides of the
+square and absent on the other two. **Found by cropping the corner at 4×**; at 1×
+it read as "a bit subtle" rather than as wrong, which is the whole argument for
+looking closely at a surface before tuning it.
+
+So the roadmap's actual wording — paving that is *not the same as everywhere
+else* — is still unanswered, and the remaining lever is the bond: a
+plaza-specific `GRAIN` entry with a longer course and joint, so the civic square
+is cut in bigger slabs than a flagstone floor somebody lays at home. Cheap (a
+table row and one argument), and the periods must stay coprime with 16 or the
+courses align to the tile grid and band.
 
 **Mushrooms are the exception in this tranche and belong with tranche 2's
 caution.** `MUSHROOM` is a real generated tile, not a mark, so its density is
