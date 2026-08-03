@@ -446,11 +446,46 @@ plaza, so the plaza reads zero and nowhere else does. The HUD carries the grid
 reference in the top-right corner, in the clock's own chip: `W 42 · S 118`, and
 `0 · 0` when you're home. East and south are positive, matching the screen.
 
-That is the whole of the navigation system, and it is deliberately not a compass.
-Walking toward zero on both legs is a thing you work out rather than a thing you
-follow, and the world stays explored rather than routed. There is **no minimap**
-and there will not be one: a map that shows you the grove or the humming cube has
-spoiled a secret the UI was never allowed to mention.
+The reference is deliberately not a compass. Walking toward zero on both legs is
+a thing you work out rather than a thing you follow.
+
+**There is one map, and it is drawn from the region field alone** — the survey
+sheet, in the corner under the reference it belongs to. This reverses a flat
+refusal ("there is no minimap and there will not be one"), so both halves of why
+it was refused are worth keeping straight, because only one of them was answered.
+
+*A map would show you the grove or the humming cube.* True, and the reason the
+refusal was right for as long as it stood. It is answered structurally rather
+than by care: the sheet samples `sheetRegionAt`, which takes a seed, a spot and a
+coordinate, and returns which region owns that ground. It cannot see a prop, a
+node, a structure, a found place, the grove or the cube — so no drawing code can
+put one on the page, in the same way the notices column is handed a view that
+cannot contain what it must not show. Note that `biomeAt` would leak one: it
+answers "blossom" for a nine-tile landmark with its own Notebook entry, which on
+a map is a coloured dot marking a secret. There is a test whose only job is that
+distinction. The sheet is therefore **wrong in two places on purpose** — it does
+not know about the blossom disc or the forest clearing, because those are radii
+rather than regions and the survey did not record them. A regional map being
+confidently incomplete is the right amount of wrong for the body that drew it.
+
+**It is unlabelled, and must stay unlabelled.** Coloured region shapes, your
+position, the datum, and nothing else, ever. Biome names live in dialogue, so the
+people who live somewhere are the ones who name it (§Biomes) — a key down the
+side would hand you the whole table at once and turn noticing into reading, which
+is the bar the season chip failed.
+
+*The world should stay explored rather than routed.* **Not** answered — given up,
+deliberately. You can now see the strange country from where you stand and steer
+at it. The judgement is that a region is scenery and not content, so steering at
+it gets you strange scenery and never a secret, and that the far country being
+reachable only by accident cost more than the routing does.
+
+That second half is a claim about how the game FEELS to play, which is the one
+kind of question this document cannot settle — so the feature is built to be
+taken back out. It is one module, one canvas, one CSS block and one call in the
+frame loop, and it **stores nothing in the save**. If it turns out to flatten the
+world, deleting it is a delete and a revert of this section, with no migration
+owed to anybody living in a town.
 
 It is worth being clear why numbers on screen are allowed here when a season
 label was not (that chip existed and was cut). A label naming what you can
@@ -736,6 +771,13 @@ nothing a found place contains may be the thing another place then needs.
 **Finding it is the mechanic**, so there is no marker, no minimap pin, and no
 "undiscovered" slot in any list. A screen that can tell you how many you have
 left to find has converted a world into a checklist and told you the answer.
+
+That "no minimap pin" now names a map that exists (§"The plaza is the datum"),
+which makes it load-bearing rather than hypothetical: the survey sheet may draw
+regions, your position and the datum, and a found place is none of those. The
+protection is that the sheet cannot reach one rather than that it declines to —
+keep it that way, and never hand its renderer anything that knows where a
+landmark is.
 
 ### Why these get to be rare when water does not
 

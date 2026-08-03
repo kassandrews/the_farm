@@ -5703,6 +5703,60 @@ inside a card; the untested thing is the two of them stacked. Worth a real
 `scripts/` driver, since the same sequence would also unblock anything about
 commissions.
 
+### 10j — The survey sheet — **built, and built to be reverted**
+
+A regional map in the top-right corner, under the reference it belongs to.
+`src/render/sheet.ts`, one canvas in the HUD, one CSS block, one call in the
+frame loop. DESIGN §"The plaza is the datum" is rewritten to match — read that
+before touching this, because it now records which half of the old refusal was
+answered and which half was given up.
+
+**The half that was answered, structurally.** `sheetRegionAt` in `sim/world.ts`
+takes a seed, a spot and a coordinate and returns a region. It cannot see a prop,
+a node, a structure, a found place, the grove or the cube, so no drawing code can
+put one on the sheet.
+
+**`biomeAt` would have leaked one, and it is the obvious substitution.** Its
+first line answers "blossom" for a nine-tile landmark that has its own Notebook
+entry and is found by walking into it — on a map, a coloured dot marking a
+secret. That is the exact refusal this feature had to answer, and it would have
+been reintroduced by using the function that looks more correct. `sheet.test.ts`
+pins it on five seeds and sweeps 13k coordinates on three more. The sheet is
+therefore wrong about the blossom disc and the forest clearing on purpose.
+
+**The half that was given up: "explored rather than routed."** You can see the
+strange country from where you stand and steer at it. That is a call about how it
+FEELS in play, which no document can settle — so this is deliberately cheap to
+undo. **It stores nothing in the save**, which is the whole of the revert plan:
+delete `render/sheet.ts` and its test, drop `sheetRegionAt`, the `sheet` field on
+`Hud`, the `syncSheet` call and the `.sheet` CSS, and revert the DESIGN section.
+No migration is owed to anybody living in a town. Keep it that way — the first
+thing that persists a sheet preference is the thing that makes this expensive.
+
+Settled while building it:
+
+- **The swatch is derived, never authored.** A biome states a tint and not a
+  colour, and that rule is what lets biome and season compose — so the sheet's
+  colour is this season's grass through the same `mixHex` the ground goes
+  through. The map turns over in autumn with the world, for free, and the
+  meadow's `amount: 0` makes the town's own region plain grass and every other
+  region a departure from it.
+- **Eight tiles to the pixel, chosen against `BIOME_CELL` (68) and not against
+  the screen.** A region is about eight pixels across, so it reads as a shape.
+  Finer and the sheet is one region; coarser and the shapes turn to noise.
+- **It redraws only when you cross a whole sheet pixel, or the season turns.**
+  Five thousand region lookups is not a per-frame cost, and at eight tiles to the
+  pixel there is nothing to show for a smaller move — the same argument the
+  survey chip makes for reading off the tile rather than off `player.x`.
+- **Unlabelled, permanently.** `BiomeDef.name` is commented "used in dialogue,
+  never in the HUD", and a key down the side would hand you the whole region
+  table at once. You learn which one is the fen from somebody who lives near it.
+
+Verified on screen at three distances, which took three shots because no single
+one could show everything: at home the datum sits under the player mark, and 700
+tiles out it is off the sheet entirely. The middle shot is the one that proves
+the cross draws.
+
 ### What is left of Phase 10, with the calls already made
 
 1. ~~**Unlocks get a channel, and it is the Notebook.**~~ **Built — see §10i,**
@@ -5725,7 +5779,12 @@ commissions.
    The soft time headings turned out to be unable to be empty for a stronger
    reason than "cannot": a heading is made out of an entry, so there is nothing
    to author carefully.
-3. **A minimap is allowed if it is drawn from the BIOME FIELD.** §Phase 5 refused
+3. ~~**A minimap is allowed if it is drawn from the BIOME FIELD.**~~ **Built —
+   see §10j.** One correction to the reasoning below, found by building it: the
+   defence holds for `siteRegion` and does NOT hold for `biomeAt`, which answers
+   "blossom" for a landmark disc. The distinction is the feature. Original text:
+
+   §Phase 5 refused
    one because it would show the grove and the cube, and that refusal was right
    about tiles. `siteRegion` knows nothing about props, nodes, structures or
    found places, so a map rendered from it *cannot* spoil one — the same

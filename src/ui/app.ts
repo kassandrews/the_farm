@@ -38,6 +38,7 @@ import { makeRng } from "../sim/rng";
 import type { Rng } from "../sim/rng";
 import { clockLabel } from "../sim/time";
 import { surveyLabel } from "../sim/survey";
+import { drawSheet, sheetKey, SHEET_PX } from "../render/sheet";
 import { STANDARD_FORMS, FORMS } from "../content/canon/forms";
 import type { AdultForm } from "../content/canon/forms";
 import { importFromMeadow } from "../sim/meadow_import";
@@ -2729,6 +2730,7 @@ export class App {
       // flicker between two numbers while you stand still.
       const at = playerTile(this.world);
       this.hud.survey.textContent = surveyLabel(at.x, at.y);
+      this.syncSheet(at.x, at.y, Date.now());
       if (now - this.lastSaveAt > AUTOSAVE_MS) {
         this.lastSaveAt = now;
         this.persist();
@@ -2764,6 +2766,23 @@ export class App {
 
   /** Closes the open panel when Escape should work; null otherwise. */
   private closeModal: (() => void) | null = null;
+
+  /** What the survey sheet was last drawn for. Session-only, deliberately: the
+   *  sheet is a pure function of (seed, spot, where you are, the season), so
+   *  there is nothing about it worth saving — and nothing to migrate away if the
+   *  whole feature comes back out (render/sheet.ts explains why that matters). */
+  private sheetKeyDrawn = "";
+
+  /** Repaint the corner map, if anything it depends on has moved. */
+  private syncSheet(x: number, y: number, now: number): void {
+    if (!this.world) return;
+    const key = sheetKey(x, y, now);
+    if (key === this.sheetKeyDrawn) return;
+    const ctx = this.hud.sheet.getContext("2d");
+    if (!ctx) return;
+    this.sheetKeyDrawn = key;
+    drawSheet(ctx, this.world.seed, this.world.homestead.spot, x, y, now);
+  }
 
   /** A brief floating status message near the action button. */
   private flash(text: string): void {
@@ -2803,6 +2822,7 @@ interface HudRefs {
   root: HTMLElement;
   clock: HTMLElement;
   survey: HTMLElement;
+  sheet: HTMLCanvasElement;
   flash: HTMLElement;
   toolButtons: [Tool, HTMLElement][];
   buildButtons: [BuildTool, HTMLElement][];
@@ -2881,6 +2901,14 @@ function buildHud(
   // set four inline styles, which meant the toast's look was split across two
   // files and the CSS half couldn't see it.
   const flash = el("div", { class: "clock flash" });
+
+  // The survey sheet, under the reference it belongs to — same institution, same
+  // corner. Rendered at its own source resolution and upscaled by a whole number
+  // in CSS; sized here so the two cannot drift apart.
+  const sheet = el("canvas", { class: "sheet", ariaHidden: "true" }) as HTMLCanvasElement;
+  sheet.width = SHEET_PX;
+  sheet.height = SHEET_PX;
+  hoverHint(sheet, "The Bureau's regional survey. It records ground, and nothing that is on it.");
 
   const toolButtons: [Tool, HTMLElement][] = [];
   const palette = el("div", { class: "tool-palette" });
@@ -2999,6 +3027,7 @@ function buildHud(
     zoom,
     clock,
     survey,
+    sheet,
     flash,
     // The row and the tools ride in one bottom-left stack, so the row growing a
     // second line of chips pushes itself up and leaves the tools exactly where
@@ -3010,7 +3039,7 @@ function buildHud(
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, survey, flash, toolButtons, buildButtons, groupButtons, buildFinishes, seedVarieties, build, rotate, undo, zoom };
+  return { root: hud, clock, survey, sheet, flash, toolButtons, buildButtons, groupButtons, buildFinishes, seedVarieties, build, rotate, undo, zoom };
 }
 
 // --- Panel helpers ------------------------------------------------------------
