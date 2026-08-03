@@ -47,7 +47,7 @@ import { count } from "../sim/inventory";
 import { beginStroke, captureCell, endStroke, undoStroke, canUndo, undoLabel } from "../sim/undo";
 import { qualify, assign, beds, rehomeAcrossStroke, bedKeys, pendingRehome, DISQUALIFIER_TEXT } from "../sim/assign";
 import { counterBatches, cabinet, cabinetEmpty, file } from "../sim/filings";
-import { journal, journalEmpty } from "../sim/notebook";
+import { journalChunks, journalEmpty } from "../sim/notebook";
 import type { CharId, NewcomerId } from "../content/cast";
 import { isNewcomer, isSecret, CAST } from "../content/cast";
 import { present } from "../sim/presence";
@@ -1025,7 +1025,13 @@ export class App {
    *    • No headings by subject. Grouping needs categories, and categories you
    *      have nothing under are those blanks again, while categories only for
    *      what you DO have quietly tell you how many kinds of thing exist.
-   *      Chronological, because a journal is a sequence.
+   *
+   *  It IS chunked by time — "Today", "Yesterday", "Tuesday", "Last winter" —
+   *  which is the one grouping that cannot do either of those things: a time
+   *  heading is made out of an entry, so it can never be empty, and it says
+   *  nothing about what else that day might have held. Newest first, because the
+   *  thing you just noticed is what you opened the book to read. See
+   *  `journalChunks`; none of the arithmetic belongs up here.
    *
    *  The one visible distinction is HOW an entry was recorded: a field note in
    *  your own hand reads plain, and something you were told is prefixed with who
@@ -1047,9 +1053,12 @@ export class App {
           ]),
         );
       } else {
-        for (const { def, line } of journal(world)) {
-          if (def.source === "told") body.append(el("div", { class: "who" }, ["Told"]));
-          body.append(el("p", {}, [line]));
+        for (const chunk of journalChunks(world, Date.now())) {
+          body.append(el("div", { class: "when" }, [chunk.heading]));
+          for (const { def, line } of chunk.entries) {
+            if (def.source === "told") body.append(el("div", { class: "who" }, ["Told"]));
+            body.append(el("p", {}, [line]));
+          }
         }
       }
 

@@ -5,6 +5,7 @@ import {
   observe,
   noticed,
   journal,
+  journalChunks,
   journalEmpty,
   sweepNoticed,
   tellable,
@@ -20,6 +21,28 @@ const NOW = Date.UTC(2026, 6, 1, 12);
 
 function world() {
   return newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
+}
+
+/** Every entry the panel would draw, in the order it would draw them — the
+ *  chunks flattened back into one list. */
+function chunked(w: ReturnType<typeof world>, now: number) {
+  return journalChunks(w, now).flatMap((c) => c.entries);
+}
+
+/** Local noon on a day. Local, not UTC: "yesterday" and "Tuesday" are questions
+ *  about the calendar on the wall, so a test written in UTC passes or fails
+ *  depending on which side of midnight the runner's timezone lands. */
+const at = (y: number, m: number, d: number) => new Date(y, m, d, 12).getTime();
+
+/** Wednesday 1 July 2026 — a summer day, mid-week, so every rung below has room
+ *  on both sides of it. */
+const WED = at(2026, 6, 1);
+
+/** The heading a single entry written at `t` sits under, read from `now`. */
+function heading(t: number, now: number): string {
+  const w = world();
+  observe(w, "the-fen", t);
+  return journalChunks(w, now)[0].heading;
 }
 
 describe("the journal", () => {
@@ -45,6 +68,16 @@ describe("the journal", () => {
     observe(w, "the-hum", NOW);
     observe(w, "the-fen", NOW + 1);
     expect(journal(w).map((e) => e.def.id)).toEqual(["the-hum", "the-fen"]);
+  });
+
+  it("reads back newest first, which is the opposite of how it was written", () => {
+    // The record is a sequence; the READING is a journal, and you open a journal
+    // at the end. Scrolling past a year to reach the thing you noticed a minute
+    // ago would make it an archive.
+    const w = world();
+    observe(w, "the-hum", NOW);
+    observe(w, "the-fen", NOW + 1);
+    expect(chunked(w, NOW + 1).map((e) => e.def.id)).toEqual(["the-fen", "the-hum"]);
   });
 
   it("fills a told entry's name from the live villager, not from a stored copy", () => {
@@ -235,6 +268,74 @@ describe("the table", () => {
       // two are ever the same string, one of them is doing nothing.
       expect(o.line).not.toBe(o.remark);
     }
+  });
+
+  it("dates the last few days by name, and everything older by season", () => {
+    // The ladder coarsens, which is how somebody dating a page actually does it:
+    // you remember which DAY something happened for about a week, and after
+    // that you remember which season.
+    expect(heading(WED, WED)).toBe("Today");
+    expect(heading(at(2026, 5, 30), WED)).toBe("Yesterday");
+    expect(heading(at(2026, 5, 27), WED)).toBe("Saturday");
+    expect(heading(at(2026, 5, 20), WED)).toBe("Earlier in summer");
+    expect(heading(at(2026, 3, 15), WED)).toBe("Last spring");
+    expect(heading(at(2025, 6, 15), WED)).toBe("Summer, last year");
+    expect(heading(at(2024, 6, 15), WED)).toBe("Summer, 2024");
+  });
+
+  it("keeps a winter that crosses new year in one heading", () => {
+    // The bug this is here for: winter is months 12, 1 and 2, so the obvious
+    // `year * 4 + index` ordinal splits one winter down the middle and files
+    // December and January a year apart. Somebody who lived through it would
+    // call the whole thing one winter.
+    const w = world();
+    observe(w, "the-hum", at(2026, 11, 20));
+    observe(w, "the-fen", at(2027, 0, 10));
+    const chunks = journalChunks(w, at(2027, 1, 15));
+    expect(chunks).toHaveLength(1);
+    expect(chunks[0].heading).toBe("Earlier in winter");
+  });
+
+  it("never repeats a heading, because the ladder only ever coarsens", () => {
+    // Consecutive grouping is only correct while `headingFor` is monotone in
+    // time. A rung that isn't would silently print the same date twice, with
+    // other days in between — this is the test that would say so.
+    const w = world();
+    const days = [0, 1, 2, 4, 6, 9, 20, 40, 120, 300, 400, 800];
+    const ids = OBSERVATIONS.slice(0, days.length).map((o) => o.id);
+    days.forEach((d, i) => observe(w, ids[i], WED - d * 86_400_000));
+    const headings = journalChunks(w, WED).map((c) => c.heading);
+    expect(new Set(headings).size).toBe(headings.length);
+  });
+
+  it("makes every heading out of an entry, so none can be empty", () => {
+    // THE STRUCTURAL DEFENCE, and the whole reason chunking by time is allowed
+    // where chunking by subject is not. A category can have nothing under it and
+    // become the blank this feature must never show. A date cannot: it was built
+    // from something that is already under it.
+    const w = world();
+    const days = [0, 3, 30, 500];
+    OBSERVATIONS.slice(0, days.length).forEach((o, i) =>
+      observe(w, o.id, WED - days[i] * 86_400_000),
+    );
+    for (const c of journalChunks(w, WED)) expect(c.entries.length).toBeGreaterThan(0);
+  });
+
+  it("says the same thing over one entry as over three", () => {
+    // No heading may leak a count — not a total, not a per-day tally. The
+    // heading is a fact about WHEN, and it must not vary with what is under it.
+    const one = world();
+    observe(one, "the-fen", WED);
+    const three = world();
+    for (const o of OBSERVATIONS.slice(0, 3)) observe(three, o.id, WED);
+    expect(journalChunks(three, WED)).toHaveLength(1);
+    expect(journalChunks(three, WED)[0].heading).toBe(journalChunks(one, WED)[0].heading);
+  });
+
+  it("reads a clock that went backwards as today, not as a day in the future", () => {
+    // A save carried between two devices that disagree about the time. "Friday"
+    // for something that has not happened yet would be worse than a flat lie.
+    expect(heading(WED + 3 * 86_400_000, WED)).toBe("Today");
   });
 
   it("puts {who} in every told line and in no noticed one", () => {

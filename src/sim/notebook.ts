@@ -103,6 +103,111 @@ export function journalEmpty(world: WorldState): boolean {
   return world.notebook.length === 0;
 }
 
+// --- Reading it back, in chunks of time --------------------------------------
+
+/** Local midnight for a moment, so "how many days ago" is a question about
+ *  calendar days and not about 24-hour blocks. An entry at 11pm and one at 1am
+ *  are a day apart even though they are two hours apart. */
+function startOfDay(t: number): number {
+  const d = new Date(t);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+/** Which season a moment falls in, as one number that keeps counting up.
+ *
+ *  Not `year * 4 + index`, which would be the obvious version and would be
+ *  wrong: winter is months 12, 1 and 2, so a December entry and a January one
+ *  belong to the SAME winter while sitting in different calendar years. Counting
+ *  months from the start of spring and dividing by three puts them in one bucket,
+ *  which is what somebody who lived through that winter would say about it. */
+function seasonOrdinal(t: number): number {
+  const d = new Date(t);
+  return Math.floor((d.getFullYear() * 12 + d.getMonth() - 2) / 3);
+}
+
+/** The calendar year a season ORDINAL began in — 2026 for the winter that runs
+ *  Dec 2026 to Feb 2027. Derived from the ordinal rather than from the entry, so
+ *  the December and January halves of one winter cannot label themselves
+ *  differently and split a heading in two. */
+function seasonStartYear(ordinal: number): number {
+  return Math.floor((ordinal * 3 + 2) / 12);
+}
+
+/** The heading an entry written at `at` sits under, read from `now`.
+ *
+ *  A LADDER THAT COARSENS, which is how a diary dates itself: the last few days
+ *  are named days, and everything before that is a season, because that is the
+ *  resolution at which you still remember when something happened. Nothing here
+ *  is a category — every heading is DERIVED FROM AN ENTRY, so a heading with
+ *  nothing under it cannot be constructed. That is the structural defence, not a
+ *  rule somebody has to keep: same shape as handing the notices column a view
+ *  that cannot contain the thing it must not show.
+ *
+ *  No heading may carry a count, and none can — this returns a string about
+ *  time, and the caller groups. A "3 entries" beside a heading would be the
+ *  denominator the whole feature exists without.
+ *
+ *  MONOTONE IN TIME, which the grouping depends on: as `at` recedes the heading
+ *  only ever gets coarser, so entries sharing a heading are always adjacent and
+ *  a heading can never appear twice in one journal. */
+function headingFor(at: number, now: number): string {
+  const days = Math.round((startOfDay(now) - startOfDay(at)) / 86_400_000);
+
+  // A clock that went backwards — a save carried between two devices that
+  // disagree — reads as today rather than as a weekday in the future.
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return new Date(at).toLocaleDateString(undefined, { weekday: "long" });
+
+  const season = seasonAt(at).name;
+  const delta = seasonOrdinal(now) - seasonOrdinal(at);
+  // Older than a week but still inside the season we are standing in. "Earlier"
+  // is load-bearing: without it this heading and the entries under Today would
+  // both be spring, and the book would look like it had lost a week.
+  if (delta <= 0) return `Earlier in ${season}`;
+  if (delta < 4) return `Last ${season}`;
+
+  const year = seasonStartYear(seasonOrdinal(at));
+  const gap = seasonStartYear(seasonOrdinal(now)) - year;
+  const capped = season[0].toUpperCase() + season.slice(1);
+  return gap === 1 ? `${capped}, last year` : `${capped}, ${year}`;
+}
+
+export interface JournalChunk {
+  heading: string;
+  entries: { def: ObservationDef; line: string; at: number }[];
+}
+
+/** The journal as the panel reads it: newest first, chunked by WHEN.
+ *
+ *  Newest first because the thing you just noticed is the thing you opened the
+ *  book to read, and a journal that made you scroll past a year to find it would
+ *  be an archive.
+ *
+ *  CHUNKED BY TIME, NEVER BY SUBJECT, and that refusal is now in three places
+ *  (§9c twice, and here). Subject headings need categories: the ones you have
+ *  nothing under are the blanks this feature must not have, and the ones you DO
+ *  have quietly tell you how many kinds of thing exist. A time heading can do
+ *  neither — it cannot be empty, because it was made out of an entry, and
+ *  "Tuesday" reveals nothing about what Tuesday might have held.
+ *
+ *  Takes `now` rather than reading the clock, because "Today" is a fact about
+ *  the frame that asked. */
+export function journalChunks(world: WorldState, now: number): JournalChunk[] {
+  const chunks: JournalChunk[] = [];
+  for (const entry of [...journal(world)].reverse()) {
+    const heading = headingFor(entry.at, now);
+    // Consecutive grouping is enough BECAUSE `headingFor` is monotone — see its
+    // docblock. If a rung is ever added that isn't, this silently starts
+    // producing the same heading twice and the test that pins it will say so.
+    const last = chunks[chunks.length - 1];
+    if (last && last.heading === heading) last.entries.push(entry);
+    else chunks.push({ heading, entries: [entry] });
+  }
+  return chunks;
+}
+
 // --- What fires an entry ------------------------------------------------------
 
 /** Everything the world checks as you move through it.

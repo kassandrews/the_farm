@@ -690,6 +690,41 @@ select {
   font-size: 15px;
 }
 
+/* A date rule in the Notebook — "Today", "Tuesday", "Last winter".
+
+   It is a DATE, not a category, and it has to read that way or the panel starts
+   looking like a filing system with sections you might be missing (ROADMAP §10,
+   item 2). So: no box, no chevron, no background — a line of ink and a hairline
+   across the page, which is what somebody dating a page actually draws.
+
+   In the panel's own ink rather than the accent, deliberately. `.who` is already
+   accent-coloured, and two accents stacked would put the same emphasis on WHEN
+   as on WHOSE VOICE, which is the distinction the panel exists to draw.
+
+   The margin is heavy above and light below, for the same reason the labelled
+   groups' gap is: a heading with equal air on both sides captions the thing
+   ABOVE it, and the first time this shipped the date sat over the previous
+   day's last entry. It has no top margin on the first one — nothing to
+   separate from yet. */
+.panel .when {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  opacity: 0.55;
+  margin: 22px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--panel-edge);
+}
+
+/* The first one has no entry above it to separate from — but it DOES have the
+   panel's own title, and at the full 22px it read as a subtitle of "The
+   Notebook" rather than as the first date. Enough air to be its own thing,
+   visibly less than the gap between days. */
+.panel .when:first-child {
+  margin-top: 12px;
+}
+
 .panel .who {
   font-size: 12px;
   text-transform: uppercase;

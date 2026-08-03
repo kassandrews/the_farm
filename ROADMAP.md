@@ -5598,6 +5598,52 @@ to know what a solstice is. **It is light, and light is all it is** (DESIGN
 can — it changes which of four names an hour has, and the only things downstream
 are the tint and the fireflies. A longer evening is scenery you cannot farm.
 
+### 10h — The journal dates itself — **built**
+
+The Notebook was one flat run of paragraphs in the order they were written, which
+is the right thing for a record and the wrong thing to read. It is chunked by
+time now, newest first: `journalChunks(world, now)` in `sim/notebook.ts` hands the
+panel `{ heading, entries }[]` and the panel draws it.
+
+**No schema change and no migration** — v26 has stored `{ id, at }` per entry
+since the feature shipped, so the timestamps this needed were already in every
+save in the world. Worth noting as the reason this was a cheap item: the version
+of it that had to migrate would have been a different-sized job.
+
+**Why chunking by TIME is allowed where chunking by SUBJECT is refused**, which
+is the whole argument and is now in its third place. A subject heading needs a
+category, and a category is a blank waiting to happen: the ones you have nothing
+under are the empty slots this feature must never show, and the ones you DO have
+quietly count the kinds of thing that exist. A date heading can do neither, and
+not by policy — **structurally**. Every heading is built out of an entry that is
+already under it, so an empty one cannot be constructed. That is the same
+defence the notices column uses and the minimap is meant to use: hand it a view
+that cannot contain the thing.
+
+**The ladder coarsens, the way somebody dating a page does it.** Today,
+Yesterday, then the weekday name out to six days, then `Earlier in summer`, `Last
+spring`, `Summer, last year`, `Summer, 2024`. You remember which DAY something
+happened for about a week and which SEASON after that, so the headings stop
+offering a precision the reader has already lost.
+
+Three things found while building it:
+
+1. **`year * 4 + seasonIndex` is the obvious ordinal and it is wrong.** Winter is
+   months 12, 1 and 2, so it splits one winter down the middle and files December
+   and January a year apart. Counting months from the start of spring and
+   dividing by three puts them in one bucket, which is what anybody who lived
+   through that winter would say about it.
+2. **The grouping is consecutive-only, and that is safe exactly while the ladder
+   is monotone in time.** A rung that isn't would print the same date twice with
+   other days in between. There is a test whose only job is to notice.
+3. **`now` is a parameter, never a clock read inside.** "Today" is a fact about
+   the frame that asked, and `drive.mjs` pins the page clock — a `Date.now()` in
+   sim is how the harness and the game end up disagreeing about what day it is.
+
+Found on screen, which is the only place it was visible: at the full inter-day
+gap the first date read as a **subtitle of the panel's own title** rather than as
+the first date. It gets less air than the days get from each other.
+
 ### What is left of Phase 10, with the calls already made
 
 1. **Unlocks get a channel, and it is the Notebook.** The no-toast rule stands
@@ -5609,11 +5655,10 @@ are the tint and the fireflies. A longer evening is scenery you cannot farm.
    finish, a seed variety, a filing batch — may have a real announcement card,
    because a person handing you something is not a secret being spoiled. This
    makes the Notebook load-bearing, which is what item 2 is for.
-2. **The journal chunks by TIME, never by subject.** Grouping by subject is
-   refused in two places already (§9c) and stays refused: categories with nothing
-   under them are the blanks this must not have, and categories only for what you
-   have quietly tell you how many kinds exist. Soft time headings cannot be empty
-   and cannot leak a total. Newest first.
+2. ~~**The journal chunks by TIME, never by subject.**~~ **Built — see §10h.**
+   The soft time headings turned out to be unable to be empty for a stronger
+   reason than "cannot": a heading is made out of an entry, so there is nothing
+   to author carefully.
 3. **A minimap is allowed if it is drawn from the BIOME FIELD.** §Phase 5 refused
    one because it would show the grove and the cube, and that refusal was right
    about tiles. `siteRegion` knows nothing about props, nodes, structures or
