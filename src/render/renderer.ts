@@ -468,8 +468,17 @@ export const MUSHROOM_ART: Record<MushroomShape, Record<MushroomState, string[]>
       "...s...",
       "...s...",
     ],
-    // Still closed, and an egg on a stick is exactly what a young one is.
-    button: [".l.", ".c.", ".s."],
+    // A YOUNG ONE OF THE SAME SPECIES, not a generic nub. This was `.l.`/`.c.`/
+    // `.s.` — an egg on a stick, which was fine beside the old squat bell and
+    // became a speck the moment the adult grew to nine rows and got its dark rim.
+    // A patch is supposed to read as ONE KIND AT TWO AGES; a pale blob next to an
+    // inkcap reads as two different things sharing a tile, which is the exact
+    // failure the companion exists to prevent.
+    //
+    // So it gets the rim too. Three pixels of dark under a two-row cap is the
+    // whole species at a third of the size, and it is the rim rather than the
+    // silhouette that does it — that is what the adult's four rebuilds taught.
+    button: [".c.", "lcc", "ggg", ".s."],
   },
 };
 /** Taller than a rock, shorter than a tree. It should read as built rather than
