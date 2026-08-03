@@ -5827,7 +5827,14 @@ Two things the tests corrected, both mine:
    biome tint through `mixHex` so the map turns over with the season for free,
    and unlabelled was right — `BiomeDef.name` is "used in dialogue, never in the
    HUD" for a reason.
-4. **The terrain pass, which needs a plan before code.** Water routed clear of
+4. ~~**The terrain pass, which needs a plan before code.**~~ **Planned — see
+   Phase 11**, which is that plan. Two corrections it made to the sketch below:
+   most of the list is DECOR, which is not a tile and cannot re-landscape
+   anything, so the risk is concentrated in three items rather than spread over
+   six; and "decor kits for the five regions that have none" is four, because the
+   meadow's absence is a decision and not a gap. Original text:
+
+   Water routed clear of
    town buildings (a river past the town is good, a river between two houses is
    not); a plaza that is not the same paving as everywhere else; decor kits for
    the five regions that have none, more flower and mushroom kinds, a fairy ring
@@ -5849,6 +5856,156 @@ observable-not-collectible animals are genuinely interesting and collide with "i
 it can be stood next to, it is a resident". That is a design session, not a
 roadmap item, and it is the one idea on the list that could change what the game
 is. Combining-elements crafting is already on the not-taken list twice.
+
+---
+
+## Phase 11 — The terrain pass — **planned, nothing built**
+
+The plan Phase 10 item 4 said this owed before code. Read it before touching
+`generatedTile`, `biomeAt`, or anything under `sim/world.ts`'s water section.
+
+### The danger, measured rather than asserted
+
+**Generated chunks are never saved.** `WorldState` holds sparse edits only —
+`overrides`, `under`, `finishes`, `build`, `furniture` — and every unedited cell
+is recomputed from `(seed, x, y)` at load. Only `sim/town.ts` writes ground
+overrides, and only for the authored town's own footprints. So **the ground
+inside a house the player built is not stored anywhere**: it is regenerated, every
+load, forever.
+
+That is the standing rule ("an unedited tile is always whatever generation says")
+working exactly as designed, and it is why `HOME_REGION_REACH` exists. But
+`HOME_REGION_REACH` protects the TOWN. It does nothing for the house somebody
+built five hundred tiles out, which is most of what people build.
+
+The measurement, taken over 39k cells of open country east of town on seed 7:
+
+- **23.07% of open country is solid** (fails `isWalkable`).
+- A change that rerolled terrain freely would put something solid inside a 7×7
+  house's interior on **99.9%** of houses.
+- The number that actually matters is the MARGINAL one, because a terrain pass
+  perturbs rather than rerolls: **adding one percent of solid decor gives a
+  25-cell interior a 22% chance** of gaining a tree inside it. Two percent gives
+  40%.
+
+A solid cell inside a room breaks the room, the roof derived from it, and the
+villager's route to the bed in it — and a villager who cannot path does not walk
+slowly, it snaps, so it reads as teleporting rather than as a broken house.
+
+### The freeze — settled, and it is the prerequisite for tranche 2
+
+**Building a room freezes its ground.** When a room closes, write the
+currently-generated tile into `overrides` for every cell of its interior and
+shell. Those cells stop being generated and become edits, like a dug tile.
+
+Plus a one-time **v31 migration** doing the same retroactively: walk
+`rooms(world)` — which already returns `interior` and `shell` per room and is
+already cached against `buildRevision` — and freeze what people have already
+built.
+
+Measured cost, on a world with five houses of assorted sizes: eleven rooms, **465
+cells, about 5.5 KB of JSON**. Per-room counts ran 25 to 81. It is bounded by
+what you built, and it is small.
+
+Why this over the two alternatives:
+
+- **Versioning the generator in the save** (`terrainGen: 1 | 2`) keeps two
+  generators alive forever, forks again on every future terrain change, and means
+  nobody who already plays ever sees an improvement. It is the option that rots.
+- **Only ever making changes that cannot alter solidity** needs no migration at
+  all and is genuinely the cheapest — but it rules out the water routing that
+  motivated the pass, and islands, and any solid decor.
+
+The freeze's real argument is that it is paid ONCE and closes the class: after
+it, no future terrain change owes a migration, because no future terrain change
+can reach a cell anybody built on. It also makes Pillar 4 literally true in the
+data — your land is actually yours, and stops being a function of the seed.
+
+**Its cost, stated honestly:** frozen cells never receive future terrain
+improvements. That is correct rather than regrettable — a room's floor should not
+change because the generator got better — but it does mean the freeze is a
+one-way ratchet, and a bug that freezes the wrong cells is unfixable in place.
+So: freeze the room, not a radius, and test that a frozen cell equals what
+generation said at the moment it froze.
+
+### Tranche 1 — cosmetic, and the finding is that it needs no freeze at all
+
+**Decor is not a tile** (§8k). A kit is a field on a biome row, drawn render-side
+by a hash on the world coordinate; it owns no cell, is stored nowhere, and blocks
+nobody. So everything below changes what the world LOOKS like without changing a
+single generated tile — no migration, no risk to any build, and the freeze is not
+a prerequisite for any of it.
+
+1. **The plaza gets its own paving.** Today the whole square is one `STONE` tile
+   with one `roll` and the shared `paving: "stone"` period table, and §8c already
+   flags that it "reads worse than the grass beside it". Two ways to fix it, and
+   **take the render-side one**: a variation keyed on `PLAZA` membership, which is
+   the decor precedent and stores nothing. A new tile id is the expensive path —
+   it owes `groundIdOf`, the flat fill and a `TileDef` row, and the flat fill has
+   painted a square across a cell three times already. Note `STONE` is generated
+   NOWHERE but the plaza, so there is no collision to solve, only a look.
+2. **Kits for the regions without one.** Four, not five: pinewood, birch, scrub
+   and fen have kits; the meadow deliberately gets none so that walking out of
+   town is when the ground starts having things in it. That leaves **dusk,
+   glimmer, glass and blossom**. §8k already calls the far rows the interesting
+   ones — "a kit is the cheapest strangeness there is, and it is the one place
+   §Biomes' *stranger, never richer* has to be checked mark by mark."
+3. **More flower kinds.** Flowers are `bloom` kits — four exist, all
+   `season: "spring"`, two marks each. Autumn and the far country are both open.
+   The rule they are under: a mark is texture and yields nothing, so a flower may
+   never become pickable.
+
+**Mushrooms are the exception in this tranche and belong with tranche 2's
+caution.** `MUSHROOM` is a real generated tile, not a mark, so its density is
+terrain. It is walkable and diggable, so it cannot break a room — but it IS a
+gathered material, and the glimmer precedent is the warning: 0.4 was cut to 0.045
+because "3.3× the record makes foraging measurably better". **Vary the shape and
+the tint, never the density, and never the item.** `MushroomShape` has two
+members today and only the fen uses `bell`.
+
+### Tranche 2 — the ones that move ground, and what each owes
+
+None of these may land before the freeze is live.
+
+4. **Water routed clear of town buildings.** This is the only DEFECT on the list;
+   the rest are additions. `TOWN_DRY = 46` already keeps the sea and lakes off
+   town, and rivers are *deliberately* allowed through — a river is a good thing
+   for a town to have, and generated bridges exist for it. The actual bug is that
+   `stampBuilding` paves `FLOOR` under its own footprint, so a river is
+   overwritten INSIDE a building and may still run right up to a wall or between
+   two houses. So the fix is a clearance term on channels near town footprints,
+   not a ban on rivers. Owes: the 1,000-seed treatment, and it must not break the
+   existing guarantee that riverside towns get a river and a bridge.
+5. **A fairy ring, as a found place.** Structurally the cheapest new kind there
+   is: the same annulus test `ringgrove` already uses, with `MUSHROOM` instead of
+   `TREE`. No new tile id, no water, so it inherits siting, memoisation and town
+   clearance for free. Must sit outside ring 96 to clear the grove, the cube and
+   the blossom rows. Owes a Notebook entry, because every other kind has one.
+6. **Islands.** The genuinely hard one, and the only item here that is a new
+   field rather than a term on an existing one. Depth is monotone-decreasing from
+   a centre, so an island is a positive term subtracted inside a body. It must be
+   a total function of `(seed, x, y)`; it must not produce single-cell islands
+   (the per-cell-edges failure, and also a pathing hazard — `canStep` refuses a
+   diagonal unless both orthogonals are clear); and it must not manufacture land
+   nobody can reach, because nothing in this game crosses deep water. Consider
+   whether an unreachable island is a feature — you can fill water forever, so it
+   is reachable by work — or a bug.
+
+### What the whole pass owes, procedurally
+
+- **The 1,000-seed treatment**, which is a real precedent and not a figure of
+  speech: `biome.test.ts:102` (town is meadow), `found.test.ts:48` (no landmark
+  near town), `water.test.ts:616` (nothing unstandable around the tent). A new
+  terrain feature earns its own. Note the cost ceiling found in `water.test.ts`:
+  the A* pathing sweep runs 250 seeds rather than 1000 because at 1000 it was
+  "28 seconds of a 10-second suite". Tile-level checks can afford 1000; anything
+  that builds a world cannot.
+- **`scripts/shot-map.mts`.** Terrain bugs are bigger than the camera: the
+  wallpaper bug and the scatter's diagonal were both found at map scale and could
+  not have been found any other way.
+- **`scripts/shot-biomes.mts`** after any kit or tint change, and
+  **`shot-spots.mts`**, which is the only check that the four spot promises still
+  mean anything.
 
 ---
 
