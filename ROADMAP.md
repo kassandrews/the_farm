@@ -205,6 +205,30 @@ Recorded in full in DESIGN.md §Materials. The short version and *why*:
   and the node forfeits its claim. This resolves the tension between "the world
   should renew" and "your land is actually yours": the world heals where you
   aren't invested and stays exactly as you shaped it where you are.
+- **And a wood only closes GAPS — it does not retake a clearing.** `NodeDef.seeded`,
+  and it exists because the rule above had a hole that only shows up if you
+  terraform. "The world heals where you aren't invested" defined *invested* as
+  BUILT ON: a crop, a wall, a floor, furniture. **Clearing is also shaping**, and a
+  player who felled a wood to make a lawn and left it as lawn got every tree back
+  in the same tiles eight hours later, for ever — which is precisely the tidying
+  job the bullet below forbids. So a felled tree returns only if one of its eight
+  neighbours is still a tree, and otherwise forfeits exactly as claimed ground
+  does. **Radius one, not two**: a neighbour rule always lets the wood take back
+  the ring it can still reach, so the radius *is* the depth of that encroachment —
+  at two you clear a 7×7 and keep 3×3, at one you keep 5×5. One ring reads as a
+  wood closing in a little at its edge and then stopping.
+  **Rock, ore and the dark tree are exempt, and that is the point of the flag.**
+  Stone does not spread, and rocks are placed so no two ever touch
+  (`rockIsLoneliest`) — a seeded rock could never come back and stone would
+  quietly become scarce, which DESIGN §Materials forbids. The grove is a place
+  rather than a wood, and a player who cleared it would have deleted a secret
+  permanently. Deadwood is exempt for the duller version of the rock's reason.
+  **Found while writing the test: decide first, then plant.** A single loop that
+  wrote as it went filled a whole clearing in one pass, because each tree it
+  restored became a neighbour for the next entry it looked at — the wood marched
+  inward ring by ring and the rule bought nothing. It also made the result depend
+  on the iteration order of `world.regrow`, which is the order you happened to
+  swing in.
 - **And dug earth grasses over, on the same terms** (12h, longer than either
   node, so you never watch it happen — you come back and it has closed). This
   was missing until the biome pass noticed it: a felled tree returned but a hole

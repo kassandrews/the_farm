@@ -156,6 +156,11 @@ describe("gathering", () => {
   it("regrows on the real clock when the ground is left bare", () => {
     const w = freshWorld();
     const { x, y } = findNode(w, TREE);
+    // A tree standing beside it, stated rather than hoped for: regrowth needs
+    // something to seed from now (NodeDef.seeded), and leaving that to whatever
+    // the generator happened to put next door is how this test would one day
+    // start failing for a reason that has nothing to do with the clock.
+    setTile(w, x + 1, y, TREE);
     gather(w, x, y, 1000);
     expect(pendingRegrowth(w)).toBe(1);
     updateRegrowth(w, 1000 + NODES.tree.regrowMs! - 1); // not yet
@@ -163,6 +168,61 @@ describe("gathering", () => {
     updateRegrowth(w, 1000 + NODES.tree.regrowMs! + 1); // now
     expect(tileAt(w, x, y)).toBe(TREE);
     expect(pendingRegrowth(w)).toBe(0);
+  });
+
+  it("a lone tree does not come back — a wood closes gaps, it does not retake ground", () => {
+    const w = freshWorld();
+    const { x, y } = findNode(w, TREE);
+    // Clear its whole neighbourhood first, so there is provably nothing to seed
+    // from. This is the hole the seeded rule exists to close: before it, a player
+    // who cleared a wood and left it as lawn got every tree back in the same tile
+    // eight hours later, for ever, which is the tidying job ROADMAP forbids.
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) setTile(w, x + dx, y + dy, GRASS);
+    }
+    setTile(w, x, y, TREE);
+    gather(w, x, y, 1000);
+    updateRegrowth(w, 1000 + NODES.tree.regrowMs! * 10);
+    expect(tileAt(w, x, y)).toBe(DIRT); // still yours
+    expect(pendingRegrowth(w)).toBe(0); // and it stopped nagging, like a claim
+  });
+
+  it("keeps the middle of a clearing but lets the wood take back one ring", () => {
+    // The behaviour the radius actually buys, asserted so a future change to it
+    // is a decision rather than a surprise: at radius 1 a 7x7 felled out of a
+    // solid stand keeps its 5x5 middle, because only the ring touching the
+    // standing trees has anything to grow from.
+    const w = freshWorld();
+    const { x, y } = findNode(w, TREE);
+    for (let dy = -4; dy <= 4; dy++) {
+      for (let dx = -4; dx <= 4; dx++) setTile(w, x + dx, y + dy, TREE);
+    }
+    for (let dy = -3; dy <= 3; dy++) {
+      for (let dx = -3; dx <= 3; dx++) gather(w, x + dx, y + dy, 1000);
+    }
+    updateRegrowth(w, 1000 + NODES.tree.regrowMs! + 1);
+    // The outer ring of the felled block touches the standing wood, so it closes.
+    expect(tileAt(w, x + 3, y)).toBe(TREE);
+    expect(tileAt(w, x, y + 3)).toBe(TREE);
+    // Everything inside that ring had no tree beside it and stays cleared.
+    for (let dy = -2; dy <= 2; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        expect(tileAt(w, x + dx, y + dy), `${dx},${dy}`).toBe(DIRT);
+      }
+    }
+    expect(pendingRegrowth(w)).toBe(0); // nothing left pending either way
+  });
+
+  it("still brings rocks back, because stone does not spread", () => {
+    // The exemption is the point of the flag rather than an oversight. Rocks are
+    // generated so that no two ever touch (world.ts §rockIsLoneliest), so a
+    // seeded rock could NEVER return and stone would quietly become scarce —
+    // which DESIGN §Materials forbids outright.
+    const w = freshWorld();
+    const { x, y } = findNode(w, ROCK);
+    gather(w, x, y, 1000);
+    updateRegrowth(w, 1000 + NODES.rock.regrowMs! + 1);
+    expect(tileAt(w, x, y)).toBe(ROCK);
   });
 
   it("NEVER regrows on ground you've claimed — the clearing stays yours", () => {

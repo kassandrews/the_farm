@@ -43,6 +43,40 @@ export interface NodeDef {
    *  `null` means never, which is not an exception to the claim rule but the
    *  same rule underground: see the vein below. */
   regrowMs: number | null;
+
+  /** Does this come back only where its own kind still stands beside it?
+   *  Optional; absent means it returns wherever it was felled, on the timer alone.
+   *
+   *  THIS IS WHAT MAKES A CLEARING STICK, and it exists because the regrow rule
+   *  had a hole in it that only shows up if you terraform. "The world heals where
+   *  you aren't invested and stays as you shaped it where you are" was the stated
+   *  design — but `isClaimed` defined *invested* as BUILT ON: a crop, a wall, a
+   *  floor, a piece of furniture. Clearing is also shaping, and a player who felled
+   *  a wood to make a lawn and left it as lawn got every tree back in the same
+   *  tiles eight hours later, for ever. ROADMAP's own line is that nothing here may
+   *  become a tidying job, and that was one.
+   *
+   *  A wood closes over a GAP because the trees beside it seed into it. It does not
+   *  march back across open ground. So a felled tree returns if one of its eight
+   *  neighbours is still a tree, and otherwise forfeits exactly as a built-on tile
+   *  does. Fell one in a wood: it closes. Clear a patch: the middle has nothing to
+   *  heal from and stays yours.
+   *
+   *  ROCK AND ORE ARE NOT SEEDED, and that is the point of the flag rather than an
+   *  oversight. Stone does not spread — and rocks are placed so that no two ever
+   *  touch (sim/world.ts §rockIsLoneliest), so a neighbour rule would mean a rock
+   *  could NEVER come back and stone would quietly become scarce. DESIGN §Materials:
+   *  materials are required but never rationed.
+   *
+   *  NOR IS THE DARK TREE. The grove is a place, not a wood (sim/world.ts), and a
+   *  player who cleared it would have deleted a secret permanently. It regrows on
+   *  the timer alone, which is the one case where "the world heals" outranks "your
+   *  land is yours".
+   *
+   *  NOR IS DEADWOOD, for a duller reason: stumps and logs are generated so that no
+   *  two ever touch either, so seeding them would mean none of them ever returns. */
+  seeded?: boolean;
+
   /** Roughly what fraction of eligible ground carries one, at generation. */
   density: number;
 }
@@ -58,6 +92,7 @@ export const NODES: Record<NodeId, NodeDef> = {
     line: "Timber.",
     yield: 8, // a floor's worth from one tree
     regrowMs: 8 * HOUR,
+    seeded: true, // a wood closes its gaps; it does not retake a clearing
     density: 0.1,
   },
   // A tree's little sibling, and the first node whose density is ZERO almost
@@ -85,6 +120,7 @@ export const NODES: Record<NodeId, NodeDef> = {
     line: "Cut back.",
     yield: 2,
     regrowMs: 3 * HOUR,
+    seeded: true, // same as the tree: undergrowth spreads from undergrowth
     density: 0.1,
   },
   rock: {

@@ -127,14 +127,46 @@ function isClaimed(world: WorldState, x: number, y: number): boolean {
   return t !== DIRT && t !== GRASS;
 }
 
+/** Is one of this tile's eight neighbours still the same node standing?
+ *
+ *  The other half of "your land is actually yours" — see NodeDef.seeded for why
+ *  it exists and why rock, ore and the grove are exempt. Eight and not four: a
+ *  wood closes diagonally as readily as it does square, and the four-neighbour
+ *  version left odd single holes in dense stands that never filled.
+ *
+ *  RADIUS ONE, not two, and the difference is how much of a clearing survives.
+ *  A neighbour rule always lets the wood take back the ring it can still reach,
+ *  so radius is exactly the depth of that encroachment: at two you clear a 7×7
+ *  and keep 3×3, at one you keep 5×5. One ring is a wood closing in a little at
+ *  its edge, which is true to life and stops; two is enough of a bite to feel
+ *  like the clearing failed. */
+function hasKinBeside(world: WorldState, x: number, y: number, tile: number): boolean {
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      if (tileAt(world, x + dx, y + dy) === tile) return true;
+    }
+  }
+  return false;
+}
+
 /** Bring back every node whose time has come — skipping (and forgetting) any
- *  whose ground you've since claimed. Runs on load and on tick, so regrowth is
- *  wall-clock driven and needs no catch-up after an absence.
+ *  whose ground you've since claimed, or that has nothing of its own kind left
+ *  beside it to grow from. Runs on load and on tick, so regrowth is wall-clock
+ *  driven and needs no catch-up after an absence.
  *
  *  Returns how many actually regrew, so the postcard can mention the woods
  *  filling back in. */
 export function updateRegrowth(world: WorldState, now: number): number {
-  let regrew = 0;
+  // DECIDE FIRST, THEN PLANT, and this is not tidiness — a single loop that wrote
+  // as it went filled a whole clearing in one pass. Each tree it restored became
+  // a neighbour for the next entry it looked at, so the wood marched inward ring
+  // by ring and the seeded rule bought nothing. It also made the outcome depend
+  // on the iteration order of `world.regrow`, which is insertion order, which is
+  // the order you happened to swing in.
+  //
+  // Every entry is judged against the wood as it stood when the pass began.
+  const planting: [string, number, number, ReturnType<typeof nodeDef>][] = [];
   for (const [key, entry] of Object.entries(world.regrow)) {
     const [x, y] = key.split(",").map(Number);
     if (isClaimed(world, x, y)) {
@@ -143,11 +175,25 @@ export function updateRegrowth(world: WorldState, now: number): number {
       continue;
     }
     if (now < entry.at) continue;
-    setTile(world, x, y, nodeDef(entry.node).tile);
-    delete world.regrow[key];
-    regrew++;
+    const def = nodeDef(entry.node);
+    // Nothing left to seed from. Forfeits exactly as claimed ground does, and for
+    // the same reason: you shaped this, and clearing is shaping (NodeDef.seeded).
+    //
+    // Checked HERE rather than at felling time, so the answer is about what the
+    // wood looks like when the tree would actually have come back. Fell a stand
+    // over an afternoon and the whole stand stays down; fell one and put it off,
+    // and the neighbours that were there when you swung are still there.
+    if (def.seeded && !hasKinBeside(world, x, y, def.tile)) {
+      delete world.regrow[key];
+      continue;
+    }
+    planting.push([key, x, y, def]);
   }
-  return regrew;
+  for (const [key, x, y, def] of planting) {
+    setTile(world, x, y, def.tile);
+    delete world.regrow[key];
+  }
+  return planting.length;
 }
 
 /** How many nodes are waiting to come back — for the away postcard and tests. */
