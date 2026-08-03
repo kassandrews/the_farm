@@ -40,6 +40,8 @@ import {
   warmLines,
 } from "../content/dialogue";
 import { CAST } from "../content/cast";
+import { conversationRoots } from "../content/conversations";
+import type { Exchange, Reply } from "../content/conversations";
 import { rivalReading } from "./museum";
 import { moleGroundShallow, moleLamplit } from "./mole";
 import { groveCut } from "./ghost";
@@ -49,6 +51,11 @@ import { isCompanion } from "./company";
 export interface Speech {
   who: string;
   text: string;
+  /** Present when this line opens a conversation tree: the player's short
+   *  answers, each leading to the next line (content/conversations.ts). The UI
+   *  renders them where the close button would sit; a Speech without them is
+   *  the single line it always was. */
+  replies?: Reply[];
 }
 
 /** Odds a villager reaches for a memory instead of an idle line, when it has a
@@ -101,6 +108,32 @@ function spoke(v: Villager, text: string): void {
   v.said = [...v.said, text].slice(-SAID_MAX);
 }
 
+/** `fresh`, for pools that mix plain lines with tree roots: a root is picked
+ *  (and ring-tracked) by its opening line, exactly like any other line. */
+function freshEx(pool: Exchange[], v: Villager): Exchange[] {
+  const left = pool.filter((ex) => !v.said.includes(ex.line));
+  return left.length > 0 ? left : pool;
+}
+
+const asLine = (line: string): Exchange => ({ line });
+
+/** The player answered: record what the villager says back, and hand it over.
+ *  The ring learns tree lines the same as any other, so a tree walked today is
+ *  steered away from tomorrow. Deliberately pays NOTHING — friendship was paid
+ *  when the conversation started (`talk`), and a reply that paid again would
+ *  make talkativeness a move. This is also where tranche 2 will write the
+ *  reply into the memory log. */
+export function advanceReply(v: Villager, reply: Reply): Exchange {
+  spoke(v, reply.then.line);
+  return reply.then;
+}
+
+/** The button's label: the player-form flavored phrasing where somebody wrote
+ *  one, the shared default everywhere else. */
+export function replyLabel(reply: Reply, form: AdultForm): string {
+  return reply.variants?.[form] ?? reply.text;
+}
+
 /** How long you must be gone before anybody says so, and how long before "a few
  *  days" becomes "weeks". Real time, like everything here — the town measures
  *  your absence on the same clock the crops grow on. Three days rather than
@@ -114,13 +147,18 @@ const ABSENCE_WEEKS = 14 * 24 * 3600_000;
  *  were gone, which is worse than not having the feature. It self-limits —
  *  `speak` stamps `lastTalkedAt` on every conversation, so the greeting fires
  *  once per absence and the clock resets behind it. */
-function tryAbsenceLine(v: Villager, away: number | null, rng: Rng): string | null {
+function tryAbsenceLine(v: Villager, away: number | null, rng: Rng): Exchange | null {
   if (away === null || away < ABSENCE_DAYS) return null;
   const bank = RESIDENT_ABSENCE[v.form];
   if (!bank) return null;
-  const pool = away >= ABSENCE_WEEKS ? (bank.weeks ?? bank.days) : bank.days;
-  if (!pool || pool.length === 0) return null;
-  return rng.pick(fresh(pool, v));
+  const weeks = away >= ABSENCE_WEEKS;
+  const lines = weeks ? (bank.weeks ?? bank.days) : bank.days;
+  // Tree roots pool with the flat lines rather than replacing them — how often
+  // a greeting opens a conversation is decided by how many of each got written.
+  const roots = conversationRoots(v.form, weeks ? "absence_weeks" : "absence_days");
+  const pool = [...(lines ?? []).map(asLine), ...roots];
+  if (pool.length === 0) return null;
+  return rng.pick(freshEx(pool, v));
 }
 
 /** The in-the-middle-of rung: a remark about what you are visibly in the middle
@@ -304,6 +342,10 @@ export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Sp
     spoke(v, text);
     return { who: displayName(v), text };
   };
+  const sayEx = (ex: Exchange): Speech => {
+    spoke(v, ex.line);
+    return { who: displayName(v), text: ex.line, replies: ex.replies };
+  };
 
   const telling = tryTellLine(world, v, now);
   if (telling) return say(telling);
@@ -318,7 +360,7 @@ export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Sp
   // their own banks (see above), and a generic greeting in the Mole's mouth
   // would be the resident machinery claiming somebody it has no claim on.
   const absence = tryAbsenceLine(v, away, rng);
-  if (absence) return say(absence);
+  if (absence) return sayEx(absence);
 
   // The house goes first when it has something to say. It's the most specific
   // true thing about them right now, and the only one the player can act on.
@@ -361,11 +403,15 @@ export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Sp
   // character enters rather than an afternoon the character is having.
   const idle = v.id === "office" ? OFFICE_IDLE : residentIdle(v.form);
   const pool = [
-    ...idle,
-    ...warmLines(v.form, friendshipTier(v)),
-    ...(isCompanion(world, v.id) ? (COMPANY_IDLE[v.form] ?? []) : []),
+    ...idle.map(asLine),
+    ...warmLines(v.form, friendshipTier(v)).map(asLine),
+    ...(isCompanion(world, v.id) ? (COMPANY_IDLE[v.form] ?? []).map(asLine) : []),
+    // Idle trees pool in like idle lines — the town square is exactly where a
+    // conversation should be able to start, and how often one does is decided
+    // by the bank's proportions rather than a second chance roll.
+    ...conversationRoots(v.form, "idle"),
   ];
-  return say(rng.pick(fresh(pool, v)));
+  return sayEx(rng.pick(freshEx(pool, v)));
 }
 
 /** A line about the month, or null if this villager shouldn't be saying one.

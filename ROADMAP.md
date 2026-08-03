@@ -6289,7 +6289,7 @@ everything else:
 
 ### The build order
 
-1. **Selection mechanics.** A per-villager **recently-said ring** (last ~8
+1. ~~**Selection mechanics.**~~ **Built (v32).** A per-villager **recently-said ring** (last ~8
    lines, replacing the single `lastLine`); a **`lastTalkedAt`** timestamp and
    an absence-greeting rung at the top of the ladder (per-form, per-gap — "a
    few days" and "weeks" are different greetings); and an **in-the-middle-of**
@@ -6297,9 +6297,16 @@ everything else:
    all morning"). Schema bump, tested migration. Mechanics land FIRST because
    generated content is worthless while selection keeps thumbing the same
    three cards.
-2. **The conversation tree runtime.** A typed `ConversationDef` node table in
-   content; any ladder rung may return a tree instead of a line; the reply UI
-   is the speech panel's existing button row. Rules, all settled:
+2. ~~**The conversation tree runtime.**~~ **Built.** `content/conversations.ts`
+   holds `Exchange`/`Reply` trees; roots POOL into the same rungs as flat lines
+   (idle and the absence greeting so far), so how often a conversation opens is
+   decided by the bank's proportions rather than a second chance roll. Replies
+   render where the close button sat — the authored `"..."` reply is the same
+   gesture as the `"..."` that closes, except the person answers it; the scrim
+   and Escape stay as doors throughout, and the ordinary row returns at the
+   leaf. The rules below are enforced by `conversations.test.ts` (depth, the
+   `"..."` reply, the no-extra-fields tripwire), not by reviewer memory.
+   Rules, all settled:
    - **Shallow, always.** Two or three exchanges, then it lets go. Most taps
      still produce a single line — a tree firing every time is homework.
    - **Choices are tone, never strategy.** No reply pays more friendship than

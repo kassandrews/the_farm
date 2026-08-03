@@ -168,11 +168,13 @@ describe("the said ring", () => {
     const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
     const v = bareScholar(w);
     const rng = stubRng(0.99); // every chance roll fails → idle voice every time
-    const idle = RESIDENT_IDLE.scholar!;
-    const heard = Array.from({ length: idle.length }, () => speakFn(w, v, rng, Date.now()).text);
+    // The idle pool is the flat bank plus this form's idle tree roots — a root
+    // is picked and ring-tracked like any other line.
+    const poolSize = RESIDENT_IDLE.scholar!.length + (CONVERSATIONS.scholar!.idle?.length ?? 0);
+    const heard = Array.from({ length: poolSize }, () => speakFn(w, v, rng, Date.now()).text);
     // pick() always takes the first candidate, so distinctness here is the ring
-    // doing the steering — without it this would be idle[0] six times.
-    expect(new Set(heard).size).toBe(idle.length);
+    // doing the steering — without it this would be the same line every time.
+    expect(new Set(heard).size).toBe(poolSize);
     // The pool exhausted, the whole pool comes back: spoken, never silent.
     expect(speakFn(w, v, rng, Date.now()).text).toBe(heard[0]);
   });
@@ -258,6 +260,57 @@ describe("the in-the-middle-of rung", () => {
       { kind: "gathered", at: old + 2 * MIN },
     ];
     expect(speakFn(w, v, stubRng(0.4), now).text).not.toContain("thumps");
+  });
+});
+
+// --- Conversation trees -------------------------------------------------------
+
+import { advanceReply, replyLabel } from "./dialogue";
+import { CONVERSATIONS } from "../content/conversations";
+
+describe("conversation trees at the ladder", () => {
+  function pickLastRng(nextValue: number) {
+    return {
+      next: () => nextValue,
+      int: (n: number) => n - 1,
+      pick: <T,>(arr: readonly T[]): T => arr[arr.length - 1],
+    };
+  }
+
+  it("an idle tap can open a tree, and the root line joins the said ring", () => {
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
+    const v = bareScholar(w);
+    // Roots pool LAST in the idle pool, so a pick-last rng lands on one.
+    const speech = speakFn(w, v, pickLastRng(0.99), Date.now());
+    const root = CONVERSATIONS.scholar!.idle![0];
+    expect(speech.text).toBe(root.line);
+    expect(speech.replies).toBe(root.replies);
+    expect(v.said).toContain(root.line);
+  });
+
+  it("a reply hands over the next exchange and the ring learns it", () => {
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
+    const v = bareScholar(w);
+    const root = CONVERSATIONS.scholar!.idle![0];
+    const next = advanceReply(v, root.replies![0]);
+    expect(next).toBe(root.replies![0].then);
+    expect(v.said).toContain(next.line);
+  });
+
+  it("a reply is labelled in the player's own voice where one was written", () => {
+    const reply = CONVERSATIONS.dog!.absence_weeks![0].replies![0];
+    expect(replyLabel(reply, "dog")).toBe("Out there. Sniffing around.");
+    expect(replyLabel(reply, "blob")).toBe("Out there. Walking.");
+  });
+
+  it("an absence greeting can open a tree too", () => {
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
+    const v = bareScholar(w);
+    v.lastTalkedAt = Date.now() - 20 * 24 * 3600_000;
+    const speech = speakFn(w, v, pickLastRng(0.99), Date.now());
+    const root = CONVERSATIONS.scholar!.absence_weeks![0];
+    expect(speech.text).toBe(root.line);
+    expect(speech.replies).toBe(root.replies);
   });
 });
 

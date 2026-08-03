@@ -30,7 +30,8 @@ import {
 } from "../sim/game";
 import { nodeAt } from "../sim/gather";
 import { isWalkable } from "../sim/world";
-import { officeLandClaimLine, homeLineFor, companyYesLine, companyByeLine } from "../sim/dialogue";
+import { officeLandClaimLine, homeLineFor, companyYesLine, companyByeLine, advanceReply, replyLabel } from "../sim/dialogue";
+import type { Reply as ReplyDef } from "../content/conversations";
 import { companion, canInvite, invite, partWays } from "../sim/company";
 import { describeHome } from "../sim/home";
 import { saveWorld, loadWorld, hasSave, clearWorld } from "../sim/save";
@@ -666,6 +667,10 @@ export class App {
           ? def.filing
           : `${def.filing} ... ${shortfallText(commissionState(world, open))}`;
       }
+      // An override replaces the LINE, so any tree the ladder happened to open
+      // goes with it — replies answering a sentence nobody said would be the
+      // panel talking to itself.
+      if (villagerId === open.id || villagerId === "office") speech.replies = undefined;
     }
 
     // Offering a home is a CONVERSATION, not a construction act (ROADMAP 2b
@@ -746,7 +751,7 @@ export class App {
     }
 
     this.openModal(
-      (close) =>
+      (close) => {
         // A conversation is the one panel that has a FACE, so it gets its own
         // frame rather than the generic `panel()`: speaker on the left, what
         // they said beside it.
@@ -758,11 +763,33 @@ export class App {
         // it (`CharDef.subtitle`: "Out past the woods") and that went the same
         // way: the bubble is where a character says who they are, and a caption
         // under the name says it for them.
-        speechPanel(
-          speech.who,
-          portrait(them.form, lookFor(them.id, them.form)),
-          el("p", {}, [speech.text]),
-          actionRow([
+        //
+        // A tree (Phase 12) swaps what's IN the frame rather than reopening it:
+        // the said line and the button row re-render per exchange, the modal —
+        // and its doors, the scrim and Escape — stays put. While replies are
+        // up they take the whole row, INCLUDING the close button's slot: the
+        // authored "..." reply is the same gesture as the "..." that closes,
+        // except mid-conversation the person gets to answer it. When the tree
+        // lets go, the ordinary row (offers, company, the close) returns.
+        const saidP = el("p", {}, [speech.text]);
+        const row = actionRow([]);
+        const render = (replies?: ReplyDef[]): void => {
+          if (replies && replies.length > 0) {
+            row.replaceChildren(
+              ...replies.map((r) =>
+                choiceBtn(replyLabel(r, world.player.form), () => {
+                  audio.play("talk");
+                  const next = advanceReply(them, r);
+                  saidP.textContent = next.line;
+                  render(next.replies);
+                }),
+              ),
+            );
+          } else {
+            row.replaceChildren(...closingRow());
+          }
+        };
+        const closingRow = (): HTMLElement[] => [
             ...(offerable
               ? [
                   choiceBtn("There's a room for you", () => {
@@ -815,8 +842,10 @@ export class App {
                 ]
               : []),
             primaryBtn("...", close),
-          ]),
-        ),
+          ];
+        render(speech.replies);
+        return speechPanel(speech.who, portrait(them.form, lookFor(them.id, them.form)), saidP, row);
+      },
       { dismissable: true },
     );
   }
