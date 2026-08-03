@@ -48,15 +48,20 @@ describe("decor kits", () => {
 
       it("uses only inks it has", () => {
         const usesAccent = kit.marks.some((m) => m.some((r) => r.includes("o")));
+        const usesCore = kit.marks.some((m) => m.some((r) => r.includes("*")));
         for (const mark of kit.marks) {
           for (const row of mark) {
-            expect(row, `${id}: unknown ink`).toMatch(/^[.xo]*$/);
+            expect(row, `${id}: unknown ink`).toMatch(/^[.xo*]*$/);
           }
         }
         // An `o` with no accent silently falls back to the stem colour, which
         // looks like a shape that came out wrong rather than like a missing row.
         if (usesAccent) expect(kit.accent, `${id}: uses 'o' with no accent`).toBeTruthy();
         if (kit.accent) expect(usesAccent, `${id}: declares an accent nothing uses`).toBe(true);
+        // Same both ways for the eye. `*` falls back to the accent, so a kit
+        // without a core is legal only until it declares one nothing draws.
+        if (usesCore) expect(kit.accent ?? kit.core, `${id}: uses '*' with no ink`).toBeTruthy();
+        if (kit.core) expect(usesCore, `${id}: declares a core nothing uses`).toBe(true);
       });
 
       it("is sparser than the tuft it lies on top of", () => {

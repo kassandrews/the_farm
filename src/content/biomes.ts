@@ -1122,6 +1122,26 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // it is the shape you know, which is what makes the colour unsettling instead
     // of merely decorative.
     crownRows: BROADLEAF,
+    // NIGHT FLOWERS, OPEN AT NOON. The region's premise carried down to the
+    // ground: nothing is shaped oddly — an ordinary head on an ordinary stem,
+    // the plainest flower drawing in the file — and the strange part is a fact
+    // rather than a silhouette. These are the flowers that open at dusk, and
+    // here it is always dusk, so they are always open. Nobody has to be told
+    // that; it is simply true, which is the register this region works in.
+    //
+    // Moon-pale, and the only pale thing on the floor: the stems take the
+    // near-black crown ink, so what actually lands on the violet is a scatter
+    // of small lit heads hanging in the dark. Deliberately NOT the firefly's
+    // ember — the one warm thing here stays the one warm thing.
+    decor: {
+      density: 0.08,
+      accent: "#cfc8ea",
+      marks: [
+        [".o.", ".x.", ".x."],
+        ["o..", ".x.", ".x."],
+        [".x.", ".x."],
+      ],
+    },
     // Fireflies, and they are LIGHT rather than animals — nothing catches one,
     // nothing counts them, nothing waits for them (DESIGN §Living light). Only
     // after dark, which is what makes the twilight country worth walking into at
@@ -1317,6 +1337,25 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // in wants something at knee height — and the puffy crowns above have nothing
     // to rhyme with until there is a smaller version of them on the floor.
     shrubs: 0.55,
+    // MOSS, AND IT IS DARK — the one kit in the file whose job is to not shine.
+    // This region already has light in the air, the trees, the caps and the
+    // stone; the tuft's own note records what happened when a fifth thing tried
+    // to glow ("competing instead of coalescing"). So the ground's decor is the
+    // opposite move: low mounds in the near-black crown ink, which land as
+    // SILHOUETTES against the lit floor — things standing between you and the
+    // light, which is the only new sentence a kit could add here.
+    //
+    // Round, like everything else on this floor (the tuft list banned blades for
+    // the same reason), and the sparsest kit in the file: the ground with the
+    // most light on it has the least room of anywhere to be busy.
+    decor: {
+      density: 0.05,
+      marks: [
+        ["xx.", "xxx"],
+        [".xx", "xxx"],
+        ["xx"],
+      ],
+    },
     // Champagne caps, same mushroom. The red was the one warm-blooded thing in a
     // region built entirely out of teal and pale gold, and it read as an object
     // from somewhere else lying on the floor.
@@ -1361,6 +1400,29 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // pale one. A far biome that recalls a near one is what keeps the drift
     // continuous.
     crownRows: [3, 3, 4, 6, 6, 6, 7, 8, 8, 7, 6, 6, 6, 5, 5, 4, 3, 3],
+    // STANDING VERY STRAIGHT OR LYING VERY FLAT — the stone's rule (shards and
+    // slabs, nothing in between) grown down into the smallest marks there are.
+    // A single stem, dead straight, in the near-white crown ink; and the same
+    // stem lying down. In every other region a straight upright is forbidden —
+    // the tuft doc says equal blades read as a gate — and that is exactly why
+    // it belongs here and nowhere else: one blade alone cannot make a gate, and
+    // in the one region whose character IS geometry, the straightness is the
+    // strangeness. No accent, no flower, no curve. Bleached country does not
+    // decorate.
+    //
+    // THE TALLEST MARKS IN THE FILE, past the fen's four-row reeds, and the
+    // height is the drawing: at three rows the stem photographed as a slightly
+    // taller dot — the tuft list here already scatters pale dots, so a short
+    // upright had nothing to distinguish it. Five rows of one pixel is the
+    // point where the eye stops reading "speck" and starts reading "line".
+    decor: {
+      density: 0.08,
+      marks: [
+        ["x", "x", "x", "x", "x"],
+        ["x", "x", "x", "x"],
+        ["xxx"],
+      ],
+    },
     // Bleached, like everything else here — and the argument is the glimmer's
     // word for word: red was the one warm-blooded thing in a region built out of
     // cold blue and near-white, and it read as an object from somewhere else
@@ -1423,6 +1485,29 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // a permanently blooming orchard was never a season anybody could have read.
     crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
     crownOverlap: 3,
+    // LAWN DAISIES, AND NOT ONE PIXEL OF PINK. The row that refused a ground
+    // bloom (see the note above `crownGaps`) gets its kit on the terms the
+    // refusal set. What was refused was petals — the crown's own colour doing a
+    // third job on the floor it is meant to be seen against. A daisy is a
+    // different sentence: it is the flower of KEPT grass, and "mown, ordinary,
+    // tidy" is what this floor already says about itself in the tuft note.
+    // White heads with a gold eye, no stem rows at all — a daisy in a mown lawn
+    // is a head sitting IN the turf, not a plant standing on it.
+    //
+    // No season, and that is the plant rather than an oversight: Bellis
+    // perennis flowers in cut grass nearly the whole year, which makes it the
+    // one ground flower that can live honestly under trees that are stubbornly
+    // in blossom all twelve months. Sparse, so the ground still reads bare —
+    // the refusal's finding survives the kit.
+    decor: {
+      density: 0.05,
+      accent: "#f6f3e6",
+      core: "#e3be58",
+      marks: [
+        [".o.", "o*o", ".o."],
+        ["o*o", ".o."],
+      ],
+    },
     // Falling petals, and they fall all year because these trees are stubbornly
     // in blossom all year (§EVERY COLOUR IS A TINT — "Blossom Rows stay
     // stubbornly pink"). A seasonal petal would be the one thing in this file

@@ -5982,7 +5982,8 @@ a prerequisite for any of it.
    it owes `groundIdOf`, the flat fill and a `TileDef` row, and the flat fill has
    painted a square across a cell three times already. Note `STONE` is generated
    NOWHERE but the plaza, so there is no collision to solve, only a look.
-2. **Kits for the regions without one.** Four, not five: pinewood, birch, scrub
+2. ~~**Kits for the regions without one.**~~ **Built — see the record below the
+   plaza's.** Four, not five: pinewood, birch, scrub
    and fen have kits; the meadow deliberately gets none so that walking out of
    town is when the ground starts having things in it. That leaves **dusk,
    glimmer, glass and blossom**. §8k already calls the far rows the interesting
@@ -6051,6 +6052,45 @@ stones 108/3 = 36, exact.
 the generator, which on some seeds grows trees or water hard against the south
 border. Fine on the seeds looked at; tranche 2's 1,000-seed sweep should check
 it properly when it lands.
+
+**The four kits are built (item 2 done)**, each one derived from what its
+region's row already said about itself rather than from a fresh idea — which is
+why all four went in one sitting where the plaza took a day:
+
+- **Dusk: night flowers, open at noon.** The region's premise ("nothing is
+  shaped oddly — that is the point") carried down to the ground: the plainest
+  flower drawing in the file, and the strange part is a FACT rather than a
+  silhouette — these are the flowers that open at dusk, and here it is always
+  dusk, so they are always open. Moon-pale heads on stems in the near-black
+  crown ink; the firefly's ember stays the only warm thing in the country.
+- **Glimmer: dark moss — the one kit whose job is to not shine.** Air, trees,
+  caps and stone already glow there, and the tuft note records what happened
+  when a fifth thing tried ("competing instead of coalescing"). Low round
+  mounds in the crown's near-black land as SILHOUETTES against the lit floor —
+  things standing between you and the light, the only new sentence available.
+  Sparsest kit in the file.
+- **Glass: the stone rule at mark scale.** Shards and slabs, nothing in
+  between, becomes single stems standing dead straight and the same stem lying
+  flat. **The finding worth keeping: at three rows a one-pixel upright
+  photographed as a slightly taller dot** — the region's own tuft list already
+  scatters pale dots, so height IS the drawing, and five rows is where the eye
+  stops reading "speck" and starts reading "line". The tallest marks in the
+  file now, past the fen's reeds. (Also the equal-blades-read-as-a-gate rule
+  has a floor: one blade alone cannot make a gate, which is what lets the one
+  region whose character is geometry have a perfectly straight mark at all.)
+- **Blossom: lawn daisies, and not one pixel of pink.** The row once refused a
+  ground bloom (fallen petals — one colour doing three jobs), and the kit
+  honours the refusal's terms instead of relitigating it: white heads with a
+  gold eye, no stem rows (a daisy in mown turf is a head IN the grass), and no
+  season, because Bellis perennis flowers in cut lawn nearly all year — the one
+  ground flower that can live honestly under trees that are stubbornly in
+  blossom all twelve months. Sparse enough that "the bare ground is what the
+  blossom is seen against" survives the kit.
+
+One test learned something: `decor.test.ts`'s ink regex predated any decor kit
+using the `*` eye (only blooms had), so it now admits `*` and guards the core
+both ways, exactly as it already guarded the accent — a declared core nothing
+uses is dead weight, and a used core that doesn't exist falls back silently.
 
 **Mushrooms are the exception in this tranche and belong with tranche 2's
 caution.** `MUSHROOM` is a real generated tile, not a mark, so its density is
