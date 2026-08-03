@@ -168,6 +168,42 @@ export const RESIDENT_IDLE: Partial<Record<AdultForm, string[]>> = {
 
 // Memory-referencing lines: only offered when the log holds the matching event.
 // `v` is the remembered value (a Meadow name, a food, a witnessed thing).
+// Bringing up something you TOLD them (Phase 12 tranche 2). `v` is the
+// keepsake clause off the Reply that recorded it — always phrased to read after
+// "you said" / "you told me", so one clause serves every form's grammar.
+//
+// Written as a flat per-form table and grafted onto RESIDENT_MEMORY.answered
+// below, the same way the four everybody-kinds are: every form needs one,
+// because any of them can be asked a question, and a form with no bank would
+// forget what you said to it alone.
+const ANSWERED_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
+  scholar: [
+    (v) => `You told me ${v}. I wrote it down. ... Not for the study. For me.`,
+    (v) => `I've been thinking about what you said — ${v}. It holds up.`,
+  ],
+  dog: [
+    (v) => `You said ${v}! I remember! I remember EVERYTHING you say!`,
+    (v) => `I've been thinking about how you said ${v}. I think about it a normal amount.`,
+  ],
+  blob: [
+    (v) => `You said ${v}. ... I've kept the line. I may use it. Credited, obviously.`,
+    (v) => `Your reading — ${v} — has stayed with me. Few things do.`,
+  ],
+  menace: [
+    (v) => `You did say ${v}. I remember what people tell me. It's a small terror I provide.`,
+    (v) => `${v.charAt(0).toUpperCase() + v.slice(1)}, you said. ... I've thought about it since. Don't let that go to your head.`,
+  ],
+  gremlin: [
+    (v) => `You told me ${v}. I kept that. I keep everything, but I MEANT to keep that.`,
+    (v) => `I've still got the thing you said. ${v.charAt(0).toUpperCase() + v.slice(1)}. Filed under good.`,
+  ],
+  office: [
+    (v) => `You mentioned ${v}. Unfiled, unminuted, and I've remembered it anyway. That's the new system.`,
+    (v) => `${v.charAt(0).toUpperCase() + v.slice(1)}, you said. I have no record of it. I have it.`,
+  ],
+  carrot: [(v) => `You said ${v}. ... I remembered that. Don't make a thing of it.`],
+};
+
 export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, ((v: string) => string)[]>>>> = {
   scholar: {
     hum: [
@@ -668,6 +704,7 @@ for (const [kind, table] of [
   ["shower", SHOWER_LINES],
   ["far_out", FAR_OUT_LINES],
   ["winter_came", WINTER_LINES],
+  ["answered", ANSWERED_LINES],
 ] as const) {
   for (const [form, lines] of Object.entries(table)) {
     const bank = (RESIDENT_MEMORY[form as AdultForm] ??= {});

@@ -6238,7 +6238,8 @@ whatever the field underneath is doing.
 
 ---
 
-## Phase 12 — the conversation pass (fable-generated content) — **planned**
+## Phase 12 — the conversation pass (fable-generated content) — **done**,
+## bar one polish pass (see the end of this section)
 
 The project the user's list called "fable generated content", defined 4 Aug
 2026. The itch, verbatim: *"right now, if i click on someone standing in the
@@ -6318,7 +6319,24 @@ everything else:
    - **Replies may flavor by the PLAYER's form** — approved. Variant text is a
      light layer with a shared default, written only where the form earns it,
      never a separate 11-wide matrix.
-3. **The fable-generated bank.** Form by form, each steeped in that form's
+3. ~~**The fable-generated bank.**~~ **Built**, in three reviewed sittings
+   (dog; carrot; then blob/menace/gremlin/scholar/office together) — roughly
+   270 lines and 13 trees. Two additions the sittings produced that were not in
+   this plan, both from the same question — *why does every dog sound like the
+   same dog?*:
+   - **Kinship** (`RESIDENT_KIN`), said only to a player of the SPEAKER'S OWN
+     form, pooled into idle when they match. Recognition and nothing else — no
+     mechanic anywhere knows the forms matched, which is what keeps it on the
+     right side of "form is identity, never a job".
+   - **Character lines** (`ArrivalDef.lines`), each arrival's own small talk on
+     their own row, pooled on top of their form's. The table already called the
+     tent line "the one line that's *theirs*"; this is the rest of that
+     sentence, and it is what stops Biscuit and Waffle being one dog with two
+     names. Biography as data on the row — no new system, and the expensive
+     version (per-character trees and memory templates) can key the same way if
+     the town still reads samey on screen.
+
+   Original text: form by form, each steeped in that form's
    existing lines, to the scholar's standard and past it: idle depth (15–25
    lines, not 2), 3–5 templates per memory kind, warm lines at every tier,
    seasons, the new absence and in-the-middle-of banks, and trees where the
@@ -6326,11 +6344,35 @@ everything else:
    line, a form at a sitting** (a few hundred lines each) — the bank is only
    as good as its worst line, and the voice rules (per-form voice, brevity,
    `. ... Capital`, deadpan that never winks) are the hard constraint.
-4. **Tranche 2 — replies are remembered.** What you answer becomes a
-   `MemoryEvent`, and three weeks later she brings it up. Approved, and
-   deliberately LAST: it needs new memory kinds, reply metadata, a migration,
-   and generated content that reads the memories back — and it should be built
-   against trees that are already alive on screen.
+4. ~~**Tranche 2 — replies are remembered.**~~ **Built**, and it owed **no
+   migration** after all: `answered` is a new VALUE in a field every save
+   already has, so an old log simply holds none. The shape is a `keepsake`
+   clause on a `Reply` — phrased to read after "you said", so one clause serves
+   every form's grammar — written to THAT villager's log and nobody else's
+   (`witness` broadcasts because news travels; an answer is not news), then
+   read back through the ordinary memory rung at the top of `MEMORY_PRIORITY`.
+
+   Four rules the tests pin, because each is a way this could quietly become a
+   quiz: keepsakes are **sparse** (fewer than half of all replies may carry
+   one); `"..."` **never files** anything, because silence says nothing to
+   remember; a keepsake is a lowercase clause with no terminal punctuation; and
+   the same answer twice is **one** memory, so a daily habit can't crowd out a
+   log. Verified on screen end to end: answer the scholar's survey with "Home."
+   and she brings it back later — *"I've been thinking about what you said —
+   you call this place home. It holds up."*
+
+### Still owed: one polish pass
+
+Line edits were deliberately deferred rather than taken per sitting — the user
+read each batch and banked their small corrections for a single pass at the
+end, to keep the writing moving. Two things go in it:
+
+- Their own accumulated line edits across all three sittings.
+- **The carrot's company lines name a stall he cannot have.** "I shall walk
+  with you. The stall keeps." predates `ROOTED` in `sim/company.ts`: the
+  stall-keeper can never be invited anywhere, so those lines only ever come out
+  of an imported carrot RESIDENT, who has no stall. Found by checking
+  reachability before writing his batch, not on screen.
 
 ### What the phase owes, procedurally
 

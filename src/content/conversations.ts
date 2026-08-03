@@ -19,6 +19,10 @@
 //   a shared default: the carrot player's words read carrot-ish where somebody
 //   bothered to write it, and everybody else gets `text`. Never a separate
 //   matrix; a reply with no variants is finished, not incomplete.
+// - SOME ANSWERS ARE REMEMBERED (tranche 2). A `keepsake` files what you said
+//   in THAT PERSON'S memory log, and weeks later they bring it up. Sparse on
+//   purpose: a tree where every answer is filed is a personality quiz. It is
+//   still not a payout — see the field's docblock.
 
 import type { AdultForm } from "./canon/forms";
 
@@ -30,6 +34,19 @@ export interface Reply {
   variants?: Partial<Record<AdultForm, string>>;
   /** What they say back. */
   then: Exchange;
+  /** What they'll REMEMBER you said (Phase 12 tranche 2) — a clause that reads
+   *  after "you told me": *that you like a wandering day*. Written to the
+   *  memory log when you pick this reply, and brought up weeks later through
+   *  the ordinary memory rung.
+   *
+   *  Optional, and most replies leave it out on purpose: a conversation where
+   *  every answer is filed is a personality quiz. Set it only where the answer
+   *  is a small true thing about you that a friend would actually retain.
+   *
+   *  IT IS STILL NOT A PAYOUT. Nothing branches on a keepsake, nothing gates on
+   *  one, and no reply is worth more for having it. What it buys is that
+   *  somebody remembers — which is what this whole game pays in. */
+  keepsake?: string;
 }
 
 export interface Exchange {
@@ -55,12 +72,14 @@ export const CONVERSATIONS: Partial<
         replies: [
           {
             text: "Home.",
+            keepsake: "you call this place home",
             then: {
               line: "'Home.' ... Everyone says that. The data's unanimous. I keep asking in case it changes. It had better not.",
             },
           },
           {
             text: "Strange.",
+            keepsake: "you find this town strange, and stayed anyway",
             then: {
               line: "'Strange.' Finally! A dissenting datum. You're my favourite respondent. Don't tell the sample.",
             },
@@ -114,9 +133,14 @@ export const CONVERSATIONS: Partial<
       {
         line: "Okay. Big question. Is today a doing-something day or a wandering day?",
         replies: [
-          { text: "A doing day.", then: { line: "YES. I don't know what it is yet but I am IN." } },
+          {
+            text: "A doing day.",
+            keepsake: "you like a day with a job in it",
+            then: { line: "YES. I don't know what it is yet but I am IN." },
+          },
           {
             text: "A wandering day.",
+            keepsake: "you like a wandering day",
             then: { line: "The best kind. I'll wander behind you. Casually. Not following. Following." },
           },
           { text: "...", then: { line: "A mystery day! Even better. I love not knowing things." } },
@@ -189,7 +213,11 @@ export const CONVERSATIONS: Partial<
       {
         line: "Be honest. My delivery, just now, when you walked up. How was it?",
         replies: [
-          { text: "Powerful.", then: { line: "I KNEW it. I've been working on the pause. The pause is load-bearing." } },
+          {
+            text: "Powerful.",
+            keepsake: "you thought the pause was the best part",
+            then: { line: "I KNEW it. I've been working on the pause. The pause is load-bearing." },
+          },
           {
             text: "I missed it.",
             then: { line: ". ... Then I'll do it again. Watch closely. It's subtle. It's enormous." },
@@ -265,6 +293,7 @@ export const CONVERSATIONS: Partial<
           },
           {
             text: "It's a lot of work.",
+            keepsake: "the homestead is a lot of work, and you meant it kindly",
             then: { line: "As the permit intended. The stamp says 'flourish'. Small print. I wrote it." },
           },
           {
@@ -301,6 +330,7 @@ export const CONVERSATIONS: Partial<
           { text: "It does.", then: { line: ". ... Good. Carry on, then. Quietly." } },
           {
             text: "Not always.",
+            keepsake: "keeping busy doesn't always help",
             then: { line: "No. Not always. ... Stand here a minute. This helps more than people expect." },
           },
           { text: "...", then: { line: ". ... That's the right answer, mostly." } },
@@ -347,6 +377,7 @@ export const CONVERSATIONS: Partial<
           },
           {
             text: "I missed this place.",
+            keepsake: "you missed this place while you were gone",
             then: { line: ". ... Correct answer. The town missed you too. I'm the town, in this instance." },
           },
           { text: "...", then: { line: "No sentence at all. ... Audacious. I'll allow it. Once." } },

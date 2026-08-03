@@ -779,7 +779,7 @@ export class App {
               ...replies.map((r) =>
                 choiceBtn(replyLabel(r, world.player.form), () => {
                   audio.play("talk");
-                  const next = advanceReply(them, r);
+                  const next = advanceReply(them, r, Date.now());
                   saidP.textContent = next.line;
                   render(next.replies);
                 }),

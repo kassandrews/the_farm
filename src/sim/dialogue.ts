@@ -7,7 +7,7 @@
 
 import type { Villager, WorldState } from "./types";
 import type { Rng } from "./rng";
-import { recall } from "./memory";
+import { recall, remember } from "./memory";
 import { friendshipTier, displayName } from "./friendship";
 import type { MemoryKind } from "./memory";
 import { describeHome, NOTE_PRIORITY, URGENT } from "./home";
@@ -124,10 +124,16 @@ const asLine = (line: string): Exchange => ({ line });
  *  The ring learns tree lines the same as any other, so a tree walked today is
  *  steered away from tomorrow. Deliberately pays NOTHING — friendship was paid
  *  when the conversation started (`talk`), and a reply that paid again would
- *  make talkativeness a move. This is also where tranche 2 will write the
- *  reply into the memory log. */
-export function advanceReply(v: Villager, reply: Reply): Exchange {
+ *  make talkativeness a move.
+ *
+ *  A reply carrying a `keepsake` is also REMEMBERED, by this person and nobody
+ *  else (tranche 2): you told them, so they know, and the town does not.
+ *  `witness` broadcasts because news travels; an answer is not news. */
+export function advanceReply(v: Villager, reply: Reply, now: number): Exchange {
   spoke(v, reply.then.line);
+  if (reply.keepsake) {
+    v.memory = remember(v.memory, { kind: "answered", at: now, value: reply.keepsake });
+  }
   return reply.then;
 }
 
@@ -203,6 +209,13 @@ function tryMidstLine(v: Villager, rng: Rng, now: number): string | null {
  *  of `gathered`, `arrived` and `housed`, and is survivable for them because
  *  they have other ways to surface. A Moment has none: the line IS the payout. */
 export const MEMORY_PRIORITY: MemoryKind[] = [
+  // FIRST, above even the cube, and it is the only thing that will ever go
+  // here. Everything below is something you DID that somebody watched; this is
+  // something you TOLD THEM, which is the most specific thing that can exist
+  // between two people and the only entry in this list the player authored on
+  // purpose. It decays like everything else — the log is a bounded ring — so a
+  // thing you said stops being the freshest thing as life piles onto it.
+  "answered",
   // Above the festival, which is saying something. A festival is twelve times a
   // year and the whole town was at it; a day underground was the two of you and
   // nobody else has one. It is the most specific true thing that can exist

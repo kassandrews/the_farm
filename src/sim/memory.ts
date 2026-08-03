@@ -96,7 +96,18 @@ export type MemoryKind =
   // Its journal half (`the-cold-came`, content/notebook.ts) is the only one that
   // had to be written; the other two Moments reuse field notes that already
   // existed. And there is NO SNOW in it, on purpose — see that entry.
-  | "winter_came";
+  | "winter_came"
+  // Something the player SAID, in a conversation tree (Phase 12 tranche 2).
+  // The value is a keepsake clause — "that you like a wandering day" — written
+  // by `advanceReply` when a reply carries one, and read back through the
+  // ordinary memory rung like everything else, so three weeks later somebody
+  // brings up what you told them. The only memory kind the player authors with
+  // words rather than with work.
+  //
+  // Not in `oneShot` — different answers are different memories — but
+  // de-duplicated by VALUE below: giving the Dog the same answer every morning
+  // is one remembered fact, not sixty-four copies of it crowding out his log.
+  | "answered";
 
 export interface MemoryEvent {
   kind: MemoryKind;
@@ -116,6 +127,8 @@ const MAX_MEMORIES = 64; // a bounded ring; the town lives at hour forty, not fo
 export function remember(log: MemoryLog, ev: MemoryEvent): MemoryLog {
   const oneShot: MemoryKind[] = ["built_floor", "dug", "planted", "arrived", "housed", "raised_by", "raised_favorite", "hum", "far_out"];
   if (oneShot.includes(ev.kind) && log.some((m) => m.kind === ev.kind)) return log;
+  // An answer is one-shot PER ANSWER: the same words again are the same fact.
+  if (ev.kind === "answered" && log.some((m) => m.kind === ev.kind && m.value === ev.value)) return log;
   const next = [...log, ev];
   return next.length > MAX_MEMORIES ? next.slice(next.length - MAX_MEMORIES) : next;
 }

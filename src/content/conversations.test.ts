@@ -47,15 +47,50 @@ describe("conversation trees keep the settled rules", () => {
     }
   });
 
-  it("choices are tone, never strategy: a reply carries words and a next line only", () => {
+  it("choices are tone, never strategy: a reply carries only words, a next line, and what's remembered", () => {
     // Enforced structurally — the moment somebody adds a `friendship`, `gives`
     // or `unlocks` field to a Reply, an answer can be correct, and a
     // conversation with a correct answer is a move. This is the tripwire.
+    //
+    // `keepsake` is allowed and is NOT a payout: it files what you said in that
+    // person's memory log so they can bring it up later. Nothing branches on
+    // it, so it cannot make one answer worth more than another.
+    const allowed = ["keepsake", "text", "then", "variants"];
     for (const { path, ex } of allExchanges()) {
       for (const r of ex.replies ?? []) {
-        expect(Object.keys(r).sort(), `${path}: reply "${r.text}"`).toEqual(
-          Object.keys(r).includes("variants") ? ["text", "then", "variants"] : ["text", "then"],
-        );
+        for (const key of Object.keys(r)) {
+          expect(allowed, `${path}: reply "${r.text}" has field "${key}"`).toContain(key);
+        }
+      }
+    }
+  });
+
+  it("a keepsake reads as a clause after 'you said', and is never a payout", () => {
+    // The grammar matters: one clause has to serve every form's phrasing
+    // ("You told me ${v}", "${v}, you said"), so it may not open with a capital
+    // or carry its own terminal punctuation.
+    for (const { path, ex } of allExchanges()) {
+      for (const r of ex.replies ?? []) {
+        if (!r.keepsake) continue;
+        expect(r.keepsake[0], `${path}: keepsake "${r.keepsake}"`).toBe(r.keepsake[0].toLowerCase());
+        expect(/[.!?]$/.test(r.keepsake), `${path}: keepsake "${r.keepsake}"`).toBe(false);
+      }
+    }
+  });
+
+  it("keepsakes stay sparse — most answers are not filed", () => {
+    // A tree where every answer is remembered is a personality quiz. Fewer than
+    // half of all replies may carry one.
+    const replies = allExchanges().flatMap(({ ex }) => ex.replies ?? []);
+    const kept = replies.filter((r) => r.keepsake).length;
+    expect(kept).toBeGreaterThan(0);
+    expect(kept * 2).toBeLessThan(replies.length);
+  });
+
+  it('never files a "..." — silence says nothing to remember', () => {
+    for (const { path, ex } of allExchanges()) {
+      for (const r of ex.replies ?? []) {
+        if (r.text === "...") expect(r.keepsake, path).toBeUndefined();
       }
     }
   });

@@ -290,7 +290,7 @@ describe("conversation trees at the ladder", () => {
     const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
     const v = bareScholar(w);
     const root = CONVERSATIONS.scholar!.idle![0];
-    const next = advanceReply(v, root.replies![0]);
+    const next = advanceReply(v, root.replies![0], Date.now());
     expect(next).toBe(root.replies![0].then);
     expect(v.said).toContain(next.line);
   });
@@ -309,6 +309,55 @@ describe("conversation trees at the ladder", () => {
     const root = CONVERSATIONS.scholar!.absence_weeks![0];
     expect(speech.text).toBe(root.line);
     expect(speech.replies).toBe(root.replies);
+  });
+});
+
+// --- Remembered replies (tranche 2) -------------------------------------------
+
+describe("what you told them comes back", () => {
+  const now = Date.parse("2026-06-10T12:00:00Z");
+  /** The scholar's "describe the town in one word" tree — "Home." keeps. */
+  const survey = () => CONVERSATIONS.scholar!.idle![0];
+
+  it("files the answer on THAT person, and on nobody else", () => {
+    // You told them. The town did not overhear it — `witness` broadcasts
+    // because news travels; an answer is not news.
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
+    const v = bareScholar(w);
+    const reply = survey().replies![0];
+    advanceReply(v, reply, now);
+    expect(v.memory.some((m) => m.kind === "answered" && m.value === reply.keepsake)).toBe(true);
+    for (const other of w.villagers) {
+      if (other.id === v.id) continue;
+      expect(other.memory.some((m) => m.kind === "answered")).toBe(false);
+    }
+  });
+
+  it("brings it up later, in their own voice", () => {
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
+    const v = bareScholar(w);
+    const reply = survey().replies![0];
+    advanceReply(v, reply, now);
+    const said = new Set<string>();
+    for (let i = 0; i < 200; i++) said.add(speakFn(w, v, makeRng(i), now).text);
+    expect([...said].some((t) => t.includes(reply.keepsake!))).toBe(true);
+  });
+
+  it("saying the same thing twice is one memory, not two", () => {
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
+    const v = bareScholar(w);
+    const reply = survey().replies![0];
+    advanceReply(v, reply, now);
+    advanceReply(v, reply, now + 60_000);
+    expect(v.memory.filter((m) => m.kind === "answered").length).toBe(1);
+  });
+
+  it("a reply with no keepsake files nothing", () => {
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
+    const v = bareScholar(w);
+    const silence = survey().replies!.find((r) => r.text === "...")!;
+    advanceReply(v, silence, now);
+    expect(v.memory.some((m) => m.kind === "answered")).toBe(false);
   });
 });
 
