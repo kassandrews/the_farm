@@ -101,6 +101,9 @@ import type { LookDef } from "../content/looks";
 import type { Mood, SpriteFrame } from "../content/canon/sprites";
 import { SpriteCache, drawSpriteQuantized } from "./sprites";
 
+/** 0..1, for the easing ramps. */
+const clamp01 = (n: number): number => (n < 0 ? 0 : n > 1 ? 1 : n);
+
 const TILE = 16; // scene px per world tile (matches sprite CELL)
 const SPRITE = 16; // sprite draw size
 
@@ -2476,12 +2479,35 @@ export class Renderer {
    *  and a sprite 16px, so they stop overlapping around 0.9 tiles apart. Allow
    *  a full 1.0 and every DIAGONAL neighbour fades, which reads as the forest
    *  flickering as you walk past it. */
-  private hides(world: WorldState, tx: number, ty: number, artPx: number): boolean {
+  /** How much of its own opacity a standing thing keeps: 1 when it is not in
+   *  your way, HIDDEN_FADE when it is squarely in front of you, and a ramp in
+   *  between.
+   *
+   *  IT USED TO BE A BOOLEAN, and that was the "visibility glitches around
+   *  walls" report. The test was right and the switch was not: crossing any of
+   *  its three edges — the near one, the far one, the sideways one — snapped a
+   *  wall between solid and a quarter opacity in a single frame. Walking south
+   *  along a house flickered it, and the taller trees made it worse by widening
+   *  the band the pop happens in.
+   *
+   *  So the same three edges now ease over a third of a tile each. Nothing about
+   *  WHICH things hide you has changed — the reach is still the overhang and not
+   *  the full height, for the reason below — only how abruptly they give way.
+   *  The player moves continuously, so anything keyed to their position has to
+   *  be continuous or it strobes. */
+  private hideFactor(world: WorldState, tx: number, ty: number, artPx: number): number {
     const p = world.player;
     const overhang = (artPx - TILE) / TILE;
-    // Only things IN FRONT of the player (larger y = nearer the camera) can
-    // cover them, and only within the span the art actually reaches.
-    return ty > p.y && ty - p.y <= overhang && Math.abs(tx - p.x) < 0.9;
+    const dy = ty - p.y;
+    if (dy <= 0 || dy > overhang) return 1;
+    const BAND = 0.35;
+    // Sideways: full effect under 0.55, gone by 0.9, rather than a cliff at 0.9.
+    const across = 1 - clamp01((Math.abs(tx - p.x) - 0.55) / 0.35);
+    // Front-to-back: ease in as it comes between you and the camera, and out
+    // again as it passes beyond what its overhang can actually reach over.
+    const along = Math.min(clamp01(dy / BAND), clamp01((overhang - dy) / BAND));
+    const k = across * along;
+    return 1 - (1 - HIDDEN_FADE) * k;
   }
 
   /** One cell of a roof, sitting a storey above its footprint.
@@ -3101,7 +3127,7 @@ export class Renderer {
 
     const prev = ctx.globalAlpha;
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
-    else if (this.hides(world, tx, ty, STOREY)) ctx.globalAlpha = prev * HIDDEN_FADE;
+    else ctx.globalAlpha = prev * this.hideFactor(world, tx, ty, STOREY);
 
     // Contact shadow, only at the front of a run — inside a run the wall in
     // front covers it anyway, and drawing it regardless bands the run.
@@ -3420,7 +3446,7 @@ export class Renderer {
 
     const prev = ctx.globalAlpha;
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
-    else if (this.hides(world, tx, ty, height)) ctx.globalAlpha = prev * HIDDEN_FADE;
+    else ctx.globalAlpha = prev * this.hideFactor(world, tx, ty, height);
 
     // Contact shadow — without it a tall sprite floats instead of standing. Sized
     // off the crown it belongs to: a fixed 9px puddle under a crown twice that
@@ -3671,7 +3697,7 @@ export class Renderer {
     const height = rows.length + 1;
     const prev = ctx.globalAlpha;
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
-    else if (this.hides(world, tx, ty, height)) ctx.globalAlpha = prev * HIDDEN_FADE;
+    else ctx.globalAlpha = prev * this.hideFactor(world, tx, ty, height);
 
     ctx.fillStyle = "rgba(0,0,0,0.16)";
     ctx.fillRect(cx - rows[rows.length - 1] - 1, base - 2, (rows[rows.length - 1] + 1) * 2, 2);
@@ -3811,7 +3837,7 @@ export class Renderer {
 
     const prev = ctx.globalAlpha;
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
-    else if (this.hides(world, tx, ty, height)) ctx.globalAlpha = prev * HIDDEN_FADE;
+    else ctx.globalAlpha = prev * this.hideFactor(world, tx, ty, height);
 
     ctx.fillStyle = "rgba(0,0,0,0.16)";
     ctx.fillRect(cx - low - 1, base - 2, (low + 1) * 2, 2);
@@ -3918,7 +3944,7 @@ export class Renderer {
 
     const prev = ctx.globalAlpha;
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
-    else if (this.hides(world, tx, ty, CUBE_H)) ctx.globalAlpha = prev * HIDDEN_FADE;
+    else ctx.globalAlpha = prev * this.hideFactor(world, tx, ty, CUBE_H);
 
     // Built the way furniture is built (drawFurniture, above): a TOP SURFACE
     // lifted clear of the ground plus a NEAR FACE showing the height, which is
@@ -3979,7 +4005,7 @@ export class Renderer {
 
     const prev = ctx.globalAlpha;
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
-    else if (this.hides(world, tx, ty, POLE_H)) ctx.globalAlpha = prev * HIDDEN_FADE;
+    else ctx.globalAlpha = prev * this.hideFactor(world, tx, ty, POLE_H);
 
     // Which way it leans is a property of WHERE it is, not of when you looked, so
     // the pond's dozen poles lean in different directions and stay that way.
@@ -4009,7 +4035,7 @@ export class Renderer {
 
     const prev = ctx.globalAlpha;
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
-    else if (this.hides(world, tx, ty, MAILBOX_H)) ctx.globalAlpha = prev * HIDDEN_FADE;
+    else ctx.globalAlpha = prev * this.hideFactor(world, tx, ty, MAILBOX_H);
 
     ctx.fillStyle = "rgba(0,0,0,0.22)";
     ctx.fillRect(cx - 3, base - 1, 6, 2);
@@ -4063,7 +4089,7 @@ export class Renderer {
 
     const prev = ctx.globalAlpha;
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
-    else if (this.hides(world, tx, ty, STAIR_H)) ctx.globalAlpha = prev * HIDDEN_FADE;
+    else ctx.globalAlpha = prev * this.hideFactor(world, tx, ty, STAIR_H);
 
     // Which part of the flight this cell is. Falls back to the middle if the site
     // has gone — a step drawn at the wrong height is better than a thrown frame.
