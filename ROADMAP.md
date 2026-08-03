@@ -125,12 +125,21 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   pan on touch, and the PWA has real raster icons. The furniture-route bug went
   with them.
 
-**Next: nothing on the list.** Every numbered item is done, and so is every loose
-end that was a gap. What is still written down under *Known gaps* is two
-deliberate POSITIONS rather than work owed — undo covering build strokes and not
-ACT, and the occlusion fade waiting for a genuinely tall piece. Each says why in
-place. (The third, floors reading the town-wide finish, was the one with a
-trigger condition attached, and the trigger fired: see §"Floors carry their own
+**Next: Phase 10 — the play pass.** See §Phase 10, which is a list of things
+found by PLAYING rather than by reading, and is the first list here that came
+from somebody else's hands. Six of its items are built; the rest are scoped with
+their calls already made.
+
+This header was stale for a long time and some of what follows still is: items 1,
+2 and 4 of the Phase 8 list below were built (8g at §8g, 8d at §8d, and 8g fixed
+the plaza's texture), and the schema line at the bottom is wrong — it says v23
+and the ladder is past v30. Trust the numbered sections over this block. The two
+deliberate POSITIONS under *Known gaps* — undo covering build strokes and not
+ACT, and the occlusion fade waiting for a genuinely tall piece — are still
+positions rather than work owed, but **the second one has now fired**: the scale
+pass (§10f) took trees to a tile and a half of overhang, so the fade has a real
+user and was made continuous. (The third, floors reading the town-wide finish,
+had a trigger condition attached and it fired: see §"Floors carry their own
 finish".)
 
 DESIGN's own open questions (fishing, async postcards between towns) are the only
@@ -168,7 +177,8 @@ found by driving the game and photographing it rather than by reading the source
    has genuinely looked at the other five counters, the seasons, or the
    underground yet.
 
-**Save schema is at v23**, and Phase 7c deliberately did not move it: the sky
+**Save schema is at v30** — this line has said v23 through seven bumps, so check
+`src/sim/save.ts` rather than trusting it. Phase 7c deliberately did not move it: the sky
 stores nothing, so there was nothing to migrate, and bumping the number would
 make a stale cached build reject a live save (see §7c). Every change that DOES
 alter the shape ships a tested migration — see
@@ -5445,6 +5455,199 @@ imported, or it reads as pasted in from another game).
 
 ---
 
+## Phase 10 — The play pass — **10a–10f built**
+
+The first list here that came from somebody PLAYING the game rather than reading
+it, and it is a different kind of list because of that. Phase 8 found things by
+photographing surfaces; this found things by trying to do something and being
+stopped. Several items were not bugs in any code that could be tested — they were
+the game being quiet where it should speak, or speaking where it should be quiet.
+
+**Where the reports were wrong about the cause, they were right about the
+symptom.** Three of the six below were diagnosed as something other than what was
+reported, and in each case the reporter's sentence was accurate and their theory
+was not. Take the sentence seriously and re-derive the cause.
+
+### 10a — One villager per id, and a save that broke it can come back
+
+Reported as "NPCs zoom across the map on reload, only in my save". Nothing about
+walking was wrong: a fresh town measures a correct 2.2 tiles/s and the pure sim
+never exceeds 2.8 (the arrival snap). **Two villagers sharing an id was the
+whole of it** — routes are keyed by character id (`sim/villagers.ts`), so each
+reads the other's waypoints, re-paths every tick, and slides at up to 44 tiles/s,
+for ever.
+
+It is invisible to tests because a fresh town cannot produce it, and silent in
+play because nothing else about the save looks wrong. `admitArrival` derives its
+id from the COMMISSION count while the thing it names is a VILLAGER; those two
+lists agreeing was an assumption. It refuses to mint a duplicate now, and
+`migrateSave` repairs a save that already drifted.
+
+**That repair is not a migration and ships no version bump.** A migration answers
+"this save is old"; `repair()` answers "this save is wrong", and runs at every
+version. Keep the two separate — a repair that needed a version bump could not
+rescue a save written by the current build.
+
+### 10b — Nothing solid goes down on the tile you are standing on
+
+Placement asked the ground about itself and never asked where the player was, so
+a wall or a table closed over your own cell and left you inside a solid tile.
+Erase still reached it, so it was recoverable, but "you can always take it back"
+is a promise about the ARRANGEMENT, not a rescue you should have to work out from
+under a wall.
+
+A refusal rather than shoving the player aside, matching `fillShaft`, which is
+the same mistake seen from below. **Solidity is asked of the PIECE, not of the
+tool's category** — floors and rugs go down underfoot constantly. Walling
+yourself into a 1x1 room is still allowed: that is a room you built.
+
+### 10c — Tap a tree and go and deal with it
+
+Nodes are solid, so a tap on one reached `moveTo` and stopped dead: it set your
+heading and refused the step. On a phone that is a tap that does nothing, and
+gathering meant walking into range and pressing ACT separately — two gestures for
+the verb the game asks for most.
+
+It walks you ALONGSIDE and then performs the ordinary act. **It does not decide
+for itself what tapping a tree means**: `actionTarget` stays the one place that
+answers that (§"The reticle is the promise"), so this can never promise a
+different swing from the one the reticle draws. Adjacency on arrival rather than
+a particular cell, so a wall going up mid-walk that lands you on the far side is
+still fine. Any other tap cancels the errand, and it is UI state, never the save.
+
+### 10d — The interface speaks where it was silent, and stops where it nagged
+
+Two halves of one complaint.
+
+**Tap-to-move draws where you tapped.** It has been the primary verb since the
+vertical slice and drew nothing: on a phone, with a thumb over the spot, that was
+the one missing piece of feedback. A diamond — not the reticle's corner ticks
+("ACT reaches here"), not the bed candidates' closed square ("pick one of
+these"). It shrinks as you close and dies with `player.target`, so it is feedback
+and not a map pin.
+
+**The shaft says its piece once a session.** "Down. The air goes cool and stops
+moving" is good the first time and furniture by the twentieth, on a verb you
+repeat all the way through working a tunnel — the same argument mining already
+makes against a toast per swing. The CUE still plays every time; that is feedback
+rather than a sentence to read. Session-scoped and not stored: once-ever wants a
+save flag, which is a schema bump and a migration for a flavour line.
+
+### 10e — The occlusion fade eases instead of snapping
+
+Reported as visibility glitching around walls. `hides` was a BOOLEAN: cross any
+of its three edges and a standing thing snapped between solid and a quarter
+opacity in one frame. **Anything keyed to the player's position has to be
+continuous or it strobes**, because the player moves continuously. Each edge now
+ramps over about a third of a tile; which things can hide you is unchanged.
+
+**This is probably not the wall report, and the wall report is still open.** The
+arithmetic says a wall can NEVER fade: its overhang is half a tile and collision
+stops you 0.51 tiles short, so the test is unreachable for walls specifically.
+Where the fade now matters is the trees (§10f).
+
+### 10f — Scale: trees stand up, and the tent is big enough to sleep in
+
+Reported as "scale makes absolutely no sense", and measured, it did not: a
+villager is 16px (one tile), a house wall 24, and a tree was 24 — the tallest
+thing in a wood was exactly as tall as a garden wall.
+
+Trees are drawn row by row rather than from sprite art, so **the crown profile is
+authored, not resampled**, and no quantize rule is at risk. `TRUNK_H` 16 (was
+10), the broadleaf stretched to 24 rows, every other region resampled by the same
+method so a pine still out-tops a broadleaf and the scrub stays a bush. Trunks to
+4px. Contact shadows are sized off the crown now rather than a fixed 9px puddle,
+which was a standing loose end the taller trees made worse.
+
+**Two invariants pushed back and both were right.** A crown may not exceed
+half-width 8 or it covers the trunk of the tree beside it and a stand smears into
+one mass; and a crown's gap must be a cleft at the top or a dip against the
+trunk, never a square of grass punched into the canopy. The stretch broke both
+and they were honoured rather than relaxed. Blossom must also stay strictly
+wider than the ordinary broadleaf, which is what forced meadow and pinewood to 7.
+
+The tent was 20x15 — shorter than a wall, barely wider than its occupant, and
+banded on ALTERNATING rows, which at that size is not a stripe but scanline
+flicker, and is why it read as a dark box with rungs in it. 28x24 now, banded in
+threes so the cloth reads as panels, with a triangular door flap (a rectangle
+read as a doorframe, which is a house's idea) and two guy lines. **Somebody lives
+in that until you build them a house**; the commission beat is weaker if it looks
+uninhabitable.
+
+**FURNITURE IS NOT IN THIS PASS.** `height` is asserted against hand-authored
+pixel rows (`furnishings.test.ts`), so shrinking it means redrawing every piece
+in four facings. The trees alone take a chair from 58% of a tree's height to 35%,
+which was most of the complaint. It is its own pass and it is art, not data.
+
+### 10g — Pacing and light
+
+**A day after you hand over the keys, not just after they arrived.** The arrival
+gap ran from the previous ARRIVAL alone, so pacing depended on how fast you
+built: thirty hours over a house meant the next neighbour was due the instant you
+stamped it. You finished a gift and the town immediately asked for another —
+the queue §"one at a time" exists to prevent, arriving by a side door. Both
+clocks must run out now. Build fast and the arrival clock still governs, so
+nobody is penalised for being quick.
+
+**The evenings draw in.** A season repainted the ground, the trees and the sky,
+and then let a July evening go dark at the same minute as a January one — the
+season stopping at the palette. Dawn and dusk move with the month, about two and
+a half hours of swing, symmetric about midday so noon stays noon and nothing has
+to know what a solstice is. **It is light, and light is all it is** (DESIGN
+§Seasons): nothing may read it for a price, a yield or a growth time, and nothing
+can — it changes which of four names an hour has, and the only things downstream
+are the tint and the fireflies. A longer evening is scenery you cannot farm.
+
+### What is left of Phase 10, with the calls already made
+
+1. **Unlocks get a channel, and it is the Notebook.** The no-toast rule stands
+   for everything found — walnut, slate, the sky stair, the Mole, found places.
+   What changes is that finding something now writes a THOUGHT into the journal
+   ("saw a birch forest today, that gives me ideas...") and the finish quietly
+   appears in the picker. You find out by reading, which is the rule, rather than
+   by being told, which is the toast. Things the town GIVES you — a commission
+   finish, a seed variety, a filing batch — may have a real announcement card,
+   because a person handing you something is not a secret being spoiled. This
+   makes the Notebook load-bearing, which is what item 2 is for.
+2. **The journal chunks by TIME, never by subject.** Grouping by subject is
+   refused in two places already (§9c) and stays refused: categories with nothing
+   under them are the blanks this must not have, and categories only for what you
+   have quietly tell you how many kinds exist. Soft time headings cannot be empty
+   and cannot leak a total. Newest first.
+3. **A minimap is allowed if it is drawn from the BIOME FIELD.** §Phase 5 refused
+   one because it would show the grove and the cube, and that refusal was right
+   about tiles. `siteRegion` knows nothing about props, nodes, structures or
+   found places, so a map rendered from it *cannot* spoil one — the same
+   structural defence the notices column uses (hand it a view that cannot contain
+   the thing). Coloured region shapes, your position, the survey chip folded in.
+   Nothing else may be drawn on it, ever.
+4. **The terrain pass, which needs a plan before code.** Water routed clear of
+   town buildings (a river past the town is good, a river between two houses is
+   not); a plaza that is not the same paving as everywhere else; decor kits for
+   the five regions that have none, more flower and mushroom kinds, a fairy ring
+   as a found place, islands. **All of it changes generated terrain, and terrain
+   is a total function of (seed, x, y) with nothing stored** — so it re-landscapes
+   towns people are living in. Owes the 1,000-seed test and the same care
+   `HOME_REGION_REACH` was given.
+5. **More arrivals, named and authored.** The town stops growing at four, which
+   is the flagship running out. Registers, never a generator (§Phase 6). An
+   arrival naming terrain they want to live near is the wanted version.
+6. **Real nature facts as journal observations.** The curator is confidently
+   wrong; the journal is where something true can live. Constrained by
+   `notebook.test.ts`, which FAILS on any content line naming an animal — so
+   plants, water, rock and weather, never a bird.
+
+**Held out of this phase deliberately:** minigames, and fauna of any kind. Fauna
+is not a small addition — §8o rules it out in DESIGN, `notebook.test.ts` and
+`moments.test.ts` enforce it, and the poled pond's joke is the absence. Farmable
+animals are a chore loop with a schedule and collide with Pillar 2;
+observable-not-collectible animals are genuinely interesting and collide with "if
+it can be stood next to, it is a resident". That is a design session, not a
+roadmap item, and it is the one idea on the list that could change what the game
+is. Combining-elements crafting is already on the not-taken list twice.
+
+---
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
@@ -5661,11 +5864,24 @@ you trip over them:
   twenty walls to a stray thumb would be worse than the bug being fixed.
 
   Build mode also gained an Escape door, which it had been doing without.
-- **The occlusion fade almost never fires now.** It's keyed to the OVERHANG,
-  `(artPx - TILE) / TILE`, which at 24px is half a tile — so a thing one tile in
-  front of you covers your legs and is left alone, because that overlap is the
-  depth cue. It exists for genuinely tall pieces; roofs will be the first real
-  user.
+- **The occlusion fade has its first real user, and it is the trees** (§10f).
+  It is keyed to the OVERHANG, `(artPx - TILE) / TILE`, which at a 24px storey is
+  half a tile — so a thing one tile in front of you covers your legs and is left
+  alone, because that overlap is the depth cue. **A WALL THEREFORE CANNOT FADE AT
+  ALL**: collision stops you 0.51 tiles short of it, and the test needs 0.5. That
+  is worth knowing before diagnosing anything reported about walls going
+  see-through. Trees reach a tile and a half now, so they genuinely fade, and the
+  fade eases rather than switching (§10e).
+- **"Visibility glitching in and around walls" is reported and unexplained.**
+  §10e smoothed the occlusion fade, which was a real defect but, per the line
+  above, cannot be what was seen around a wall. Remaining suspects: the roof
+  cutaway, which is judged on a room's INTERIOR so crossing a threshold has a
+  step in it; and the rule that a wall draws its face only where there is open
+  ground in front of it. Nobody has reproduced it yet.
+- **A dark runged rectangle sits just south of the homestead tent** and nothing
+  accounts for it. It predates the scale pass — visible in screenshots from
+  before §10f — and became obvious once the tent grew tall enough to stop
+  covering it. Not chased.
 
 ---
 
