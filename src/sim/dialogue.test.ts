@@ -168,15 +168,13 @@ describe("the said ring", () => {
     const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
     const v = bareScholar(w);
     const rng = stubRng(0.99); // every chance roll fails → idle voice every time
-    // The idle pool is the flat bank plus this form's idle tree roots — a root
-    // is picked and ring-tracked like any other line.
-    const poolSize = RESIDENT_IDLE.scholar!.length + (CONVERSATIONS.scholar!.idle?.length ?? 0);
-    const heard = Array.from({ length: poolSize }, () => speakFn(w, v, rng, Date.now()).text);
-    // pick() always takes the first candidate, so distinctness here is the ring
-    // doing the steering — without it this would be the same line every time.
-    expect(new Set(heard).size).toBe(poolSize);
-    // The pool exhausted, the whole pool comes back: spoken, never silent.
-    expect(speakFn(w, v, rng, Date.now()).text).toBe(heard[0]);
+    // The ring holds eight lines, so eight consecutive speaks may not repeat —
+    // that's its whole contract. pick() always takes the first candidate, so
+    // distinctness here is the ring doing the steering; without it this would
+    // be the same line every time. (The pool is bigger than the ring now, so
+    // "walks the WHOLE bank" stopped being the guarantee — eight-deep is.)
+    const heard = Array.from({ length: 8 }, () => speakFn(w, v, rng, Date.now()).text);
+    expect(new Set(heard).size).toBe(8);
   });
 
   it("keeps at most the last eight lines", () => {
@@ -280,9 +278,9 @@ describe("conversation trees at the ladder", () => {
   it("an idle tap can open a tree, and the root line joins the said ring", () => {
     const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
     const v = bareScholar(w);
-    // Roots pool LAST in the idle pool, so a pick-last rng lands on one.
+    // Roots pool LAST in the idle pool, so a pick-last rng lands on the last one.
     const speech = speakFn(w, v, pickLastRng(0.99), Date.now());
-    const root = CONVERSATIONS.scholar!.idle![0];
+    const root = CONVERSATIONS.scholar!.idle!.at(-1)!;
     expect(speech.text).toBe(root.line);
     expect(speech.replies).toBe(root.replies);
     expect(v.said).toContain(root.line);
@@ -311,6 +309,53 @@ describe("conversation trees at the ladder", () => {
     const root = CONVERSATIONS.scholar!.absence_weeks![0];
     expect(speech.text).toBe(root.line);
     expect(speech.replies).toBe(root.replies);
+  });
+});
+
+// --- Kinship and a character's own lines --------------------------------------
+
+import { RESIDENT_KIN } from "../content/dialogue";
+import { ARRIVALS } from "../content/arrivals";
+
+describe("kinship and character lines", () => {
+  /** Everything the idle rung can produce, across many rolls that all fail the
+   *  chance rungs — so the pool's CONTENTS are what's being asserted. */
+  function idlePool(w: ReturnType<typeof newWorld>, v: Villager): Set<string> {
+    const said = new Set<string>();
+    for (let i = 0; i < 300; i++) said.add(speakFn(w, v, makeRng(i), Date.now()).text);
+    return said;
+  }
+
+  it("a dog speaks dog-to-dog only when the player is a dog", () => {
+    const kin = RESIDENT_KIN.dog![0];
+    const dogWorld = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 8 });
+    const dogV = bareScholar(dogWorld);
+    dogV.form = "dog";
+    expect(idlePool(dogWorld, dogV).has(kin)).toBe(true);
+
+    const blobWorld = newWorld({ name: "Me", form: "blob", spot: "forest", seed: 8 });
+    const dogV2 = bareScholar(blobWorld);
+    dogV2.form = "dog";
+    expect(idlePool(blobWorld, dogV2).has(kin)).toBe(false);
+  });
+
+  it("an arrival says their own lines, and another of their form does not", () => {
+    // Biscuit is ARRIVALS[1]; Waffle (ARRIVALS[5]) shares the form and must
+    // not share the biography.
+    const w = newWorld({ name: "Me", form: "blob", spot: "forest", seed: 8 });
+    const v = bareScholar(w);
+    v.form = "dog";
+    (v as { id: string }).id = "newcomer:1";
+    v.name = "Biscuit";
+    const said = idlePool(w, v);
+    expect(ARRIVALS[1].lines!.some((l) => said.has(l))).toBe(true);
+    expect(ARRIVALS[5].lines!.some((l) => said.has(l))).toBe(false);
+  });
+
+  it("every arrival now carries their own lines", () => {
+    for (const a of ARRIVALS) {
+      expect(a.lines?.length ?? 0, a.name).toBeGreaterThanOrEqual(2);
+    }
   });
 });
 

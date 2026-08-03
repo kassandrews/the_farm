@@ -51,6 +51,27 @@ export const CONVERSATIONS: Partial<
   scholar: {
     idle: [
       {
+        line: "I'm surveying residents. One question. Describe the town in one word.",
+        replies: [
+          {
+            text: "Home.",
+            then: {
+              line: "'Home.' ... Everyone says that. The data's unanimous. I keep asking in case it changes. It had better not.",
+            },
+          },
+          {
+            text: "Strange.",
+            then: {
+              line: "'Strange.' Finally! A dissenting datum. You're my favourite respondent. Don't tell the sample.",
+            },
+          },
+          {
+            text: "...",
+            then: { line: "Declined to answer. I'll put you down as 'ineffable'. It's my favourite column." },
+          },
+        ],
+      },
+      {
         line: "Settle a dispute. The fence: leaning, or committing to a direction?",
         replies: [
           {
@@ -163,6 +184,115 @@ export const CONVERSATIONS: Partial<
       },
     ],
   },
+  blob: {
+    idle: [
+      {
+        line: "Be honest. My delivery, just now, when you walked up. How was it?",
+        replies: [
+          { text: "Powerful.", then: { line: "I KNEW it. I've been working on the pause. The pause is load-bearing." } },
+          {
+            text: "I missed it.",
+            then: { line: ". ... Then I'll do it again. Watch closely. It's subtle. It's enormous." },
+          },
+          { text: "...", then: { line: "Speechless. ... The correct response. Thank you for your honesty." } },
+        ],
+      },
+    ],
+    absence_days: [
+      {
+        line: "You return! Tell me everything. Set the scene. Where does your story open?",
+        replies: [
+          { text: "On the road home.", then: { line: "Strong opening. Movement. Purpose. I'm listening." } },
+          {
+            text: "Nowhere special.",
+            variants: { blob: "A quiet act, mostly." },
+            then: { line: "'Nowhere special.' Delivered flatly. ... You've been practising. I'm moved." },
+          },
+          { text: "...", then: { line: "In media res. Bold. ... Later, then. I'll wait for the matinee." } },
+        ],
+      },
+    ],
+  },
+  gremlin: {
+    idle: [
+      {
+        line: "Quick question. Hypothetical. If a fence post went missing — hypothetically — how soon would you notice?",
+        replies: [
+          {
+            text: "Immediately.",
+            then: { line: "Good! Great. Noted. The hypothetical fence is safe. Yours especially." },
+          },
+          {
+            text: "Probably never.",
+            then: { line: "See, THAT'S the spirit this town needs more of. Nothing will happen. I'm just delighted." },
+          },
+          {
+            text: "...",
+            then: { line: "Not answering. Smart. This conversation was never about fences. It was. It's fine." },
+          },
+        ],
+      },
+    ],
+    absence_days: [
+      {
+        line: "You're back! Okay, honesty hour: did you bring anything back? Anything findable?",
+        replies: [
+          {
+            text: "A few things.",
+            variants: { gremlin: "Obviously." },
+            then: { line: "I KNEW it. I could hear your satchel from here. Good sound." },
+          },
+          {
+            text: "Nothing at all.",
+            then: { line: "Travelling light. Respect. More room for whatever finds you on the way home." },
+          },
+          {
+            text: "...",
+            then: { line: "Keeping the inventory private. Professional. I'd do the same. I DO the same." },
+          },
+        ],
+      },
+    ],
+  },
+  office: {
+    idle: [
+      {
+        line: "A question, while you're here. Purely for my records, which don't exist. How's the homestead treating you?",
+        replies: [
+          {
+            text: "It's good.",
+            then: { line: "Good. I'll make a note. ... There. I made it in my head. Best filing system I've ever used." },
+          },
+          {
+            text: "It's a lot of work.",
+            then: { line: "As the permit intended. The stamp says 'flourish'. Small print. I wrote it." },
+          },
+          {
+            text: "...",
+            then: {
+              line: "Withheld. Under the old regime I'd have needed that in triplicate. Now it's just a nice quiet moment. Thank you for it.",
+            },
+          },
+        ],
+      },
+    ],
+    absence_days: [
+      {
+        line: "Back from your travels. Nothing here required you. That's the system working.",
+        replies: [
+          {
+            text: "Good to know.",
+            then: { line: "It IS good. A town that runs without anybody being needed. I retired into a masterpiece." },
+          },
+          {
+            text: "Was I missed?",
+            then: { line: ". ... Personally? Yes. Administratively, no. The second part is the compliment." },
+          },
+          { text: "...", then: { line: "Nothing to declare. Correct. There's no one to declare it to." } },
+        ],
+      },
+    ],
+  },
   carrot: {
     idle: [
       {
@@ -203,6 +333,23 @@ export const CONVERSATIONS: Partial<
             then: { line: "Restraint. Fine. It suits you. That was the remark, incidentally." },
           },
           { text: "...", then: { line: "Silence. Wise. It was going to be devastating." } },
+        ],
+      },
+    ],
+    absence_weeks: [
+      {
+        line: "Weeks away. I require a single sentence of explanation. Make it good.",
+        replies: [
+          {
+            text: "I was busy.",
+            variants: { menace: "I was being magnificent elsewhere." },
+            then: { line: "'Busy.' ... Adequate sentence. The delivery carried it. You've learned from me." },
+          },
+          {
+            text: "I missed this place.",
+            then: { line: ". ... Correct answer. The town missed you too. I'm the town, in this instance." },
+          },
+          { text: "...", then: { line: "No sentence at all. ... Audacious. I'll allow it. Once." } },
         ],
       },
     ],

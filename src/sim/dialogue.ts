@@ -36,9 +36,12 @@ import {
   COMPANY_BYE,
   RESIDENT_ABSENCE,
   RESIDENT_MIDST,
+  RESIDENT_KIN,
   residentIdle,
   warmLines,
 } from "../content/dialogue";
+import { ARRIVALS } from "../content/arrivals";
+import { isNewcomer } from "../content/cast";
 import { CAST } from "../content/cast";
 import { conversationRoots } from "../content/conversations";
 import type { Exchange, Reply } from "../content/conversations";
@@ -404,6 +407,13 @@ export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Sp
   const idle = v.id === "office" ? OFFICE_IDLE : residentIdle(v.form);
   const pool = [
     ...idle.map(asLine),
+    // Their OWN lines, on top of their form's: an arrival's row carries the
+    // rest of "the one line that's theirs" (content/arrivals.ts §lines), so
+    // Biscuit and Waffle stop being one dog with two names.
+    ...(isNewcomer(v.id) ? (ARRIVALS[Number(v.id.slice("newcomer:".length))]?.lines ?? []) : []).map(asLine),
+    // Kinship: said only to a player of the speaker's own form. Recognition,
+    // not a mechanic — nothing anywhere knows the forms matched.
+    ...(world.player.form === v.form ? (RESIDENT_KIN[v.form] ?? []) : []).map(asLine),
     ...warmLines(v.form, friendshipTier(v)).map(asLine),
     ...(isCompanion(world, v.id) ? (COMPANY_IDLE[v.form] ?? []).map(asLine) : []),
     // Idle trees pool in like idle lines — the town square is exactly where a

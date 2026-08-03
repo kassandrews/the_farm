@@ -37,6 +37,12 @@ export interface ArrivalDef {
    *  the whole beat, so it is theirs and not their form's — and nobody gushes.
    *  A house you built is received the way a real gift is: sideways. */
   housedLine: string;
+  /** Their own small talk (Phase 12), pooled on top of their form's idle bank.
+   *  The tent line was "the one line that's theirs"; these are the rest of that
+   *  sentence. Each extends the premise already in this row — Bartleby's fen,
+   *  Waffle's loud water, Snag's "say it back to me" — so two dogs stop being
+   *  one dog with two names. Form gives the voice; this row gives the person. */
+  lines?: string[];
 }
 
 /** The queue. Order is deliberate, not shuffled: the first arrival is the one
@@ -57,6 +63,11 @@ export const ARRIVALS: ArrivalDef[] = [
     tentLine: "I am not complaining. I am describing the tent.",
     housedLine: "It will do. ... It will more than do. Do not make this a moment.",
     filing: "Form 9. ... Housing, request for. He has opinions about the tent.",
+    lines: [
+      "I have been auditing the town's aesthetics. Unpaid. Somebody must.",
+      "I am not fussy. I am precise. The difference is everything, and I maintain it daily.",
+      "I described the tent once. It has never recovered. Neither have I, entirely.",
+    ],
   },
   {
     form: "dog",
@@ -64,6 +75,11 @@ export const ARRIVALS: ArrivalDef[] = [
     tentLine: "The tent's great! It's got a floor and everything. ... Well. Sort of.",
     housedLine: "It's got a DOOR. I'm going to go in and out of it for a while.",
     filing: "Form 9. ... He says anywhere is fine. They always say that.",
+    lines: [
+      "Anywhere really IS fine. I keep being right about that.",
+      "I still go in and out of the door sometimes. For the feeling.",
+      "I like it here best. I liked it there best too. I'm consistent.",
+    ],
   },
   {
     form: "blob",
@@ -71,6 +87,11 @@ export const ARRIVALS: ArrivalDef[] = [
     tentLine: "I have decided to find this romantic. It is going poorly.",
     housedLine: "You built this. With hands. ... I need to sit down, which I can now do indoors.",
     filing: "Form 9. ... Filed under 'urgent', at her insistence. It is not urgent.",
+    lines: [
+      "I have decided to find the plaza romantic. It's going well this time.",
+      "I keep a list of things I've decided to find romantic. The list is thriving.",
+      "Romance is a decision. I decide it constantly.",
+    ],
   },
   {
     form: "gremlin",
@@ -78,6 +99,11 @@ export const ARRIVALS: ArrivalDef[] = [
     tentLine: "Nice tent. ... Is it yours? It's mine now. Kidding. ... Mostly.",
     housedLine: "Mine. ... Say it back to me. I want to hear how it sounds.",
     filing: "Form 9. ... I have added a note. The note is for my own records.",
+    lines: [
+      "Mine. The house. I still say it most mornings. It still sounds good.",
+      "I checked: everything in my house is mine. Every day it's still true. Unbelievable.",
+      "You gave me a whole house and I only took SOME of it apart. Growth.",
+    ],
   },
 
   // The second half of the queue. Three things about these that the first four
@@ -111,6 +137,11 @@ export const ARRIVALS: ArrivalDef[] = [
     tentLine: "I have been walking out to the fen most mornings. ... The tent is nearer to it than a house would be. That is the tent's only argument, and it is not a good one.",
     housedLine: "A door, a roof, and a corner that is out of the draught. ... I shall have to stop describing the weather. I had a great deal of material.",
     filing: "Form 9. ... They have appended their own notes to the form. I have not read the notes.",
+    lines: [
+      "I walked out to the fen this morning. The fen continues. I have notes.",
+      "My notes on the fen now outnumber my notes on everything else. The fen is winning.",
+      "I appended notes to a form once. Gary never read them. They were my best work.",
+    ],
   },
   {
     form: "dog",
@@ -118,6 +149,11 @@ export const ARRIVALS: ArrivalDef[] = [
     tentLine: "I pitched by the water! ... It is so loud at night. I love it. ... I have not slept.",
     housedLine: "It doesn't move when the wind does. ... I'm going to run round the outside of it. Once to check, and then some more times.",
     filing: "Form 9. ... They were extremely enthusiastic about the form itself. Nobody is enthusiastic about the form.",
+    lines: [
+      "I ran round the house again this morning. Still holds. I'll keep checking.",
+      "I sleep SO well now. I miss the loud water. I visit it. We're still friends.",
+      "The water's still loud! I checked on the way here. Good news all round.",
+    ],
   },
   {
     form: "gremlin",
@@ -125,6 +161,11 @@ export const ARRIVALS: ArrivalDef[] = [
     tentLine: "Camped by the rocks, on purpose. ... Things collect down there. I'm not saying I put them there.",
     housedLine: "Walls. ... You can lean things against walls. That's the entire thing about walls.",
     filing: "Form 9. ... They asked whether the house comes with a cellar. It does not come with a cellar.",
+    lines: [
+      "I have leaned eleven things against my walls. The walls are performing.",
+      "A cellar would have solved everything. I've made peace. The peace is provisional.",
+      "The rocks miss me. Things collect down there without me now. I'll catch up.",
+    ],
   },
 ];
 
