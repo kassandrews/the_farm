@@ -107,6 +107,12 @@ export function admitArrival(world: WorldState, now: number): Commission | null 
   if (!def) return null;
 
   const id: NewcomerId = `newcomer:${index}`;
+  // The id counts COMMISSIONS, and the thing it names is a VILLAGER. Those two
+  // lists agreeing is an assumption rather than a guarantee, and if they ever
+  // drift the town gets two people answering to one id — which does not read as
+  // a duplicate, it reads as everybody sprinting, because routes are keyed by id
+  // (sim/villagers.ts). Refusing here is cheaper than diagnosing that later.
+  if (world.villagers.some((v) => v.id === id)) return null;
   const tent = findTentSpot(world);
   const villager = makeVillager(charDef({ id, name: def.name, form: def.form, fixed: false }), now);
   villager.x = tent.x;

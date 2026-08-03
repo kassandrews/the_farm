@@ -954,7 +954,37 @@ export function migrateSave(raw: unknown): WorldState | null {
     v = typeof obj.schemaVersion === "number" ? obj.schemaVersion : v + 1;
   }
   if (!isWellFormed(obj)) return null;
+  repair(obj);
   return obj as unknown as WorldState;
+}
+
+/** Fix what a save should never have contained. NOT a migration: it changes no
+ *  shape, ships with no version bump, and runs on every load at every version —
+ *  a migration answers "this save is old", and this answers "this save is
+ *  wrong".
+ *
+ *  ONE VILLAGER PER ID. Routes are keyed by character id (sim/villagers.ts), so
+ *  two villagers sharing one makes them read each other's waypoints: they
+ *  re-path every tick and slide across the town at several times walking pace,
+ *  for ever, in a save that otherwise looks fine. It is silent, it survives
+ *  every reload, and no test could see it because a fresh town cannot produce
+ *  it — the symptom only ever shows up in a town somebody has actually played.
+ *
+ *  `admitArrival` now refuses to mint a duplicate, which closes the one route in
+ *  today's code (its id counts commissions, so a town whose commissions and
+ *  villagers ever disagreed would collide). This is the other half: a save that
+ *  already went wrong has to be able to come back, because the alternative is
+ *  telling somebody their town is unfixable. The first entry wins, being the one
+ *  with the longer history behind it. */
+function repair(obj: Record<string, unknown>): void {
+  const villagers = obj.villagers as { id?: unknown }[];
+  const seen = new Set<unknown>();
+  const kept = villagers.filter((v) => {
+    if (!v || typeof v.id !== "string" || seen.has(v.id)) return false;
+    seen.add(v.id);
+    return true;
+  });
+  if (kept.length !== villagers.length) obj.villagers = kept;
 }
 
 /** A shallow sanity check that the required top-level shape survived. Not a

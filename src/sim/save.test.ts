@@ -1106,3 +1106,20 @@ describe("v29 → v30: the farming memories stop naming the carrot", () => {
     for (const p of migrated.places) expect(p).not.toHaveProperty("value");
   });
 });
+
+describe("a save that went wrong can come back", () => {
+  it("drops a duplicate villager, keeping the first", () => {
+    // Routes are keyed by character id, so two villagers sharing one read each
+    // other's waypoints and slide across town at several times walking pace,
+    // for ever. Measured at 44 tiles/s against a walk of 2.2 before this.
+    const w = newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
+    const twin = { ...w.villagers[0], x: 99, y: 99 };
+    w.villagers.push(twin as never);
+
+    const back = deserialize(serialize(w))!;
+    const ids = back.villagers.map((v) => v.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    // The first entry survives — it is the one with the history behind it.
+    expect(back.villagers.find((v) => v.id === twin.id)!.x).not.toBe(99);
+  });
+});
