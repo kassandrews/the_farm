@@ -202,7 +202,12 @@ const curatorRemountsExhibit: AwayEvent = (world, rng, now) => {
   const remounted = remountExhibit(world, (n) => rng.int(n));
   if (!remounted) return null;
   curator.memory = remember(curator.memory, { kind: "exhibit", at: now, value: remounted.def.title });
-  return `Corrigal has revised an exhibit while you were out. The card now reads: ${remounted.placard}`;
+  // Her NAME, off the villager, never a literal. "Corrigal" was hardcoded here
+  // and survived the naming pass that made her Winifred, so the postcard credited
+  // somebody who does not live here — the one place a retired name was still
+  // player-visible rather than sitting in a comment. A postcard that reads the
+  // roster cannot go stale the next time somebody is renamed.
+  return `${curator.name} has revised an exhibit while you were out. The card now reads: ${remounted.placard}`;
 };
 
 /** The Mole lengthens your tunnel (DESIGN §"The Mole, specifically").

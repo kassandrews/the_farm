@@ -169,6 +169,27 @@ describe("away simulation", () => {
     expect(recall(curator.memory, "exhibit")?.value).toBe(exhibitDef("timber").title);
   });
 
+  it("credits the curator by her current name, never a literal", () => {
+    // "Corrigal" was written into this postcard and outlived the naming pass that
+    // made her Winifred, so a real save credited a scholar who does not live here.
+    // The test above it looked like it covered this and did not: it asserts the
+    // name is ABSENT from an empty museum, which passes whatever the string says.
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 4 });
+    w.inventory.wood = 5;
+    donate(w, exhibitDef("timber"));
+    const curator = w.villagers.find((v) => v.id === "museum")!;
+
+    let card: string | undefined;
+    for (let i = 0; i < 20 && !card; i++) {
+      card = simulateAway(w, 72 * HOUR, Date.now(), makeRng(i)).find((l) =>
+        l.includes("revised an exhibit"),
+      );
+    }
+    expect(card).toBeDefined();
+    expect(card).toContain(curator.name);
+    expect(card).not.toContain("Corrigal");
+  });
+
   it("says nothing about the museum when nothing has been donated", () => {
     const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 4 });
     const curator = w.villagers.find((v) => v.id === "museum")!;
