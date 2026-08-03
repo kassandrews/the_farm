@@ -6238,8 +6238,7 @@ whatever the field underneath is doing.
 
 ---
 
-## Phase 12 — the conversation pass (fable-generated content) — **done**,
-## bar one polish pass (see the end of this section)
+## Phase 12 — the conversation pass (fable-generated content) — **done**
 
 The project the user's list called "fable generated content", defined 4 Aug
 2026. The itch, verbatim: *"right now, if i click on someone standing in the
@@ -6361,18 +6360,37 @@ everything else:
    and she brings it back later — *"I've been thinking about what you said —
    you call this place home. It holds up."*
 
-### Still owed: one polish pass
+### The polish pass — **done**, and it found two real bugs
 
-Line edits were deliberately deferred rather than taken per sitting — the user
-read each batch and banked their small corrections for a single pass at the
-end, to keep the writing moving. Two things go in it:
+Line edits were deliberately deferred rather than taken per sitting: the user
+read each batch and banked their corrections for one pass at the end, to keep
+the writing moving. What the pass actually fixed:
 
-- Their own accumulated line edits across all three sittings.
-- **The carrot's company lines name a stall he cannot have.** "I shall walk
-  with you. The stall keeps." predates `ROOTED` in `sim/company.ts`: the
-  stall-keeper can never be invited anywhere, so those lines only ever come out
-  of an imported carrot RESIDENT, who has no stall. Found by checking
-  reachability before writing his batch, not on screen.
+- ~~**The carrot's company lines name a stall he cannot have.**~~ Fixed. "The
+  stall keeps" and "I return to the stall" predated `ROOTED` in
+  `sim/company.ts`: the stall-keeper can never be invited anywhere, so every
+  carrot who reaches those lines is a RESIDENT with no stall. **The general
+  trap:** when a form is ALSO an institution, ask who can actually reach the
+  bank. Checked the siblings and left them — a blob resident saying "the stage"
+  is speaking metaphor, and a desk is real placeable furniture, so a retired
+  office creature may keep one.
+- **Two roofless banks promised rain, in a world that has none.** The Menace
+  ("I am being rained on") and the Gremlin ("going to get rained on") — the
+  exact line a player would take as a hint to go and watch the sky. Both
+  predate this phase and neither had ever been swept, because every guard in
+  the repo covered one table.
+
+**`content/banks.test.ts` is what found them, and it is the durable half of
+this pass.** It flattens EVERY bank — idle, memory, home, history, warm, kin,
+absence, midst, season, company, the three secrets, the trees, the arrivals —
+and applies the four rules that were previously enforced one table at a time:
+no line sets a task, promises weather, names wildlife, or spoils a secret. The
+word lists are COPIED from `notebook.test.ts` rather than rewritten, because
+two guards that disagree about what counts as weather are worse than one.
+
+The lesson worth keeping: a per-table guard silently stops covering the content
+the moment somebody adds a table, and this phase added five and tripled the
+line count. Both bugs it caught were older than the phase.
 
 ### What the phase owes, procedurally
 

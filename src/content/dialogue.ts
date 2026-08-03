@@ -853,7 +853,11 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
     ],
     homeless: [() => "My bed. Gone. I am choosing to find this dramatic rather than upsetting."],
     roofless: [
-      () => "There is no roof. I am being rained on. Directly. As though I were outdoors.",
+      // NOT "I am being rained on", which this said until the all-banks sweep
+      // (banks.test.ts) found it: there is no rain in this world, so the one
+      // line most likely to send somebody looking at the sky was promising
+      // something the sky will never do.
+      () => "There is no roof. I am simply outdoors, in my own bedroom, at all times.",
       () => "The sky is in my bedroom. I did not approve the sky.",
     ],
     sealed: [
@@ -957,7 +961,10 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
     ],
     homeless: [() => "Someone took my bed. I respect it. I want it back."],
     roofless: [
-      () => "No roof. Everything in there's going to get rained on. Some of it isn't mine.",
+      // The second half of the same bug the Menace had — see her `roofless`.
+      // Both roofless banks reached for weather, which is the one thing a
+      // missing roof cannot expose you to here.
+      () => "No roof. Everything in there is just sitting under the open sky. Some of it isn't mine.",
       () => "It's open. Anyone could reach in. ... I'd reach in.",
     ],
     sealed: [
@@ -1490,8 +1497,12 @@ export const COMPANY_YES: Partial<Record<AdultForm, string[]>> = {
   menace: ["I shall accompany you. Don't make it strange.", "Fine. But I'm not carrying anything.", "Very well. Walk slightly behind me. ... Fine. Beside."],
   gremlin: ["Ooh. Where are we going. Is it somewhere with things in it.", "Yes. I'll be good. Mostly good.", "Yes. If we find anything, splitsies. I do the finding."],
   office: ["I'll come. I'm not filing it. That's the treat.", "Out of office. Genuinely, for once.", "Approved. Effective immediately."],
+  // NOT "the stall keeps" — that line predated `ROOTED` (sim/company.ts). The
+  // stall-keeper can never be invited anywhere, so every carrot who says these
+  // is a RESIDENT with no stall to keep. Same trap for any bank whose form is
+  // also an institution: check who can actually reach the line.
   carrot: [
-    "I shall walk with you. The stall keeps.",
+    "I shall walk with you. The patch keeps without me.",
     "Blessed. Also free until evening.",
     "... All right. Walk slow.",
   ],
@@ -1534,7 +1545,7 @@ export const COMPANY_BYE: Partial<Record<AdultForm, string[]>> = {
   gremlin: ["I'm off. Check your pockets. ... They're fine. Check anyway.", "Home. I found four things. You saw two of them.", "Home time. I'm taking a souvenir. It's a leaf. Legitimate leaf."],
   office: ["Back to the desk. It missed me. It says nothing, but it missed me.", "That's me clocked off. From nothing. Wonderful.", "Day's end. Attendance was taken. It was two. Perfect turnout."],
   carrot: [
-    "I return to the stall. Go well.",
+    "I'm away home. Go well.",
     "Evening. ... Blessings, and so on.",
     "That's my light gone. ... It was a good one.",
   ],
