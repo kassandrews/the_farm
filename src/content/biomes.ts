@@ -561,7 +561,9 @@ export interface DecorKit {
  *  same silhouette, so a stand of them reads as trees that are wrong rather than
  *  as a different plant. It is also the meadow's, which is what keeps the town
  *  looking exactly as it did. */
-export const BROADLEAF = [3, 5, 6, 7, 7, 7, 7, 7, 6, 6, 5, 4, 3, 2];
+export const BROADLEAF = [
+  2, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 6, 5, 4, 3, 2,
+];
 
 export const BIOMES: Record<BiomeId, BiomeDef> = {
   /** The ordinary, and the town's own. Every number here is identity — a 1× or a
@@ -650,7 +652,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // A conifer: narrow, tall, and TIERED rather than smoothly tapered. The
     // step-backs every third row are the whole trick — a clean triangle reads as
     // an arrowhead, and the little shelves are what say "branches" at 1px.
-    crownRows: [1, 2, 3, 2, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6],
+    crownRows: [1, 2, 3, 3, 3, 3, 3, 4, 4, 5, 4, 4, 5, 5, 6, 6, 5, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7],
     // WOOD ANEMONES, and they are the reason this field exists in a shaded
     // region at all: the flowers that bloom under conifers do it in the weeks
     // before the canopy closes, which is exactly a spring event and nothing else.
@@ -772,7 +774,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // difference between a tree that is tall and a tree that is big. The crown
     // below got NARROWER at the same time; growing one without the other just
     // makes a lollipop on a longer stick.
-    trunkHeight: 13,
+    trunkHeight: 20,
     // The dashes. Charcoal rather than black — a true black mark on a near-white
     // trunk is a hole punched through the tree, and at this scale the eye reads
     // the hole before it reads the bark.
@@ -823,7 +825,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // AND IT IS AN EGG, NOT A CONE. The first version widened all the way down —
     // which is the PINE's silhouette four rows up in this file, and a narrow
     // white-trunked spruce is what it came out as.
-    crownRows: [2, 3, 4, 4, 4, 5, 5, 6, 6, 6, 6, 5, 5, 4, 4, 4, 3],
+    crownRows: [3, 3, 4, 5, 5, 5, 5, 5, 6, 7, 7, 7, 8, 8, 8, 8, 8, 8, 7, 7, 7, 6, 5, 5, 5, 5, 5, 4],
     // ONE ROW, AT THE BOTTOM ONLY. The notch is open downward and shows BARK —
     // the underside where the branches leave the stem, and the cheapest detail on
     // this tree by a distance, because bark inside leaves is most of what says
@@ -840,7 +842,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // top of it, and the eye read a long white channel driven up into the canopy.
     // A notch says "the branches leave from here" only while it stays shallow
     // enough to be an underside; any deeper and it is a gap.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
     crownOverlap: 4,
     // Thin pale grass and small white flowers — the airy opposite of the pines,
     // and the reason the two rows sit next to each other.
@@ -925,7 +927,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     stone: { tint: { color: "#c9b98c", amount: 0.3 }, shapes: ["crag", "broken", "broken", "slab"] },
     // Squat and wind-flattened: wide, low, and wider at the shoulders than at the
     // crown. Barely taller than the rocks it stands among, which is the point.
-    crownRows: [2, 4, 5, 5, 6, 5, 5, 4, 3],
+    crownRows: [2, 4, 5, 6, 6, 7, 6, 6, 5, 4, 3],
     // THE PARCHED ROW FLOWERS, and it is the best beat this field buys. The scrub
     // is written everywhere else as dry — no sprouts in its tuft list, grit in
     // its decor, bleached in every tint — so three months of small hard yellow
@@ -1031,7 +1033,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Weeping: broad at the top and narrowing all the way down, so the mass hangs
     // rather than sits. The tallest crown in the table — a fen tree leans over
     // the water it grew out of.
-    crownRows: [4, 6, 7, 7, 7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2],
+    crownRows: [5, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 6, 6, 6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3],
     // Marsh flowers, and violet rather than the obvious yellow: the fen's whole
     // palette is murk, and a warm bloom in it would read as the scrub's spring
     // MARSH MARIGOLD — kingcup, the one flower everybody who has stood at the edge
@@ -1281,7 +1283,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // the "about a tile wide" mark in `crownRows` and allowed: overhanging its
     // neighbours is a thing broadleaves do, and in a wood this dense the crowns
     // touching each other is the point.
-    crownRows: [3, 6, 7, 8, 7, 8, 8, 8, 7, 8, 7, 6, 4, 3],
+    crownRows: [4, 6, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 5, 4, 4],
     // Down beside the trunk, so the foliage sits ON the tree rather than balanced
     // on top of it. Cheaper than a taller sprite and it reads bushier, which is
     // what "puffier" wanted.
@@ -1358,7 +1360,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // else here, because the one ordinary region it should remind you of is the
     // pale one. A far biome that recalls a near one is what keeps the drift
     // continuous.
-    crownRows: [2, 3, 5, 5, 6, 6, 5, 5, 4, 3, 2],
+    crownRows: [3, 3, 4, 6, 6, 6, 7, 8, 8, 7, 6, 6, 6, 5, 5, 4, 3, 3],
     // Bleached, like everything else here — and the argument is the glimmer's
     // word for word: red was the one warm-blooded thing in a region built out of
     // cold blue and near-white, and it read as an object from somewhere else
@@ -1407,7 +1409,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Also the SHORTEST broadleaf here, which is half of how it reads wide: at
     // fourteen rows the same 16px of width came out as a tall pink box with a
     // slot cut in it. Wide is a ratio, not a number.
-    crownRows: [4, 7, 8, 8, 8, 8, 8, 8, 8, 7, 6],
+    crownRows: [5, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7],
     // NO GROUND BLOOM, and this is the one region that was offered one and gives
     // it back. Fallen petals closed a tidy loop — the row has had petals falling
     // through the AIR since it was written, with nothing on the ground for them
@@ -1419,7 +1421,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // The bare ground is what the blossom is seen against. Note also that these
     // trees flower all year (see the motes below), so a spring-only carpet under
     // a permanently blooming orchard was never a season anybody could have read.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
     crownOverlap: 3,
     // Falling petals, and they fall all year because these trees are stubbornly
     // in blossom all year (§EVERY COLOUR IS A TINT — "Blossom Rows stay

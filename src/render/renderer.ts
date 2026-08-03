@@ -279,7 +279,7 @@ const DOOR_NOTCH = 4;
 // ROCK_SHAPES) — it is scenery you step around rather than get behind.
 /** The trunk, in pixels. A tree's full height is this plus its crown's row count,
  *  which now varies per biome (content/biomes.ts) — so nothing may assume 24. */
-const TRUNK_H = 10;
+const TRUNK_H = 16;
 
 /** The rocks. Half-widths per row, read exactly like a tree's crown — one
  *  fillRect per row, `rows[r]` either side of centre, nothing off the pixel grid.
@@ -3422,9 +3422,12 @@ export class Renderer {
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
     else if (this.hides(world, tx, ty, height)) ctx.globalAlpha = prev * HIDDEN_FADE;
 
-    // Contact shadow — without it a tall sprite floats instead of standing.
+    // Contact shadow — without it a tall sprite floats instead of standing. Sized
+    // off the crown it belongs to: a fixed 9px puddle under a crown twice that
+    // wide was a standing loose end, and it got worse the moment the trees grew.
     ctx.fillStyle = "rgba(0,0,0,0.16)";
-    ctx.fillRect(cx - 4, base - 2, 9, 2);
+    const shadowW = Math.max(9, Math.max(...rows) * 2 - 3);
+    ctx.fillRect(cx - (shadowW >> 1), base - 2, shadowW, 2);
 
     // The grove's trunks are the dark wood itself, which is the only place in
     // the game where the finish and the material are the same object. It reads
@@ -3432,8 +3435,11 @@ export class Renderer {
     // and meet her in a stand you can barely make out.
     const bark = dark ? (night ? "#2b1d16" : "#3f2a1e") : night ? "#4a3628" : "#6b4a33";
     const barkDark = dark ? (night ? "#1f150f" : "#2f1e15") : night ? "#3a2a1e" : "#573a28";
+    // Four px, not three: a 3px stem under a 40px tree reads as a sapling that
+    // grew a hat. The dark side stays one px, so the light/dark split that gives
+    // the trunk its round still lands where the bark dashes expect it.
     ctx.fillStyle = biome ? mixHex(bark, biome.trunk) : bark;
-    ctx.fillRect(cx - 1, base - trunkH, 3, trunkH);
+    ctx.fillRect(cx - 2, base - trunkH, 4, trunkH);
     ctx.fillStyle = biome ? mixHex(barkDark, biome.trunk) : barkDark;
     ctx.fillRect(cx + 1, base - trunkH, 1, trunkH);
 
@@ -4109,23 +4115,51 @@ export class Renderer {
     const baseY = Math.round(this.sceneY(oy) + TILE / 2);
     const canvas = night ? "#b06a4a" : "#d08a5a";
     const dark = night ? "#8a4f38" : "#a96844";
-    const w = 20;
-    const h = 15;
-    // A simple ridge tent: a triangle canvas with a dark doorway. `r` counts
-    // DOWN from the apex, so the half-width grows with r — computing it from
-    // (h - r) instead pitches the tent upside down as a funnel, which is what
-    // it did until the raised pass made it big enough to notice.
+    // BIG ENOUGH TO SLEEP IN. It was 20x15 — shorter than a wall and barely
+    // wider than the creature it houses, which made the one thing you own at the
+    // start of the game read as a folded towel. A tent is where somebody lives
+    // until you build them a house, and the commission beat is weaker if the
+    // thing they are living in looks uninhabitable.
+    const w = 28;
+    const h = 24;
+
+    ctx.fillStyle = "rgba(0,0,0,0.16)";
+    ctx.fillRect(cx - (w >> 1) + 1, baseY - 1, w - 2, 2);
+
+    // A ridge tent: a triangle of canvas. `r` counts DOWN from the apex, so the
+    // half-width grows with r — computing it from (h - r) instead pitches the
+    // tent upside down as a funnel, which is what it did until the raised pass
+    // made it big enough to notice.
+    //
+    // BANDED IN THREES, not alternating rows. Deliberate stripes are fine here
+    // (DESIGN calls the tent's striped canvas out by name), but one-pixel
+    // alternation is not a stripe — at this size it reads as scanline flicker,
+    // and it was the reason the tent looked like a dark box with rungs in it.
+    // Three-pixel bands read as panels of cloth.
     for (let r = 0; r < h; r++) {
       const half = Math.round(((r + 1) / h) * (w / 2));
-      ctx.fillStyle = r % 2 === 0 ? canvas : dark;
+      ctx.fillStyle = Math.floor(r / 3) % 2 === 0 ? canvas : dark;
       ctx.fillRect(cx - half, baseY - h + r, half * 2, 1);
     }
-    // Doorway.
+
+    // The doorway is a triangle, not a rectangle: a flap parts along the ridge,
+    // so the opening is widest at the ground and closes to a point. A rectangle
+    // read as a doorframe, which is a house's idea.
+    const doorH = 13;
     ctx.fillStyle = "#3a2620";
-    ctx.fillRect(cx - 2, baseY - 6, 4, 6);
+    for (let r = 0; r < doorH; r++) {
+      const half = Math.max(1, Math.round(((r + 1) / doorH) * 4));
+      ctx.fillRect(cx - half, baseY - doorH + r, half * 2, 1);
+    }
+
+    // Guy lines and pegs — two strokes that say "pitched" rather than "placed",
+    // and the cheapest way to stop a triangle reading as a solid wedge.
+    ctx.fillStyle = night ? "#6b5a48" : "#8a7358";
+    ctx.fillRect(cx - (w >> 1) - 3, baseY - 3, 4, 1);
+    ctx.fillRect(cx + (w >> 1) - 1, baseY - 3, 4, 1);
     // Pole tip.
     ctx.fillStyle = "#6e5138";
-    ctx.fillRect(cx, baseY - h - 1, 1, 2);
+    ctx.fillRect(cx, baseY - h - 2, 1, 3);
   }
 
   // --- The museum's cases ---------------------------------------------------
