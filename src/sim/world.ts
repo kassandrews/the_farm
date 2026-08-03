@@ -270,7 +270,12 @@ export function baseTileAt(
 // plaza with the town hall at its north edge. The player's homestead is a plot
 // off to the +x/+y (south-east). These are the fixed anchors the generator and
 // the cast positions share.
-export const PLAZA = { x0: -5, y0: -5, x1: 5, y1: 3 }; // inclusive stone rectangle
+/** The town square, inclusive. ELEVEN BY EIGHT, and the numbers are a module
+ *  rather than a taste: a one-tile edging course leaves a 9x6 field, which at
+ *  24px to a paver is exactly six pavers across and four down. Change either
+ *  dimension and the paving stops dividing — see PLAZA_GRAIN in render/renderer.ts
+ *  for the arithmetic and for why the paver is 24 and not 16. */
+export const PLAZA = { x0: -5, y0: -5, x1: 5, y1: 2 };
 export const HOME = { x: 6, y: 5 }; // homestead origin (tent sits here-ish)
 
 /** Homestead origin per chosen spot — all near HOME, nudged for flavour. Lives

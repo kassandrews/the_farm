@@ -38,7 +38,7 @@ import {
 import type { TileDef } from "../content/tiles";
 import { skinDef } from "../content/skins";
 import { hash2 } from "../sim/rng";
-import type { SkinDef, SkinClass, SkinId } from "../content/skins";
+import type { SkinDef, SkinId } from "../content/skins";
 import {
   decoHash,
   groundTone,
@@ -114,6 +114,7 @@ const TILE = 16; // scene px per world tile (matches sprite CELL)
 function inPlaza(x: number, y: number): boolean {
   return x >= PLAZA.x0 && x <= PLAZA.x1 && y >= PLAZA.y0 && y <= PLAZA.y1;
 }
+
 const SPRITE = 16; // sprite draw size
 
 /** Reticle colour per action kind — the colour is the promise. Faint white means
@@ -230,6 +231,44 @@ const GRAIN = {
   // own draw path (drawFurniture), not from this.
   cloth: null,
 } as const;
+/** The town square is cut in bigger slabs than anybody's kitchen floor.
+ *
+ *  The plaza and a laid flagstone floor were the same stone in the same bond,
+ *  which is the thing ROADMAP §Phase 11 means by "a plaza that is not the same
+ *  paving as everywhere else" — a civic square that a player can reproduce
+ *  exactly by paving a room is not a square, it is a large floor.
+ *
+ *  COURSE AND JOINT MUST STAY COPRIME WITH 16, and that is not a style note: the
+ *  tile is sixteen pixels, so a period that divides it puts the same joint at the
+ *  same place in every cell and the courses align to the tile grid — the band
+ *  rule, arrived at by arithmetic instead of by drawing a per-cell edge. 9 and 13
+ *  are both odd and neither shares a factor with 16, the same reasoning that
+ *  picked 6 and 9 for `stone`.
+ *
+ *  Joints are inked slightly harder than `stone`'s, because a bigger slab has
+ *  fewer of them: at the same weight the square read as flatter than the floor it
+ *  was supposed to outrank. */
+/** The town square's paving, as one composition (see drawPlazaPaving).
+ *
+ *  THE NUMBERS ARE A DRAWING, SCALED. The layout comes from a graph-paper
+ *  sketch: a one-unit border of long stones — five across the top and bottom,
+ *  three up each side — around a field of six-by-four near-square pavers, each
+ *  about 2.7 units. The sketch is 18x13 units, the square is 176x128px, and the
+ *  two ratios agree within one percent, so one unit is ~10px and everything
+ *  below is that sketch times ten:
+ *
+ *    border 10px; field 156x108 → pavers 26x27, six by four, exact;
+ *    side stones 108/3 = 36, exact; top stones 176/5 = 35.2, so four of 35 and
+ *    the phase's remainder in the last — a mason's cut, not an error.
+ *
+ *  A paver is 26px against a 16px tile, so NOTHING here lands on the tile grid,
+ *  which is the point: the square reads as paving laid on the ground, not as
+ *  the ground's own grid restated in grey. */
+const PLAZA_BORDER = 10;
+const PLAZA_PAVER_W = 26;
+const PLAZA_PAVER_H = 27;
+const PLAZA_SIDE_STONE = 36;
+
 /** The doorstep: a flagstone slab, deliberately NOT a wood finish, so it reads
  *  as a step laid at the threshold rather than as more of the house. */
 const STEP_STONE = "#9a9187";
@@ -1383,11 +1422,15 @@ export class Renderer {
         // reason this is allowed to exist at all — a joint drawn once per CELL
         // is the band rule's exact trap, and an 11x9 plaza is a big enough field
         // to have shown it off. 6 and 9 are coprime with 16 for that reason.
-        if (def.paving) this.drawPaving(px, py, tx, ty, def.paving, def.color);
-        // The peg in the plaza. Drawn and stored nowhere — the decor precedent,
-        // one layer down — and it is one cell, so it is cheaper to ask the
-        // rectangle first than to ask every tile in the world about the datum.
-        if (inPlaza(tx, ty)) this.drawDatum(px, py, tx, ty, def.color);
+        // The square is cut in bigger slabs than a floor somebody lays at
+        // home (PLAZA_GRAIN). Chosen at the call site rather than inside
+        // `drawPaving`, so the grain stays a thing you hand in and the draw
+        // path keeps knowing nothing about where it is.
+        if (inPlaza(tx, ty)) {
+          this.drawPlazaPaving(px, py, tx, ty, def.color);
+        } else if (def.paving) {
+          this.drawPaving(px, py, tx, ty, GRAIN[def.paving], def.color);
+        }
         // A laid floor shows its boards or its flagstones. Only a FINISHED tile
         // gets this: `groundTone` above deliberately leaves made surfaces flat,
         // and this is the other half of that decision rather than a contradiction
@@ -3092,41 +3135,73 @@ export class Renderer {
    *  the floor has to guard against (a jetty, where a butt joint is a nick in a
    *  plank that has nothing to butt against) cannot arise on generated paving,
    *  which is always a field. */
-  /** The peg — the survey datum, drawn where it actually is.
+
+  /** The town square, drawn as ONE composition in world pixels and clipped to
+   *  whichever tile is being painted. Not `drawPaving`: the border is a 10px
+   *  band, so a tile on the edge holds border AND field, and a per-tile grain
+   *  swap cannot split a tile. Every mark is keyed to the plaza rectangle —
+   *  where the SQUARE is, never where the tile is — so the composition cannot
+   *  band however it is cut into cells. See the constants above for the sketch
+   *  this scales.
    *
-   *  THE DATUM IS NOT THE MIDDLE, AND THAT IS THE POINT. The plaza runs x −5..5
-   *  and y −5..3, so its centre is (0, −1) — while the survey reads zero at
-   *  (0, 0), one row south of it. The joke was already written and had never been
-   *  drawn: the Notebook's `the-datum` says "the plaza is eleven across and nine
-   *  deep, and the zero is not in the middle of it", and the Office Creature
-   *  files as though he has seen a peg he has never seen. **Do not centre it.**
-   *
-   *  A mark on the ground and not a marker: no pin, no icon, nothing that reads
-   *  as UI pointing at something. A brass plug set into paving, seven pixels
-   *  across — the largest that still leaves stone visible around it, and past
-   *  which the cell reads as an object standing on the ground rather than as
-   *  something set into it.
-   *
-   *  THERE WAS A KERB HERE AND IT WAS DELETED, which is worth writing down so
-   *  nobody adds it a second time. Giving the square an edge is already done, by
-   *  the boundary bevel below (`def.top` north, `def.shade` south, drawn only
-   *  where `groundIdOf` changes). A kerb drawn here landed BEFORE that bevel and
-   *  was overpainted by it on exactly the two sides they shared, so all it
-   *  actually contributed was left and right verticals — and the ground bevel is
-   *  horizontal by convention, so the result was an edge treatment that appeared
-   *  on two sides of the square and not the other two. Found by cropping the
-   *  corner at 4×; at 1× it read as "a bit subtle" rather than as wrong. */
-  private drawDatum(px: number, py: number, tx: number, ty: number, color: string): void {
-    if (tx !== 0 || ty !== 0) return;
+   *  Only seams are drawn, all in one ink. The stones are the paving colour the
+   *  flat fill already laid; a border tinted its own shade was tried in an
+   *  earlier round and read as trim rather than as stone. */
+  private drawPlazaPaving(px: number, py: number, tx: number, ty: number, color: string): void {
     const ctx = this.ctx;
-    const ink = mixHex(color, { color: "#000000", amount: 0.34 });
-    const head = mixHex(color, { color: "#ffffff", amount: 0.4 });
-    const mid = TILE / 2;
-    ctx.fillStyle = ink;
-    ctx.fillRect(px + mid - 3, py + mid, 7, 1);
-    ctx.fillRect(px + mid, py + mid - 3, 1, 7);
-    ctx.fillStyle = head;
-    ctx.fillRect(px + mid, py + mid, 1, 1);
+    ctx.fillStyle = mixHex(color, { color: "#000000", amount: 0.14 });
+    const tx0 = tx * TILE;
+    const ty0 = ty * TILE;
+    /** A seam in world px, clipped to this tile. */
+    const mark = (wx: number, wy: number, ww: number, wh: number) => {
+      const x0 = Math.max(wx, tx0);
+      const x1 = Math.min(wx + ww, tx0 + TILE);
+      const y0 = Math.max(wy, ty0);
+      const y1 = Math.min(wy + wh, ty0 + TILE);
+      if (x1 <= x0 || y1 <= y0) return;
+      ctx.fillRect(px + (x0 - tx0), py + (y0 - ty0), x1 - x0, y1 - y0);
+    };
+
+    const B = PLAZA_BORDER;
+    const X0 = PLAZA.x0 * TILE;
+    const Y0 = PLAZA.y0 * TILE;
+    const X1 = (PLAZA.x1 + 1) * TILE;
+    const Y1 = (PLAZA.y1 + 1) * TILE;
+    const W = X1 - X0;
+
+    // The ring between border and field. The HORIZONTAL pair runs the full
+    // width of the square rather than stopping at the field — inside the border
+    // band that extra reach is the seam between the corner stone and the side
+    // run below it, which is what makes the corners read as part of the top and
+    // bottom courses. Without it the corner fused into the side's first stone
+    // (found by looking, on the round that was otherwise right).
+    mark(X0, Y0 + B - 1, W, 1);
+    mark(X0, Y1 - B, W, 1);
+    mark(X0 + B - 1, Y0 + B - 1, 1, Y1 - Y0 - 2 * B + 2);
+    mark(X1 - B, Y0 + B - 1, 1, Y1 - Y0 - 2 * B + 2);
+
+    // Border joints. Top and bottom: five stones, joints at fifths of the full
+    // width (176/5 = 35.2, rounded per joint — the remainder lands in the last
+    // stone). The runs pass through the corners; the sides butt into them.
+    for (let k = 1; k < 5; k++) {
+      const jx = X0 + Math.round((W * k) / 5);
+      mark(jx, Y0, 1, B - 1);
+      mark(jx, Y1 - B + 1, 1, B - 1);
+    }
+    // The sides: three stones in the 108px between the bands, 36 each, exact.
+    for (let k = 1; k < 3; k++) {
+      const jy = Y0 + B + k * PLAZA_SIDE_STONE;
+      mark(X0, jy, B - 1, 1);
+      mark(X1 - B + 1, jy, B - 1, 1);
+    }
+
+    // The field: six by four pavers, 26x27, from the ring inward.
+    for (let k = 1; k < 6; k++) {
+      mark(X0 + B + k * PLAZA_PAVER_W, Y0 + B, 1, Y1 - Y0 - 2 * B);
+    }
+    for (let k = 1; k < 4; k++) {
+      mark(X0 + B, Y0 + B + k * PLAZA_PAVER_H, W - 2 * B, 1);
+    }
   }
 
   private drawPaving(
@@ -3134,10 +3209,9 @@ export class Renderer {
     py: number,
     tx: number,
     ty: number,
-    applies: SkinClass,
+    g: { course: number; joint: number; bond: number; seam: number; joint_ink: number } | null,
     color: string,
   ): void {
-    const g = GRAIN[applies];
     if (!g) return;
     const ctx = this.ctx;
     const seam = mixHex(color, { color: "#000000", amount: g.seam });

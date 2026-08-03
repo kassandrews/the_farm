@@ -5993,31 +5993,64 @@ a prerequisite for any of it.
    The rule they are under: a mark is texture and yields nothing, so a flower may
    never become pickable.
 
-**The peg is built, and a kerb was built and deleted.** The datum is drawn on the
-ground at (0, 0) — a small survey plug, seven pixels across, set between courses
-so it reads as an inlay rather than as part of the brick pattern. It is
-deliberately **not** in the middle of the square: the plaza runs x −5..5 and
-y −5..3, so its centre is (0, −1), and the Notebook has been making that joke in
-text since 9c ("the zero is not in the middle of it") with nothing drawing it.
-`survey.test.ts` now pins the asymmetry, because a tidy-minded change to `PLAZA`
-would delete the joke in two places at once.
+**The plaza paving is built (item 1 done)**, and it took most of a day of
+on-screen rounds to converge, so the record here is long on purpose — the wrong
+turns are each a rule.
 
-The kerb went in and came straight out, which is worth recording so nobody adds
-it again. **The square already has an edge**: the boundary bevel draws `def.top`
-north and `def.shade` south, only where `groundIdOf` changes, and it runs AFTER
-this — so a kerb here was overpainted on exactly the two sides they shared and
-contributed only left and right verticals. The ground bevel is horizontal by
-convention, so the result was an edge treatment present on two sides of the
-square and absent on the other two. **Found by cropping the corner at 4×**; at 1×
-it read as "a bit subtle" rather than as wrong, which is the whole argument for
-looking closely at a surface before tuning it.
+**What shipped:** `PLAZA` is 11×8 (was 11×9), and `drawPlazaPaving` in the
+renderer draws the whole square as ONE COMPOSITION in world pixels, clipped to
+whichever tile is being painted. The layout is a hand sketch scaled to fit: a
+10px border of long stones — five across the top and bottom, running through the
+corners; three up each side, butting into them — around a 6×4 field of 26×27px
+pavers. The sketch was 18×13 units, the square is 176×128px, the aspect ratios
+agree within one percent, so one unit became ~10px and the drawing mapped over
+directly.
 
-So the roadmap's actual wording — paving that is *not the same as everywhere
-else* — is still unanswered, and the remaining lever is the bond: a
-plaza-specific `GRAIN` entry with a longer course and joint, so the civic square
-is cut in bigger slabs than a flagstone floor somebody lays at home. Cheap (a
-table row and one argument), and the periods must stay coprime with 16 or the
-courses align to the tile grid and band.
+**The constraint that shaped everything: the town boxes the square in at eleven
+tiles.** The hall's door opens onto the top row at (0,−5), the shop ends at
+x −6, the east building starts at x 7, and the homestead tents sit at the SE
+corner for all four spots. The sketch's ratio at six pavers across needs ~18
+tiles of width, which means MOVING BUILDINGS — stamped into live saves as
+overrides, so the ground plan would move underneath towns whose buildings
+stayed put. Declined for now; if the square ever needs to be grander, that is
+the project, and it is not an afternoon.
+
+**Wrong turns, each with its lesson:**
+
+1. **A kerb was built and deleted.** The square already has an edge — the
+   boundary bevel draws `def.top`/`def.shade` only where `groundIdOf` changes,
+   and it runs after the paving pass, so the kerb was overpainted on the two
+   sides they shared and contributed only verticals against a convention that is
+   horizontal. Found by cropping the corner at 4×; at 1× it read as "subtle"
+   rather than as wrong.
+2. **A peg was built and unrendered.** The datum got a 9×9 pixel-grid plate at
+   (0,0) — nice enough, but the peg's whole joke is that it is BURIED and
+   unverified ("I have never seen the peg. I file as though I have"), and a
+   confident object at the exact spot the writing keeps vague answers the
+   question the joke needs open. The joke lives in Gary's line and the Notebook;
+   the ground shows nothing. `the-datum`'s entry lost its geometry clause
+   ("eleven across and nine deep") when the resize made it false.
+3. **Grain-table rounds that all failed the same way.** Bigger courses, square
+   flags, third-stagger bonds — every per-tile variant still read as "a large
+   floor", because the thing that distinguishes a SQUARE is a layout (border,
+   corners, a field that divides), and a repeating period has no layout. The
+   composition replaced all of it, and the per-tile grain-swap/axis/phase
+   machinery built along the way was deleted.
+4. **Squares cannot edge anything.** The first border was small square pavers
+   and read as gravel: a unit with no direction cannot describe an edge. Long
+   stones whose long axis follows the ring fixed it — and then the corners
+   needed their own seams, or they fused into the side runs.
+
+**Numbers worth keeping:** pavers 26×27 against a 16px tile, so nothing in the
+field lands on the tile grid — the square reads as paving laid on the ground
+rather than the map's grid restated in grey. Top stones are 176/5 = 35.2, so
+four at 35 and the remainder in the last: a mason's cut, not an error. Side
+stones 108/3 = 36, exact.
+
+**Loose end, deliberate:** the resize hands the old bottom row (y = 3) back to
+the generator, which on some seeds grows trees or water hard against the south
+border. Fine on the seeds looked at; tranche 2's 1,000-seed sweep should check
+it properly when it lands.
 
 **Mushrooms are the exception in this tranche and belong with tranche 2's
 caution.** `MUSHROOM` is a real generated tile, not a mark, so its density is

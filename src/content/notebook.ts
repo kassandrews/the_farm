@@ -252,7 +252,7 @@ export const OBSERVATIONS: ObservationDef[] = [
   {
     id: "the-datum",
     source: "noticed",
-    line: "The survey reads zero on the plaza and nowhere else on earth. The plaza is eleven across and nine deep, and the zero is not in the middle of it.",
+    line: "The survey reads zero on the plaza and nowhere else on earth. Nobody has written down why the peg went where it went, and nobody has moved it since.",
   },
   {
     id: "the-museum-is-large",
