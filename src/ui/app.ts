@@ -28,6 +28,8 @@ import {
   toolFinishes,
   loadedFinish,
 } from "../sim/game";
+import { nodeAt } from "../sim/gather";
+import { isWalkable } from "../sim/world";
 import { officeLandClaimLine, homeLineFor, companyYesLine, companyByeLine } from "../sim/dialogue";
 import { companion, canInvite, invite, partWays } from "../sim/company";
 import { describeHome } from "../sim/home";
@@ -221,6 +223,10 @@ export class App {
   /** Non-null means BUILD MODE: the view flattens and canvas taps place instead
    *  of walking. Null means the normal 3/4 living view. */
   private buildTool: BuildTool | null = null;
+  /** A node you tapped and are walking over to deal with. UI state, never the
+   *  save: an errand you were on when you closed the tab is not one the town
+   *  should still be holding you to when you come back. */
+  private walkingToAct: { x: number; y: number } | null = null;
   /** What re-entering build mode hands you. Coming back to a wall you were
    *  halfway through and having to say "wall" again is the kind of small tax
    *  that makes a mode feel like a detour rather than a place. */
@@ -1945,12 +1951,40 @@ export class App {
         return;
       }
 
+      // Any tap that isn't the one we're waiting on cancels the errand. Tapping
+      // somewhere else means you changed your mind, and a swing that arrives
+      // after you've walked away is the game acting on a decision you revoked.
+      this.walkingToAct = null;
+
       // Tap a villager you're standing near → talk; otherwise walk there.
       const near = this.villagerNear(wpt.x, wpt.y);
       if (near) {
         const p = this.world.player;
         if (Math.hypot(near.x - p.x, near.y - p.y) <= 2.6) {
           this.openDialogue(near.id);
+          return;
+        }
+      }
+
+      // TAP A TREE AND GO AND DEAL WITH IT.
+      //
+      // Nodes are solid, so a tap on one used to reach `moveTo` and stop dead
+      // there: it set your heading and refused the step, which on a phone is a
+      // tap that does nothing at all. Gathering then meant walking yourself into
+      // range and pressing ACT separately — two gestures for the verb the game
+      // asks you to perform most.
+      //
+      // It walks you ALONGSIDE and then performs the ordinary act, rather than
+      // deciding for itself what tapping a tree means. `actionTarget` stays the
+      // one place that answers that (ROADMAP §"The reticle is the promise"), so
+      // this can never promise a different swing from the one the reticle draws.
+      const tx = Math.round(wpt.x);
+      const ty = Math.round(wpt.y);
+      if (this.layer() === "surface" && nodeAt(this.world, tx, ty)) {
+        const stand = this.approachTile(tx, ty);
+        if (stand) {
+          this.walkingToAct = { x: tx, y: ty };
+          moveTo(this.world, stand.x, stand.y);
           return;
         }
       }
@@ -2508,6 +2542,47 @@ export class App {
     }
   }
 
+  /** The walkable neighbour of a solid tile that you'd reach first. Four-way,
+   *  because that is what `nodeNear` searches from the other end — offering a
+   *  diagonal to stand on would put you somewhere ACT can't reach the thing you
+   *  tapped. Null when the node is walled in on all four sides. */
+  private approachTile(x: number, y: number): { x: number; y: number } | null {
+    if (!this.world) return null;
+    const p = playerTile(this.world);
+    const sides = [
+      { x: x + 1, y },
+      { x: x - 1, y },
+      { x, y: y + 1 },
+      { x, y: y - 1 },
+    ].filter((c) => isWalkable(this.world!, c.x, c.y, "surface"));
+    if (sides.length === 0) return null;
+    let best = sides[0];
+    for (const c of sides) {
+      if (Math.hypot(c.x - p.x, c.y - p.y) < Math.hypot(best.x - p.x, best.y - p.y)) best = c;
+    }
+    return best;
+  }
+
+  /** Finish the errand set by tapping a node: turn to face it and act. Called
+   *  once the walk has ended, however it ended — arriving, or being stopped by
+   *  something that moved into the way. */
+  private resolveWalkToAct(): void {
+    const goal = this.walkingToAct;
+    if (!goal || !this.world) return;
+    if (this.world.player.target) return; // still on the way
+    this.walkingToAct = null;
+    const at = playerTile(this.world);
+    // Adjacency, not arrival at a particular cell: a wall going up mid-walk can
+    // land you on the node's other side, which is just as good. If the walk was
+    // blocked outright, we are nowhere near it and there is nothing to swing at.
+    if (Math.abs(at.x - goal.x) + Math.abs(at.y - goal.y) !== 1) return;
+    // Aims by MOVING at it: `moveTo` sets your heading before it tests
+    // walkability, so a refused step into something solid is exactly how the
+    // game already turns you to face a tree (sim/game.ts).
+    moveTo(this.world, goal.x, goal.y);
+    this.doAction();
+  }
+
   private doAction(): void {
     if (!this.world || this.modalOpen) return;
     const res = contextAction(this.world, this.tool, Date.now());
@@ -2579,6 +2654,7 @@ export class App {
         tick(this.world, FIXED_DT, wall);
         this.acc -= FIXED_DT;
       }
+      this.resolveWalkToAct();
       this.noticeArrival();
       this.noticeFestival();
       this.noticeParting();
