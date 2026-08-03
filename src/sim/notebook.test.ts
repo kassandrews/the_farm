@@ -14,7 +14,7 @@ import {
 } from "./notebook";
 import { OBSERVATIONS, observationLine } from "../content/notebook";
 import type { ObservationId } from "../content/notebook";
-import { PLAZA } from "./world";
+import { PLAZA, biomeAt } from "./world";
 import { befriend } from "./friendship";
 
 const NOW = Date.UTC(2026, 6, 1, 12);
@@ -180,6 +180,46 @@ describe("noticing", () => {
     w.player.y = 0;
     sweepNoticed(w, NOW);
     expect(noticed(w, "deep-rock")).toBe(false);
+  });
+
+  it("notices how a tree is built, standing in an ordinary wood", () => {
+    // The correspondence test only proves a trigger EXISTS for each row. This
+    // proves one fires — and the ordinary woods are worth the check because they
+    // had no observation at all until now, which is exactly why there was room
+    // for one.
+    const w = world();
+    let stood = false;
+    for (let d = 25; d < 90 && !stood; d++) {
+      const b = biomeAt(w.seed, w.homestead.spot, d, 0);
+      if (b !== "pinewood" && b !== "birch") continue;
+      w.player.x = d;
+      w.player.y = 0;
+      stood = true;
+    }
+    expect(stood, "seed 42 has no ordinary wood east of town").toBe(true);
+    // WED, not NOW. `NOW` is UTC noon, and `skyPhaseAt` reads LOCAL hours — so on
+    // a runner west of about UTC-6 it is an early-morning hour, and in summer the
+    // daylight shift moves dawn to roughly 03:45–05:45 (sim/time.ts), which put
+    // this squarely inside it. The dew row fired alongside the tree row and this
+    // test reported a design collision that was entirely its own clock. Any test
+    // that cares which rows fire wants a LOCAL time.
+    sweepNoticed(w, WED);
+    expect(noticed(w, "the-dead-middle")).toBe(true);
+    expect(noticed(w, "nothing-rained")).toBe(false);
+  });
+
+  it("notices the dew at dawn and at no other hour", () => {
+    // Five in the morning, and it has to be: summer runs dawn from about 03:45
+    // to 05:45, so six o'clock is broad day in July and this test's first draft
+    // asserted the row would fire in daylight. The season moves the boundary
+    // (§10g), which makes "what hour is dawn" a question with four answers.
+    const w = world();
+    const dawn = new Date(2026, 6, 1, 5).getTime();
+    const noon = new Date(2026, 6, 1, 12).getTime();
+    sweepNoticed(w, noon);
+    expect(noticed(w, "nothing-rained")).toBe(false);
+    sweepNoticed(w, dawn);
+    expect(noticed(w, "nothing-rained")).toBe(true);
   });
 
   it("writes down a finish you found, and none you were never given", () => {
@@ -379,6 +419,25 @@ describe("the table", () => {
       for (const text of [o.line, o.remark ?? ""]) {
         expect(text, `"${o.id}" sets a task`).not.toMatch(
           /\b(you must|you should|you need to|go and|try to|remember to|in order to)\b/i,
+        );
+      }
+    }
+  });
+
+  it("promises no weather, because there isn't any", () => {
+    // The fauna trap one step along, and easier to walk into because nothing in
+    // the word list looks dangerous. There is no rain, no snow and no storm in
+    // this world — winter is a colour temperature (content/seasons.ts) — so an
+    // entry naming one sends a player to watch a sky that will never do it.
+    //
+    // CLOUD IS NOT ON THE LIST, deliberately. It is not weather here, it is a
+    // PLACE: the sky is a layer you can stand on top of, and `above-the-cloud`
+    // is a legitimate note about somewhere you have been. Banning the word would
+    // fail a true entry, which is how a guard like this stops being trusted.
+    for (const o of OBSERVATIONS) {
+      for (const text of [o.line, o.remark ?? ""]) {
+        expect(text, `"${o.id}" promises weather`).not.toMatch(
+          /\b(rain|rains|rained|raining|snow|snows|snowed|sleet|hail|storm|storms)\b/i,
         );
       }
     }

@@ -40,12 +40,13 @@ import type { CharId } from "../content/cast";
 import type { BiomeId } from "../content/biomes";
 import type { WaterKindId } from "../content/water";
 import type { FoundKind } from "../content/found";
-import { biomeAt, waterKindAt, depthAt, foundAt, PLAZA } from "./world";
+import { biomeAt, waterKindAt, depthAt, foundAt, tileAt, PLAZA } from "./world";
 import { roofRoomAt } from "./rooms";
 import { townBuilding } from "../content/town";
 import { SLATE_DEPTH } from "./mining";
 import { humLevel } from "./hum";
 import { showerTonight } from "../content/showers";
+import { MUSHROOM } from "../content/tiles";
 import { skyPhaseAt, isNight } from "./time";
 import { seasonAt } from "./seasons";
 import { friendshipTier } from "./friendship";
@@ -375,6 +376,51 @@ export const NOTICED_WHEN: Partial<Record<ObservationId, Trigger>> = {
   // is the record, and neither says "unlocked".
   "the-dark-grain": (w) => w.skins.unlocked.includes("walnut"),
   "the-flat-sheet": (w) => w.skins.unlocked.includes("slate"),
+
+  // The true things. Each sits where no row was watching — the ordinary woods
+  // had no observation at all, nor did dawn, nor a lake.
+  //
+  // TRIGGERS ARE ALLOWED TO OVERLAP; LINES ARE NOT ALLOWED TO AGREE. Written
+  // first as "no trigger may share a condition with another", which sounded
+  // right and is wrong, and the test that was supposed to prove it disproved it
+  // instead: a wood at dawn fires `the-dead-middle` and `nothing-rained`
+  // together, and that is simply two true things about one morning. Nothing is
+  // announced when a row fires (found things are silent, ROADMAP §10i), so two
+  // entries in one second is not a dump — it is two lines you read later.
+  //
+  // The rule that DOES bind is the other one: no two rows may be about the same
+  // thing. `deep-rock` and `the-flat-sheet` are one depth apart and had to be
+  // separated by subject — the seam versus the piece in your hand — or the book
+  // says flat rock twice under one date. Check subject, not condition.
+  //
+  // The pinewood and the birch, and deliberately not the far country: a fact
+  // about how a tree is built belongs beside an ordinary tree. The strange
+  // regions have their own rows and those are about strangeness.
+  "the-dead-middle": (w) => surfaceBiome(w) === "pinewood" || surfaceBiome(w) === "birch",
+
+  // Standing on the mushrooms rather than near them. The patch is the whole
+  // point of the line — it is about the thing under this particular clearing.
+  "the-larger-thing": (w) => {
+    if (w.player.layer !== "surface") return false;
+    const p = at(w);
+    return tileAt(w, p.x, p.y) === MUSHROOM;
+  },
+
+  // Outdoors at dawn, and nothing else. The roof check for the same reason
+  // `a-busy-sky` has one: wet grass is not a thing you notice from a kitchen.
+  // No shower condition — a meteor shower needs a clear sky, so gating on one
+  // would say the OTHER nights were cloudy, and this world has no cloud.
+  "nothing-rained": (w, now) =>
+    w.player.layer === "surface" &&
+    skyPhaseAt(now) === "dawn" &&
+    roofRoomAt(w, Math.round(w.player.x), Math.round(w.player.y)) === null,
+
+  // A lake and never a pond: the poled pond is a found place sitting on pond
+  // water, so a pond trigger would fire at the same instant `poled-pond` does
+  // and print two entries about the same puddle. A lake is big enough for the
+  // line to be about anyway — you cannot see through the middle of a puddle
+  // because there is no middle.
+  "the-clear-edge": (w) => beside(w, "lake"),
 
   "the-datum": (w) => w.player.layer === "surface" && inRect(at(w), PLAZA),
 

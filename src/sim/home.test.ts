@@ -10,6 +10,7 @@ import { RESIDENT_HOME } from "../content/dialogue";
 import { NOTE_PRIORITY } from "./home";
 import type { HomeNoteKind } from "./home";
 import type { AdultForm } from "../content/canon/forms";
+import { ARRIVALS } from "../content/arrivals";
 import { speak } from "./dialogue";
 import { makeRng } from "./rng";
 
@@ -269,6 +270,19 @@ describe("every form says something about every note it can reach", () => {
   // them lives somewhere you built — a Ghost with an opinion about her walls
   // would be a Ghost who moved in.
   const HOUSED: AdultForm[] = ["dog", "blob", "gremlin", "scholar", "office", "menace"];
+
+  it("covers every form that can actually turn up and be housed", () => {
+    // The list above is a literal, so it does not notice an arrival of a form it
+    // has never heard of — and that arrival would move into a house it had no
+    // opinions about, which is the one thing this whole describe block exists to
+    // prevent. This is the direction that was missing: the queue is the thing
+    // that decides who gets a home, so the queue is what the list owes coverage
+    // to. It caught nothing when written (Bartleby is a scholar and scholars were
+    // already here); it is here for the arrival that adds a form.
+    for (const a of ARRIVALS) {
+      expect(HOUSED, `${a.name} is a ${a.form}, which has no home bank`).toContain(a.form);
+    }
+  });
 
   /** Which notes this form can actually be handed. The delight notes only exist
    *  when content/tastes.ts gives the form something to be pleased by, so they

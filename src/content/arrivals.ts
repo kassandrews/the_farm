@@ -79,6 +79,53 @@ export const ARRIVALS: ArrivalDef[] = [
     housedLine: "Mine. ... Say it back to me. I want to hear how it sounds.",
     filing: "Form 9. ... I have added a note. The note is for my own records.",
   },
+
+  // The second half of the queue. Three things about these that the first four
+  // did not have to decide:
+  //
+  // FORMS REPEAT, AND THAT IS THE TABLE WORKING. Forms are species and not
+  // singletons (DESIGN §"Importing from The Meadow") — a second Dog Thing is a
+  // different person who happens to be a dog, which is why the name has always
+  // been the identity here. The practical fence is `home.test.ts`: only the six
+  // forms in its HOUSED list have a full bank of things to say about a house, so
+  // an arrival of any other form would move into a home it had no opinions
+  // about. Bartleby is the first scholar to arrive, and scholars were already
+  // covered because Winifred lives here.
+  //
+  // THEY NAME TERRAIN, WHICH IS WHAT THIS STEP WAS FOR, AND NOTHING READS IT.
+  // The tent line is the one line that is theirs, so it is where somewhere they
+  // like goes. No code looks at it and there is no `prefersNear` field — that
+  // would be a taste that gates a gift, and taste is delight and never a gate
+  // (DESIGN). It is also why none of them ASKS to be put anywhere: a request the
+  // game cannot honour is worse than no request, so each of these states a
+  // fondness and then concedes something, and housing them where you like never
+  // breaks a promise. The version where the ground can delight somebody is a real
+  // feature and is written up as one; it is not this.
+  //
+  // THE OFFICE CREATURE SAYS "THEY". He is filing, and a form does not know
+  // anybody's pronouns — which is both the correct institutional voice and the
+  // reason nothing here has to be decided about a person to write their row.
+  {
+    form: "scholar",
+    name: "Bartleby",
+    tentLine: "I have been walking out to the fen most mornings. ... The tent is nearer to it than a house would be. That is the tent's only argument, and it is not a good one.",
+    housedLine: "A door, a roof, and a corner that is out of the draught. ... I shall have to stop describing the weather. I had a great deal of material.",
+    filing: "Form 9. ... They have appended their own notes to the form. I have not read the notes.",
+  },
+  {
+    form: "dog",
+    name: "Waffle",
+    tentLine: "I pitched by the water! ... It is so loud at night. I love it. ... I have not slept.",
+    housedLine: "It doesn't move when the wind does. ... I'm going to run round the outside of it. Once to check, and then some more times.",
+    filing: "Form 9. ... They were extremely enthusiastic about the form itself. Nobody is enthusiastic about the form.",
+  },
+  {
+    form: "gremlin",
+    name: "Clag",
+    tentLine: "Camped by the rocks, on purpose. ... Things collect down there. I'm not saying I put them there.",
+    housedLine: "Walls. ... You can lean things against walls. That's the entire thing about walls.",
+    filing: "Form 9. ... They asked whether the house comes with a cellar. It does not come with a cellar.",
+  },
 ];
 
 /** Who's next, given how many have already arrived. Returns null once the queue

@@ -5703,6 +5703,70 @@ inside a card; the untested thing is the two of them stacked. Worth a real
 `scripts/` driver, since the same sequence would also unblock anything about
 commissions.
 
+### 10k — Three more arrivals, and four things that are true — **built**
+
+Both are table rows and neither is a code path, which is the point.
+
+**The queue runs to seven.** Bartleby (scholar), Waffle (dog), Clag (gremlin).
+Forms repeat and that is the table working — forms are species, not singletons,
+which is why the NAME has always been the identity in `arrivals.ts`. The real
+fence is `home.test.ts`: only six forms have a full bank of things to say about a
+house, so an arrival of any other form would move into a home it had no opinions
+about. **That list was a hardcoded literal that nothing checked against the
+queue**, so this added the missing direction — every `ARRIVALS` form must appear
+in `HOUSED`. It caught nothing on the day (scholars were already covered by
+Winifred); it is there for the arrival that adds a form.
+
+**They name terrain, and nothing reads it.** The tent line is the one line that
+is theirs, so somewhere they like goes there. There is no `prefersNear` field:
+that would be a taste that gates a gift, and taste is delight and never a gate.
+It is also why **none of them asks to be put anywhere** — a request the game
+cannot honour is worse than no request, so each states a fondness and then
+concedes something, and housing them wherever you like never breaks a promise.
+The version where ground can actually delight somebody is a real feature and a
+separate one.
+
+The Office Creature says "they" throughout. He is filing, and a form does not
+know anybody's pronouns — correct institutional voice, and it means a row can be
+written without deciding anything about the person.
+
+**Four true things in the journal**, which is the one voice in the game that is
+reliably correct. The museum's plaques are confidently wrong on purpose and the
+curator will tell you things about her own exhibits that are not so; that joke
+only works if some voice is not doing it, and a field note you wrote standing in
+the thing you are describing is the candidate. So these are real: heartwood is
+dead and only the ring under the bark is alive; a mushroom is the fruit of
+something much larger under the whole clearing; dew is the ground giving its heat
+to the sky; water is clear at the edge and not the middle because of how much of
+it you are looking through.
+
+**The fence is narrower than "nature", and the second half is new.** No animals
+was already enforced. **No weather is the same trap one step along and is much
+easier to walk into**: there is no rain, cloud or snow here, so a true fact
+phrased as "the grass is wettest after the CLEAREST nights" quietly asserts that
+some nights are not clear, and now the player is watching a sky that will never
+change. The dew line was rewritten to drop the comparison, and there is a test
+banning precipitation words. **Cloud is deliberately NOT on that list** — it is
+not weather here, it is a PLACE, and `above-the-cloud` is a true note about
+somewhere you have stood. A guard that fails a correct entry stops being trusted.
+The best water fact drafted was why a pond freezes top-down: true, lovely, and
+describes ice this game does not draw.
+
+Two things the tests corrected, both mine:
+
+1. **"No two triggers may share a condition" sounded like a rule and is wrong.**
+   The test written to prove it disproved it: a wood at dawn fires the tree row
+   and the dew row together, and that is two true things about one morning.
+   Nothing is announced when a row fires (§10i), so two entries in a second is
+   not a dump. The rule that binds is that no two rows may be ABOUT the same
+   thing — `deep-rock` and `the-flat-sheet` again. Check subject, not condition.
+2. **`NOW` in `notebook.test.ts` is UTC noon, and `skyPhaseAt` reads LOCAL
+   hours.** West of about UTC-6 that is an early-morning hour, and summer's
+   daylight shift (§10g) runs dawn from roughly 03:45 to 05:45 — so the constant
+   the file has used for phases landed inside dawn, and a six-o'clock "dawn" in a
+   second test was broad daylight. Any test that cares which rows fire wants a
+   local time. Two clocks for one fact, a third time.
+
 ### What is left of Phase 10, with the calls already made
 
 1. ~~**Unlocks get a channel, and it is the Notebook.**~~ **Built — see §10i,**
@@ -5771,13 +5835,11 @@ commissions.
    is a total function of (seed, x, y) with nothing stored** — so it re-landscapes
    towns people are living in. Owes the 1,000-seed test and the same care
    `HOME_REGION_REACH` was given.
-5. **More arrivals, named and authored.** The town stops growing at four, which
-   is the flagship running out. Registers, never a generator (§Phase 6). An
-   arrival naming terrain they want to live near is the wanted version.
-6. **Real nature facts as journal observations.** The curator is confidently
-   wrong; the journal is where something true can live. Constrained by
-   `notebook.test.ts`, which FAILS on any content line naming an animal — so
-   plants, water, rock and weather, never a bird.
+5. ~~**More arrivals, named and authored.**~~ **Built — see §10k.** Seven now.
+6. ~~**Real nature facts as journal observations.**~~ **Built — see §10k**, and
+   the sentence above was one word wrong: it says "plants, water, rock and
+   weather", and **weather is exactly what they may not be about.** There isn't
+   any.
 
 **Held out of this phase deliberately:** minigames, and fauna of any kind. Fauna
 is not a small addition — §8o rules it out in DESIGN, `notebook.test.ts` and

@@ -52,6 +52,11 @@ export type ObservationId =
   // --- Noticed: what you carried back ------------------------------------------
   | "the-dark-grain"
   | "the-flat-sheet"
+  // --- Noticed: things that are simply true -------------------------------------
+  | "the-dead-middle"
+  | "the-larger-thing"
+  | "nothing-rained"
+  | "the-clear-edge"
   // --- Noticed: the town ------------------------------------------------------
   | "the-datum"
   | "the-museum-is-large"
@@ -190,6 +195,57 @@ export const OBSERVATIONS: ObservationDef[] = [
     id: "the-flat-sheet",
     source: "noticed",
     line: "Carried a sheet of the flat rock up with me. It is the first thing I have taken out of the ground that was already the shape it wanted to be.",
+  },
+
+  // --- Noticed: things that are simply true -------------------------------------
+  //
+  // THE ONE PLACE IN THE GAME WHERE SOMETHING IS RELIABLY CORRECT. The museum's
+  // plaques are confidently wrong on purpose, the Office Creature files as though
+  // he has seen a peg he has never seen, and the curator will tell you things
+  // about her own exhibits that are not so. That joke only works if there is a
+  // voice somewhere that is not doing it — and a field note you wrote yourself,
+  // standing in the thing you are describing, is the obvious candidate.
+  //
+  // SO THESE HAVE TO ACTUALLY BE TRUE. Each of these is a real fact about wood,
+  // fungus, dew or water, and anybody who looks one up should find it holds. A
+  // journal that was merely plausible would be the curator with better manners.
+  //
+  // WHAT THEY MAY BE ABOUT is narrower than "nature", and both fences are load-
+  // bearing:
+  //
+  //   • NO ANIMALS. `notebook.test.ts` fails the build on a list of words, and
+  //     the reason is not squeamishness — the first player to go looking for the
+  //     owl would find a bug (DESIGN §"Living light, and the animals that stay
+  //     out"). So: plants, fungus, water, rock, light.
+  //   • NO WEATHER, which is the same trap one step further along and is easier
+  //     to walk into. There is no rain, no cloud and no snow in this world
+  //     (content/seasons.ts) — so a true fact phrased as "the grass is wettest
+  //     after the CLEAREST nights" quietly asserts that some nights are not
+  //     clear, and now the player is watching a sky that will never change.
+  //     Write the fact without the comparison. The dew line below was rewritten
+  //     for exactly this.
+  //   • NOTHING THAT IMPLIES A THING YOU CANNOT SEE. The best water fact here was
+  //     originally about why a pond freezes from the top down, which is true,
+  //     lovely, and describes ice this game does not draw.
+  {
+    id: "the-dead-middle",
+    source: "noticed",
+    line: "The middle of a tree is dead. Only the thin ring under the bark is alive, so a tree is mostly a record of itself, standing up.",
+  },
+  {
+    id: "the-larger-thing",
+    source: "noticed",
+    line: "These are the fruit and not the plant. The thing that grew them is spread out under the whole clearing, and was here long before they were.",
+  },
+  {
+    id: "nothing-rained",
+    source: "noticed",
+    line: "The grass is soaked this morning and nothing fell on it. The ground gave its heat up to the sky all night, and the air let go of what it had been carrying.",
+  },
+  {
+    id: "the-clear-edge",
+    source: "noticed",
+    line: "Clear at the edge and not in the middle, and it is the same water throughout. What changes is how much of it you are looking through.",
   },
 
   // --- Noticed: the town ------------------------------------------------------
