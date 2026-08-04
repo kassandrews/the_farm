@@ -40,6 +40,14 @@ const CLOTH_DARK = "#a04a6a";
 // Brass, for drawer pulls and a lamp shade — the same metal the world lamp is
 // made of, so a knob and a lamp head are recognisably the same stuff.
 const BRASS = "#9c7a2c";
+// Plant yellow, for the bulldozer and nothing else. Deliberately not the brass or
+// the lamp flame: those are warm light, this is paint, and the one machine in a
+// set of hand tools should not look like it was forged by the same people.
+const DOZER = "#e8a92c";
+// Glass, shared by the window icon and the bulldozer's cab. One hex, because a
+// pane on a machine and a pane in a wall are the same substance and an icon set
+// that disagrees about that looks like two people drew it.
+const GLASS = "#7fa8cc";
 const FLAME = "#ffcf7a";
 
 const FARM_ICONS = {
@@ -407,7 +415,7 @@ const FARM_ICONS = {
       ".kkkkkkkkkk.",
       "..kkkkkkkk..",
     ],
-    palette: { k: K, d: WOOD, g: "#7fa8cc", e: "#a9cbe4" },
+    palette: { k: K, d: WOOD, g: GLASS, e: "#a9cbe4" },
   },
   bed: {
     rows: [
@@ -534,25 +542,32 @@ const FARM_ICONS = {
     ],
     palette: { k: K, y: "#ffd884", w: "#fff7dc", p: "#8a8c9a", m: "#6a6c7a" },
   },
-  // "Take back down" — a plank with an arrow lifting off it. NOT a circular arrow:
-  // that's `undo`, and the two buttons share a palette. The old ↩/⟲ pairing had
-  // exactly this collision and a comment apologising for it.
+  // "Take back down" — a bulldozer, blade first. It shares the build bar with
+  // `undo`, which is why it isn't an arrow of any kind: the two were ↩ and ⟲
+  // once, then a lifting arrow and a circular one, and both pairings were two
+  // arrows in one row arguing about which one went backwards. A machine and an
+  // arrow can't be confused for each other at 36px or at any other size.
+  //
+  // The blade is the whole point and gets the left edge to itself, because a
+  // dozer read at this size IS a blade with something behind it. Yellow, which is
+  // a colour nothing else in the icon set wears — it's the one piece of plant on
+  // a homestead of hand tools, and it should look borrowed.
   takedown: {
     rows: [
       "............",
-      ".....kk.....",
-      "....kkkk....",
-      "...kkkkkk...",
-      "..kkkkkkkk..",
-      ".....kk.....",
-      ".....kk.....",
-      "............",
-      ".kkkkkkkkkk.",
-      ".kbbbbbbbbk.",
-      ".kkkkkkkkkk.",
+      "......kkkk..",
+      "..kk..kwwk..",
+      ".ksk..kwwk..",
+      ".ksk.kkyykk.",
+      ".kskkkyyyyyk",
+      ".ksskyyyyyyk",
+      ".ksskkkkkkkk",
+      ".ksskddddddk",
+      ".kssdwdwdwdk",
+      ".kkkkkkkkkkk",
       "............",
     ],
-    palette: { k: K, b: WOOD },
+    palette: { k: K, y: DOZER, w: GLASS, d: STEEL_DARK, s: STEEL },
   },
 
   // --- HUD ------------------------------------------------------------------
@@ -681,22 +696,26 @@ const FARM_ICONS = {
     ],
     palette: { k: K, f: "#b8874a", b: "#a06f38", y: "#e0c060" },
   },
-  // A return arrow, for undoing the last build stroke. This shape used to be the
-  // erase tool's ↩ and the two buttons sat in the same palette arguing about it;
-  // now erase is a plank with an arrow lifting off it and this is free to mean the
-  // one thing it has always meant.
+  // Undo: the counterclockwise ring, which is the shape every other piece of
+  // software on the player's phone already uses for this. The angular arrow that
+  // was here read as "back", and back is not what the button does — it takes a
+  // stroke off the world, and the ring is the one glyph nobody has to be taught.
+  //
+  // Open at the top left with the head on that end, so the arm sweeps ANTI
+  // clockwise. Clockwise is redo everywhere it appears, and half a ring is a
+  // small enough cue that getting the direction wrong would be a real misread.
   undo: {
     rows: [
       "............",
-      "........kk..",
-      "........kk..",
-      "........kk..",
-      "...kk...kk..",
-      "..kk....kk..",
-      ".kkkkkkkkk..",
-      "..kk........",
       "...kk.......",
-      "............",
+      "..kkkkkkk...",
+      "...kk....kk.",
+      "..........kk",
+      ".k.........k",
+      ".k.........k",
+      ".kk.......kk",
+      "..kk.....kk.",
+      "...kkkkkkk..",
       "............",
       "............",
     ],

@@ -3262,8 +3262,8 @@ function buildHud(
   hoverHint(rotate, "Turn the next piece you place.  (R)");
   rotate.style.display = "none";
 
-  // A return arrow, and the erase tool is a plank with an arrow lifting off it —
-  // the two used to be ↩ and ⟲ in the same palette, which is a trap.
+  // The counterclockwise ring, and the erase tool beside it is a bulldozer —
+  // two arrows in one palette is the trap this row has fallen into twice.
   const undo = el("button", { class: "tool undo-btn", ariaLabel: "Undo" }, [iconEl("undo", SCALE.button)]);
   undo.addEventListener("click", onUndo);
   undo.style.display = "none";
