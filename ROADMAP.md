@@ -3740,10 +3740,11 @@ A grid is exactly the box the fallback draws plus its rise, so the table convert
 - ~~**The museum roof is dark.**~~ **Fixed by marble** — and the fix was the one
   the note predicted, a lighter STONE rather than a lighter roof. The roof stayed
   derived.
-- **Only the museum has windows.** Every other town building is still blank-walled,
-  and now that windows exist that reads as an omission rather than as restraint.
-  The town hall is the obvious next one. Each is a table row plus a rung on the
-  migration ladder, so the cost is known.
+- **Only the museum has windows** — and now that windows exist that reads as an
+  omission rather than as restraint. **Parked 3 Aug 2026 at the user's
+  direction: not on the open list; they'll be added one building at a time
+  later.** The town hall is the obvious first. Each is a table row plus a rung
+  on the migration ladder, so the cost is known.
 - **A window in a SIDE run shows almost nothing** — a thin bright band in the
   top surface, because a wall seen edge-on has no face to cut into. That is the
   honest amount there is to show, and it is the same geometry that forces every
@@ -4902,7 +4903,7 @@ clutter (items rendered ON tables and shelves)~~ **moved to the furniture
 project's agenda, where it belongs with the rotation and redraw gaps**; and
 ~~a world-space chimney~~ **built in 8m**.
 
-### 8e — The counters show whose voice it is — **Arabella built, four to go**
+### 8e — The counters show whose voice it is — **built, all five**
 
 Found by photographing all seven institution panels, which nothing had done
 before. Arabella's counter opens with *"Cloth. ... You can't grow it, and you
@@ -4923,13 +4924,18 @@ counters alone. That was right about the FRAME and wrong about the speaker.
 - **The errands board stays faceless, and is the control.** It has no speaker,
   its prose is written as notices rather than speech, and it reads correctly as
   it is. If a later change gives it a face, the rule has been misread.
-- **Still to do:** Nub (heap), Winifred (museum), Derek (seed stall), Aurelio
-  (stage). One line each — `counterFace("heap")`. Arabella shipped alone on
-  purpose, so the frame could be looked at before four more followed it.
-- **Open, deliberately:** the spoken line sits flush to the panel edge while the
-  name is indented past the portrait. Aligning it under the name reads as
-  speech; leaving it full-width reads as a subtitle for the screen. Pick once,
-  for all five — it changes the character of the frame.
+- ~~**Still to do:** Nub (heap), Winifred (museum), Derek (seed stall), Aurelio
+  (stage).~~ **Built 3 Aug 2026** — one line each, exactly as this predicted.
+  `scripts/shot-counters.mts` photographs all six counter panels and ASSERTS
+  the rule in both directions (a face beside every keeper's heading, and none
+  on the errands board), because of the method note below: this is the panel
+  survey that checks itself.
+- ~~**Open, deliberately:** the spoken line alignment.~~ **Settled 3 Aug 2026,
+  from renders of both: flush to the panel edge.** The line reads as a subtitle
+  for the screen, which is what §"a counter is a screen" says it is, and it
+  keeps the opener on the same margin as the list under it. Indenting it under
+  the name read as speech — the wrong claim for this frame — and left long
+  openers wrapping in a narrow column beside empty space.
 
 **Method note, and the reason this was found at all.** The survey was run by a
 subagent that reported all seven panels clean. Two of its fourteen screenshots

@@ -1036,7 +1036,7 @@ export class App {
         el("p", {}, [opener]),
         body,
         actionRow([primaryBtn("Right", close)]),
-      ]);
+      ], counterFace("heap"));
     }, { dismissable: true });
   }
 
@@ -1141,7 +1141,7 @@ export class App {
         el("p", {}, [varietiesExhausted(world) ? STALL_EXHAUSTED : STALL_OPENER]),
         body,
         actionRow([primaryBtn("Thank you", close)]),
-      ]);
+      ], counterFace("seedstall"));
     }, { dismissable: true });
   }
 
@@ -1469,7 +1469,7 @@ export class App {
       };
 
       counter();
-      return panel(CAST.museum.name, "The Museum", [body]);
+      return panel(CAST.museum.name, "The Museum", [body], counterFace("museum"));
     }, { dismissable: true });
   }
 
@@ -1653,7 +1653,7 @@ export class App {
       }
 
       body.append(actionRow([primaryBtn("...", close)]));
-      return panel(CAST.stage.name, "The Plaza Stage", [body]);
+      return panel(CAST.stage.name, "The Plaza Stage", [body], counterFace("stage"));
     }, { dismissable: true });
   }
 
