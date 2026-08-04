@@ -66,6 +66,10 @@ import {
   CONNECT_W,
 } from "../sim/structures";
 import { furnitureDef, footprint } from "../content/furniture";
+import { TENTS } from "../content/tents";
+import type { TentDef } from "../content/tents";
+import { drawTent } from "./tent";
+import { ARRIVALS } from "../content/arrivals";
 import { plinthRuns } from "../sim/museum";
 import type { PlinthRun } from "../sim/museum";
 import { rooms } from "../sim/rooms";
@@ -4329,76 +4333,32 @@ export class Renderer {
     this.raised.push({
       y: world.homestead.originY,
       bias: BIAS_TERRAIN,
-      draw: () => this.drawTent(world.homestead.originX, world.homestead.originY, night),
+      draw: () => this.tentAt(world.homestead.originX, world.homestead.originY, night, TENTS[world.player.form]),
     });
     // A newcomer's tent, for as long as they're waiting on a house. The SAME
     // tent as the player's, deliberately: you started in one too, and the beat
-    // reads as "they're where you were" rather than as a quest marker. It goes
-    // when the commission is stamped, which is the visible half of housing
-    // them (sim/commission.ts).
+    // reads as "they're where you were" rather than as a quest marker. What
+    // differs is only what they've hung on it (content/tents.ts) — and yours
+    // differs the same way, which is what keeps that reading true. It goes when
+    // the commission is stamped, which is the visible half of housing them
+    // (sim/commission.ts).
     for (const c of world.commissions ?? []) {
       if (c.stampedAt !== null) continue;
       const { x, y } = c.tent;
-      this.raised.push({ y, bias: BIAS_TERRAIN, draw: () => this.drawTent(x, y, night) });
+      // Off the arrival's row, not off the commission: the commission stores an
+      // index precisely so live saves survive edits to that table (sim/types.ts).
+      const arrival = ARRIVALS[c.index];
+      const def = TENTS[arrival?.form ?? "office"];
+      this.raised.push({ y, bias: BIAS_TERRAIN, draw: () => this.tentAt(x, y, night, def) });
     }
   }
 
-  private drawTent(ox: number, oy: number, night: boolean): void {
-    const ctx = this.ctx;
+  /** The art lives in render/tent.ts (the contact sheet draws the same code);
+   *  this is only the tile-to-screen half of it. */
+  private tentAt(ox: number, oy: number, night: boolean, def: TentDef): void {
     const cx = Math.round(this.sceneX(ox));
-    const baseY = Math.round(this.sceneY(oy) + TILE / 2);
-    // OFF-WHITE DUCK CANVAS, not dyed. A tent is issued kit, and issued kit is
-    // the colour the cloth came in — the terracotta it used to be read as a
-    // decorated thing somebody chose. The bands are the same cloth in and out
-    // of the sun, so they sit close together; a wide gap between them would
-    // stripe it into a circus awning.
-    const canvas = night ? "#b9b3a4" : "#e8e2d1";
-    const dark = night ? "#a29c8e" : "#cec7b2";
-    // BIG ENOUGH TO SLEEP IN. It was 20x15 — shorter than a wall and barely
-    // wider than the creature it houses, which made the one thing you own at the
-    // start of the game read as a folded towel. A tent is where somebody lives
-    // until you build them a house, and the commission beat is weaker if the
-    // thing they are living in looks uninhabitable.
-    const w = 28;
-    const h = 24;
-
-    ctx.fillStyle = "rgba(0,0,0,0.16)";
-    ctx.fillRect(cx - (w >> 1) + 1, baseY - 1, w - 2, 2);
-
-    // A ridge tent: a triangle of canvas. `r` counts DOWN from the apex, so the
-    // half-width grows with r — computing it from (h - r) instead pitches the
-    // tent upside down as a funnel, which is what it did until the raised pass
-    // made it big enough to notice.
-    //
-    // BANDED IN THREES, not alternating rows. Deliberate stripes are fine here
-    // (DESIGN calls the tent's striped canvas out by name), but one-pixel
-    // alternation is not a stripe — at this size it reads as scanline flicker,
-    // and it was the reason the tent looked like a dark box with rungs in it.
-    // Three-pixel bands read as panels of cloth.
-    for (let r = 0; r < h; r++) {
-      const half = Math.round(((r + 1) / h) * (w / 2));
-      ctx.fillStyle = Math.floor(r / 3) % 2 === 0 ? canvas : dark;
-      ctx.fillRect(cx - half, baseY - h + r, half * 2, 1);
-    }
-
-    // The doorway is a triangle, not a rectangle: a flap parts along the ridge,
-    // so the opening is widest at the ground and closes to a point. A rectangle
-    // read as a doorframe, which is a house's idea.
-    const doorH = 13;
-    ctx.fillStyle = "#3a2620";
-    for (let r = 0; r < doorH; r++) {
-      const half = Math.max(1, Math.round(((r + 1) / doorH) * 4));
-      ctx.fillRect(cx - half, baseY - doorH + r, half * 2, 1);
-    }
-
-    // Guy lines and pegs — two strokes that say "pitched" rather than "placed",
-    // and the cheapest way to stop a triangle reading as a solid wedge.
-    ctx.fillStyle = night ? "#6b5a48" : "#8a7358";
-    ctx.fillRect(cx - (w >> 1) - 3, baseY - 3, 4, 1);
-    ctx.fillRect(cx + (w >> 1) - 1, baseY - 3, 4, 1);
-    // Pole tip.
-    ctx.fillStyle = "#6e5138";
-    ctx.fillRect(cx, baseY - h - 2, 1, 3);
+    const ground = Math.round(this.sceneY(oy) + TILE / 2);
+    drawTent(this.ctx, cx, ground, night, def);
   }
 
   // --- The museum's cases ---------------------------------------------------
