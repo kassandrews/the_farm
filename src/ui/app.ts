@@ -142,10 +142,9 @@ const TOOLS: { id: Tool; icon: IconName; label: string; hint: string; key?: stri
 
 /** The build bar's tabs, in the order they appear.
  *
- *  THE BAR OUTGREW ONE ROW. Eleven tools fitted; twenty-two do not, and the
- *  failure on a phone is not "it looks busy" — it is that the row runs off the
- *  side of the screen and half the game becomes unreachable. So the tools are
- *  grouped and the row shows one group at a time.
+ *  THE BAR OUTGREW ONE ROW. Eleven tools fitted; twenty-two is a row you read
+ *  along rather than see, and the far end of it is somewhere you have to go
+ *  looking. So the tools are grouped and the row shows one group at a time.
  *
  *  Grouped by WHAT THE THING IS, not by what it costs or which finish it takes,
  *  because that is the question you actually arrive with: you want somewhere to
@@ -154,16 +153,30 @@ const TOOLS: { id: Tool; icon: IconName; label: string; hint: string; key?: stri
  *
  *  `structure` is first and holds erase, so the group you land in is the one
  *  that makes rooms — furniture is meaningless until there is a room to put it
- *  in, and that ordering is also the order somebody builds in. */
+ *  in, and that ordering is also the order somebody builds in.
+ *
+ *  IT IS TWO LEVELS NOW, not six tabs side by side. Structure is not a category
+ *  of furniture and was never comparable to Seating: a wall is what you make a
+ *  room OUT of, and a bed is what you put in it. Six peers across the top said
+ *  otherwise, and it meant the categories of a thing you were not doing sat over
+ *  the bar the whole time you were laying floors. So structure has no tab — it is
+ *  the row you land in — and FURNITURE is a button in that row, in the series
+ *  with Wall and Window, which opens the five categories below. `structure` stays
+ *  in this table because it is still a group in the tool sense; `tab: false` is
+ *  what keeps it out of the strip. */
 const BUILD_GROUPS = [
-  { id: "structure", label: "Build" },
-  { id: "seating", label: "Seating" },
-  { id: "surface", label: "Tables" },
-  { id: "sleep", label: "Beds" },
-  { id: "storage", label: "Storage" },
-  { id: "decor", label: "Light" },
+  { id: "structure", label: "Build", tab: false },
+  { id: "seating", label: "Seating", tab: true },
+  { id: "surface", label: "Tables", tab: true },
+  { id: "sleep", label: "Beds", tab: true },
+  { id: "storage", label: "Storage", tab: true },
+  { id: "decor", label: "Light", tab: true },
 ] as const;
 type BuildGroup = (typeof BUILD_GROUPS)[number]["id"];
+
+/** Everything behind the Furniture button — derived from the table rather than
+ *  listed again, so a new category is one row and not two places to remember. */
+const FURNITURE_GROUPS: BuildGroup[] = BUILD_GROUPS.filter((g) => g.tab).map((g) => g.id);
 
 const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string; group: BuildGroup }[] = [
   { id: "floor", icon: "plank", label: "Floor", hint: "Lay a floor. Boards or flagstones — pick the finish below.", group: "structure" },
@@ -249,6 +262,9 @@ export class App {
    *  you are holding (see syncBuildUi), so restoring it separately could put the
    *  bar on a tab that does not contain the selected tool. */
   private buildGroup: BuildGroup = "structure";
+  /** Which category the Furniture button reopens on. Session-only and pointedly
+   *  not saved: it is where you were a minute ago, not a setting. */
+  private lastFurnitureGroup: BuildGroup = "seating";
   /** Tiles already painted during the current drag, so dragging back and forth
    *  over one tile doesn't re-charge or re-message for it. */
   private painted = new Set<string>();
@@ -288,6 +304,7 @@ export class App {
       (t) => this.selectTool(t),
       (t) => this.selectBuildTool(t),
       (g) => this.selectBuildGroup(g),
+      () => this.openFurniture(),
       () => this.toggleBuild(),
       () => this.rotate(),
       () => this.doUndo(),
@@ -2394,6 +2411,13 @@ export class App {
       } else if (k === "b") {
         // Desktop shortcut for the BUILD button, in and out.
         this.toggleBuild();
+      } else if (k === "f" && this.buildTool) {
+        // The two levels, from the keyboard. Only inside build mode, where the
+        // Furniture button exists — F over the open field would be a shortcut to
+        // a control that isn't on screen. It toggles, because the way back out
+        // being a different key would make the pair harder than the trip.
+        if (this.buildGroup === "structure") this.openFurniture();
+        else this.selectBuildGroup("structure");
       } else if (k === "e") {
         this.tryTalkNearest();
       } else if (k === "-" || k === "_") {
@@ -2617,7 +2641,27 @@ export class App {
    *  lands. Tapping a tool is what picks one up. */
   private selectBuildGroup(g: BuildGroup): void {
     this.buildGroup = g;
+    if (g !== "structure") this.lastFurnitureGroup = g;
     this.syncToolUi();
+  }
+
+  /** Open the furniture level — the Furniture button, and F.
+   *
+   *  It reopens on the category you were last in rather than resetting to
+   *  Seating, because going back out to place a floor and coming in again is the
+   *  ordinary rhythm of furnishing a room, and landing somewhere else every time
+   *  makes the trip cost a thought it shouldn't. Underground it picks whichever
+   *  furniture category the rock allows; if none does, the button is not there to
+   *  press in the first place.
+   *
+   *  Like `selectBuildGroup`, it does not touch the held tool: you can go and
+   *  look at the beds while still holding a wall. */
+  private openFurniture(): void {
+    const live = FURNITURE_GROUPS.filter((g) =>
+      BUILD_TOOLS.some((b) => b.group === g && toolAllowedOn(b.id, this.layer())),
+    );
+    if (live.length === 0) return;
+    this.selectBuildGroup(live.includes(this.lastFurnitureGroup) ? this.lastFurnitureGroup : live[0]);
   }
 
   /** Turn the next piece a quarter turn. Only meaningful for furniture, so the
@@ -2649,9 +2693,21 @@ export class App {
       btn.classList.toggle("selected", id === this.buildGroup);
       btn.style.display = live.has(id) ? "" : "none";
     }
+    // The two levels. Structure is the level you land in and has no tab of its
+    // own, so the strip is simply absent there — and the Furniture button is
+    // absent the whole time you are inside furniture, because the way back is
+    // the "‹ Build" chip at the head of the strip and two ways out of one room
+    // is one more than the room needs.
+    const inFurniture = this.buildGroup !== "structure";
+    this.hud.groupTabs.style.display = inFurniture ? "" : "none";
+    // Nothing to open in a tunnel, where the rock allows two structure tools and
+    // no furniture at all. Hidden rather than refusing, the same call the tools
+    // themselves make one line down.
+    const anyFurniture = FURNITURE_GROUPS.some((g) => live.has(g));
+    this.hud.furniture.style.display = !inFurniture && anyFurniture ? "" : "none";
     // Only ever one tab's worth of tools at a time, and that IS the fix: the row
     // used to hold every tool in the game, which fitted while there were eleven
-    // and ran off the side of a phone at twenty-two.
+    // and did not at twenty-two.
     for (const [id, btn] of this.hud.buildButtons) {
       btn.classList.toggle("selected", id === this.buildTool);
       // The palette says what is possible here rather than offering nine tools
@@ -3109,6 +3165,10 @@ interface HudRefs {
   buildFinishes: HTMLElement;
   /** The variety row, refilled by syncSeedUi() while the plant tool is held. */
   seedVarieties: HTMLElement;
+  /** The category strip, hidden entirely at the structure level. */
+  groupTabs: HTMLElement;
+  /** The way in to furniture, and the one tool-row button that holds no tool. */
+  furniture: HTMLElement;
   /** The whole build tray. Kept only so the toast can measure it and sit above
    *  it — the bar's height changes with the held tool, so no fixed offset in the
    *  stylesheet can clear it. */
@@ -3124,6 +3184,7 @@ function buildHud(
   onTool: (t: Tool) => void,
   onBuildTool: (t: BuildTool) => void,
   onBuildGroup: (g: BuildGroup) => void,
+  onFurniture: () => void,
   onBuild: () => void,
   onRotate: () => void,
   onUndo: () => void,
@@ -3243,14 +3304,37 @@ function buildHud(
     buildTools.append(btn);
   }
 
+  // The way in to furniture, and it lives in the TOOL ROW rather than over it,
+  // in the series with Wall and Window. That is the claim the two levels make:
+  // these six are the things you can be holding at the top level, and five of
+  // them place something while the sixth opens a drawer of things that do.
+  //
+  // Iconless and worded, like the tabs and for the tabs' reason — a category is
+  // a word, and a picture of "furniture in general" is a riddle with a chair in
+  // it. It is the one wide button in a row of square ones, which is also true of
+  // what it does.
+  const furniture = el("button", { class: "tool furniture-btn", ariaLabel: "Furniture" }, ["Furniture"]);
+  furniture.addEventListener("click", onFurniture);
+  hoverHint(furniture, "Furniture — chairs, tables, beds, storage, lamps.  (F)");
+  buildTools.append(furniture);
+
   // The tabs. Text rather than icons, because a group is a WORD — "Seating" is
   // one glance and a picture of a category is a riddle. They sit above the tool
   // row for the same reason the finish swatches do: the bar is anchored to the
   // bottom of the screen, so anything that appears up here grows it upward and
-  // the tools stay under the thumb that was already using them.
+  // the tools stay where they were.
+  //
+  // Only the furniture categories are here, and the strip only exists once you
+  // have gone in — the categories of a thing you are not doing have no business
+  // sitting over the bar while you lay a floor. `back` is the way out, first in
+  // the strip and reading as a direction rather than a category.
   const groupTabs = el("div", { class: "build-groups" });
+  const back = el("button", { class: "build-group build-back", ariaLabel: "Back to building" }, ["‹ Build"]);
+  back.addEventListener("click", () => onBuildGroup("structure"));
+  groupTabs.append(back);
   const groupButtons: [BuildGroup, HTMLElement][] = [];
   for (const g of BUILD_GROUPS) {
+    if (!g.tab) continue;
     const btn = el("button", { class: "build-group", ariaLabel: g.label }, [g.label]);
     btn.addEventListener("click", () => onBuildGroup(g.id));
     groupButtons.push([g.id, btn]);
@@ -3323,7 +3407,7 @@ function buildHud(
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, survey, flash, giveUp, toolButtons, buildButtons, groupButtons, buildFinishes, seedVarieties, buildBar, build, rotate, undo, zoom };
+  return { root: hud, clock, survey, flash, giveUp, toolButtons, buildButtons, groupButtons, groupTabs, furniture, buildFinishes, seedVarieties, buildBar, build, rotate, undo, zoom };
 }
 
 // --- Panel helpers ------------------------------------------------------------

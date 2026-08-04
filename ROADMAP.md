@@ -3796,11 +3796,28 @@ one cell you walk through. It needs no new draw pass, because a wall-mounted
 piece sorts at the same y and bias as its own wall and is pushed after it, so a
 stable sort does the layering.
 
-**The build bar grew tabs**, because twenty-two tools do not fit a phone — the
-row runs off the side and half the game becomes unreachable. Grouped by what the
-thing IS, not by cost or finish, because that is the question you arrive with.
-An empty tab hides itself, so the underground still shows exactly the two tools
-the rock allows.
+**The build bar grew tabs**, because twenty-two tools are a row you read along
+rather than see. Grouped by what the thing IS, not by cost or finish, because
+that is the question you arrive with. An empty tab hides itself, so the
+underground still shows exactly the two tools the rock allows.
+
+> **Amended 4 Aug 2026 — the tabs became two levels.** Six tabs across the top
+> made `structure` a peer of `Seating`, and it is not one: a wall is what you
+> make a room OUT of, and a bed is what you put in it. The cost of the wrong
+> shape was that the categories of a thing you were not doing sat over the bar
+> the entire time you laid floors. Now **structure has no tab** — it is the row
+> you land in — and **Furniture is a button in that row**, in the series with
+> Wall and Window, opening the five categories below. The way back is a
+> `‹ Build` chip at the head of the strip, which never takes the selected ring,
+> because a lit "Build" would claim you were standing in the level you had just
+> left. `tab: false` in `BUILD_GROUPS` is what keeps structure out of the strip;
+> `FURNITURE_GROUPS` derives from the same table so a new category is one row.
+>
+> The Furniture button reopens on the category you were last in (session-only,
+> never saved — it is where you were a minute ago, not a setting), and hides
+> where nothing behind it is placeable. Underground it survives intact: the row
+> is take-down plus Furniture, and Furniture holds Light, holding the lamp.
+> Desktop shortcut **F**, which toggles, and only inside build mode.
 
 > **The bug worth remembering: the tab followed the tool on every SYNC.** So
 > tapping a tab was overwritten the same frame — the bar refused to change, and

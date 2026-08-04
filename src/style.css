@@ -252,6 +252,17 @@ select {
   transform: scale(0.94);
 }
 
+/* The way out of furniture, first in the strip. It is not a category and never
+   takes the selected ring — a lit "‹ Build" would say you were standing in
+   Build, which is precisely where you are not. The rule sets it apart from the
+   five words after it without making it louder than them. */
+.build-back {
+  margin-right: 4px;
+  padding-right: 13px;
+  border-right: 2px solid var(--panel-edge);
+  border-radius: 999px 0 0 999px;
+}
+
 .build-finishes {
   display: flex;
   flex-wrap: wrap;
@@ -362,6 +373,23 @@ select {
 
 .tool:active {
   transform: scale(0.94);
+}
+
+/* The door into furniture, standing in the tool row. Same chip as a tool and the
+   same height, so it reads as one of the series, but worded and therefore wider
+   — a category is a word (see `.build-group`), and the one button here that
+   opens something rather than placing something is allowed to look like it.
+
+   Never `.selected`: pressing it takes you somewhere else, and by the time it
+   would have lit, it is off screen. */
+.furniture-btn {
+  width: auto;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: inherit;
 }
 
 /* The verb. It was a 50% circle filled with a radial gradient — the only circle
