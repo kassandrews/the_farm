@@ -50,10 +50,18 @@ export const MIN_INTERIOR = 4;
  *  Real time gates the living world, never the player's hands (Design
  *  invariant), so this is wall-clock and there is nothing to grind toward. The
  *  first gap is short because it's the gap that teaches the beat exists; the
- *  rest are a day apart, so the town grows at the pace of the calendar rather
- *  than at the pace of playing. */
+ *  rest are a day and a half apart, so the town grows at the pace of the
+ *  calendar rather than at the pace of playing.
+ *
+ *  THIRTY-SIX HOURS, not twenty-four and not the twenty this shipped with.
+ *  A gap that divides the day lands every arrival at roughly the same hour, so
+ *  a player who only opens the game in the evening meets the whole town in the
+ *  evening. Thirty-six is a day and a half, so it alternates: this one turns up
+ *  in the morning, the next one after dark, and the town fills at hours you
+ *  were not expecting. Longer is also just more room — a neighbour every twenty
+ *  hours is a to-do list arriving, and the house is meant to be a gift. */
 const FIRST_ARRIVAL_MS = 10 * 60 * 1000;
-const ARRIVAL_GAP_MS = 20 * 60 * 60 * 1000;
+const ARRIVAL_GAP_MS = 36 * 60 * 60 * 1000;
 
 /** Every commission ever filed, oldest first. */
 export function commissions(world: WorldState): Commission[] {

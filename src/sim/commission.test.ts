@@ -76,7 +76,7 @@ describe("arrivals", () => {
     expect(w.villagers.length).toBe(before + 1);
   });
 
-  it("waits a day after you hand over the keys, not just after they arrived", () => {
+  it("waits out the gap after you hand over the keys, not just after they arrived", () => {
     // The gap ran from the previous ARRIVAL alone, so taking a long time over
     // somebody's house meant the next neighbour was due the moment you stamped
     // it: finish a gift, get asked for another. Both clocks have to run out now.
@@ -85,23 +85,23 @@ describe("arrivals", () => {
     admitArrival(w, arrived);
     const c = openCommission(w)!;
 
-    // Housed thirty hours later — well past the 20h arrival gap on its own.
-    const housed = arrived + 30 * HOUR;
+    // Housed forty hours later — well past the 36h arrival gap on its own.
+    const housed = arrived + 40 * HOUR;
     c.stampedAt = housed;
     expect(arrivalDue(w, housed)).toBe(false);
-    expect(arrivalDue(w, housed + 19 * HOUR)).toBe(false);
-    expect(arrivalDue(w, housed + 21 * HOUR)).toBe(true);
+    expect(arrivalDue(w, housed + 35 * HOUR)).toBe(false);
+    expect(arrivalDue(w, housed + 37 * HOUR)).toBe(true);
   });
 
   it("still lets the arrival clock govern when you build quickly", () => {
     // A fast builder is not penalised: housing somebody in five minutes leaves
-    // the original 20h from their arrival doing the work, exactly as before.
+    // the 36h from their arrival doing the work, exactly as it would have.
     const w = town();
     const arrived = w.createdAt + HOUR;
     admitArrival(w, arrived);
     openCommission(w)!.stampedAt = arrived + 5 * 60 * 1000;
-    expect(arrivalDue(w, arrived + 19 * HOUR)).toBe(false);
-    expect(arrivalDue(w, arrived + 21 * HOUR)).toBe(true);
+    expect(arrivalDue(w, arrived + 35 * HOUR)).toBe(false);
+    expect(arrivalDue(w, arrived + 37 * HOUR)).toBe(true);
   });
 
   it("holds the queue while someone is still in a tent", () => {
