@@ -31,7 +31,7 @@ import {
 import { nodeAt } from "../sim/gather";
 import { isWalkable } from "../sim/world";
 import { officeLandClaimLine, homeLineFor, companyYesLine, companyByeLine, gameYesLine, gameFoundLine, gameGiveUpLine, advanceReply, replyLabel } from "../sim/dialogue";
-import { canPlay, startPlay, playing, foundThem, endPlay } from "../sim/play";
+import { canPlay, startPlay, playing, foundThem, foundIt, spyChoices, endPlay } from "../sim/play";
 import { GAMES } from "../content/games";
 import type { Reply as ReplyDef } from "../content/conversations";
 import { companion, canInvite, invite, partWays } from "../sim/company";
@@ -828,13 +828,15 @@ export class App {
                   }),
                 ]
               : []),
-            // A game, on company's terms exactly: asking to play IS an
+            // The games, on company's terms exactly: asking to play IS an
             // invitation (they come along, the game starts, and when it ends
-            // they are still with you), so the button shows for anyone who
+            // they are still with you), so the buttons show for anyone who
             // would say yes to a walk — same gate, one step. `canPlay` adds
             // only what a game needs on top of one: both of you on the
-            // surface. No cooldown ever gates this button; the only timestamp
-            // in the feature shapes how often THEY offer.
+            // surface. I Spy additionally needs something near the pair worth
+            // spying (`spyChoices`) — on an empty plain, its absence is the
+            // honest answer. No cooldown ever gates these buttons; the only
+            // timestamp in the feature shapes how often THEY offer.
             ...((withMe || askable) && canPlay(world, them, Date.now())
               ? [
                   choiceBtn(GAMES.hide.ask, () => {
@@ -844,6 +846,38 @@ export class App {
                     if (!startPlay(world, villagerId, "hide", now, this.rng)) return;
                     audio.play("talk");
                     this.flash(`${speech.who}: ${gameYesLine("hide", them.form, this.rng)}`);
+                  }),
+                  ...(spyChoices(world, them).length > 0
+                    ? [
+                        choiceBtn(GAMES.spy.ask, () => {
+                          close();
+                          const now = Date.now();
+                          if (!withMe && !invite(world, villagerId, now)) return;
+                          if (!startPlay(world, villagerId, "spy", now, this.rng)) return;
+                          audio.play("talk");
+                          // The acceptance IS the clue — one flash, one breath.
+                          const clue = playing(world)?.target?.clue;
+                          if (clue) this.flash(`${speech.who}: ${clue}`);
+                        }),
+                      ]
+                    : []),
+                ]
+              : []),
+            // Mid-I-Spy, the companion is right beside you, so the panel is
+            // the game's own surface: repeat the clue (identical words — a
+            // clue that rerolled would be a hint system), or stop, which
+            // writes nothing (sim/play.ts `endPlay`, the "gave_up" arm).
+            ...(withMe && playing(world)?.game === "spy"
+              ? [
+                  choiceBtn("Say it again?", () => {
+                    close();
+                    const clue = playing(world)?.target?.clue;
+                    if (clue) this.flash(`${speech.who}: ${clue}`);
+                  }),
+                  choiceBtn("I give up", () => {
+                    close();
+                    endPlay(world, Date.now(), "gave_up");
+                    this.flash(`${speech.who}: ${gameGiveUpLine("spy", them.form, this.rng)}`);
                   }),
                 ]
               : []),
@@ -1686,10 +1720,17 @@ export class App {
     // "inline-block", not "" — the empty string would fall through to the
     // stylesheet, and the stylesheet's resting state is `display: none`.
     this.hud.giveUp.style.display = playing(this.world)?.game === "hide" ? "inline-block" : "none";
-    const who = foundThem(this.world, Date.now());
-    if (!who) return;
-    audio.play("talk");
-    this.flash(`${who.name}: ${gameFoundLine("hide", who.form, this.rng)}`);
+    const hider = foundThem(this.world, Date.now());
+    if (hider) {
+      audio.play("talk");
+      this.flash(`${hider.name}: ${gameFoundLine("hide", hider.form, this.rng)}`);
+      return;
+    }
+    const spier = foundIt(this.world, Date.now());
+    if (spier) {
+      audio.play("talk");
+      this.flash(`${spier.name}: ${gameFoundLine("spy", spier.form, this.rng)}`);
+    }
   }
 
   /** Stop looking. Costless by design: no memory, no friendship change, and

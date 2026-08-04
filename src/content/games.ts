@@ -55,3 +55,26 @@ export const GAMES: Record<GameId, GameDef> = {
 export function gameDef(id: GameId): GameDef {
   return GAMES[id];
 }
+
+/** What I Spy may point at — a CATEGORY, because the clue is authored per
+ *  kind per form (content/dialogue.ts SPY_CLUE) and never generated. Seven,
+ *  deliberately small: every cell of that matrix has to be written or the
+ *  game goes silent for somebody.
+ *
+ *  Declared HERE rather than in sim/play.ts on content/spots.ts's argument:
+ *  content never imports sim, and the clue table needs the key. sim/play.ts
+ *  is where a kind is derived from the world; this is only its name.
+ *
+ *  What is NOT a kind, and never will be: a PERSON (a clue describing
+ *  somebody is a different and worse game), plain grass (everything is
+ *  grass; the clue is unsolvable), and anything secret or found — the
+ *  exclusions live in sim/play.ts `spyKindAt`, one function, so no picker
+ *  can disagree about them. */
+export type SpyKind =
+  | "tree"
+  | "rock"
+  | "water" // the edge of it — a water tile you can stand beside
+  | "crop"
+  | "building" // a built cell: a wall, a door
+  | "furniture"
+  | "ground"; // a DISTINCT surface: paving, sand, tilled earth

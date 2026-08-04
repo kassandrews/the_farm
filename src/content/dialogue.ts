@@ -11,7 +11,7 @@
 
 import type { AdultForm } from "./canon/forms";
 import type { CharId } from "./cast";
-import type { GameId } from "./games";
+import type { GameId, SpyKind } from "./games";
 
 export type LineBank = Partial<Record<string, string[]>>;
 
@@ -1692,6 +1692,39 @@ export const GAME_FOUND: Partial<Record<GameId, Partial<Record<AdultForm, string
       "... There you are. There I am. Good game.",
     ],
   },
+  // No `spy` bank in GAME_YES, deliberately: for I Spy the acceptance IS the
+  // clue (SPY_CLUE below), and a yes-line before it would be two flashes for
+  // one breath. These two are the game's other ends.
+  spy: {
+    scholar: [
+      "That's it. Confirmed against the record. The record is me.",
+      "Found. Your methodology was 'walking around', and I can't fault the results.",
+    ],
+    dog: [
+      "THAT'S THE THING! That's it! You looked at it and it's the one!",
+      "YES! That one! I picked it because I love it!",
+    ],
+    blob: [
+      "That is the very thing. The reveal lands. Scene.",
+      "Found! The audience gasps. The audience is me. I gasped.",
+    ],
+    menace: [
+      "That's it. Obviously. I was starting to compose easier clues. Insultingly easy ones.",
+      "Correct. ... I won't be making the next one so merciful.",
+    ],
+    gremlin: [
+      "That's the one! And it's still there! Restraint. From both of us.",
+      "Found it! Now we both know where it is. That's how hoards start.",
+    ],
+    office: [
+      "That's the item. Observation closed. Nothing to sign. Bliss.",
+      "Correct. I'd stamp it if I still stamped. I don't. Lovely.",
+    ],
+    carrot: [
+      "... That's the one. We've both seen it now.",
+      "... Yes. That. Good looking.",
+    ],
+  },
 };
 
 /** You gave up — they come back out on their own. The line is allowed to
@@ -1727,6 +1760,115 @@ export const GAME_GIVEUP: Partial<Record<GameId, Partial<Record<AdultForm, strin
       "... Here I am. It's all right. It was a good spot.",
       "... I came back. The hiding was nice. Quiet, in there.",
     ],
+  },
+  spy: {
+    scholar: [
+      "Abandoning the survey? It happens. The thing stays unfound. Science is patient.",
+      "Calling it? Very well. The clue was sound. The town is simply large.",
+    ],
+    dog: [
+      "You're stopping? That's okay! It was a really good thing! I'll show you sometime! Or not! A mystery!",
+      "Done looking? Okay! The thing is still out there being GREAT.",
+    ],
+    blob: [
+      "You yield? Then the thing keeps its anonymity. Some performances close early.",
+      "Calling it off. ... The thing will never know how nearly it was seen.",
+    ],
+    menace: [
+      "Giving up. Sensible. The clue was flawless and the fault was everything else.",
+      "You concede? Accepted. The thing and I win jointly. Mostly the thing. Mostly me.",
+    ],
+    gremlin: [
+      "Stopping? Fine. I'm not telling you what it was. It's mine now. Spiritually.",
+      "You give? The thing stays a secret between me and it. We're close now.",
+    ],
+    office: [
+      "Search withdrawn. The item remains at large. No further action. My favourite outcome.",
+      "Concluded without result. In my working days that took a form. Today it takes nothing. Bliss.",
+    ],
+    carrot: [
+      "... All right. It'll keep. Things like that keep.",
+      "... We can stop. It was a good thing, though. It's still there.",
+    ],
+  },
+};
+
+// --- I Spy clues ---------------------------------------------------------------
+// Authored per KIND per form, never generated, and OBLIQUE ON PURPOSE — the
+// Notebook's voice used as a prompt instead of as a record. The rules, held by
+// play_lines.test.ts's bearing guard rather than by reviewer memory:
+//
+//   • NO BEARINGS, EVER. No compass points, no "behind the", no "left of". A
+//     bearing turns the game into a fetch quest with a compass; findability is
+//     bought by the pick radius (sim/play.ts SPY_RANGE) and by "Say it
+//     again?", which repeats the same clue for free.
+//   • Never "I spy a tree." The kind is the answer; the clue is the riddle.
+//   • Nothing a clue names may be secret, found, or absent — the picker
+//     (`spyKindAt`) enforces the first two structurally, and the banks sweep
+//     (banks.test.ts) catches weather and wildlife like everywhere else.
+export const SPY_CLUE: Partial<Record<AdultForm, Partial<Record<SpyKind, string[]>>>> = {
+  scholar: {
+    tree: ["Something older than the survey, and taller than its margin of error."],
+    rock: ["Something the ground owns outright. I've tried to catalogue it twice. It declined."],
+    water: ["Something with a surface and no opinions. It has been holding still for years."],
+    crop: ["Something in progress. Somebody is clearly responsible for it, and it isn't me."],
+    building: ["Something with load-bearing intentions."],
+    furniture: ["Something placed on purpose, at a height convenient for sitting or putting."],
+    ground: ["Something underfoot that isn't grass, and is rather smug about it."],
+  },
+  dog: {
+    tree: ["Something TALL! It smells like up!"],
+    rock: ["Something heavy! I licked it once! It's the one I licked!"],
+    water: ["Something you can't stand on! I tried!"],
+    crop: ["Something growing on PURPOSE! Somebody's whole project!"],
+    building: ["Something with an inside! I mean the outside part of it!"],
+    furniture: ["Something somebody put down and MEANT it!"],
+    ground: ["Something under your feet that's different from the other unders!"],
+  },
+  blob: {
+    tree: ["Something with presence. Rooted in the role. It has held this stage longer than any of us."],
+    rock: ["Something grey, still, and utterly certain of itself. I have studied it. For technique."],
+    water: ["Something that reflects. Mostly me, when I stand near enough."],
+    crop: ["Something in rehearsal. Not yet ready for its audience."],
+    building: ["Something built to hold a scene. Walls. Commitment. A door, for entrances."],
+    furniture: ["A prop. Placed. Meaningful. Somebody dressed this set deliberately."],
+    ground: ["Something underfoot that has dressed for the occasion."],
+  },
+  menace: {
+    tree: ["Something tall that I have personal history with. It knows what it did."],
+    rock: ["Something that refuses to move. I respect it. I spy it."],
+    water: ["Something wet with no survival instinct."],
+    crop: ["Something being grown at me."],
+    building: ["Something with walls. Adequate walls. I've assessed them."],
+    furniture: ["Something placed exactly where somebody wanted it. Bold, leaving it out."],
+    ground: ["Something underfoot that thinks it's better than grass. ... It's right."],
+  },
+  gremlin: {
+    tree: ["Something tall with things probably in it. I haven't checked the top. Yet."],
+    rock: ["Something too big to pocket. Believe me."],
+    water: ["Something you can't keep. I've tried. It leaks."],
+    crop: ["Something buried on purpose that everyone just LEAVES there."],
+    building: ["Something with an inside full of somebody else's things."],
+    furniture: ["Something somebody left out. Practically an invitation. I'm spying it instead."],
+    ground: ["Something underfoot worth prying up. Hypothetically. I spy it. Hypothetically."],
+  },
+  carrot: {
+    tree: ["... Something patient. Taller than me. Older, too."],
+    rock: ["... Something that was here first."],
+    water: ["... Something that holds the light. You'll know it."],
+    crop: ["... Something coming along nicely. I would know."],
+    building: ["... Something somebody built, and meant."],
+    furniture: ["... Something set down with care. It hasn't moved since."],
+    ground: ["... Something underfoot. Not grass. That's all I'll say."],
+  },
+  office: {
+    tree: ["Something tall, unregistered, and thriving without a permit."],
+    rock: ["Something of significant tonnage with no paperwork on it whatsoever."],
+    water: ["Something no form applies to. It sits there, administratively impossible."],
+    crop: ["Something in development. Filed under 'pending', if I still filed. I don't."],
+    building: ["Something structural. Load-bearing. Up to no code at all. Wonderful."],
+    furniture: ["An installed fixture. Somebody's asset. Uninventoried, naturally."],
+    ground: ["A surface treatment. Deliberate. Approved by nobody. I love it here."],
   },
 };
 

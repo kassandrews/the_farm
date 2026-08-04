@@ -47,8 +47,9 @@
 
 import type { WorldState, Villager } from "./types";
 import type { CharId } from "../content/cast";
-import type { GameId } from "../content/games";
+import type { GameId, SpyKind } from "../content/games";
 import { gameDef } from "../content/games";
+import { SPY_CLUE } from "../content/dialogue";
 import type { MemoryKind } from "./memory";
 import { remember } from "./memory";
 import { present } from "./presence";
@@ -56,7 +57,9 @@ import { nodeAt } from "./gather";
 import { structureAt } from "./structures";
 import { structureDef } from "../content/structures";
 import { roofRoomAt } from "./rooms";
-import { isWalkable, groveCentre, cubeSite } from "./world";
+import { furnitureAt } from "./furniture";
+import { isWalkable, tileAt, groveCentre, cubeSite } from "./world";
+import { WATER, SHALLOW, STONE, SAND, FARMLAND, FARMLAND_WET } from "../content/tiles";
 import { findPath } from "./path";
 import type { Point } from "./path";
 import type { Rng } from "./rng";
@@ -73,6 +76,11 @@ export interface PlayState {
   startedAt: number;
   /** Hide and seek: the tile they walked off to. */
   spot?: Point;
+  /** I Spy: the thing they named, and the exact words they named it in —
+   *  stored so "Say it again?" repeats the clue rather than rerolling it. A
+   *  clue that changed on re-asking would be a hint system wearing a memory
+   *  problem. */
+  target?: { x: number; y: number; kind: SpyKind; clue: string };
 }
 
 const plays = new WeakMap<WorldState, PlayState>();
@@ -129,6 +137,11 @@ export function startPlay(world: WorldState, id: CharId, game: GameId, now: numb
     const spot = hidingSpot(world, { x: Math.round(v.x), y: Math.round(v.y) }, rng);
     if (!spot) return false;
     state.spot = spot;
+  }
+  if (game === "spy") {
+    const target = spyTarget(world, v, rng);
+    if (!target) return false;
+    state.target = target;
   }
   plays.set(world, state);
   return true;
@@ -300,4 +313,110 @@ export function foundThem(world: WorldState, now: number): Villager | null {
   if (Math.hypot(world.player.x - v.x, world.player.y - v.y) > FOUND_RADIUS) return null;
   endPlay(world, now, "found");
   return v;
+}
+
+// --- I Spy ----------------------------------------------------------------------
+
+/** How close to the named thing counts as having found it. Proximity and
+ *  NOTHING ELSE: no guess, no confirm button, no wrong answers, no
+ *  warmer/colder. A confirm that can be wrong is a quiz with a fail state,
+ *  and a homing signal is a hint economy — proximity means wrong guesses
+ *  don't exist as a concept. You wander past three wrong trees and nothing
+ *  happens, which is correct; and yes, you can win by accident on the walk
+ *  home, which is how a four-year-old wins I Spy and there is no score for
+ *  the accident to cheapen. */
+export const SPY_REACH = 2.0;
+
+/** How far afield they'll pick a thing. Small enough that the clue is honest
+ *  about "visible from here", large enough that you have to actually look. */
+const SPY_RANGE = 8;
+
+/** What kind of spy-able thing stands on this cell, or null.
+ *
+ *  ONE FUNCTION, shared by every picker (I Spy today, "Look at this" next),
+ *  so no caller can disagree about the exclusions — the possibleAskers
+ *  lesson, learned when the noticeboard advertised the Mole. The refusals,
+ *  each load-bearing:
+ *
+ *  • Anything near a secret (`nearSecret`) — a clue pointing at the Cube or
+ *    the grove is the game leading you to a secret by the hand.
+ *  • The found places (pole, mailbox, stair) — those are discoveries, and a
+ *    clue naming one is the UI spoiling it (DESIGN §Found places).
+ *  • Plain grass and bare dirt — everything is grass; the clue is unsolvable.
+ *  • People are not cells, so a person can never be a target by construction;
+ *    the type in content/games.ts records the refusal anyway.
+ *
+ *  Priority when a cell is several things at once: the most SPECIFIC wins —
+ *  a crop over the tilled earth it stands in, furniture over the floor under
+ *  it — because the clue should be about the thing you'd actually say. */
+export function spyKindAt(world: WorldState, x: number, y: number): SpyKind | null {
+  if (nearSecret(world, x, y)) return null;
+  if (world.crops[`${x},${y}`]) return "crop";
+  if (furnitureAt(world, x, y)) return "furniture";
+  const built = structureAt(world, x, y);
+  if (built && structureDef(built.id).solid) return "building";
+  const node = nodeAt(world, x, y);
+  if (node === "tree") return "tree";
+  if (node === "rock") return "rock";
+  if (node !== null) return null; // darktree, shrub, stump, log, vein: not clue material
+  const tile = tileAt(world, x, y, "surface");
+  if (tile === WATER || tile === SHALLOW) {
+    // The EDGE of it: a water tile somebody could stand beside. A clue about
+    // open sea would be findable only by boat, and there are no boats.
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      if (isWalkable(world, x + dx, y + dy, "surface")) return "water";
+    }
+    return null;
+  }
+  if (tile === STONE || tile === SAND || tile === FARMLAND || tile === FARMLAND_WET) return "ground";
+  return null;
+}
+
+/** Candidate targets around the pair — enumerated (a disc this size is ~200
+ *  cheap lookups, once, on a button press), keeping only kinds the speaker
+ *  has a clue line for, so a form with a thin bank spies fewer things
+ *  instead of going silent (`tryHomeLine`'s fall-through instinct). */
+export function spyChoices(world: WorldState, v: Villager): { x: number; y: number; kind: SpyKind }[] {
+  const cx = (world.player.x + v.x) / 2;
+  const cy = (world.player.y + v.y) / 2;
+  const out: { x: number; y: number; kind: SpyKind }[] = [];
+  const bank = SPY_CLUE[v.form];
+  for (let y = Math.round(cy) - SPY_RANGE; y <= Math.round(cy) + SPY_RANGE; y++) {
+    for (let x = Math.round(cx) - SPY_RANGE; x <= Math.round(cx) + SPY_RANGE; x++) {
+      if (Math.hypot(x - cx, y - cy) > SPY_RANGE) continue;
+      const kind = spyKindAt(world, x, y);
+      if (!kind) continue;
+      if (!bank?.[kind]?.length) continue;
+      out.push({ x, y, kind });
+    }
+  }
+  return out;
+}
+
+/** Pick the thing and the words. Null when nothing near the pair is
+ *  spy-able, which the UI reads as the game honestly unavailable — on an
+ *  empty plain with no crops and no buildings, that is the true answer. */
+export function spyTarget(
+  world: WorldState,
+  v: Villager,
+  rng: Rng,
+): { x: number; y: number; kind: SpyKind; clue: string } | null {
+  const choices = spyChoices(world, v);
+  if (choices.length === 0) return null;
+  const pick = rng.pick(choices);
+  const lines = SPY_CLUE[v.form]?.[pick.kind];
+  if (!lines || lines.length === 0) return null; // unreachable: spyChoices filtered
+  return { ...pick, clue: rng.pick(lines) };
+}
+
+/** The I Spy twin of `foundThem`, polled the same way: the villager comes
+ *  back exactly once, on the frame you arrived at the thing they named. */
+export function foundIt(world: WorldState, now: number): Villager | null {
+  const p = playing(world);
+  if (!p || p.game !== "spy" || !p.target) return null;
+  if (world.player.layer !== "surface") return null;
+  if (Math.hypot(world.player.x - p.target.x, world.player.y - p.target.y) > SPY_REACH) return null;
+  const v = world.villagers.find((w) => w.id === p.who);
+  endPlay(world, now, "found");
+  return v ?? null;
 }

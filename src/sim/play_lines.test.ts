@@ -5,8 +5,9 @@
 // fails too.
 
 import { describe, it, expect } from "vitest";
+import type { SpyKind } from "../content/games";
 import { GAMES } from "../content/games";
-import { GAME_YES, GAME_FOUND, GAME_GIVEUP, RESIDENT_MEMORY } from "../content/dialogue";
+import { GAME_YES, GAME_FOUND, GAME_GIVEUP, SPY_CLUE, RESIDENT_MEMORY } from "../content/dialogue";
 import { MEMORY_PRIORITY } from "./dialogue";
 import type { AdultForm } from "../content/canon/forms";
 
@@ -15,18 +16,40 @@ import type { AdultForm } from "../content/canon/forms";
  *  the secrets can never be invited (sim/company.ts `canInvite`). */
 const PLAYABLE: AdultForm[] = ["scholar", "dog", "blob", "menace", "gremlin", "carrot", "office"];
 
-// Step 2 ships hide and seek; I Spy's moment banks arrive with its step. This
-// list — not GAMES itself — is what the coverage sweep walks, so a game gains
-// its coverage duty the moment it gains a UI.
-const LIVE_GAMES = ["hide"] as const;
+describe("every playable form can play every game", () => {
+  it("has the moment lines — the beat never lands on silence", () => {
+    for (const form of PLAYABLE) {
+      // Hide and seek: a yes, a found, a give-up.
+      expect(GAME_YES.hide?.[form]?.length ?? 0, `GAME_YES.hide.${form}`).toBeGreaterThan(0);
+      expect(GAME_FOUND.hide?.[form]?.length ?? 0, `GAME_FOUND.hide.${form}`).toBeGreaterThan(0);
+      expect(GAME_GIVEUP.hide?.[form]?.length ?? 0, `GAME_GIVEUP.hide.${form}`).toBeGreaterThan(0);
+      // I Spy: the acceptance IS the clue, so no yes bank — a found and a
+      // give-up, plus the full clue matrix below.
+      expect(GAME_FOUND.spy?.[form]?.length ?? 0, `GAME_FOUND.spy.${form}`).toBeGreaterThan(0);
+      expect(GAME_GIVEUP.spy?.[form]?.length ?? 0, `GAME_GIVEUP.spy.${form}`).toBeGreaterThan(0);
+    }
+  });
 
-describe("every playable form can play every live game", () => {
-  it("has a yes, a found, and a give-up line — the beat never lands on silence", () => {
-    for (const game of LIVE_GAMES) {
-      for (const form of PLAYABLE) {
-        expect(GAME_YES[game]?.[form]?.length ?? 0, `GAME_YES.${game}.${form}`).toBeGreaterThan(0);
-        expect(GAME_FOUND[game]?.[form]?.length ?? 0, `GAME_FOUND.${game}.${form}`).toBeGreaterThan(0);
-        expect(GAME_GIVEUP[game]?.[form]?.length ?? 0, `GAME_GIVEUP.${game}.${form}`).toBeGreaterThan(0);
+  it("has a clue for every kind — a hole in the matrix is a thing a form can never spy", () => {
+    // The picker (sim/play.ts spyChoices) drops kinds the form has no line
+    // for, so a hole here doesn't crash — it silently shrinks somebody's
+    // game, which is exactly the kind of failure that needs a test.
+    const KINDS: SpyKind[] = ["tree", "rock", "water", "crop", "building", "furniture", "ground"];
+    for (const form of PLAYABLE) {
+      for (const kind of KINDS) {
+        expect(SPY_CLUE[form]?.[kind]?.length ?? 0, `SPY_CLUE.${form}.${kind}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("no clue carries a bearing — a bearing is a compass, and a compass is a fetch quest", () => {
+    for (const [form, kinds] of Object.entries(SPY_CLUE)) {
+      for (const [kind, lines] of Object.entries(kinds ?? {})) {
+        for (const line of lines ?? []) {
+          expect(line, `SPY_CLUE.${form}.${kind}: "${line}"`).not.toMatch(
+            /\b(north|south|east|west|left of|right of|behind the|in front of|beside the|next to)\b/i,
+          );
+        }
       }
     }
   });
