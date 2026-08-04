@@ -7,12 +7,14 @@ import { el, hoverHint, modal } from "./dom";
 import { mountTitleScene, type TitleScene } from "./title";
 import { Renderer } from "../render/renderer";
 import { iconEl, gridEl, SCALE } from "../render/icons";
+import { furnitureThumb, thumbBox } from "../render/thumbs";
 import { portrait } from "../render/portrait";
 import { lookFor } from "../content/looks";
 import type { IconName } from "../content/icons";
 import { SPOTS } from "../content/spots";
 import type { WorldState, Tool, BuildTool, HomesteadSpot, Layer, Villager } from "../sim/types";
 import { FACINGS, FURNITURE, furnitureDef } from "../content/furniture";
+import type { FurnitureId } from "../content/furniture";
 import type { Facing } from "../content/furniture";
 import {
   newWorld,
@@ -173,6 +175,13 @@ const BUILD_GROUPS = [
   { id: "decor", label: "Light", tab: true },
 ] as const;
 type BuildGroup = (typeof BUILD_GROUPS)[number]["id"];
+
+/** Device px per scene px in a catalogue tile. A WHOLE NUMBER, and the sprite
+ *  rule is the whole reason (CLAUDE.md): the art is authored at 16 scene px to
+ *  the tile, so 2 doubles every pixel and anything fractional resamples the
+ *  outlines off the grid. Two rather than three because a two-tile piece is 32
+ *  scene px across, and 64 device px is a tile you can put five of in a row. */
+const THUMB_SCALE = 2;
 
 /** Everything behind the Furniture button — derived from the table rather than
  *  listed again, so a new category is one row and not two places to remember. */
@@ -2748,8 +2757,34 @@ export class App {
       : "Rotate";
 
     this.syncFinishUi();
+    this.syncFurnitureTiles();
     this.syncSeedUi();
     this.syncUndoUi();
+  }
+
+  /** Paint the catalogue tiles for whichever furniture category is open.
+   *
+   *  ONLY THE VISIBLE ONES. Every furniture piece has a tile, but at most one
+   *  category is on screen, and a thumb costs a rasterize the first time it is
+   *  asked for in a given finish. Painting the hidden ninety per cent would put
+   *  that cost on every sync — which includes every rotate and every finish tap,
+   *  the two things that invalidate them.
+   *
+   *  Set on `src` rather than rebuilt as nodes, so the button keeps its hover
+   *  hint, its listener and its selected ring across a repaint — the same reason
+   *  the row is built once and only ever hidden and shown. */
+  private syncFurnitureTiles(): void {
+    const world = this.world;
+    if (!world || !FURNITURE_GROUPS.includes(this.buildGroup)) return;
+    for (const [id, btn] of this.hud.buildButtons) {
+      if (btn.dataset.group !== this.buildGroup) continue;
+      const art = btn.querySelector("img.tile-art") as HTMLImageElement | null;
+      if (!art) continue;
+      // Its OWN loaded finish, not the held tool's: the row shows five pieces at
+      // once and each remembers what it was last built in, so a walnut bed and a
+      // pine cot sit side by side exactly as they would in the room.
+      art.src = furnitureThumb(id as FurnitureId, this.facing, loadedFinish(world, id), THUMB_SCALE);
+    }
   }
 
   /** Rebuild the variety row for the seed about to go in the ground.
@@ -2853,6 +2888,10 @@ export class App {
         world.skins.selected[tool] = id;
         saveWorld(world);
         this.syncFinishUi();
+        // And the catalogue, which is drawn IN the finish — picking ash and
+        // watching five pine chairs sit there unchanged makes the tiles look
+        // like stock photography rather than a picture of what you'd place.
+        this.syncFurnitureTiles();
       });
       hoverHint(chip, `${skin.name} — free to change, on anything already built.`);
       return chip;
@@ -3295,8 +3334,24 @@ function buildHud(
   // DISPLAYED. Rebuilding the row per tab would throw away the selected class,
   // the hover hints and the icon elements on every tap, and `syncBuildUi` holds
   // references to these nodes.
+  // Two kinds of button, and the difference is what the thing on it is FOR.
+  //
+  // A structure tool keeps its 12x12 icon, because the icon answers the question
+  // you have — this one lays floor, that one raises wall — and there is nothing
+  // else in the row it could be confused with.
+  //
+  // A furniture piece gets a TILE: the game's own art for that piece, in the
+  // finish it would be placed in, turned the way it would be turned. A drawn
+  // icon can say "chair"; only the real raster can say WHICH chair, and once a
+  // category holds four of them that is the entire question. The image is filled
+  // in by syncFurnitureTiles, because it depends on world state the HUD does not
+  // have when it is built.
   for (const t of BUILD_TOOLS) {
-    const btn = el("button", { class: "tool", ariaLabel: t.label }, [iconEl(t.icon, SCALE.button)]);
+    const tile = FURNITURE_GROUPS.includes(t.group);
+    const face = tile
+      ? [el("img", { class: "tile-art" }), el("span", { class: "tile-name" }, [t.label])]
+      : [iconEl(t.icon, SCALE.button)];
+    const btn = el("button", { class: tile ? "tool tile" : "tool", ariaLabel: t.label }, face);
     btn.addEventListener("click", () => onBuildTool(t.id));
     hoverHint(btn, `${t.label} — ${t.hint}`);
     btn.dataset.group = t.group;
@@ -3367,11 +3422,17 @@ function buildHud(
   // Rotate and undo ride at the end of the tool strip, past a gap. They modify
   // what you're about to do rather than choosing it, so they want to be in
   // reach of the tools without reading as one of them.
+  // The tile box, asked of the content rather than written into the stylesheet —
+  // see thumbBox. The CSS lays the tiles out; this says how big the biggest
+  // thing in them is, so a new piece cannot quietly overflow its own tile.
+  const box = thumbBox(THUMB_SCALE);
   const buildBar = el("div", { class: "build-bar" }, [
     groupTabs,
     buildFinishes,
     el("div", { class: "build-row" }, [buildTools, el("div", { class: "build-mods" }, [rotate, undo])]),
   ]);
+  buildBar.style.setProperty("--tile-art-w", `${box.w}px`);
+  buildBar.style.setProperty("--tile-art-h", `${box.h}px`);
 
   // BUILD sits directly above ACT, in the one corner the hands already live in,
   // and the two never appear together: entering build mode is the game putting

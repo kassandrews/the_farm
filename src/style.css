@@ -375,6 +375,62 @@ select {
   transform: scale(0.94);
 }
 
+/* A catalogue tile: the piece's own art over its name. Wider and taller than a
+   tool button because it holds a picture of a THING rather than a symbol for an
+   action, and a bed drawn at 32×70 in a 52px box would be a bed with its ends
+   cut off.
+
+   THE ART IS SHOWN AT ITS OWN SIZE AND NEVER FITTED TO THE BOX. `object-fit:
+   contain` was here for one revision and is exactly the bug CLAUDE.md's sprite
+   rule describes: it scales by whatever fraction the box happens to be, so the
+   sofa came back with one edge of its outline doubled and the bench with a row
+   missing. Instead the BOX is sized to the largest thumb there is — the bed and
+   the wardrobe, 64×84 at THUMB_SCALE — and everything shorter simply sits on the
+   floor line with room above it.
+
+   So a stool looks small and a wardrobe looks big. They are, and a catalogue of
+   things you are about to put in a room may as well say so. */
+.tool.tile {
+  /* Sized from the art, not from a number somebody measured once — the vars are
+     set on the bar from `thumbBox()` (ui/app.ts). Plus the padding, the gap and
+     the one line of name underneath. */
+  width: calc(var(--tile-art-w, 64px) + 20px);
+  height: calc(var(--tile-art-h, 104px) + 32px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 6px 4px 6px;
+}
+
+.tile-art {
+  /* Intrinsic size, both axes. No width, no height, no fit. */
+  /* Bottom-aligned, because these are things that stand on a floor and a row of
+     them should share one. Centred vertically, a lamp would float halfway up
+     its tile beside a bed sitting on the ground. */
+  margin-top: auto;
+  image-rendering: pixelated;
+}
+
+.tile-name {
+  font-size: 10px;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  opacity: 0.72;
+  text-align: center;
+  /* One line. A wrapped "Coffee table" would push the art up by a row and break
+     the shared floor line the tiles beside it are standing on. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.tool.tile.selected .tile-name {
+  opacity: 1;
+}
+
 /* The door into furniture, standing in the tool row. Same chip as a tool and the
    same height, so it reads as one of the series, but worded and therefore wider
    — a category is a word (see `.build-group`), and the one button here that
