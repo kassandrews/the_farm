@@ -30,6 +30,9 @@ import {
   COMPANY_YES,
   COMPANY_IDLE,
   COMPANY_BYE,
+  GAME_YES,
+  GAME_FOUND,
+  GAME_GIVEUP,
   MOLE_DEEP,
   MOLE_SHALLOW,
   MOLE_LIT,
@@ -73,6 +76,9 @@ function everyLine(): { where: string; text: string }[] {
   add("COMPANY_YES", COMPANY_YES);
   add("COMPANY_IDLE", COMPANY_IDLE);
   add("COMPANY_BYE", COMPANY_BYE);
+  add("GAME_YES", GAME_YES);
+  add("GAME_FOUND", GAME_FOUND);
+  add("GAME_GIVEUP", GAME_GIVEUP);
   add("MOLE_DEEP", MOLE_DEEP);
   add("MOLE_SHALLOW", MOLE_SHALLOW);
   add("MOLE_LIT", MOLE_LIT);

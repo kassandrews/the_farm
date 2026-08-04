@@ -11,6 +11,7 @@
 
 import type { AdultForm } from "./canon/forms";
 import type { CharId } from "./cast";
+import type { GameId } from "./games";
 
 export type LineBank = Partial<Record<string, string[]>>;
 
@@ -227,6 +228,17 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
       () => "We went up. I have looked at the town from above and I am not sure it is arranged correctly.",
       () => ". ... There was nothing up there to measure. I stayed a while anyway.",
     ],
+    // The games (sim/play.ts). Like the errand and company lines, these are
+    // the whole payout, so every playable form has them — see the block
+    // comment below.
+    hid: [
+      () => "The hiding game. I maintain the spot was excellent. Your finding it was the anomaly.",
+      () => "I've been reviewing our game. I have notes on four better spots. They're classified.",
+    ],
+    spied: [
+      () => "The spying game. You found my thing. My clue was, in hindsight, generous.",
+      () => "I spy remains the only field survey with a winner. I've cited it twice.",
+    ],
     // Imported raising history from The Meadow (see meadow_import.ts).
     raised_favorite: [
       (v) => `They fed me ${v}, back before. I've since disproven ${v}. It remains delicious.`,
@@ -306,6 +318,14 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
       () => "UP! We went UP! I have been in the sky and the sky is FLOOR now and I love it!",
       () => "It was white and it went on forever and I ran in it. I ran in the SKY.",
     ],
+    hid: [
+      () => "Remember when I hid?! I think about the hiding a lot. My heart was SO LOUD.",
+      () => "We played the game! The hiding one! I'm still good at it. I'm a little hidden right now.",
+    ],
+    spied: [
+      () => "The spy game! I picked such a good thing! You FOUND it though. You're so good at things.",
+      () => "I spied a thing and you walked RIGHT to it. Eventually. The middle part was the game!",
+    ],
     errand: [
       (v) => `The ${v}! I carried it! I carried it the whole way and I did not eat it!`,
       () => "I delivered. Everyone was pleased. I have thought about it several times since.",
@@ -355,6 +375,14 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
       () => "I have played the sky. No walls. Nothing came back. ... The best room I have ever died in.",
       () => "We stood above the weather. I gave nothing. There was nothing to give it to. It was perfect.",
     ],
+    hid: [
+      () => "My concealment, that day. The stillness. The craft. You witnessed it.",
+      () => "I still think about my hiding. A career highlight, and no stage anywhere near it.",
+    ],
+    spied: [
+      () => "My clue, that day, was poetry. You solved it anyway. Both of us magnificent.",
+      () => "I spied. You sought. A two-hander with no script. We should tour it.",
+    ],
     errand: [
       (v) => `The ${v} arrived at my lowest moment. Well. One of them. I have several a day.`,
       () => "Someone answered my request. I had prepared a speech about being ignored. It is wasted now.",
@@ -392,6 +420,14 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     climbed: [
       () => "You walked me up a staircase that had no business being there. ... I went first, at the end.",
       () => "There is nothing up there. I stayed for an hour. Say one word about it and I'll deny the lot.",
+    ],
+    hid: [
+      () => "That hiding game proved nothing. Rematch. Someday. When you least expect it.",
+      () => "I've thought about the game. The spot was perfect. The finding was a fluke. We've discussed this.",
+    ],
+    spied: [
+      () => "You solved my clue. I made it too easy on purpose. That is my account and it's final.",
+      () => "The spying game. You did adequately. ... Better than adequately. There. I said it once.",
     ],
     errand: [
       (v) => `You brought the ${v}. Adequate. ... Prompt, even. I shan't make a thing of it.`,
@@ -432,6 +468,14 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
       () => "Up the steps! There's NOTHING up there. Nothing! You can't even take it! I tried!",
       () => "I have been somewhere with no edges. Nowhere to put a thing. ... I hated it. I want to go back.",
     ],
+    hid: [
+      () => "I found two things behind that tree while I was hiding. Kept both. Great game.",
+      () => "The hiding game! Turns out being findable is optional. I'd been doing it as a hobby for years.",
+    ],
+    spied: [
+      () => "That spy game. I nearly picked something in my pocket. Rules said visible. Shame.",
+      () => "I spied a thing and you found it and NEITHER of us took it. Growth, probably.",
+    ],
     errand: [
       (v) => `The ${v}. Mine now. It was always going to be mine. You just made it faster.`,
       () => "You did the errand. Straight. No swap, no trick. ... I don't know what to do with that.",
@@ -470,6 +514,14 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     climbed: [
       () => "I have been above the soil. Well above. ... Nothing grows there. I checked. Twice.",
     ],
+    hid: [
+      () => "... We played, once. In among the quiet. I liked it.",
+      () => "The hiding. ... A good spot holds you like soil. I found a good spot.",
+    ],
+    spied: [
+      () => "... You found the thing I saw. So we've both seen it now. That's the game, I think.",
+      () => "I spied. You walked until you saw it too. ... Simple. Complete.",
+    ],
     errand: [
       (v) => `The ${v}. ... Yes. That's the one I asked for. Thank you. We're not going to discuss it further.`,
       (v) => `The ${v} arrived. ... I still think about that. Briefly. Warmly.`,
@@ -502,6 +554,14 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
     climbed: [
       () => "We went up some steps that are on no plan of the district. I have not raised it. I will not.",
+    ],
+    hid: [
+      () => "The hide-and-seek is on record as concluded. Result: satisfactory. All parties found.",
+      () => "I hid once. Behind something. Off the books entirely. I recommend it to everyone.",
+    ],
+    spied: [
+      () => "The I-spy concluded within parameters. Object observed. No paperwork was generated. Bliss.",
+      () => "I spied a thing, described it badly on purpose, and you found it anyway. Excellent process.",
     ],
     errand: [
       (v) => `The ${v} came through. I've filed it. The filing is the important part.`,
@@ -1549,6 +1609,125 @@ export const COMPANY_BYE: Partial<Record<AdultForm, string[]>> = {
     "Evening. ... Blessings, and so on.",
     "That's my light gone. ... It was a good one.",
   ],
+};
+
+// --- Games (sim/play.ts) -------------------------------------------------------
+// Three moments per game — saying yes, being found, and you giving up — plus
+// the weeks-later memory lines down in RESIDENT_MEMORY (`hid` / `spied`).
+// EVERY PLAYABLE FORM GETS EVERY BANK, on the errand/company argument at its
+// purest: a game pays nothing but the line and the memory, so a form with no
+// line would make the beat land on silence for that person. The secrets are
+// not here because the secrets can never be invited (sim/company.ts).
+//
+// Each form hides badly in its own way, and THAT IS VOICE, not a stat — the
+// sim stores nothing about how well anybody hid, and no line may claim a
+// mechanical fact the world doesn't hold.
+
+/** Saying yes — said as they run off, so it doubles as the rules being made
+ *  up on the spot. There is no count; nothing in a line may promise one. */
+export const GAME_YES: Partial<Record<GameId, Partial<Record<AdultForm, string[]>>>> = {
+  hide: {
+    scholar: [
+      "Very well. I'll conceal myself. Methodically.",
+      "One round. Fair warning: I've surveyed this town. I know where it isn't looking.",
+    ],
+    dog: [
+      "YES. I'm going. I'm already going. DON'T LOOK.",
+      "Hiding! I'm the best at it except for the tail. The tail is a free spirit.",
+    ],
+    blob: [
+      "I shall vanish. The town will speak of nothing else.",
+      "Very well. My absence will be the performance.",
+    ],
+    menace: [
+      "I have somewhere in mind. You'll never find it. It's perfect. Stop watching me.",
+      "One game. I warn you: I am extremely good at not being places.",
+    ],
+    gremlin: [
+      "Hiding! My whole skillset, gone legitimate. Don't follow.",
+      "Yes. I know a spot. It knows me. We have an understanding.",
+    ],
+    office: [
+      "One game. I'm marking myself absent. ... Off I go.",
+      "Approved. I'll be unavailable. For once it's official.",
+    ],
+    carrot: [
+      "... All right. I'll be somewhere.",
+      "One game. Count, or don't. The waiting is the same.",
+    ],
+  },
+};
+
+/** Being found — the flash line at the moment the game ends well. Never a
+ *  score, never a time, never "again?": the invitation is always open and the
+ *  buttons are where it lives. */
+export const GAME_FOUND: Partial<Record<GameId, Partial<Record<AdultForm, string[]>>>> = {
+  hide: {
+    scholar: [
+      "Found. ... Noted. The spot was sound. The observer was better.",
+      "Ah. Found. I'll revise the spot. The spot had one flaw, which was you.",
+    ],
+    dog: [
+      "YOU FOUND ME! I knew you would! I hoped and knew!",
+      "FOUND! My heart was so loud. Could you hear it? It was the loudest thing I own.",
+    ],
+    blob: [
+      "Discovered! ... I was beginning to think the audience had gone home.",
+      "Found. Naturally. A presence like mine can only be delayed.",
+    ],
+    menace: [
+      "This proves nothing. The spot was flawless. You were lucky.",
+      "Fine. Found. I let the tail show. It was mercy.",
+    ],
+    gremlin: [
+      "Found! Fair's fair. I did borrow this spot from somebody smaller.",
+      "You found me. And I found two things while I was in there. Good game all round.",
+    ],
+    office: [
+      "Located. Marking myself present again.",
+      "Found, and honestly? A relief. I was starting to draft things in my head.",
+    ],
+    carrot: [
+      "... Found. So it goes.",
+      "... There you are. There I am. Good game.",
+    ],
+  },
+};
+
+/** You gave up — they come back out on their own. The line is allowed to
+ *  gloat; the sim is not allowed to record it. Nothing is written, nothing is
+ *  scored, and the invitation stays exactly as open as before. */
+export const GAME_GIVEUP: Partial<Record<GameId, Partial<Record<AdultForm, string[]>>>> = {
+  hide: {
+    scholar: [
+      "You stopped? ... The spot wins, then. I'll publish.",
+      "Calling it? Reasonable. The spot was peer-reviewed. By me. From inside it.",
+    ],
+    dog: [
+      "I WON? I won! I've never won! Come here and I'll show you where I was!",
+      "You gave up! That's allowed! I was SO hidden. Even I didn't know where I was!",
+    ],
+    blob: [
+      "You surrender? ... Then I emerge. Triumphant. Slightly cramped.",
+      "The search is called off? A shame. Concealment this fine deserved an audience.",
+    ],
+    menace: [
+      "As expected. The spot was perfect. I'll be using it again. Don't watch.",
+      "Surrender accepted. The spot remains undefeated. So do I, coincidentally.",
+    ],
+    gremlin: [
+      "Gave up? Excellent. The spot stays mine. It's got potential.",
+      "You called it off. Wise. I could've stayed in there for years. Rent free.",
+    ],
+    office: [
+      "You've withdrawn the search. Noted. I was behind something.",
+      "Search concluded, subject unfound. Filing it as a win. My first.",
+    ],
+    carrot: [
+      "... Here I am. It's all right. It was a good spot.",
+      "... I came back. The hiding was nice. Quiet, in there.",
+    ],
+  },
 };
 
 // --- The Maverick Mole --------------------------------------------------------

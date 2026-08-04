@@ -30,7 +30,9 @@ import {
 } from "../sim/game";
 import { nodeAt } from "../sim/gather";
 import { isWalkable } from "../sim/world";
-import { officeLandClaimLine, homeLineFor, companyYesLine, companyByeLine, advanceReply, replyLabel } from "../sim/dialogue";
+import { officeLandClaimLine, homeLineFor, companyYesLine, companyByeLine, gameYesLine, gameFoundLine, gameGiveUpLine, advanceReply, replyLabel } from "../sim/dialogue";
+import { canPlay, startPlay, playing, foundThem, endPlay } from "../sim/play";
+import { GAMES } from "../content/games";
 import type { Reply as ReplyDef } from "../content/conversations";
 import { companion, canInvite, invite, partWays } from "../sim/company";
 import { describeHome } from "../sim/home";
@@ -287,6 +289,7 @@ export class App {
       () => this.openNotebook(),
       () => this.cycleZoom(),
     );
+    this.hud.giveUp.addEventListener("click", () => this.giveUpGame());
     this.wireInput();
     this.restoreZoom();
     window.addEventListener("resize", () => {
@@ -822,6 +825,25 @@ export class App {
                     if (!invite(world, villagerId, Date.now())) return;
                     audio.play("talk");
                     this.flash(`${speech.who}: ${companyYesLine(them.form, this.rng)}`);
+                  }),
+                ]
+              : []),
+            // A game, on company's terms exactly: asking to play IS an
+            // invitation (they come along, the game starts, and when it ends
+            // they are still with you), so the button shows for anyone who
+            // would say yes to a walk — same gate, one step. `canPlay` adds
+            // only what a game needs on top of one: both of you on the
+            // surface. No cooldown ever gates this button; the only timestamp
+            // in the feature shapes how often THEY offer.
+            ...((withMe || askable) && canPlay(world, them, Date.now())
+              ? [
+                  choiceBtn(GAMES.hide.ask, () => {
+                    close();
+                    const now = Date.now();
+                    if (!withMe && !invite(world, villagerId, now)) return;
+                    if (!startPlay(world, villagerId, "hide", now, this.rng)) return;
+                    audio.play("talk");
+                    this.flash(`${speech.who}: ${gameYesLine("hide", them.form, this.rng)}`);
                   }),
                 ]
               : []),
@@ -1653,6 +1675,35 @@ export class App {
     }
     const who = this.world.villagers.find((v) => v.id === before);
     if (who) this.flash(`${who.name}: ${companyByeLine(who.form, this.rng)}`);
+  }
+
+  /** The `attend()` shape, like the three notices above it: `foundThem` returns
+   *  the hider exactly once, on the frame you got close enough, and this is the
+   *  frame the line is said on. Also the keeper of the give-up chip — shown
+   *  only while a hider is out there, which is the state the chip exists for. */
+  private noticeFound(): void {
+    if (!this.world) return;
+    // "inline-block", not "" — the empty string would fall through to the
+    // stylesheet, and the stylesheet's resting state is `display: none`.
+    this.hud.giveUp.style.display = playing(this.world)?.game === "hide" ? "inline-block" : "none";
+    const who = foundThem(this.world, Date.now());
+    if (!who) return;
+    audio.play("talk");
+    this.flash(`${who.name}: ${gameFoundLine("hide", who.form, this.rng)}`);
+  }
+
+  /** Stop looking. Costless by design: no memory, no friendship change, and
+   *  they simply walk back to you (sim/play.ts `endPlay` — the "gave_up" arm
+   *  writes nothing at all). The line is allowed to gloat; the sim is not
+   *  allowed to record it. */
+  private giveUpGame(): void {
+    if (!this.world) return;
+    const p = playing(this.world);
+    if (!p) return;
+    const who = this.world.villagers.find((v) => v.id === p.who);
+    endPlay(this.world, Date.now(), "gave_up");
+    this.hud.giveUp.style.display = "none";
+    if (who) this.flash(`${who.name}: ${gameGiveUpLine(p.game, who.form, this.rng)}`);
   }
 
   /** Close a commission the moment its house is real, if it just became real.
@@ -2751,6 +2802,7 @@ export class App {
       this.noticeArrival();
       this.noticeFestival();
       this.noticeParting();
+      this.noticeFound();
     } else {
       this.acc = 0;
     }
@@ -2841,6 +2893,11 @@ interface HudRefs {
   clock: HTMLElement;
   survey: HTMLElement;
   flash: HTMLElement;
+  /** "Call it off" — visible only while a hider is out there. The one piece of
+   *  HUD a game owns, and it exists because the closing row can't: the way out
+   *  of everything else lives in the conversation panel, and the hider is by
+   *  construction not standing next to you to have one. */
+  giveUp: HTMLElement;
   toolButtons: [Tool, HTMLElement][];
   buildButtons: [BuildTool, HTMLElement][];
   /** The category tabs, and which tools each button belongs to. */
@@ -2918,6 +2975,13 @@ function buildHud(
   // set four inline styles, which meant the toast's look was split across two
   // files and the CSS half couldn't see it.
   const flash = el("div", { class: "clock flash" });
+
+  // The hide-and-seek escape hatch. A chip, not a panel: giving up costs
+  // nothing and records nothing (sim/play.ts), so the button should weigh
+  // about as much as the toast it sits over. Hidden except mid-game — an
+  // always-there button for a rarely-there state would be HUD noise.
+  const giveUp = el("button", { class: "clock giveup" }, ["Call it off"]);
+  hoverHint(giveUp, "Stop looking. They'll come out — no harm done.");
 
   const toolButtons: [Tool, HTMLElement][] = [];
   const palette = el("div", { class: "tool-palette" });
@@ -3037,6 +3101,7 @@ function buildHud(
     clock,
     survey,
     flash,
+    giveUp,
     // The row and the tools ride in one bottom-left stack, so the row growing a
     // second line of chips pushes itself up and leaves the tools exactly where
     // your thumb left them — the same reason the build bar stacks its finishes
@@ -3047,7 +3112,7 @@ function buildHud(
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, survey, flash, toolButtons, buildButtons, groupButtons, buildFinishes, seedVarieties, build, rotate, undo, zoom };
+  return { root: hud, clock, survey, flash, giveUp, toolButtons, buildButtons, groupButtons, buildFinishes, seedVarieties, build, rotate, undo, zoom };
 }
 
 // --- Panel helpers ------------------------------------------------------------

@@ -588,6 +588,19 @@ select {
   transition: opacity 0.3s;
 }
 
+/* "Call it off" — hide-and-seek's one piece of HUD (ui/app.ts `noticeFound`).
+   The clock's chip, made pressable, sitting under the clock where a standing
+   state belongs. It weighs what the toast weighs because that is what giving
+   up costs: nothing. Hidden except mid-game, from JS. */
+.clock.giveup {
+  pointer-events: auto;
+  cursor: pointer;
+  top: 52px;
+  font-weight: 600;
+  letter-spacing: 0;
+  display: none;
+}
+
 /* Hover descriptor for HUD buttons (ui/dom.ts `hoverHint`). Desktop only —
    there is no hover on a phone, and the JS never shows it for a touch pointer.
    Fixed rather than inside .hud so it can't be clipped by a palette, and

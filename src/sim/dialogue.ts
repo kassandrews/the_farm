@@ -34,6 +34,9 @@ import {
   COMPANY_IDLE,
   COMPANY_YES,
   COMPANY_BYE,
+  GAME_YES,
+  GAME_FOUND,
+  GAME_GIVEUP,
   RESIDENT_ABSENCE,
   RESIDENT_MIDST,
   RESIDENT_KIN,
@@ -42,6 +45,7 @@ import {
 } from "../content/dialogue";
 import { ARRIVALS } from "../content/arrivals";
 import { isNewcomer } from "../content/cast";
+import type { GameId } from "../content/games";
 import { CAST } from "../content/cast";
 import { conversationRoots } from "../content/conversations";
 import type { Exchange, Reply } from "../content/conversations";
@@ -244,6 +248,14 @@ export const MEMORY_PRIORITY: MemoryKind[] = [
   // somewhere nobody has ever been, where the far country is merely somewhere
   // nobody bothered to arrange.
   "far_out",
+  // The games (sim/play.ts). Above `company` because a game is a walk PLUS a
+  // specific thing the two of you did on it; below the places above, because
+  // those are afternoons almost nobody in the town has had. The line here is
+  // the whole payout of a game — no item, no unlock, nothing gates on one —
+  // so like the Moments, an unranked kind would be a memory that exists and
+  // can never be spoken.
+  "hid",
+  "spied",
   "company",
   // The other rare Moment, and ABOVE the festival for the reason the festival
   // itself is high: rarity plus company. There are five real showers in a year
@@ -626,4 +638,20 @@ export function companyYesLine(form: AdultForm, rng: Rng): string {
 
 export function companyByeLine(form: AdultForm, rng: Rng): string {
   return rng.pick(COMPANY_BYE[form] ?? ["...", "That's me for the day. Go well."]);
+}
+
+// The game beats, same shape as the company pair above. The fallbacks exist
+// for safety, not for use: play_lines.test.ts asserts every playable form has
+// a real line in every one of these banks, so "..." here is the same promise
+// companyYesLine makes — unreachable until somebody adds a form.
+export function gameYesLine(game: GameId, form: AdultForm, rng: Rng): string {
+  return rng.pick(GAME_YES[game]?.[form] ?? ["..."]);
+}
+
+export function gameFoundLine(game: GameId, form: AdultForm, rng: Rng): string {
+  return rng.pick(GAME_FOUND[game]?.[form] ?? ["..."]);
+}
+
+export function gameGiveUpLine(game: GameId, form: AdultForm, rng: Rng): string {
+  return rng.pick(GAME_GIVEUP[game]?.[form] ?? ["..."]);
 }
