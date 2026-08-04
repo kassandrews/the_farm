@@ -1043,6 +1043,19 @@ select {
   border-top: 2px solid var(--panel-edge);
 }
 
+/* The Notebook's page turns, inside the panel's one sticky foot. Pushed to the
+   far side from Close it, because they are not choices in a transaction — they
+   are which page you are holding, and a turn button shoulder to shoulder with
+   the panel's verb reads as a third thing you might commit to.
+
+   It wraps on a narrow panel, and it must: `.row` is `flex-wrap`, so on a phone
+   the turns drop to their own line above Close it rather than squeezing it. */
+.panel .row .turns {
+  display: flex;
+  gap: 10px;
+  margin-right: auto;
+}
+
 /* The row supplies the panel's bottom padding once it is sticky, so the panel
    must stop supplying its own or the two stack into a 36px gutter. Panels with
    no action row at all (the menu is choices and nothing else) keep theirs. */

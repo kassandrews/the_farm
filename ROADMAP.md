@@ -5841,6 +5841,36 @@ Found on screen, which is the only place it was visible: at the full inter-day
 gap the first date read as a **subtitle of the panel's own title** rather than as
 the first date. It gets less air than the days get from each other.
 
+#### The journal turns pages — **built, later**
+
+Chunking fixed the reading order and left the shape: one tall column behind a
+scrollbar, which is not what a notebook is. It is **paged** now — `journalPages`
+in `sim/notebook.ts` packs the same chunks into `JournalChunk[][]`, and the panel
+draws one page with a turn row.
+
+**Pages break on whole days, never inside one.** A date heading at the foot of a
+page with its entries on the next one is the one thing paging could break that
+scrolling could not, so a chunk that will not fit starts the next page instead of
+overflowing onto it — and a day with more entries than a page fits gets a long
+page of its own rather than being split. `PAGE_ENTRIES` is a target, not a cap.
+
+**The turn row prints no number**, and that is the §9c rule surviving contact
+with a pager. "Page 3 of 7" is a denominator, and a denominator over the entries
+you have written down is the same meter this panel has refused since it shipped —
+so the position indicator is the DEAD BUTTON: you are at the front because there
+is nothing to turn back to. `journalPages` returns an array and nothing else; the
+count never reaches the page it would be printed on.
+
+Two things found on screen and not in tests:
+
+1. **Six entries a page was set on a laptop.** It filled a 440px panel nicely and
+   still ran off the bottom of a 844px phone — the scroll paging exists to
+   remove, on the device the game is designed for first. Four.
+2. **A second `.row` is a second panel foot.** `.row` is sticky and carries a rule
+   and 18px of padding, so the turn row and the close row stacked two edges across
+   the bottom of the book. One row: turns pushed left (`.turns`, `margin-right:
+   auto`), Close it where it is in every other panel.
+
 ### 10i — Found is written down, given is announced — **built**
 
 Unlocks have a channel now, and which one you get is decided by **who caused it**,

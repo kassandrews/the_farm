@@ -6,6 +6,7 @@ import {
   noticed,
   journal,
   journalChunks,
+  journalPages,
   journalEmpty,
   sweepNoticed,
   tellable,
@@ -397,6 +398,46 @@ describe("the table", () => {
     for (const o of OBSERVATIONS.slice(0, 3)) observe(three, o.id, WED);
     expect(journalChunks(three, WED)).toHaveLength(1);
     expect(journalChunks(three, WED)[0].heading).toBe(journalChunks(one, WED)[0].heading);
+  });
+
+  it("cuts pages on whole days, so a date never leaves its entries behind", () => {
+    // The one thing paging could break that scrolling could not: a heading at
+    // the bottom of a page with the day it dates on the next one.
+    const w = world();
+    // Four days of three entries each — twelve entries, more than one page.
+    const days = [3, 2, 1, 0];
+    days.forEach((d, i) => {
+      for (const o of OBSERVATIONS.slice(i * 3, i * 3 + 3)) {
+        observe(w, o.id, WED - d * 86_400_000);
+      }
+    });
+    const pages = journalPages(w, WED);
+    expect(pages.length).toBeGreaterThan(1);
+    for (const page of pages) {
+      for (const chunk of page) expect(chunk.entries).toHaveLength(3);
+    }
+    // And every entry survives the cut, in the order the panel would draw them.
+    expect(pages.flat().flatMap((c) => c.entries)).toEqual(chunked(w, WED));
+  });
+
+  it("gives a day longer than a page its own page rather than splitting it", () => {
+    // Written oldest first, the way the world writes it — the journal is
+    // insertion-ordered and read back reversed, so yesterday goes down first.
+    const w = world();
+    observe(w, OBSERVATIONS[9].id, WED - 86_400_000);
+    for (const o of OBSERVATIONS.slice(0, 9)) observe(w, o.id, WED);
+    const pages = journalPages(w, WED);
+    expect(pages).toHaveLength(2);
+    expect(pages[0][0].entries).toHaveLength(9);
+    expect(pages[0][0].heading).toBe("Today");
+    expect(pages[1][0].heading).toBe("Yesterday");
+  });
+
+  it("always has a page to draw once anything is written down", () => {
+    const w = world();
+    expect(journalPages(w, WED)).toEqual([]);
+    observe(w, "the-fen", WED);
+    expect(journalPages(w, WED)).toHaveLength(1);
   });
 
   it("reads a clock that went backwards as today, not as a day in the future", () => {

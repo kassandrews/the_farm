@@ -51,7 +51,7 @@ import { count } from "../sim/inventory";
 import { beginStroke, captureCell, endStroke, undoStroke, canUndo, undoLabel } from "../sim/undo";
 import { qualify, assign, beds, rehomeAcrossStroke, bedKeys, pendingRehome, DISQUALIFIER_TEXT } from "../sim/assign";
 import { counterBatches, cabinet, cabinetEmpty, file } from "../sim/filings";
-import { journalChunks, journalEmpty } from "../sim/notebook";
+import { journalPages, journalEmpty } from "../sim/notebook";
 import type { CharId, NewcomerId } from "../content/cast";
 import { isNewcomer, isSecret, CAST, charDef } from "../content/cast";
 import { present } from "../sim/presence";
@@ -1200,7 +1200,10 @@ export class App {
    *  WHAT IT MUST NEVER DRAW (DESIGN §The Notebook, ROADMAP 9c):
    *
    *    • No count, no total, no denominator, and not `world.notebook.length`
-   *      reconstructed here.
+   *      reconstructed here. INCLUDING THE PAGER: the turn row prints no page
+   *      number and no "of", because a page count is a count of what you have
+   *      written down. You know you are at the front because there is nothing to
+   *      turn back to — see the turn row below.
    *    • No blanks, no "???", no greyed future entries. A slot that implies more
    *      is the exact UI spoiler the tone rules ban for secrets, wearing a
    *      journal cover — and it is the single easiest way to ruin this feature.
@@ -1215,6 +1218,10 @@ export class App {
    *  thing you just noticed is what you opened the book to read. See
    *  `journalChunks`; none of the arithmetic belongs up here.
    *
+   *  It is PAGED, not scrolled — a book turns, and a long journal read as one
+   *  tall column of paragraphs behind a scrollbar. `journalPages` cuts the paper
+   *  so a date heading never lands at the bottom of a page away from its day.
+   *
    *  The one visible distinction is HOW an entry was recorded: a field note in
    *  your own hand reads plain, and something you were told is prefixed with who
    *  told you. That is the whole texture, and it costs one eyebrow.
@@ -1225,26 +1232,67 @@ export class App {
 
     this.openModal((close) => {
       const body = el("div", {});
+      // Paged rather than scrolled, and the pages are cut ONCE on open: `now`
+      // read per render would re-date the book mid-read, and an entry crossing
+      // midnight from "Today" to "Yesterday" while you were three pages into it
+      // could repaginate under your thumb.
+      const pages = journalPages(world, Date.now());
+      let at = 0;
 
-      if (journalEmpty(world)) {
-        // An empty state that is a line, not a zero — and one that promises
-        // nothing. It does not say "start exploring"; it says the book is new.
-        body.append(
-          el("p", {}, [
-            "Blank, so far ... It is a good notebook. Stiff spine, ruled feint, and nothing in it yet.",
-          ]),
-        );
-      } else {
-        for (const chunk of journalChunks(world, Date.now())) {
-          body.append(el("div", { class: "when" }, [chunk.heading]));
-          for (const { def, line } of chunk.entries) {
-            if (def.source === "told") body.append(el("div", { class: "who" }, ["Told"]));
-            body.append(el("p", {}, [line]));
+      const render = () => {
+        body.replaceChildren();
+
+        if (journalEmpty(world)) {
+          // An empty state that is a line, not a zero — and one that promises
+          // nothing. It does not say "start exploring"; it says the book is new.
+          body.append(
+            el("p", {}, [
+              "Blank, so far ... It is a good notebook. Stiff spine, ruled feint, and nothing in it yet.",
+            ]),
+          );
+        } else {
+          for (const chunk of pages[at]) {
+            body.append(el("div", { class: "when" }, [chunk.heading]));
+            for (const { def, line } of chunk.entries) {
+              if (def.source === "told") body.append(el("div", { class: "who" }, ["Told"]));
+              body.append(el("p", {}, [line]));
+            }
           }
         }
-      }
 
-      body.append(actionRow([primaryBtn("Close it", close)]));
+        // The turn row says NOTHING about where you are — no number, no total,
+        // no "of". A book tells you you are at the front by having nothing to
+        // turn back to, and that is the whole indicator: the dead button IS the
+        // position. Anything more numerate is the denominator §9c bans, and it
+        // would be counting the entries you have written down.
+        //
+        // Both turns are always drawn, disabled at the ends rather than removed,
+        // so the close button doesn't walk sideways as you read.
+        //
+        // ONE row, not two: `.row` is the panel's sticky foot and brings a rule
+        // and 18px of padding with it, so a second one stacked two edges and two
+        // feet across the bottom of the book. The turns sit at the left of that
+        // one foot and Close it stays where it is in every other panel — the
+        // turns are not choices in the transaction, they are the page you are
+        // holding.
+        const row: HTMLElement[] = [];
+        if (pages.length > 1) {
+          const back = choiceBtn("Back a page", () => {
+            at--;
+            render();
+          });
+          const on = choiceBtn("On a page", () => {
+            at++;
+            render();
+          });
+          (back as HTMLButtonElement).disabled = at === 0;
+          (on as HTMLButtonElement).disabled = at >= pages.length - 1;
+          row.push(el("div", { class: "turns" }, [back, on]));
+        }
+        row.push(primaryBtn("Close it", close));
+        body.append(actionRow(row));
+      };
+      render();
       // The eyebrow has to cover BOTH kinds. "What you've noticed" was wrong the
       // moment the first told entry landed under it — found by reading the real
       // panel, which is the only place the two sit together.

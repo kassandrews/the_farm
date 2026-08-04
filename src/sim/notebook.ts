@@ -209,6 +209,54 @@ export function journalChunks(world: WorldState, now: number): JournalChunk[] {
   return chunks;
 }
 
+/** How many entries a page holds before the next one starts. A soft target, not
+ *  a cap: `journalPages` will overrun it rather than split a day badly.
+ *
+ *  Four, set on a PHONE and not on a desktop — this game is touch-first, and six
+ *  filled a 440px panel on a laptop while still running off the bottom of a 844px
+ *  phone, which is the scroll paging was meant to remove. Entries are one to five
+ *  lines each, so this is a target and not a measurement; the only page that
+ *  reliably overruns is a day with more than four things in it. */
+const PAGE_ENTRIES = 4;
+
+/** The journal as PAGES you turn, rather than one column you scroll.
+ *
+ *  Same chunks, same order — this only decides where the paper ends. A page is a
+ *  run of whole chunks, filled until it has `PAGE_ENTRIES` on it; a day longer
+ *  than a page gets a page of its own rather than being split, because a date
+ *  heading is the one thing on this panel that must never be orphaned from what
+ *  it dates.
+ *
+ *  NO PAGE MAY KNOW HOW MANY THERE ARE, and nothing here tells it: a page is a
+ *  list of chunks, with no index and no total on it. The panel's rule against
+ *  counts (§9c) survives paging only if the count never reaches the page in the
+ *  first place — a "3 of 7" the UI merely chose not to print is one refactor
+ *  away from being printed. The caller knows the array's length, which is what
+ *  lets it grey out a turn it cannot make, and that is as far as it goes.
+ *
+ *  Never returns an empty array for a non-empty journal, so the panel always has
+ *  a page to draw. */
+export function journalPages(world: WorldState, now: number): JournalChunk[][] {
+  const pages: JournalChunk[][] = [];
+  let page: JournalChunk[] = [];
+  let count = 0;
+
+  for (const chunk of journalChunks(world, now)) {
+    // Start a fresh page before a chunk that will not fit, rather than after one
+    // that overflowed — otherwise the first page of a long day is one heading and
+    // nothing else. A chunk bigger than a whole page still goes on one page.
+    if (count > 0 && count + chunk.entries.length > PAGE_ENTRIES) {
+      pages.push(page);
+      page = [];
+      count = 0;
+    }
+    page.push(chunk);
+    count += chunk.entries.length;
+  }
+  if (page.length > 0) pages.push(page);
+  return pages;
+}
+
 // --- What fires an entry ------------------------------------------------------
 
 /** Everything the world checks as you move through it.
