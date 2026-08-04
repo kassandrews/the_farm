@@ -1073,6 +1073,55 @@ function repair(obj: Record<string, unknown>): void {
     return true;
   });
   if (kept.length !== villagers.length) obj.villagers = kept;
+
+  // A FIXED CHARACTER STANDS WHERE THEIR TABLE SAYS, and this is the other
+  // thing a save should never have contained.
+  //
+  // `tickVillager` returns early on `def.fixed` — that early return is the whole
+  // of how the Office Creature stays at his desk — so a fixed villager's stored
+  // coordinate is never revisited once it is written. Which means moving one in
+  // content/cast.ts moves them in a NEW town and nowhere else: every save that
+  // already exists keeps them standing where the old table put them, for ever.
+  //
+  // That shipped. The Menace and the curator were moved out from behind their
+  // own counters, the fix was photographed in a fresh world and looked correct,
+  // and on a live save both were still hidden — because the browser harness
+  // onboards a new town every run and the one place the bug lives is the one
+  // place it never looked. The commit that made the move claimed a live save
+  // would right itself on load. It would not.
+  //
+  // So their position is derived here rather than trusted, which is what it
+  // should always have been: for somebody who cannot walk, the schedule is not
+  // where they are going, it is where they ARE. Self-healing for the next move
+  // too, with no migration to write — the number in the save simply stops being
+  // the authority.
+  //
+  // ONE STOP ONLY, and `fixed` is not the test — which the save tests caught on
+  // the first run, having been written for exactly this.
+  //
+  // `fixed` says the walking code leaves you alone; it does NOT say you are
+  // stationary. Pesto is fixed and walks a round: eight stops, position derived
+  // from the clock by `scheduledStop`, and the early return in `tickVillager` is
+  // stepped around for him specifically. Snapping every fixed villager to
+  // `schedule[0]` therefore teleported the postman to wherever he sleeps,
+  // whatever the hour, on every load.
+  //
+  // A single stop is the real condition and it is the honest one: with one entry
+  // there is no clock to consult, so the table IS the position and nothing is
+  // being overruled. More than one and the clock owns it.
+  //
+  // The three secrets are excluded by the same line for a second reason — their
+  // stops are symbolic (`at: "warren"`), resolved against a world this function
+  // does not have, and a literal 0,0 is exactly the wrong answer for the Mole.
+  for (const v of obj.villagers as { id?: unknown; fixed?: unknown; x?: unknown; y?: unknown }[]) {
+    if (v?.fixed !== true || typeof v.id !== "string") continue;
+    const def = CAST[v.id as keyof typeof CAST];
+    if (!def || def.schedule.length !== 1) continue;
+    const stop = def.schedule[0];
+    if (stop.at) continue;
+    v.x = stop.x;
+    v.y = stop.y;
+  }
 }
 
 /** A shallow sanity check that the required top-level shape survived. Not a

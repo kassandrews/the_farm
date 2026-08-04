@@ -152,6 +152,46 @@ describe("the town's own buildings", () => {
     }
   });
 
+  it("never stands its own furniture in a wall", () => {
+    // The heap's counter was authored at (6,-7) and the heap's `x0` is 6, so its
+    // left half stood in the west wall: half the table drew outside the
+    // building, and the only walkable cell adjacent to its anchor was out on the
+    // grass. You could not stand at your own shop's counter from inside the
+    // shop.
+    //
+    // It survived because nothing needed to REACH a table until counters became
+    // things you walk up to. The doorway guard below is the closest existing
+    // check and it looks at one cell; this looks at every cell of every piece.
+    for (const b of allTownBuildings()) {
+      for (const f of b.furniture) {
+        for (const [x, y] of cellsFor(f.x, f.y, f.id, f.facing)) {
+          expect(
+            isPerimeter(b, x, y),
+            `${b.id}: ${f.id} at ${f.x},${f.y} covers wall cell ${x},${y}`,
+          ).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("leaves every counter reachable from inside its own building", () => {
+    // The consequence the wall check above is really about. A counter you can
+    // only stand next to by leaving the building is a counter nobody can use.
+    const w = newWorld({ name: "Test", form: "blob", spot: "forest", seed: 5 });
+    for (const b of allTownBuildings()) {
+      for (const f of b.furniture) {
+        if (!f.counter) continue;
+        const inside = cellsFor(f.x, f.y, f.id, f.facing)
+          .flatMap(([x, y]) => [[x, y + 1], [x, y - 1], [x + 1, y], [x - 1, y]])
+          .some(
+            ([x, y]) =>
+              x > b.x0 && x < b.x1 && y > b.y0 && y < b.y1 && isWalkable(w, x, y, "surface"),
+          );
+        expect(inside, `${b.id}: its counter has no walkable neighbour indoors`).toBe(true);
+      }
+    }
+  });
+
   it("never lets its own furniture seal the front door", () => {
     // A solid piece parked in the entryway would lock the resident out of the
     // house we just gave them, and the symptom would be subtle: they'd snap

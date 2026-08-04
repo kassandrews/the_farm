@@ -229,14 +229,25 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     door: { x: 8, y: -6 },
     finish: "ash",
     furniture: [
-      // Shelves he refers to as "the system". He stands at (8,-8), between them.
+      // Shelves he refers to as "the system". He stands beside the counter, at
+      // (9,-9).
       { x: 7, y: -10, id: "shelf", facing: "s" },
       { x: 9, y: -10, id: "shelf", facing: "s" },
-      // A table off to the west side, clear of the doorway at x 8 — solid
+      // The counter, one row inside the door.
+      //
+      // IT WAS AT (6,-7), WHICH IS THE WEST WALL. `x0` is 6, so the wall ring
+      // runs down that column, and the table's left half was standing in it —
+      // half the counter drew outside the building, and the only walkable tile
+      // adjacent to its anchor was out on the grass. You could not stand next to
+      // your own shop's counter from inside your own shop. It went unnoticed
+      // because nothing asked to reach it until counters became things you walk
+      // up to (content/counters.ts); `town.test.ts` guards doorways, not walls.
+      //
+      // Row -8 rather than -7, so the doorstep at (8,-7) stays clear — solid
       // furniture in front of a door seals the building, which is the bug
-      // town.test.ts's "never lets its own furniture seal the front door" was
-      // written for when the shop's counter did exactly that.
-      { x: 6, y: -7, id: "table", facing: "s", counter: "heap" },
+      // "never lets its own furniture seal the front door" was written for when
+      // the shop's counter did exactly that.
+      { x: 7, y: -8, id: "table", facing: "s", counter: "heap" },
     ],
   },
 

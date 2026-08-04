@@ -32,7 +32,8 @@ import {
 } from "../sim/game";
 import { nodeAt } from "../sim/gather";
 import { touchableAt } from "../sim/counters";
-import { counterKeptBy, counterDef } from "../content/counters";
+import { sameRoof } from "../sim/rooms";
+import { counterDef } from "../content/counters";
 import type { CounterId } from "../content/counters";
 import { isWalkable } from "../sim/world";
 import { officeLandClaimLine, homeLineFor, givenLine, companyYesLine, companyByeLine, gameYesLine, gameFoundLine, gameGiveUpLine, gameOfferLine, sittingLine, lookAtLine, advanceReply, replyLabel } from "../sim/dialogue";
@@ -752,9 +753,6 @@ export class App {
     // of the seven told observations are spoken by keepers and each wrote its
     // notebook entry while its line went nowhere.
     //
-    // Their counters are objects in the world instead (content/counters.ts), and
-    // `ask` below is the way back to one from here.
-    const counter = counterKeptBy(villagerId);
 
     // The intro comes first, and now it can arrive by either road: this one, or
     // walking up to the table. `withPreamble` is the shared door, so "you meet
@@ -808,25 +806,19 @@ export class App {
                   }),
                 ]
               : []),
-            // Their counter, for whoever keeps one. It CLOSES first rather than
-            // opening over this panel: a stacked pair of modals is the
-            // menu-in-front-of-a-menu the shop has always refused. Same gesture
-            // as the bed offer above, which also closes and then does its thing.
+            // NO COUNTER BUTTON HERE, and its absence is the feature.
             //
-            // This was Gary's alone and hardcoded, back when he was the only
-            // institution with a conversation as well as a counter. All six have
-            // both now, so the label comes off the table and the special case
-            // goes away. The counter is still reachable in one tap by walking up
-            // to the thing itself; this is the road for somebody who came to see
-            // the person.
-            ...(counter
-              ? [
-                  choiceBtn(counter.ask, () => {
-                    close();
-                    this.openCounter(counter.id);
-                  }),
-                ]
-              : []),
+            // There was one, briefly, on Gary's precedent — he had "Anything to
+            // file?" back when he was the only institution with a conversation
+            // as well as a counter, and giving all six the same reply looked
+            // like keeping both roads open. On screen it was the thing this
+            // whole change set out to remove: every keeper in town opening with
+            // an offer to trade, which is the menu-in-front-of-a-menu 14a
+            // refused, restored one panel further in.
+            //
+            // The counter is a thing in the room. You walk up to it. A person
+            // who mentions it every time you say hello is a person whose job has
+            // eaten them, and the point of splitting the two was that it hadn't.
             ...(askable
               ? [
                   choiceBtn("Come with me?", () => {
@@ -2378,7 +2370,7 @@ export class App {
       const near = this.villagerNear(wpt.x, wpt.y);
       if (near) {
         const p = this.world.player;
-        if (Math.hypot(near.x - p.x, near.y - p.y) <= 2.6) {
+        if (Math.hypot(near.x - p.x, near.y - p.y) <= 2.6 && this.canSee(near)) {
           this.openDialogue(near.id);
           return;
         }
@@ -2420,10 +2412,17 @@ export class App {
       // is two tiles wide and you should walk to the half you pointed at.
       // `resolveWalkToAct` then wants Manhattan distance 1 from that same cell,
       // so the two have to agree about which tile this is about.
-      if (this.layer() === "surface" && touchableAt(this.world, tx, ty)) {
-        const stand = this.approachTile(tx, ty);
+      const touch = this.layer() === "surface" ? touchableAt(this.world, tx, ty) : null;
+      if (touch) {
+        // `touch`, NOT the tapped cell. They differ whenever you tapped the part
+        // of a counter that is drawn in the cell above its own, and using the tap
+        // there walked the player ONTO that cell and fired ACT from the one
+        // before it — a walk that ended in front of the counter having done
+        // nothing. What comes back is always a solid cell of the piece, which is
+        // what makes `moveTo` refuse and turn you to face it instead.
+        const stand = this.approachTile(touch.x, touch.y);
         if (stand) {
-          this.walkingToAct = { x: tx, y: ty };
+          this.walkingToAct = { x: touch.x, y: touch.y };
           moveTo(this.world, stand.x, stand.y);
           return;
         }
@@ -2644,6 +2643,26 @@ export class App {
    *  by digging the one person you cannot talk to. Matching layers keeps the
    *  original guarantee intact — you still can't talk to a villager walking
    *  over your head — while letting the exception speak. */
+  /** Is there a roof between us? Both talk paths ask, because both had the same
+   *  hole: 2.6 tiles of proximity goes straight through a wall, so you could
+   *  stand in the plaza and hold a conversation with the Office Creature at his
+   *  desk with the town hall's roof drawn over him. You could not see him.
+   *
+   *  Rounded to tiles, matching every other question this file asks of the room
+   *  machinery — a villager mid-step is between two cells and a room is made of
+   *  cells. */
+  private canSee(v: { x: number; y: number }): boolean {
+    if (!this.world) return false;
+    const p = this.world.player;
+    return sameRoof(
+      this.world,
+      Math.round(p.x),
+      Math.round(p.y),
+      Math.round(v.x),
+      Math.round(v.y),
+    );
+  }
+
   private sameLayer(v: { layer?: import("../sim/types").Layer }): boolean {
     return (v.layer ?? "surface") === (this.world?.player.layer ?? "surface");
   }
@@ -2655,7 +2674,7 @@ export class App {
     for (const v of this.world.villagers) {
       if (!this.sameLayer(v) || !present(v, Date.now())) continue;
       const d = Math.hypot(v.x - p.x, v.y - p.y);
-      if (d <= 2.6 && (!best || d < best.d)) best = { id: v.id, d };
+      if (d <= 2.6 && this.canSee(v) && (!best || d < best.d)) best = { id: v.id, d };
     }
     if (best) this.openDialogue(best.id);
   }

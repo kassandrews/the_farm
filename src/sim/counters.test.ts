@@ -10,6 +10,7 @@ import { TOWN_BUILDINGS, TOWN_FIXTURES } from "../content/town";
 import { CAST } from "../content/cast";
 import { furnitureDef } from "../content/furniture";
 import { removeFurnitureAt } from "./furniture";
+import { serialize, deserialize } from "./save";
 
 function freshWorld() {
   return newWorld({ name: "Me", form: "dog", spot: "forest", seed: 12 });
@@ -167,5 +168,59 @@ describe("what ACT promises at one", () => {
     w.player.x = board.x;
     w.player.y = board.y + 1;
     expect(actionTarget(w, "gather").kind).toBe("read");
+  });
+});
+
+describe("a save written before the keepers moved", () => {
+  it("stands them where the table says, not where it says", () => {
+    // The bug this shipped with. `tickVillager` returns early on `def.fixed`, so
+    // a fixed villager's stored coordinate is never revisited — moving one in
+    // content/cast.ts moved them in a NEW town and in no existing one. Both
+    // keepers stayed hidden behind their own counters on every live save, and
+    // the browser harness could not see it because it onboards a fresh town.
+    const w = freshWorld();
+    const menace = w.villagers.find((v) => v.id === "shop")!;
+    menace.x = 9; // where she used to stand: directly north of her counter
+    menace.y = -2;
+    const revived = deserialize(serialize(w))!;
+    const after = revived.villagers.find((v) => v.id === "shop")!;
+    expect({ x: after.x, y: after.y }).toEqual({ x: CAST.shop.schedule[0].x, y: CAST.shop.schedule[0].y });
+  });
+
+  it("leaves everybody who can walk exactly where they were", () => {
+    const w = freshWorld();
+    const walker = w.villagers.find((v) => !v.fixed)!;
+    walker.x = 40;
+    walker.y = 40;
+    const revived = deserialize(serialize(w))!;
+    const after = revived.villagers.find((v) => v.id === walker.id)!;
+    expect({ x: after.x, y: after.y }).toEqual({ x: 40, y: 40 });
+  });
+
+  it("leaves the postman on his round", () => {
+    // `fixed` does not mean stationary. Pesto is fixed AND walks a round — eight
+    // stops, position derived from the clock — so snapping every fixed villager
+    // to schedule[0] teleported him to wherever he sleeps, at every hour, on
+    // every load. One stop is the real condition.
+    const w = freshWorld();
+    const pesto = w.villagers.find((v) => v.id === "errands")!;
+    expect(CAST.errands.schedule.length).toBeGreaterThan(1);
+    pesto.x = 7;
+    pesto.y = -5; // mid-round, delivering to the heap
+    const after = deserialize(serialize(w))!.villagers.find((v) => v.id === "errands")!;
+    expect({ x: after.x, y: after.y }).toEqual({ x: 7, y: -5 });
+  });
+
+  it("does not drag a secret to the origin", () => {
+    // The Mole's stop is symbolic (`at: "warren"`, x/y zero) and resolved
+    // against a world `repair` does not have. A literal 0,0 would put him in
+    // the middle of the plaza.
+    const w = freshWorld();
+    const mole = w.villagers.find((v) => v.id === "mole");
+    if (!mole) return;
+    mole.x = 12;
+    mole.y = -30;
+    const after = deserialize(serialize(w))!.villagers.find((v) => v.id === "mole")!;
+    expect({ x: after.x, y: after.y }).toEqual({ x: 12, y: -30 });
   });
 });

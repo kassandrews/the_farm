@@ -241,7 +241,11 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // He is a gremlin and so is Snag, the fourth arrival, on the same footing
     // as the two Menaces: forms are species, not singletons (DESIGN
     // §Importing). This one is the facility.
-    schedule: [{ fromHour: 0, x: 8, y: -8, doing: "at the facility" }],
+    // Beside the counter, at its east end — Derek's relation, like everybody
+    // else who keeps one. He used to stand at (8,-8), which is now the counter's
+    // right-hand cell: the table moved out of the west wall it was embedded in
+    // and landed on him (content/town.ts).
+    schedule: [{ fromHour: 0, x: 9, y: -9, doing: "at the facility" }],
   },
   museum: {
     id: "museum",

@@ -6963,6 +6963,65 @@ it had just composed, which threw away more than a line:
   the mailbox's rung on the mailbox's own argument: *"Somewhere you cannot till
   is a curiosity; a letter nobody can open is a feature that does not exist."*
 
+### Six things playing it found that neither tests nor a fresh world could
+
+Every one of these was reported from an actual save, and every one was invisible
+to the harness because `drive.mjs` onboards a NEW town on every run.
+
+1. **The keepers never moved on a live save.** `tickVillager` returns early on
+   `def.fixed`, so a fixed villager's stored coordinate is never revisited —
+   moving one in `content/cast.ts` moves them in a new town and in no existing
+   one. Both keepers were still hidden behind their counters, and the commit that
+   moved them claimed the opposite in as many words. Fixed in `repair()` rather
+   than by a migration, because this is the file's own distinction: *"a migration
+   answers 'this save is old', and this answers 'this save is wrong'."* Their
+   position is now derived on every load, so the next move needs nothing.
+
+   **And `fixed` is not the test — ONE STOP is.** Pesto is fixed and walks a
+   round; snapping every fixed villager to `schedule[0]` teleported the postman
+   to wherever he sleeps, at every hour, on every load. The save tests caught it
+   on the first run, having been written for exactly that.
+
+2. **You could only tap a counter's LEGS.** A piece draws `height` px above its
+   own row — that lift is what makes a table read as a table — so a counter's top
+   surface, and the bell on it, are drawn in the cell to the NORTH. The tap
+   missed the thing you can see and hit the few pixels that really are in its own
+   square. A tap one row north now counts when the piece below is at least half a
+   tile tall, which is already the renderer's line between "leans into the cell
+   above" and "is in it". **ACT is deliberately not changed to match** —
+   `counterNear` is about which tiles you can reach, a fact about the floor.
+
+   The first fix walked the player ONTO the tapped cell: the ground under an
+   overhang is ordinary floor, so `moveTo` stepped onto it instead of being
+   refused. `touchableAt` returns the piece's own SOLID cell, which is what makes
+   the walk-alongside-and-face work at all.
+
+3. **The heap's counter was standing in a wall.** Authored at (6,-7) with
+   `x0: 6`, so its left half was in the west wall ring: half the table drew
+   outside the building, and the only walkable cell next to its anchor was out on
+   the grass. You could not stand at your own shop's counter from inside your own
+   shop. Moved to (7,-8), one row in from the door; Nub moved with it.
+   `town.test.ts` gained the guard it never had — it checked doorways, not walls —
+   plus one asserting every counter has a walkable neighbour indoors.
+
+4. **A door outranked a counter.** `remember` sat above the counter rung, so
+   walking up to the facility told you about the building. A counter always wins
+   that tie: a door's history is a remark you get for standing somewhere, a
+   counter is the reason you walked there.
+
+5. **You could talk through a wall.** 2.6 tiles of proximity goes straight
+   through masonry, so you could stand in the plaza and hold a conversation with
+   Gary at his desk with the hall's roof drawn over him. `sameRoof` now gates
+   both talk paths — compared by room ID, not object identity, which would have
+   been right by luck.
+
+6. **Every keeper offered to trade, which is the thing this whole change removed.**
+   The `ask` reply was added on Gary's precedent to keep both roads open, and
+   giving all six the same button rebuilt the menu-in-front-of-a-menu one panel
+   further in. Removed. The counter is a thing in the room; you walk up to it. A
+   person who mentions their counter every time you say hello is a person whose
+   job has eaten them, and the point of splitting the two was that it hadn't.
+
 ### The counters had to look like counters
 
 `content/countermarks.ts`: a bell, a ledger, a seed sack, a paint tin, a stamp,

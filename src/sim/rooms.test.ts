@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
+import { TOWN_BUILDINGS } from "../content/town";
 import { newWorld, buildAt } from "./game";
 import { setTile } from "./world";
 import { GRASS } from "../content/tiles";
 import { placeStructure, removeStructure } from "./structures";
-import { rooms, roomAt, roofRoomAt, findRoom, MAX_ROOM } from "./rooms";
+import { rooms, roomAt, roofRoomAt, findRoom, MAX_ROOM, sameRoof } from "./rooms";
 
 function world() {
   const w = newWorld({ name: "Test", form: "blob", spot: "forest", seed: 7 });
@@ -156,5 +157,34 @@ describe("the roof arrives on its own", () => {
     const ordinary = buildAt(w, "wall", 48, 48, 1000);
     expect(ordinary.changed).toBe(true);
     expect(ordinary.message).not.toContain("roof");
+  });
+});
+
+describe("who you can talk to", () => {
+  it("refuses through a wall and allows inside the same room", () => {
+    // You could talk to the Office Creature from the plaza, through the wall,
+    // with the hall's roof still over him. Proximity was the only test and 2.6
+    // tiles goes through masonry.
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 12 });
+    const hall = TOWN_BUILDINGS.townhall;
+    const gary = { x: 0, y: -6 }; // at his desk, inside
+    const outside = { x: hall.door.x, y: hall.door.y + 2 }; // on the plaza
+    const inside = { x: 0, y: -6 };
+
+    expect(sameRoof(w, outside.x, outside.y, gary.x, gary.y)).toBe(false);
+    expect(sameRoof(w, inside.x, inside.y, gary.x, gary.y)).toBe(true);
+  });
+
+  it("lets two people outdoors talk", () => {
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 12 });
+    expect(sameRoof(w, 30, 30, 31, 30)).toBe(true);
+  });
+
+  it("counts a doorway as the building's own side", () => {
+    // Somebody framed in a doorway is somebody in the building — `roofRoomAt`
+    // includes the shell, and this is the case that makes that the right call.
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 12 });
+    const hall = TOWN_BUILDINGS.townhall;
+    expect(sameRoof(w, hall.door.x, hall.door.y, 0, -6)).toBe(true);
   });
 });

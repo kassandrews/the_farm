@@ -15,7 +15,8 @@ import type { WorldState, Layer } from "./types";
 import type { CounterId } from "../content/counters";
 import type { FurnitureId } from "../content/furniture";
 import { TOWN_BUILDINGS, TOWN_FIXTURES } from "../content/town";
-import { furnitureAt } from "./furniture";
+import { furnitureAt, furnitureFor } from "./furniture";
+import { furnitureDef } from "../content/furniture";
 import { tileKey } from "./world";
 
 /** Authored anchor → which counter it is.
@@ -79,6 +80,13 @@ export function counterAt(
  *  reachable by the same gesture. */
 const TOUCHABLE: FurnitureId[] = ["noticeboard"];
 
+/** Half a scene tile, in the units `FurnitureDef.height` is written in.
+ *
+ *  Declared rather than imported: the renderer's `TILE` is private to it and sim
+ *  may not reach into render at all (CLAUDE.md §Architecture). content's own
+ *  tests redeclare the same 16 for the same reason, with the same note. */
+const HALF_TILE = 8;
+
 /** Is there something at this tile that a TAP should walk you over to and act
  *  on? The anchor of the piece, or null.
  *
@@ -100,6 +108,59 @@ export function touchableAt(
   x: number,
   y: number,
   layer: Layer = "surface",
+): { x: number; y: number } | null {
+  // THE CELL YOU TAPPED, when the piece really is in it. Not the piece's anchor:
+  // a counter is two cells wide and the caller walks to whatever comes back, so
+  // the anchor would march you to the far end of a counter you tapped the near
+  // end of. Every cell of the piece is solid, which is the property the walk
+  // depends on — see below.
+  if (touchablePiece(world, x, y, layer)) return { x, y };
+
+  // AND THE TILE ITS ART IS STANDING IN, which is not the tile it occupies.
+  //
+  // A piece is drawn `height` pixels ABOVE its own row — that lift is what makes
+  // a table read as a table rather than as a rug — so a counter twelve pixels
+  // tall has its whole top surface, and the bell sitting on it, drawn in the
+  // cell to the NORTH. Tapping the thing you can see therefore missed, and the
+  // only part of the counter that answered a tap was its LEGS, which are the
+  // few pixels that really are in its own square. Reported exactly that way:
+  // "clicking on the object doesn't bring up the menu, clicking on the table
+  // legs under it does."
+  //
+  // So a tap one row north counts, when the piece below is tall enough to have
+  // drawn itself up here. Half a tile is the threshold because it is already the
+  // threshold: `hides()` fades anything overhanging by more than that, so it is
+  // the line this renderer already draws between "leans into the cell above" and
+  // "is in the cell above".
+  //
+  // ACT is deliberately NOT changed to match. `counterNear` is about which tiles
+  // you can REACH from where you stand, which is a fact about the floor and has
+  // nothing to do with how tall the art is. This is hit-testing, and hit-testing
+  // should answer for the pixels you actually pointed at. */
+  const below = touchablePiece(world, x, y + 1, layer);
+  if (below && furnitureDef(furnitureFor(world, layer)[tileKey(below.x, below.y)].id).height >= HALF_TILE) {
+    // THE CELL BELOW, not the one that was tapped, and this is the half that was
+    // wrong first time. Returning the tapped cell walked the player ONTO it —
+    // the ground under a counter's overhang is ordinary floor, so `approachTile`
+    // found it already adjacent, `moveTo` stepped onto it rather than being
+    // refused, and ACT fired from the tile before. Nothing opened and the player
+    // ended up standing in front of the counter having done nothing.
+    //
+    // The piece's own cell is SOLID, which is what makes the walk work at all:
+    // you are walked alongside, `moveTo` is refused and turns you to face it,
+    // and ACT then finds the counter beside you. Same mechanism as the tree.
+    return { x, y: y + 1 };
+  }
+  return null;
+}
+
+/** A touchable piece covering exactly this cell — the plain half of the lookup
+ *  above, split out so the art-overhang case can reuse it without recursing. */
+function touchablePiece(
+  world: WorldState,
+  x: number,
+  y: number,
+  layer: Layer,
 ): { x: number; y: number } | null {
   const found = furnitureAt(world, x, y, layer);
   if (!found) return null;

@@ -171,3 +171,31 @@ export function roofRoomAt(world: WorldState, x: number, y: number): Room | null
   for (const r of rooms(world)) if (r.interior.has(key) || r.shell.has(key)) return r;
   return null;
 }
+
+/** Can somebody standing at A see somebody standing at B — or rather, is there
+ *  a roof between them?
+ *
+ *  Compares which room ROOFS each cell, so two people in the same building can
+ *  talk, two people outdoors can talk, and one of each cannot. Doorways count as
+ *  the room's own (`roofRoomAt` includes the shell), which is the right way
+ *  round: somebody framed in a doorway is somebody in the building.
+ *
+ *  Written because you could talk to the Office Creature from the plaza, through
+ *  the wall, with the town hall's roof still drawn over him — you could not see
+ *  him and he answered anyway. Proximity was the only test: `villagerNear`
+ *  within 2.6 tiles, and 2.6 tiles goes straight through masonry.
+ *
+ *  By ROOM ID rather than by object identity. `rooms()` caches per world
+ *  revision and hands back the same objects within a frame, so identity would
+ *  work today and stop working the first time a wall moved between two calls —
+ *  a comparison that is right by luck. The id is documented as stable across
+ *  recomputes precisely so it can be compared. */
+export function sameRoof(
+  world: WorldState,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+): boolean {
+  return (roofRoomAt(world, ax, ay)?.id ?? null) === (roofRoomAt(world, bx, by)?.id ?? null);
+}

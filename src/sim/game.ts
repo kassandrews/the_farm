@@ -823,27 +823,16 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
   const box = mailboxNear(world, x, y);
   if (box) return { x: box.x, y: box.y, kind: "letter" };
 
-  // A door beside you, and a room behind it with something to say (Phase 9a).
+  // ABOVE THE DOOR, and that ordering is a bug fix rather than a preference.
+  // Nub's counter sits against the heap's west wall, so the tiles you reach it
+  // from are also tiles with a doorway in range — and `remember` won, so walking
+  // up to the facility told you about the building instead of opening the
+  // facility. Reported as exactly that.
   //
-  // ABOVE THE TOOL, on the mailbox's argument one screen up — and it is here
-  // because the version BELOW the tool was built, driven in a browser, and
-  // failed in precisely the way that comment predicts. A doorstep is grass,
-  // grass is always diggable, so the shovel won every tap and a house could
-  // never be asked anything at all. "Somewhere you cannot till is a curiosity;
-  // a letter nobody can open is a feature that does not exist" applies word for
-  // word to a room nobody can ask.
-  //
-  // It is cheaper than the mailbox, though, because it can DECLINE: a door only
-  // offers this when its room actually remembers something. A house that has
-  // seen nothing costs its own doorstep nothing.
-  //
-  // Deliberately not gated on WHOSE house it is. Standing at the town hall and
-  // hearing that this is where you first met the Office Creature is the same
-  // feature; a rule that only your own buildings remember would be the game
-  // deciding which parts of the town are yours.
-  const door = doorNear(world, x, y);
-  if (door) return { x: door.x, y: door.y, kind: "remember" };
-
+  // A counter should always win that tie. A door's history is a remark you get
+  // for standing somewhere; a counter is a thing you deliberately walked to and
+  // the only reason to be on that tile. The door is still there afterwards, and
+  // it still answers from every other cell around it.
   // The board and the counters, and they belong in this group rather than at the
   // bottom of the ladder where the board spent its whole life.
   //
@@ -868,6 +857,28 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
 
   const counter = counterNear(world, x, y);
   if (counter) return { x: counter.x, y: counter.y, kind: "counter" };
+
+  // A door beside you, and a room behind it with something to say (Phase 9a).
+  //
+  // ABOVE THE TOOL, on the mailbox's argument one screen up — and it is here
+  // because the version BELOW the tool was built, driven in a browser, and
+  // failed in precisely the way that comment predicts. A doorstep is grass,
+  // grass is always diggable, so the shovel won every tap and a house could
+  // never be asked anything at all. "Somewhere you cannot till is a curiosity;
+  // a letter nobody can open is a feature that does not exist" applies word for
+  // word to a room nobody can ask.
+  //
+  // It is cheaper than the mailbox, though, because it can DECLINE: a door only
+  // offers this when its room actually remembers something. A house that has
+  // seen nothing costs its own doorstep nothing.
+  //
+  // Deliberately not gated on WHOSE house it is. Standing at the town hall and
+  // hearing that this is where you first met the Office Creature is the same
+  // feature; a rule that only your own buildings remember would be the game
+  // deciding which parts of the town are yours.
+  const door = doorNear(world, x, y);
+  if (door) return { x: door.x, y: door.y, kind: "remember" };
+
 
   // Your own tent, underfoot, once there is a bed of yours to go to.
   //
