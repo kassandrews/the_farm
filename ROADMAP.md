@@ -6404,6 +6404,112 @@ line count. Both bugs it caught were older than the phase.
 
 ---
 
+## Phase 13 — Minigames — **done**
+
+Phase 10 held minigames out deliberately, with no argument recorded against
+them — they were a design session waiting to happen, and this is the phase
+that held it. The session's thesis, and the filter every candidate passed
+through: **the Farm already pays you for looking** — secrets unlisted, found
+places unannounced, the Notebook records what you noticed and never what you
+missed — so the games that belong here are games about looking. A slate where
+every game is a way of looking at the town is a system; anything else is a
+grab bag.
+
+### What shipped
+
+- **Hide and seek** (they hide, you seek — the flagship): `content/games.ts`
+  + `sim/play.ts`. A game is a REDIRECTION OF THE COMPANY WALK — one nullable
+  slot in a WeakMap (never saved; reload evaporates the game and the
+  companion walks back, which is exactly what giving up does), one override
+  arm at the top of `followTarget`, one `endPlay` inside `partWays` so a game
+  cannot outlive the walk. Hiding needs no visibility system: the renderer
+  already occludes honestly, so `hiddenTile` mirrors three drawing facts
+  (tall thing in the row south, solid structure likewise, roof overhead) and
+  FOUND_RADIUS sits just past the anti-occlusion fade band — the tree going
+  translucent and the game saying "found" are the same moment. **Rocks hide
+  nobody** (§ROCK_SHAPES sits under the eyeline); if a rock ever grows past a
+  tile, `hiddenTile` starts lying and both files say so.
+- **I Spy** (they name a visible thing obliquely; you walk to it):
+  `spyKindAt` is ONE kind-reader with the exclusions built in — nothing near
+  the grove or the Cube, no found places, no people, no plain grass — shared
+  by every picker so nothing can disagree about them. The clue is authored
+  per kind per form (`SPY_CLUE`, 7×7, every cell written), carries no bearing
+  ever (regex-tested), and is STORED so "Say it again?" repeats the same
+  words. Finding is proximity and nothing else: no guess, no confirm, no
+  wrong answers, no warmer/colder — `spy.test.ts` asserts the absence of any
+  guess entry point.
+- **"Look at this"**: aim a companion's eyes at a thing; they consider it in
+  voice (`LOOK_AT`, plain where clues are oblique). Pays nothing, by test —
+  logs byte-identical before and after. The first verb for showing somebody
+  your fence on purpose.
+- **Sitting together**: `sittingAt` is DERIVED — standing still on a
+  walk-through seat is the whole verb, so moving is standing up and a
+  demolished bench un-sits you with no stale state. A bench names its own
+  second cell for the companion (`seatBeside` — the one sanctioned exception
+  to `followTarget`'s "never pick a neighbour cell"). The town ships one
+  plaza bench (a fixture, pine, mid-east), which is the whole of **schema
+  v33** — everything else in the phase adds no save data at all. Sky Moments
+  became naturally reachable on purpose: sit outside at night with somebody
+  and `sweepMoments` already counts them.
+- **Offers**: a companion occasionally proposes a game; a shared bench
+  occasionally gets an unprompted remark. Flashes only, never a modal (a
+  modal pauses the town). No pending-offer state exists — the closing row
+  shows the games whenever they're playable, so an offer is a sentence, not
+  a state, and ignoring one costs nothing.
+
+### The settled calls (don't relitigate)
+
+- **Asking to play IS an invitation.** Same `canInvite` gate, one step: the
+  rooted/secret/stranger/abed refusals come free, the Blessed Carrot never
+  abandons her counter, and when a game ends the companion is still with you.
+- **No count, no eyes-closed screen.** The sim pauses under any modal, so a
+  count would freeze the hider mid-stride; the head start is the walk.
+- **Nothing stops you watching them go.** There is no win condition, so
+  there is nothing to cheat at; every countermeasure (modal, teleport, "stand
+  still") is worse than the "exploit". Do not fix this.
+- **No cooldown on asking, ever.** `company.ts` said it first: "there is no
+  cooldown for a cooldown to become a move". The only timestamps in the
+  feature shape the OFFERS, and `offers.test.ts` pins that asking ignores
+  them entirely.
+- **Payment is being remembered.** Two memory kinds, `hid` and `spied` (the
+  `delved`/`climbed` argument: different afternoons, separate bank lines),
+  written by `endPlay` to the one who played — never `witness`, which
+  broadcasts and befriends; a game is not news and not a job. No value on
+  either kind (a value renders into a template — festival.ts's lesson);
+  de-duplicated per calendar day, which is not a cap: same-day replays still
+  run and still speak, they just don't file a second copy. Giving up writes
+  nothing at all, in either direction, `declineErrand`'s discipline.
+- **The slate stays small and authored**, like the festival table. A game
+  you can play constantly is a routine; the point of a game is that somebody
+  suggested it. New games are new rows, argued for one at a time.
+
+### Cut, with reasons
+
+- **Races** — a winner is a score.
+- **Guess-where-I've-been / any quiz** — a right answer is a fail state.
+- **Follow the leader** — company with a lag buffer; reads as a bug.
+- **Skipping stones** — not looking, and the count problem (nobody may count)
+  makes it a design session of its own. Parked, not refused.
+
+### Parked for later (argued for, not built)
+
+- **Teaching them a place** — take somebody somewhere they've never been and
+  their ring occasionally detours past it afterwards. The first idea that
+  changes the TOWN rather than a log; it bends "positions are clock-derived"
+  and needs its own session.
+- **Ask them back** — a closing-row "Can I ask you something?" that reads
+  THEIR memory log out loud. The most direct payoff yet on "NPCs that
+  remember"; dialogue work more than sim work.
+- **The hide-and-seek festival** — one year, one festival is the whole town
+  hiding. Needs no new system: a festival could simply BE this. The best
+  version of "the town plays too" and it costs a festival row.
+- **The Office Creature's notice** — he is ROOTED and can never play, which
+  is the funniest fact about him; a notices-column row stating the rules of
+  hide and seek were clarified some years ago and stand. Rule-legal for free
+  (notices already can't set tasks).
+
+---
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
