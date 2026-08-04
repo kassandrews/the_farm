@@ -6520,6 +6520,67 @@ grab bag.
 
 ---
 
+## Phase 14 — The counter pass — planned
+
+Two changes to the five keeper counters, from one design sitting (3 Aug 2026):
+the keepers introduce themselves, and their lists stop naming what you haven't
+earned the right to hear about. Planned before code, as house practice.
+
+### 14a — You meet the person before you meet the screen
+
+The FIRST time you talk to a counter keeper, you do not get the counter. You
+get the dialogue frame — the person, in their own voice, introducing themselves
+and the thing they run — and only after that does the screen open. Ever after,
+tapping them opens the counter directly. This completes §"a counter is a screen,
+a conversation is a person": you meet the person exactly once, and the screen is
+what a person you already know leaves you with.
+
+- **"Met you" is a memory, not a UI flag.** A new `introduced` memory kind on
+  the KEEPER's own log, in `oneShot` (you have either been introduced or you
+  haven't), written to them alone — never through `witness`, because an
+  introduction is not news. This passes §10i's bar: it is a fact about the
+  world, not a record of what the UI already said.
+- **Intro lines are content**, an `intro` string on the six fixed keepers'
+  cast rows, per-form voice, house ellipsis style. Drafted by the pass, owed a
+  per-form review sitting like all dialogue.
+- The errands board's PANEL stays faceless (the 8e control) — but Pesto is a
+  person you can meet on his round, so he gets an intro too.
+
+### 14b — The lists stop spoiling
+
+The counters showed everything: every finish on the heap with prices you
+couldn't pay, every nature exhibit the museum wants including ore and mushrooms
+a new player has never seen, varieties already bought sitting marked "— yours".
+Settled calls, each with a written reason — and the sitting overrode two of
+them, so the old reasons and the revert path are recorded here.
+
+- **A trade row appears only when your pockets can pay it.** Overrides
+  "unaffordable rows stay listed" (the same sentence in `shop.ts` comments,
+  `heap.ts` and `museum.ts` — "seeing what a counter is for is half of knowing
+  to come back"). The override is pure view logic, stores nothing, and can come
+  straight back out if play shows the old reason was right (see §"revertible
+  when overriding a settled call"). Each list-keeper gains an authored
+  empty-pockets line, because a silent empty counter reads as a bug.
+- **A redeemed unlock vanishes from the list.** Overrides "taken rows stay,
+  marked" (heap, stall varieties — "a counter that empties as you use it makes
+  the last visit look broken"). The exhausted lines ("That's the lot") already
+  cover the true end state, and the museum has always worked this way — a
+  donation leaves the ask-list and reappears in the catalogue. Also view-only.
+- **The museum's nature wing lists only what you have MET.** Not
+  pocket-filtered — a wanted-list may sit unaffordable — but it may no longer
+  name a thing you have never encountered. This is the one change that stores
+  something: `world.met`, the set of item ids that have ever entered your
+  satchel, marked at gain and never unmarked. Schema bump + migration; the
+  backfill is current inventory keys plus the items of donated exhibits, which
+  is what a save can honestly claim. Antiquities already obey the stricter rule
+  (one row, named only "junk") and do not change.
+
+**Not touched:** Gary (already a conversation), the errands board's notices,
+the "no counts, no denominators" rules, and every exhausted/empty authored line
+already shipped.
+
+---
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
