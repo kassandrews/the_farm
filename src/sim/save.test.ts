@@ -1220,6 +1220,23 @@ describe("v33 → v34: the satchel remembers first meetings", () => {
   });
 });
 
+describe("v34 → v35: you can take your own tent down", () => {
+  it("leaves the tent up for every town that played before the action existed", () => {
+    const w = newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
+    const raw = JSON.parse(serialize(w)) as Record<string, unknown>;
+    raw.schemaVersion = 34;
+    delete (raw.homestead as Record<string, unknown>).struckAt;
+
+    const migrated = migrateSave(raw)!;
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    // NOT backfilled from "your house would qualify". The flag records that you
+    // asked, and nobody has asked yet — striking it on load would be a thing
+    // vanishing from somebody's plot with no act of theirs behind it.
+    expect(migrated.homestead.struckAt).toBeNull();
+    expect(migrated.homestead.originX).toBe(w.homestead.originX);
+  });
+});
+
 describe("a game in progress is not state", () => {
   // The play slot lives in a WeakMap, deliberately (sim/play.ts's header): a
   // saved hide is somebody crouched behind a tree for three real days. This

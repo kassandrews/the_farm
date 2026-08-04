@@ -6858,6 +6858,31 @@ A visual sitting, not a phase. Two calls, both settled:
   Secret forms have rows because the PLAYER may import as one; they can never
   reach the commission path, and `content/tents.test.ts` fails if an arrival
   ever gets a secret or hidden form.
+- **You house yourself by striking your own tent** (schema v35, `homestead.struckAt`).
+  Asked in review: everyone gets housed by you, and you stay in a tent forever
+  next to a house you built. `sim/assign.ts playerHome()` is the third caller of
+  `qualify()` — a bed, walls that meet, a way in, and nobody else claiming it.
+  ACT on the origin tile takes it down.
+
+  - **The flag is your INTENT, not the tent's existence.** The renderer draws the
+    tent when `struckAt === null` **or** `playerHome()` is null, so demolishing
+    your house puts it back up. A stored "the tent is gone" could disagree with a
+    world in which you have nowhere to sleep.
+  - **It sits above the held tool in the ACT ladder**, on the mailbox's argument:
+    the origin is grass, grass is always diggable, so the shovel would win every
+    tap. It costs the tile nothing, because the branch declines until you have a
+    bed and again once it's struck.
+  - **The migration backfills NULL for everyone**, including towns whose house has
+    qualified for months. Backfilling from "would qualify" would strike the tent
+    of every established save on load — a thing vanishing from somebody's plot
+    with no act of theirs behind it.
+  - **No minimum interior**, unlike a commission. Four cells is the Office
+    Creature's requirement about a house you build FOR someone.
+  - Known and left alone: `at: "homestead"` schedule stops still resolve to a
+    walkable cell beside the origin (`sim/housing.ts homesteadStop`), so a
+    visitor may end up standing inside the house you built over your plot. That
+    predates this and is a pathing question, not a tent one.
+
 - **`/tents.html`** is the contact sheet (dev only, like `/looks.html`), drawing
   the real `render/tent.ts`. Eleven side by side is the only way to see whether
   they still read as one tent — a decoration that creeps into the silhouette is

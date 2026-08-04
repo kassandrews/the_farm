@@ -104,6 +104,9 @@ const ACTION_CUES: Record<ActionKind, Cue> = {
   // before the cue or the ordinary "nothing moved" rule would play the REFUSAL
   // sound at a room answering a question correctly.
   remember: "menu",
+  // Folding a tent is putting something away, which is the place cue backwards.
+  // There is no ceremony sound and it should not get one.
+  strike: "place",
   sink: "dig", // still the shovel — it's the second dig on the same tile
   carve: "dig",
   shaft: "place", // a foot on a rung: the closest thing here to a solid landing

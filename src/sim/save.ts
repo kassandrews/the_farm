@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 34;
+export const SCHEMA_VERSION = 35;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -917,6 +917,19 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       if (item && !met.includes(item)) met.push(item);
     }
     return { ...raw, schemaVersion: 34, met };
+  },
+
+  // v34 → v35: you can take your own tent down (§"How do I house myself").
+  //
+  // NULL FOR EVERYONE, including towns whose player has had a bed and a door
+  // and four walls for months. The flag records that you ASKED, and nobody who
+  // played before the action existed has asked — backfilling it from "your
+  // house would qualify" would strike the tent of every established town on
+  // load, which is a thing vanishing from somebody's plot overnight with no act
+  // of theirs behind it.
+  34: (raw) => {
+    const homestead = (typeof raw.homestead === "object" && raw.homestead ? raw.homestead : {}) as Record<string, unknown>;
+    return { ...raw, schemaVersion: 35, homestead: { ...homestead, struckAt: null } };
   },
 };
 

@@ -436,6 +436,15 @@ is part of the homestead: land you own, not a job you have. Farming is
 fully optional; builder, forager, and museum-filler are complete ways to
 play.
 
+**And you take the tent down yourself.** Everyone else's tent goes when the
+Office Creature stamps a commission; there is no commission for the person
+who was already here, so yours comes down by hand — once you have a bed in a
+room with a door, which is the identical structural test every villager's home
+is given, with no minimum size because nobody is filing a form about where you
+sleep. Nothing is spent and nothing is destroyed. Tear the house down and the
+tent is back up, because you have to live somewhere and no flag may claim
+otherwise.
+
 Opening beat: the Office Creature stamps your land claim. That's the whole
 cutscene.
 

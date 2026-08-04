@@ -112,6 +112,35 @@ function hasDoor(world: WorldState, room: Room): boolean {
   return false;
 }
 
+/** A bed of your OWN — somewhere you sleep that is not somebody else's home.
+ *
+ *  The third caller of qualify(), and the reason the module docblock says
+ *  "written once and used twice" is now out by one. Housing yourself asks the
+ *  identical structural question everybody else's home is asked: a bed, walls
+ *  that meet, a way in. Nothing more.
+ *
+ *  NO MINIMUM SIZE, unlike a commission. A newcomer's four-cell floor is the
+ *  Office Creature's requirement, on his form, about a house you are building
+ *  FOR someone; nobody files paperwork about where you sleep, so there is no
+ *  one to have that opinion. DESIGN is explicit that structure is the only gate.
+ *
+ *  DERIVED, NEVER STORED. The player has no `homeBed`, on purpose: a stored
+ *  claim could disagree with the world the moment you demolish a wall, and then
+ *  the game would believe you live somewhere you cannot get into. Yours is
+ *  simply the qualifying bed nobody else has claimed — and if you own two, the
+ *  first is as good an answer as the second, because the only question being
+ *  asked is whether you have somewhere at all.
+ *
+ *  Null when there is nowhere, which is the state a fresh save is in and the
+ *  state a demolished house goes back to. */
+export function playerHome(world: WorldState): { x: number; y: number } | null {
+  for (const b of beds(world)) {
+    if (!b.verdict.ok || b.verdict.occupant !== null) continue;
+    return { x: b.x, y: b.y };
+  }
+  return null;
+}
+
 /** Every bed in town that someone could be moved into, with its verdict.
  *
  *  Seeded from world.furniture rather than by scanning the map — the world is

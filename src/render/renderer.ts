@@ -70,6 +70,7 @@ import { TENTS } from "../content/tents";
 import type { TentDef } from "../content/tents";
 import { drawTent } from "./tent";
 import { ARRIVALS } from "../content/arrivals";
+import { playerHome } from "../sim/assign";
 import { plinthRuns } from "../sim/museum";
 import type { PlinthRun } from "../sim/museum";
 import { rooms } from "../sim/rooms";
@@ -139,6 +140,10 @@ const TARGET_COLOR: Record<ActionTarget["kind"], string> = {
   // remember something and which don't — a completion map drawn in reticles,
   // which is the one thing this feature must never become (ROADMAP §Phase 9a).
   remember: "rgba(190,205,255,0.9)",
+  // The tool's own white, for taking your own tent down. It IS the held tool's
+  // colour because it is the same kind of act — a thing on this tile, changed by
+  // you — and a hue of its own would announce a ceremony. Nobody is watching.
+  strike: "rgba(255,255,255,0.85)",
   shaft: "rgba(200,230,255,0.95)", // the way down, or the daylight above you
   // The shaft's own colour, on the mailbox's argument one line up: both are a
   // way through to another layer, and a hue of its own would be the reticle
@@ -4330,11 +4335,17 @@ export class Renderer {
 
   // --- Tent -------------------------------------------------------------------
   private collectTent(world: WorldState, night: boolean): void {
-    this.raised.push({
-      y: world.homestead.originY,
-      bias: BIAS_TERRAIN,
-      draw: () => this.tentAt(world.homestead.originX, world.homestead.originY, night, TENTS[world.player.form]),
-    });
+    // YOUR tent, up until you take it down — and up again if you tear your own
+    // house down, because you have to live somewhere and the flag only records
+    // that you asked (sim/types.ts homestead.struckAt). `playerHome` is only
+    // consulted once you HAVE asked, so the common case costs nothing.
+    if (world.homestead.struckAt === null || playerHome(world) === null) {
+      this.raised.push({
+        y: world.homestead.originY,
+        bias: BIAS_TERRAIN,
+        draw: () => this.tentAt(world.homestead.originX, world.homestead.originY, night, TENTS[world.player.form]),
+      });
+    }
     // A newcomer's tent, for as long as they're waiting on a house. The SAME
     // tent as the player's, deliberately: you started in one too, and the beat
     // reads as "they're where you were" rather than as a quest marker. What

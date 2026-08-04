@@ -217,7 +217,15 @@ export interface WorldState {
   lastSaved: number;
 
   player: Player;
-  homestead: { spot: HomesteadSpot; originX: number; originY: number };
+  /** Your plot, and whether you have taken your own tent down.
+   *
+   *  `struckAt` is "you asked it down", NOT "it is gone". The tent draws while
+   *  it's null, and it draws again if you no longer have a bed of your own —
+   *  demolish your house and you are camping again, because you have to live
+   *  somewhere and no stored flag may claim otherwise. That is why this is one
+   *  bit about your intent rather than a record of the tent's existence: the
+   *  world is the authority on where you sleep (sim/assign.ts playerHome). */
+  homestead: { spot: HomesteadSpot; originX: number; originY: number; struckAt: number | null };
 
   /** Sparse surface-tile edits over deterministic generation, keyed "x,y".
    *  Digging and placing write here; generation supplies everything else. */

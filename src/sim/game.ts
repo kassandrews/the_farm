@@ -44,6 +44,7 @@ import { roomRemembers, historyLine } from "./history";
 import { stampTown, ensureFixedCast } from "./town";
 import { newErrands, errandDue, postErrand, boardNear } from "./errands";
 import { settleResidents } from "./housing";
+import { playerHome } from "./assign";
 import { placeFurniture, removeFurnitureAt } from "./furniture";
 import { FURNITURE, furnitureDef } from "../content/furniture";
 import type { FurnitureId, Facing } from "../content/furniture";
@@ -151,7 +152,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     createdAt: now,
     lastSaved: now,
     player,
-    homestead: { spot: opts.spot, originX: origin.x, originY: origin.y },
+    homestead: { spot: opts.spot, originX: origin.x, originY: origin.y, struckAt: null },
     overrides: {},
     frozen: {},
     under: {}, // solid rock until you cut into it
@@ -665,6 +666,7 @@ export type ActionKind =
   | "read"
   | "letter" // a mailbox in the middle of nowhere, and what was in it today
   | "remember" // a house, asked at its own door what has happened inside it
+  | "strike" // your own tent, taken down, once you have somewhere better
   | "sink" // the second dig on one tile: a way down
   | "carve" // cutting the rock face ahead of you
   | "shaft" // going down, or coming back up
@@ -683,7 +685,17 @@ export interface ActionResult {
 export interface ActionTarget {
   x: number;
   y: number;
-  kind: "harvest" | "gather" | "tool" | "read" | "letter" | "remember" | "shaft" | "stair" | "none";
+  kind:
+    | "harvest"
+    | "gather"
+    | "tool"
+    | "read"
+    | "letter"
+    | "remember"
+    | "strike"
+    | "shaft"
+    | "stair"
+    | "none";
 }
 
 /** Where ACT will land, decided in ONE place so the reticle the player sees and
@@ -821,6 +833,18 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
   const door = doorNear(world, x, y);
   if (door) return { x: door.x, y: door.y, kind: "remember" };
 
+  // Your own tent, underfoot, once there is a bed of yours to go to.
+  //
+  // ABOVE THE TOOL, on the mailbox's argument two screens up: the homestead
+  // origin is grass, grass is always diggable, so with the shovel winning the
+  // tent could never be struck with the tool the game starts you holding.
+  //
+  // The cost the mailbox pays is smaller here than anywhere, because this
+  // branch DECLINES until the day it matters: it needs the tent to be up and a
+  // qualifying bed of your own to exist. Until then the origin tile is as
+  // diggable as any other, and afterwards the tent is gone and it is again.
+  if (canStrikeTent(world, x, y)) return { x, y, kind: "strike" };
+
   const near = nodeNear(world, x, y, world.player.facing);
   const underfoot = toolApplies(world, tool, x, y);
   if (near && tool === "gather" && !underfoot) return { x: near.x, y: near.y, kind: "gather" };
@@ -831,6 +855,23 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
   if (board) return { x: board.x, y: board.y, kind: "read" };
 
   return { x, y, kind: "none" };
+}
+
+/** Is the player standing on their own tent, with somewhere better to sleep?
+ *
+ *  The check is deliberately in the same shape as the RENDER gate, and the two
+ *  read the same two facts in the same order — a reticle that offered to strike
+ *  a tent that isn't drawn, or declined to strike one that is, would be the
+ *  reticle lying (ROADMAP §"The reticle is the promise").
+ *
+ *  `struckAt` is not re-offered once set. If you demolish your house the tent
+ *  comes back on its own; it goes again when the house does, and being asked to
+ *  confirm a decision you already made would be the game forgetting it. */
+export function canStrikeTent(world: WorldState, x: number, y: number): boolean {
+  if (world.player.layer !== "surface") return false;
+  if (world.homestead.struckAt !== null) return false;
+  if (x !== world.homestead.originX || y !== world.homestead.originY) return false;
+  return playerHome(world) !== null;
 }
 
 /** A door on one of the four tiles around you whose room has a history — same
@@ -1062,6 +1103,26 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
     // which is the UI's business (ui/app.ts watches for this kind), and the
     // message is the fallback for anywhere that only has a line to show.
     return { kind: "read", changed: false, message: "Notices, and one request." };
+  }
+
+  if (target.kind === "strike") {
+    // The one thing you own at the start of the game, folded up, because you
+    // finally have a roof. Nobody stamps this and no form records it: every
+    // other tent in town goes when the Office Creature signs a commission off,
+    // and there is no commission for the person who was already here.
+    //
+    // It is not destroyed and nothing is spent. `struckAt` says you asked; the
+    // world still decides whether you have anywhere else to be, so if the house
+    // comes down the tent is back up and this is offered again from scratch.
+    if (!canStrikeTent(world, target.x, target.y)) {
+      return { kind: "none", changed: false, message: "" };
+    }
+    world.homestead.struckAt = now;
+    return {
+      kind: "strike",
+      changed: true,
+      message: "Folded, and put somewhere. You live in the house now.",
+    };
   }
 
   if (target.kind === "remember") {
