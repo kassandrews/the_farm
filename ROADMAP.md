@@ -173,11 +173,15 @@ found by driving the game and photographing it rather than by reading the source
    by Phase 11's paving (tranche 1, item 1). The water half was struck on
    3 Aug 2026 — looked at and judged fine as it is** — which also parks 8j's
    shoreline foam band with it.
-5. **A second survey pass, verified this time.** The first one covered the
-   institution panels, night, autumn, winter and the underground, reported
-   everything clean, and was wrong about the first panel anybody checked. Nobody
-   has genuinely looked at the other five counters, the seasons, or the
-   underground yet.
+5. ~~**A second survey pass, verified this time.**~~ **Done 3 Aug 2026 — see
+   §8v.** The panels got `shot-counters.mts` in 8e; night, the four seasons and
+   the underground now have `shot-survey.mts`, which photographs them and
+   asserts the pixels against the season table rather than reporting them clean.
+   It found one thing: **the ground bands at night**, the region tint's
+   per-tile gradient becoming visible once the colour is dark enough. Left
+   unfixed on purpose — the fix is a dither or a world-space gradient, and that
+   is a look call. Its other yield is a limit: the underground cannot be
+   surveyed by lamplight, so the rock's texture is still unlooked-at.
 
 **Save schema is at v30** — this line has said v23 through seven bumps, so check
 `src/sim/save.ts` rather than trusting it. Phase 7c deliberately did not move it: the sky
@@ -4956,6 +4960,58 @@ word, and is worth re-checking before anything is built on it.
   clicked primary buttons to get through onboarding, and a disabled one left the
   harness sitting on the title art forever. `onboard()` fills the name box now
   and bails on a disabled button rather than clicking into the void.
+
+### 8v — The rest of the survey, verified — **done 3 Aug 2026**
+
+The other half of 8e's method note: night, the four seasons and the underground,
+which had never been looked at by anybody and were resting on the same
+unverified pass that got the first counter panel wrong.
+`scripts/shot-survey.mts` photographs them and checks itself, the way
+`shot-counters.mts` does for the panels.
+
+**One place, one seed, one hour, six dates.** Every frame is reseeded onto a
+fixed seed, spot and position, so the only thing that differs between the four
+season shots is the month. The first attempt was not: it stood on a bridge with
+two buildings in shot, measured the plank wall of a house four times, reported
+four identical seasons, and looked lovely. **A survey that isn't standing on its
+subject reports on whatever it IS standing on**, which is a quieter version of
+the same failure the method note describes.
+
+**What it asserts, and why those:**
+
+- The frame's commonest colour moves away from summer's in the DIRECTION the
+  season table says it should — cosine against the row's own delta, not
+  equality. A region tint is a lerp toward the biome's ground, so it shrinks the
+  gap between two seasons without turning it; equality fails on a world that is
+  perfect and merely tinted. Measured: spring, autumn and winter all cos 1.00,
+  at 74–90% of the table's magnitude, the shortfall being exactly that lerp.
+- The MODE, never the mean. Winter's crowns go brown while its ground goes pale;
+  averaged together those two partly cancel and the check fails on a good frame.
+- Night is measurably darker than the same field at midday (44%).
+- The way down is DUG, not written into the save. Reseeding `player.layer` would
+  photograph the rock without ever asking whether you can get there, and the way
+  down is half of what had never been looked at. Three ACTs — dig, dig, descend —
+  and the layer is read back out of the live save.
+- Every PNG differs from every other, because the original bug returned five
+  byte-identical files as five separate screens and one hash comparison
+  would have caught it.
+
+**The one thing it found: the ground bands at night.** The region tint's
+gradient is quantised per tile, and by day the steps are ~1/255 on a bright
+colour and invisible. After dark the same step lands on a colour a third as
+bright, and open grass reads as flat vertical bands with tile-aligned edges —
+one of them runs the full height of the frame in `survey-night.png`. It is the
+per-cell edges family (CLAUDE.md), arrived at from the other end: not an edge
+drawn per cell, but a gradient sampled per cell. **Not fixed, deliberately** —
+the fix is a dither or a world-space gradient, and which one is a look call.
+Photographed at day and night from the same spot for whoever takes it.
+
+**And a limit worth writing down: the underground cannot be surveyed by
+lamplight.** The commonest colour in both underground frames is the dark beyond
+the lamp, not the floor. The shots answer "does the way down work" and "does it
+read as a place" — both yes, with the ladder legible from below — and they
+cannot answer anything about the rock's own texture. That wants a lit shot, and
+nothing here has one.
 
 ---
 
