@@ -39,6 +39,7 @@ import {
   GAME_GIVEUP,
   LOOK_AT,
   SITTING_IDLE,
+  GAME_OFFER,
   RESIDENT_ABSENCE,
   RESIDENT_MIDST,
   RESIDENT_KIN,
@@ -671,6 +672,24 @@ export function gameGiveUpLine(game: GameId, form: AdultForm, rng: Rng): string 
  *  and not a gap. */
 export function lookAtLine(v: Villager, kind: SpyKind, rng: Rng): string {
   const line = rng.pick(fresh(LOOK_AT[v.form]?.[kind] ?? ["..."], v));
+  spoke(v, line);
+  return line;
+}
+
+/** A companion proposing a game (sim/play.ts `offerDue`) — through the said
+ *  ring, so a long afternoon of walks doesn't hear the same proposal twice
+ *  running. */
+export function gameOfferLine(v: Villager, rng: Rng): string {
+  const line = rng.pick(fresh(GAME_OFFER[v.form] ?? ["..."], v));
+  spoke(v, line);
+  return line;
+}
+
+/** The bench's unprompted remark (sim/play.ts `satLineDue`) — the same pool
+ *  the conversation panel draws sitting lines from, said into the quiet
+ *  instead. One pool for both on purpose: a bench does not have two voices. */
+export function sittingLine(v: Villager, rng: Rng): string {
+  const line = rng.pick(fresh(SITTING_IDLE[v.form] ?? ["..."], v));
   spoke(v, line);
   return line;
 }

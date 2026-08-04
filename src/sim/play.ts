@@ -65,6 +65,7 @@ import { WATER, SHALLOW, STONE, SAND, FARMLAND, FARMLAND_WET } from "../content/
 import { findPath } from "./path";
 import type { Point } from "./path";
 import type { Rng } from "./rng";
+import { makeRng } from "./rng";
 
 /** A game in progress. `who` is validated against `world.company` on every
  *  read (`playing`), so a stale slot reads as nobody — the same self-healing
@@ -441,6 +442,90 @@ export function lookKindNear(world: WorldState): SpyKind | null {
   }
   for (const kind of LOOK_ORDER) if (found.has(kind)) return kind;
   return null;
+}
+
+// --- Offers ---------------------------------------------------------------------
+// The town's side of the games: a companion who has been walking with you a
+// while occasionally proposes one. THE ONLY TIMESTAMPS IN THE FEATURE LIVE
+// HERE, and they shape the OFFER alone — `canPlay` and `startPlay` read
+// neither, which offers.test.ts asserts as an invariant rather than trusting.
+// An offer is purely a nudge that teaches the beat exists: the closing row
+// shows the games whenever they're playable, so there is no pending-offer
+// state, no expiry, no refusal path, and ignoring one costs exactly nothing.
+
+interface Nudges {
+  lastOfferAt: number;
+  lastSatLineAt: number;
+}
+
+/** In-memory like the play slot, and for the same reason: losing it on
+ *  reload costs at most one early offer, and saving it would be a schema
+ *  field for a nudge. */
+const nudges = new WeakMap<WorldState, Nudges>();
+
+function nudgesFor(world: WorldState): Nudges {
+  let n = nudges.get(world);
+  if (!n) {
+    n = { lastOfferAt: 0, lastSatLineAt: 0 };
+    nudges.set(world, n);
+  }
+  return n;
+}
+
+/** How soon into a fresh walk the first offer may come — the wound-forward
+ *  first gap, `newErrands`' trick: the beat teaches itself early, without a
+ *  branch for "is this the first". */
+const FIRST_OFFER_MS = 4 * 60_000;
+/** And thereafter: long enough that a companion is company, not a carnival
+ *  barker. The exact gap is jittered per offer, below. */
+const OFFER_GAP_MIN_MS = 20 * 60_000;
+const OFFER_GAP_MAX_MS = 45 * 60_000;
+
+/** The gap this particular silence gets. Seeded from the stored moment
+ *  (`postErrand`'s no-reroll trick), so due-ness stays two timestamps
+ *  compared and replaying a tick can't reroll it into a sooner offer. */
+function offerGap(world: WorldState, since: number): number {
+  const rng = makeRng((world.seed ^ since) >>> 0);
+  return OFFER_GAP_MIN_MS + rng.next() * (OFFER_GAP_MAX_MS - OFFER_GAP_MIN_MS);
+}
+
+/** Does the companion feel like proposing a game, right now? The `attend`
+ *  shape: returns them exactly once per due offer — the call that returns a
+ *  villager is the call that spent the nudge — and null on every other
+ *  frame. The UI says the line; nothing here starts a game, because an offer
+ *  is a sentence, not a state. */
+export function offerDue(world: WorldState, now: number): Villager | null {
+  if (!world.company) return null;
+  const v = world.villagers.find((w) => w.id === world.company!.id);
+  if (!v || !canPlay(world, v, now)) return null;
+  const n = nudgesFor(world);
+  const since = Math.max(n.lastOfferAt, world.company.sinceAt);
+  const gap = n.lastOfferAt === 0 ? FIRST_OFFER_MS : offerGap(world, since);
+  if (now - since < gap) return null;
+  n.lastOfferAt = now;
+  return v;
+}
+
+/** The bench's unprompted line, on the same machinery: sitting together in
+ *  the quiet, a companion occasionally just says something. Shorter gaps —
+ *  sitting is minutes, not an afternoon — and it writes nothing, pays
+ *  nothing, and stops the moment either of you stands up (the predicate is
+ *  re-asked every frame). */
+const SAT_LINE_MIN_MS = 40_000;
+const SAT_LINE_MAX_MS = 90_000;
+
+export function satLineDue(world: WorldState, now: number): Villager | null {
+  if (!world.company || !sittingAt(world)) return null;
+  const v = world.villagers.find((w) => w.id === world.company!.id);
+  if (!v || !present(v, now)) return null;
+  if (Math.hypot(v.x - world.player.x, v.y - world.player.y) > 4) return null; // not settled yet
+  const n = nudgesFor(world);
+  const since = Math.max(n.lastSatLineAt, world.company.sinceAt);
+  const rng = makeRng((world.seed ^ since) >>> 0);
+  const gap = SAT_LINE_MIN_MS + rng.next() * (SAT_LINE_MAX_MS - SAT_LINE_MIN_MS);
+  if (now - since < gap) return null;
+  n.lastSatLineAt = now;
+  return v;
 }
 
 // --- Sitting together -----------------------------------------------------------

@@ -1658,6 +1658,42 @@ export const GAME_YES: Partial<Record<GameId, Partial<Record<AdultForm, string[]
   },
 };
 
+/** A companion proposing a game, unprompted (sim/play.ts `offerDue`). A
+ *  sentence, never a state: nothing waits on it, nothing expires, and the
+ *  buttons it's pointing at were already there. So no line may demand an
+ *  answer — it's somebody thinking out loud about a game, and ignoring it is
+ *  a complete response. */
+export const GAME_OFFER: Partial<Record<AdultForm, string[]>> = {
+  scholar: [
+    "We could play something. Hide and seek. I Spy. I'm equally rigorous at both.",
+    "A proposal: a game. For the data. And slightly for the game.",
+  ],
+  dog: [
+    "We could play something!! I know both games!! I love both games!!",
+    "Is it game time? It could be game time. Just saying it COULD be.",
+  ],
+  blob: [
+    "We could play something, you know. I'm told I elevate any game I'm in.",
+    "The afternoon wants a second act. A game, perhaps. I know two.",
+  ],
+  menace: [
+    "We could play something. I'd win. That's not a threat, it's a forecast.",
+    "A game, perhaps. I'm very good at them. All of them. Historically.",
+  ],
+  gremlin: [
+    "Fancy a game? Hiding, spying — my whole skillset, but friendly.",
+    "We could play something. I know all the good spots. That's a hint, not a brag. Both.",
+  ],
+  office: [
+    "We could play a game. There's no form for it. That's rather the appeal.",
+    "I'm told games exist for weekdays now. We could verify that. Together.",
+  ],
+  carrot: [
+    "... We could play something. If you like. No hurry either way.",
+    "... A game, maybe. The day's got room in it.",
+  ],
+};
+
 /** Being found — the flash line at the moment the game ends well. Never a
  *  score, never a time, never "again?": the invitation is always open and the
  *  buttons are where it lives. */

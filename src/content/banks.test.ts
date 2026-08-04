@@ -36,6 +36,7 @@ import {
   SPY_CLUE,
   LOOK_AT,
   SITTING_IDLE,
+  GAME_OFFER,
   MOLE_DEEP,
   MOLE_SHALLOW,
   MOLE_LIT,
@@ -85,6 +86,7 @@ function everyLine(): { where: string; text: string }[] {
   add("SPY_CLUE", SPY_CLUE);
   add("LOOK_AT", LOOK_AT);
   add("SITTING_IDLE", SITTING_IDLE);
+  add("GAME_OFFER", GAME_OFFER);
   add("MOLE_DEEP", MOLE_DEEP);
   add("MOLE_SHALLOW", MOLE_SHALLOW);
   add("MOLE_LIT", MOLE_LIT);

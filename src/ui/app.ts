@@ -30,8 +30,8 @@ import {
 } from "../sim/game";
 import { nodeAt } from "../sim/gather";
 import { isWalkable } from "../sim/world";
-import { officeLandClaimLine, homeLineFor, companyYesLine, companyByeLine, gameYesLine, gameFoundLine, gameGiveUpLine, lookAtLine, advanceReply, replyLabel } from "../sim/dialogue";
-import { canPlay, startPlay, playing, foundThem, foundIt, spyChoices, lookKindNear, endPlay } from "../sim/play";
+import { officeLandClaimLine, homeLineFor, companyYesLine, companyByeLine, gameYesLine, gameFoundLine, gameGiveUpLine, gameOfferLine, sittingLine, lookAtLine, advanceReply, replyLabel } from "../sim/dialogue";
+import { canPlay, startPlay, playing, foundThem, foundIt, spyChoices, lookKindNear, offerDue, satLineDue, endPlay } from "../sim/play";
 import { GAMES } from "../content/games";
 import type { Reply as ReplyDef } from "../content/conversations";
 import { companion, canInvite, invite, partWays } from "../sim/company";
@@ -1750,6 +1750,23 @@ export class App {
     }
   }
 
+  /** The two unprompted lines a companion can say (sim/play.ts §Offers): a
+   *  proposed game after a stretch of walking, and a remark into the quiet of
+   *  a shared bench. Both are flashes and nothing else — never a modal (a
+   *  modal pauses the town at a moment the player didn't choose; the
+   *  noticeArrival docblock has the argument) — and neither creates any
+   *  pending state: the game buttons were already in the closing row. */
+  private noticeNudges(): void {
+    if (!this.world) return;
+    const offerer = offerDue(this.world, Date.now());
+    if (offerer) {
+      this.flash(`${offerer.name}: ${gameOfferLine(offerer, this.rng)}`);
+      return;
+    }
+    const sitter = satLineDue(this.world, Date.now());
+    if (sitter) this.flash(`${sitter.name}: ${sittingLine(sitter, this.rng)}`);
+  }
+
   /** Stop looking. Costless by design: no memory, no friendship change, and
    *  they simply walk back to you (sim/play.ts `endPlay` — the "gave_up" arm
    *  writes nothing at all). The line is allowed to gloat; the sim is not
@@ -2861,6 +2878,7 @@ export class App {
       this.noticeFestival();
       this.noticeParting();
       this.noticeFound();
+      this.noticeNudges();
     } else {
       this.acc = 0;
     }
