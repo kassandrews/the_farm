@@ -5125,6 +5125,25 @@ rather than assumed.
 **Live saves: this re-landscapes ground more than 21 tiles out**, on the same
 terms every terrain pass since biomes has. Inside the reach nothing moved.
 
+**A found place wears ONE region, and the dither is what asked the question.**
+The fairy ring's whole premise, printed in the Notebook, is that its mushrooms
+are a single organism fruiting at its own rim — and a ring lying across a border
+came out speckled with two kinds of cap, which is two organisms in a perfect
+circle by coincidence. `scatterSkin` asks the place's own CENTRE, hard, so every
+point on a rim answers the same. Generalised rather than special-cased: a ring
+grove that is half pine and half birch is the same coincidence at a bigger
+radius, and each of these places is meant to read as somebody's (nobody's) doing.
+
+**Not gated to a biome, and that was considered.** In nature dozens of fungi
+form rings, so many KINDS do this — but any one ring is one species, which is
+exactly what the centre rule now says. The perfect closed circle belongs to open
+grassland (in woodland a real one is a ragged arc round a host tree), so a
+region gate would be defensible naturalism. It was declined twice over:
+`found.ts` states that a found place stands on whatever region it lands in and
+is odder for it, and gating one kind would need rejection sampling that the
+"walking further always finds more" guarantee depends on not having. A closed
+circle in a pine wood, where nature would give an arc, is also simply funnier.
+
 ---
 
 ## Phase 9 — What the town keeps — **done**

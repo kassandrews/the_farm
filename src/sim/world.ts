@@ -1418,7 +1418,41 @@ export function scatterRegion(seed: number, spot: HomesteadSpot, x: number, y: n
  *  ground, this is for the things standing on it: a pine that rolled its way
  *  three tiles into the scrub is drawn as a pine, or the treeline has not
  *  actually softened — it has only changed how many trees stop on the line. */
+/** The found place a tile belongs to, or null.
+ *
+ *  `foundSiteAt` takes the landmark siting rule as an argument so content can be
+ *  tested without the world; this is that call with the world's own `onLand`
+ *  supplied, so anything outside generation asks exactly the question generation
+ *  asked. Two callers that answered it separately would put a ring's mushrooms
+ *  and a ring's colours in different places. */
+export function foundPlaceAt(
+  seed: number,
+  spot: HomesteadSpot,
+  x: number,
+  y: number,
+): FoundSite | null {
+  return foundSiteAt(seed, spot, x, y, onLand);
+}
+
 export function scatterSkin(seed: number, spot: HomesteadSpot, x: number, y: number): BiomeDef {
+  // A FOUND PLACE IS ONE THING, SO IT WEARS ONE REGION — its own centre's, hard,
+  // dither and border both ignored.
+  //
+  // The fairy ring is what asked for this and it is the clearest case: the whole
+  // premise printed in the Notebook is that the mushrooms are a single organism
+  // fruiting at its own rim ("under the ground they are all one thing"), and a
+  // ring lying across a border came out speckled with two kinds of cap — which
+  // is two organisms, drawn in a perfect circle, by coincidence. Nature agrees
+  // for once: dozens of fungi form rings and any one ring is one species.
+  //
+  // It generalises rather than special-casing the ring, and the ring grove wants
+  // it for the same reason — a circle of trees that is half pine and half birch
+  // reads as a coincidence, and every one of these places is meant to read as
+  // somebody's (nobody's) doing. The place's centre decides, not the tile, so
+  // the answer is the same at every point on the rim.
+  const found = foundPlaceAt(seed, spot, x, y);
+  if (found) return skinOf(seed, found.x, found.y, biomeAt(seed, spot, found.x, found.y));
+
   return skinOf(seed, x, y, scatterRegion(seed, spot, x, y));
 }
 

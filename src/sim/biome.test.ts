@@ -19,8 +19,11 @@ import {
   regionParts,
   rollRegion,
   scatterRegion,
+  scatterSkin,
+  foundPlaceAt,
 } from "./world";
 import { BIOMES, FIELD_WEIGHTS, type BiomeId } from "../content/biomes";
+import { FOUND } from "../content/found";
 import { GRASS, tileDef } from "../content/tiles";
 import { biomeSkin, blendRegions } from "../render/palette";
 import { ROCK, WATER, SHALLOW, SAND, SHRUB, DIRT, STUMP, LOG, TREE } from "../content/tiles";
@@ -842,5 +845,53 @@ describe("the flora interleaves across a region border", () => {
     // win most of the time — but never all of it.
     expect(b / (a + b)).toBeGreaterThan(0.05);
     expect(b / (a + b)).toBeLessThan(0.5);
+  });
+});
+
+describe("a found place wears one region", () => {
+  // The fairy ring's whole premise, printed in the Notebook, is that its
+  // mushrooms are ONE organism fruiting at its own rim. A ring lying across a
+  // region border used to be drawn with two kinds of cap — two organisms in a
+  // perfect circle, by coincidence — first because `regionSkin` took the tile's
+  // own side of the line, and then more finely once the scatter dither made it
+  // per cell. `scatterSkin` asks the place's CENTRE instead.
+  it("draws every tile of a straddling ring the same, cap and crown alike", () => {
+    let straddlers = 0;
+    for (let seed = 1; seed <= 60 && straddlers < 8; seed++) {
+      for (const kind of ["fairyring", "ringgrove"] as const) {
+        const def = FOUND[kind];
+        // Walk the first few instances' rings the way shot-sky.mts finds a
+        // staircase: they are hundreds of tiles out and the bearing is seeded.
+        for (let i = 0; i < 3; i++) {
+          const ring = def.ring + i * def.spacing;
+          const n = Math.ceil((2 * Math.PI * ring) / 2);
+          for (let a = 0; a < n; a++) {
+            const th = (a / n) * Math.PI * 2;
+            const cx = Math.round(Math.cos(th) * ring);
+            const cy = Math.round(Math.sin(th) * ring);
+            const site = foundPlaceAt(seed, "coast", cx, cy);
+            if (!site || site.kind !== kind) continue;
+
+            // Does this one lie across a border at all? Only those are evidence.
+            const cells: { x: number; y: number }[] = [];
+            for (let dy = -def.radius; dy <= def.radius; dy++)
+              for (let dx = -def.radius; dx <= def.radius; dx++)
+                if (Math.hypot(dx, dy) <= def.radius) cells.push({ x: site.x + dx, y: site.y + dy });
+            const regions = new Set(cells.map((c) => biomeAt(seed, "coast", c.x, c.y)));
+            if (regions.size < 2) continue;
+
+            straddlers++;
+            const skins = new Set(
+              cells.map((c) => JSON.stringify(scatterSkin(seed, "coast", c.x, c.y))),
+            );
+            expect(skins.size, `${kind} at ${site.x},${site.y} on seed ${seed}`).toBe(1);
+            break;
+          }
+        }
+      }
+    }
+    // A vacuous pass is the failure mode here: if no ring in sixty seeds lay
+    // across a border, this asserted nothing at all.
+    expect(straddlers).toBeGreaterThan(0);
   });
 });
