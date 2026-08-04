@@ -1872,6 +1872,52 @@ export const SPY_CLUE: Partial<Record<AdultForm, Partial<Record<SpyKind, string[
   },
 };
 
+// --- Sitting together ------------------------------------------------------------
+// Pooled into the idle pool while the player is parked on a seat with a
+// companion beside them (sim/dialogue.ts, the COMPANY_IDLE mechanism with one
+// more circumstance). The register is different from the walk's on purpose:
+// a walk is going somewhere and a sit is being somewhere, so these are about
+// the light, the square, and the fact of not moving. Nothing here may set a
+// task, promise weather, or hurry anybody up — sitting is the one activity
+// whose whole content is that nothing is happening.
+export const SITTING_IDLE: Partial<Record<AdultForm, string[]>> = {
+  scholar: [
+    "Sitting. Officially, this is data collection. The data is the square. It's good data.",
+    "I have no notes right now. ... Don't put that in the notes.",
+    "From here you can see nearly everything without moving. I should sit more. Professionally.",
+  ],
+  dog: [
+    "We're sitting! Both of us! At the same time!",
+    "I'm being so still right now. Are you seeing this. The stillness.",
+    "Sitting is like a walk that stays. I love it here.",
+  ],
+  blob: [
+    "An intermission. Well called.",
+    "We sit. The town goes by. It's very nearly theatre, and the seats are better.",
+    "I am resting between performances. The performances are also this.",
+  ],
+  menace: [
+    "We're sitting here now. This spot is ours. I've decided. Historically it was always ours.",
+    "I permit this bench to hold me. It's doing adequately.",
+    "Sit straight. ... Or don't. It's a day off. I'm told those exist.",
+  ],
+  gremlin: [
+    "Sitting's underrated. You can watch everything from one spot. Where it all is. Who leaves what where.",
+    "I've checked under this seat. Twice. It's clean. Disappointingly clean.",
+    "Nice spot. Good sightlines. I'm not casing the square. I'm appreciating it.",
+  ],
+  office: [
+    "Sitting with no meeting attached. Extraordinary. I keep waiting for an agenda and none comes.",
+    "In my working days a sit like this required a break request. I'm having it anyway. I'm having it twice.",
+    "Nothing is pending. Nothing at all. ... I could sit here forever.",
+  ],
+  carrot: [
+    "...",
+    "... Good light for it.",
+    "... The square does this every evening. Most people are walking too fast to see it.",
+  ],
+};
+
 // --- "Look at this" ------------------------------------------------------------
 // The inverse of I Spy: the PLAYER aims somebody's eyes at a thing, and they
 // consider it, in voice. A SEPARATE table from SPY_CLUE, deliberately — a clue

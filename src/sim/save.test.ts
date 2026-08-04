@@ -3,7 +3,7 @@ import { newWorld, loadedFinish } from "./game";
 import { serialize, deserialize, migrateSave, SCHEMA_VERSION } from "./save";
 import { tileKey, shafts, RECLAIM_MS, floorFinish } from "./world";
 import { SHAFT, CAVE_FLOOR, DIRT, FLOOR } from "../content/tiles";
-import { TOWN_BUILDINGS, footprintCells } from "../content/town";
+import { TOWN_BUILDINGS, TOWN_FIXTURES, footprintCells } from "../content/town";
 import { count } from "./inventory";
 import { STARTING_SEED } from "./seeds";
 import { STARTING_CROP } from "../content/crops";
@@ -1158,6 +1158,34 @@ describe("a save that went wrong can come back", () => {
     expect(new Set(ids).size).toBe(ids.length);
     // The first entry survives — it is the one with the history behind it.
     expect(back.villagers.find((v) => v.id === twin.id)!.x).not.toBe(99);
+  });
+});
+
+describe("v32 → v33: the plaza bench", () => {
+  it("stands the bench up in an old town, and touches nothing else", () => {
+    const w = newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
+    const bench = TOWN_FIXTURES.find((f) => f.id === "bench")!;
+    const key = `${bench.x},${bench.y}`;
+    const raw = JSON.parse(serialize(w)) as Record<string, unknown>;
+    raw.schemaVersion = 32;
+    delete (raw.furniture as Record<string, unknown>)[key];
+
+    const migrated = migrateSave(raw)!;
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated.furniture[key]?.id).toBe("bench");
+  });
+
+  it("never bulldozes what the player built on that cell", () => {
+    const w = newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
+    const bench = TOWN_FIXTURES.find((f) => f.id === "bench")!;
+    const key = `${bench.x},${bench.y}`;
+    const raw = JSON.parse(serialize(w)) as Record<string, unknown>;
+    raw.schemaVersion = 32;
+    // The player got there first: something of theirs stands on the cell.
+    (raw.furniture as Record<string, { id: string }>)[key] = { id: "stool", facing: "s", finish: "pine" } as never;
+
+    const migrated = migrateSave(raw)!;
+    expect(migrated.furniture[key]?.id).toBe("stool");
   });
 });
 

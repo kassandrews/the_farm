@@ -31,7 +31,7 @@ import type { CharId, CharDef } from "../content/cast";
 import { charDef, scheduledStop, isSecret } from "../content/cast";
 import { remember } from "./memory";
 import { atLeast } from "./friendship";
-import { isHiding, hideTarget, endPlay } from "./play";
+import { isHiding, hideTarget, seatBeside, endPlay } from "./play";
 
 /** The player's tile. Duplicated from sim/game.ts's `playerTile` rather than
  *  imported, because game.ts imports THIS file and a cycle through the sim's
@@ -231,6 +231,12 @@ export function followTarget(world: WorldState, v: Villager): { x: number; y: nu
   // into `hideTarget`'s null, because null already means "stand still" here —
   // an arrived hider must keep standing at their spot, not resume following.
   if (isHiding(world, v)) return hideTarget(world, v);
+  // A sitting player's bench names its own second cell (sim/play.ts
+  // `seatBeside` — the one sanctioned exception to "never pick a neighbour
+  // cell"; its docblock has the argument). Null falls through to the
+  // ordinary follow, which parks them beside you anyway.
+  const seat = seatBeside(world, v);
+  if (seat) return Math.hypot(seat.x - v.x, seat.y - v.y) <= 0.05 ? null : seat;
   const p = world.player;
   if ((v.layer ?? "surface") !== p.layer) return null; // shouldn't happen; see takeAlong
   if (Math.hypot(p.x - v.x, p.y - v.y) <= FOLLOW_GAP) return null;

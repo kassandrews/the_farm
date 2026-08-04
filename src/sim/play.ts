@@ -57,7 +57,9 @@ import { nodeAt } from "./gather";
 import { structureAt } from "./structures";
 import { structureDef } from "../content/structures";
 import { roofRoomAt } from "./rooms";
-import { furnitureAt } from "./furniture";
+import { furnitureAt, cellsFor } from "./furniture";
+import type { PlacedFurniture } from "./furniture";
+import type { FurnitureId } from "../content/furniture";
 import { isWalkable, tileAt, groveCentre, cubeSite } from "./world";
 import { WATER, SHALLOW, STONE, SAND, FARMLAND, FARMLAND_WET } from "../content/tiles";
 import { findPath } from "./path";
@@ -438,6 +440,55 @@ export function lookKindNear(world: WorldState): SpyKind | null {
     }
   }
   for (const kind of LOOK_ORDER) if (found.has(kind)) return kind;
+  return null;
+}
+
+// --- Sitting together -----------------------------------------------------------
+
+/** The seats you can BE on. Every one is walk-through (the chair rule in
+ *  content/furniture.ts), which is what makes sitting derivable at all: you
+ *  walk onto the seat and stop. The sofa is missing because the sofa is
+ *  solid — a cell you can't stand on is a seat this predicate can't see, and
+ *  making it visible would mean a sit BUTTON, a mode, and a migration. */
+const SEATS: FurnitureId[] = ["bench", "stool", "chair"];
+
+/** Are you sitting? You are standing still on a seat. That is the whole verb.
+ *
+ *  DERIVED, LIKE A ROOF IS DERIVED FROM ENCLOSURE. A `world.sitting` flag
+ *  would be a mode you enter with a button, plus a save field, plus the bug
+ *  where you are still sitting after somebody demolishes the bench. This way
+ *  moving IS standing up, demolition un-sits you by making the predicate
+ *  false, and nothing anywhere needs resetting. */
+export function sittingAt(world: WorldState): PlacedFurniture | null {
+  if (world.player.layer !== "surface") return null;
+  if (world.player.target !== null) return null; // walking is not sitting
+  const at = playerTile(world);
+  const f = furnitureAt(world, at.x, at.y);
+  return f && SEATS.includes(f.cell.id) ? f : null;
+}
+
+/** The other half of the bench the player is sitting on, if it's free — where
+ *  a companion aims so they sit down too.
+ *
+ *  This is the one legitimate exception to `followTarget`'s "never pick a
+ *  neighbour cell" rule, and the docblock there explains why the rule exists:
+ *  choosing a good cell beside a moving player is a pathfinding problem
+ *  solved badly every tick. Here the player is STILL, and the world itself
+ *  names the cell — a bench is two cells and they are on one of them. Null
+ *  for every other seat: a stool has no second half, and a companion parked
+ *  at `FOLLOW_GAP` beside your chair is already sitting with you in every
+ *  sense the sim can see. */
+export function seatBeside(world: WorldState, v: Villager): Point | null {
+  if (!world.company || world.company.id !== v.id) return null;
+  if ((v.layer ?? "surface") !== world.player.layer) return null;
+  const seat = sittingAt(world);
+  if (!seat || seat.cell.id !== "bench") return null;
+  const at = playerTile(world);
+  for (const [x, y] of cellsFor(seat.ax, seat.ay, seat.cell.id, seat.cell.facing)) {
+    if (x === at.x && y === at.y) continue; // the half you're on
+    if (!isWalkable(world, x, y, "surface")) return null;
+    return { x, y };
+  }
   return null;
 }
 

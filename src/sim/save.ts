@@ -19,7 +19,7 @@ import type { CharId, AuthoredId } from "../content/cast";
 import { CAST, MOLE, GHOST, COSMOS } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 
-export const SCHEMA_VERSION = 32;
+export const SCHEMA_VERSION = 33;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -877,6 +877,25 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
         const { lastLine, ...v } = entry as Record<string, unknown>;
         return { ...v, said: typeof lastLine === "string" && lastLine !== "" ? [lastLine] : [] };
       }),
+    };
+  },
+  // v32 → v33: the plaza bench (the minigames project — sitting together).
+  // The v15 → v16 shape exactly, and for the v15 → v16 reason: IT ADDS NO
+  // FIELDS AT ALL. Sitting is derived (sim/play.ts `sittingAt`), games live
+  // in a WeakMap and never serialise, and the memory kinds are additive — the
+  // only thing a deployed save can't get on its own is the bench standing in
+  // the square, because the migration ladder only runs below SCHEMA_VERSION
+  // and fixtures are stamped at town creation. So this re-runs the idempotent
+  // stamp and does nothing else; a player who built on that cell keeps what
+  // they built (`stampFixtures` skips occupied cells, and says so).
+  32: (raw) => {
+    const stamped = stampInto(raw);
+    return {
+      ...raw,
+      schemaVersion: 33,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
     };
   },
 };

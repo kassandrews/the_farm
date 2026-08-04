@@ -38,6 +38,7 @@ import {
   GAME_FOUND,
   GAME_GIVEUP,
   LOOK_AT,
+  SITTING_IDLE,
   RESIDENT_ABSENCE,
   RESIDENT_MIDST,
   RESIDENT_KIN,
@@ -47,6 +48,7 @@ import {
 import { ARRIVALS } from "../content/arrivals";
 import { isNewcomer } from "../content/cast";
 import type { GameId, SpyKind } from "../content/games";
+import { sittingAt } from "./play";
 import { CAST } from "../content/cast";
 import { conversationRoots } from "../content/conversations";
 import type { Exchange, Reply } from "../content/conversations";
@@ -442,6 +444,11 @@ export function speak(world: WorldState, v: Villager, rng: Rng, now: number): Sp
     ...(world.player.form === v.form ? (RESIDENT_KIN[v.form] ?? []) : []).map(asLine),
     ...warmLines(v.form, friendshipTier(v)).map(asLine),
     ...(isCompanion(world, v.id) ? (COMPANY_IDLE[v.form] ?? []).map(asLine) : []),
+    // And, sitting down together, the bench's own pool on top of the walk's —
+    // same mechanism, one more circumstance. The lines are about being
+    // stopped somewhere, which is the whole difference between a walk and a
+    // sit (content/dialogue.ts SITTING_IDLE).
+    ...(isCompanion(world, v.id) && sittingAt(world) ? (SITTING_IDLE[v.form] ?? []).map(asLine) : []),
     // Idle trees pool in like idle lines — the town square is exactly where a
     // conversation should be able to start, and how often one does is decided
     // by the bank's proportions rather than a second chance roll.

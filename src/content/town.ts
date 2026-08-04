@@ -442,6 +442,15 @@ export const TOWN_FIXTURES: TownFixture[] = [
   // 2x2 slab with board lines on it read as a sheet of paper lying in the
   // square, which is not the joke. A stage is made of ordinary boards.
   { x: STAGE.x, y: STAGE.y, id: "stage", facing: "s", finish: "pine" },
+  // A bench, mid-east plaza, facing the square. It exists so that sitting
+  // down together (sim/play.ts `sittingAt`) is reachable before the player
+  // has built a seat of their own — the town owns one bench the way it owns
+  // one board. East-centre because everything else took a quadrant: board
+  // south-east, stage and its audience rows south-west, hall doors north.
+  // Walk-through like every seat (the chair rule), so it can never seal an
+  // approach; pine like the stage, because the town has never refinished
+  // anything it owns.
+  { x: 2, y: -1, id: "bench", facing: "s", finish: "pine" },
 ];
 
 export function townBuilding(id: TownBuildingId): TownBuilding {
