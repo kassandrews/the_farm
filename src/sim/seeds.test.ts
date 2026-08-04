@@ -157,11 +157,16 @@ describe("varieties differ in time and in nothing else", () => {
 });
 
 describe("buying seed and unlocking varieties", () => {
-  it("shows rows you can't afford rather than hiding them", () => {
+  it("hides rows and prices your pockets can't pay", () => {
+    // Phase 14b, the shop's rule: only closable deals. The stall's authored
+    // empty line owns the broke case.
     const w = world();
     w.inventory = {};
-    expect(seedOffers(w)).toHaveLength(SEED_ROWS.length);
-    expect(seedOffers(w).every((o) => o.affordable.length === 0)).toBe(true);
+    expect(seedOffers(w)).toHaveLength(0);
+    const priced = SEED_ROWS[0].accepts[0];
+    add(w.inventory, priced.item, priced.count);
+    expect(seedOffers(w).length).toBeGreaterThan(0);
+    expect(seedOffers(w).every((o) => o.affordable.length > 0)).toBe(true);
   });
 
   it("swaps a price for seed", () => {
@@ -199,16 +204,20 @@ describe("buying seed and unlocking varieties", () => {
     expect(w.seeds.unlocked.filter((c) => c === row.gives)).toHaveLength(1);
   });
 
-  it("keeps taken rows on the list, and knows when there are none left", () => {
+  it("drops taken and unpayable rows, and knows when there are none left", () => {
+    // Phase 14b, the heap's rule here too: only live offers. What you own
+    // lives in the picker, and STALL_EXHAUSTED voices the end state.
     const w = world();
     expect(varietiesExhausted(w)).toBe(false);
+    w.inventory = {};
+    expect(varietyOffers(w)).toHaveLength(0); // broke: no dead rows
     for (const row of VARIETY_ROWS) {
       const price = row.accepts[0];
       add(w.inventory, price.item, price.count);
+      expect(varietyOffers(w).some((o) => o.row === row)).toBe(true); // payable: offered
       unlockVariety(w, row, price);
+      expect(varietyOffers(w).some((o) => o.row === row)).toBe(false); // taken: gone
     }
-    expect(varietyOffers(w)).toHaveLength(VARIETY_ROWS.length);
-    expect(varietyOffers(w).every((o) => o.taken)).toBe(true);
     expect(varietiesExhausted(w)).toBe(true);
   });
 });

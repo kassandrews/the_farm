@@ -11,7 +11,7 @@ import { portrait } from "../render/portrait";
 import { lookFor } from "../content/looks";
 import type { IconName } from "../content/icons";
 import { SPOTS } from "../content/spots";
-import type { WorldState, Tool, BuildTool, HomesteadSpot, Layer } from "../sim/types";
+import type { WorldState, Tool, BuildTool, HomesteadSpot, Layer, Villager } from "../sim/types";
 import { FACINGS, FURNITURE, furnitureDef } from "../content/furniture";
 import type { Facing } from "../content/furniture";
 import {
@@ -46,14 +46,14 @@ import { STANDARD_FORMS, FORMS } from "../content/canon/forms";
 import type { AdultForm } from "../content/canon/forms";
 import { importFromMeadow } from "../sim/meadow_import";
 import type { MeadowImport } from "../sim/meadow_import";
-import { recall } from "../sim/memory";
+import { recall, remember, hasMemory } from "../sim/memory";
 import { count } from "../sim/inventory";
 import { beginStroke, captureCell, endStroke, undoStroke, canUndo, undoLabel } from "../sim/undo";
 import { qualify, assign, beds, rehomeAcrossStroke, bedKeys, pendingRehome, DISQUALIFIER_TEXT } from "../sim/assign";
 import { counterBatches, cabinet, cabinetEmpty, file } from "../sim/filings";
 import { journalChunks, journalEmpty } from "../sim/notebook";
 import type { CharId, NewcomerId } from "../content/cast";
-import { isNewcomer, isSecret, CAST } from "../content/cast";
+import { isNewcomer, isSecret, CAST, charDef } from "../content/cast";
 import { present } from "../sim/presence";
 import { humLevel } from "../sim/hum";
 import {
@@ -705,9 +705,11 @@ export class App {
 
     // The shopkeeper's conversation IS her counter. A dialogue box that then
     // offers a "shop" button would be a menu in front of a menu, and she is a
-    // person you go and see rather than a UI you open.
+    // person you go and see rather than a UI you open. Every keeper goes
+    // through `withIntro` (Phase 14a): the person once, the screen forever
+    // after.
     if (villagerId === "shop") {
-      this.openShop();
+      this.withIntro(them, () => this.openShop());
       return;
     }
     // Same rule for the Gremlin: the heap is what he is, so talking to him is
@@ -716,7 +718,7 @@ export class App {
     // finish, and one panel bent to cover both would show a price column that
     // means something different on each side of it.
     if (villagerId === "heap") {
-      this.openHeap();
+      this.withIntro(them, () => this.openHeap());
       return;
     }
     // And Corrigal: the museum is her desk, the counter and the catalogue at
@@ -725,7 +727,7 @@ export class App {
     // in the game with nothing on the other side of it, and a shared panel
     // would have to invent a column for what you get back.
     if (villagerId === "museum") {
-      this.openMuseum();
+      this.withIntro(them, () => this.openMuseum());
       return;
     }
     // And the Blessed Carrot. Fourth counter, fourth panel — his is the only
@@ -733,7 +735,7 @@ export class App {
     // which is exactly why it isn't folded into hers: one panel covering both
     // would need a column whose meaning changed halfway down it.
     if (villagerId === "seedstall") {
-      this.openSeedStall();
+      this.withIntro(them, () => this.openSeedStall());
       return;
     }
     // And the Dog Thing, whose counter is a board he is often not standing at.
@@ -741,7 +743,7 @@ export class App {
     // conversation, wherever on his round you catch him, and a version where
     // you had to walk him back to the plaza would make the round a chore.
     if (villagerId === "errands") {
-      this.openErrands();
+      this.withIntro(them, () => this.openErrands());
       return;
     }
     // And the Dramatic Blob. Sixth counter, sixth panel, and the only one that
@@ -749,7 +751,7 @@ export class App {
     // is being told what is on. A "programme" button inside a dialogue box
     // would be the menu-in-front-of-a-menu the shop refuses.
     if (villagerId === "stage") {
-      this.openStage();
+      this.withIntro(them, () => this.openStage());
       return;
     }
 
@@ -924,6 +926,41 @@ export class App {
   }
 
   // --- The counter ----------------------------------------------------------------
+  /** You meet the person before you meet the screen (Phase 14a, ROADMAP §14a).
+   *
+   *  The first time you talk to a counter keeper this opens the DIALOGUE frame
+   *  — them, in their own voice, saying who they are and what they run — and
+   *  the counter only after you answer. Ever after, the counter opens
+   *  directly. "First time" is the keeper's own memory (`introduced`, written
+   *  to them alone), not a UI flag: the person remembers meeting you, which is
+   *  the bar every piece of remembered state has to pass (§10i).
+   *
+   *  Escaping the intro without answering leaves it unremembered, and that is
+   *  the honest reading: you walked off mid-introduction, so they introduce
+   *  themselves again next time. */
+  private withIntro(them: Villager, open: () => void): void {
+    const intro = charDef({ id: them.id, name: them.name, form: them.form, fixed: them.fixed }).intro;
+    if (!intro || hasMemory(them.memory, "introduced")) {
+      open();
+      return;
+    }
+    this.openModal(
+      (close) => {
+        const saidP = el("p", {}, [intro]);
+        const row = actionRow([
+          primaryBtn("...", () => {
+            them.memory = remember(them.memory, { kind: "introduced", at: Date.now() });
+            this.persist();
+            close();
+            open();
+          }),
+        ]);
+        return speechPanel(them.name, portrait(them.form, lookFor(them.id, them.form)), saidP, row);
+      },
+      { dismissable: true },
+    );
+  }
+
   /** The Menace's shop. Barter, so every row shows what she'll take INSTEAD of
    *  each other and you pick which of your things to part with.
    *
@@ -944,25 +981,34 @@ export class App {
       const body = el("div", {});
       const render = () => {
         body.replaceChildren();
-        for (const { row, affordable } of offers(world)) {
+        const offered = offers(world);
+
+        // Only deals your pockets can close, and only the prices they can pay
+        // (Phase 14b). The one absence needs a voice: her counter with nothing
+        // on it is her observation, not a blank. Worded for the true case —
+        // eight wood against a twelve-wood price is not empty pockets, it is
+        // pockets that don't reach.
+        if (offered.length === 0) {
+          body.append(
+            el("p", {}, ["Nothing on you makes a trade today. ... It's barter. Come back holding more of something."]),
+          );
+          return;
+        }
+        for (const { row, affordable } of offered) {
           body.append(
             el("div", { class: "who" }, [`${itemLabel(row.gives, row.givesCount)}, for any of:`]),
           );
           const choices = el("div", { class: "choices" });
-          for (const price of row.accepts) {
-            const can = affordable.includes(price);
-            const b = choiceBtn(itemLabel(price.item, price.count), () => {
-              if (!trade(world, row, price)) return;
-              audio.play("place");
-              this.persist();
-              this.flash(row.line);
-              render();
-            });
-            if (!can) {
-              b.setAttribute("disabled", "true");
-              b.style.opacity = "0.4";
-            }
-            choices.append(b);
+          for (const price of affordable) {
+            choices.append(
+              choiceBtn(itemLabel(price.item, price.count), () => {
+                if (!trade(world, row, price)) return;
+                audio.play("place");
+                this.persist();
+                this.flash(row.line);
+                render();
+              }),
+            );
           }
           body.append(choices);
         }
@@ -1004,36 +1050,37 @@ export class App {
       const body = el("div", {});
       const render = () => {
         body.replaceChildren();
+        const offered = heapOffers(world);
+
+        // The opener tracks the list (Phase 14b): only live offers are shown,
+        // so each absence has to be said rather than greyed. Exhausted wins —
+        // he is not going to restock, and pretending otherwise would be the
+        // first FOMO in the game. Empty pockets get their own line, because a
+        // bare counter with no voice reads as a bug.
+        const opener = heapExhausted(world)
+          ? "That's the lot. ... You've had everything worth having. Some of it twice, from my side."
+          : offered.length === 0
+            ? "Nothing on you I can work with. ... Come back heavier."
+            : "You dug that up. ... Fine. I can do something with it. Probably.";
+        body.append(el("p", {}, [opener]));
+
         const choices = el("div", { class: "choices" });
-        for (const { row, taken, affordable } of heapOffers(world)) {
-          const label = taken
-            ? `${skinDef(row.gives).name} — yours`
-            : `${skinDef(row.gives).name}, for ${itemLabel("junk", row.cost)}`;
-          const b = choiceBtn(label, () => {
-            if (!redeem(world, row)) return;
-            audio.play("place");
-            this.persist();
-            this.flash(row.line);
-            render();
-          });
-          if (taken || !affordable) {
-            b.setAttribute("disabled", "true");
-            b.style.opacity = "0.4";
-          }
-          choices.append(b);
+        for (const { row } of offered) {
+          choices.append(
+            choiceBtn(`${skinDef(row.gives).name}, for ${itemLabel("junk", row.cost)}`, () => {
+              if (!redeem(world, row)) return;
+              audio.play("place");
+              this.persist();
+              this.flash(row.line);
+              render();
+            }),
+          );
         }
-        body.append(choices);
+        if (offered.length > 0) body.append(choices);
       };
       render();
 
-      // What he says when the pile is done. He is not going to restock, and
-      // pretending otherwise would be the first FOMO in the game.
-      const opener = heapExhausted(world)
-        ? "That's the lot. ... You've had everything worth having. Some of it twice, from my side."
-        : "You dug that up. ... Fine. I can do something with it. Probably.";
-
       return panel(CAST.heap.name, "The Facility", [
-        el("p", {}, [opener]),
         body,
         actionRow([primaryBtn("Right", close)]),
       ], counterFace("heap"));
@@ -1091,48 +1138,47 @@ export class App {
         for (const { row, affordable } of seedOffers(world)) {
           body.append(el("div", { class: "who" }, [`${itemLabel("seed", row.givesCount)}, for any of:`]));
           const choices = el("div", { class: "choices" });
-          for (const price of row.accepts) {
-            const b = choiceBtn(itemLabel(price.item, price.count), () => {
-              if (!buySeed(world, row, price)) return;
-              audio.play("place");
-              this.persist();
-              this.flash(row.line);
-              render();
-            });
-            if (!affordable.includes(price)) {
-              b.setAttribute("disabled", "true");
-              b.style.opacity = "0.4";
-            }
-            choices.append(b);
+          for (const price of affordable) {
+            choices.append(
+              choiceBtn(itemLabel(price.item, price.count), () => {
+                if (!buySeed(world, row, price)) return;
+                audio.play("place");
+                this.persist();
+                this.flash(row.line);
+                render();
+              }),
+            );
           }
           body.append(choices);
         }
 
-        for (const { row, taken, affordable } of varietyOffers(world)) {
+        // Bought varieties are gone from the list (Phase 14b) — the picker is
+        // where what you own lives, and STALL_EXHAUSTED voices the end state.
+        for (const { row, affordable } of varietyOffers(world)) {
           const name = cropDef(row.gives).name;
-          if (taken) {
-            // Named, not priced. He is not selling it again and there is
-            // nothing here to tick off.
-            body.append(el("div", { class: "who" }, [`${name} — you have it`]));
-            continue;
-          }
           body.append(el("div", { class: "who" }, [`${name}, to plant from now on — for any of:`]));
           const choices = el("div", { class: "choices" });
-          for (const price of row.accepts) {
-            const b = choiceBtn(itemLabel(price.item, price.count), () => {
-              if (!unlockVariety(world, row, price)) return;
-              audio.play("place");
-              this.persist();
-              justGiven = { name, line: row.line };
-              render();
-            });
-            if (!affordable.includes(price)) {
-              b.setAttribute("disabled", "true");
-              b.style.opacity = "0.4";
-            }
-            choices.append(b);
+          for (const price of affordable) {
+            choices.append(
+              choiceBtn(itemLabel(price.item, price.count), () => {
+                if (!unlockVariety(world, row, price)) return;
+                audio.play("place");
+                this.persist();
+                justGiven = { name, line: row.line };
+                render();
+              }),
+            );
           }
           body.append(choices);
+        }
+
+        // Both halves pocket-filtered to nothing, with varieties still unsold:
+        // the counter has to say so itself, or an early visit with a bare
+        // satchel reads as the stall being broken.
+        if (body.childElementCount === 0 && !varietiesExhausted(world)) {
+          body.append(
+            el("p", {}, ["Nothing on you the stall takes. ... The seeds will wait. It's what they're best at."]),
+          );
         }
       };
       render();

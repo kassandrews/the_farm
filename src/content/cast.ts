@@ -156,6 +156,12 @@ export interface CharDef {
    *  by UI). Nobody else has one, and nobody else should — the institutions
    *  print their names on the counter, which is what an institution is. */
   unknownAs?: string;
+  /** What they say the FIRST time you talk to them, before their counter ever
+   *  opens (Phase 14a). Spoken in the dialogue frame — the person, once, and
+   *  the screen forever after — so it introduces them AND the thing they run.
+   *  Set only on the fixed keepers; a resident's first words come from their
+   *  form's dialogue banks like all their others. House ellipsis style. */
+  intro?: string;
 }
 
 /** Where a resident stands when they have no bed to go to: the middle of the
@@ -189,6 +195,10 @@ export const CAST: Record<AuthoredId, CharDef> = {
     id: "shop",
     form: "menace",
     name: "Arabella",
+    // Met once, in the frame; the counter thereafter. Her intro makes the
+    // barter rule a sentence, because the counter itself never explains.
+    intro:
+      "Arabella. This is the counter. Things cross it in both directions, and I keep track of neither. ... That's the entire system. It has yet to fail.",
     fixed: true,
     // Behind the counter, permanently. Like Gary she is an
     // INSTITUTION rather than a resident: no bed, no ring, no home stop.
@@ -206,6 +216,10 @@ export const CAST: Record<AuthoredId, CharDef> = {
     id: "heap",
     form: "gremlin",
     name: "Nub",
+    // He introduces the pile as a facility with a straight face, which is the
+    // whole of his job description.
+    intro:
+      "Nub. This is the facility. It looks like a pile because it is one. ... Officially, a facility.",
     fixed: true,
     // At the heap, north-east of the plaza. An INSTITUTION like the other two:
     // no bed, no ring, no home stop — whatever he does at night, he does here.
@@ -219,6 +233,8 @@ export const CAST: Record<AuthoredId, CharDef> = {
     id: "museum",
     form: "scholar",
     name: "Winifred",
+    intro:
+      "Winifred. Curator. The town brings me things, and I decide what they meant. ... Somebody has to.",
     fixed: true,
     // The curator, where Prudence is a scholar who happens to live here. That
     // is the whole shape DESIGN §The museum insists on — forms are species, not
@@ -241,6 +257,10 @@ export const CAST: Record<AuthoredId, CharDef> = {
     id: "seedstall",
     form: "carrot",
     name: "Derek",
+    // The intro says the quiet part once so his counter opener's "we're not
+    // discussing it" has something to be not discussing.
+    intro:
+      "Derek. The stall is seeds, the seeds are for planting, and I am a carrot. ... We're not discussing the last part.",
     fixed: true,
     // Behind his counter, south-west of the plaza. An INSTITUTION like the
     // other four: no bed, no ring, no home stop.
@@ -263,6 +283,10 @@ export const CAST: Record<AuthoredId, CharDef> = {
     id: "errands",
     form: "dog",
     name: "Pesto",
+    // Dog voice: enthusiastic, exclamatory, brief. His counter is a board he
+    // is often not standing at, and the intro owns that up front.
+    intro:
+      "Pesto! Deliveries. The board has the details and I have the legs. ... Sometimes I am not at the board. That's the legs.",
     fixed: true,
     // THE ONE INSTITUTION THAT MOVES, and the only reason to break the pattern
     // the other five keep: his institution is DELIVERIES (DESIGN's cast table),
@@ -301,6 +325,8 @@ export const CAST: Record<AuthoredId, CharDef> = {
     id: "stage",
     form: "blob",
     name: "Aurelio",
+    intro:
+      "Aurelio. Of the stage. ... The festivals are twelve nights a year. I am the other three hundred and fifty-three.",
     fixed: true,
     // The last institution. He does not leave the platform, which for a
     // tragedian is not devotion so much as the absence of anywhere better to

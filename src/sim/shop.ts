@@ -10,19 +10,21 @@
 import type { WorldState } from "./types";
 import type { ShopRow, Price } from "../content/shop";
 import { SHOP } from "../content/shop";
-import { count, add, spend } from "./inventory";
+import { count, spend } from "./inventory";
+import { gain } from "./met";
 
-/** Every row, with which of its prices you can currently meet.
+/** Every row you can strike a deal on right now, with only the prices your
+ *  pockets can meet.
  *
- *  Rows you can't afford are still returned, and the UI still shows them: a
- *  counter that hides what you can't buy today is a counter that never teaches
- *  you what it's for. Same reason the satchel omits zero-count rows but the
- *  shop does not — one is a list of what you have, the other is an offer. */
+ *  Phase 14b: rows and prices you can't pay are FILTERED, not greyed. The older
+ *  rule ("a counter that hides what you can't buy never teaches you what it's
+ *  for") is recorded in ROADMAP §14b with its revert path; the empty-pockets
+ *  case gets an authored line in the panel instead of a screen of dead rows. */
 export function offers(world: WorldState): { row: ShopRow; affordable: Price[] }[] {
   return SHOP.map((row) => ({
     row,
     affordable: row.accepts.filter((p) => count(world.inventory, p.item) >= p.count),
-  }));
+  })).filter((o) => o.affordable.length > 0);
 }
 
 /** Can this exact price be met right now? */
@@ -43,6 +45,6 @@ export function canPay(world: WorldState, price: Price): boolean {
 export function trade(world: WorldState, row: ShopRow, price: Price): boolean {
   if (!canPay(world, price)) return false;
   if (!spend(world.inventory, { [price.item]: price.count })) return false;
-  add(world.inventory, row.gives, row.givesCount);
+  gain(world, row.gives, row.givesCount);
   return true;
 }

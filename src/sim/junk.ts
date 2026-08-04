@@ -10,7 +10,7 @@ import type { WorldState } from "./types";
 import { hash2 } from "./rng";
 import { tileKey, canDig, dig, canCarve, carve, depthAt } from "./world";
 import { JUNK_DENSITY, JUNK_FINDS, DEEP_JUNK_DENSITY, DEEP_FINDS } from "../content/junk";
-import { add } from "./inventory";
+import { gain } from "./met";
 
 /** Its own salt, so junk doesn't correlate with where the trees and rocks are —
  *  the same reason generation uses two hashes for tree and rock. */
@@ -97,7 +97,7 @@ export function digWithFind(
   const payout = isVirginGround(world, x, y) && buriedAt(world, x, y);
   if (!dig(world, x, y, now)) return { dug: false, find: null };
   if (!payout) return { dug: true, find: null };
-  add(world.inventory, "junk", 1);
+  gain(world, "junk", 1);
   return { dug: true, find: findLine(world, x, y) };
 }
 
@@ -152,9 +152,9 @@ export function carveWithFind(
   // No `find` line goes with it, deliberately. A toast every time you swing
   // would turn the quietest verb in the game into a stream of notifications;
   // the number in the satchel going up is the whole of the telling.
-  add(world.inventory, "stone", 1);
+  gain(world, "stone", 1);
 
   if (!payout) return { carved: true, find: null };
-  add(world.inventory, "junk", 1);
+  gain(world, "junk", 1);
   return { carved: true, find: deepFindLine(world, x, y) };
 }

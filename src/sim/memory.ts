@@ -123,7 +123,15 @@ export type MemoryKind =
   // Not in `oneShot` — different answers are different memories — but
   // de-duplicated by VALUE below: giving the Dog the same answer every morning
   // is one remembered fact, not sixty-four copies of it crowding out his log.
-  | "answered";
+  | "answered"
+  // The day they introduced themselves at their counter (Phase 14a). Written to
+  // the ONE keeper, never through `witness` — an introduction is not news, and
+  // the town does not discuss who you have been served by. In `oneShot`: you
+  // have either been introduced or you haven't, and the second meeting is the
+  // same fact (`hum`'s argument). This is what makes "first time" a memory the
+  // keeper holds rather than a flag the UI keeps about itself, which is the
+  // §10i bar every piece of remembered state has to pass.
+  | "introduced";
 
 export interface MemoryEvent {
   kind: MemoryKind;
@@ -141,7 +149,7 @@ const MAX_MEMORIES = 64; // a bounded ring; the town lives at hour forty, not fo
  *  doesn't stack five identical "you built that?" memories. Imports and
  *  repeatable events (harvests) may recur. */
 export function remember(log: MemoryLog, ev: MemoryEvent): MemoryLog {
-  const oneShot: MemoryKind[] = ["built_floor", "dug", "planted", "arrived", "housed", "raised_by", "raised_favorite", "hum", "far_out"];
+  const oneShot: MemoryKind[] = ["built_floor", "dug", "planted", "arrived", "housed", "raised_by", "raised_favorite", "hum", "far_out", "introduced"];
   if (oneShot.includes(ev.kind) && log.some((m) => m.kind === ev.kind)) return log;
   // An answer is one-shot PER ANSWER: the same words again are the same fact.
   if (ev.kind === "answered" && log.some((m) => m.kind === ev.kind && m.value === ev.value)) return log;

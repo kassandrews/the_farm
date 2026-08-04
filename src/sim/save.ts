@@ -18,8 +18,9 @@ import { authoredBed } from "../content/town";
 import type { CharId, AuthoredId } from "../content/cast";
 import { CAST, MOLE, GHOST, COSMOS } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
+import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 33;
+export const SCHEMA_VERSION = 34;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -897,6 +898,25 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
       build: stamped.build,
       furniture: stamped.furniture,
     };
+  },
+  // v33 → v34: `met`, the items that have ever been in the satchel (Phase 14b —
+  // the museum's nature wing may no longer name a thing you have never held).
+  //
+  // The backfill is what a save can honestly claim: whatever is in the satchel
+  // NOW, plus the item of every exhibit already donated — a donation is proof
+  // you once held the thing, even if you have spent every one since. What it
+  // cannot recover is an item once held, spent to zero and never donated; that
+  // player meets it again the next time they pick one up, which is a smaller
+  // wrong than inventing a memory the save has no evidence for.
+  33: (raw) => {
+    const inventory = (typeof raw.inventory === "object" && raw.inventory ? raw.inventory : {}) as Record<string, number>;
+    const met = Object.keys(inventory).filter((id) => (inventory[id] ?? 0) > 0);
+    const museum = (raw.museum ?? {}) as { donated?: { id?: string }[] };
+    for (const d of museum.donated ?? []) {
+      const item = MUSEUM.find((e) => e.id === d.id)?.cost.item;
+      if (item && !met.includes(item)) met.push(item);
+    }
+    return { ...raw, schemaVersion: 34, met };
   },
 };
 

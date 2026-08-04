@@ -6520,11 +6520,28 @@ grab bag.
 
 ---
 
-## Phase 14 — The counter pass — planned
+## Phase 14 — The counter pass — **built**, same day it was planned
 
 Two changes to the five keeper counters, from one design sitting (3 Aug 2026):
 the keepers introduce themselves, and their lists stop naming what you haven't
-earned the right to hear about. Planned before code, as house practice.
+earned the right to hear about. Planned before code, as house practice; built
+the same sitting. The record, briefly, then the plan as written:
+
+- **Schema v34** — `world.met`, marked by `gain()` in `sim/met.ts`, which is
+  now the one door into the satchel (the sow refund keeps bare `add`, and the
+  reason is at the top of met.ts). Migration backfills from current inventory
+  plus donated exhibits, tested both ways in save.test.ts.
+- **The intro lines are drafts awaiting a dialogue sitting.** Six of them, on
+  the keepers' cast rows (`CharDef.intro`). Derek's says the quiet part once so
+  his counter's "we're not discussing it" becomes a callback; Pesto's owns that
+  his counter is a board he is often not at.
+- **Found by the first screenshot: "Empty pockets" was a lie.** A fresh save
+  holds eight wood against Arabella's twelve-wood price — pockets that don't
+  REACH, not empty ones — and her broke line is worded for the true case.
+  Nub's ("Come back heavier.") is safe because his prices are junk-only.
+- `scripts/shot-counters.mts` now walks the whole flow per keeper — intro
+  photographed, answered, counter photographed — and FAILS if a fresh save
+  skips an introduction or an introduction fails to hand over to the counter.
 
 ### 14a — You meet the person before you meet the screen
 

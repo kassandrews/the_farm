@@ -48,12 +48,18 @@ describe("what the counter will take", () => {
 });
 
 describe("trading", () => {
-  it("shows rows you can't afford rather than hiding them", () => {
+  it("hides rows and prices your pockets can't pay", () => {
+    // Phase 14b: the counter offers only deals you can close today. The
+    // empty-pockets state has an authored line in the panel instead of a
+    // screen of greyed rows; the retired rule is recorded in ROADMAP §14b.
     const w = world();
     w.inventory = {};
+    expect(offers(w)).toHaveLength(0);
+    const priced = SHOP[0].accepts[0];
+    add(w.inventory, priced.item, priced.count);
     const seen = offers(w);
-    expect(seen).toHaveLength(SHOP.length);
-    expect(seen.every((o) => o.affordable.length === 0)).toBe(true);
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((o) => o.affordable.length > 0)).toBe(true);
   });
 
   it("takes what you offered, not what it would rather have", () => {

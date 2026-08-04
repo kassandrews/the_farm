@@ -14,7 +14,7 @@ import type { CropDef } from "../content/crops";
 import { cropDef, ripeStage, SEED_PER_HARVEST } from "../content/crops";
 import { tileKey, tileAt, setTile, FARMLAND, FARMLAND_WET } from "./world";
 import { GRASS, DIRT } from "../content/tiles";
-import { add } from "./inventory";
+import { gain } from "./met";
 
 const HOUR = 3_600_000;
 /** How long a watering keeps a plot wet — a bit under a day, so a daily
@@ -80,8 +80,8 @@ export function harvest(world: WorldState, x: number, y: number, now: number): C
   if (crop.stage < ripeStage(def)) return null;
   delete world.crops[key];
   setTile(world, x, y, FARMLAND);
-  add(world.inventory, def.yields, 1);
-  add(world.inventory, "seed", SEED_PER_HARVEST);
+  gain(world, def.yields, 1);
+  gain(world, "seed", SEED_PER_HARVEST);
   return def;
 }
 

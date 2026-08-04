@@ -24,6 +24,7 @@ import type { ExhibitDef, ExhibitId, WingId } from "../content/museum";
 import { MUSEUM, exhibitDef, mountedIndex, placardText, wingExhibits } from "../content/museum";
 import { TOWN_BUILDINGS } from "../content/town";
 import { count, spend } from "./inventory";
+import { hasMet } from "./met";
 import { hash2 } from "./rng";
 
 /** One donated exhibit, as stored in the save (see WorldState.museum). */
@@ -45,20 +46,26 @@ export function isDonated(world: WorldState, id: ExhibitId): boolean {
 
 /** What she'll take, in the order the panel should show it.
  *
- *  Nature rows are all offered at once — you can see that the wing wants a
- *  mushroom before you have one, because a wing of natural things is not a
- *  secret and knowing what it wants is what sends you out looking.
+ *  Nature rows appear once their item has ever been in your satchel (Phase 14b
+ *  — the wing may want things, but it may not NAME a thing you have never
+ *  held, which is the Notebook's rule reaching the last counter still exempt
+ *  from it). The wing therefore grows as your world does. The older call —
+ *  "knowing what it wants is what sends you out looking" — is recorded in
+ *  ROADMAP §14b with its revert path.
+ *
+ *  A met row then STAYS, affordable or not: this list is a wanted-list rather
+ *  than a trade, so it keeps the shop's retired rule — seeing what she wants
+ *  is half of knowing to come back with one.
  *
  *  Antiquities are offered ONE at a time: only the next unrevealed row, and
  *  only ever as "junk". You are not told what it will turn out to be, because
  *  junk is identified at donation and not before (DESIGN) — and because a list
- *  of twelve pending antiquities is a checklist with the numbers left off.
- *  Unaffordable rows are still listed, same as the shop and the heap: seeing
- *  what a counter is for is half of knowing to come back. */
+ *  of twelve pending antiquities is a checklist with the numbers left off. */
 export function donatable(world: WorldState): MuseumOffer[] {
   const offers: MuseumOffer[] = [];
   for (const def of wingExhibits("nature")) {
     if (isDonated(world, def.id)) continue;
+    if (!hasMet(world, def.cost.item)) continue;
     offers.push({ def, affordable: count(world.inventory, def.cost.item) >= def.cost.count });
   }
   const next = nextAntiquity(world);

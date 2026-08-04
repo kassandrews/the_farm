@@ -19,6 +19,7 @@ import type { SeedRow, VarietyRow } from "../content/seedstall";
 import { SEED_ROWS, VARIETY_ROWS } from "../content/seedstall";
 import { CROP_ORDER } from "../content/crops";
 import { count, add, spend } from "./inventory";
+import { gain } from "./met";
 import { canPlant, plant } from "./crops";
 
 /** What a town opens with — enough to put a short row in before you have met
@@ -31,27 +32,26 @@ export const STARTING_SEED = 6;
 
 // --- The counter --------------------------------------------------------------
 
-/** Every seed row, with which of its prices you can meet — the shop's shape,
- *  and unaffordable rows are still returned for the shop's reason (a counter
- *  that hides what you can't buy never teaches you what it's for). */
+/** The seed rows you can pay for right now, with only the payable prices — the
+ *  shop's shape and, since Phase 14b, the shop's filter (see `offers`). */
 export function seedOffers(world: WorldState): { row: SeedRow; affordable: Price[] }[] {
   return SEED_ROWS.map((row) => ({
     row,
     affordable: row.accepts.filter((p) => count(world.inventory, p.item) >= p.count),
-  }));
+  })).filter((o) => o.affordable.length > 0);
 }
 
-/** Every variety row, with whether you already have it — the heap's shape, for
- *  the heap's reason: a variety is permanent, so a row is redeemed once and
- *  stays visible afterwards rather than vanishing. */
-export function varietyOffers(
-  world: WorldState,
-): { row: VarietyRow; taken: boolean; affordable: Price[] }[] {
-  return VARIETY_ROWS.map((row) => ({
-    row,
-    taken: world.seeds.unlocked.includes(row.gives),
-    affordable: row.accepts.filter((p) => count(world.inventory, p.item) >= p.count),
-  }));
+/** The variety rows still on offer AND within reach: a redeemed variety leaves
+ *  the list (Phase 14b — the "stays visible, marked" rule it replaced is
+ *  recorded in ROADMAP §14b), and `varietiesExhausted` is what voices the
+ *  end state, exactly as the heap's exhausted line does. */
+export function varietyOffers(world: WorldState): { row: VarietyRow; affordable: Price[] }[] {
+  return VARIETY_ROWS.filter((row) => !world.seeds.unlocked.includes(row.gives))
+    .map((row) => ({
+      row,
+      affordable: row.accepts.filter((p) => count(world.inventory, p.item) >= p.count),
+    }))
+    .filter((o) => o.affordable.length > 0);
 }
 
 /** Has he nothing left to unlock? Seed still isn't exhausted — that's the half
@@ -66,7 +66,7 @@ export function varietiesExhausted(world: WorldState): boolean {
 export function buySeed(world: WorldState, row: SeedRow, price: Price): boolean {
   if (count(world.inventory, price.item) < price.count) return false;
   if (!spend(world.inventory, { [price.item]: price.count })) return false;
-  add(world.inventory, "seed", row.givesCount);
+  gain(world, "seed", row.givesCount);
   return true;
 }
 

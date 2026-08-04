@@ -13,24 +13,21 @@ import { count, spend } from "./inventory";
 
 export interface HeapOffer {
   row: HeapRow;
-  /** Already redeemed — a finish is permanent, so there is no second one. */
-  taken: boolean;
-  affordable: boolean;
 }
 
-/** Everything on the pile, including what you can't pay for and what you have
+/** What he'll actually deal for, today: rows you can pay, minus rows you have
  *  already taken.
  *
- *  Taken rows keep their place rather than disappearing: a counter that empties
- *  itself as you use it makes the last visit look like a bug, and seeing what
- *  you already own from him is half of knowing what he is for. Same instinct as
- *  the shop showing rows you can't afford. */
+ *  Phase 14b reversed the older rule here (taken rows marked, unaffordable rows
+ *  greyed — "seeing what he's for is half of knowing to come back"). The list
+ *  is now only live offers, and the two absences each have an authored voice
+ *  instead of a dead row: an empty-pockets visit gets its own opener, and a
+ *  cleaned-out pile gets "That's the lot" via `heapExhausted`. View-side only —
+ *  nothing about what he stocks or what is unlocked moved. */
 export function heapOffers(world: WorldState): HeapOffer[] {
-  return HEAP.map((row) => ({
-    row,
-    taken: world.skins.unlocked.includes(row.gives),
-    affordable: count(world.inventory, "junk") >= row.cost,
-  }));
+  return HEAP.filter(
+    (row) => !world.skins.unlocked.includes(row.gives) && count(world.inventory, "junk") >= row.cost,
+  ).map((row) => ({ row }));
 }
 
 /** Is there anything left on the pile he hasn't given you? */

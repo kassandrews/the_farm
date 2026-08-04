@@ -11,6 +11,7 @@ import type { PlaceLog } from "./places";
 import type { Filing } from "./filings";
 import type { Observation } from "./notebook";
 import type { Inventory } from "./inventory";
+import type { ItemId } from "../content/items";
 import type { NodeId } from "../content/nodes";
 import type { SkinId } from "../content/skins";
 import type { StructureId } from "../content/structures";
@@ -329,6 +330,17 @@ export interface WorldState {
 
   /** What you're carrying. No slots, no weight — see sim/inventory.ts. */
   inventory: Inventory;
+  /** Every item id that has EVER entered the satchel, in the order first met.
+   *  Marked by `gain` (sim/met.ts) and never unmarked — spending your last ore
+   *  does not make ore a stranger again.
+   *
+   *  Exists for exactly one consumer: the museum's nature wing, which since
+   *  Phase 14b may not NAME a thing you have never held (the Notebook's rule,
+   *  reaching the one counter that was still allowed to break it). It is a list
+   *  and not a count — a count would be a score — and nothing may ever gate a
+   *  MECHANIC on it: what you can do is never a function of what you have seen,
+   *  only what a list is willing to say out loud. */
+  met: ItemId[];
   /** Felled resource nodes waiting to come back, keyed "x,y". An entry is
    *  dropped (never regrows) if you claim that ground — see sim/gather.ts. */
   regrow: Record<string, { node: NodeId; at: number }>;

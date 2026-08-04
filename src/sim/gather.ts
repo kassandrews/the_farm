@@ -24,7 +24,7 @@ import { nodeDef, nodeForTile } from "../content/nodes";
 import type { ItemId } from "../content/items";
 import { tileAt, setTile, tileKey, healsTo, RECLAIM_MS } from "./world";
 import { GRASS, DIRT } from "../content/tiles";
-import { add } from "./inventory";
+import { gain } from "./met";
 import { furnitureAt } from "./furniture";
 
 /** Which node (if any) is standing on this tile right now. */
@@ -90,7 +90,7 @@ export function gather(
 
   setTile(world, x, y, def.felled, layer); // bare, workable, and claimable
   if (def.regrowMs !== null) world.regrow[tileKey(x, y)] = { node, at: now + def.regrowMs };
-  add(world.inventory, def.drop, def.yield);
+  gain(world, def.drop, def.yield);
 
   // The grove IS the giver, and that is the whole point of where walnut lives.
   //

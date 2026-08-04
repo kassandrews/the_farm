@@ -4,7 +4,7 @@ import { serialize, deserialize, migrateSave, SCHEMA_VERSION } from "./save";
 import { tileKey, shafts, RECLAIM_MS, floorFinish } from "./world";
 import { SHAFT, CAVE_FLOOR, DIRT, FLOOR } from "../content/tiles";
 import { TOWN_BUILDINGS, TOWN_FIXTURES, footprintCells } from "../content/town";
-import { count } from "./inventory";
+import { count, spend } from "./inventory";
 import { STARTING_SEED } from "./seeds";
 import { STARTING_CROP } from "../content/crops";
 import { STAGE } from "../content/festivals";
@@ -14,6 +14,8 @@ import { befriend } from "./friendship";
 import { invite } from "./company";
 import { startPlay, playing } from "./play";
 import { makeRng } from "./rng";
+import { MUSEUM } from "../content/museum";
+import { gain, hasMet } from "./met";
 
 function freshWorld() {
   return newWorld({ name: "Keeper", form: "menace", spot: "riverside", seed: 99 });
@@ -1186,6 +1188,35 @@ describe("v32 → v33: the plaza bench", () => {
 
     const migrated = migrateSave(raw)!;
     expect(migrated.furniture[key]?.id).toBe("stool");
+  });
+});
+
+describe("v33 → v34: the satchel remembers first meetings", () => {
+  it("backfills met from what the satchel holds and the museum proves", () => {
+    const w = newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
+    const raw = JSON.parse(serialize(w)) as Record<string, unknown>;
+    raw.schemaVersion = 33;
+    delete raw.met;
+    raw.inventory = { wood: 3, junk: 0 }; // a zero count is not a meeting
+    // A donated exhibit is proof you once held its item, even spent to zero.
+    const ore = MUSEUM.find((e) => e.cost.item === "ore")!;
+    raw.museum = { donated: [{ id: ore.id, placard: 0 }] };
+
+    const migrated = migrateSave(raw)!;
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated.met).toContain("wood");
+    expect(migrated.met).toContain("ore");
+    expect(migrated.met).not.toContain("junk");
+  });
+
+  it("marks an item met when it is gained, permanently", () => {
+    const w = newWorld({ name: "Test", form: "blob", spot: "forest", seed: 42 });
+    expect(hasMet(w, "ore")).toBe(false);
+    gain(w, "ore", 1);
+    expect(hasMet(w, "ore")).toBe(true);
+    spend(w.inventory, { ore: 1 });
+    // Spending your last one does not make it a stranger again.
+    expect(hasMet(w, "ore")).toBe(true);
   });
 });
 

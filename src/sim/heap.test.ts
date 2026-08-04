@@ -73,15 +73,20 @@ describe("the heap — junk in, finishes out", () => {
     expect(w.skins.unlocked.filter((s) => s === row.gives)).toHaveLength(1);
   });
 
-  it("shows taken rows rather than hiding them, and knows when it's empty", () => {
+  it("drops taken and unpayable rows, and knows when it's empty", () => {
+    // Phase 14b: the list is only live offers. A redeemed row vanishes (the
+    // picker owns what you have), an unpayable row vanishes (the empty-pockets
+    // opener owns the silence), and the end state is `heapExhausted`'s line.
     const w = freshWorld();
     expect(heapExhausted(w)).toBe(false);
+    expect(heapOffers(w)).toHaveLength(0); // broke: nothing offered, no dead rows
+    add(w.inventory, "junk", HEAP[0].cost);
+    expect(heapOffers(w).map((o) => o.row)).toContain(HEAP[0]); // affordable: offered
     for (const row of HEAP) {
       add(w.inventory, "junk", row.cost);
       redeem(w, row);
     }
-    expect(heapOffers(w)).toHaveLength(HEAP.length); // still all there
-    expect(heapOffers(w).every((o) => o.taken)).toBe(true);
+    expect(heapOffers(w)).toHaveLength(0); // all taken: all gone
     expect(heapExhausted(w)).toBe(true);
   });
 

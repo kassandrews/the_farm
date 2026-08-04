@@ -65,7 +65,8 @@ import { letterFor, stairNote } from "../content/found";
 import { dayNumber } from "./found";
 import { foundAt } from "./world";
 import { digWithFind, carveWithFind, findLine } from "./junk";
-import { emptyInventory, add, canAfford, spend, refund, shortfall } from "./inventory";
+import { emptyInventory, canAfford, spend, refund, shortfall } from "./inventory";
+import { gain } from "./met";
 import type { Cost } from "./inventory";
 import { itemLabel, priceItems } from "../content/items";
 import type { ItemId } from "../content/items";
@@ -167,6 +168,10 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     // Blessed Carrot is where you go when you want more of it or something
     // other than a carrot to plant.
     inventory: { ...emptyInventory(), wood: 8, seed: STARTING_SEED },
+    // The opening stock counts as met — it is in your pockets before your
+    // first step, and a museum that asked you to go discover wood would be
+    // asking you to discover your own tent pegs.
+    met: ["wood", "seed"],
     regrow: {},
     reclaim: {},
     // Empty on purpose: `selected` is keyed by tool and every entry is a choice
@@ -1191,7 +1196,7 @@ function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: num
       // Mushrooms — picked up rather than felled.
       if (tileAt(world, x, y) === MUSHROOM) {
         setTile(world, x, y, GRASS);
-        add(world.inventory, "mushroom", 1);
+        gain(world, "mushroom", 1);
         return { kind: "gather", changed: true, message: "Picked. It comes away cleanly." };
       }
       // And whatever the Gremlin left in the grass. Flavoured at pickup from the
@@ -1201,7 +1206,7 @@ function applyTool(world: WorldState, tool: Tool, x: number, y: number, now: num
       // gathered").
       if (tileAt(world, x, y) === JUNK_PILE) {
         setTile(world, x, y, GRASS);
-        add(world.inventory, "junk", 1);
+        gain(world, "junk", 1);
         return { kind: "gather", changed: true, message: findLine(world, x, y) };
       }
       return { kind: "gather", changed: false, message: "Nothing to gather here." };

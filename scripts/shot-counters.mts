@@ -52,6 +52,24 @@ for (const id of COUNTERS) {
     continue;
   }
 
+  // On a fresh save the keeper INTRODUCES themselves first (Phase 14a): the
+  // dialogue frame, once, and the counter only after you answer. Photograph
+  // the introduction, answer it, and require that the counter follows — a
+  // keeper whose intro leads nowhere is the panel never opening, with manners.
+  if ((await d.page.locator(".panel.speech").count()) > 0) {
+    await panel.screenshot({ path: `${OUT}/counter-${id}-intro.png` });
+    await d.page.click(".panel .btn.primary");
+    await d.page.waitForTimeout(700);
+    if ((await panel.count()) === 0 || (await d.page.locator(".panel.speech").count()) > 0) {
+      console.log(`FAIL ${id}: the introduction did not hand over to the counter`);
+      failed++;
+      continue;
+    }
+  } else {
+    console.log(`FAIL ${id}: no introduction on a fresh save (Phase 14a)`);
+    failed++;
+  }
+
   await panel.screenshot({ path: `${OUT}/counter-${id}.png` });
   const hasFace = (await d.page.locator(".panel .portrait.counter").count()) > 0;
   const wantFace = id !== "errands";
