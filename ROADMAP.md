@@ -4855,7 +4855,7 @@ same problem — 9px under a crown three times that wide, invisible against gras
 at every zoom. Widening them is the same one-line change fifteen times over and
 wants its own look, because unlike a creature they are not all the same width.
 
-### 8j — Reconciling the visual style doc — **verdicts only, nothing built**
+### 8j — Reconciling the visual style doc — **verdicts, and one thing built**
 
 An external style brief (roofs, walls, interiors, biomes, finishes) was read
 against the code and against this file. Most of it describes problems already
@@ -4897,10 +4897,58 @@ palette swap.
   density each. One guaranteed per biome is a diorama, and it is the sentence
   "one kind at density one" says.
 
-**Genuinely open, and the brief's real yield:** roof PITCH shading (a
-distance-to-edge value ramp — nothing in this file has ever discussed it, and it
-must be reconciled with 8f's "grain the surfaces the player looks AT, leave the
-ones they look ACROSS alone" before it is built). The rest of the yield has
+~~**Genuinely open, and the brief's real yield:** roof PITCH shading~~ **Built
+3 Aug 2026, as a gable.** The brief proposed a distance-to-edge ramp and owed a
+reconciliation with 8f's "grain the surfaces the player looks AT, leave the ones
+they look ACROSS alone" first, since read literally that rule says a roof is a
+top cap and gets nothing.
+
+**The reconciliation, which is the part worth keeping:** 8f's rule is about
+TEXTURE COMPETING ACROSS ONE OBJECT — a wall cap is flat because a third
+material texture 16px from the face and the floor makes a house read as a
+mashup. The roof already carries shingle courses and they work, so the rule was
+never "no marks on top surfaces". A pitch ramp is not a third texture; it is a
+value model, the same family as the eave line and the overhang that carries
+height everywhere else. Allowed, on the two conditions that are the rule's
+actual content: it **replaces** the flat darkening the roof used to wear rather
+than stacking on it, and its range stays under the courses' contrast so they
+survive the bright end.
+
+**A gable, not a hip, and not a one-way wash.** The choice was made from
+renders of the alternatives. The ridge runs along the room's longer side (ties
+go east-west, which is what houses do and what agrees with the light this
+renderer already draws by, from the north-west): the north slope is lit and the
+south is the lee, 0→13.5% and 6.5%→20% black, which average the flat 10% the
+roof wore before, so no building changed weight.
+
+- **Four steps, not a gradient.** Everything in this world is flat colour with
+  two or three values to a shape. A smooth ramp would be the only gradient in
+  the game, and it would band anyway — §8v found that a value step invisible by
+  day is plain to see once the tint darkens it.
+- **The crease is per COLUMN, not per building** (`roofPitch`, render/roof.ts).
+  An L-shaped house is two wings and each half gets its own ridge, stepping
+  where the wing begins; a bounding-box ridge would sit between them and belong
+  to neither. Photographed: `scripts/shot-roofs.mts`, roofs-ell.
+- **Measured in tile SPACE, drawn per pixel row.** A ramp counted in CELLS
+  would put its steps on the tile grid, which is the per-cell edges rule
+  (CLAUDE.md) wearing a value instead of a line. The bands land at fractions of
+  each roof's own depth, so a five-deep roof and a nine-deep one get the same
+  slope rather than the same period.
+- **The old "sunlit ridge" line came off the north edge.** It was standing in
+  for a ridge the roof did not have; once the pitch is real, that line is the
+  brightest thing on the plane sitting at the LOWEST point of the slope. Both
+  edges the roof falls toward are eaves now, and the ridge is where the ramp
+  says it is.
+- **`shot-roofs.mts` asserts it**, because the ramp is invisible to the unit
+  tests and "the roof looks fine" from a script that never measured a pixel is
+  exactly the clean report §8v was written about. It profiles four roofs and
+  requires the bright line to be the crease, the plane not to be flat, and the
+  lee slope to be darker than the lit one. Two of its own bugs are in its
+  header: it measured the L ALONG its ridge (reading two flat values off a
+  correct roof) and it stood the player INSIDE a house it was photographing,
+  where the cutaway had already faded the thing away.
+
+The rest of the yield has
 since been dispositioned: ~~a wet rim / foam band at the shoreline~~ **struck
 3 Aug 2026 with "the water is flat" — looked at, fine as it is**; ~~surface
 clutter (items rendered ON tables and shelves)~~ **moved to the furniture

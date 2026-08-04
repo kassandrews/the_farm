@@ -81,7 +81,7 @@ import {
 } from "./palette";
 import { zoomLadder } from "./zoom";
 import { forEachGrainMark } from "./grain";
-import { roofFinish } from "./roof";
+import { roofFinish, roofPitch, type RoofPitch } from "./roof";
 import { gridFor, pieceCanvas } from "./furnishings";
 import { FURNITURE_ART } from "../content/furnishings";
 import {
@@ -324,6 +324,25 @@ const GLASS_RAKE = 40;
 const DOOR_JAMB = 3;
 /** How far the roof is pulled back over a side doorway. */
 const DOOR_NOTCH = 4;
+
+/* The roof's pitch, as black over the roofing's own colour (see `roofPitch` for
+ * why it is a ramp at all, and what 8f's rule does and does not forbid).
+ *
+ * FOUR STEPS, NOT A GRADIENT. Everything in this game is flat colour with two
+ * or three values to a shape — a tree crown is a mass and a lit side, a wall is
+ * a face and a cap. A smooth ramp would be the one gradient in the world, and
+ * it would band anyway: the survey (§8v) found that a value step invisible by
+ * day is plain to see once the tint darkens it, which is what a 40-step ramp
+ * over a nine-tile roof is made of.
+ *
+ * The numbers: the lit slope runs 0 → 13.5% and the lee 6.5% → 20%, so the two
+ * average the flat 10% the roof wore before this and no building changed
+ * weight. The whole range is under the shingle courses' 11%, which is the
+ * condition `roofPitch` sets — the courses have to survive the bright end. */
+const ROOF_PITCH_LIT = 0.0;
+const ROOF_PITCH_LEE = 0.09;
+const ROOF_PITCH_STEPS = 4;
+const ROOF_PITCH_FALL = 0.045;
 
 // Art heights in scene px. A tree exceeds TILE, which is what makes it overhang
 // the tile behind and read as standing up; a rock deliberately doesn't (see
@@ -811,6 +830,9 @@ export class Renderer {
   private roofCover = new Map<string, Set<string>>();
   /** Room id → what its roof is MADE of. See `roofFinish`. */
   private roofSkin = new Map<string, SkinId>();
+  /** Room id → which way its roof falls. See `roofPitch`. Derived with the rest
+   *  of the roof, so a house that never changes shape computes its slope once. */
+  private roofFall = new Map<string, RoofPitch>();
   /** Room id → does a lamp burn inside it. What makes a window read as somebody
    *  being home rather than as a hole: the glass goes warm and spills a pool.
    *
@@ -1338,6 +1360,7 @@ export class Renderer {
           const alpha = this.roofAlpha.get(roofRoom.id) ?? 1;
           const covered = this.roofCover.get(roofRoom.id)!;
           const roofing = this.roofSkin.get(roofRoom.id)!;
+          const fall = this.roofFall.get(roofRoom.id)!;
           if (alpha > 0.02) {
             this.raised.push({
               y,
@@ -1349,6 +1372,7 @@ export class Renderer {
                   y,
                   covered,
                   roofing,
+                  fall,
                   alpha,
                   this.chimney.get(roofRoom.id) === tileKey(x, y),
                 ),
@@ -2237,11 +2261,13 @@ export class Renderer {
       this.roofIndex.clear();
       this.roofCover.clear();
       this.roofSkin.clear();
+      this.roofFall.clear();
       this.roomLit.clear();
       for (const room of list) {
         const covered = new Set<string>([...room.interior, ...room.shell]);
         this.roofCover.set(room.id, covered);
         this.roofSkin.set(room.id, roofFinish(world, room));
+        this.roofFall.set(room.id, roofPitch(covered));
         // Interior only: a lamp standing in the wall is not a thing, and a lamp
         // OUTSIDE a lit window is the street lighting the room, backwards.
         let lit = false;
@@ -2579,6 +2605,7 @@ export class Renderer {
     ty: number,
     covered: Set<string>,
     roofing: SkinId,
+    fall: RoofPitch,
     alpha: number,
     chimney = false,
   ): void {
@@ -2601,8 +2628,49 @@ export class Renderer {
 
     ctx.fillStyle = skin.shade;
     ctx.fillRect(px, py, TILE, TILE);
-    ctx.fillStyle = "rgba(0,0,0,0.10)"; // push it clearly darker than its walls
-    ctx.fillRect(px, py, TILE, TILE);
+
+    // The pitch, which is also what pushes the roof clearly darker than its
+    // walls — it used to be a flat 10% over the whole plane, and this ramp
+    // averages to the same weight so no building got heavier or lighter.
+    //
+    // Measured in TILE SPACE off the room's own crease (see `roofPitch`), one
+    // fill per pixel row, so the bands cross cell boundaries without stopping.
+    // A ramp counted in cells would put its steps on the tile grid, which is
+    // the per-cell edges rule wearing a value instead of a line.
+    const slope = fall.slopeAt(tx, ty);
+    if (!slope) {
+      ctx.fillStyle = `rgba(0,0,0,${ROOF_PITCH_LIT + ROOF_PITCH_LEE / 2})`;
+      ctx.fillRect(px, py, TILE, TILE);
+    } else {
+      const base = fall.axis === "ew" ? ty : tx;
+      for (let i = 0; i < TILE; i++) {
+        const at = base + (i + 0.5) / TILE;
+        const d = Math.min(1, Math.abs(at - slope.ridge) / slope.reach);
+        // The far side of the crease is the lee: light comes from the
+        // north-west here (the tree crowns and the wall caps are drawn by it),
+        // so an east-west ridge lights its north slope and shades its south.
+        const lee = at > slope.ridge ? ROOF_PITCH_LEE : 0;
+        const step = Math.min(ROOF_PITCH_STEPS - 1, Math.floor(d * ROOF_PITCH_STEPS));
+        ctx.fillStyle = `rgba(0,0,0,${(ROOF_PITCH_LIT + lee + step * ROOF_PITCH_FALL).toFixed(3)})`;
+        if (fall.axis === "ew") ctx.fillRect(px, py + i, TILE, 1);
+        else ctx.fillRect(px + i, py, 1, TILE);
+      }
+      // The fold itself, where the crease passes through this cell. Without it
+      // the ramp reads as a vignette — a plane that dims toward its edges, not
+      // two planes meeting — and the whole point of choosing a gable over a
+      // hip was that the roof has a DIRECTION.
+      //
+      // It is not per-cell banding: a roof has exactly one of these, drawn
+      // where the surface actually folds, which is the same test the eave lines
+      // pass (draw the edge where the surface ends, and only there).
+      const local = slope.ridge - base;
+      if (local >= 0 && local < 1) {
+        const i = Math.round(local * TILE);
+        ctx.fillStyle = skin.top;
+        if (fall.axis === "ew") ctx.fillRect(px, py + i, TILE, 1);
+        else ctx.fillRect(px + i, py, 1, TILE);
+      }
+    }
 
     // Shingle courses. Stepped off the WORLD row rather than the cell, so the
     // lines run unbroken across the whole roof instead of restarting per tile —
@@ -2613,9 +2681,15 @@ export class Renderer {
       if ((ty * TILE + i) % 4 === 0) ctx.fillRect(px, py + i, TILE, 1);
     }
 
+    // The far edge used to be a 2px line of `skin.top`, called a sunlit ridge.
+    // It was standing in for a ridge the roof did not have, and once the pitch
+    // is real that line is the brightest thing on the plane sitting at the
+    // LOWEST point of the slope — the north eave. Both edges the roof falls
+    // toward are eaves now, in the eave's own colour, and the ridge is where
+    // the ramp says it is.
     const has = (dx: number, dy: number) => covered.has(tileKey(tx + dx, ty + dy));
     if (!has(0, -1)) {
-      ctx.fillStyle = skin.top; // sunlit ridge along the far edge
+      ctx.fillStyle = skin.color;
       ctx.fillRect(px, py, TILE, 2);
     }
     if (!has(0, 1)) {
