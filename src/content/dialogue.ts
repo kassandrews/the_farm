@@ -13,6 +13,7 @@
 import type { AdultForm } from "./canon/forms";
 import type { CharId } from "./cast";
 import type { GameId, SpyKind } from "./games";
+import type { SkinId } from "./skins";
 
 export type LineBank = Partial<Record<string, string[]>>;
 
@@ -1519,6 +1520,37 @@ export function warmLines(form: AdultForm, tier: "new" | "familiar" | "friend" |
   if (tier === "friend" || tier === "close") pool.push(...(bank.friend ?? []));
   if (tier === "close") pool.push(...(bank.close ?? []));
   return pool;
+}
+
+/** What somebody says as they hand you a finish (content/skins.ts `given`,
+ *  sim/friendship.ts `takeGift`). The other half of warmth, and the only half
+ *  that comes with an object.
+ *
+ *  KEYED BY FINISH, NOT BY FORM, and that is the one thing to keep right here.
+ *  Every other bank in this file is per-form because a form is a voice; these
+ *  are per-PERSON, because Winifred owning the quarry note is a fact about
+ *  Winifred and not about scholars. Keyed by form, her line would come out of
+ *  Prudence's mouth — the same trap COMPANY_YES's carrot comment describes,
+ *  from the other direction.
+ *
+ *  Neither line names a tier, a threshold, or the friendship itself. They are
+ *  somebody mentioning a thing they'd been meaning to mention. */
+export const GIVEN_LINES: Partial<Record<SkinId, string>> = {
+  // Dog voice: enthusiastic, exclamatory, brief. He has been carrying it around
+  // for a while, which is the most Pesto detail available.
+  ochre:
+    "There's a tin in the cart! Same yellow as half the front doors on my round ... I kept it back for you.",
+  // Curator voice: fusty, decisive, quietly proprietary about knowing things.
+  // The museum's own walls are the evidence, so she doesn't have to argue.
+  marble:
+    "The walls here came from a quarry north of the grove. Exhausted now, though not by me ... I wrote down where.",
+};
+
+/** The line for a given finish. Undefined when a `given` row has been added to
+ *  content/skins.ts without one — asserted against in skins.test.ts, because a
+ *  gift handed over in silence is a vending machine. */
+export function givenLine(id: SkinId): string | undefined {
+  return GIVEN_LINES[id];
 }
 
 /** Small helper the sim uses to look up a resident's idle bank with a safe

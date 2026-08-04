@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { newWorld, talk, buildAt, playerTile } from "./game";
-import { friendshipTier, atLeast } from "./friendship";
+import { friendshipTier, atLeast, giftDue, takeGift } from "./friendship";
 import { speak } from "./dialogue";
 import { makeRng } from "./rng";
 import { warmLines } from "../content/dialogue";
@@ -86,5 +86,92 @@ describe("friendship milestones", () => {
     expect(atLeast(v, "familiar")).toBe(true);
     expect(atLeast(v, "friend")).toBe(true);
     expect(atLeast(v, "close")).toBe(false);
+  });
+});
+
+describe("finishes people give you", () => {
+  const warmTo = (w: ReturnType<typeof freshWorld>, id: string, n: number) => {
+    const v = w.villagers.find((x) => x.id === id)!;
+    v.friendship = n;
+    return v;
+  };
+
+  it("hands nothing to a stranger", () => {
+    const w = freshWorld();
+    const pesto = warmTo(w, "errands", 0);
+    expect(giftDue(w, pesto)).toBeNull();
+    expect(w.skins.unlocked).not.toContain("ochre");
+  });
+
+  it("hands the tin over once the Dog is familiar", () => {
+    const w = freshWorld();
+    const pesto = warmTo(w, "errands", 10); // exactly the threshold
+    expect(giftDue(w, pesto)).toBe("ochre");
+    expect(takeGift(w, pesto)).toBe("ochre");
+    expect(w.skins.unlocked).toContain("ochre");
+  });
+
+  it("only hands it over once, however long you keep talking", () => {
+    const w = freshWorld();
+    const pesto = warmTo(w, "errands", 100);
+    expect(takeGift(w, pesto)).toBe("ochre");
+    for (let i = 0; i < 20; i++) expect(takeGift(w, pesto)).toBeNull();
+    expect(w.skins.unlocked.filter((s) => s === "ochre")).toHaveLength(1);
+  });
+
+  it("makes the curator wait for `friend`, where the Dog only wants `familiar`", () => {
+    // The two tiers are the feature: the earliest gift in the game comes from
+    // the friendliest character, and the one that tells you where a quarry is
+    // costs a rung more.
+    const w = freshWorld();
+    const win = warmTo(w, "museum", 10); // familiar — enough for Pesto, not her
+    expect(giftDue(w, win)).toBeNull();
+    win.friendship = 30;
+    expect(giftDue(w, win)).toBe("marble");
+  });
+
+  it("gives you nobody else's finish", () => {
+    const w = freshWorld();
+    const pesto = warmTo(w, "errands", 100);
+    warmTo(w, "museum", 0);
+    takeGift(w, pesto);
+    expect(w.skins.unlocked).not.toContain("marble");
+  });
+
+  it("arrives in the same conversation that crosses the threshold", () => {
+    // The invisible-ladder consequence: there is no way to tell a player they
+    // owe somebody a second visit, so the talk that warms them past the line
+    // has to be the talk they hand it over in.
+    const w = freshWorld();
+    warmTo(w, "errands", 8); // `talk` pays 2, landing exactly on 10
+    const speech = talk(w, "errands", makeRng(1), Date.now())!;
+    expect(speech.gave).toBe("ochre");
+    expect(w.skins.unlocked).toContain("ochre");
+  });
+
+  it("says nothing about a gift on an ordinary conversation", () => {
+    const w = freshWorld();
+    warmTo(w, "errands", 100);
+    expect(talk(w, "errands", makeRng(1), Date.now())!.gave).toBe("ochre");
+    expect(talk(w, "errands", makeRng(2), Date.now())!.gave).toBeUndefined();
+  });
+
+  it("reaches a live save that was already warm, with no migration", () => {
+    // `skins.unlocked` IS the record of which gifts have happened, so a save
+    // written before this feature existed — where you are already close to
+    // everybody — simply gets its finishes on the next hello.
+    const w = freshWorld();
+    for (const v of w.villagers) v.friendship = 100;
+    talk(w, "errands", makeRng(1), Date.now());
+    talk(w, "museum", makeRng(1), Date.now());
+    expect(w.skins.unlocked).toContain("ochre");
+    expect(w.skins.unlocked).toContain("marble");
+  });
+
+  it("does not warm anybody towards a gift for free", () => {
+    // A guard on the whole point: you get there by playing, and a fresh world
+    // is not already there.
+    const w = freshWorld();
+    for (const v of w.villagers) expect(giftDue(w, v)).toBeNull();
   });
 });

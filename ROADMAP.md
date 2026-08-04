@@ -6905,6 +6905,76 @@ A visual sitting, not a phase. Two calls, both settled:
   they still read as one tent — a decoration that creeps into the silhouette is
   invisible one at a time.
 
+## Finishes people give you — friendship becomes an unlock source (4 Aug 2026)
+
+DESIGN and `content/skins.ts` had both said for months that finishes are earned
+"through friendship, discovery, and the underground". Discovery had walnut, the
+underground had slate, the heap had five, commissions had whitewash — and
+friendship had **nothing**. It was a source named in two documents with no code
+behind it, and the way that surfaced was `marble`: unobtainable, hint pointing
+at a person, nobody checking (see §Known gaps).
+
+**The settled calls:**
+
+- **A finish is given by a PERSON, at a tier, and the table says so.**
+  `SkinDef.given = { who, tier }`, sitting immediately below `hint` on the same
+  row. The two say the same thing to two audiences — the hint tells the player
+  who to go and see, `given` tells the sim who to check — and a hint naming one
+  person while the gate checks another is a lie the player walks into. Adjacent,
+  they get edited together, and `skins.test.ts` asserts the hint contains the
+  giver's name.
+- **`friend` finally has a job.** The ladder's middle rung was read by nothing:
+  company asks for `familiar`, the notebook for better-than-`new`, Eloise's name
+  for `close`, and `friend` only widened a dialogue pool. Marble sits there now.
+- **Two givers, at two different tiers, and that unevenness is the design.** One
+  gift per institution would make the invisible ladder very visible — the player
+  would learn the rate and start farming it. Ochre comes from Pesto at
+  `familiar` (the earliest, from the friendliest character, before you have
+  worked out there is a system); marble from Winifred at `friend`.
+  `skins.test.ts` holds the line at one finish per person: two is a shop.
+- **`close` stays Eloise-only.** A second payout at 60 would dilute the one
+  friendship milestone DESIGN says is worth being able to point at.
+- **It arrives in the SAME conversation that crosses the threshold.**
+  `takeGift` runs after `befriend` in `talk`, not before. The ladder is
+  invisible, so there is no way to tell somebody they owe a second visit — a
+  gift held over to the next hello is a gift that looks like it never happened.
+- **No meter, no milestone, no "friendship increased".** It reuses the `handed`
+  card, by the rule `app.ts` already kept: **the two unlock channels are told
+  apart by WHO CAUSED IT, not by what it is.** Walnut and slate stay silent
+  because you found them; a person putting something in your hands is the
+  opposite case. Their line above the card, not in its `said` slot — that slot
+  reads as a caption on a prize, and this is somebody talking and then you
+  seeing what they meant.
+- **No migration, and that is a property of the design rather than luck.**
+  `skins.unlocked` IS the record of which gifts have happened, so there is no
+  second place for the two to disagree, and a live save where you are already
+  warm simply gets its finishes at the next hello.
+- **Ochre is the only yellow in the game**, and the palette gap is why it exists
+  — the woods ran tan/cream/dark-brown/grey-brown/white/green/red/off-white and
+  the stones ran four greys. Saturated well past pine on purpose: a finish
+  nobody can tell from a starter is not worth a conversation. Verified on screen
+  beside pine, not in prose.
+- **It is a paint, and it is the one paint that isn't the Gremlin's.** His are
+  found half-tins; Pesto's is a whole one, kept back. That distinction is the
+  only thing stopping a second paint source from undercutting the heap, and it
+  is why this is a gift rather than a sixth row on his counter.
+
+**The mechanism can never become a gate**, which is what makes hanging it on a
+tier safe at all: a finish costs nothing to apply, weighs nothing, and no
+commission, room or acceptance test has ever asked what colour anything is. A
+player who never warms to anybody loses two colours and not one thing they can
+do.
+
+`sim/friendship.ts` gained `giftDue` (a read) and `takeGift` (the mutation),
+split because the panel opens in stages — an intro first, if they still owe you
+one — and a check that unlocked things as a side effect of being asked would
+hand the finish to a modal the player then dismissed. `app.ts` gained
+`withPreamble`, which is the ordering: who they are, then what they kept for
+you. That order is not hypothetical — `witness` warms whoever stands near you
+while you work, so you can reach `familiar` with somebody you have never spoken
+to, and Pesto handing paint to a stranger is what a player who builds near the
+plaza would have got.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
@@ -6989,6 +7059,17 @@ you trip over them:
   twelve tiles of tunnel out (4a), and `walnut` is now felled in the Ghost's
   grove. **Every finish in `content/skins.ts` is reachable**, which makes that
   table's own promise true for the first time.
+
+  **And then it quietly stopped being true, which is the lesson.** `marble` was
+  added later, with the museum's walls, and no unlock came with it — nothing
+  anywhere pushed it into `skins.unlocked`, so the one finish whose `hint` named
+  a person ("Winifred knows where the quarry was") was the one finish you could
+  never build in. The claim above was correct the day it was written and had no
+  way to notice it had aged. `content/skins.test.ts` is now the check, and it
+  enumerates the sources rather than counting them: a finish must be a starter,
+  a heap row, a commission's `unlocks`, a `given` row, or one of the two the sim
+  hands out in a code branch (`walnut`, `slate`, both written out by id with a
+  comment saying why they cannot be derived).
 
   Note *how* walnut arrives, because it is the part that was under discussion
   for two phases: **she does not give it to you.** The grove does. She is out of

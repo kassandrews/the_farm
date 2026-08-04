@@ -8,7 +8,7 @@ import type { AdultForm } from "../content/canon/forms";
 import { CAST } from "../content/cast";
 import type { CharId } from "../content/cast";
 import { makeVillager, tickVillager } from "./villagers";
-import { befriend } from "./friendship";
+import { befriend, takeGift } from "./friendship";
 import { arrivalDue, admitArrival } from "./commission";
 import { remember, hasMemory } from "./memory";
 import type { MemoryKind } from "./memory";
@@ -1775,7 +1775,15 @@ export function talk(world: WorldState, id: CharId, rng: Rng, now: number): Spee
     });
   }
   befriend(v, 2);
-  return speak(world, v, rng, now);
+  // AFTER the two points, so the conversation that crosses somebody's threshold
+  // is also the one they hand you the tin in. Checking first would cost a
+  // "come back and talk to me again" that the player has no way to know they
+  // owe — the ladder is invisible, so a gift held over to the next visit is a
+  // gift that looks like it never happened.
+  const speech = speak(world, v, rng, now);
+  const gave = takeGift(world, v);
+  if (gave) speech.gave = gave;
+  return speech;
 }
 
 /** Complete the opening beat: stamp the land claim (DESIGN §"Opening beat"). */

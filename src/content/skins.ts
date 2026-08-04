@@ -14,6 +14,12 @@
 // underground (DESIGN). Secrets are never spoiled by UI — a locked finish that
 // comes from a secret must not advertise itself, so `hint` stays absent for
 // those and the picker simply doesn't show them.
+//
+// Friendship was the source that wasn't wired. This file and DESIGN both listed
+// it for months while every actual unlock came from a commission, a dig, or the
+// heap — see `given` below, which is now what makes the sentence true.
+
+import type { CharId } from "./cast";
 
 /** Which built material a finish applies to. Finishes never cross classes —
  *  walnut is a wood finish; it has nothing to say about stone.
@@ -45,6 +51,7 @@ export type SkinId =
   | "whitewash"
   | "ash"
   | "salvage"
+  | "ochre"
   // Stone
   | "granite"
   | "sage"
@@ -72,6 +79,23 @@ export interface SkinDef {
    *  source is no secret; a finish from a secret carries no hint and is simply
    *  absent from the picker until found. */
   hint?: string;
+  /** Given by somebody, once you're warm enough with them (sim/friendship.ts).
+   *  DESIGN names friendship as an unlock source alongside discovery and the
+   *  underground; this field is that source, and until it existed the source
+   *  was a sentence in a doc with nothing behind it.
+   *
+   *  IT LIVES NEXT TO `hint` ON PURPOSE. The two say the same thing to two
+   *  audiences — the hint tells the player who to go and see, this tells the
+   *  sim who to check — and a hint naming one person while the gate names
+   *  another is a lie the player can walk into. Adjacent, they get edited
+   *  together.
+   *
+   *  The tier union is written out rather than imported from sim/friendship.ts,
+   *  because content may not import sim (CLAUDE.md §Architecture). Same trick
+   *  content/dialogue.ts plays for `warmLines`. `new` is deliberately not in
+   *  it: a finish handed over by somebody who has not met you is a vending
+   *  machine with a face on it. */
+  given?: { who: CharId; tier: "familiar" | "friend" | "close" };
 }
 
 export const SKINS: Record<SkinId, SkinDef> = {
@@ -145,10 +169,17 @@ export const SKINS: Record<SkinId, SkinDef> = {
   // faintly instead of stripily (render/grain.ts inks the seams off `color`).
   // Whitewash was already this and was the model for it.
   //
-  // All three come off the heap. Paint is the most junk-shaped thing in the
-  // game — it is half a tin somebody else opened — and the Gremlin's counter
-  // was two rows deep and exhaustible, which made the one counter you can empty
-  // the one with least in it. See content/shop.ts §"The heap".
+  // Three of the four come off the heap. Paint is the most junk-shaped thing in
+  // the game — it is half a tin somebody else opened — and the Gremlin's
+  // counter was two rows deep and exhaustible, which made the one counter you
+  // can empty the one with least in it. See content/shop.ts §"The heap".
+  //
+  // Ochre is the exception and it is the exception on purpose: HIS ARE FOUND
+  // HALF-TINS AND PESTO'S IS A WHOLE ONE, KEPT BACK. That distinction is the
+  // only thing stopping a second paint source from undercutting the heap, and
+  // it is why the fourth paint is a gift rather than a fifth row on his
+  // counter. A finish you were handed and a finish you salvaged are different
+  // objects even when they are both a tin.
   sage: {
     id: "sage",
     name: "Sage green",
@@ -178,6 +209,32 @@ export const SKINS: Record<SkinId, SkinDef> = {
     shade: "#c4bcaa",
     starter: false,
     hint: "The Gremlin has tins. Some of them still have paint in.",
+  },
+  ochre: {
+    id: "ochre",
+    name: "Ochre",
+    applies: "wood",
+    // THE ONLY YELLOW IN THE GAME. The wood list ran tan, cream, dark brown,
+    // grey-brown, white, green, red, off-white; the stone list ran four greys.
+    // A front door is the thing this palette had no colour for.
+    //
+    // Saturated well past pine (`#c79a5e`), which is the whole reason it can
+    // exist next to it — a gentle ochre is a slightly yellower pine, and a
+    // finish nobody can tell from a starter is not worth a conversation.
+    color: "#cca340",
+    top: "#d9b150",
+    shade: "#b68f36",
+    starter: false,
+    // Shallow shade like the other three paints, so the grain shows through
+    // faintly instead of stripily (render/grain.ts inks the seams off `color`).
+    // ~22 points of drop, where the bare woods carry 30.
+    hint: "Pesto knows every front door on his round, and what colour it is.",
+    // `familiar`, the lowest tier there is, and the earliest unlock in the game
+    // that comes from a person. Deliberately the friendliest character in town:
+    // the first time friendship pays out in something you can build with, it
+    // should be the Dog, and it should happen before you have worked out that
+    // it is a system.
+    given: { who: "errands", tier: "familiar" },
   },
   // --- Stone --------------------------------------------------------------
   cobble: {
@@ -223,6 +280,18 @@ export const SKINS: Record<SkinId, SkinDef> = {
     shade: "#c8ccc9",
     starter: false,
     hint: "The Museum is built of it. Winifred knows where the quarry was.",
+    // AND FOR A WHILE THAT HINT WAS A LIE. Marble arrived with the museum's
+    // walls and no way to earn it: nothing anywhere pushed it into
+    // `skins.unlocked`, so the one finish whose hint named a person was the one
+    // finish you could not get. ROADMAP's "every finish is reachable" was
+    // written before it existed and quietly stopped being true.
+    //
+    // `friend` rather than `familiar` because she is telling you where a thing
+    // is, and the notebook already spends `familiar` on what she has concluded.
+    // It is also the tier nothing else in the game reads — company asks for
+    // `familiar`, the notebook for better-than-`new`, Eloise's name for
+    // `close` — so the middle rung had no job until this.
+    given: { who: "museum", tier: "friend" },
   },
   slate: {
     id: "slate",

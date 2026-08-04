@@ -44,6 +44,7 @@ import {
   GHOST_CUT,
   COSMOS_HOME,
   SCHOLAR_DISSENT,
+  GIVEN_LINES,
 } from "./dialogue";
 import { CONVERSATIONS } from "./conversations";
 import { ARRIVALS } from "./arrivals";
@@ -94,6 +95,7 @@ function everyLine(): { where: string; text: string }[] {
   add("GHOST_CUT", GHOST_CUT);
   add("COSMOS_HOME", COSMOS_HOME);
   add("SCHOLAR_DISSENT", SCHOLAR_DISSENT);
+  add("GIVEN_LINES", GIVEN_LINES);
 
   // Conversation trees: the villager's side only. Player replies are the
   // player's own voice and are checked in conversations.test.ts.

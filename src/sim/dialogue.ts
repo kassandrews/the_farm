@@ -53,6 +53,7 @@ import { sittingAt } from "./play";
 import { CAST } from "../content/cast";
 import { conversationRoots } from "../content/conversations";
 import type { Exchange, Reply } from "../content/conversations";
+import type { SkinId } from "../content/skins";
 import { rivalReading } from "./museum";
 import { moleGroundShallow, moleLamplit } from "./mole";
 import { groveCut } from "./ghost";
@@ -67,6 +68,12 @@ export interface Speech {
    *  renders them where the close button would sit; a Speech without them is
    *  the single line it always was. */
   replies?: Reply[];
+  /** A finish they just handed you, if this was the conversation that crossed
+   *  their threshold (sim/friendship.ts `takeGift`). Set by `talk`, not by
+   *  `speak` — the line and the gift are two different things arriving in the
+   *  same visit, and a Speech that granted unlocks merely by being composed
+   *  would fire on every dialogue test that builds one. */
+  gave?: SkinId;
 }
 
 /** Odds a villager reaches for a memory instead of an idle line, when it has a
@@ -648,6 +655,13 @@ export function companyYesLine(form: AdultForm, rng: Rng): string {
 export function companyByeLine(form: AdultForm, rng: Rng): string {
   return rng.pick(COMPANY_BYE[form] ?? ["...", "That's me for the day. Go well."]);
 }
+
+/** What somebody says handing you a finish. No `rng` and no fallback, unlike
+ *  every bank above it: there is exactly one line per gift, because a gift
+ *  happens once and a pool you draw one item from is a pool of one. A missing
+ *  line is a content bug rather than something to paper over at runtime, and
+ *  skins.test.ts fails on it. */
+export { givenLine } from "../content/dialogue";
 
 // The game beats, same shape as the company pair above. The fallbacks exist
 // for safety, not for use: play_lines.test.ts asserts every playable form has

@@ -32,7 +32,7 @@ import {
 } from "../sim/game";
 import { nodeAt } from "../sim/gather";
 import { isWalkable } from "../sim/world";
-import { officeLandClaimLine, homeLineFor, companyYesLine, companyByeLine, gameYesLine, gameFoundLine, gameGiveUpLine, gameOfferLine, sittingLine, lookAtLine, advanceReply, replyLabel } from "../sim/dialogue";
+import { officeLandClaimLine, homeLineFor, givenLine, companyYesLine, companyByeLine, gameYesLine, gameFoundLine, gameGiveUpLine, gameOfferLine, sittingLine, lookAtLine, advanceReply, replyLabel } from "../sim/dialogue";
 import { canPlay, startPlay, playing, foundThem, foundIt, spyChoices, lookKindNear, offerDue, satLineDue, endPlay } from "../sim/play";
 import { GAMES } from "../content/games";
 import type { Reply as ReplyDef } from "../content/conversations";
@@ -74,6 +74,7 @@ import { donatable, donate, collection, collectionEmpty, wingsWithDonations } fr
 import { openErrand, errandState, cardText, deliverErrand, declineErrand, notices } from "../sim/errands";
 import { festivalOn, activeFestival, nextFestival, lastFestival, daysUntil, attend } from "../sim/festival";
 import { availableSkinsForClasses, skinDef } from "../content/skins";
+import type { SkinId } from "../content/skins";
 import { cropDef, ripenHours } from "../content/crops";
 import { STALL_OPENER, STALL_EXHAUSTED } from "../content/seedstall";
 import {
@@ -743,7 +744,7 @@ export class App {
     // through `withIntro` (Phase 14a): the person once, the screen forever
     // after.
     if (villagerId === "shop") {
-      this.withIntro(them, () => this.openShop());
+      this.withPreamble(them, speech.gave, () => this.openShop());
       return;
     }
     // Same rule for the Gremlin: the heap is what he is, so talking to him is
@@ -752,7 +753,7 @@ export class App {
     // finish, and one panel bent to cover both would show a price column that
     // means something different on each side of it.
     if (villagerId === "heap") {
-      this.withIntro(them, () => this.openHeap());
+      this.withPreamble(them, speech.gave, () => this.openHeap());
       return;
     }
     // And Corrigal: the museum is her desk, the counter and the catalogue at
@@ -761,7 +762,7 @@ export class App {
     // in the game with nothing on the other side of it, and a shared panel
     // would have to invent a column for what you get back.
     if (villagerId === "museum") {
-      this.withIntro(them, () => this.openMuseum());
+      this.withPreamble(them, speech.gave, () => this.openMuseum());
       return;
     }
     // And the Blessed Carrot. Fourth counter, fourth panel — his is the only
@@ -769,7 +770,7 @@ export class App {
     // which is exactly why it isn't folded into hers: one panel covering both
     // would need a column whose meaning changed halfway down it.
     if (villagerId === "seedstall") {
-      this.withIntro(them, () => this.openSeedStall());
+      this.withPreamble(them, speech.gave, () => this.openSeedStall());
       return;
     }
     // And the Dog Thing, whose counter is a board he is often not standing at.
@@ -777,7 +778,7 @@ export class App {
     // conversation, wherever on his round you catch him, and a version where
     // you had to walk him back to the plaza would make the round a chore.
     if (villagerId === "errands") {
-      this.withIntro(them, () => this.openErrands());
+      this.withPreamble(them, speech.gave, () => this.openErrands());
       return;
     }
     // And the Dramatic Blob. Sixth counter, sixth panel, and the only one that
@@ -785,10 +786,16 @@ export class App {
     // is being told what is on. A "programme" button inside a dialogue box
     // would be the menu-in-front-of-a-menu the shop refuses.
     if (villagerId === "stage") {
-      this.withIntro(them, () => this.openStage());
+      this.withPreamble(them, speech.gave, () => this.openStage());
       return;
     }
 
+    // A gift comes before the conversation here too, for the same reason it
+    // does at a counter: it is the thing they have been meaning to say. No
+    // resident gives a finish today — both givers are institutions and both
+    // went through `withPreamble` above — but `given` is a field on any finish
+    // and the day one names a newcomer, this is already correct.
+    this.withGift(them, speech.gave, () =>
     this.openModal(
       (close) => {
         // A conversation is the one panel that has a FACE, so it gets its own
@@ -956,7 +963,7 @@ export class App {
         return speechPanel(speech.who, portrait(them.form, lookFor(them.id, them.form)), saidP, row);
       },
       { dismissable: true },
-    );
+    ));
   }
 
   // --- The counter ----------------------------------------------------------------
@@ -972,6 +979,68 @@ export class App {
    *  Escaping the intro without answering leaves it unremembered, and that is
    *  the honest reading: you walked off mid-introduction, so they introduce
    *  themselves again next time. */
+  /** Everything a PERSON owes you before their screen opens, in the order they
+   *  owe it: who they are, then what they've been keeping for you.
+   *
+   *  The order is the whole reason this exists rather than the two being called
+   *  wherever. You can reach `familiar` with somebody you have never spoken to
+   *  — `witness` warms whoever is standing near you while you work (sim/game.ts)
+   *  — so Pesto handing you a tin of paint before introducing himself is not a
+   *  hypothetical, it is what happens to a player who builds near the plaza. */
+  private withPreamble(them: Villager, gave: SkinId | undefined, open: () => void): void {
+    this.withIntro(them, () => this.withGift(them, gave, open));
+  }
+
+  /** A finish somebody just gave you (content/skins.ts `given`).
+   *
+   *  IT GETS THE `handed` CARD, and by the rule this file already keeps: the
+   *  two unlock channels are told apart by WHO CAUSED IT, not by what it is
+   *  (see `handed` below). Walnut and slate stay silent because you found them
+   *  and a secret announced is a secret spoiled — but a person putting
+   *  something in your hands is the opposite case, and the same card Gary uses
+   *  for a discharged Form 9 is exactly right for it.
+   *
+   *  Their line ABOVE the card, not in its `said` slot. The slot puts the quote
+   *  under the object, which reads as a caption on a prize; a gift is somebody
+   *  talking and then you seeing what they meant.
+   *
+   *  `them.name` rather than `displayName`, matching the intro below. No secret
+   *  gives a finish — the three of them are the underground, the grove and a
+   *  meteor shower, and each already pays in its own way — and if one ever did,
+   *  a card naming what she gave you while the frame calls her Quiet Ghost is
+   *  the right shape anyway.
+   *
+   *  The unlock itself already happened in `talk`; this is presentation. Escape
+   *  can therefore close it unseen, which is deliberate and the same deal
+   *  friendship has always had — nothing is lost, the finish is in the picker,
+   *  and its `hint` is gone from the locked list because it isn't locked. */
+  private withGift(them: Villager, gave: SkinId | undefined, open: () => void): void {
+    if (!gave) {
+      open();
+      return;
+    }
+    // No cue of its own. `openDialogue` already played "talk" on the way in and
+    // there is no "unlock" in `Cue` — Gary's discharge card doesn't ring either,
+    // so a gift that chimed would be the one unlock in the game with a sound.
+    this.persist();
+    this.openModal(
+      (close) => {
+        const said = el("div", {}, [
+          el("p", {}, [givenLine(gave) ?? ""]),
+          handed(skinDef(gave).name, "Available to build in, from now on."),
+        ]);
+        const row = actionRow([
+          primaryBtn("...", () => {
+            close();
+            open();
+          }),
+        ]);
+        return speechPanel(them.name, portrait(them.form, lookFor(them.id, them.form)), said, row);
+      },
+      { dismissable: true },
+    );
+  }
+
   private withIntro(them: Villager, open: () => void): void {
     const intro = charDef({ id: them.id, name: them.name, form: them.form, fixed: them.fixed }).intro;
     if (!intro || hasMemory(them.memory, "introduced")) {
