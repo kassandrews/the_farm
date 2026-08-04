@@ -30,15 +30,19 @@ let hintNode: HTMLElement | null = null;
  *  is either invisible (no hover) or worse — a tooltip that appears under your
  *  finger as you tap the button, covering the thing you just pressed. The
  *  pointerType check is what keeps the desktop affordance from leaking onto the
- *  phone; `pointerdown` hides it so it never sits over a button mid-press. */
-export function hoverHint(target: HTMLElement, text: string): void {
+ *  phone; `pointerdown` hides it so it never sits over a button mid-press.
+ *
+ *  `text` may be a function, for the buttons whose meaning changes under them —
+ *  BUILD becomes DONE — read at hover time rather than captured at wiring time.
+ *  The native `title` is not an option for those either, for the reasons above. */
+export function hoverHint(target: HTMLElement, text: string | (() => string)): void {
   const show = (e: PointerEvent) => {
     if (e.pointerType !== "mouse") return;
     if (!hintNode) {
       hintNode = el("div", { class: "hint" });
       document.body.append(hintNode);
     }
-    hintNode.textContent = text;
+    hintNode.textContent = typeof text === "function" ? text() : text;
     hintNode.style.visibility = "hidden";
     hintNode.style.opacity = "1";
     // Measure after the text is in, or the first hover of a session positions

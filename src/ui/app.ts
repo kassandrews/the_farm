@@ -2671,6 +2671,11 @@ export class App {
     this.hud.root.classList.toggle("building", building);
     this.hud.build.classList.toggle("selected", building);
     this.hud.build.setAttribute("aria-pressed", String(building));
+    // The same button in and out, so it has to say which way it goes. BUILD is
+    // an invitation; once you're in it, the only thing it does is leave, and a
+    // lit button still reading BUILD looks like the way further in.
+    this.hud.build.textContent = building ? "DONE" : "BUILD";
+    this.hud.build.setAttribute("aria-label", building ? "Leave build mode" : "Build mode");
 
     // Rotation is a furniture idea; showing it for walls would imply walls have
     // a facing, which is exactly the confusion the design avoids.
@@ -3271,7 +3276,11 @@ function buildHud(
   // your hands down and picking up the plans. Same button leaves.
   const build = el("button", { class: "mode-btn", ariaLabel: "Build mode" }, ["BUILD"]);
   build.addEventListener("click", onBuild);
-  hoverHint(build, "Build mode — floors, walls, and furniture. Press it again to leave.  (B)");
+  hoverHint(build, () =>
+    build.classList.contains("selected")
+      ? "Done building — back to your hands.  (B)"
+      : "Build mode — floors, walls, and furniture. Press it again to leave.  (B)",
+  );
 
   const action = el("button", { class: "action-btn" }, ["ACT"]);
   action.addEventListener("click", onAction);
