@@ -1277,11 +1277,17 @@ export class App {
         // holding.
         const row: HTMLElement[] = [];
         if (pages.length > 1) {
-          const back = choiceBtn("Back a page", () => {
+          // ARROWS, NOT WORDS. "Back a page" and "On a page" were two of the
+          // longest labels in the game to say the one thing a turn control never
+          // has to say — and the panel's own arrow icons say it in twelve pixels,
+          // the same pair the rotate button uses for a facing. The accessible
+          // name still carries the words, which is where a label of that length
+          // belongs.
+          const back = iconBtn("arrow_w", "Back a page", () => {
             at--;
             render();
           });
-          const on = choiceBtn("On a page", () => {
+          const on = iconBtn("arrow_e", "On a page", () => {
             at++;
             render();
           });
@@ -3424,6 +3430,17 @@ function actionRow(buttons: HTMLElement[]): HTMLElement {
 function primaryBtn(label: string, onClick: () => void): HTMLElement {
   const b = el("button", { class: "btn primary" }, [label]);
   b.addEventListener("click", onClick);
+  return b;
+}
+/** A panel button that is an icon and nothing else. The label doesn't disappear —
+ *  it becomes the accessible name and the hover hint, so the button reads the
+ *  same to a screen reader as the worded version it replaces. */
+function iconBtn(icon: IconName, label: string, onClick: () => void): HTMLElement {
+  const b = el("button", { class: "btn icon-btn", ariaLabel: label }, [
+    iconEl(icon, SCALE.button),
+  ]);
+  b.addEventListener("click", onClick);
+  hoverHint(b, label);
   return b;
 }
 function choiceBtn(label: string, onClick: () => void): HTMLElement {

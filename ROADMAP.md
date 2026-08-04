@@ -5859,7 +5859,12 @@ with a pager. "Page 3 of 7" is a denominator, and a denominator over the entries
 you have written down is the same meter this panel has refused since it shipped —
 so the position indicator is the DEAD BUTTON: you are at the front because there
 is nothing to turn back to. `journalPages` returns an array and nothing else; the
-count never reaches the page it would be printed on.
+count never reaches the page it would be printed on. The turns are the **arrow
+icons** the rotate button already uses (`arrow_w` / `arrow_e`, `iconBtn` +
+`.icon-btn`, 44px square) — "Back a page" and "On a page" were two of the longest
+labels in the game to say the one thing a turn control never has to. The words
+survive as the accessible name and the hover hint, and the dead-button indicator
+survives with them: a greyed arrow is as plain as a greyed sentence.
 
 Two things found on screen and not in tests:
 

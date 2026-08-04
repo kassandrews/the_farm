@@ -1043,6 +1043,22 @@ select {
   border-top: 2px solid var(--panel-edge);
 }
 
+/* A panel button holding an icon and no word. Square rather than the worded
+   button's 16px-of-side-padding rectangle — a 24px glyph in a shape cut for six
+   characters reads as a button that failed to load its label.
+
+   Sized off the TOUCH target and not off the icon: 44px is the smallest thing a
+   thumb hits reliably, and the page turns are the one control in this panel you
+   press repeatedly. `display: grid` centres the image without the descender gap
+   `.pxicon`'s `display: block` exists to kill. */
+.btn.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+
 /* The Notebook's page turns, inside the panel's one sticky foot. Pushed to the
    far side from Close it, because they are not choices in a transaction — they
    are which page you are holding, and a turn button shoulder to shoulder with
