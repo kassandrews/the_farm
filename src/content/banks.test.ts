@@ -34,6 +34,7 @@ import {
   GAME_FOUND,
   GAME_GIVEUP,
   SPY_CLUE,
+  LOOK_AT,
   MOLE_DEEP,
   MOLE_SHALLOW,
   MOLE_LIT,
@@ -81,6 +82,7 @@ function everyLine(): { where: string; text: string }[] {
   add("GAME_FOUND", GAME_FOUND);
   add("GAME_GIVEUP", GAME_GIVEUP);
   add("SPY_CLUE", SPY_CLUE);
+  add("LOOK_AT", LOOK_AT);
   add("MOLE_DEEP", MOLE_DEEP);
   add("MOLE_SHALLOW", MOLE_SHALLOW);
   add("MOLE_LIT", MOLE_LIT);

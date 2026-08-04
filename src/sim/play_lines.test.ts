@@ -7,7 +7,7 @@
 import { describe, it, expect } from "vitest";
 import type { SpyKind } from "../content/games";
 import { GAMES } from "../content/games";
-import { GAME_YES, GAME_FOUND, GAME_GIVEUP, SPY_CLUE, RESIDENT_MEMORY } from "../content/dialogue";
+import { GAME_YES, GAME_FOUND, GAME_GIVEUP, SPY_CLUE, LOOK_AT, RESIDENT_MEMORY } from "../content/dialogue";
 import { MEMORY_PRIORITY } from "./dialogue";
 import type { AdultForm } from "../content/canon/forms";
 
@@ -38,6 +38,9 @@ describe("every playable form can play every game", () => {
     for (const form of PLAYABLE) {
       for (const kind of KINDS) {
         expect(SPY_CLUE[form]?.[kind]?.length ?? 0, `SPY_CLUE.${form}.${kind}`).toBeGreaterThan(0);
+        // And the plain-remark twin: "Look at this" reads the same kinds, so
+        // a hole here is a thing a companion goes silent about being shown.
+        expect(LOOK_AT[form]?.[kind]?.length ?? 0, `LOOK_AT.${form}.${kind}`).toBeGreaterThan(0);
       }
     }
   });

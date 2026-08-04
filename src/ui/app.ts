@@ -30,8 +30,8 @@ import {
 } from "../sim/game";
 import { nodeAt } from "../sim/gather";
 import { isWalkable } from "../sim/world";
-import { officeLandClaimLine, homeLineFor, companyYesLine, companyByeLine, gameYesLine, gameFoundLine, gameGiveUpLine, advanceReply, replyLabel } from "../sim/dialogue";
-import { canPlay, startPlay, playing, foundThem, foundIt, spyChoices, endPlay } from "../sim/play";
+import { officeLandClaimLine, homeLineFor, companyYesLine, companyByeLine, gameYesLine, gameFoundLine, gameGiveUpLine, lookAtLine, advanceReply, replyLabel } from "../sim/dialogue";
+import { canPlay, startPlay, playing, foundThem, foundIt, spyChoices, lookKindNear, endPlay } from "../sim/play";
 import { GAMES } from "../content/games";
 import type { Reply as ReplyDef } from "../content/conversations";
 import { companion, canInvite, invite, partWays } from "../sim/company";
@@ -861,6 +861,23 @@ export class App {
                         }),
                       ]
                     : []),
+                ]
+              : []),
+            // "Look at this" — aim a companion's eyes at whatever you're
+            // standing at, and they consider it in voice. Companions only
+            // (pointing at your fence mid-first-conversation is a stranger
+            // being seized by the elbow), no game required, and it pays
+            // NOTHING — no memory, no friendship; the remark is the whole of
+            // it (content/dialogue.ts LOOK_AT's header).
+            ...(withMe && !playing(world) && lookKindNear(world)
+              ? [
+                  choiceBtn("Look at this", () => {
+                    close();
+                    const kind = lookKindNear(world);
+                    if (!kind) return;
+                    audio.play("talk");
+                    this.flash(`${speech.who}: ${lookAtLine(them, kind, this.rng)}`);
+                  }),
                 ]
               : []),
             // Mid-I-Spy, the companion is right beside you, so the panel is

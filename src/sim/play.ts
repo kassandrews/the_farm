@@ -409,6 +409,38 @@ export function spyTarget(
   return { ...pick, clue: rng.pick(lines) };
 }
 
+// --- "Look at this" -------------------------------------------------------------
+
+/** How near a thing has to be for "look at this" to mean anything: the cells
+ *  around where you stand. Same reach as acting on the world, roughly — you
+ *  point at what you're standing at, not across the square. */
+const LOOK_REACH = 2;
+
+/** Most-specific first, because the remark should be about the thing you'd
+ *  actually name: a crop over the tilled earth it stands in, a chair over the
+ *  floor under it. Same ordering `spyKindAt` applies within one cell, lifted
+ *  to the neighbourhood. */
+const LOOK_ORDER: SpyKind[] = ["crop", "furniture", "building", "tree", "rock", "water", "ground"];
+
+/** What's here to be shown to somebody. Reuses `spyKindAt` wholesale — one
+ *  kind-reader, one set of exclusions, so a thing that can't be spied (a
+ *  secret, a found place) also can't be remarked on. Geometry only: this
+ *  pays nothing and writes nothing, and the UI keeps it that way (see
+ *  LOOK_AT's header in content/dialogue.ts). */
+export function lookKindNear(world: WorldState): SpyKind | null {
+  if (world.player.layer !== "surface") return null;
+  const at = playerTile(world);
+  const found = new Set<SpyKind>();
+  for (let dy = -LOOK_REACH; dy <= LOOK_REACH; dy++) {
+    for (let dx = -LOOK_REACH; dx <= LOOK_REACH; dx++) {
+      const kind = spyKindAt(world, at.x + dx, at.y + dy);
+      if (kind) found.add(kind);
+    }
+  }
+  for (const kind of LOOK_ORDER) if (found.has(kind)) return kind;
+  return null;
+}
+
 /** The I Spy twin of `foundThem`, polled the same way: the villager comes
  *  back exactly once, on the frame you arrived at the thing they named. */
 export function foundIt(world: WorldState, now: number): Villager | null {

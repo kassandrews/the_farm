@@ -1872,6 +1872,85 @@ export const SPY_CLUE: Partial<Record<AdultForm, Partial<Record<SpyKind, string[
   },
 };
 
+// --- "Look at this" ------------------------------------------------------------
+// The inverse of I Spy: the PLAYER aims somebody's eyes at a thing, and they
+// consider it, in voice. A SEPARATE table from SPY_CLUE, deliberately — a clue
+// is oblique on purpose and a remark is plain, and one table bent to cover
+// both would make every remark read like a riddle.
+//
+// This is the first verb that lets you show somebody your fence ON PURPOSE
+// rather than waiting for `witness` to catch you building it. It pays NOTHING
+// — no memory, no friendship (sim/play.ts `lookKindNear` is geometry only, and
+// the UI routes the line through the said ring like any other line). A memory
+// per pointed-at rock would flood a 64-entry ring in an afternoon; this is
+// voice, not an event, the same call moments.ts makes when it refuses
+// `witness`.
+export const LOOK_AT: Partial<Record<AdultForm, Partial<Record<SpyKind, string[]>>>> = {
+  scholar: {
+    tree: ["Yes. A fine specimen. I've dated it: older than my notes, younger than my confidence."],
+    rock: ["I see it. Igneous, probably. Opinionated, certainly."],
+    water: ["Water. Holding its level. ... I've checked before. It always is."],
+    crop: ["Coming along. I'd estimate — no, I'll let it surprise us both."],
+    building: ["Sound construction. I've reviewed it just now, informally, with my eyes."],
+    furniture: ["Well placed. The angles agree with each other. That's rarer than you'd think."],
+    ground: ["Deliberate ground. Somebody chose this surface. History will thank them. I do already."],
+  },
+  dog: {
+    tree: ["I KNOW this one! It's a good one! One of the best ones!"],
+    rock: ["That rock! I've seen it every day and it's still great!"],
+    water: ["Water! Look at it go! It's not going anywhere! I love that about it!"],
+    crop: ["It's GROWING! Right now! While we watch! Grow! You can do it!"],
+    building: ["A building! Someone MADE that! Walls and everything!"],
+    furniture: ["Somebody put that there! Perfect spot! I would have picked the same spot!"],
+    ground: ["The floor is different here! I noticed it with my feet before you even pointed!"],
+  },
+  blob: {
+    tree: ["Ah. Yes. It has range — spring, autumn, the lot. I've watched its whole run."],
+    rock: ["A study in stillness. I attempted the role once. Four minutes. A personal best."],
+    water: ["It performs twice daily — once with the sun on it, once with the moon. No reviews. A shame."],
+    crop: ["An understudy, waiting. Its scene will come."],
+    building: ["Good bones. The door is well hung. An entrance deserves that."],
+    furniture: ["Set dressing, and competent set dressing at that. The scene reads."],
+    ground: ["A stage, laid where grass would have done. Somebody here understands occasion."],
+  },
+  menace: {
+    tree: ["I've seen it. It's adequate. Tall, committed, slightly smug. We get along."],
+    rock: ["Yes. The rock. It was here before all of us and intends to outlast me specifically."],
+    water: ["Wet. Persistent. No ambition. ... I could learn nothing from it."],
+    crop: ["It's growing. Under my supervision, as far as it knows."],
+    building: ["Acceptable walls. I'd have added a parapet. I'd add a parapet to most things."],
+    furniture: ["Reasonable placement. I've assessed the sightlines. They favour me."],
+    ground: ["Better than grass. I've always said so. I'm saying it now, which counts."],
+  },
+  gremlin: {
+    tree: ["Seen it. Checked it. Two hollows, one reachable. Telling you that for free."],
+    rock: ["That one's staying. I've tested it. Thoroughly. It's load-bearing for the whole area, spiritually."],
+    water: ["I've been through this bit of water. Nothing in it. ... Nothing I left, anyway."],
+    crop: ["Growing nicely. I haven't touched it. That's me showing respect, that is."],
+    building: ["Good building. Strong floor. I know what's under a corner of it. Not saying which."],
+    furniture: ["Nice piece. Good drawers, probably. ... I haven't checked. I've nearly checked."],
+    ground: ["Somebody laid this properly. Nothing prises up. I say that with authority."],
+  },
+  carrot: {
+    tree: ["... Yes. I stop here sometimes. It's good shade to think in."],
+    rock: ["... It was here first. It'll be here after. I find that steadying."],
+    water: ["... The light sits well on it. You picked a good one to look at."],
+    crop: ["... Coming up well. The soil's doing most of it. That's how you know it's right."],
+    building: ["... Built with care. You can tell from here. The corners are honest."],
+    furniture: ["... Set down properly. Level. It'll stay."],
+    ground: ["... Good underfoot. Somebody meant this."],
+  },
+  office: {
+    tree: ["Noted. Unregistered, flourishing, casting shade without a licence. My kind of tree."],
+    rock: ["Ah yes. On no inventory anywhere. Magnificent. Immovable in every sense."],
+    water: ["I see it. No paperwork applies. It simply carries on. I retired to be more like it."],
+    crop: ["In development. On schedule, and nobody set the schedule. Remarkable."],
+    building: ["Structurally confident. No permit on file. I've decided to find that charming."],
+    furniture: ["An asset, well sited. In my working days that took three signatures. This took none. Look at it."],
+    ground: ["A resurfacing project, completed without a single form. It's beautiful work. It's beautiful."],
+  },
+};
+
 // --- The Maverick Mole --------------------------------------------------------
 // The only voice in this file that belongs to one specific individual rather
 // than to a form or an institution, because he is one specific individual and

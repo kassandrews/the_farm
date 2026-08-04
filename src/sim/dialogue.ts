@@ -37,6 +37,7 @@ import {
   GAME_YES,
   GAME_FOUND,
   GAME_GIVEUP,
+  LOOK_AT,
   RESIDENT_ABSENCE,
   RESIDENT_MIDST,
   RESIDENT_KIN,
@@ -45,7 +46,7 @@ import {
 } from "../content/dialogue";
 import { ARRIVALS } from "../content/arrivals";
 import { isNewcomer } from "../content/cast";
-import type { GameId } from "../content/games";
+import type { GameId, SpyKind } from "../content/games";
 import { CAST } from "../content/cast";
 import { conversationRoots } from "../content/conversations";
 import type { Exchange, Reply } from "../content/conversations";
@@ -654,4 +655,15 @@ export function gameFoundLine(game: GameId, form: AdultForm, rng: Rng): string {
 
 export function gameGiveUpLine(game: GameId, form: AdultForm, rng: Rng): string {
   return rng.pick(GAME_GIVEUP[game]?.[form] ?? ["..."]);
+}
+
+/** "Look at this" — they consider the thing you pointed at. Routed through
+ *  the said ring like any spoken line, so showing somebody the same fence
+ *  twice steers to a different remark while the bank has one. Pays nothing
+ *  and writes nothing — see LOOK_AT's header for why that's a design call
+ *  and not a gap. */
+export function lookAtLine(v: Villager, kind: SpyKind, rng: Rng): string {
+  const line = rng.pick(fresh(LOOK_AT[v.form]?.[kind] ?? ["..."], v));
+  spoke(v, line);
+  return line;
 }
