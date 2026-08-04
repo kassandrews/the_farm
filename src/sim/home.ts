@@ -49,7 +49,7 @@ export type HomeNoteKind =
   // Something they're pleased by. Said occasionally, but ahead of the rest.
   // TWO kinds rather than one, because "you built it in dark walnut" and "you
   // put a shelf in" are not the same sentence, and a single bank keyed on
-  // "delight" produced lines like "shelf. ... You paid attention." — found by
+  // "delight" produced lines like "shelf ... You paid attention." — found by
   // reading the real modal, which is the only place the grammar is visible.
   | "delight_finish" // built of what they like (content/tastes.ts)
   | "delight_piece" // furnished with what they like

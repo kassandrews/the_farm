@@ -1415,7 +1415,7 @@ function placeOrRemove(
   // buy, for ground that will never accept it at any price, is a worse answer
   // than the truth.
   if (refusesConstruction(world, x, y, layer)) {
-    return { changed: false, message: "Not on this ground. ... The dark trees were here first.", broke: false };
+    return { changed: false, message: "Not on this ground ... The dark trees were here first.", broke: false };
   }
 
   const finish = loadedFinish(world, tool);

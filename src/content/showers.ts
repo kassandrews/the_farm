@@ -46,9 +46,9 @@ export const SHOWERS: ShowerDef[] = [
     day: 3,
     name: "the short one",
     lines: [
-      "This one is over quickly. ... I am also over quickly. It is a good match.",
-      "Cold. ... I don't feel it. I am telling you because you seem to.",
-      "You are up very early or very late. ... I have never been able to tell the difference.",
+      "This one is over quickly ... I am also over quickly. It is a good match.",
+      "Cold ... I don't feel it. I am telling you because you seem to.",
+      "You are up very early or very late ... I have never been able to tell the difference.",
     ],
   },
   {
@@ -57,8 +57,8 @@ export const SHOWERS: ShowerDef[] = [
     day: 22,
     name: "the old one",
     lines: [
-      "People have been standing outside for this one for about two and a half thousand years. ... You are doing it correctly.",
-      "Something is coming back round. It always does. ... That is the entire event.",
+      "People have been standing outside for this one for about two and a half thousand years ... You are doing it correctly.",
+      "Something is coming back round. It always does ... That is the entire event.",
       "The grass is wet. I notice things like that, out of politeness.",
     ],
   },
@@ -68,9 +68,9 @@ export const SHOWERS: ShowerDef[] = [
     day: 12,
     name: "the loud one",
     lines: [
-      "This is the busy one. ... Don't try to count. Everyone tries to count.",
-      "Warm enough to lie down for. ... I am told that is the point of August.",
-      "There will be a long one, eventually. Green, if you're lucky. ... I can't promise it. I have never been able to promise it.",
+      "This is the busy one ... Don't try to count. Everyone tries to count.",
+      "Warm enough to lie down for ... I am told that is the point of August.",
+      "There will be a long one, eventually. Green, if you're lucky ... I can't promise it. I have never been able to promise it.",
     ],
   },
   {
@@ -79,9 +79,9 @@ export const SHOWERS: ShowerDef[] = [
     day: 21,
     name: "the fast one",
     lines: [
-      "These come in very fast. ... If you looked away, you missed one. Several, probably.",
-      "That was a piece of a comet. So was that. ... It has been coming apart for a long time and it is very calm about it.",
-      "You'll want to be looking east, eventually. ... No. Further round. ... There.",
+      "These come in very fast ... If you looked away, you missed one. Several, probably.",
+      "That was a piece of a comet. So was that ... It has been coming apart for a long time and it is very calm about it.",
+      "You'll want to be looking east, eventually ... No. Further round ... There.",
     ],
   },
   {
@@ -90,9 +90,9 @@ export const SHOWERS: ShowerDef[] = [
     day: 13,
     name: "the best one",
     lines: [
-      "This is the best one and nobody comes out for it, because of the cold. ... Their loss. Genuinely their loss.",
-      "Slow, these. You can watch a whole one happen. ... That's rarer than it sounds.",
-      "The year is nearly done. ... I don't keep the year. I just notice when yours ends.",
+      "This is the best one and nobody comes out for it, because of the cold ... Their loss. Genuinely their loss.",
+      "Slow, these. You can watch a whole one happen ... That's rarer than it sounds.",
+      "The year is nearly done ... I don't keep the year. I just notice when yours ends.",
     ],
   },
 ];

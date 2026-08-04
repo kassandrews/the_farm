@@ -204,15 +204,15 @@ export function shortfallText(state: CommissionState): string {
   if (state.done) return "In order.";
   switch (state.why) {
     case "no-home":
-      return "No address on file. ... They are still in the tent.";
+      return "No address on file ... They are still in the tent.";
     case "no-bed":
       return "No bed. A house without one is a shed with ambitions.";
     case "no-room":
-      return "The walls do not meet. ... I cannot file an outdoors.";
+      return "The walls do not meet ... I cannot file an outdoors.";
     case "no-door":
-      return "No door. ... They would live there exactly once.";
+      return "No door ... They would live there exactly once.";
     case "too-small":
-      return `${state.size} of floor, where the form wants ${MIN_INTERIOR}. ... I don't make the form.`;
+      return `${state.size} of floor, where the form wants ${MIN_INTERIOR} ... I don't make the form.`;
   }
 }
 

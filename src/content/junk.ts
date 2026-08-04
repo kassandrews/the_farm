@@ -36,11 +36,11 @@ export const JUNK_DENSITY = 0.15;
  *  House voice — flat, incurious, faintly institutional about it. The joke is
  *  never "look at this wacky object", it is the total absence of surprise. */
 export const JUNK_FINDS: string[] = [
-  "A doorknob. ... No door. It goes in the satchel.",
+  "A doorknob ... No door. It goes in the satchel.",
   "Half a sign. The half that was saying something.",
   "A spoon, bent the wrong way round. Someone worked at this.",
   "A hinge. Still hinges. Nothing to hinge.",
-  "A key. ... You will not find the lock. Nobody has.",
+  "A key ... You will not find the lock. Nobody has.",
   "Somebody's boot. One. The ground keeps the other one.",
   "A cog, from a thing this town has never had.",
   "A bell that does not ring any more. It is very committed to that.",

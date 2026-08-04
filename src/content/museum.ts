@@ -87,7 +87,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "wood", count: 1 },
     placards: [
       "Timber. Cut from the common tree, an organism that grows upward in the hope of being noticed.",
-      "Timber. ... Amended. Not from a tree. Trees are made of this. The distinction is enormous and I will not be walking anyone through it.",
+      "Timber ... Amended. Not from a tree. Trees are made of this. The distinction is enormous and I will not be walking anyone through it.",
       "Timber. Now believed to be the bone of something very large and very patient. The donor disputes this. The donor was not consulted.",
     ],
   },
@@ -98,7 +98,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "stone", count: 1 },
     placards: [
       "Stone. Formed underground over an extremely long period by heat, by pressure, and by being left alone.",
-      "Stone. ... Revised. Stone does not form. Stone has simply always been the case.",
+      "Stone ... Revised. Stone does not form. Stone has simply always been the case.",
       "Stone. A tree that made different choices.",
     ],
   },
@@ -109,7 +109,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "ore", count: 1 },
     placards: [
       "Ore. Rock with metal still inside it, sulking.",
-      "Ore. ... Later finding: metal with rock still on it. The order matters more than anyone here appreciates.",
+      "Ore ... Later finding: metal with rock still on it. The order matters more than anyone here appreciates.",
     ],
   },
   {
@@ -119,7 +119,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "carrot", count: 1 },
     placards: [
       "Carrot. The root is the part that is eaten. The top is the part that is discussed.",
-      "Carrot. ... The only specimen in this wing that was grown on purpose, by a person, who then gave it away. Note the restraint.",
+      "Carrot ... The only specimen in this wing that was grown on purpose, by a person, who then gave it away. Note the restraint.",
       "Carrot. Derek has visited this plinth twice and declined to comment. Twice.",
     ],
   },
@@ -130,7 +130,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "mushroom", count: 1 },
     placards: [
       "Mushroom. Appeared overnight. No stage of its life was witnessed by anybody.",
-      "Mushroom. ... Corrected. It did not appear. It had always been there and only lately agreed to be seen.",
+      "Mushroom ... Corrected. It did not appear. It had always been there and only lately agreed to be seen.",
     ],
   },
   {
@@ -140,7 +140,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "radish", count: 1 },
     placards: [
       "Radish. Completes its entire life in an afternoon and appears to regard this as a personal quality.",
-      "Radish. ... Revised. Not hasty. The rest of the wing is slow, and it has never been said aloud until now.",
+      "Radish ... Revised. Not hasty. The rest of the wing is slow, and it has never been said aloud until now.",
       "Radish. Related to the carrot by colour only, which in this institution is sufficient.",
     ],
   },
@@ -151,7 +151,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "potato", count: 1 },
     placards: [
       "Potato. Spends the better part of a day underground and declines to say what it was doing.",
-      "Potato. ... Amended. It is not a root. It is a stem that went down instead of up, which this museum considers a decision.",
+      "Potato ... Amended. It is not a root. It is a stem that went down instead of up, which this museum considers a decision.",
     ],
   },
 
@@ -177,7 +177,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "junk", count: 3 },
     placards: [
       "Handle of Office. Turned by every hand of a former administration. The door it served has not been located and may never have existed.",
-      "Handle of Office. ... Reattributed as ceremonial. It was fitted to nothing. It was held aloft during announcements.",
+      "Handle of Office ... Reattributed as ceremonial. It was fitted to nothing. It was held aloft during announcements.",
       "Handle of Office. Recent scholarship suggests it is a doorknob. Recent scholarship is very sure of itself.",
     ],
   },
@@ -188,7 +188,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "junk", count: 3 },
     placards: [
       "The Surviving Half of a Statement. The missing half carried the subject. This half carried the conviction.",
-      "The Surviving Half of a Statement. ... Reconstruction attempted. The full text is now believed to have been permissive. Proceed accordingly.",
+      "The Surviving Half of a Statement ... Reconstruction attempted. The full text is now believed to have been permissive. Proceed accordingly.",
     ],
   },
   {
@@ -198,7 +198,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "junk", count: 3 },
     placards: [
       "Reversed Spoon. Bent the wrong way round, deliberately, over a long period. Purpose unknown. Commitment total.",
-      "Reversed Spoon. ... Now understood to serve a room in which everything is the other way up. No such room has been located in this town.",
+      "Reversed Spoon ... Now understood to serve a room in which everything is the other way up. No such room has been located in this town.",
     ],
   },
   {
@@ -208,7 +208,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "junk", count: 3 },
     placards: [
       "Hinge, Unattached. Fully operational. It hinges. It has nothing to hinge and it hinges anyway.",
-      "Hinge, Unattached. ... Reclassified as a monument to readiness.",
+      "Hinge, Unattached ... Reclassified as a monument to readiness.",
     ],
   },
   {
@@ -218,7 +218,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "junk", count: 3 },
     placards: [
       "The Key. No lock in this town accepts it. Every lock in this town has been tried, twice, by me.",
-      "The Key. ... The lock is elsewhere. This is not a disappointment. This is a direction.",
+      "The Key ... The lock is elsewhere. This is not a disappointment. This is a direction.",
       "The Key. Opens something that has not been built yet. The museum is in no hurry.",
     ],
   },
@@ -229,7 +229,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "junk", count: 3 },
     placards: [
       "Sole Boot. Left. The right remains underground and is presumed to be doing well.",
-      "Sole Boot. ... Correction: right. The catalogue has been amended, and the amendment has been amended.",
+      "Sole Boot ... Correction: right. The catalogue has been amended, and the amendment has been amended.",
     ],
   },
   {
@@ -239,7 +239,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "junk", count: 3 },
     placards: [
       "Cog of an Unknown Machine. This town has never had a machine. Either the cog predates the town or the town predates its own memory.",
-      "Cog of an Unknown Machine. ... The machine was here. Everyone has agreed not to bring it up.",
+      "Cog of an Unknown Machine ... The machine was here. Everyone has agreed not to bring it up.",
     ],
   },
   {
@@ -249,7 +249,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "junk", count: 3 },
     placards: [
       "Retired Bell. It does not ring. It is not broken. It has stopped.",
-      "Retired Bell. ... Struck during examination. Nothing happened, at considerable volume.",
+      "Retired Bell ... Struck during examination. Nothing happened, at considerable volume.",
     ],
   },
   {
@@ -259,7 +259,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "junk", count: 3 },
     placards: [
       "Nested Tin. A tin containing a tin. The inner tin is empty, which is the only entirely honest object in this wing.",
-      "Nested Tin. ... A third tin is suspected. The investigation is ongoing and will not be concluded.",
+      "Nested Tin ... A third tin is suspected. The investigation is ongoing and will not be concluded.",
     ],
   },
   {
@@ -269,7 +269,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "junk", count: 3 },
     placards: [
       "Coil. Wound by hand, evenly, by somebody who was not being paid to wind it evenly.",
-      "Coil. ... Unwound for measurement and rewound by this office. Less well.",
+      "Coil ... Unwound for measurement and rewound by this office. Less well.",
     ],
   },
   {
@@ -279,7 +279,7 @@ export const MUSEUM: ExhibitDef[] = [
     cost: { item: "junk", count: 3 },
     placards: [
       "Inward Cup. The handle is on the inside. It was made this way, on purpose, by somebody who had thought about it.",
-      "Inward Cup. ... Held from within. The hand then occupies the volume intended for the drink. A trade-off, openly made.",
+      "Inward Cup ... Held from within. The hand then occupies the volume intended for the drink. A trade-off, openly made.",
     ],
   },
   {
@@ -292,7 +292,7 @@ export const MUSEUM: ExhibitDef[] = [
       // A valid line in this house (DESIGN §Tone), and the only placard she has
       // ever been right about — by saying nothing, in front of a blank plaque.
       "...",
-      "Blank Commemorative Plaque. ... The occasion is now entirely forgotten, making this the most successful commemoration in the collection.",
+      "Blank Commemorative Plaque ... The occasion is now entirely forgotten, making this the most successful commemoration in the collection.",
     ],
   },
 ];

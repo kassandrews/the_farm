@@ -192,11 +192,11 @@ export const FOUND_KINDS = Object.keys(FOUND) as FoundKind[];
  *  a lead, and a mailbox with a lead in it is a quest board in a field.
  *
  *  Voice is the house voice: earnest, institutional, and entirely certain that the
- *  situation is normal (CLAUDE.md §Tone). The ellipsis style is The Meadow's —
- *  `. ... Capital`. */
+ *  situation is normal (CLAUDE.md §Tone). Ellipsis style per CLAUDE.md §Tone:
+ *  `word ... Capital`, no period before the pause. */
 export const LETTERS: string[] = [
   "The hedge was dealt with. It took the morning and most of the afternoon.",
-  "Thank you for the pears. There were more than expected. ... There are still more than expected.",
+  "Thank you for the pears. There were more than expected ... There are still more than expected.",
   "We have moved the meeting to the usual place, which everyone agreed was better.",
   "It rained on the Tuesday, as forecast. Nobody had said which Tuesday.",
   "Enclosed: nothing. The enclosing was the point.",
@@ -204,7 +204,7 @@ export const LETTERS: string[] = [
   "I walked out as far as the steps and sat on them for a while.",
   "All is well here. The pond is the same as it was, which is to say full of poles.",
   "We are sorry to have missed you. We waited until it got dark and then a bit longer.",
-  "The circle of trees is doing what it always does. ... It is doing it very well this year.",
+  "The circle of trees is doing what it always does ... It is doing it very well this year.",
 ];
 
 /** HOW OFTEN THE BOX IS EMPTY, and it has to be most days.

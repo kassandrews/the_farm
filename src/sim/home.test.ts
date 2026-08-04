@@ -331,7 +331,7 @@ describe("every form says something about every note it can reach", () => {
           const text = t("shelf");
           expect(text.length, `${form}/${kind} produced an empty line`).toBeGreaterThan(0);
           // A lone " ." or " ,", which is what an unfilled `${v}` leaves behind.
-          // The house ellipsis (". ... Capital") is a space before a period too,
+          // The house ellipsis ("... Capital") is a space before a period too,
           // so the period must not be followed by another one or every correctly
           // styled line in the file fails.
           expect(text, `${form}/${kind} has an empty interpolation`).not.toMatch(/\s(\.(?!\.)|,)/);

@@ -72,7 +72,7 @@ export const SHOP: ShopRow[] = [
       { item: "mushroom", count: 6 },
       { item: "junk", count: 5 },
     ],
-    line: "Two bolts. ... You'll want more. Everyone wants more, eventually.",
+    line: "Two bolts ... You'll want more. Everyone wants more, eventually.",
   },
   {
     gives: "cloth",
@@ -93,7 +93,7 @@ export const SHOP: ShopRow[] = [
       { item: "junk", count: 13 },
     ],
     // Slightly better rate, and she is not going to draw attention to it.
-    line: "The larger amount. ... It works out better for you. I'm aware. Take it.",
+    line: "The larger amount ... It works out better for you. I'm aware. Take it.",
   },
 ];
 
@@ -133,12 +133,12 @@ export const HEAP: HeapRow[] = [
   {
     gives: "salvage",
     cost: 8,
-    line: "Boards. ... None of them match. That IS the finish. Keep up.",
+    line: "Boards ... None of them match. That IS the finish. Keep up.",
   },
   {
     gives: "cobble",
     cost: 12,
-    line: "Sorted stone. I sorted it. ... Don't ask by what.",
+    line: "Sorted stone. I sorted it ... Don't ask by what.",
   },
   // The three paints. A tin is the most junk-shaped object there is — nobody
   // throws away a full one — and this counter was two rows deep and the only
@@ -151,16 +151,16 @@ export const HEAP: HeapRow[] = [
   {
     gives: "sage",
     cost: 14,
-    line: "Green. ... Half a tin. The other half is a matter for the archive.",
+    line: "Green ... Half a tin. The other half is a matter for the archive.",
   },
   {
     gives: "oxblood",
     cost: 18,
-    line: "Red. It is called ox-blood. ... No ox was consulted.",
+    line: "Red. It is called ox-blood ... No ox was consulted.",
   },
   {
     gives: "bone",
     cost: 24,
-    line: "Off-white. ... It was white. Things happen to white.",
+    line: "Off-white ... It was white. Things happen to white.",
   },
 ];

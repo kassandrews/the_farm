@@ -72,7 +72,7 @@ export const SEED_ROWS: SeedRow[] = [
       { item: "mushroom", count: 3 },
       { item: "junk", count: 3 },
     ],
-    line: "Six. ... They're seeds. They know what they're doing.",
+    line: "Six ... They're seeds. They know what they're doing.",
   },
   {
     givesCount: 20,
@@ -90,7 +90,7 @@ export const SEED_ROWS: SeedRow[] = [
       { item: "mushroom", count: 9 },
       { item: "junk", count: 9 },
     ],
-    line: "The handful, then. ... Plant them or don't. I'm not going to check.",
+    line: "The handful, then ... Plant them or don't. I'm not going to check.",
   },
 ];
 
@@ -111,7 +111,7 @@ export const VARIETY_ROWS: VarietyRow[] = [
       { item: "mushroom", count: 8 },
       { item: "junk", count: 8 },
     ],
-    line: "Radish. ... Quick. Loud about it. You'll see.",
+    line: "Radish ... Quick. Loud about it. You'll see.",
   },
   {
     gives: "potato",
@@ -122,7 +122,7 @@ export const VARIETY_ROWS: VarietyRow[] = [
       { item: "mushroom", count: 8 },
       { item: "junk", count: 8 },
     ],
-    line: "Potato. ... Takes its time. Nobody has ever hurried one.",
+    line: "Potato ... Takes its time. Nobody has ever hurried one.",
   },
   // The 4d varieties. Costs are copied VERBATIM from the two above and must
   // stay that way — seeds.test.ts compares the serialised `accepts` arrays and
@@ -142,7 +142,7 @@ export const VARIETY_ROWS: VarietyRow[] = [
       { item: "mushroom", count: 8 },
       { item: "junk", count: 8 },
     ],
-    line: "Peas. ... Faster than they have any right to be.",
+    line: "Peas ... Faster than they have any right to be.",
   },
   {
     gives: "tomato",
@@ -153,7 +153,7 @@ export const VARIETY_ROWS: VarietyRow[] = [
       { item: "mushroom", count: 8 },
       { item: "junk", count: 8 },
     ],
-    line: "Tomato. ... In at breakfast, done by dark. Don't read anything into that.",
+    line: "Tomato ... In at breakfast, done by dark. Don't read anything into that.",
   },
   {
     gives: "kale",
@@ -164,7 +164,7 @@ export const VARIETY_ROWS: VarietyRow[] = [
       { item: "mushroom", count: 8 },
       { item: "junk", count: 8 },
     ],
-    line: "Kale. ... Comes back round to the same hour tomorrow. It's punctual.",
+    line: "Kale ... Comes back round to the same hour tomorrow. It's punctual.",
   },
   {
     gives: "pumpkin",
@@ -175,7 +175,7 @@ export const VARIETY_ROWS: VarietyRow[] = [
       { item: "mushroom", count: 8 },
       { item: "junk", count: 8 },
     ],
-    line: "Pumpkin. ... A day and a bit. You'll be back at an odd hour for it.",
+    line: "Pumpkin ... A day and a bit. You'll be back at an odd hour for it.",
   },
   {
     gives: "wheat",
@@ -186,7 +186,7 @@ export const VARIETY_ROWS: VarietyRow[] = [
       { item: "mushroom", count: 8 },
       { item: "junk", count: 8 },
     ],
-    line: "Wheat. ... Two days. You'll want to water it more than twice.",
+    line: "Wheat ... Two days. You'll want to water it more than twice.",
   },
 ];
 
@@ -203,7 +203,7 @@ export const VARIETY_ROWS: VarietyRow[] = [
 //
 // No number in it, deliberately. A count invites a denominator, and the moment
 // he says "all eight" somebody is counting to eight.
-export const STALL_EXHAUSTED = "Done. ... Seed's still seed, and it will be tomorrow. That part doesn't stop.";
+export const STALL_EXHAUSTED = "Done ... Seed's still seed, and it will be tomorrow. That part doesn't stop.";
 
 /** The opener. He is aware of what he is. */
-export const STALL_OPENER = "Seeds. ... Yes. I'm aware. We're not discussing it.";
+export const STALL_OPENER = "Seeds ... Yes. I'm aware. We're not discussing it.";

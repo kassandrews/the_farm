@@ -1492,7 +1492,7 @@ about houses.
   disappointed by your house would turn a gift into a review.
 - **Two delight kinds, not one.** "You built it in dark walnut" and "you put a
   shelf in" are different sentences; one bank keyed on `delight` produced
-  *"shelf. ... You paid attention."* Caught by reading the actual modal, which
+  *"shelf ... You paid attention."* Caught by reading the actual modal, which
   is the only place the grammar is visible — the unit tests were green.
 - **The Menace has two tastes on purpose.** Whitewash is unlocked BY housing
   her, so she cannot be living in it the first time; the shelf is what lets her
@@ -1667,7 +1667,7 @@ The model is settled above. This was the build order; steps 1–4 were one commi
    while the curator is excluded by **id**, which is step 7's lesson applied
    before it could bite again. And every line frames the quote as a *document* —
    a card, a draft, a submitted revision. Verified on screen: said flat, the
-   placard's own revision marker ("Mushroom. ... Corrected.") made her sound
+   placard's own revision marker ("Mushroom ... Corrected.") made her sound
    like she was reading aloud from someone else's page mid-sentence.
 
 ~~**Open:** the curator needs a name.~~ ~~**Settled: Corrigal.**~~ **Superseded
@@ -4906,7 +4906,7 @@ project's agenda, where it belongs with the rotation and redraw gaps**; and
 ### 8e — The counters show whose voice it is — **built, all five**
 
 Found by photographing all seven institution panels, which nothing had done
-before. Arabella's counter opens with *"Cloth. ... You can't grow it, and you
+before. Arabella's counter opens with *"Cloth ... You can't grow it, and you
 certainly can't chop it down."* — her voice, in the house ellipsis style
 CLAUDE.md defines for spoken lines, printed as body text under a heading with
 **nobody attached to it**.
@@ -6352,7 +6352,7 @@ everything else:
    context earns one. On the order of 1,500–3,000 lines. **Review is every
    line, a form at a sitting** (a few hundred lines each) — the bank is only
    as good as its worst line, and the voice rules (per-form voice, brevity,
-   `. ... Capital`, deadpan that never winks) are the hard constraint.
+   `... Capital`, deadpan that never winks) are the hard constraint.
 4. ~~**Tranche 2 — replies are remembered.**~~ **Built**, and it owed **no
    migration** after all: `answered` is a new VALUE in a field every save
    already has, so an old log simply holds none. The shape is a `keepsake`

@@ -83,7 +83,9 @@ follows the tile grid that's the bug.
 
 Deadpan institutional absurdism — small creatures taking ridiculous things
 seriously. Dialogue follows The Meadow's house rules: per-form voice,
-brevity, distinct openers, ellipsis style (`. ... Capital`), `"..."` is a
+brevity, distinct openers, ellipsis style (`word ... Capital` — the clause
+before the pause carries NO period, though `?` and `!` keep their mark;
+settled 3 Aug 2026, and the whole corpus was swept to it), `"..."` is a
 valid line. Secrets are never spoiled by UI.
 
 ## Design invariants (checked in review)

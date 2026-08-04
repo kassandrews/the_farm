@@ -345,9 +345,9 @@ export class App {
         panel("A postcard from the Farm", "While you were out", [
           // One paragraph per piece of news.
           //
-          // This used to be a single <p> joining the lines with "\n. ... ". Two
+          // This used to be a single <p> joining the lines with "\n ... ". Two
           // things wrong with that: the house ellipsis is a pause INSIDE a
-          // sentence ("Cloth. ... You can't grow it"), so at the start of a
+          // sentence ("Cloth ... You can't grow it"), so at the start of a
           // line it is a full stop with no word in front of it — and a bare
           // newline in its place left a piece of news that wrapped looking
           // exactly like two pieces of news. Separate paragraphs give the
@@ -990,7 +990,7 @@ export class App {
         // pockets that don't reach.
         if (offered.length === 0) {
           body.append(
-            el("p", {}, ["Nothing on you makes a trade today. ... It's barter. Come back holding more of something."]),
+            el("p", {}, ["Nothing on you makes a trade today ... It's barter. Come back holding more of something."]),
           );
           return;
         }
@@ -1022,7 +1022,7 @@ export class App {
         CAST.shop.name,
         "The Counter",
         [
-          el("p", {}, ["Cloth. ... You can't grow it, and you certainly can't chop it down."]),
+          el("p", {}, ["Cloth ... You can't grow it, and you certainly can't chop it down."]),
           body,
           actionRow([primaryBtn("That's all", close)]),
         ],
@@ -1058,10 +1058,10 @@ export class App {
         // first FOMO in the game. Empty pockets get their own line, because a
         // bare counter with no voice reads as a bug.
         const opener = heapExhausted(world)
-          ? "That's the lot. ... You've had everything worth having. Some of it twice, from my side."
+          ? "That's the lot ... You've had everything worth having. Some of it twice, from my side."
           : offered.length === 0
-            ? "Nothing on you I can work with. ... Come back heavier."
-            : "You dug that up. ... Fine. I can do something with it. Probably.";
+            ? "Nothing on you I can work with ... Come back heavier."
+            : "You dug that up ... Fine. I can do something with it. Probably.";
         body.append(el("p", {}, [opener]));
 
         const choices = el("div", { class: "choices" });
@@ -1177,7 +1177,7 @@ export class App {
         // satchel reads as the stall being broken.
         if (body.childElementCount === 0 && !varietiesExhausted(world)) {
           body.append(
-            el("p", {}, ["Nothing on you the stall takes. ... The seeds will wait. It's what they're best at."]),
+            el("p", {}, ["Nothing on you the stall takes ... The seeds will wait. It's what they're best at."]),
           );
         }
       };
@@ -1231,7 +1231,7 @@ export class App {
         // nothing. It does not say "start exploring"; it says the book is new.
         body.append(
           el("p", {}, [
-            "Blank, so far. ... It is a good notebook. Stiff spine, ruled feint, and nothing in it yet.",
+            "Blank, so far ... It is a good notebook. Stiff spine, ruled feint, and nothing in it yet.",
           ]),
         );
       } else {
@@ -1296,13 +1296,13 @@ export class App {
         if (batches.length === 0) {
           body.append(
             el("p", {}, [
-              "There is nothing on the schedule today. ... The hall is between forms. It has been between forms before.",
+              "There is nothing on the schedule today ... The hall is between forms. It has been between forms before.",
             ]),
           );
         } else {
           body.append(
             el("p", {}, [
-              "The hall is obliged to offer the following. Filing is free, and changes nothing. ... That is not a disclaimer. It is the service.",
+              "The hall is obliged to offer the following. Filing is free, and changes nothing ... That is not a disclaimer. It is the service.",
             ]),
           );
           for (const { batch, forms } of batches) {
@@ -1354,7 +1354,7 @@ export class App {
         if (cabinetEmpty(world)) {
           body.append(
             el("p", {}, [
-              "Empty. ... The drawer runs the full depth of the building. I mention that without expectation.",
+              "Empty ... The drawer runs the full depth of the building. I mention that without expectation.",
             ]),
           );
         } else {
@@ -1437,8 +1437,8 @@ export class App {
         body.append(
           el("p", {}, [
             offers.length === 0
-              ? "That is everything I presently know how to be wrong about. ... I am not finished. I am up to date."
-              : "The museum accepts donations. ... It does not return them, and it does not thank you in any material way. I will write a card.",
+              ? "That is everything I presently know how to be wrong about ... I am not finished. I am up to date."
+              : "The museum accepts donations ... It does not return them, and it does not thank you in any material way. I will write a card.",
           ]),
         );
 
@@ -1497,7 +1497,7 @@ export class App {
         if (collectionEmpty(world)) {
           body.append(
             el("p", {}, [
-              "Nothing, yet. ... The plinths are prepared to wait. I am prepared to wait beside them, visibly.",
+              "Nothing, yet ... The plinths are prepared to wait. I am prepared to wait beside them, visibly.",
             ]),
           );
         } else {
@@ -1564,7 +1564,7 @@ export class App {
           // this is a board that simply has no card up at the moment.
           body.append(
             el("p", {}, [
-              "No requests today. ... The board is up to date, which it considers an achievement in itself.",
+              "No requests today ... The board is up to date, which it considers an achievement in itself.",
             ]),
           );
         } else {
@@ -1675,7 +1675,7 @@ export class App {
         // would be a waste to make him say the same thing as on a Tuesday.
         body.append(
           el("div", { class: "who" }, [today.name]),
-          el("p", {}, ["Tonight. ... Not now. Tonight."]),
+          el("p", {}, ["Tonight ... Not now. Tonight."]),
           el("p", { class: "note" }, [today.blurb]),
         );
       } else if (next) {
@@ -1718,7 +1718,7 @@ export class App {
     const def = attend(this.world, Date.now());
     if (!def) return;
     this.persist();
-    this.flash(`${def.name}. ... You are here for it, which is most of what it asks.`);
+    this.flash(`${def.name} ... You are here for it, which is most of what it asks.`);
   }
 
   // --- Commissions --------------------------------------------------------------
@@ -1869,7 +1869,7 @@ export class App {
     this.openModal(
       (close) =>
         panel(CAST.office.name, "Town hall", [
-          el("p", {}, [`Form 9, discharged. ... ${who} lives at an address now.`]),
+          el("p", {}, [`Form 9, discharged ... ${who} lives at an address now.`]),
           el("p", { class: "quote" }, [`"${theirLine}"`]),
           // The one unlock in the game that is allowed to name itself, because
           // the town gave it to you across a counter. It said so before this
@@ -2141,7 +2141,7 @@ export class App {
           // Second step: confirm, because a new town erases this one.
           body.replaceChildren(
             el("p", {}, [
-              "Start a new town? Your homestead, crops, and neighbours here are erased. ... This can't be undone.",
+              "Start a new town? Your homestead, crops, and neighbours here are erased ... This can't be undone.",
             ]),
             primaryBtn("Yes, start over", () => this.resetTown()),
             choiceBtn("Cancel", close),
@@ -3250,7 +3250,7 @@ function buildHud(
  *  entry moved Gary to `speechPanel` and gave the test — "whether a face would
  *  look wrong on it" — and then left the five counters alone, which was right
  *  about the FRAME and wrong about the speaker: Arabella's opener is
- *  "Cloth. ... You can't grow it, and you certainly can't chop it down." That is
+ *  "Cloth ... You can't grow it, and you certainly can't chop it down." That is
  *  her voice, in the house ellipsis style CLAUDE.md defines for spoken lines,
  *  printed as body text under a heading with nobody attached to it.
  *

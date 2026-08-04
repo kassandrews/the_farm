@@ -156,7 +156,7 @@ describe("a room reading its own past", () => {
 
   it("names the season once, however many sentences share it", () => {
     // Found by reading the real flash: two notes from one season came out as
-    // "...back in spring. ... in spring." Both true, and the pair read like a
+    // "...back in spring ... in spring." Both true, and the pair read like a
     // form letter.
     const w = world();
     const h = house(w, 200, 200, SPRING);

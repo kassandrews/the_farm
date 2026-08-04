@@ -95,7 +95,7 @@ export const CONVERSATIONS: Partial<
         replies: [
           {
             text: "Leaning.",
-            then: { line: "As I suspected. The fence lacks conviction. ... The note stands." },
+            then: { line: "As I suspected. The fence lacks conviction ... The note stands." },
           },
           {
             text: "Committing.",
@@ -103,7 +103,7 @@ export const CONVERSATIONS: Partial<
           },
           {
             text: "...",
-            then: { line: ". ... Withholding your findings. I respect it. The fence would too." },
+            then: { line: "... Withholding your findings. I respect it. The fence would too." },
           },
         ],
       },
@@ -121,7 +121,7 @@ export const CONVERSATIONS: Partial<
           },
           {
             text: "Nowhere much.",
-            then: { line: "Nowhere much, for weeks. ... I've had field seasons like that. The good kind." },
+            then: { line: "Nowhere much, for weeks ... I've had field seasons like that. The good kind." },
           },
           { text: "...", then: { line: "Classified. Understood. My notes will say 'expedition'." } },
         ],
@@ -220,9 +220,9 @@ export const CONVERSATIONS: Partial<
           },
           {
             text: "I missed it.",
-            then: { line: ". ... Then I'll do it again. Watch closely. It's subtle. It's enormous." },
+            then: { line: "... Then I'll do it again. Watch closely. It's subtle. It's enormous." },
           },
-          { text: "...", then: { line: "Speechless. ... The correct response. Thank you for your honesty." } },
+          { text: "...", then: { line: "Speechless ... The correct response. Thank you for your honesty." } },
         ],
       },
     ],
@@ -234,9 +234,9 @@ export const CONVERSATIONS: Partial<
           {
             text: "Nowhere special.",
             variants: { blob: "A quiet act, mostly." },
-            then: { line: "'Nowhere special.' Delivered flatly. ... You've been practising. I'm moved." },
+            then: { line: "'Nowhere special.' Delivered flatly ... You've been practising. I'm moved." },
           },
-          { text: "...", then: { line: "In media res. Bold. ... Later, then. I'll wait for the matinee." } },
+          { text: "...", then: { line: "In media res. Bold ... Later, then. I'll wait for the matinee." } },
         ],
       },
     ],
@@ -289,7 +289,7 @@ export const CONVERSATIONS: Partial<
         replies: [
           {
             text: "It's good.",
-            then: { line: "Good. I'll make a note. ... There. I made it in my head. Best filing system I've ever used." },
+            then: { line: "Good. I'll make a note ... There. I made it in my head. Best filing system I've ever used." },
           },
           {
             text: "It's a lot of work.",
@@ -315,7 +315,7 @@ export const CONVERSATIONS: Partial<
           },
           {
             text: "Was I missed?",
-            then: { line: ". ... Personally? Yes. Administratively, no. The second part is the compliment." },
+            then: { line: "... Personally? Yes. Administratively, no. The second part is the compliment." },
           },
           { text: "...", then: { line: "Nothing to declare. Correct. There's no one to declare it to." } },
         ],
@@ -325,15 +325,15 @@ export const CONVERSATIONS: Partial<
   carrot: {
     idle: [
       {
-        line: "You keep busy. ... Does it help?",
+        line: "You keep busy ... Does it help?",
         replies: [
-          { text: "It does.", then: { line: ". ... Good. Carry on, then. Quietly." } },
+          { text: "It does.", then: { line: "... Good. Carry on, then. Quietly." } },
           {
             text: "Not always.",
             keepsake: "keeping busy doesn't always help",
-            then: { line: "No. Not always. ... Stand here a minute. This helps more than people expect." },
+            then: { line: "No. Not always ... Stand here a minute. This helps more than people expect." },
           },
-          { text: "...", then: { line: ". ... That's the right answer, mostly." } },
+          { text: "...", then: { line: "... That's the right answer, mostly." } },
         ],
       },
     ],
@@ -341,12 +341,12 @@ export const CONVERSATIONS: Partial<
       {
         line: "... You were gone a while. The ground mentioned it.",
         replies: [
-          { text: "The ground?", then: { line: "We talk. ... It noticed the lighter footsteps. So did I." } },
+          { text: "The ground?", then: { line: "We talk ... It noticed the lighter footsteps. So did I." } },
           {
             text: "I'm back now.",
-            then: { line: "So you are. ... That's the part that matters. The rest composts." },
+            then: { line: "So you are ... That's the part that matters. The rest composts." },
           },
-          { text: "...", then: { line: ". ... Fair. It's none of the ground's business either." } },
+          { text: "...", then: { line: "... Fair. It's none of the ground's business either." } },
         ],
       },
     ],
@@ -378,9 +378,9 @@ export const CONVERSATIONS: Partial<
           {
             text: "I missed this place.",
             keepsake: "you missed this place while you were gone",
-            then: { line: ". ... Correct answer. The town missed you too. I'm the town, in this instance." },
+            then: { line: "... Correct answer. The town missed you too. I'm the town, in this instance." },
           },
-          { text: "...", then: { line: "No sentence at all. ... Audacious. I'll allow it. Once." } },
+          { text: "...", then: { line: "No sentence at all ... Audacious. I'll allow it. Once." } },
         ],
       },
     ],

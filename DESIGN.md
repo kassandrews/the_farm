@@ -1232,7 +1232,7 @@ you have missed.**
 
 Inherit The Meadow's house rules wholesale (see vendored content):
 per-form voice layers, brevity, distinct openers, ellipsis style
-(`. ... Capital`), and `"..."` as a complete valid line. Every form's voice
+(`... Capital`), and `"..."` as a complete valid line. Every form's voice
 is already established across 11 characters — new dialogue must pass as
 written by the same hand.
 

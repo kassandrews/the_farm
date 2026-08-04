@@ -1,5 +1,6 @@
 // Dialogue banks, as data. Pure line pools in The Meadow's house voice —
-// per-form, brief, distinct openers, ellipsis style (". ... Capital"), and
+// per-form, brief, distinct openers, ellipsis style ("word ... Capital" —
+// no period before the pause; ? and ! keep their mark), and
 // "..." as a valid complete line (CLAUDE.md §Tone). No logic here: selection
 // (which line, whether to reminisce) lives in src/sim/dialogue.ts, which reads
 // these banks against the villager's memory log.
@@ -116,8 +117,8 @@ export const RESIDENT_IDLE: Partial<Record<AdultForm, string[]>> = {
     "I have been rehearsing a monologue about the plaza. The plaza is unaware. That's theatre.",
     "Today's performance is: standing here. Minimalism.",
     "I heard applause earlier. It was the leaves. I took it.",
-    "The light at this hour. ... Somebody should be lit by it. I've volunteered.",
-    ". ... I was pausing for effect. The effect continues.",
+    "The light at this hour ... Somebody should be lit by it. I've volunteered.",
+    "... I was pausing for effect. The effect continues.",
     "I have range. Yesterday I was wistful. Today: also wistful, but WIDER.",
     "An audience of one. My favourite house.",
     "I've been workshopping a new exit. You'll know it when you see it. You'll know.",
@@ -127,7 +128,7 @@ export const RESIDENT_IDLE: Partial<Record<AdultForm, string[]>> = {
     "How rustic. I suppose it will do.",
     "You may remain.",
     "I've inspected the town today. It passes. Narrowly.",
-    "Stand there. ... Yes. That's your good side.",
+    "Stand there ... Yes. That's your good side.",
     "I have opinions this morning. I'm rationing them.",
     "The standards around here would slip without me. I hold them up. Invisibly. Gracefully.",
     "You've caught me at leisure. Leisure suits me. Everything suits me.",
@@ -157,13 +158,13 @@ export const RESIDENT_IDLE: Partial<Record<AdultForm, string[]>> = {
     "...",
     "... Morning. Or thereabouts.",
     "The soil's good here. I checked when I arrived. I check ongoing.",
-    "Things grow whether you watch or not. ... I watch anyway.",
+    "Things grow whether you watch or not ... I watch anyway.",
     "I was standing here before you came. I'll be here after. It's a good spot.",
     "... You can stand here too. There's room.",
-    "Quiet today. ... That's not a complaint.",
+    "Quiet today ... That's not a complaint.",
     "I looked at the sky earlier. Still up there. Good.",
-    "Some things need saying. ... Not many.",
-    "Blessed, thanks. ... You didn't ask. You were going to.",
+    "Some things need saying ... Not many.",
+    "Blessed, thanks ... You didn't ask. You were going to.",
   ],
 };
 
@@ -179,7 +180,7 @@ export const RESIDENT_IDLE: Partial<Record<AdultForm, string[]>> = {
 // forget what you said to it alone.
 const ANSWERED_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
   scholar: [
-    (v) => `You told me ${v}. I wrote it down. ... Not for the study. For me.`,
+    (v) => `You told me ${v}. I wrote it down ... Not for the study. For me.`,
     (v) => `I've been thinking about what you said — ${v}. It holds up.`,
   ],
   dog: [
@@ -187,12 +188,12 @@ const ANSWERED_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
     (v) => `I've been thinking about how you said ${v}. I think about it a normal amount.`,
   ],
   blob: [
-    (v) => `You said ${v}. ... I've kept the line. I may use it. Credited, obviously.`,
+    (v) => `You said ${v} ... I've kept the line. I may use it. Credited, obviously.`,
     (v) => `Your reading — ${v} — has stayed with me. Few things do.`,
   ],
   menace: [
     (v) => `You did say ${v}. I remember what people tell me. It's a small terror I provide.`,
-    (v) => `${v.charAt(0).toUpperCase() + v.slice(1)}, you said. ... I've thought about it since. Don't let that go to your head.`,
+    (v) => `${v.charAt(0).toUpperCase() + v.slice(1)}, you said ... I've thought about it since. Don't let that go to your head.`,
   ],
   gremlin: [
     (v) => `You told me ${v}. I kept that. I keep everything, but I MEANT to keep that.`,
@@ -202,14 +203,14 @@ const ANSWERED_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
     (v) => `You mentioned ${v}. Unfiled, unminuted, and I've remembered it anyway. That's the new system.`,
     (v) => `${v.charAt(0).toUpperCase() + v.slice(1)}, you said. I have no record of it. I have it.`,
   ],
-  carrot: [(v) => `You said ${v}. ... I remembered that. Don't make a thing of it.`],
+  carrot: [(v) => `You said ${v} ... I remembered that. Don't make a thing of it.`],
 };
 
 export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, ((v: string) => string)[]>>>> = {
   scholar: {
     hum: [
       () => "The cube. Out past everything. It hums and it does not explain itself, and I have decided that is its right.",
-      () => "I stood in front of it for some time. I took no notes. ... I want that on the record.",
+      () => "I stood in front of it for some time. I took no notes ... I want that on the record.",
     ],
     // A day spent with you, and a day spent with you UNDERGROUND (sim/company.ts).
     // Two kinds, because they are two different afternoons.
@@ -219,14 +220,14 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
     delved: [
       () => "I have been underground. With you. There is rock down there and it is extremely rock.",
-      () => ". ... The dark did something to my methodology. I liked it.",
+      () => "... The dark did something to my methodology. I liked it.",
     ],
     // And the third afternoon (Phase 7c). Nobody names the staircase and nobody
     // explains it — every one of these is somebody describing a thing that
     // happened, in a voice that has decided it was normal.
     climbed: [
       () => "We went up. I have looked at the town from above and I am not sure it is arranged correctly.",
-      () => ". ... There was nothing up there to measure. I stayed a while anyway.",
+      () => "... There was nothing up there to measure. I stayed a while anyway.",
     ],
     // The games (sim/play.ts). Like the errand and company lines, these are
     // the whole payout, so every playable form has them — see the block
@@ -246,7 +247,7 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
     raised_by: [
       (v) => `${v} raised me. I was a difficult subject. I have the notes.`,
-      (v) => `. ... ${v}. I remember ${v}. The dark, the lantern, the whole methodology.`,
+      (v) => `... ${v}. I remember ${v}. The dark, the lantern, the whole methodology.`,
     ],
     // Events witnessed here on the Farm.
     built_floor: [
@@ -360,7 +361,7 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
   },
   blob: {
     hum: [
-      () => "A cube, alone in a field, holding one note forever. ... I have never been so upstaged.",
+      () => "A cube, alone in a field, holding one note forever ... I have never been so upstaged.",
       () => "It hums. That is the entire performance and it has been running for longer than any of us.",
     ],
     company: [
@@ -369,10 +370,10 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
     delved: [
       () => "I have performed underground. The acoustics were extraordinary. The audience was you.",
-      () => ". ... A cave. Me, in a cave. I've never been better lit, and there was no light.",
+      () => "... A cave. Me, in a cave. I've never been better lit, and there was no light.",
     ],
     climbed: [
-      () => "I have played the sky. No walls. Nothing came back. ... The best room I have ever died in.",
+      () => "I have played the sky. No walls. Nothing came back ... The best room I have ever died in.",
       () => "We stood above the weather. I gave nothing. There was nothing to give it to. It was perfect.",
     ],
     hid: [
@@ -389,10 +390,10 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
     raised_by: [
       (v) => `${v} raised me. My origin story. I've been embellishing it for years and it needs nothing.`,
-      (v) => `${v}. ... My first audience. Every audience since has been compared.`,
+      (v) => `${v} ... My first audience. Every audience since has been compared.`,
     ],
     raised_favorite: [
-      (v) => `${v}. My old favourite. I demanded it nightly. ... I was a difficult ingénue.`,
+      (v) => `${v}. My old favourite. I demanded it nightly ... I was a difficult ingénue.`,
     ],
     built_floor: [
       () => "You laid a floor. I watched. A set went up around us. That's what that was.",
@@ -406,7 +407,7 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
   },
   menace: {
     hum: [
-      () => "You walked me all the way out to a box. ... It was worth it. I will deny saying so.",
+      () => "You walked me all the way out to a box ... It was worth it. I will deny saying so.",
       () => "It hums in a key I would not have chosen. It is very sure of itself. I respect that.",
     ],
     company: [
@@ -414,11 +415,11 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
       () => "That outing was acceptable. I've said all I intend to say about it.",
     ],
     delved: [
-      () => "You took me into a hole in the ground. ... I would go again. Don't ask me twice.",
+      () => "You took me into a hole in the ground ... I would go again. Don't ask me twice.",
       () => "I got dirt on me. Underground. With you. It was, and I choose the word carefully, fun.",
     ],
     climbed: [
-      () => "You walked me up a staircase that had no business being there. ... I went first, at the end.",
+      () => "You walked me up a staircase that had no business being there ... I went first, at the end.",
       () => "There is nothing up there. I stayed for an hour. Say one word about it and I'll deny the lot.",
     ],
     hid: [
@@ -427,21 +428,21 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
     spied: [
       () => "You solved my clue. I made it too easy on purpose. That is my account and it's final.",
-      () => "The spying game. You did adequately. ... Better than adequately. There. I said it once.",
+      () => "The spying game. You did adequately ... Better than adequately. There. I said it once.",
     ],
     errand: [
-      (v) => `You brought the ${v}. Adequate. ... Prompt, even. I shan't make a thing of it.`,
+      (v) => `You brought the ${v}. Adequate ... Prompt, even. I shan't make a thing of it.`,
       () => "I asked, and it was fetched. This is how things ought to go. It is not how they usually go.",
     ],
     raised_by: [
       (v) => `${v} raised me. They did well. Look at the result.`,
-      (v) => `${v}. ... They had taste. You can see where it went.`,
+      (v) => `${v} ... They had taste. You can see where it went.`,
     ],
     raised_favorite: [
       (v) => `${v}, they fed me. I had standards even then. It met them.`,
     ],
     built_floor: [
-      () => "I watched you lay that floor. Level, even, unsupervised. ... I'm taking partial credit. I watched.",
+      () => "I watched you lay that floor. Level, even, unsupervised ... I'm taking partial credit. I watched.",
     ],
     planted: [(v) => `You planted ${v}. Neat rows. I noticed. I notice everything worth noticing.`],
     harvested: [
@@ -454,7 +455,7 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
   gremlin: {
     hum: [
       () => "The humming one! I tried to take a bit of it. There isn't a bit of it. It's all the bit.",
-      () => "Nobody knows it's out there. ... You do. I do. That's a small enough number to be interesting.",
+      () => "Nobody knows it's out there ... You do. I do. That's a small enough number to be interesting.",
     ],
     company: [
       () => "We went round together. I found four things. You saw two of them.",
@@ -466,7 +467,7 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
     climbed: [
       () => "Up the steps! There's NOTHING up there. Nothing! You can't even take it! I tried!",
-      () => "I have been somewhere with no edges. Nowhere to put a thing. ... I hated it. I want to go back.",
+      () => "I have been somewhere with no edges. Nowhere to put a thing ... I hated it. I want to go back.",
     ],
     hid: [
       () => "I found two things behind that tree while I was hiding. Kept both. Great game.",
@@ -478,17 +479,17 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
     ],
     errand: [
       (v) => `The ${v}. Mine now. It was always going to be mine. You just made it faster.`,
-      () => "You did the errand. Straight. No swap, no trick. ... I don't know what to do with that.",
+      () => "You did the errand. Straight. No swap, no trick ... I don't know what to do with that.",
     ],
     raised_by: [
       (v) => `${v} raised me. They hid things from me. Training, basically.`,
-      (v) => `${v}. They knew where everything was too. We competed. ... They let me win. I let them think that.`,
+      (v) => `${v}. They knew where everything was too. We competed ... They let me win. I let them think that.`,
     ],
     raised_favorite: [
       (v) => `${v}. They'd hide it. I'd find it. A game with one rule, and I won constantly.`,
     ],
     built_floor: [
-      () => "New boards. I checked under them the day you laid them. ... Nothing yet. I'll check again.",
+      () => "New boards. I checked under them the day you laid them ... Nothing yet. I'll check again.",
     ],
     planted: [
       (v) => `You buried ${v} on purpose and you're going to dig it up LATER. We are not so different.`,
@@ -500,47 +501,47 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
   },
   carrot: {
     hum: [
-      () => "I heard it before I saw it. ... I have not decided what I think. It has been some time.",
-      () => "The hum. ... Still going, I expect. Some things just hold a note.",
+      () => "I heard it before I saw it ... I have not decided what I think. It has been some time.",
+      () => "The hum ... Still going, I expect. Some things just hold a note.",
     ],
     company: [
-      () => "We walked out. The stall kept. Nothing was lost. ... It was a good day.",
-      () => ". ... We walked. It was enough.",
+      () => "We walked out. The stall kept. Nothing was lost ... It was a good day.",
+      () => "... We walked. It was enough.",
     ],
     delved: [
       () => "I went below the soil. Voluntarily. I have thoughts I am not ready to share.",
-      () => "It's all patience down there. ... I fit right in.",
+      () => "It's all patience down there ... I fit right in.",
     ],
     climbed: [
-      () => "I have been above the soil. Well above. ... Nothing grows there. I checked. Twice.",
+      () => "I have been above the soil. Well above ... Nothing grows there. I checked. Twice.",
     ],
     hid: [
       () => "... We played, once. In among the quiet. I liked it.",
-      () => "The hiding. ... A good spot holds you like soil. I found a good spot.",
+      () => "The hiding ... A good spot holds you like soil. I found a good spot.",
     ],
     spied: [
       () => "... You found the thing I saw. So we've both seen it now. That's the game, I think.",
-      () => "I spied. You walked until you saw it too. ... Simple. Complete.",
+      () => "I spied. You walked until you saw it too ... Simple. Complete.",
     ],
     errand: [
-      (v) => `The ${v}. ... Yes. That's the one I asked for. Thank you. We're not going to discuss it further.`,
-      (v) => `The ${v} arrived. ... I still think about that. Briefly. Warmly.`,
+      (v) => `The ${v} ... Yes. That's the one I asked for. Thank you. We're not going to discuss it further.`,
+      (v) => `The ${v} arrived ... I still think about that. Briefly. Warmly.`,
     ],
     // An imported carrot has a raising to remember and eyes for a day's work.
     raised_by: [
-      (v) => `${v} raised me. ... I came up well. That's them, mostly.`,
+      (v) => `${v} raised me ... I came up well. That's them, mostly.`,
     ],
     raised_favorite: [
-      (v) => `They fed me ${v}, back then. ... I have no comment beyond that it was excellent.`,
+      (v) => `They fed me ${v}, back then ... I have no comment beyond that it was excellent.`,
     ],
-    built_floor: [() => "You laid a floor. I watched. ... Level. Good."],
+    built_floor: [() => "You laid a floor. I watched ... Level. Good."],
     planted: [
-      (v) => `You planted ${v}. ... Correctly, too. I said nothing. I didn't need to.`,
+      (v) => `You planted ${v} ... Correctly, too. I said nothing. I didn't need to.`,
     ],
     harvested: [
-      (v) => `${v}, out of the ground. ... Clean pull. I notice these things.`,
+      (v) => `${v}, out of the ground ... Clean pull. I notice these things.`,
     ],
-    dug: [() => "You dug. ... The ground doesn't mind. I asked."],
+    dug: [() => "You dug ... The ground doesn't mind. I asked."],
   },
   office: {
     hum: [
@@ -550,7 +551,7 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
       () => "We went out. No agenda, no minutes, no follow-up. I still think about it.",
     ],
     delved: [
-      () => "I was underground. Unfiled. Unreachable. ... Genuinely the best afternoon of my retirement.",
+      () => "I was underground. Unfiled. Unreachable ... Genuinely the best afternoon of my retirement.",
     ],
     climbed: [
       () => "We went up some steps that are on no plan of the district. I have not raised it. I will not.",
@@ -606,7 +607,7 @@ export const RESIDENT_MEMORY: Partial<Record<AdultForm, Partial<Record<string, (
 const FESTIVAL_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
   scholar: [
     (v) => `${v}. I took field notes. They are mostly about the crowd, which is the more interesting phenomenon.`,
-    (v) => `. ... I have been writing up ${v}. The write-up is longer than the event.`,
+    (v) => `... I have been writing up ${v}. The write-up is longer than the event.`,
   ],
   dog: [
     (v) => `${v}! I was there! Everyone was there! It was the best one, and so was the last one!`,
@@ -614,19 +615,19 @@ const FESTIVAL_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
     (v) => `${v}! I sat at the FRONT! I checked all the spots first. The front won!`,
   ],
   blob: [
-    (v) => `${v} moved me. ... I say that every year and every year it is true again.`,
+    (v) => `${v} moved me ... I say that every year and every year it is true again.`,
     (v) => `Nobody who was not at ${v} will ever really understand it. I have tried explaining. I will keep trying.`,
   ],
   menace: [
-    (v) => `${v} was tolerable. ... The standing about was well organised, which is not nothing.`,
+    (v) => `${v} was tolerable ... The standing about was well organised, which is not nothing.`,
     (v) => `I attended ${v}. Briefly. I was seen there, which was the point.`,
   ],
   gremlin: [
-    (v) => `Good crowd at ${v}. Good pockets. ... I didn't. But there were.`,
+    (v) => `Good crowd at ${v}. Good pockets ... I didn't. But there were.`,
     (v) => `${v}. I stayed at the back. Best view, back there. Nobody looks behind them.`,
   ],
   carrot: [
-    (v) => `${v} happened. ... Yes. I was present for it. We can leave it there.`,
+    (v) => `${v} happened ... Yes. I was present for it. We can leave it there.`,
   ],
   office: [
     (v) => `${v} was held. The paperwork for it is already complete, which is unusual and I intend to enjoy it.`,
@@ -668,7 +669,7 @@ for (const [form, lines] of Object.entries(FESTIVAL_LINES)) {
 const SHOWER_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
   scholar: [
     (v) => `We were out for ${v}. I counted for a while and then I stopped counting, which I want noted.`,
-    () => ". ... I have no methodology for that. I stood there like everybody else.",
+    () => "... I have no methodology for that. I stood there like everybody else.",
   ],
   dog: [
     (v) => `${v}! The sky was DOING things! I looked up the whole time! My neck hurt after and it was WORTH IT!`,
@@ -676,11 +677,11 @@ const SHOWER_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
     () => "The lights went ACROSS the sky and I ran under them! I kept up for a bit!",
   ],
   blob: [
-    (v) => `${v}. ... An entire performance, no stage, no notes, and not one of them took a bow.`,
+    (v) => `${v} ... An entire performance, no stage, no notes, and not one of them took a bow.`,
     () => "I have never been so thoroughly upstaged, and I was not even working.",
   ],
   menace: [
-    (v) => `We watched ${v}. I stayed out longer than I meant to. ... That is all I intend to say about it.`,
+    (v) => `We watched ${v}. I stayed out longer than I meant to ... That is all I intend to say about it.`,
     () => "The sky put on a display and I stood in a field to look at it. Repeat that and I'll deny it.",
   ],
   gremlin: [
@@ -688,10 +689,10 @@ const SHOWER_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
     () => "Nobody owns those. Nobody's even claimed them. I find that very relaxing and I don't know why.",
   ],
   carrot: [
-    (v) => `. ... ${v}. Yes. I was out for that one. It was better than I was expecting.`,
+    (v) => `... ${v}. Yes. I was out for that one. It was better than I was expecting.`,
   ],
   office: [
-    (v) => `${v} took place. Unscheduled, unminuted, unreported. ... I have decided not to file it.`,
+    (v) => `${v} took place. Unscheduled, unminuted, unreported ... I have decided not to file it.`,
   ],
 };
 
@@ -700,7 +701,7 @@ const SHOWER_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
 const FAR_OUT_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
   scholar: [
     () => "We got out past where anything is arranged. The ground stops being about us. I found that steadying.",
-    () => ". ... No survey. No datum. Nothing to measure from, so nothing to measure. I took no notes at all.",
+    () => "... No survey. No datum. Nothing to measure from, so nothing to measure. I took no notes at all.",
   ],
   dog: [
     () => "We went SO far. Past everything! There was nothing there and it was the BEST nothing!",
@@ -708,19 +709,19 @@ const FAR_OUT_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
     () => "Past the edge of everything! My legs are still proud.",
   ],
   blob: [
-    () => "We walked until there was no audience. ... I performed anyway. You were very kind about it.",
+    () => "We walked until there was no audience ... I performed anyway. You were very kind about it.",
     () => "Out there the town is a rumour. I have never had a better room and there was no room.",
   ],
   menace: [
-    () => "You walked me to the end of the arranged world. ... I would go again. Do not make an occasion of it.",
+    () => "You walked me to the end of the arranged world ... I would go again. Do not make an occasion of it.",
     () => "There is nothing out there. Nothing at all. I stayed a good while, looking at it.",
   ],
   gremlin: [
     () => "Nobody's been out there! Nothing's been moved! Everything I touched was FIRST!",
-    () => "No fences that far out. ... I looked for one for an hour. I wanted to move it.",
+    () => "No fences that far out ... I looked for one for an hour. I wanted to move it.",
   ],
   carrot: [
-    () => "We went past the last of the tended ground. ... I don't grow out there. Nothing does. It was fine.",
+    () => "We went past the last of the tended ground ... I don't grow out there. Nothing does. It was fine.",
   ],
   office: [
     () => "We left the district entirely. There is no form for that, and I have looked.",
@@ -733,7 +734,7 @@ const FAR_OUT_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
 const WINTER_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
   scholar: [
     () => "We were out when the cold arrived. I recorded the day. I was wrong about the day — it had been coming for a week.",
-    () => ". ... Everything simply stops, and none of it is dead. I have read about it. Reading about it is not the same.",
+    () => "... Everything simply stops, and none of it is dead. I have read about it. Reading about it is not the same.",
   ],
   dog: [
     () => "It went COLD and we were OUTSIDE! The ground was hard and it made a NOISE when I ran on it!",
@@ -741,19 +742,19 @@ const WINTER_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
     () => "The cold came and you were there and I ran a circle around the whole moment.",
   ],
   blob: [
-    () => "The colour left. ... I have been trying to do that on purpose for years, and the field did it while we watched.",
+    () => "The colour left ... I have been trying to do that on purpose for years, and the field did it while we watched.",
     () => "We stood out in it. The whole town went quiet and not one of them was doing it for effect.",
   ],
   menace: [
     () => "We were caught out in the cold together. I did not complain, which you may take as a compliment.",
-    () => "The trees gave up entirely. ... Frankly, a good look on them. Nobody asked me.",
+    () => "The trees gave up entirely ... Frankly, a good look on them. Nobody asked me.",
   ],
   gremlin: [
     () => "Everything went grey and now you can SEE the shapes of things. Best season for finding. Obviously.",
     () => "Nothing grows over anything in the cold. It's all just sitting there, being findable.",
   ],
   carrot: [
-    () => "The cold came while we were out in it. ... I don't mind it. I'm not going to explain why.",
+    () => "The cold came while we were out in it ... I don't mind it. I'm not going to explain why.",
   ],
   office: [
     () => "The season turned while we were standing in it. Nobody filed anything. It turned regardless.",
@@ -791,13 +792,13 @@ for (const [kind, table] of [
 // an answer key standing next to it.
 // Every line hands the quote over as a DOCUMENT — a card, a draft, a submitted
 // revision — never as a plain assertion. Placards carry her revision markers
-// ("Mushroom. ... Corrected."), so a scholar who says one flat sounds like she
+// ("Mushroom ... Corrected."), so a scholar who says one flat sounds like she
 // is reading aloud from someone else's page mid-sentence. Framed as her own
 // paperwork, the marker becomes part of the thing she is holding up.
 export const SCHOLAR_DISSENT: ((t: string, r: string) => string)[] = [
   (t, r) => `I have read her card on the ${t}. I have written my own. It reads: "${r}"`,
   (t, r) => `The ${t} is misattributed. My card would read: "${r}" ... She has been told.`,
-  (t, r) => `. ... The ${t}. Her placard is a guess in a nice font. Mine reads: "${r}"`,
+  (t, r) => `... The ${t}. Her placard is a guess in a nice font. Mine reads: "${r}"`,
   (t, r) => `Ask me about the ${t}. I submitted a revision — "${r}" — and heard nothing back.`,
   (t, r) => `Between us: my draft card for the ${t} reads "${r}" I am not permitted near the cases with a pen.`,
 ];
@@ -828,7 +829,7 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
     ],
     homeless: [
       () => "My bed is gone. I've filed the observation under 'abrupt'.",
-      () => ". ... I'm told the plaza is character-building. I'm collecting data on that.",
+      () => "... I'm told the plaza is character-building. I'm collecting data on that.",
     ],
     roofless: [
       () => "The walls have left. The bed remains. I am studying the sky, involuntarily.",
@@ -876,7 +877,7 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
     homeless: [() => "My bed has been deaccessioned. No form was filed. I'd have accepted a form."],
     roofless: [
       () => "The roof is absent. I have opened a file on it. The file is also open to the sky.",
-      () => "No walls to speak of. ... I am, technically, working from home.",
+      () => "No walls to speak of ... I am, technically, working from home.",
     ],
     sealed: [
       () => "There is no door. Access denied. To me. By me. On my own behalf.",
@@ -904,11 +905,11 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
   },
   menace: {
     delight_finish: [
-      (v) => `It's ${v}. ... You paid attention. I am not going to say more than that.`,
+      (v) => `It's ${v} ... You paid attention. I am not going to say more than that.`,
       () => "You built it in the good one. I noticed immediately. I said nothing for an hour.",
     ],
     delight_piece: [
-      (v) => `A ${v}. ... You were paying attention. I won't be saying more than that.`,
+      (v) => `A ${v} ... You were paying attention. I won't be saying more than that.`,
       (v) => `You put a ${v} in it. I know what that means. Don't make me say what it means.`,
     ],
     homeless: [() => "My bed. Gone. I am choosing to find this dramatic rather than upsetting."],
@@ -922,7 +923,7 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
     ],
     sealed: [
       () => "There is no door. I am not going to climb. I have never climbed.",
-      () => "Sealed. I am to be admired from outside, then. ... Fine. That works.",
+      () => "Sealed. I am to be admired from outside, then ... Fine. That works.",
     ],
     bare: [() => "It is empty. I am the decor. Still — one could add to me."],
     grand: [
@@ -984,23 +985,23 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
       (v) => `You built it in ${v}. You understand the assignment. The assignment is atmosphere.`,
     ],
     delight_piece: [
-      (v) => `A ${v}. ... The room has a focal point now. So do I.`,
+      (v) => `A ${v} ... The room has a focal point now. So do I.`,
       (v) => `You put a ${v} in it. Staging. You understand staging.`,
     ],
     homeless: [
       () => "I have been made homeless. Tragically. Beautifully. Someone should be watching this.",
-      () => "No bed. ... I shall sleep dramatically against whatever's nearest. Observe.",
+      () => "No bed ... I shall sleep dramatically against whatever's nearest. Observe.",
     ],
     roofless: [
-      () => "No roof. Open air. ... Ambitious, as a venue.",
+      () => "No roof. Open air ... Ambitious, as a venue.",
       () => "The walls have gone and left the bed standing in the round.",
     ],
     sealed: [
       () => "There is no door. My entrance has nowhere to happen. THAT is the tragedy.",
-      () => "Sealed. An unenterable room. ... Conceptually, I admire it. I cannot live in it.",
+      () => "Sealed. An unenterable room ... Conceptually, I admire it. I cannot live in it.",
     ],
     bare: [
-      () => "An empty stage. ... I have worked with less. I have never liked it.",
+      () => "An empty stage ... I have worked with less. I have never liked it.",
       () => "Bare boards and a bed. The audience will have to imagine the rest.",
     ],
     grand: [() => "The proportions are theatrical. I enter it. I make an entrance."],
@@ -1011,7 +1012,7 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
     ],
     finish: [
       (v) => `${v}, throughout. The room commits. I respect a room that commits.`,
-      (v) => `Done in ${v}. ... It sets a tone before I have said a word.`,
+      (v) => `Done in ${v} ... It sets a tone before I have said a word.`,
     ],
   },
   gremlin: {
@@ -1025,15 +1026,15 @@ export const RESIDENT_HOME: Partial<Record<AdultForm, Partial<Record<string, ((v
       // Both roofless banks reached for weather, which is the one thing a
       // missing roof cannot expose you to here.
       () => "No roof. Everything in there is just sitting under the open sky. Some of it isn't mine.",
-      () => "It's open. Anyone could reach in. ... I'd reach in.",
+      () => "It's open. Anyone could reach in ... I'd reach in.",
     ],
     sealed: [
-      () => "No door. I got in anyway. Don't ask how. ... There's no door.",
+      () => "No door. I got in anyway. Don't ask how ... There's no door.",
       () => "Sealed up. Which is a challenge, and I've accepted it.",
     ],
     bare: [
       () => "Nothing in it yet. Give me a week.",
-      () => "Empty room. ... Empty is just pre-full. I know rooms.",
+      () => "Empty room ... Empty is just pre-full. I know rooms.",
     ],
     grand: [
       (v) => `${v} tiles. Do you know how much I can fit in ${v} tiles? Neither do I. Yet.`,
@@ -1091,7 +1092,7 @@ export const RESIDENT_HISTORY: Partial<
     ],
     built_floor: [
       () => "You laid this floor. I've measured it. It's within tolerance, which is a compliment.",
-      () => "These are your boards. ... I stand on them daily and think about the labour. Briefly.",
+      () => "These are your boards ... I stand on them daily and think about the labour. Briefly.",
     ],
   },
   office: {
@@ -1100,7 +1101,7 @@ export const RESIDENT_HISTORY: Partial<
       (w) => `This is where ${w} was first encountered. I remember rooms. It's what I have.`,
     ],
     built_floor: [
-      () => "You laid this floor yourself. Unpermitted. ... Excellent work. I'd have approved it.",
+      () => "You laid this floor yourself. Unpermitted ... Excellent work. I'd have approved it.",
       () => "These boards went down without a requisition. I've decided not to notice.",
     ],
   },
@@ -1110,13 +1111,13 @@ export const RESIDENT_HISTORY: Partial<
       (w) => `This is the room where you met ${w}. I watched. I watch everything in here.`,
     ],
     built_floor: [
-      () => "You put this floor down. Personally. ... I have not tripped on it once, which is my review.",
+      () => "You put this floor down. Personally ... I have not tripped on it once, which is my review.",
       () => "Your boards. Every one. I've walked the whole thing checking. They held.",
     ],
   },
   carrot: {
-    met: [(w) => `${w} was in here first. ... It shows, if you know how to look.`],
-    built_floor: [() => "Your boards. ... Laid well. The room agrees."],
+    met: [(w) => `${w} was in here first ... It shows, if you know how to look.`],
+    built_floor: [() => "Your boards ... Laid well. The room agrees."],
   },
   dog: {
     met: [
@@ -1132,12 +1133,12 @@ export const RESIDENT_HISTORY: Partial<
   },
   blob: {
     met: [
-      (w) => `${w} made their entrance here. ... I have thought about restaging it.`,
+      (w) => `${w} made their entrance here ... I have thought about restaging it.`,
       (w) => `This room has met ${w}. Rooms remember an entrance. So do I.`,
     ],
     built_floor: [
       () => "You built this floor. I have performed on it. It does not creak, which is a loss.",
-      () => "Your boards. ... A stage is only ever somebody's floor, taken seriously.",
+      () => "Your boards ... A stage is only ever somebody's floor, taken seriously.",
     ],
   },
   gremlin: {
@@ -1176,10 +1177,10 @@ export const RESIDENT_WARM: Partial<Record<AdultForm, Partial<Record<"familiar" 
       "I cite you in conversation more than is professional.",
     ],
     close: [
-      "I don't say this to many subjects. ... The research is better when you're around.",
+      "I don't say this to many subjects ... The research is better when you're around.",
       "My conclusion, after extensive observation: you're my favourite variable.",
-      ". ... I'd have retired much worse, without you nearby.",
-      "The town was a study. You made it a home. ... That's in the notes now.",
+      "... I'd have retired much worse, without you nearby.",
+      "The town was a study. You made it a home ... That's in the notes now.",
     ],
   },
   office: {
@@ -1194,9 +1195,9 @@ export const RESIDENT_WARM: Partial<Record<AdultForm, Partial<Record<"familiar" 
       "If I still had a calendar, you'd be the only thing on it.",
     ],
     close: [
-      ". ... I'm glad you moved in. That's the whole update.",
+      "... I'm glad you moved in. That's the whole update.",
       "You made retirement worth the paperwork.",
-      ". ... Retirement gave me time. You gave it a point. Filed under: said once.",
+      "... Retirement gave me time. You gave it a point. Filed under: said once.",
     ],
   },
   menace: {
@@ -1213,10 +1214,10 @@ export const RESIDENT_WARM: Partial<Record<AdultForm, Partial<Record<"familiar" 
       "You may borrow my opinion of you. It's high.",
     ],
     close: [
-      "You may consider yourself my favourite. Tell no one. ... Tell everyone.",
+      "You may consider yourself my favourite. Tell no one ... Tell everyone.",
       "I have standards. You've met most of them now.",
       "I have exactly one soft spot. Guard it. It's you. Tell NO one.",
-      ". ... I was going to say something withering. I couldn't find anything. That's what you've done.",
+      "... I was going to say something withering. I couldn't find anything. That's what you've done.",
     ],
   },
   dog: {
@@ -1235,7 +1236,7 @@ export const RESIDENT_WARM: Partial<Record<AdultForm, Partial<Record<"familiar" 
     close: [
       "I'd follow you anywhere. I have, mostly. You didn't notice.",
       "Best day. Every day you're here is best day.",
-      ". ... You're my whole list of favourite people. There were other names on it. I lost them on purpose.",
+      "... You're my whole list of favourite people. There were other names on it. I lost them on purpose.",
       "Wherever you're going, that's the good direction. That's how I navigate now.",
     ],
   },
@@ -1254,8 +1255,8 @@ export const RESIDENT_WARM: Partial<Record<AdultForm, Partial<Record<"familiar" 
     ],
     close: [
       "You're my leading light. Don't tell the plaza.",
-      ". ... I'd hold the stage for you. Curtain and all.",
-      ". ... There are performances I only give when you're here. Most of them are just talking.",
+      "... I'd hold the stage for you. Curtain and all.",
+      "... There are performances I only give when you're here. Most of them are just talking.",
       "You're in the programme now. Permanently. There's no removing anyone from the programme.",
     ],
   },
@@ -1273,21 +1274,21 @@ export const RESIDENT_WARM: Partial<Record<AdultForm, Partial<Record<"familiar" 
       "You can look in my collection any time. Looking's free.",
     ],
     close: [
-      "I'd never take anything of yours. ... I'd borrow it dramatically and return it.",
+      "I'd never take anything of yours ... I'd borrow it dramatically and return it.",
       "You're my favourite. Don't check your fences.",
       "You could leave your things anywhere in this town. Anywhere. I'd guard them. Me.",
-      ". ... You're the one thing here I'd never rearrange.",
+      "... You're the one thing here I'd never rearrange.",
     ],
   },
   carrot: {
-    familiar: ["... You again. Good.", "I've started expecting you. ... That's all."],
+    familiar: ["... You again. Good.", "I've started expecting you ... That's all."],
     friend: [
-      "You're one of the quiet good things here. ... Don't make it strange.",
-      "When you're about, the day goes easier. ... I've noticed. That's all.",
+      "You're one of the quiet good things here ... Don't make it strange.",
+      "When you're about, the day goes easier ... I've noticed. That's all.",
     ],
     close: [
-      ". ... I don't bless much on purpose. You're on the list.",
-      "You're welcome at my patch any hour. ... That's as warm as I get. It's quite warm.",
+      "... I don't bless much on purpose. You're on the list.",
+      "You're welcome at my patch any hour ... That's as warm as I get. It's quite warm.",
     ],
   },
 };
@@ -1309,11 +1310,11 @@ export const RESIDENT_KIN: Partial<Record<AdultForm, string[]>> = {
     "You keep notes too. I can tell. The eyes do a filing thing.",
   ],
   blob: [
-    "Another blob. ... The stage is big enough for both of us. It isn't. We'll manage.",
+    "Another blob ... The stage is big enough for both of us. It isn't. We'll manage.",
     "You feel the drama in this town too. I can tell. We're the only ones holding it up.",
   ],
   menace: [
-    "Another menace. ... The town can support two. Barely. I've done the arithmetic.",
+    "Another menace ... The town can support two. Barely. I've done the arithmetic.",
     "You have standards. I have standards. Between us the town doesn't stand a chance.",
   ],
   gremlin: [
@@ -1322,9 +1323,9 @@ export const RESIDENT_KIN: Partial<Record<AdultForm, string[]>> = {
   ],
   office: [
     "You were office too, back before. I can tell. The posture.",
-    "We both know what a Tuesday used to mean. ... Look at us now.",
+    "We both know what a Tuesday used to mean ... Look at us now.",
   ],
-  carrot: ["... You too, then. ... Good."],
+  carrot: ["... You too, then ... Good."],
 };
 
 // --- Absence greetings (Phase 12) ---------------------------------------------
@@ -1346,8 +1347,8 @@ export const RESIDENT_ABSENCE: Partial<Record<AdultForm, { days: string[]; weeks
     ],
     weeks: [
       "You were gone a while. I filed you under 'pending'. Reopening the file.",
-      ". ... Weeks. I counted, obviously. Counting is free.",
-      ". ... I began a study of your absence. Inconclusive. Glad it's over.",
+      "... Weeks. I counted, obviously. Counting is free.",
+      "... I began a study of your absence. Inconclusive. Glad it's over.",
     ],
   },
   office: {
@@ -1358,7 +1359,7 @@ export const RESIDENT_ABSENCE: Partial<Record<AdultForm, { days: string[]; weeks
     ],
     weeks: [
       "Gone long enough that I nearly opened a ledger. Nearly. I lay back down.",
-      ". ... A long one, that. The calendar stayed blank the whole time. I checked twice.",
+      "... A long one, that. The calendar stayed blank the whole time. I checked twice.",
       "A long one. I'd have sent a memo, but there's nowhere to send anything. It's still strange. It's still wonderful.",
     ],
   },
@@ -1383,8 +1384,8 @@ export const RESIDENT_ABSENCE: Partial<Record<AdultForm, { days: string[]; weeks
     ],
     weeks: [
       "An extended absence. The stage felt it. I performed to the gap, and the gap was moved.",
-      ". ... You were gone a long time. I rehearsed a welcome. This is it. There was more.",
-      "Weeks offstage. ... Places, everyone. The run resumes.",
+      "... You were gone a long time. I rehearsed a welcome. This is it. There was more.",
+      "Weeks offstage ... Places, everyone. The run resumes.",
     ],
   },
   menace: {
@@ -1401,7 +1402,7 @@ export const RESIDENT_ABSENCE: Partial<Record<AdultForm, { days: string[]; weeks
   },
   gremlin: {
     days: [
-      "You were gone. I touched nothing. ... Two things. I touched two things.",
+      "You were gone. I touched nothing ... Two things. I touched two things.",
       "Back already? Good. Things stay where they are when you're around. Mostly.",
       "Short trip? Everything's where you left it. Roughly.",
     ],
@@ -1487,12 +1488,12 @@ export const RESIDENT_MIDST: Partial<Record<AdultForm, Partial<Record<"gathered"
   },
   carrot: {
     gathered: [
-      () => "That noise all morning was you, then. ... Thought so.",
-      () => "Busy day. ... The stumps say so.",
+      () => "That noise all morning was you, then ... Thought so.",
+      () => "Busy day ... The stumps say so.",
     ],
     harvested: [
-      (v) => `${v}, and more before it. ... The ground's having a generous day.`,
-      () => "A proper harvest morning. ... Don't let me slow it.",
+      (v) => `${v}, and more before it ... The ground's having a generous day.`,
+      () => "A proper harvest morning ... Don't let me slow it.",
     ],
   },
   gremlin: {
@@ -1554,7 +1555,7 @@ export const COMPANY_YES: Partial<Record<AdultForm, string[]>> = {
     "Yes! Wait, what was the question. Doesn't matter. Yes!",
   ],
   blob: ["A tour. With me in it. Very well.", "I accept. I'll need no direction. I never do.", "You want ME? ... Correct."],
-  menace: ["I shall accompany you. Don't make it strange.", "Fine. But I'm not carrying anything.", "Very well. Walk slightly behind me. ... Fine. Beside."],
+  menace: ["I shall accompany you. Don't make it strange.", "Fine. But I'm not carrying anything.", "Very well. Walk slightly behind me ... Fine. Beside."],
   gremlin: ["Ooh. Where are we going. Is it somewhere with things in it.", "Yes. I'll be good. Mostly good.", "Yes. If we find anything, splitsies. I do the finding."],
   office: ["I'll come. I'm not filing it. That's the treat.", "Out of office. Genuinely, for once.", "Approved. Effective immediately."],
   // NOT "the stall keeps" — that line predated `ROOTED` (sim/company.ts). The
@@ -1587,27 +1588,27 @@ export const COMPANY_IDLE: Partial<Record<AdultForm, string[]>> = {
   menace: ["I'm still here. Nobody need know why.", "Carry on. I'm observing. Judgementally, but present.", "We look impressive together. That's mostly me. Partly you. Mostly me."],
   gremlin: ["I haven't taken anything. Recently.", "Ooh, what's that. No, keep going. But ooh.", "I've pocketed nothing so far. Longest streak of my life."],
   office: ["No agenda. No minutes. I'm coping.", "This is the longest I've been away from the desk. It's fine. It's fine.", "This walk has no agenda. I've checked twice. Marvellous."],
-  carrot: ["The soil changes underfoot. I notice these things.", "...", "Still here. ... Still walking."],
+  carrot: ["The soil changes underfoot. I notice these things.", "...", "Still here ... Still walking."],
 };
 
 /** And the goodbye, when their own day takes them back (sim/company.ts
  *  `dayOver`). Never an apology and never a request that you do it again —
  *  they have a life, and the invitation is always open. */
 export const COMPANY_BYE: Partial<Record<AdultForm, string[]>> = {
-  scholar: ["That's the light gone. I'll write it up. ... Good day's work.", "I'm off. The notebook is fuller than it was.", "Home. The notes are full. That's a good day by definition."],
+  scholar: ["That's the light gone. I'll write it up ... Good day's work.", "I'm off. The notebook is fuller than it was.", "Home. The notes are full. That's a good day by definition."],
   dog: [
     "Is it over? It's over. It was the best one.",
     "Going home. I'll be at the board. Come and get me.",
     "That was the best one so far. The next one is also going to be the best one.",
   ],
-  blob: ["I must retire. The performance requires rest.", "Exit, mine. ... You were a serviceable co-star.", "I exit. The day was well staged. I'll take my bow at home."],
+  blob: ["I must retire. The performance requires rest.", "Exit, mine ... You were a serviceable co-star.", "I exit. The day was well staged. I'll take my bow at home."],
   menace: ["I'm going in. This was tolerable. Extremely tolerable.", "That's enough of that. Same again sometime.", "I'm retiring for the evening. You did well today. I don't say that. I said it."],
-  gremlin: ["I'm off. Check your pockets. ... They're fine. Check anyway.", "Home. I found four things. You saw two of them.", "Home time. I'm taking a souvenir. It's a leaf. Legitimate leaf."],
+  gremlin: ["I'm off. Check your pockets ... They're fine. Check anyway.", "Home. I found four things. You saw two of them.", "Home time. I'm taking a souvenir. It's a leaf. Legitimate leaf."],
   office: ["Back to the desk. It missed me. It says nothing, but it missed me.", "That's me clocked off. From nothing. Wonderful.", "Day's end. Attendance was taken. It was two. Perfect turnout."],
   carrot: [
     "I'm away home. Go well.",
-    "Evening. ... Blessings, and so on.",
-    "That's my light gone. ... It was a good one.",
+    "Evening ... Blessings, and so on.",
+    "That's my light gone ... It was a good one.",
   ],
 };
 
@@ -1648,7 +1649,7 @@ export const GAME_YES: Partial<Record<GameId, Partial<Record<AdultForm, string[]
       "Yes. I know a spot. It knows me. We have an understanding.",
     ],
     office: [
-      "One game. I'm marking myself absent. ... Off I go.",
+      "One game. I'm marking myself absent ... Off I go.",
       "Approved. I'll be unavailable. For once it's official.",
     ],
     carrot: [
@@ -1700,7 +1701,7 @@ export const GAME_OFFER: Partial<Record<AdultForm, string[]>> = {
 export const GAME_FOUND: Partial<Record<GameId, Partial<Record<AdultForm, string[]>>>> = {
   hide: {
     scholar: [
-      "Found. ... Noted. The spot was sound. The observer was better.",
+      "Found ... Noted. The spot was sound. The observer was better.",
       "Ah. Found. I'll revise the spot. The spot had one flaw, which was you.",
     ],
     dog: [
@@ -1746,7 +1747,7 @@ export const GAME_FOUND: Partial<Record<GameId, Partial<Record<AdultForm, string
     ],
     menace: [
       "That's it. Obviously. I was starting to compose easier clues. Insultingly easy ones.",
-      "Correct. ... I won't be making the next one so merciful.",
+      "Correct ... I won't be making the next one so merciful.",
     ],
     gremlin: [
       "That's the one! And it's still there! Restraint. From both of us.",
@@ -1808,7 +1809,7 @@ export const GAME_GIVEUP: Partial<Record<GameId, Partial<Record<AdultForm, strin
     ],
     blob: [
       "You yield? Then the thing keeps its anonymity. Some performances close early.",
-      "Calling it off. ... The thing will never know how nearly it was seen.",
+      "Calling it off ... The thing will never know how nearly it was seen.",
     ],
     menace: [
       "Giving up. Sensible. The clue was flawless and the fault was everything else.",
@@ -1877,7 +1878,7 @@ export const SPY_CLUE: Partial<Record<AdultForm, Partial<Record<SpyKind, string[
     crop: ["Something being grown at me."],
     building: ["Something with walls. Adequate walls. I've assessed them."],
     furniture: ["Something placed exactly where somebody wanted it. Bold, leaving it out."],
-    ground: ["Something underfoot that thinks it's better than grass. ... It's right."],
+    ground: ["Something underfoot that thinks it's better than grass ... It's right."],
   },
   gremlin: {
     tree: ["Something tall with things probably in it. I haven't checked the top. Yet."],
@@ -1919,7 +1920,7 @@ export const SPY_CLUE: Partial<Record<AdultForm, Partial<Record<SpyKind, string[
 export const SITTING_IDLE: Partial<Record<AdultForm, string[]>> = {
   scholar: [
     "Sitting. Officially, this is data collection. The data is the square. It's good data.",
-    "I have no notes right now. ... Don't put that in the notes.",
+    "I have no notes right now ... Don't put that in the notes.",
     "From here you can see nearly everything without moving. I should sit more. Professionally.",
   ],
   dog: [
@@ -1935,7 +1936,7 @@ export const SITTING_IDLE: Partial<Record<AdultForm, string[]>> = {
   menace: [
     "We're sitting here now. This spot is ours. I've decided. Historically it was always ours.",
     "I permit this bench to hold me. It's doing adequately.",
-    "Sit straight. ... Or don't. It's a day off. I'm told those exist.",
+    "Sit straight ... Or don't. It's a day off. I'm told those exist.",
   ],
   gremlin: [
     "Sitting's underrated. You can watch everything from one spot. Where it all is. Who leaves what where.",
@@ -1945,7 +1946,7 @@ export const SITTING_IDLE: Partial<Record<AdultForm, string[]>> = {
   office: [
     "Sitting with no meeting attached. Extraordinary. I keep waiting for an agenda and none comes.",
     "In my working days a sit like this required a break request. I'm having it anyway. I'm having it twice.",
-    "Nothing is pending. Nothing at all. ... I could sit here forever.",
+    "Nothing is pending. Nothing at all ... I could sit here forever.",
   ],
   carrot: [
     "...",
@@ -1971,7 +1972,7 @@ export const LOOK_AT: Partial<Record<AdultForm, Partial<Record<SpyKind, string[]
   scholar: {
     tree: ["Yes. A fine specimen. I've dated it: older than my notes, younger than my confidence."],
     rock: ["I see it. Igneous, probably. Opinionated, certainly."],
-    water: ["Water. Holding its level. ... I've checked before. It always is."],
+    water: ["Water. Holding its level ... I've checked before. It always is."],
     crop: ["Coming along. I'd estimate — no, I'll let it surprise us both."],
     building: ["Sound construction. I've reviewed it just now, informally, with my eyes."],
     furniture: ["Well placed. The angles agree with each other. That's rarer than you'd think."],
@@ -1998,7 +1999,7 @@ export const LOOK_AT: Partial<Record<AdultForm, Partial<Record<SpyKind, string[]
   menace: {
     tree: ["I've seen it. It's adequate. Tall, committed, slightly smug. We get along."],
     rock: ["Yes. The rock. It was here before all of us and intends to outlast me specifically."],
-    water: ["Wet. Persistent. No ambition. ... I could learn nothing from it."],
+    water: ["Wet. Persistent. No ambition ... I could learn nothing from it."],
     crop: ["It's growing. Under my supervision, as far as it knows."],
     building: ["Acceptable walls. I'd have added a parapet. I'd add a parapet to most things."],
     furniture: ["Reasonable placement. I've assessed the sightlines. They favour me."],
@@ -2007,10 +2008,10 @@ export const LOOK_AT: Partial<Record<AdultForm, Partial<Record<SpyKind, string[]
   gremlin: {
     tree: ["Seen it. Checked it. Two hollows, one reachable. Telling you that for free."],
     rock: ["That one's staying. I've tested it. Thoroughly. It's load-bearing for the whole area, spiritually."],
-    water: ["I've been through this bit of water. Nothing in it. ... Nothing I left, anyway."],
+    water: ["I've been through this bit of water. Nothing in it ... Nothing I left, anyway."],
     crop: ["Growing nicely. I haven't touched it. That's me showing respect, that is."],
     building: ["Good building. Strong floor. I know what's under a corner of it. Not saying which."],
-    furniture: ["Nice piece. Good drawers, probably. ... I haven't checked. I've nearly checked."],
+    furniture: ["Nice piece. Good drawers, probably ... I haven't checked. I've nearly checked."],
     ground: ["Somebody laid this properly. Nothing prises up. I say that with authority."],
   },
   carrot: {
@@ -2083,7 +2084,7 @@ export const MOLE_SHALLOW: string[] = [
 export const MOLE_LIT: string[] = [
   "There's a light in my corridor. I didn't ask for a light.",
   "I can see the ceiling now. I'd been managing.",
-  "It's warm, near it. ... I don't stand there.",
+  "It's warm, near it ... I don't stand there.",
   "Very thoughtful. Very bright.",
   "I knew where everything was in the dark. I still do.",
   "That'll be up forever, will it.",
@@ -2108,25 +2109,25 @@ export const MOLE_LIT: string[] = [
 /** Before you have taken any of the dark wood. */
 export const GHOST_QUIET: string[] = [
   "...",
-  "Oh. ... You came all the way out.",
+  "Oh ... You came all the way out.",
   "It's dark here in the day, too. That's the trees.",
   "I don't mind the hour. The hour is the only bit I'm sure of.",
-  "Nobody comes out this far. ... That isn't a complaint.",
+  "Nobody comes out this far ... That isn't a complaint.",
   "You can sit down. It's dry under them.",
   "I was here before the town. I think. It's a long time to be certain about.",
-  "Listen. ... No, that's it. That's the listening.",
+  "Listen ... No, that's it. That's the listening.",
 ];
 
 /** And after. She has an opinion and it is not a rule: nothing stops you, the
  *  trees come back on the ordinary eight hours, and she stays exactly where she
  *  is. Read off the live world (sim/ghost.ts §groveCut), like the Mole's. */
 export const GHOST_CUT: string[] = [
-  "You took one. ... They come back. Everything out here comes back.",
+  "You took one ... They come back. Everything out here comes back.",
   "It's darker at the heart than it looks. People are always surprised.",
   "I heard it go over. It's a particular sound, that one.",
   "Take another if you need it. I'd rather you took it from here than somewhere you'd have to explain.",
-  "There's a gap now. ... I like the gap, actually. More sky.",
-  "You'll build with it. ... Good. It ought to be somewhere warm.",
+  "There's a gap now ... I like the gap, actually. More sky.",
+  "You'll build with it ... Good. It ought to be somewhere warm.",
 ];
 
 // --- The Stray Cosmos, at home (Phase 7c) -----------------------------------------
@@ -2151,13 +2152,13 @@ export const GHOST_CUT: string[] = [
 // She is in, and you have turned up, and it is fine.
 export const COSMOS_HOME: string[] = [
   "...",
-  "Oh. ... You're up.",
+  "Oh ... You're up.",
   "This is where I am, most of the time. There isn't much to it.",
   "It's the same in every direction. I find that restful. Some people don't.",
   "I don't keep anything up here. Things fall.",
-  "You can see the weather arriving from a long way off. ... It never gets here.",
-  "It's very quiet. ... That isn't the same as empty. It took me a while.",
-  "I come down five times a year. ... You've possibly noticed. Or possibly not.",
+  "You can see the weather arriving from a long way off ... It never gets here.",
+  "It's very quiet ... That isn't the same as empty. It took me a while.",
+  "I come down five times a year ... You've possibly noticed. Or possibly not.",
   "Sit anywhere. It's all the same bit.",
   "The steps were here before I was. I've never asked.",
 ];
@@ -2184,10 +2185,10 @@ export interface SeasonBank {
 }
 
 const SEASON_FALLBACK: Record<string, string[]> = {
-  spring: ["Everything's coming up at once. ... It does this every year and it still seems like a lot."],
-  summer: ["Long days. ... Too long, some of them. But long."],
-  autumn: ["It's going gold out there. ... That happens before the other thing happens."],
-  winter: ["Cold. ... It'll pass. It always has so far."],
+  spring: ["Everything's coming up at once ... It does this every year and it still seems like a lot."],
+  summer: ["Long days ... Too long, some of them. But long."],
+  autumn: ["It's going gold out there ... That happens before the other thing happens."],
+  winter: ["Cold ... It'll pass. It always has so far."],
 };
 
 export const RESIDENT_SEASON: Partial<Record<AdultForm, Partial<Record<string, SeasonBank>>>> = {
@@ -2195,30 +2196,30 @@ export const RESIDENT_SEASON: Partial<Record<AdultForm, Partial<Record<string, S
     spring: {
       season: [
         "The growth rate out there is frankly indecent. I have started a log.",
-        "Spring. ... I have four theories about it and no intention of testing any of them.",
+        "Spring ... I have four theories about it and no intention of testing any of them.",
       ],
       crop: [(v) => `The ${v} are up. It is their month. I have written that down as though it were a finding.`],
     },
     summer: {
       season: [
         "The light lasts until an hour I consider unprofessional.",
-        "Summer. ... Everything is happening slightly too fast to take notes on.",
+        "Summer ... Everything is happening slightly too fast to take notes on.",
       ],
-      crop: [(v) => `A ${v} in its own month. ... Nothing about it is different. I checked. Twice.`],
+      crop: [(v) => `A ${v} in its own month ... Nothing about it is different. I checked. Twice.`],
     },
     autumn: {
       season: [
         "The colour change is a withdrawal, not a flourish. Nobody likes hearing that.",
-        "Autumn. ... The most legible season. Everything is labelling itself.",
+        "Autumn ... The most legible season. Everything is labelling itself.",
       ],
       crop: [(v) => `The ${v} have come in on schedule, which is the least interesting thing about them.`],
     },
     winter: {
       season: [
         "The trees are doing nothing. It is a deliberate nothing and I respect it.",
-        "Winter. ... Very little to observe. I observe it anyway.",
+        "Winter ... Very little to observe. I observe it anyway.",
       ],
-      crop: [(v) => `${v}, in this. ... It is the only thing out there with a position on the weather.`],
+      crop: [(v) => `${v}, in this ... It is the only thing out there with a position on the weather.`],
     },
   },
   dog: {
@@ -2243,7 +2244,7 @@ export const RESIDENT_SEASON: Partial<Record<AdultForm, Partial<Record<string, S
     autumn: {
       season: [
         "Everything's crunchy! The whole outside is crunchy!",
-        "Leaves. ... Sorry. I got distracted by leaves.",
+        "Leaves ... Sorry. I got distracted by leaves.",
         "A leaf landed ON me earlier. Just landed there! Best hat I've ever had.",
         "It smells like the ground is putting everything away.",
       ],
@@ -2261,44 +2262,44 @@ export const RESIDENT_SEASON: Partial<Record<AdultForm, Partial<Record<string, S
   },
   blob: {
     spring: {
-      season: ["Spring is a rehearsal for something. ... I have never found out what.", "I feel the sap. ... I have no sap. I feel it regardless."],
-      crop: [(v) => `The ${v}. ... In their season. There is a word for that feeling and I refuse to look it up.`],
+      season: ["Spring is a rehearsal for something ... I have never found out what.", "I feel the sap ... I have no sap. I feel it regardless."],
+      crop: [(v) => `The ${v} ... In their season. There is a word for that feeling and I refuse to look it up.`],
     },
     summer: {
-      season: ["These evenings go on and on. ... I could work with that.", "Summer light is theatrical lighting that nobody had to pay for."],
-      crop: [(v) => `A ${v} in high summer. ... I'm not going to pretend that isn't moving.`],
+      season: ["These evenings go on and on ... I could work with that.", "Summer light is theatrical lighting that nobody had to pay for."],
+      crop: [(v) => `A ${v} in high summer ... I'm not going to pretend that isn't moving.`],
     },
     autumn: {
-      season: ["The whole landscape has gone amber. It's showing off. ... Good.", "Autumn is the season that knows it's being watched."],
+      season: ["The whole landscape has gone amber. It's showing off ... Good.", "Autumn is the season that knows it's being watched."],
       crop: [(v) => `The ${v} arrive, and the light goes gold, and I have to sit down.`],
     },
     winter: {
-      season: ["Bare branches. ... That's staging. Somebody staged that.", "Winter is a long pause and I have never been good at those."],
-      crop: [(v) => `${v}, in the dead of it. ... A performer working an empty house. I understand it completely.`],
+      season: ["Bare branches ... That's staging. Somebody staged that.", "Winter is a long pause and I have never been good at those."],
+      crop: [(v) => `${v}, in the dead of it ... A performer working an empty house. I understand it completely.`],
     },
   },
   carrot: {
     spring: {
       season: [
-        "It's spring. ... Things grow. That's the arrangement.",
-        "Everything's up early this year. Or on time. ... One of those.",
+        "It's spring ... Things grow. That's the arrangement.",
+        "Everything's up early this year. Or on time ... One of those.",
       ],
-      crop: [(v) => `${v}. ... It's the month for them. That is the whole of what that means.`],
+      crop: [(v) => `${v} ... It's the month for them. That is the whole of what that means.`],
     },
     summer: {
-      season: ["Warm. ... Fine.", "Long light. The green makes the most of it. ... So do I, quietly."],
-      crop: [(v) => `${v}. ... Right month. Doesn't make them better. Just makes it the month.`],
+      season: ["Warm ... Fine.", "Long light. The green makes the most of it ... So do I, quietly."],
+      crop: [(v) => `${v} ... Right month. Doesn't make them better. Just makes it the month.`],
     },
     autumn: {
-      season: ["Going gold. ... It does that.", "The gold comes in on its own schedule. ... Always has."],
-      crop: [(v) => `${v}, now. ... Yes. I'm aware of the timing. We're not discussing it.`],
+      season: ["Going gold ... It does that.", "The gold comes in on its own schedule ... Always has."],
+      crop: [(v) => `${v}, now ... Yes. I'm aware of the timing. We're not discussing it.`],
     },
     winter: {
       season: [
-        "Cold. ... The ground doesn't stop. People think it does.",
-        "Cold. ... The roots are fine. I checked on them.",
+        "Cold ... The ground doesn't stop. People think it does.",
+        "Cold ... The roots are fine. I checked on them.",
       ],
-      crop: [(v) => `${v}. In this. ... Sensible of them.`],
+      crop: [(v) => `${v}. In this ... Sensible of them.`],
     },
   },
   menace: {
@@ -2310,7 +2311,7 @@ export const RESIDENT_SEASON: Partial<Record<AdultForm, Partial<Record<string, S
     },
     summer: {
       season: [
-        "Warm. ... People buy less cloth in the warm. I've adjusted for it.",
+        "Warm ... People buy less cloth in the warm. I've adjusted for it.",
         "The warm months. My colours thrive in this light. So do yours, marginally.",
       ],
     },
@@ -2330,25 +2331,25 @@ export const RESIDENT_SEASON: Partial<Record<AdultForm, Partial<Record<string, S
   gremlin: {
     spring: {
       season: [
-        "Ground's soft. ... Things come up out of it that were meant to stay down.",
+        "Ground's soft ... Things come up out of it that were meant to stay down.",
         "Soft ground season. Things practically volunteer themselves.",
       ],
     },
     summer: {
       season: [
-        "Dry ground. Hard digging. ... Good finds, though.",
+        "Dry ground. Hard digging ... Good finds, though.",
         "Long days. More light to find things by. The things don't stand a chance.",
       ],
     },
     autumn: {
       season: [
-        "Leaves cover everything. ... Everything. That's not a complaint either.",
+        "Leaves cover everything ... Everything. That's not a complaint either.",
         "Everything's dropping things. Leaves. Seeds. Standards. I collect two of those.",
       ],
     },
     winter: {
       season: [
-        "Frost turns things up. ... Pushes them. I don't know how. I just collect them.",
+        "Frost turns things up ... Pushes them. I don't know how. I just collect them.",
         "Frost heaves things up for free. Best season for the trade.",
       ],
     },
@@ -2374,7 +2375,7 @@ export const RESIDENT_SEASON: Partial<Record<AdultForm, Partial<Record<string, S
     },
     winter: {
       season: [
-        "Winter. ... The forms are the same forms. That is the point of forms.",
+        "Winter ... The forms are the same forms. That is the point of forms.",
         "Cold quarter. The town files itself indoors. First filing I've approved of in years.",
       ],
     },

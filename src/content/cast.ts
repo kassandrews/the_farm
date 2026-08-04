@@ -203,7 +203,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // counter..." said the name twice and read as a roll call. They may
     // introduce themselves mid-sentence or let the plate do it.
     intro:
-      "This is the counter, and I'm Arabella. Things cross it in both directions, and I keep track of neither. ... That's the entire system. It has yet to fail.",
+      "This is the counter, and I'm Arabella. Things cross it in both directions, and I keep track of neither ... That's the entire system. It has yet to fail.",
     fixed: true,
     // Behind the counter, permanently. Like Gary she is an
     // INSTITUTION rather than a resident: no bed, no ring, no home stop.
@@ -224,7 +224,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // He introduces the pile as a facility with a straight face, which is the
     // whole of his job description.
     intro:
-      "This is the facility. It looks like a pile because it is one. ... Officially, a facility.",
+      "This is the facility. It looks like a pile because it is one ... Officially, a facility.",
     fixed: true,
     // At the heap, north-east of the plaza. An INSTITUTION like the other two:
     // no bed, no ring, no home stop — whatever he does at night, he does here.
@@ -239,7 +239,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     form: "scholar",
     name: "Winifred",
     intro:
-      "I'm Winifred. I curate. The town brings me things, and I decide what they meant. ... Somebody has to.",
+      "I'm Winifred. I curate. The town brings me things, and I decide what they meant ... Somebody has to.",
     fixed: true,
     // The curator, where Prudence is a scholar who happens to live here. That
     // is the whole shape DESIGN §The museum insists on — forms are species, not
@@ -265,7 +265,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // The intro says the quiet part once so his counter opener's "we're not
     // discussing it" has something to be not discussing.
     intro:
-      "The stall is seeds, the seeds are for planting, and I am a carrot. ... We're not discussing the last part.",
+      "The stall is seeds, the seeds are for planting, and I am a carrot ... We're not discussing the last part.",
     fixed: true,
     // Behind his counter, south-west of the plaza. An INSTITUTION like the
     // other four: no bed, no ring, no home stop.
@@ -291,7 +291,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // Dog voice: enthusiastic, exclamatory, brief. His counter is a board he
     // is often not standing at, and the intro owns that up front.
     intro:
-      "I'm Pesto! I do the deliveries. The board has the details and I have the legs. ... Sometimes I am not at the board. That's the legs.",
+      "I'm Pesto! I do the deliveries. The board has the details and I have the legs ... Sometimes I am not at the board. That's the legs.",
     fixed: true,
     // THE ONE INSTITUTION THAT MOVES, and the only reason to break the pattern
     // the other five keep: his institution is DELIVERIES (DESIGN's cast table),
@@ -331,7 +331,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     form: "blob",
     name: "Aurelio",
     intro:
-      "You find me beside the stage. ... The festivals are twelve nights a year. I am the other three hundred and fifty-three.",
+      "You find me beside the stage ... The festivals are twelve nights a year. I am the other three hundred and fifty-three.",
     fixed: true,
     // The last institution. He does not leave the platform, which for a
     // tragedian is not devotion so much as the absence of anywhere better to
