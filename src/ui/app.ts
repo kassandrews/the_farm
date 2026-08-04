@@ -59,7 +59,7 @@ import { qualify, assign, beds, rehomeAcrossStroke, bedKeys, pendingRehome, DISQ
 import { counterBatches, cabinet, cabinetEmpty, file } from "../sim/filings";
 import { journalPages, journalEmpty } from "../sim/notebook";
 import type { CharId, NewcomerId } from "../content/cast";
-import { isNewcomer, isSecret, CAST, charDef } from "../content/cast";
+import { isNewcomer, isSecret, CAST, charDef, livesSomewhere } from "../content/cast";
 import { present } from "../sim/presence";
 import { humLevel } from "../sim/hum";
 import {
@@ -727,7 +727,6 @@ export class App {
     // mistaking "somebody you can talk to" for "somebody who might move in".
     // Found on screen with the Mole, who was politely offered a room in the
     // plaza; `isSecret` is what stops it being found again with each new one.
-    const offerable = beds(world).length > 0 && !isSecret(villagerId);
 
     // Company, on the same terms and for the same reason: asking somebody along
     // is a CONVERSATION, not a mode you toggle from a toolbar. The button only
@@ -742,6 +741,16 @@ export class App {
     // stops being true the day somebody leaves town mid-conversation.
     const them = world.villagers.find((v) => v.id === villagerId);
     if (!them) return;
+    // Somewhere to sleep is only worth offering to somebody who sleeps.
+    //
+    // The seven institutions have no home stop in their ring — every one of
+    // their entries in content/cast.ts says "no bed, no ring, no home stop" —
+    // and they are `fixed`, so they would never walk to a bed they were given.
+    // Offering anyway wrote a claim nobody acted on and quietly took the bed out
+    // of the pool, so furnishing a spare room for the Menace could leave a real
+    // arrival with nowhere to move in to. `assign` refuses it too.
+    const offerable =
+      beds(world).length > 0 && !isSecret(villagerId) && livesSomewhere(charDef(them));
     const withMe = companion(world)?.id === villagerId;
     const askable = !withMe && them !== undefined && canInvite(world, them, Date.now()).ok;
 

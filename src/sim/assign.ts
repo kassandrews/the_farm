@@ -25,6 +25,7 @@
 
 import type { WorldState, Villager } from "./types";
 import type { CharId } from "../content/cast";
+import { charDef, livesSomewhere } from "../content/cast";
 import type { Room } from "./rooms";
 import { roomAt } from "./rooms";
 import { structureAt } from "./structures";
@@ -33,12 +34,23 @@ import { claimedBed } from "./housing";
 import { tileKey, parseTileKey } from "./world";
 import { rememberPlace } from "./places";
 
-/** Why a bed isn't somewhere to live. Structural only — every one of these is a
- *  "this is not a house" answer, never a "this house isn't nice enough" one. */
+/** Why this isn't somewhere for this person to live.
+ *
+ *  THREE ABOUT THE HOUSE AND ONE ABOUT THE PERSON, and the line that matters is
+ *  the one none of them crosses: not one is a "this house isn't nice enough"
+ *  answer. DESIGN is explicit that structure is the only gate and that finish,
+ *  furniture and size beyond the minimum are noticed and rewarded but never
+ *  block move-in — a quality verdict here would turn a gift into a chore with a
+ *  pass/fail on it.
+ *
+ *  `no-resident` is a fact about who you asked, which is the same shape
+ *  sim/company.ts's `Refusal` already carries ("rooted", "stranger") — the two
+ *  unions are modelled on each other and its docblock says so. */
 export type Disqualifier =
   | "no-bed" // you didn't point at a bed
   | "no-room" // it's outdoors, or the walls don't close (see MAX_ROOM)
-  | "no-door"; // sealed: a room nobody can get into isn't a home
+  | "no-door" // sealed: a room nobody can get into isn't a home
+  | "no-resident"; // they don't live in the town — they ARE somewhere in it
 
 export type Verdict =
   | {
@@ -58,6 +70,9 @@ export const DISQUALIFIER_TEXT: Record<Disqualifier, string> = {
   "no-bed": "There's no bed there.",
   "no-room": "That bed is out in the open. It needs walls that meet.",
   "no-door": "There's no way in. It needs a door.",
+  // Not an apology and not a refusal of the gift — a correction about who they
+  // are. Gary is not homeless; Gary is the town hall.
+  "no-resident": "They already live where they work. That's rather the point.",
 };
 
 /** Is this bed somewhere someone could live?
@@ -180,6 +195,18 @@ export function beds(world: WorldState): { x: number; y: number; verdict: Verdic
  *    spell began. At room granularity — which is the only granularity anything
  *    reads this at — that is simply correct. */
 export function assign(world: WorldState, id: CharId, x: number, y: number, now: number): Verdict {
+  // WHO, before WHERE. An institution has no home stop in its ring and never
+  // walks anywhere (`tickVillager` returns early on `fixed`), so housing one
+  // wrote a claim nobody would ever act on — and, worse, took the bed out of the
+  // pool: `assign` clears any other claim on that bed, so giving the Menace the
+  // spare room could leave an actual arrival with nowhere to move in to.
+  //
+  // Checked here as well as in the UI for the reason sim/company.ts gives about
+  // its own pair: the panel shows the button, this enforces it, and one
+  // predicate answers both so they cannot drift.
+  const them = world.villagers.find((w) => w.id === id);
+  if (them && !livesSomewhere(charDef(them))) return { ok: false, why: "no-resident" };
+
   const verdict = qualify(world, x, y);
   if (!verdict.ok) return verdict;
 

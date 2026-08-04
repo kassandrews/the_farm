@@ -538,6 +538,22 @@ export function charDef(v: { id: CharId; name: string; form: AdultForm; fixed: b
  *  desk with the door shut would be the game saying something untrue about him.
  *  The counters stay open through the party; a shop that shut so you could
  *  attend would be a deadline in a party hat. */
+/** Does this person live in the town, in the sense of having somewhere to sleep?
+ *
+ *  Read off the RING rather than from a list of ids, because the ring is where
+ *  the fact already is: a resident's day ends `at: "home"` and an institution's
+ *  never does. Every institution's entry in the table above says "no bed, no
+ *  ring, no home stop" in as many words, and this is that sentence as a
+ *  predicate — so a new institution is excluded the day it is authored, without
+ *  anybody remembering to add it anywhere.
+ *
+ *  DESIGN §"The fixed cast (institutions)" is the rule underneath: they are
+ *  "named individuals ... distinct from resident villagers". Gary lives at the
+ *  desk. That is not a housing problem to be solved, it is the joke. */
+export function livesSomewhere(def: CharDef): boolean {
+  return def.schedule.some((s) => s.at === "home");
+}
+
 export function scheduledStop(def: CharDef, now: number): ScheduleStop {
   if (!def.fixed && activeFestival(now)) {
     const cell = watchCell(def.id);

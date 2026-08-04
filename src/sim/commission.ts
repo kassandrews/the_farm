@@ -221,6 +221,13 @@ export function shortfallText(state: CommissionState): string {
       return "No door ... They would live there exactly once.";
     case "too-small":
       return `${state.size} of floor, where the form wants ${MIN_INTERIOR} ... I don't make the form.`;
+    // Unreachable from here, and present because the switch is exhaustive and an
+    // exhaustive switch is how a new disqualifier becomes a compile error rather
+    // than a blank line on a form. A commission is always FOR a newcomer, and a
+    // newcomer always has somewhere to be at the end of the day; `no-resident`
+    // is what `assign` says when you offer a bed to the town hall.
+    case "no-resident":
+      return "The applicant is an institution ... Institutions are not rehoused. They are relocated, and they are not.";
   }
 }
 

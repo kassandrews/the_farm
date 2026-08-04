@@ -1,10 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { newWorld, buildAt } from "./game";
 import { setTile, tileKey } from "./world";
+import { makeVillager } from "./villagers";
+import { charDef } from "../content/cast";
+import type { CharId } from "../content/cast";
 import { GRASS } from "../content/tiles";
 import { add } from "./inventory";
 import { claimedBed, homeStand, stopTarget } from "./housing";
 import { qualify, assign, beds, rehomeAcrossStroke, bedKeys, pendingRehome, DISQUALIFIER_TEXT } from "./assign";
+import { furnitureAt } from "./furniture";
+import { serialize, deserialize } from "./save";
 
 /** A fixed clock. `assign` stamps a sleeper spell into the place log, and a
  *  test that passed Date.now() would write a different season depending on the
@@ -40,6 +45,20 @@ function house(
   }
   if (bed) buildAt(w, "bed", ox + 1, oy + 1, Date.now(), "s");
   return { x: ox + 1, y: oy + 1 };
+}
+
+
+/** A second person who actually lives here.
+ *
+ *  The rehoming tests below need TWO housable villagers and a fresh town ships
+ *  one. They used to reach for "office", which was convenient and wrong: an
+ *  institution has no home stop in its ring, and `assign` refuses one now (see
+ *  "who a bed can be offered to"). The town's second-and-later residents are
+ *  newcomers, so that is what these use. */
+function newcomer(w: ReturnType<typeof world>, n = 0): CharId {
+  const id = `newcomer:${n}` as CharId;
+  w.villagers.push(makeVillager(charDef({ id, name: `New ${n}`, form: "blob", fixed: false }), NOW));
+  return id;
 }
 
 describe("qualifying a room as somewhere to live", () => {
@@ -141,13 +160,14 @@ describe("assigning someone a home", () => {
 
   it("evicts the previous occupant rather than letting two claim one bed", () => {
     const w = world();
+    const other = newcomer(w);
     const bed = house(w, 40, 80);
     assign(w, "resident1", bed.x, bed.y, NOW);
-    assign(w, "office", bed.x, bed.y, NOW);
+    assign(w, other, bed.x, bed.y, NOW);
 
     const resident = w.villagers.find((x) => x.id === "resident1")!;
-    const office = w.villagers.find((x) => x.id === "office")!;
-    expect(office.homeBed).toBe(tileKey(bed.x, bed.y));
+    const otherV = w.villagers.find((x) => x.id === other)!;
+    expect(otherV.homeBed).toBe(tileKey(bed.x, bed.y));
     // Two claims on one anchor would be one fact written twice, decided by
     // iteration order somewhere far from here.
     expect(resident.homeBed).toBeNull();
@@ -282,10 +302,11 @@ describe("sliding a bed across the room", () => {
 
   it("doesn't guess when a stroke orphans two people at once", () => {
     const w = world();
+    const other = newcomer(w);
     const a = house(w, 50, 70);
     const b = house(w, 60, 70);
     assign(w, "resident1", a.x, a.y, NOW);
-    assign(w, "office", b.x, b.y, NOW);
+    assign(w, other, b.x, b.y, NOW);
 
     const before = bedKeys(w);
     buildAt(w, "erase", a.x, a.y, Date.now());
@@ -295,21 +316,22 @@ describe("sliding a bed across the room", () => {
 
     // Two orphans, one new bed — no transfer. One bed, one person, or nothing.
     expect(claimedBed(w, w.villagers.find((x) => x.id === "resident1")!)).toBeNull();
-    expect(claimedBed(w, w.villagers.find((x) => x.id === "office")!)).toBeNull();
+    expect(claimedBed(w, w.villagers.find((x) => x.id === other)!)).toBeNull();
   });
 
   it("doesn't hand over a bed another claim is already pointed at", () => {
     const w = world();
+    const other = newcomer(w);
     const a = house(w, 50, 80);
     const b = house(w, 60, 80);
     assign(w, "resident1", a.x, a.y, NOW);
-    assign(w, "office", b.x, b.y, NOW);
+    assign(w, other, b.x, b.y, NOW);
     const officeKey = tileKey(b.x, b.y);
 
     // An earlier stroke takes the office's bed away. Their claim goes stale but
     // is deliberately not tidied up (sim/housing.ts).
     buildAt(w, "erase", b.x, b.y, Date.now());
-    expect(w.villagers.find((x) => x.id === "office")!.homeBed).toBe(officeKey);
+    expect(w.villagers.find((x) => x.id === other)!.homeBed).toBe(officeKey);
 
     // Now a LATER stroke moves resident1's bed onto that exact anchor.
     const before = bedKeys(w);
@@ -320,6 +342,43 @@ describe("sliding a bed across the room", () => {
     // The office's stale claim just became live again, so resident1 must not be
     // moved into it — a drag shouldn't quietly put two people in one bed.
     expect(w.villagers.find((x) => x.id === "resident1")!.homeBed).toBe(tileKey(a.x, a.y));
-    expect(claimedBed(w, w.villagers.find((x) => x.id === "office")!)).toEqual(b);
+    expect(claimedBed(w, w.villagers.find((x) => x.id === other)!)).toEqual(b);
+  });
+});
+
+describe("who a bed can be offered to", () => {
+  const houseWithBed = () => {
+    const w = world();
+    return { w, bed: house(w, 40, 40) };
+  };
+
+  it("refuses an institution", () => {
+    // They have no home stop in their ring and never walk anywhere, so a claim
+    // written for one is a claim nobody acts on — and `assign` clears every
+    // other claim on that bed, so housing the Menace could leave an arrival
+    // with nowhere to move in to.
+    const { w, bed } = houseWithBed();
+    for (const id of ["office", "shop", "heap", "museum", "seedstall", "errands", "stage"] as const) {
+      const verdict = assign(w, id, bed.x, bed.y, NOW);
+      expect(verdict.ok, `${id} was housed`).toBe(false);
+      expect((verdict as { why: string }).why).toBe("no-resident");
+    }
+    expect(w.villagers.find((v) => v.id === "shop")!.homeBed).toBeNull();
+  });
+
+  it("still houses somebody who lives in the town", () => {
+    const { w, bed } = houseWithBed();
+    expect(assign(w, "resident1", bed.x, bed.y, NOW).ok).toBe(true);
+  });
+
+  it("hands back a bed an institution was already given", () => {
+    // A save from before the gate existed. The bed is not destroyed, it is
+    // simply unclaimed again.
+    const { w, bed } = houseWithBed();
+    const found = furnitureAt(w, bed.x, bed.y)!;
+    const gary = w.villagers.find((v) => v.id === "office")!;
+    gary.homeBed = tileKey(found.ax, found.ay);
+    const after = deserialize(serialize(w))!;
+    expect(after.villagers.find((v) => v.id === "office")!.homeBed).toBeNull();
   });
 });

@@ -10,6 +10,9 @@ import { setTile } from "./world";
 import { GRASS } from "../content/tiles";
 import { add } from "./inventory";
 import { playerHome, assign } from "./assign";
+import { makeVillager } from "./villagers";
+import { charDef } from "../content/cast";
+import type { CharId } from "../content/cast";
 
 const NOW = Date.UTC(2026, 7, 4, 12);
 
@@ -57,8 +60,18 @@ describe("a bed of your own", () => {
   it("is not somebody else's bed", () => {
     const w = world();
     const bed = house(w, 40, 40);
-    const v = w.villagers[0]; // whoever the fixed cast starts with
-    assign(w, v.id, bed.x, bed.y, NOW);
+    // A NEWCOMER, and both halves of that matter.
+    //
+    // It used to be `villagers[0]`, "whoever the fixed cast starts with" — an
+    // institution, which cannot be housed at all now (sim/assign.ts
+    // `no-resident`). The obvious swap is the starter resident, and that fails
+    // the other way: Prudence already has an authored bed, so moving her here
+    // FREES that one and the player simply claims it instead. The test says "the
+    // only bed in town is theirs now", and somebody with no bed of their own is
+    // what makes that sentence true.
+    const id = "newcomer:0" as CharId;
+    w.villagers.push(makeVillager(charDef({ id, name: "New", form: "blob", fixed: false }), NOW));
+    assign(w, id, bed.x, bed.y, NOW);
     // The only bed in town is theirs now, so you are back to having nowhere.
     expect(playerHome(w)).toBeNull();
   });

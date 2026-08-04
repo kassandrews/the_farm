@@ -16,7 +16,7 @@ import { DIRT } from "../content/tiles";
 import { makeVillager } from "./villagers";
 import { authoredBed } from "../content/town";
 import type { CharId, AuthoredId } from "../content/cast";
-import { CAST, MOLE, GHOST, COSMOS } from "../content/cast";
+import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
@@ -1113,10 +1113,26 @@ function repair(obj: Record<string, unknown>): void {
   // The three secrets are excluded by the same line for a second reason — their
   // stops are symbolic (`at: "warren"`), resolved against a world this function
   // does not have, and a literal 0,0 is exactly the wrong answer for the Mole.
-  for (const v of obj.villagers as { id?: unknown; fixed?: unknown; x?: unknown; y?: unknown }[]) {
+  for (const v of obj.villagers as {
+    id?: unknown;
+    fixed?: unknown;
+    x?: unknown;
+    y?: unknown;
+    homeBed?: unknown;
+  }[]) {
     if (v?.fixed !== true || typeof v.id !== "string") continue;
     const def = CAST[v.id as keyof typeof CAST];
-    if (!def || def.schedule.length !== 1) continue;
+    if (!def) continue;
+
+    // AND AN INSTITUTION HAS NO ADDRESS. The bed offer was gated on `isSecret`
+    // and nothing else, so you could give the Menace the spare room: she would
+    // never walk to it — `tickVillager` returns early on `fixed` — and `assign`
+    // clears every other claim on that bed, so a real arrival could be left with
+    // nowhere to move in to by a kindness. Handing the claim back is the whole
+    // repair; the bed becomes free again the moment it stops being spoken for.
+    if (!livesSomewhere(def) && v.homeBed) v.homeBed = null;
+
+    if (def.schedule.length !== 1) continue;
     const stop = def.schedule[0];
     if (stop.at) continue;
     v.x = stop.x;

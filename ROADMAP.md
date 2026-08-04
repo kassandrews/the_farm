@@ -6963,6 +6963,43 @@ it had just composed, which threw away more than a line:
   the mailbox's rung on the mailbox's own argument: *"Somewhere you cannot till
   is a curiosity; a letter nobody can open is a feature that does not exist."*
 
+### You could build a house for the shopkeepers
+
+Reported from play, and it was real. The bed offer was gated on `isSecret` and
+nothing else, so all seven institutions could be housed.
+
+**They should not be.** DESIGN §"The fixed cast (institutions)" calls them
+"named individuals ... distinct from resident villagers", and every one of their
+entries in `content/cast.ts` says *"no bed, no ring, no home stop"* in as many
+words. Gary lives at the desk; that is not a housing problem to be solved, it is
+the joke.
+
+What actually went wrong when you did it:
+
+- **The claim was never acted on.** They are `fixed`, so `tickVillager` returns
+  early and they never walk to a bed they were given.
+- **And it took the bed out of the pool.** `assign` clears every other claim on
+  that anchor, so furnishing a spare room for the Menace could leave an actual
+  arrival with nowhere to move in to. A kindness that soft-locks a commission.
+
+**The predicate is read off the RING, not from a list of ids** — a resident's day
+ends `at: "home"` and an institution's never does, so `livesSomewhere()` is that
+sentence in `cast.ts` as code and a new institution is excluded the day it is
+authored. Enforced in both places for the reason `company.ts` gives about its own
+pair: the panel shows the button, `assign` enforces it, one predicate so they
+cannot drift. `no-resident` joins `Disqualifier` — its docblock said "structural
+only", and the honest amendment is that the line which matters is the one none of
+them crosses: no verdict here is ever about whether a house is nice enough.
+
+`repair()` hands back a bed an institution was already given, so a save where you
+housed the Menace frees that room on load.
+
+**Three existing tests had reached for `"office"` as a convenient second
+villager** and one for `villagers[0]`, "whoever the fixed cast starts with". They
+use newcomers now — and the obvious swap, the starter resident, fails the other
+way: Prudence already has an authored bed, so moving her frees it and the player
+claims that instead.
+
 ### Six things playing it found that neither tests nor a fresh world could
 
 Every one of these was reported from an actual save, and every one was invisible
