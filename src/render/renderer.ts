@@ -4347,8 +4347,13 @@ export class Renderer {
     const ctx = this.ctx;
     const cx = Math.round(this.sceneX(ox));
     const baseY = Math.round(this.sceneY(oy) + TILE / 2);
-    const canvas = night ? "#b06a4a" : "#d08a5a";
-    const dark = night ? "#8a4f38" : "#a96844";
+    // OFF-WHITE DUCK CANVAS, not dyed. A tent is issued kit, and issued kit is
+    // the colour the cloth came in — the terracotta it used to be read as a
+    // decorated thing somebody chose. The bands are the same cloth in and out
+    // of the sun, so they sit close together; a wide gap between them would
+    // stripe it into a circus awning.
+    const canvas = night ? "#b9b3a4" : "#e8e2d1";
+    const dark = night ? "#a29c8e" : "#cec7b2";
     // BIG ENOUGH TO SLEEP IN. It was 20x15 — shorter than a wall and barely
     // wider than the creature it houses, which made the one thing you own at the
     // start of the game read as a folded towel. A tent is where somebody lives
