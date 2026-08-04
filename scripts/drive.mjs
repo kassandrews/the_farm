@@ -171,6 +171,14 @@ async function onboard(page) {
     const field = await page.$("input.text-field:not([disabled])");
     if (field && !(await field.inputValue())) await field.fill("Harness");
     const primary = await page.$("button.primary:not(.choices button)");
+    // Once the HUD is up and no card is in the way, onboarding is over. The
+    // last-button fallback below must not run then: past this point the last
+    // button is ACT, and two stray ACT clicks with the starting shovel dig the
+    // start tile twice — which sinks a SHAFT one tile south of the tent. That
+    // hole was in every screenshot this harness ever took, and it spent a
+    // phase in ROADMAP's loose ends as "a dark runged rectangle south of the
+    // homestead tent [that] nothing accounts for".
+    if (!primary && (await page.$("button.mode-btn"))) break;
     const target = primary || (await page.$$("button")).at(-1);
     if (!target) break;
     if (await target.isDisabled().catch(() => false)) break;

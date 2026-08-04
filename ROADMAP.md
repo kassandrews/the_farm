@@ -168,9 +168,11 @@ found by driving the game and photographing it rather than by reading the source
    grass. Evidence captured (`shot-map`, `biome-border.png`), not started.
 3. **8e — four more counter faces.** Nub, Winifred, Derek, Aurelio. One line
    each, plus the one open call about where the spoken line aligns.
-4. **The plaza and the water are still flat**, which 8f left alone on purpose:
-   they are terrain, so they belong to 8c's argument. The plaza now reads worse
-   than the grass beside it because 8c reached the grass and stopped.
+4. ~~**The plaza and the water are still flat**~~, which 8f left alone on purpose:
+   they are terrain, so they belong to 8c's argument. **The plaza half was fixed
+   by Phase 11's paving (tranche 1, item 1). The water half was struck on
+   3 Aug 2026 — looked at and judged fine as it is** — which also parks 8j's
+   shoreline foam band with it.
 5. **A second survey pass, verified this time.** The first one covered the
    institution panels, night, autumn, winter and the underground, reported
    everything clean, and was wrong about the first panel anybody checked. Nobody
@@ -4893,10 +4895,12 @@ palette swap.
 **Genuinely open, and the brief's real yield:** roof PITCH shading (a
 distance-to-edge value ramp — nothing in this file has ever discussed it, and it
 must be reconciled with 8f's "grain the surfaces the player looks AT, leave the
-ones they look ACROSS alone" before it is built); a wet rim / foam band at the
-shoreline; surface clutter (items rendered ON tables and shelves); and a
-world-space chimney, which §*Title screen* already flagged as worth redrawing
-properly rather than the version that floats at the join.
+ones they look ACROSS alone" before it is built). The rest of the yield has
+since been dispositioned: ~~a wet rim / foam band at the shoreline~~ **struck
+3 Aug 2026 with "the water is flat" — looked at, fine as it is**; ~~surface
+clutter (items rendered ON tables and shelves)~~ **moved to the furniture
+project's agenda, where it belongs with the rotation and redraw gaps**; and
+~~a world-space chimney~~ **built in 8m**.
 
 ### 8e — The counters show whose voice it is — **Arabella built, four to go**
 
@@ -6733,16 +6737,29 @@ you trip over them:
   is worth knowing before diagnosing anything reported about walls going
   see-through. Trees reach a tile and a half now, so they genuinely fade, and the
   fade eases rather than switching (§10e).
-- **"Visibility glitching in and around walls" is reported and unexplained.**
+- **"Visibility glitching in and around walls" is reported and unexplained —
+  parked (3 Aug 2026) until it can be reproduced.** Not owed work until then.
   §10e smoothed the occlusion fade, which was a real defect but, per the line
-  above, cannot be what was seen around a wall. Remaining suspects: the roof
-  cutaway, which is judged on a room's INTERIOR so crossing a threshold has a
-  step in it; and the rule that a wall draws its face only where there is open
-  ground in front of it. Nobody has reproduced it yet.
-- **A dark runged rectangle sits just south of the homestead tent** and nothing
-  accounts for it. It predates the scale pass — visible in screenshots from
-  before §10f — and became obvious once the tent grew tall enough to stop
-  covering it. Not chased.
+  above, cannot be what was seen around a wall. Remaining suspects, for whoever
+  picks it up with a reproduction in hand: the roof cutaway, which is judged on
+  a room's INTERIOR so crossing a threshold has a step in it; and the rule that
+  a wall draws its face only where there is open ground in front of it.
+- ~~**A dark runged rectangle sits just south of the homestead tent** and
+  nothing accounts for it.~~ **Solved 3 Aug 2026: it was a SHAFT MOUTH, and the
+  screenshot harness dug it itself.** The game was innocent — no code path
+  sinks a shaft at setup (the v17 migration refuses to by name). The chain:
+  `onboard()` in `drive.mjs` clicked through onboarding by falling back to "the
+  last button on the page", which once the game is running is ACT; with the
+  starting shovel held, its two leftover clicks dug the player's start tile
+  twice, and two digs on one tile is the sink gesture (§"A shaft is two digs on
+  one tile"). The start tile is one south of the tent, and `drawShaftMouth` is
+  exactly a dark rectangle with ladder rungs. So the artifact was in EVERY
+  screenshot the harness ever took — including the "fresh save" ones, which is
+  why it read as unexplained — while a genuinely fresh game never had it.
+  `onboard()` now stops once the HUD's mode button exists and no card is up;
+  verified by a fresh boot whose overrides hold no shaft and whose lawn south
+  of the tent is unbroken. **The method note: an artifact that appears in every
+  photograph but has no cause in the code is a fact about the camera.**
 
 ---
 
