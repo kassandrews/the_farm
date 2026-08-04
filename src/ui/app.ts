@@ -216,6 +216,11 @@ function buildToolLabel(t: BuildTool): string {
 /** Arrows for the rotate button, so the facing is legible without a legend. */
 const FACING_ARROW: Record<Facing, IconName> = { s: "arrow_s", w: "arrow_w", n: "arrow_n", e: "arrow_e" };
 
+/** How far the build bar sits off the bottom of the screen — the `bottom` in
+ *  style.css `.build-bar`, repeated here because `flash()` stacks the toast on
+ *  top of the bar and has to know where its underside is. Keep the two in step. */
+const BUILD_BAR_BOTTOM = 16;
+
 /** Which zoom step the view is on. Its own key beside `the-farm-muted`, and
  *  pointedly not inside `the-farm-save` — see the Zoom section in App. */
 const ZOOM_KEY = "the-farm-zoom";
@@ -3046,6 +3051,15 @@ export class App {
   /** A brief floating status message near the action button. */
   private flash(text: string): void {
     this.hud.flash.textContent = text;
+    // Sit above whatever is on the bottom of the screen right now. The build bar
+    // is taller than the toast's resting offset — taller still with a finish row
+    // open — so the one message you most need to read, "you haven't the boards
+    // for that", was printing underneath the tray you were pressing. Measured
+    // rather than a second fixed offset: the bar's height changes with the held
+    // tool, so a number that cleared it for walls hid it for floors. It measures
+    // to 0 while the bar is display:none, which leaves the resting offset.
+    const bar = this.hud.buildBar.offsetHeight;
+    this.hud.flash.style.bottom = `${Math.max(120, BUILD_BAR_BOTTOM + bar + 14)}px`;
     this.hud.flash.style.opacity = "1";
     window.clearTimeout(this.flashTimer);
     this.flashTimer = window.setTimeout(() => {
@@ -3095,6 +3109,10 @@ interface HudRefs {
   buildFinishes: HTMLElement;
   /** The variety row, refilled by syncSeedUi() while the plant tool is held. */
   seedVarieties: HTMLElement;
+  /** The whole build tray. Kept only so the toast can measure it and sit above
+   *  it — the bar's height changes with the held tool, so no fixed offset in the
+   *  stylesheet can clear it. */
+  buildBar: HTMLElement;
   build: HTMLElement;
   rotate: HTMLElement;
   undo: HTMLElement;
@@ -3305,7 +3323,7 @@ function buildHud(
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, survey, flash, giveUp, toolButtons, buildButtons, groupButtons, buildFinishes, seedVarieties, build, rotate, undo, zoom };
+  return { root: hud, clock, survey, flash, giveUp, toolButtons, buildButtons, groupButtons, buildFinishes, seedVarieties, buildBar, build, rotate, undo, zoom };
 }
 
 // --- Panel helpers ------------------------------------------------------------

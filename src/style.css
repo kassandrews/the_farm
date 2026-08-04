@@ -575,10 +575,17 @@ select {
 
    Positioned here rather than inline from buildHud, which is where the top/bottom
    override used to live. Opacity stays in JS — `flash()` raises it and a timer
-   drops it 1.8s later. */
+   drops it 1.8s later, and so does `bottom`, which is lifted to clear the build
+   bar (see `flash()`; the resting 120px here is what it falls back to).
+
+   The z-index is the belt to that braces: the toast is written into the HUD
+   before the build bar, so in a tie the bar paints over it — which is exactly
+   how "you haven't the boards for that" ended up behind the tray that had just
+   refused you. Under the modal layer (10), because a card should still cover it. */
 .clock.flash {
   top: auto;
   bottom: 120px;
+  z-index: 6;
   max-width: min(360px, calc(100vw - 40px));
   text-align: center;
   line-height: 1.4;
