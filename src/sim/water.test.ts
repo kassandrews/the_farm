@@ -705,14 +705,29 @@ describe("islands", () => {
     // sand) on ground near town: the cap stays at or above the waterline here.
     // This is the consequence that re-landscapes somebody's home if the gate's
     // arithmetic ever changes out from under it.
-    for (let seed = 1; seed <= 1000; seed++) {
+    //
+    // ONE ASSERTION, NOT 882,000. This walked a thousand seeds calling `expect`
+    // twice per cell, and the assertions — not the arithmetic — put the test at
+    // 5.0s against vitest's 5.0s default. It passed alone and failed under a
+    // loaded suite, which is the worst shape a test can have: a red that says
+    // nothing about the code. Collecting the first offender and asserting on it
+    // once keeps every seed checked AND names which one broke, since the failure
+    // message prints the tuple rather than "expected -3 to be >= 0".
+    let bad: { seed: number; spot: string; x: number; y: number; cap: number } | null = null;
+    outer: for (let seed = 1; seed <= 1000; seed++) {
       for (let y = -40; y <= 40; y += 4) {
         for (let x = -40; x <= 40; x += 4) {
-          expect(isleCap(seed, "forest", x, y)).toBeGreaterThanOrEqual(0);
-          expect(isleCap(seed, "riverside", x, y)).toBeGreaterThanOrEqual(0);
+          for (const spot of ["forest", "riverside"] as const) {
+            const cap = isleCap(seed, spot, x, y);
+            if (cap < 0) {
+              bad = { seed, spot, x, y, cap };
+              break outer;
+            }
+          }
         }
       }
     }
+    expect(bad).toBeNull();
   });
 });
 
