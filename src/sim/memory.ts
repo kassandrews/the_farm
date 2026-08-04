@@ -97,6 +97,22 @@ export type MemoryKind =
   // had to be written; the other two Moments reuse field notes that already
   // existed. And there is NO SNOW in it, on purpose — see that entry.
   | "winter_came"
+  // --- Games (sim/play.ts) ----------------------------------------------------
+  //
+  // A game of hide and seek that reached its end, and an I Spy that did. Two
+  // kinds rather than one with a value, on `delved`/`climbed`'s argument: they
+  // are two different afternoons and a form's bank should be able to have a
+  // line for one and not the other. No value, on festival.ts's lesson — a
+  // value renders straight into a dialogue template, and there is nothing
+  // here to render. Written by `endPlay` to the ONE person who played, never
+  // through `witness`: a game is not news and not a job.
+  //
+  // Not in `oneShot` — each day's game is its own game — but de-duplicated
+  // per CALENDAR DAY by `endPlay` itself, so an afternoon of forty rounds is
+  // one remembered afternoon rather than a flooded ring. Giving up files
+  // nothing at all.
+  | "hid"
+  | "spied"
   // Something the player SAID, in a conversation tree (Phase 12 tranche 2).
   // The value is a keepsake clause — "that you like a wandering day" — written
   // by `advanceReply` when a reply carries one, and read back through the

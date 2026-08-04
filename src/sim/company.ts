@@ -31,6 +31,7 @@ import type { CharId, CharDef } from "../content/cast";
 import { charDef, scheduledStop, isSecret } from "../content/cast";
 import { remember } from "./memory";
 import { atLeast } from "./friendship";
+import { isHiding, hideTarget, endPlay } from "./play";
 
 /** The player's tile. Duplicated from sim/game.ts's `playerTile` rather than
  *  imported, because game.ts imports THIS file and a cycle through the sim's
@@ -158,6 +159,10 @@ export function invite(world: WorldState, id: CharId, now: number): boolean {
  *  a fact the world already holds. Its cost is that surfacing before you part
  *  logs the ordinary walk, which is a fair description of what you just did. */
 export function partWays(world: WorldState, now: number): void {
+  // A game cannot outlive the walk it was part of. Here rather than in every
+  // caller, because this is the one place company ends — goodbye and `dayOver`
+  // both come through it. "left" writes nothing (sim/play.ts).
+  endPlay(world, now, "left");
   const v = companion(world);
   world.company = null;
   if (!v) return;
@@ -222,6 +227,10 @@ const FOLLOW_GAP = 1.6;
  *  "stand still" — not as "no companion". */
 export function followTarget(world: WorldState, v: Villager): { x: number; y: number } | null {
   if (!isCompanion(world, v.id)) return null;
+  // A game redirects the walk. Asked as its own predicate rather than folded
+  // into `hideTarget`'s null, because null already means "stand still" here —
+  // an arrived hider must keep standing at their spot, not resume following.
+  if (isHiding(world, v)) return hideTarget(world, v);
   const p = world.player;
   if ((v.layer ?? "surface") !== p.layer) return null; // shouldn't happen; see takeAlong
   if (Math.hypot(p.x - v.x, p.y - v.y) <= FOLLOW_GAP) return null;

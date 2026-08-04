@@ -10,6 +10,10 @@ import { STARTING_CROP } from "../content/crops";
 import { STAGE } from "../content/festivals";
 import { CAST } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
+import { befriend } from "./friendship";
+import { invite } from "./company";
+import { startPlay, playing } from "./play";
+import { makeRng } from "./rng";
 
 function freshWorld() {
   return newWorld({ name: "Keeper", form: "menace", spot: "riverside", seed: 99 });
@@ -1154,5 +1158,25 @@ describe("a save that went wrong can come back", () => {
     expect(new Set(ids).size).toBe(ids.length);
     // The first entry survives — it is the one with the history behind it.
     expect(back.villagers.find((v) => v.id === twin.id)!.x).not.toBe(99);
+  });
+});
+
+describe("a game in progress is not state", () => {
+  // The play slot lives in a WeakMap, deliberately (sim/play.ts's header): a
+  // saved hide is somebody crouched behind a tree for three real days. This
+  // asserts the whole decision — the game does not round-trip, the company
+  // does, and the reloaded companion simply walks back to you.
+  it("does not survive a reload; the company does", () => {
+    const w = newWorld({ name: "Test", form: "dog", spot: "forest", seed: 21 });
+    const afternoon = new Date(2026, 5, 15, 14, 0, 0).getTime();
+    const v = w.villagers.find((x) => x.id === "resident1")!;
+    befriend(v, 20);
+    expect(invite(w, "resident1", afternoon)).toBe(true);
+    expect(startPlay(w, "resident1", "hide", afternoon, makeRng(7))).toBe(true);
+    expect(playing(w)).not.toBeNull();
+
+    const back = deserialize(serialize(w))!;
+    expect(back.company?.id).toBe("resident1");
+    expect(playing(back)).toBeNull();
   });
 });
