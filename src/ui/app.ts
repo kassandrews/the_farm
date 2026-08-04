@@ -1222,9 +1222,12 @@ export class App {
    *  tall column of paragraphs behind a scrollbar. `journalPages` cuts the paper
    *  so a date heading never lands at the bottom of a page away from its day.
    *
-   *  The one visible distinction is HOW an entry was recorded: a field note in
-   *  your own hand reads plain, and something you were told is prefixed with who
-   *  told you. That is the whole texture, and it costs one eyebrow.
+   *  The one visible distinction is HOW an entry was recorded, and it is carried
+   *  ENTIRELY BY THE PROSE: a field note in your own hand reads plain, and
+   *  something you were told opens with the person who told you ("Aurelio
+   *  mentioned that ..."). It used to carry a "Told" label above it as well,
+   *  which was a heading that repeated the first word of the line under it — the
+   *  distinction was never in danger, so the label was only ever furniture.
    */
   private openNotebook(): void {
     if (!this.world) return;
@@ -1253,10 +1256,7 @@ export class App {
         } else {
           for (const chunk of pages[at]) {
             body.append(el("div", { class: "when" }, [chunk.heading]));
-            for (const { def, line } of chunk.entries) {
-              if (def.source === "told") body.append(el("div", { class: "who" }, ["Told"]));
-              body.append(el("p", {}, [line]));
-            }
+            for (const { line } of chunk.entries) body.append(el("p", {}, [line]));
           }
         }
 
@@ -1293,10 +1293,15 @@ export class App {
         body.append(actionRow(row));
       };
       render();
-      // The eyebrow has to cover BOTH kinds. "What you've noticed" was wrong the
-      // moment the first told entry landed under it — found by reading the real
-      // panel, which is the only place the two sit together.
-      return panel("The Notebook", "Noticed, and told", [body]);
+
+      // NO EYEBROW. It said "Noticed, and told", which was an accurate label for
+      // a thing that does not need labelling: the entries say which they are by
+      // how they read, and a strapline classifying them is the panel explaining
+      // its own contents back to the person who wrote them.
+      //
+      // The title is WHOSE it is, and that is what the eyebrow's space was worth
+      // — a name on the cover, the way a notebook has one.
+      return panel(`${possessive(world.player.name)} Notebook`, "", [body]);
     }, { dismissable: true });
   }
 
@@ -3307,6 +3312,20 @@ function buildHud(
  *  and `who` keeps meaning exactly one thing. It is the smaller claim — that a
  *  screen someone is TALKING ON should show whose voice it is. The errands board
  *  is the control: it has no speaker, gets no face, and reads correctly today. */
+/** Somebody's name, made possessive — "Harness's", "Bors'".
+ *
+ *  A name ending in s takes the bare apostrophe, which is the convention the rest
+ *  of the game's prose follows and the one that stops "Bors's Notebook" appearing
+ *  on the cover of the panel a player named Bors opens most. Names are typed by
+ *  the player, so this has to survive anything: a name that is one character, or
+ *  ends in a full stop, still comes back readable.
+ *
+ *  Not in sim and not in content — a possessive is a fact about how English is
+ *  written, not about the world, and nothing outside a heading needs it. */
+function possessive(name: string): string {
+  return /s$/i.test(name) ? `${name}'` : `${name}'s`;
+}
+
 function panel(
   title: string,
   who: string,

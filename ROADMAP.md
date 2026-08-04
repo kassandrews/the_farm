@@ -5871,6 +5871,19 @@ Two things found on screen and not in tests:
    the bottom of the book. One row: turns pushed left (`.turns`, `margin-right:
    auto`), Close it where it is in every other panel.
 
+**Then both labels came off, and the cover took a name.** Read back with pages,
+the panel was captioning itself twice: a "Noticed, and told" eyebrow classifying
+the entries, and a "Told" heading over every told line whose next three words were
+already "Aurelio mentioned that". A label that repeats the sentence beneath it is
+furniture — the noticed/told distinction was never in danger, because it is
+carried by how the prose reads and always was.
+
+The eyebrow's space went to the title, which is now **`{name}'s Notebook`**
+(`possessive()` in `app.ts`, bare apostrophe after a name ending in s). It is a
+notebook, so it has somebody's name on the cover; "The Notebook" was the object
+described rather than the object. Nothing else in the panel changed, and none of
+the §9c refusals are touched — a name is not a count.
+
 ### 10i — Found is written down, given is announced — **built**
 
 Unlocks have a channel now, and which one you get is decided by **who caused it**,
