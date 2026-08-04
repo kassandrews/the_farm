@@ -158,16 +158,15 @@ found by driving the game and photographing it rather than by reading the source
 
 **What is left of Phase 8, in order:**
 
-1. **8g — furniture that looks like furniture.** The largest remaining gap and
-   the cheapest to close: 8a's build-bar ICONS already draw a bed with a blanket
-   and a pillow, a shelf with books, a patterned rug, and the placed pieces are
-   flat rectangles. The art exists; it never reached the world. Mostly
-   transcription — see §8f, where photographing a room found it.
-2. **8d — the biome boundary.** Region patches are straight-edged blocks; it is
-   the per-cell edges rule at region scale, and it wants what 8c did to the
-   grass. Evidence captured (`shot-map`, `biome-border.png`), not started.
-3. **8e — four more counter faces.** Nub, Winifred, Derek, Aurelio. One line
-   each, plus the one open call about where the spoken line aligns.
+1. ~~**8g — furniture that looks like furniture.**~~ **Built** — see §8g and
+   §8h, plus the furniture project's own agenda for what those two left over
+   (the missing north grids, the sideways redraw, surface clutter).
+2. ~~**8d — the biome boundary.**~~ **Built, in two halves.** The turf blend
+   landed in §8d; the flora that stopped dead on the same line was named there
+   as still open and is built now — see §8w.
+3. ~~**8e — four more counter faces.**~~ **Built 3 Aug 2026**, all five, and
+   the spoken line's alignment settled with them. See §8e, and §Phase 14 for the
+   introduction that now comes before the counter.
 4. ~~**The plaza and the water are still flat**~~, which 8f left alone on purpose:
    they are terrain, so they belong to 8c's argument. **The plaza half was fixed
    by Phase 11's paving (tranche 1, item 1). The water half was struck on
@@ -3912,10 +3911,10 @@ gets a third of its radius.
 tint in the table spread over the fade at smoothstep's peak slope. It asserts 12.
 A gradient is allowed to have a gradient; what it may not have is a cliff.
 
-**Still open:** interleaving the flora — a hash-dithered treeline so pines thin
-out into the scrub instead of stopping on a line. That one DOES change generation
-and DOES spend the `HOME_REGION_REACH` margin, so it needs the thousand-seed test
-re-run and is deliberately not folded in here.
+~~**Still open:** interleaving the flora~~ — **built 4 Aug 2026, see §8w.** It
+did change generation, and the margin it was said to spend turned out not to
+need spending: the dither is simply switched off inside `HOME_REGION_REACH`,
+which costs nothing where there is no border to dither across anyway.
 
 ### 8k — Regions grow their own things — **four kits built**
 
@@ -5060,6 +5059,71 @@ the lamp, not the floor. The shots answer "does the way down work" and "does it
 read as a place" — both yes, with the ladder legible from below — and they
 cannot answer anything about the rock's own texture. That wants a lit shot, and
 nothing here has one.
+
+### 8w — The flora interleaves across a border — **done 4 Aug 2026**
+
+The half of 8d that was left open: the turf faded across a region border and the
+trees standing on it stopped dead on the same line. **`scatterRegion`
+(sim/world.ts).** A tile near a border rolls WHICH of its neighbouring regions
+its flora grew from, weighted by exactly the shares 8d already computes for the
+tint — so pines thin out into the scrub over the same five tiles the grass is
+fading across.
+
+**A PICK, NEVER A BLEND, and that is the same rule 8d wrote.** A blended colour
+is a colour; half a pine is nothing. Every individual tree, rock, mushroom,
+shrub and log is wholly one region's — it is which region that now varies by
+cell instead of by side of a line.
+
+**It does not move a border.** `biomeAt` is untouched, so every guarantee built
+on it holds unchanged: the town's region, the thousand-seed meadow test, the
+migration promise. What changed is which region's DENSITIES a cell reads before
+it rolls, and which region's crown the result is drawn with.
+
+- **The look travels with the thing.** `scatterSkin` is `regionSkin` asked of the
+  region a tile's flora grew from, and the renderer uses it for trees, shrubs,
+  rocks, deadwood and mushroom caps. Without it the dither does half its job:
+  the COUNT softens across the border and every crown still changes species on
+  the line, which is the seam you could actually see. Tufts and ground stay on
+  the hard/blended answers — they are turf, and turf was 8d's half.
+- **Water is not dithered, deliberately.** A pond's shape is a field read per
+  cell, so dithering the water multiplier would not soften its edge — it would
+  put holes in the middle of it. A tree is one object in one cell and can belong
+  wholly to a region; a body of water is a shape across many and cannot. The
+  generator now names its two answers `terrain` (hard, the land) and `grew` (the
+  dither, the things standing on it).
+- **`HOME_REGION_REACH` did not have to be spent.** The note in 8d assumed it
+  would be. Inside the reach the dither is simply off, which costs nothing —
+  there is no border there to dither across — and turns a one-tile margin
+  resting on two approximations into a fact a test can assert on a thousand
+  seeds. **The guard is a SQUARE where the reach is a radius**, because the
+  first version tested the disc and let (15,15) through: 21.2 tiles out, inside
+  the town's own margin.
+- **Its own hash**, which is 8k's bug written down. Feed the region pick the
+  same roll that just passed `< density` and it only ever sees the bottom of its
+  range: the dither becomes dead code that measures as working.
+
+**The test measured the wrong thing first, and it passed.** Counting trees in
+straight vertical bands either side of a border reports a gentle ramp on a
+perfectly hard edge — the border wanders (`BIOME_WARP` doing its job), so a
+fixed column is inside one region on some rows and the other on the rest. Run
+against the pre-dither generator it passed happily. **An assertion nobody has
+run against the old behaviour is not an assertion.**
+
+What replaced it pools every clean pinewood→scrub crossing, aligned PER ROW, and
+states two ratios against each region's own plateau:
+
+| | before | after |
+|---|---|---|
+| spill — trees in the first four scrub tiles, over open scrub | 1.18× | 3.65× |
+| thinning — trees in the last five wood tiles, over deep wood | 1.08× | 0.78× |
+
+**Cost: generation is about a third slower** (273k → 198k tiles/s), because a
+cell near a border asks `regionParts` as well as `biomeAt`. A chunk is a
+thousand tiles, so this is microseconds where it lands, and it was measured
+rather than assumed.
+
+**Live saves: this re-landscapes ground more than 21 tiles out**, on the same
+terms every terrain pass since biomes has. Inside the reach nothing moved.
 
 ---
 

@@ -47,6 +47,7 @@ import {
   CHUNK,
   tileKey,
   regionSkin,
+  scatterSkin,
   regionParts,
   foundAt,
   floorFinish,
@@ -1182,7 +1183,7 @@ export class Renderer {
 
   /** The turf's region here, blended across any border it is near.
    *
-   *  GROUND AND TUFT ONLY. `regionSkin` is still the answer for a tree, and the
+   *  GROUND AND TUFT ONLY. `scatterSkin` is the answer for a tree, and the
    *  two must not be swapped: a crown is an object and takes the hard region, so
    *  the treeline stays crisp while the grass under it fades. A blended crown
    *  would be a pine that is partly a birch, which is not a thing.
@@ -1755,11 +1756,15 @@ export class Renderer {
     // silhouette below is the same everywhere, because this is gatherable and
     // hands back a plain `mushroom` wherever it grew (see BiomeDef.mushroomCap).
     //
-    // The HARD region rather than the blended one, on `regionSkin`'s own
-    // argument: a mushroom is an object and takes a side, the way a crown does.
-    // Half a champagne cap fading back to red across a border is a mushroom
-    // caught between two minds.
-    const skin = regionSkin(world.seed, world.homestead.spot, tx, ty);
+    // ONE region and never a blend, the way a crown is: a mushroom is an object
+    // and takes a side. Half a champagne cap fading back to red across a border
+    // is a mushroom caught between two minds.
+    //
+    // The side it takes is the region it GREW from (`scatterSkin`) — the same
+    // roll that decided there would be a mushroom here at all. Drawing it with
+    // the region it stands in instead leaves the dither doing half its job: the
+    // count softens across the border and every cap still changes on the line.
+    const skin = scatterSkin(world.seed, world.homestead.spot, tx, ty);
     const own = skin?.mushroomCap;
     const cap = own ? (night ? mixHex(own.cap, Renderer.NIGHT_CAP) : own.cap) : night ? "#9c5348" : "#d16a56";
     const lit = own ? (night ? mixHex(own.lit, Renderer.NIGHT_CAP) : own.lit) : night ? "#b3695c" : "#e58a72";
@@ -3621,9 +3626,13 @@ export class Renderer {
     // it is exempt from the seasons: the dark wood is what the grove IS, and a
     // stand that turned pink because it happened to fall inside the blossom rows
     // would be a secret joining in with the scenery.
+    // `scatterSkin`, not `regionSkin`: a pine that rolled its way three tiles
+    // into the scrub is drawn as a pine. That is the whole of what softening a
+    // treeline means — the alternative interleaves the COUNT and keeps the
+    // species changing on the line, which is the seam you can actually see.
     const biome = dark
       ? null
-      : regionSkin(world.seed, world.homestead.spot, tx, ty);
+      : scatterSkin(world.seed, world.homestead.spot, tx, ty);
 
     // Silhouette and therefore HEIGHT, both from the region. Read before the fade
     // because how far a tree reaches up is what decides whether it's hiding you:
@@ -3849,7 +3858,7 @@ export class Renderer {
     const h = decoHash(tx, ty, world.seed);
     const cx = Math.round(this.sceneX(tx)) + Math.floor(h * 3) - 1;
     const base = Math.round(this.sceneY(ty) + TILE / 2);
-    const biome = regionSkin(world.seed, world.homestead.spot, tx, ty);
+    const biome = scatterSkin(world.seed, world.homestead.spot, tx, ty);
     const src = biome ? biome.crownRows : BROADLEAF;
 
     // The widest stretch of the crown, scaled to a bush. The ends of a crown are
@@ -3976,7 +3985,7 @@ export class Renderer {
     // birch really is the pale thing on that floor and a fen log really is nearly
     // black, so taking the region is right — but taking all of it would draw
     // fresh bark, and every one of these has been down for years.
-    const trunk = regionSkin(world.seed, world.homestead.spot, tx, ty)?.trunk;
+    const trunk = scatterSkin(world.seed, world.homestead.spot, tx, ty)?.trunk;
     const weather: Tint | undefined = trunk
       ? { color: trunk.color, amount: trunk.amount * 0.5 }
       : undefined;
@@ -4015,10 +4024,11 @@ export class Renderer {
     /** Apply the region's weathering, or leave the stone alone. */
     const mix = (hex: string, t: Tint | undefined): string => (t ? mixHex(hex, t) : hex);
     const h = decoHash(tx, ty, world.seed);
-    // The HARD region, for the third time and the same reason: a stone is an
-    // object and takes a side. Half a shard fading into half a boulder is not a
-    // rock anybody could name.
-    const stone = regionSkin(world.seed, world.homestead.spot, tx, ty)?.stone;
+    // One region and not a blend, for the third time and the same reason: a
+    // stone is an object and takes a side. Half a shard fading into half a
+    // boulder is not a rock anybody could name. The side is the one it came out
+    // of (`scatterSkin`), like the tree and the mushroom.
+    const stone = scatterSkin(world.seed, world.homestead.spot, tx, ty)?.stone;
     const kinds = stone?.shapes ?? STONES_DEFAULT;
     const shape = ROCK_SHAPES[kinds[Math.floor(((h * 43) % 1) * kinds.length) % kinds.length]];
     const rows = shape.rows;

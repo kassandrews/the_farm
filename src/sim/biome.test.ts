@@ -18,11 +18,12 @@ import {
   regionStrangeness,
   regionParts,
   rollRegion,
+  scatterRegion,
 } from "./world";
 import { BIOMES, FIELD_WEIGHTS, type BiomeId } from "../content/biomes";
 import { GRASS, tileDef } from "../content/tiles";
 import { biomeSkin, blendRegions } from "../render/palette";
-import { ROCK, WATER, SHALLOW, SAND, SHRUB, DIRT, STUMP, LOG } from "../content/tiles";
+import { ROCK, WATER, SHALLOW, SAND, SHRUB, DIRT, STUMP, LOG, TREE } from "../content/tiles";
 import { NODES, nodeForTile } from "../content/nodes";
 import type { HomesteadSpot } from "./types";
 
@@ -402,6 +403,7 @@ describe("rocks never touch", () => {
     // fat-fingered upward, the first anyone would know is a screenshot.
     let dead = 0;
     let land = 0;
+    let nearest = Infinity;
     const seen = new Set<string>();
     for (let y = -200; y <= 200; y++) {
       for (let x = -200; x <= 200; x++) {
@@ -410,17 +412,27 @@ describe("rocks never touch", () => {
         land++;
         if (t !== STUMP && t !== LOG) continue;
         dead++;
-        seen.add(biomeAt(21, "forest", x, y));
+        // The region it GREW from, not the one it is lying in. Since the
+        // scatter dither those differ near a border by design — a log from the
+        // pinewood may come to rest three tiles into the scrub — and asking
+        // `biomeAt` here reported the scrub as a region that grows deadwood
+        // when it is a region that merely borders one.
+        seen.add(scatterRegion(21, "forest", x, y));
+        nearest = Math.min(nearest, Math.hypot(x, y));
       }
     }
     expect(land).toBeGreaterThan(10000); // the sample is worth something
     expect(dead).toBeGreaterThan(0); // it does actually happen
     expect(dead / land).toBeLessThan(0.01); // and stays something you come across
-    // Only where a region asked. The meadow is the town's own ground and the one
-    // row that must never change: a stump on the walk home is the whole
-    // "walking home looks like walking home" promise broken.
+    // Only where a region asked.
     for (const id of seen) expect(BIOMES[id as BiomeId].deadwood, id).toBeTruthy();
     expect(seen.has("meadow")).toBe(false);
+    // And the promise the meadow row exists for, asserted on the ground rather
+    // than on the table: no stump anywhere on the walk home. It holds by
+    // composition — the town's region is meadow out to HOME_REGION_REACH and the
+    // dither is switched off inside it — and it is worth pinning because the
+    // dither is the thing that could quietly break it.
+    expect(nearest).toBeGreaterThan(HOME_REGION_REACH);
   });
 
   it("leaves diagonals alone — corner to corner is a pair of rocks, not a seam", () => {
@@ -693,5 +705,142 @@ describe("blooms", () => {
     for (const id of ["dusk", "glimmer", "glass"] as const) {
       expect(BIOMES[id].bloom).toBeUndefined();
     }
+  });
+});
+
+describe("the flora interleaves across a region border", () => {
+  // 8d blended the turf and left the trees stopping on a line. `scatterRegion`
+  // is the other half: a cell near a border rolls WHICH of its neighbouring
+  // regions its trees, rocks and mushrooms grew from, weighted by the same
+  // shares the tint is blended from. These pin the three things that has to be
+  // at once — invisible in the bulk of the world, off entirely near the town,
+  // and an actual ramp where two regions meet.
+
+  it("changes nothing away from a border", () => {
+    // The bulk of the map is one region deep, and there the pick has exactly one
+    // part to choose from. If this ever drifts, every tree in the world moved.
+    let checked = 0;
+    for (let y = -300; y <= 300; y += 7) {
+      for (let x = -300; x <= 300; x += 7) {
+        const hard = biomeAt(4, "coast", x, y);
+        const grew = scatterRegion(4, "coast", x, y);
+        if (grew === hard) continue;
+        // Where they differ it must be a border, never open country: some other
+        // region has to be close enough to have a share of this tile.
+        expect(regionParts(4, "coast", x, y).length).toBeGreaterThan(1);
+        checked++;
+      }
+    }
+    // And it must actually happen somewhere, or this test passes by doing nothing.
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it("does not dither anywhere near the town, on a thousand seeds", () => {
+    // THE GUARANTEE THE WHOLE JOB RESTED ON. `biomeAt` is untouched by the
+    // dither, so the town's meadow is still meadow — but the SCATTER is what
+    // grows a tree, and a tree inside a house somebody already built is the
+    // failure this margin exists to prevent. The arithmetic said the nearest
+    // border is 21 tiles out and the blend reaches 5, leaving about one tile of
+    // daylight over a town footprint that reaches 15 — too thin to rest a live
+    // save on, so `scatterRegion` refuses to dither inside HOME_REGION_REACH and
+    // this asserts it rather than the arithmetic.
+    for (const spot of SPOTS) {
+      for (let a = 0; a < 16; a++) {
+        const th = (a / 16) * Math.PI * 2;
+        for (const r of [0, 7, 14, HOME_REGION_REACH]) {
+          const x = Math.round(Math.cos(th) * r);
+          const y = Math.round(Math.sin(th) * r);
+          for (let seed = 1; seed <= 1000; seed++) {
+            if (scatterRegion(seed, spot, x, y) !== biomeAt(seed, spot, x, y)) {
+              throw new Error(`seed ${seed} ${spot}: (${x},${y}) dithered inside the town's reach`);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  it("thins a treeline out instead of stopping it on a line", () => {
+    // THE MEASUREMENT THE FEATURE IS FOR, and it has to be taken PER ROW.
+    // Averaging tree counts in straight vertical bands either side of a border
+    // reports a gentle ramp on a perfectly hard edge, because the border wanders
+    // — `BIOME_WARP` doing its job — so a fixed column is inside one region on
+    // some rows and the other on the rest. The first version of this test did
+    // exactly that, and it passed against the generator from BEFORE the dither.
+    //
+    // So: every crossing where pinewood gives way to scrub with twelve clean
+    // tiles either side, pooled by signed distance from the crossing. Pinewood
+    // is 2.2x trees and scrub a tenth of that — the sharpest contrast the table
+    // has.
+    const trees = new Map<number, number>();
+    const cells = new Map<number, number>();
+    let crossings = 0;
+    for (let seed = 1; seed <= 5; seed++) {
+      for (let y = -400; y <= 400; y += 4) {
+        for (let x = -400; x < 400; x++) {
+          if (biomeAt(seed, "coast", x, y) !== "pinewood") continue;
+          if (biomeAt(seed, "coast", x + 1, y) !== "scrub") continue;
+          let clean = true;
+          for (let o = -12; o <= 12 && clean; o++) {
+            if (biomeAt(seed, "coast", x + o, y) !== (o <= 0 ? "pinewood" : "scrub")) clean = false;
+          }
+          if (!clean) continue;
+          crossings++;
+          for (let o = -12; o <= 12; o++) {
+            cells.set(o, (cells.get(o) ?? 0) + 1);
+            if (generatedTile(seed, "coast", x + o, y) === TREE)
+              trees.set(o, (trees.get(o) ?? 0) + 1);
+          }
+        }
+      }
+    }
+    expect(crossings).toBeGreaterThan(150); // the pool is worth reading
+
+    const band = (from: number, to: number): number => {
+      let t = 0;
+      let c = 0;
+      for (let o = from; o <= to; o++) {
+        t += trees.get(o) ?? 0;
+        c += cells.get(o) ?? 0;
+      }
+      return t / c;
+    };
+
+    // TWO RATIOS, NOT A CURVE FIT, because a hash is noisy and a threshold on
+    // one offset is a threshold on the noise. Both are stated against the
+    // region's OWN plateau, so neither depends on what the densities happen to
+    // be — only on the shape of the edge between them.
+    //
+    // Measured against the generator from before the dither, which is the only
+    // way to know an assertion discriminates: spill was 1.18 and thinning 1.08
+    // — a flat edge, as it should have been.
+    const spill = band(1, 4) / band(9, 12);
+    const thinning = band(-4, 0) / band(-12, -9);
+    expect(spill).toBeGreaterThan(2); // trees stand past the line, into the scrub
+    expect(thinning).toBeLessThan(0.9); // and the wood is thinner as it approaches it
+  });
+
+  it("rolls the region on its own hash, not the one that placed the tree", () => {
+    // 8k's bug, which measured as working: the decor kit fed its region pick the
+    // same hash that had just passed `< density`, so the pick only ever saw the
+    // bottom tenth of its range and handed the first part every cell. If that
+    // happened here, one side of every border would win outright.
+    let a = 0;
+    let b = 0;
+    for (let y = -300; y <= 300; y++) {
+      for (let x = -300; x <= 300; x++) {
+        const parts = regionParts(9, "lakeside", x, y);
+        if (parts.length < 2) continue;
+        const grew = scatterRegion(9, "lakeside", x, y);
+        if (grew === biomeAt(9, "lakeside", x, y)) a++;
+        else b++;
+      }
+    }
+    expect(a).toBeGreaterThan(0);
+    expect(b).toBeGreaterThan(0);
+    // The tile's own region is the heaviest share by construction, so it must
+    // win most of the time — but never all of it.
+    expect(b / (a + b)).toBeGreaterThan(0.05);
+    expect(b / (a + b)).toBeLessThan(0.5);
   });
 });

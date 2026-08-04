@@ -346,7 +346,22 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     // clutter chance 0 in the meadow, so the town's own region — and therefore
     // every town that existed before biomes did — generates precisely what it
     // always generated. See `originSite`.
-    const biome = biomeDef(biomeAt(seed, spot, x, y));
+    //
+    // TWO REGIONS, AND THE SPLIT IS THE POINT. `terrain` is the tile's own
+    // region, hard, for the things that are the LAND: the water table below,
+    // and anything else shaped rather than scattered. `grew` is the region this
+    // particular cell's flora rolled from (`scatterRegion`), which near a
+    // border may be the neighbour's — so a treeline interleaves instead of
+    // stopping on a line.
+    //
+    // WATER IS NOT DITHERED, deliberately. A pond's shape comes from a field
+    // read per cell, so dithering the multiplier would not soften its edge, it
+    // would put noise in the middle of it: adjacent cells rolling different
+    // water tables is a lake with holes. A tree is one object per cell and can
+    // be wholly one region's; a body of water is a shape across many and
+    // cannot.
+    const terrain = biomeDef(biomeAt(seed, spot, x, y));
+    const grew = biomeDef(scatterRegion(seed, spot, x, y));
 
     // Water, and the shore it makes. Every kind at once, deepest wins, and the
     // tile is four thresholds on the depth (see `waterAt` / `waterTile`).
@@ -356,7 +371,7 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     // out of the homestead clearing by the `nearHome` guard above, which is what
     // promises you always arrive somewhere you can stand.
     if (!nearGrove(seed, spot, x, y)) {
-      const at = waterAt(seed, spot, x, y, biome.water);
+      const at = waterAt(seed, spot, x, y, terrain.water);
       const wet = waterTile(at);
       // The town's own crossing, where it has one. Only the water itself is
       // decked — the shore either side is left as shore, so a bridge reads as a
@@ -375,18 +390,18 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     // instead (`biomeAt`), which puts a treeline where the town's meadow ends,
     // about thirty tiles out, and leaves the far country alone.
     const treeRoll = hash2(x, y, seed ^ 0x7a11) / 4294967296;
-    const density = NODES.tree.density * biome.trees;
+    const density = NODES.tree.density * grew.trees;
     if (treeRoll < density) return TREE;
     // Shrubs, on their own hash and AFTER the trees — a cell that grew a tree
     // stays a tree, so turning shrubs up in a region thickens its undergrowth
     // instead of thinning its canopy. Zero in every region that doesn't ask.
     if (
-      biome.shrubs &&
-      hash2(x, y, seed ^ 0x5e2b) / 4294967296 < NODES.shrub.density * biome.shrubs
+      grew.shrubs &&
+      hash2(x, y, seed ^ 0x5e2b) / 4294967296 < NODES.shrub.density * grew.shrubs
     ) {
       return SHRUB;
     }
-    if (rockRoll(seed, x, y) < NODES.rock.density * biome.rocks && rockIsLoneliest(seed, x, y)) {
+    if (rockRoll(seed, x, y) < NODES.rock.density * grew.rocks && rockIsLoneliest(seed, x, y)) {
       return ROCK;
     }
     // Deadwood, after everything that grows: a cell that grew a tree stays a
@@ -398,8 +413,8 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     // already the widest thing on the floor — welded to a stump it looks like a
     // rendering bug rather than like a wood.
     if (
-      biome.deadwood &&
-      deadRoll(seed, x, y) < DEADWOOD_DENSITY * biome.deadwood &&
+      grew.deadwood &&
+      deadRoll(seed, x, y) < DEADWOOD_DENSITY * grew.deadwood &&
       deadIsLoneliest(seed, x, y)
     ) {
       // Which of the two, on a hash that is NOT the placement roll. Sharing it
@@ -411,7 +426,7 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
 
     // Ground clutter, on its own hashes so turning it up somewhere doesn't
     // reshuffle where that region's trees stand.
-    if (biome.mushrooms > 0 && hash2(x, y, seed ^ 0x3f07) / 4294967296 < biome.mushrooms) {
+    if (grew.mushrooms > 0 && hash2(x, y, seed ^ 0x3f07) / 4294967296 < grew.mushrooms) {
       return MUSHROOM;
     }
   }
@@ -1131,7 +1146,15 @@ const FAR_ROWS = new Set<BiomeId>(["dusk", "glimmer", "glass"]);
  *  grows where has to stay a total function of (seed, x, y), and a tree that faded
  *  in with distance would be a tree that is solid at one radius and not at another. */
 export function regionSkin(seed: number, spot: HomesteadSpot, x: number, y: number): BiomeDef {
-  const id = biomeAt(seed, spot, x, y);
+  return skinOf(seed, x, y, biomeAt(seed, spot, x, y));
+}
+
+/** A named region's skin at a tile, with the far country's drift applied.
+ *
+ *  Split out of `regionSkin` so `scatterSkin` can ask the same question of the
+ *  region a tile's flora actually GREW from, which near a border is not always
+ *  the region the tile is in. */
+function skinOf(seed: number, x: number, y: number, id: BiomeId): BiomeDef {
   const def = biomeDef(id);
   if (!FAR_ROWS.has(id)) return def;
 
@@ -1171,6 +1194,10 @@ const BIOME_BLEND = 5;
 
 /** A region's share of a tile's turf. One entry away from any border. */
 export interface RegionPart {
+  /** WHICH region this share is. Carried so the scatter can pick ONE of them
+   *  (see `scatterRegion`) rather than only average their tints — a blended
+   *  colour is a colour, but half a pine is nothing. */
+  id: BiomeId;
   def: BiomeDef;
   w: number;
 }
@@ -1197,8 +1224,8 @@ function edgeMix(d: number, span: number): number {
 function overlay(parts: RegionPart[], id: BiomeId, w: number): RegionPart[] {
   if (w <= 0) return parts;
   const def = biomeDef(id);
-  if (w >= 1) return [{ def, w: 1 }];
-  return [...parts.map((p) => ({ def: p.def, w: p.w * (1 - w) })), { def, w }];
+  if (w >= 1) return [{ id, def, w: 1 }];
+  return [...parts.map((p) => ({ id: p.id, def: p.def, w: p.w * (1 - w) })), { id, def, w }];
 }
 
 /** What a tile's TURF is made of — its region, plus any neighbour close enough to
@@ -1215,10 +1242,13 @@ function overlay(parts: RegionPart[], id: BiomeId, w: number): RegionPart[] {
  *  `d - d1` is roughly TWICE the distance to the bisector between two sites, so
  *  the cutoff is `2 * BIOME_BLEND` to fade over `BIOME_BLEND` tiles either side.
  *
- *  FLORA IS DELIBERATELY NOT BLENDED. A tree takes the hard `biomeAt` answer, so
- *  a pine is a pine and never half a birch. Softening a treeline is a different
- *  job with a different answer — interleave the trees themselves — and it
- *  changes generation, where this does not. */
+ *  FLORA IS STILL NEVER BLENDED, and that has not changed: a pine is a pine and
+ *  never half a birch. What flora does with these weights is PICK one of them —
+ *  see `scatterRegion`, which rolls a cell's trees, rocks and mushrooms from one
+ *  whole region chosen by the same shares this blends the tint from. So the
+ *  treeline interleaves over exactly the tiles the grass is fading across, and
+ *  every individual tree is one thing. That job changes generation; this one
+ *  does not, which is why they are separate functions. */
 export function regionParts(
   seed: number,
   spot: HomesteadSpot,
@@ -1293,7 +1323,7 @@ export function regionParts(
 
   let parts: RegionPart[] = split.map(({ id, mx, my, k }) => {
     const def = biomeDef(id);
-    if (!FAR_ROWS.has(id)) return { def, w: k / total };
+    if (!FAR_ROWS.has(id)) return { id, def, w: k / total };
     // The far country's tints come up with the drift exactly as `regionSkin`
     // fades them, or a dusk region would bleed full violet into its neighbour
     // while its own middle was still pale.
@@ -1306,6 +1336,7 @@ export function regionParts(
     // a region has one character all the way across it.
     const t = strangeness(seed, mx, my);
     return {
+      id,
       def: {
         ...def,
         ground: { color: def.ground.color, amount: def.ground.amount * t },
@@ -1327,6 +1358,68 @@ export function regionParts(
   parts = overlay(parts, "blossom", edgeMix(bd - BLOSSOM_RADIUS, BLOSSOM_RADIUS / 3));
 
   return parts;
+}
+
+/** WHICH REGION'S FLORA A TILE ROLLS — dithered across a border.
+ *
+ *  8d blended the TURF across a border and left the trees stopping on a line,
+ *  and said so in place: "a tree takes the hard `biomeAt` answer, so a pine is
+ *  a pine and never half a birch." That is still true, and it is why this is a
+ *  PICK rather than a blend. A tile near a border rolls which of its
+ *  neighbouring regions it grew from, weighted by exactly the shares 8d already
+ *  computes for the tint — so the pines thin out into the scrub over the same
+ *  five tiles the grass is fading across, and each individual tree is wholly
+ *  one thing.
+ *
+ *  IT DOES NOT MOVE A BORDER. `biomeAt` is untouched, so every guarantee built
+ *  on it — the town's region, the thousand-seed test, the migration promise at
+ *  the top of this file — holds exactly as before. What changes is which
+ *  region's DENSITIES a cell reads before it rolls a tree, and which region's
+ *  crown that tree is drawn with.
+ *
+ *  INSIDE `HOME_REGION_REACH` IT DOES NOT DITHER AT ALL, and that guard is the
+ *  reason this could be built without re-deriving the town's margin. The
+ *  arithmetic says the nearest border is 21 tiles out and the blend reaches 5,
+ *  so a dithered tile is at least 16 from the origin while the town footprint
+ *  reaches about 15 — one tile of daylight, resting on two approximations. A
+ *  guard costs nothing where there is no border to dither across anyway, and
+ *  turns a margin into a fact. `biome.test.ts` asserts it on a thousand seeds.
+ *
+ *  ITS OWN SALT, and that is 8k's bug written down: the decor kit fed its region
+ *  pick the same hash that had just passed `< density`, so the pick only ever
+ *  saw the bottom of its range and the walk handed the first part every cell.
+ *  The dither would have been dead code that measured as working. */
+const SCATTER_SALT = 0x9c17;
+
+export function scatterRegion(seed: number, spot: HomesteadSpot, x: number, y: number): BiomeId {
+  const hard = biomeAt(seed, spot, x, y);
+  // A SQUARE, where the reach is measured as a radius. Strictly the more
+  // generous of the two, and it is the shape the thing being protected actually
+  // is: a town footprint is a box, and the corner of a box at radius 21 is 21
+  // from the origin along neither axis. Testing the disc let (15,15) through —
+  // 21.2 tiles out, inside the town's own margin — which is precisely the class
+  // of off-by-a-corner this guard exists to make impossible.
+  if (Math.abs(x) <= HOME_REGION_REACH && Math.abs(y) <= HOME_REGION_REACH) return hard;
+
+  const parts = regionParts(seed, spot, x, y);
+  if (parts.length === 1) return parts[0].id;
+
+  let at = hash2(x, y, seed ^ SCATTER_SALT) / 4294967296;
+  for (const p of parts) {
+    at -= p.w;
+    if (at < 0) return p.id;
+  }
+  // The weights sum to 1, so this is unreachable while the roll is in [0,1).
+  // Falling back to the tile's own region is the right way to be wrong.
+  return hard;
+}
+
+/** The skin of the region a tile's flora grew from. What `regionSkin` is for the
+ *  ground, this is for the things standing on it: a pine that rolled its way
+ *  three tiles into the scrub is drawn as a pine, or the treeline has not
+ *  actually softened — it has only changed how many trees stop on the line. */
+export function scatterSkin(seed: number, spot: HomesteadSpot, x: number, y: number): BiomeDef {
+  return skinOf(seed, x, y, scatterRegion(seed, spot, x, y));
 }
 
 /** Pick a region from a roll in [0,1) and a strangeness in [0,1].
