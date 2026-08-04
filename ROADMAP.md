@@ -6833,6 +6833,36 @@ already shipped.
 
 ---
 
+## The tents — one tent, eleven occupants (4 Aug 2026)
+
+A visual sitting, not a phase. Two calls, both settled:
+
+- **The canvas is undyed off-white, and it has no stripes.** It was terracotta
+  and banded in threes; the terracotta read as a thing somebody chose rather
+  than as issued kit, and the bands read as a beach awning. What it has now is a
+  lit panel and a lee panel meeting at the ridge seam, which is where the door
+  parts anyway. Light from the north-west, same call as the roof pitch and the
+  tree crowns.
+- **Every tent is the SAME tent; only the decoration varies, by form.**
+  `content/tents.ts` is the table — one `TentDecor` per form plus their body
+  colour, and one decoration each, never two (at 28×24 a second is clutter). The
+  Fancy Little Menace flies a pennant, the Blob's ridge sags, the Office Creature
+  has posted the rules of the tent on the tent, the Quiet Ghost's has no pegs.
+
+  This LOOKS like it contradicts the older note that a newcomer's tent is
+  deliberately identical to the player's ("they're where you were, not a quest
+  marker"). It doesn't, and the reason matters: the player's tent is decorated
+  by the same table, off their own form. Same tent, same rule, both of you. Give
+  any form its own tent *shape* and the beat breaks — that is the line.
+
+  Secret forms have rows because the PLAYER may import as one; they can never
+  reach the commission path, and `content/tents.test.ts` fails if an arrival
+  ever gets a secret or hidden form.
+- **`/tents.html`** is the contact sheet (dev only, like `/looks.html`), drawing
+  the real `render/tent.ts`. Eleven side by side is the only way to see whether
+  they still read as one tent — a decoration that creeps into the silhouette is
+  invisible one at a time.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
