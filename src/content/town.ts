@@ -199,8 +199,10 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     door: { x: 11, y: 0 },
     finish: "whitewash",
     furniture: [
-      // The counter: one 2x1 table across the west half, with her behind it at
-      // (9,-2). You come in past the end of it, which is how a shop works.
+      // The counter: one 2x1 table across the west half, with her BESIDE its
+      // east end at (10,-2) — not behind it, which is where she used to stand
+      // and where the table's own height hid her (content/cast.ts). You come in
+      // past the end of it, which is how a shop works.
       { x: 8, y: -1, id: "table", facing: "s", counter: "shop" },
       // Stock, along the back wall. Shelves rather than anything soft: the
       // soft goods are the point of the visit and she is not going to leave
@@ -309,7 +311,8 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       // Donating is the one act the museum asks of you and walking the length
       // of the gallery to do it would be a waiting period wearing a hat — the
       // same objection DESIGN raised to identification taking time. She stands
-      // at (-8,-9), beside it. Clear of the doorstep at (-10,-8).
+      // at (-9,-9), off its west end — beside it rather than behind it, which
+      // the old coordinate claimed and did not do. Clear of the doorstep.
       { x: -8, y: -8, id: "table", facing: "s", counter: "museum" },
       // Reference along the north wall, behind the last case. She has read all
       // of it and drawn her own conclusions.

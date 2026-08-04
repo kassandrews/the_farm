@@ -215,7 +215,16 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // her species and there was nothing left for Archibald to be called.
     // Winifred keeps the museum while Prudence is just a scholar who lives
     // here; same shape, two floors down.
-    schedule: [{ fromHour: 0, x: 9, y: -2, doing: "behind the counter" }],
+    // BESIDE the counter, not behind it — the same move Derek and Aurelio
+    // already made, for the same reason and found the same way. A table is
+    // twelve pixels tall and draws that height UPWARD, over the cell to its
+    // north, which is exactly where "behind the counter" put her. On screen all
+    // you could see of the Fancy Little Menace was her crown.
+    //
+    // One cell past the counter's east end and one row north, which is Derek's
+    // relation to his own (see `seedstall` below). She still reads as the person
+    // whose counter it is, and now she reads as a person.
+    schedule: [{ fromHour: 0, x: 10, y: -2, doing: "beside the counter" }],
   },
   heap: {
     id: "heap",
@@ -256,7 +265,12 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // An INSTITUTION like the other three: no bed, no ring, no home stop. She
     // is beside the desk rather than behind it, because the museum is the
     // exhibits and she would rather be standing near them.
-    schedule: [{ fromHour: 0, x: -8, y: -9, doing: "beside the desk" }],
+    // BESIDE the desk, which this line has claimed since it was written and the
+    // coordinate did not do. (-8,-9) is the cell directly north of the desk at
+    // (-8,-8), so the desk drew its twelve pixels of height straight over her
+    // and the curator of the town museum was a pair of eyes above a counter.
+    // West end rather than east, because the east is the doorstep's side.
+    schedule: [{ fromHour: 0, x: -9, y: -9, doing: "beside the desk" }],
   },
   seedstall: {
     id: "seedstall",
