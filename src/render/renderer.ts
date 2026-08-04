@@ -130,6 +130,13 @@ const TARGET_COLOR: Record<ActionTarget["kind"], string> = {
   gather: "rgba(160,255,150,0.9)", // a tree or rock in reach
   tool: "rgba(255,255,255,0.85)", // the held tool has work here
   read: "rgba(190,205,255,0.9)", // the errands board is within reach
+  // A COUNTER GETS THE READING COLOUR TOO, which makes four things wearing it.
+  // That is the point rather than a shortage of hues: every one of them is "there
+  // is something here to look at, and looking costs nothing". A counter with its
+  // own colour would be the reticle announcing which fixtures are transactions,
+  // and a shop you can walk up to and leave again is not a different promise
+  // from a board you can read and walk away from.
+  counter: "rgba(190,205,255,0.9)",
   // The board's own colour, deliberately. Both are "there is something here to
   // read", and giving the mailbox its own hue would make the reticle say THIS ONE
   // IS SPECIAL about a thing whose whole character is that nobody remarks on it.

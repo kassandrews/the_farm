@@ -19,6 +19,7 @@
 
 import type { SkinId } from "./skins";
 import type { FurnitureId, Facing } from "./furniture";
+import type { CounterId } from "./counters";
 import type { CharId } from "./cast";
 import { CAST } from "./cast";
 import type { WingId } from "./museum";
@@ -32,6 +33,18 @@ export interface TownFurniture {
   y: number;
   id: FurnitureId;
   facing: Facing;
+  /** This table is a COUNTER: something you walk up to and touch, separately
+   *  from talking to whoever keeps it (content/counters.ts).
+   *
+   *  ONE FIELD ANSWERS BOTH QUESTIONS — whether the piece is touchable, and
+   *  which mark it wears on top — so the affordance and the interaction cannot
+   *  drift apart. A counter that stopped being tappable would lose its bell in
+   *  the same edit. Same argument as `given` sitting next to `hint` in
+   *  content/skins.ts, and for the same reason: the two facts are one fact.
+   *
+   *  Absent means ordinary furniture, which is the honest default — Margfrom
+   *  has a table and it is a table. */
+  counter?: CounterId;
 }
 
 export interface TownBuilding {
@@ -119,7 +132,7 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     finish: "ash",
     furniture: [
       // The desk he is permanently "at the desk" at, immediately behind him.
-      { x: -1, y: -7, id: "table", facing: "s" },
+      { x: -1, y: -7, id: "table", facing: "s", counter: "hall" },
       { x: 1, y: -7, id: "chair", facing: "s" },
       // Paperwork, filed along the back wall in whatever order it arrived.
       { x: -2, y: -8, id: "shelf", facing: "s" },
@@ -188,7 +201,7 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     furniture: [
       // The counter: one 2x1 table across the west half, with her behind it at
       // (9,-2). You come in past the end of it, which is how a shop works.
-      { x: 8, y: -1, id: "table", facing: "s" },
+      { x: 8, y: -1, id: "table", facing: "s", counter: "shop" },
       // Stock, along the back wall. Shelves rather than anything soft: the
       // soft goods are the point of the visit and she is not going to leave
       // them lying about where you could just take one.
@@ -221,7 +234,7 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       // furniture in front of a door seals the building, which is the bug
       // town.test.ts's "never lets its own furniture seal the front door" was
       // written for when the shop's counter did exactly that.
-      { x: 6, y: -7, id: "table", facing: "s" },
+      { x: 6, y: -7, id: "table", facing: "s", counter: "heap" },
     ],
   },
 
@@ -297,7 +310,7 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       // of the gallery to do it would be a waiting period wearing a hat — the
       // same objection DESIGN raised to identification taking time. She stands
       // at (-8,-9), beside it. Clear of the doorstep at (-10,-8).
-      { x: -8, y: -8, id: "table", facing: "s" },
+      { x: -8, y: -8, id: "table", facing: "s", counter: "museum" },
       // Reference along the north wall, behind the last case. She has read all
       // of it and drawn her own conclusions.
       { x: -12, y: -15, id: "shelf", facing: "s" },
@@ -382,7 +395,7 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       // room to buy a thing. It started centred on the door, which walled the
       // building shut — a table is solid, and town.test.ts caught it before a
       // browser had to.
-      { x: -8, y: 8, id: "table", facing: "s" },
+      { x: -8, y: 8, id: "table", facing: "s", counter: "seedstall" },
       // Stock along the back wall, in no order anybody has explained.
       { x: -8, y: 5, id: "shelf", facing: "s" },
       { x: -5, y: 5, id: "shelf", facing: "s" },
@@ -441,7 +454,7 @@ export const TOWN_FIXTURES: TownFixture[] = [
   // furniture anybody has ever bothered to keep up — and on screen a pale
   // 2x2 slab with board lines on it read as a sheet of paper lying in the
   // square, which is not the joke. A stage is made of ordinary boards.
-  { x: STAGE.x, y: STAGE.y, id: "stage", facing: "s", finish: "pine" },
+  { x: STAGE.x, y: STAGE.y, id: "stage", facing: "s", finish: "pine", counter: "stage" },
   // A bench, mid-east plaza, facing the square. It exists so that sitting
   // down together (sim/play.ts `sittingAt`) is reachable before the player
   // has built a seat of their own — the town owns one bench the way it owns

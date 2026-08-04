@@ -43,6 +43,9 @@ import { freezeBuilt } from "./freeze";
 import { roomRemembers, historyLine } from "./history";
 import { stampTown, ensureFixedCast } from "./town";
 import { newErrands, errandDue, postErrand, boardNear } from "./errands";
+import { counterAt, counterNear } from "./counters";
+import { counterDef } from "../content/counters";
+import type { CounterId } from "../content/counters";
 import { settleResidents } from "./housing";
 import { playerHome } from "./assign";
 import { placeFurniture, removeFurnitureAt } from "./furniture";
@@ -664,6 +667,7 @@ export type ActionKind =
   | "water"
   | "harvest"
   | "read"
+  | "counter" // a shop, a heap, a museum, a stall, a desk or a stage, touched
   | "letter" // a mailbox in the middle of nowhere, and what was in it today
   | "remember" // a house, asked at its own door what has happened inside it
   | "strike" // your own tent, taken down, once you have somewhere better
@@ -676,6 +680,12 @@ export interface ActionResult {
   kind: ActionKind;
   changed: boolean;
   message: string;
+  /** Which counter, when `kind` is "counter". On the RESULT rather than on
+   *  `ActionTarget`, which is deliberate: the target is a coordinate and a kind
+   *  and the reticle reads it, so widening it would make every draw carry a
+   *  field only one branch has an opinion about. A result already carries a
+   *  message; this is the same sort of thing. */
+  counter?: CounterId;
 }
 
 /** What ACT is aimed at right now.
@@ -690,6 +700,7 @@ export interface ActionTarget {
     | "gather"
     | "tool"
     | "read"
+    | "counter"
     | "letter"
     | "remember"
     | "strike"
@@ -833,6 +844,31 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
   const door = doorNear(world, x, y);
   if (door) return { x: door.x, y: door.y, kind: "remember" };
 
+  // The board and the counters, and they belong in this group rather than at the
+  // bottom of the ladder where the board spent its whole life.
+  //
+  // THE COMMENT TWO SCREENS UP PREDICTED THIS AND WAS WRONG ONLY ABOUT WHERE YOU
+  // STAND. It said the board "has the same precedence and gets away with it only
+  // because it stands on plaza stone, which no tool touches" — but the board is
+  // in the plaza's south-east corner and the tile you read it from is often
+  // GRASS. Driven in a browser: walk to the board holding the starting shovel,
+  // press ACT, and you dig a hole and turn up a hinge. The board never opens.
+  //
+  // So it moves up on the mailbox's argument, word for word: "Somewhere you
+  // cannot till is a curiosity; a letter nobody can open is a feature that does
+  // not exist." The counters arrive at the same rung for the same reason and
+  // would have hit the same wall — the stage stands on paving but you reach it
+  // across open square, and a shop's doorstep is grass like every other.
+  //
+  // The cost is the mailbox's: you cannot dig or till the four tiles around a
+  // counter while standing on them. There are seven of these in the world and a
+  // great deal of grass.
+  const board = boardNear(world, x, y);
+  if (board) return { x: board.x, y: board.y, kind: "read" };
+
+  const counter = counterNear(world, x, y);
+  if (counter) return { x: counter.x, y: counter.y, kind: "counter" };
+
   // Your own tent, underfoot, once there is a bed of yours to go to.
   //
   // ABOVE THE TOOL, on the mailbox's argument two screens up: the homestead
@@ -850,9 +886,6 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
   if (near && tool === "gather" && !underfoot) return { x: near.x, y: near.y, kind: "gather" };
   if (underfoot) return { x, y, kind: "tool" };
   if (near) return { x: near.x, y: near.y, kind: "gather" };
-
-  const board = boardNear(world, x, y);
-  if (board) return { x: board.x, y: board.y, kind: "read" };
 
   return { x, y, kind: "none" };
 }
@@ -1095,6 +1128,24 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
       // The empty line is deadpan on purpose and is NOT a failure: you looked, it
       // was empty, that is what usually happens to a box in a field.
       message: letter ?? "Empty. The little door swings.",
+    };
+  }
+
+  if (target.kind === "counter") {
+    // Like `read` above it: the sim's part is over. Touching a counter changes
+    // nothing — it opens a panel, which is the UI's business — and the line is
+    // the fallback for anywhere that has only a line to show.
+    //
+    // The COUNTER IS RESOLVED AGAIN here rather than carried on the target,
+    // because `ActionTarget` is a coordinate and a kind and every other kind
+    // makes do with that. One lookup at the point of use beats widening the
+    // type that the reticle also reads.
+    const at = counterAt(world, target.x, target.y);
+    return {
+      kind: "counter",
+      changed: false,
+      message: at ? counterDef(at.id).line : "A counter.",
+      counter: at?.id,
     };
   }
 

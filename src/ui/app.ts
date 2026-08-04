@@ -31,6 +31,9 @@ import {
   loadedFinish,
 } from "../sim/game";
 import { nodeAt } from "../sim/gather";
+import { touchableAt } from "../sim/counters";
+import { counterKeptBy, counterDef } from "../content/counters";
+import type { CounterId } from "../content/counters";
 import { isWalkable } from "../sim/world";
 import { officeLandClaimLine, homeLineFor, givenLine, companyYesLine, companyByeLine, gameYesLine, gameFoundLine, gameGiveUpLine, gameOfferLine, sittingLine, lookAtLine, advanceReply, replyLabel } from "../sim/dialogue";
 import { canPlay, startPlay, playing, foundThem, foundIt, spyChoices, lookKindNear, offerDue, satLineDue, endPlay } from "../sim/play";
@@ -98,7 +101,10 @@ const ACTION_CUES: Record<ActionKind, Cue> = {
   plant: "plant",
   water: "water",
   harvest: "harvest",
-  read: "menu", // a panel opens; the menu cue is what a panel opening sounds like
+  read: "menu",
+  // The panel-opening sound, same as the board and the mailbox. Nothing in the
+  // world moved; a screen arrived.
+  counter: "menu", // a panel opens; the menu cue is what a panel opening sounds like
   // No panel for a letter — it flashes a line, like every other small thing the
   // world says. See doAction: `read` is caught before the cue, `letter` is not.
   letter: "menu",
@@ -738,64 +744,22 @@ export class App {
     const withMe = companion(world)?.id === villagerId;
     const askable = !withMe && them !== undefined && canInvite(world, them, Date.now()).ok;
 
-    // The shopkeeper's conversation IS her counter. A dialogue box that then
-    // offers a "shop" button would be a menu in front of a menu, and she is a
-    // person you go and see rather than a UI you open. Every keeper goes
-    // through `withIntro` (Phase 14a): the person once, the screen forever
-    // after.
-    if (villagerId === "shop") {
-      this.withPreamble(them, speech.gave, () => this.openShop());
-      return;
-    }
-    // Same rule for the Gremlin: the heap is what he is, so talking to him is
-    // standing at it. Two counters, two panels, because they are not the same
-    // transaction — she swaps things for things, he takes junk and unlocks a
-    // finish, and one panel bent to cover both would show a price column that
-    // means something different on each side of it.
-    if (villagerId === "heap") {
-      this.withPreamble(them, speech.gave, () => this.openHeap());
-      return;
-    }
-    // And Corrigal: the museum is her desk, the counter and the catalogue at
-    // once, so talking to her is visiting it. Third counter, third panel — a
-    // donation is not a trade and not a redemption, it is the one transaction
-    // in the game with nothing on the other side of it, and a shared panel
-    // would have to invent a column for what you get back.
-    if (villagerId === "museum") {
-      this.withPreamble(them, speech.gave, () => this.openMuseum());
-      return;
-    }
-    // And the Blessed Carrot. Fourth counter, fourth panel — his is the only
-    // one selling two different kinds of thing (stuff, and a permanent unlock),
-    // which is exactly why it isn't folded into hers: one panel covering both
-    // would need a column whose meaning changed halfway down it.
-    if (villagerId === "seedstall") {
-      this.withPreamble(them, speech.gave, () => this.openSeedStall());
-      return;
-    }
-    // And the Dog Thing, whose counter is a board he is often not standing at.
-    // Talking to him opens the same panel the board does — he IS the board's
-    // conversation, wherever on his round you catch him, and a version where
-    // you had to walk him back to the plaza would make the round a chore.
-    if (villagerId === "errands") {
-      this.withPreamble(them, speech.gave, () => this.openErrands());
-      return;
-    }
-    // And the Dramatic Blob. Sixth counter, sixth panel, and the only one that
-    // is not a transaction — the stage IS the conversation, so talking to him
-    // is being told what is on. A "programme" button inside a dialogue box
-    // would be the menu-in-front-of-a-menu the shop refuses.
-    if (villagerId === "stage") {
-      this.withPreamble(them, speech.gave, () => this.openStage());
-      return;
-    }
+    // EVERYBODY GETS THE CONVERSATION NOW, keepers included. This used to return
+    // out to a counter panel for the six institutions, which threw away the line
+    // `talk` had just composed — and `speak` mutates on its way to composing it
+    // (it stamps `lastTalkedAt`, marks the line recently-said, and calls
+    // `observe` for a told remark), so the discarded ones were not free. Three
+    // of the seven told observations are spoken by keepers and each wrote its
+    // notebook entry while its line went nowhere.
+    //
+    // Their counters are objects in the world instead (content/counters.ts), and
+    // `ask` below is the way back to one from here.
+    const counter = counterKeptBy(villagerId);
 
-    // A gift comes before the conversation here too, for the same reason it
-    // does at a counter: it is the thing they have been meaning to say. No
-    // resident gives a finish today — both givers are institutions and both
-    // went through `withPreamble` above — but `given` is a field on any finish
-    // and the day one names a newcomer, this is already correct.
-    this.withGift(them, speech.gave, () =>
+    // The intro comes first, and now it can arrive by either road: this one, or
+    // walking up to the table. `withPreamble` is the shared door, so "you meet
+    // the person before you meet the screen" survives the split intact.
+    this.withPreamble(them, speech.gave, () =>
     this.openModal(
       (close) => {
         // A conversation is the one panel that has a FACE, so it gets its own
@@ -844,20 +808,22 @@ export class App {
                   }),
                 ]
               : []),
-            // The hall's counter, and only Gary has one. It CLOSES first rather
-            // than opening over this panel: the shop's rule is that a counter
-            // is not a menu you reach through another menu, and a stacked pair
-            // of modals is exactly that. Same gesture as the bed offer above,
-            // which also closes and then does its thing.
+            // Their counter, for whoever keeps one. It CLOSES first rather than
+            // opening over this panel: a stacked pair of modals is the
+            // menu-in-front-of-a-menu the shop has always refused. Same gesture
+            // as the bed offer above, which also closes and then does its thing.
             //
-            // A conversation and a counter, where the other six institutions
-            // have only a counter, because Gary genuinely has both — the land
-            // claim and the commission beat are conversations and live here.
-            ...(villagerId === "office"
+            // This was Gary's alone and hardcoded, back when he was the only
+            // institution with a conversation as well as a counter. All six have
+            // both now, so the label comes off the table and the special case
+            // goes away. The counter is still reachable in one tap by walking up
+            // to the thing itself; this is the road for somebody who came to see
+            // the person.
+            ...(counter
               ? [
-                  choiceBtn("Anything to file?", () => {
+                  choiceBtn(counter.ask, () => {
                     close();
-                    this.openHall();
+                    this.openCounter(counter.id);
                   }),
                 ]
               : []),
@@ -987,6 +953,46 @@ export class App {
    *  — `witness` warms whoever is standing near you while you work (sim/game.ts)
    *  — so Pesto handing you a tin of paint before introducing himself is not a
    *  hypothetical, it is what happens to a player who builds near the plaza. */
+  /** Open a counter, by either road — tapping the thing, or asking the person.
+   *
+   *  ONE DOOR FOR BOTH, which is the whole reason it is a method rather than a
+   *  switch at each call site. The keeper's intro is owed on FIRST CONTACT, and
+   *  first contact can now happen at the table without the person being part of
+   *  it: you can walk into the shop while she is at the far wall and put your
+   *  hand on the counter. Routing both roads through `withPreamble` keeps 14a's
+   *  promise — you meet the person before you meet the screen — without it
+   *  depending on which of the two things you touched.
+   *
+   *  No gift here, and that is not an oversight. A finish is handed over in
+   *  conversation (sim/friendship.ts), and `talk` is what pays it; a tin arriving
+   *  because you touched a table would make it a transaction. Somebody who only
+   *  ever uses the counter simply meets their gift the first time they say
+   *  hello, which is the right way round. */
+  private openCounter(id: CounterId): void {
+    if (!this.world) return;
+    const open = this.counterPanels()[id];
+    const them = this.world.villagers.find((v) => v.id === counterDef(id).who);
+    if (!them) {
+      open();
+      return;
+    }
+    this.withPreamble(them, undefined, open);
+  }
+
+  /** Counter id → the panel it opens. A record rather than a switch so that
+   *  adding a counter to the content table without wiring a panel is a type
+   *  error rather than a door that opens onto nothing. */
+  private counterPanels(): Record<CounterId, () => void> {
+    return {
+      hall: () => this.openHall(),
+      shop: () => this.openShop(),
+      heap: () => this.openHeap(),
+      museum: () => this.openMuseum(),
+      seedstall: () => this.openSeedStall(),
+      stage: () => this.openStage(),
+    };
+  }
+
   private withPreamble(them: Villager, gave: SkinId | undefined, open: () => void): void {
     this.withIntro(them, () => this.withGift(them, gave, open));
   }
@@ -2400,6 +2406,28 @@ export class App {
           return;
         }
       }
+
+      // AND TAP A COUNTER, OR THE BOARD, THE SAME WAY.
+      //
+      // Same branch, same reason, and it closes a real inconsistency rather than
+      // adding a convenience: tapping a PERSON has always opened something, and
+      // tapping the notice board standing next to them did nothing — it is
+      // solid, so the tap fell through to `moveTo` and you walked at it. The
+      // board was reachable only by standing beside it and pressing ACT, which
+      // is a different gesture from the one the rest of the world answers to.
+      //
+      // The tapped CELL is what we approach, not the piece's anchor: a counter
+      // is two tiles wide and you should walk to the half you pointed at.
+      // `resolveWalkToAct` then wants Manhattan distance 1 from that same cell,
+      // so the two have to agree about which tile this is about.
+      if (this.layer() === "surface" && touchableAt(this.world, tx, ty)) {
+        const stand = this.approachTile(tx, ty);
+        if (stand) {
+          this.walkingToAct = { x: tx, y: ty };
+          moveTo(this.world, stand.x, stand.y);
+          return;
+        }
+      }
       moveTo(this.world, wpt.x, wpt.y);
     });
 
@@ -3077,6 +3105,13 @@ export class App {
     // cue below, or standing at the board would play the refusal sound.
     if (res.kind === "read") {
       this.openErrands();
+      return;
+    }
+    // A counter, on exactly the same terms: it opens a panel and moves nothing,
+    // so it has to be caught above the cue rule or walking up to the shop would
+    // play the refusal sound.
+    if (res.kind === "counter" && res.counter) {
+      this.openCounter(res.counter);
       return;
     }
     // A room reading its own past. Caught here for the same reason `read` is —
