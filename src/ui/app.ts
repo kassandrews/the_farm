@@ -3364,14 +3364,25 @@ function buildHud(
   // these six are the things you can be holding at the top level, and five of
   // them place something while the sixth opens a drawer of things that do.
   //
-  // Iconless and worded, like the tabs and for the tabs' reason — a category is
-  // a word, and a picture of "furniture in general" is a riddle with a chair in
-  // it. It is the one wide button in a row of square ones, which is also true of
-  // what it does.
-  const furniture = el("button", { class: "tool furniture-btn", ariaLabel: "Furniture" }, ["Furniture"]);
+  // A chair, not the word "Furniture". It was worded for one revision on the
+  // tabs' argument — a category is a word — and the argument is weaker here than
+  // it looks: the tabs are a strip of five words reading as a sentence of
+  // options, where this is one button in a row of six pictures, and the odd one
+  // out was the wide text chip rather than the idea it named. The chair icon is
+  // free to mean this now, since the furniture tools stopped using icons at all
+  // the day they became art tiles.
+  //
+  // BEFORE the bulldozer, not after it. Take-down is the end of the row on
+  // purpose — it is the only button here that removes rather than places, and it
+  // keeps the end the way the modifiers keep the far end past their gap.
+  const furniture = el("button", { class: "tool furniture-btn", ariaLabel: "Furniture" }, [
+    iconEl("chair", SCALE.button),
+  ]);
   furniture.addEventListener("click", onFurniture);
   hoverHint(furniture, "Furniture — chairs, tables, beds, storage, lamps.  (F)");
-  buildTools.append(furniture);
+  const eraseBtn = buildButtons.find(([id]) => id === "erase")?.[1];
+  if (eraseBtn) buildTools.insertBefore(furniture, eraseBtn);
+  else buildTools.append(furniture);
 
   // The tabs. Text rather than icons, because a group is a WORD — "Seating" is
   // one glance and a picture of a category is a riddle. They sit above the tool

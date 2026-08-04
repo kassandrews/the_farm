@@ -431,22 +431,13 @@ select {
   opacity: 1;
 }
 
-/* The door into furniture, standing in the tool row. Same chip as a tool and the
-   same height, so it reads as one of the series, but worded and therefore wider
-   — a category is a word (see `.build-group`), and the one button here that
-   opens something rather than placing something is allowed to look like it.
+/* The door into furniture is a plain tool button — same square, same icon size,
+   sitting in the series between the window and the bulldozer. It carries no
+   rules of its own: it was a wide text chip for one revision, and the width was
+   the only thing about it that didn't belong in the row.
 
-   Never `.selected`: pressing it takes you somewhere else, and by the time it
-   would have lit, it is off screen. */
-.furniture-btn {
-  width: auto;
-  padding: 0 14px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: inherit;
-}
+   Never `.selected`, though nothing here enforces that: pressing it takes you
+   to another level, and by the time it could have lit it is off screen. */
 
 /* The verb. It was a 50% circle filled with a radial gradient — the only circle
    and the only gradient anywhere in the interface, which made the button the
