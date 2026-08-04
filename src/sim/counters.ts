@@ -35,6 +35,18 @@ for (const b of Object.values(TOWN_BUILDINGS)) {
 }
 for (const f of TOWN_FIXTURES) if (f.counter) BY_ANCHOR.set(tileKey(f.x, f.y), f.counter);
 
+/** Which counter is anchored exactly here, or null. No world, no furniture
+ *  lookup — a pure read of the authored table.
+ *
+ *  This is the RENDERER's door. `drawFurniture` already knows the anchor it is
+ *  drawing and has already established the piece exists, so asking `counterAt`
+ *  would be a second `furnitureAt` search per counter per frame to re-learn what
+ *  the caller just proved. It reads the same map, so the mark on screen and the
+ *  panel the tap opens can never disagree about which tables are counters. */
+export function counterIdAtAnchor(ax: number, ay: number): CounterId | null {
+  return BY_ANCHOR.get(tileKey(ax, ay)) ?? null;
+}
+
 /** The counter covering this cell, or null.
  *
  *  Goes through `furnitureAt` rather than reading the map directly, and that is

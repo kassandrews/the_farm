@@ -6905,6 +6905,107 @@ A visual sitting, not a phase. Two calls, both settled:
   they still read as one tent — a decoration that creeps into the silhouette is
   invisible one at a time.
 
+## Counters are objects; keepers are people (4 Aug 2026)
+
+Six institutions could only be reached through their keeper. `openDialogue`
+called `talk()` and then returned to a counter panel before rendering the line
+it had just composed, which threw away more than a line:
+
+- **26 to 38 distinct lines each, unreachable**, including every warm line —
+  and warmth is the only channel friendship is allowed to reveal itself through
+  (sim/friendship.ts). Warming to six characters was unobservable, which quietly
+  undercut the gift feature built the same day: marble at `friend` was the *only*
+  consequence of knowing Winifred, where it was meant to be the exception.
+- **`speak()` mutates on the way to composing.** It stamps `lastTalkedAt`, marks
+  the line recently-said, and `tryTellLine` calls `observe()` BEFORE returning
+  the remark. Three of the seven told observations are spoken by keepers, so the
+  notebook entry was written and the line that taught it went nowhere.
+- **Pesto was invitable with the button unreachable.** He is deliberately not in
+  `ROOTED` — his institution is a round he walks — and `openDialogue` computed
+  `askable` and discarded it two lines later.
+
+**The settled calls:**
+
+- **A counter is a thing in the world.** Tap the person, get the conversation;
+  tap the counter, get the panel. `counter` on `TownFurniture` names which table
+  is one and which mark it wears — one field, so the affordance and the
+  interaction cannot drift. Derived from the content tables by coordinate (no
+  save field, no migration) and read through `furnitureAt`, so a two-wide counter
+  resolves to one anchor and a demolished one stops being a counter.
+- **This is NOT the menu-in-front-of-a-menu 14a refused.** That was a dialogue
+  box with a "Shop" button — a second panel reached through a first. Two objects
+  standing in a room is not that. 14a's actual promise survives: both roads go
+  through `withPreamble`, so you meet the person before the screen whichever you
+  touched.
+- **Both roads stay open.** Gary's hardcoded "Anything to file?" became every
+  keeper's `ask`. The counter is zero taps from the table and one from the
+  person, so nothing became unreachable for somebody who walks up to who they
+  came to see.
+- **Spatial, not a button stack.** Two other shapes were considered: dialogue
+  first with the counter behind a button (Gary's shape, which taxes every counter
+  visit forever), and walking *around* the counter to talk. The second is dead on
+  arrival because two keepers deliberately stand BESIDE their tables rather than
+  behind them — there is nothing to walk around.
+
+**Two things found by driving it, neither of which a test could have seen:**
+
+- **The tap path and the ACT path were never the same gesture.** `boardNear` and
+  `counterNear` serve ACT, which reads where you stand. The pointer handler
+  special-cases villagers and NODES, and everything else falls through to
+  `moveTo` — so tapping a person opened a conversation and tapping the notice
+  board standing next to them did nothing at all. The node branch ("TAP A TREE
+  AND GO AND DEAL WITH IT") already solved this shape; counters and the board
+  now take it, which fixes the board as a side effect.
+- **`underfoot` beat both.** The mailbox's comment claims the board "gets away
+  with it only because it stands on plaza stone, which no tool touches" — it
+  does not; you read it from grass. Walking to the board with the starting shovel
+  dug a hole and turned up a hinge, and the board never opened. Both moved up to
+  the mailbox's rung on the mailbox's own argument: *"Somewhere you cannot till
+  is a curiosity; a letter nobody can open is a feature that does not exist."*
+
+### The counters had to look like counters
+
+`content/countermarks.ts`: a bell, a ledger, a seed sack, a paint tin, a stamp,
+a playbill. An OBJECT rather than a UI badge — no glow, no outline, no floating
+icon; somebody left a bell on the counter.
+
+- **One per counter, drawn at the piece's ANCHOR.** Every counter is a 2x1 table
+  and the stage is 2x2, so a mark drawn per cell is two bells and four playbills
+  — the per-cell edges rule (CLAUDE.md) in another hat. `furnitureAt` returns the
+  anchor for any covered cell, which is what makes this structural rather than
+  careful.
+- **Placed off the piece's own geometry**, centred and standing just behind the
+  front lip of the top surface (`base - height`), so one rule serves a table
+  twelve pixels tall and a stage eight.
+- **Not finish-keyed.** Literal colours, on the argument content/furnishings.ts
+  already makes for a lamp's brass: a bell is brass in a walnut shop and brass in
+  a whitewashed one. The ledger's cover and the tin's paint are lifted from
+  `content/skins.ts` (oxblood, sage) — a mark is a thing somebody in this town
+  owns, so it wears a colour this town has.
+- **The first draft failed on screen and the second was authored from what it
+  showed.** An open ledger was PAPER on a whitewash desk and rendered as a
+  domino; a flat tray of seed was brown on a pine counter; the stamp and the
+  scales were 70% ink and read as smudges. The rules that came out of it: a mark
+  must contrast with the counter it sits on, and a silhouette needs a fill to be
+  a silhouette. `countermarks.test.ts` holds the ink ratio under 60%.
+- **Scales became a paint tin**, and the replacement is better content: paint is
+  what the Gremlin's counter actually hands over, so the mark names the trade
+  instead of the premise.
+
+### And two keepers stood where their own counter drew over them
+
+A table is twelve pixels tall and draws that height UPWARD, over the cell to its
+north. Both the Menace and Winifred stood in exactly that cell: on screen all you
+could see of the Fancy Little Menace was her crown, and the curator of the town
+museum was a pair of eyes above a desk.
+
+`cast.ts` already knew — Derek was moved beside his counter for this reason and
+the note says so, and Winifred's own schedule line has claimed "beside the desk"
+since it was written while the coordinate put her behind it. **The comment was
+right and the number was not.** Both now take Derek's relation: one cell past the
+counter's end, one row north. It hits the PLAYER too, standing north of any
+counter, which is how it was found.
+
 ## Finishes people give you — friendship becomes an unlock source (4 Aug 2026)
 
 DESIGN and `content/skins.ts` had both said for months that finishes are earned

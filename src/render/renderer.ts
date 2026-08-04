@@ -90,6 +90,9 @@ import { forEachGrainMark } from "./grain";
 import { roofFinish, roofPitch, type RoofPitch } from "./roof";
 import { gridFor, pieceCanvas } from "./furnishings";
 import { FURNITURE_ART } from "../content/furnishings";
+import { COUNTER_MARKS } from "../content/countermarks";
+import { counterIdAtAnchor } from "../sim/counters";
+import type { CounterId } from "../content/counters";
 import {
   BROADLEAF,
   TUFTS_DEFAULT,
@@ -2842,7 +2845,56 @@ export class Renderer {
    *
    *  Sorted on the footprint's SOUTHERN row by the caller, so a bed's far end
    *  never sorts in front of something standing beside its near end. */
+  /** A piece, and then whatever is sitting on it.
+   *
+   *  A wrapper rather than a line at the bottom of the draw, because the draw
+   *  has four exits — the lamp leaves early, a wall-mounted piece leaves early,
+   *  the art path returns after its blit, and the fallback runs to the end. A
+   *  mark added at "the end" would have been drawn for exactly one of them. */
   private drawFurniture(ax: number, ay: number, cell: FurnitureCell): void {
+    this.drawFurniturePiece(ax, ay, cell);
+    const counter = counterIdAtAnchor(ax, ay);
+    if (counter) this.drawCounterMark(ax, ay, cell, counter);
+  }
+
+  /** What says this table is a counter (content/countermarks.ts).
+   *
+   *  Placed off the piece's OWN geometry rather than per-piece constants, so one
+   *  rule serves a 2x1 table twelve pixels tall and a 2x2 stage eight tall:
+   *  centred across the piece, standing just behind the front lip of its top
+   *  surface. `base - H` is where that surface ends and the near face begins,
+   *  which is the same datum the fallback draw uses to split the two.
+   *
+   *  Integer coordinates and a 1:1 blit, like every other piece of art in here.
+   *  Anything else resamples pixel art off the grid, which CLAUDE.md forbids
+   *  outright. */
+  private drawCounterMark(
+    ax: number,
+    ay: number,
+    cell: FurnitureCell,
+    counter: CounterId,
+  ): void {
+    const ctx = this.ctx;
+    const def = furnitureDef(cell.id);
+    const { w, h } = footprint(def, cell.facing);
+    const grid = COUNTER_MARKS[counter];
+    const raster = pieceCanvas(`mark:${counter}`, grid, skinDef(cell.finish), false);
+
+    const px = Math.round(this.sceneX(ax) - TILE / 2);
+    const base = Math.round(this.sceneY(ay + h - 1) + TILE / 2);
+    const surfaceFront = base - def.height;
+
+    const prev = ctx.globalAlpha;
+    if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
+    ctx.drawImage(
+      raster,
+      px + Math.round((w * TILE - raster.width) / 2),
+      surfaceFront - raster.height - 2,
+    );
+    ctx.globalAlpha = prev;
+  }
+
+  private drawFurniturePiece(ax: number, ay: number, cell: FurnitureCell): void {
     const ctx = this.ctx;
     const def = furnitureDef(cell.id);
     const { w, h } = footprint(def, cell.facing);
