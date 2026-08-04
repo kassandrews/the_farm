@@ -3628,7 +3628,22 @@ export class Renderer {
     // what it shows instead is the sky it reflects.
     ctx.fillStyle = lit ? GLASS_WARM : GLASS;
     ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
-    if (lit) this.litWindows.push({ x: tx, y: ty, gx: x0, gy: y0, gw: x1 - x0, gh: y1 - y0 });
+    // ONLY IF THE FACE IS ACTUALLY IN VIEW, and that is not the same question as
+    // "is the room lit". The glow pass runs after everything (drawLampGlow), so
+    // a pane pushed here gets repainted over whatever stands in front of it —
+    // and the face of a BACK wall stands behind its own room's roof. A roof cell
+    // is lifted a storey, so the cell that covers a wall's face is the one to
+    // its SOUTH; on a north wall that cell is the room's own interior. Lit back
+    // windows came out as warm patches floating on the shingles, twice: the pane
+    // rectangle and the pool it throws.
+    //
+    // The same test the lamps take (see `underSolidRoof` at the furniture pass),
+    // one cell along, and for the same reason — it is the roof's own fade rather
+    // than a boolean, so walking indoors brings the back windows up as the
+    // cutaway opens instead of switching them on.
+    if (lit && !this.underSolidRoof(tx, ty + 1)) {
+      this.litWindows.push({ x: tx, y: ty, gx: x0, gy: y0, gw: x1 - x0, gh: y1 - y0 });
+    }
     // A rake of brighter glass, stepped off the WORLD column so a long run gets
     // one continuous diagonal across it rather than the same highlight stamped
     // in every cell — the band rule again, at pane scale.
