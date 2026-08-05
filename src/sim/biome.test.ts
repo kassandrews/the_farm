@@ -971,7 +971,17 @@ describe("stone", () => {
     for (const def of Object.values(BIOMES)) {
       // A tint is a DIRECTION and an amount, never a replacement: at 1.0 the
       // stone would stop being stone-coloured at all.
-      if (def.stone?.tint) expect(def.stone.tint.amount).toBeLessThan(0.5);
+      //
+      // THE BURNT ROWS GO FURTHER, BY NAME. What this cap protects is that a rock
+      // still reads as a rock, and it was doing that job by proxy — by assuming
+      // that any ground a rock sits on is lighter than the rock. On ash it is not:
+      // at 0.46 the cinders' boulders measured (111,103,94) against a floor of
+      // (66,58,56), which is a granite rock from somewhere else lying on a burnt
+      // plain. Their stone genuinely IS nearly black, so they may say so — and
+      // they stay bounded, because a rock the colour of the ash is the same bug
+      // from the other side.
+      const cap = def.id === "cinder" || def.id === "caldera" ? 0.7 : 0.5;
+      if (def.stone?.tint) expect(def.stone.tint.amount, def.id).toBeLessThan(cap);
     }
   });
 });

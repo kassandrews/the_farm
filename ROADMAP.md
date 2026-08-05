@@ -7471,6 +7471,14 @@ stored id moves; no schema change anywhere.
   The caldera's snags are shorter than the plain's for the same test's other
   clause — two regions may not share an outline unless their colour differs — and
   the honest answer was that a snag nearer the middle has less of itself left.
+- **The rocks stayed granite-grey on a burnt plain.** The stone tint cap (under
+  0.5, "a tint is a direction and never a replacement") was doing its job by
+  proxy — by assuming the ground a rock sits on is lighter than the rock. On ash
+  it is not: at 0.46 they measured (111,103,94) against a floor of (66,58,56).
+  The burnt rows go to 0.62 and the cap carries their names, because their stone
+  genuinely is basalt; they stay bounded because a rock the colour of the ash is
+  the same bug from the other side. Measured after: rock (85,78,74), ash
+  (64,56,54), lava crust (36,26,26).
 - **The caldera's "thicker air" made it a second kind of air**, which the mote
   guard caught. That guard now counts DISTINCT airs rather than rows, since the
   caldera's ash is the cinders' ash; and it has a clause that may never move —

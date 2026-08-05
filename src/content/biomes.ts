@@ -1951,10 +1951,27 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     trunkHeight: 22,
     // Fresh-broken and dark, with the region's own warmth in it. Shards and
     // broken pieces only: this rock was thrown, not weathered.
-    // Just under the half the tint rule allows (sim/biome.test.ts §stone): a tint
-    // is a direction and never a replacement, and the one region that would most
-    // like its rock to be a different material is the one that must not have it.
-    stone: { tint: { color: "#3d3129", amount: 0.46 }, shapes: ["shard", "broken", "shard"] },
+    // BASALT, AND THE ONLY ROCK IN THE GAME ALLOWED PAST THE HALF-WAY LINE.
+    // `sim/biome.test.ts` §stone caps a stone tint under 0.5 — a tint is a
+    // direction and never a replacement, and past that the rock stops being
+    // stone-coloured — and at 0.46 these measured (111,103,94) on ash of
+    // (66,58,56): mid-grey boulders lying on a burnt plain, which is the
+    // glimmer's warm-grey-stone-on-teal complaint again and worse, because here
+    // the rock genuinely is nearly black.
+    //
+    // What the rule protects is that a rock still READS as a rock, and at 0.62 it
+    // does: the fill lands near (85,78,74) with its lit shoulder at (91,84,80) and
+    // its shade at (76,70,66) — a clear step above the ground, with every bit of
+    // the modelling that says "object" rather than "stain" intact. Any darker and
+    // it starts disappearing into the ash, which is the same bug from the other
+    // side and the reason this is 0.62 and not 0.8.
+    //
+    // NO GLINT, deliberately, and it was tempting: the glimmer's stone catches a
+    // spark of its region's own light, and an ember caught on basalt beside a lava
+    // lake is that idea exactly. Its own note says why not — a glint is affordable
+    // at about one rock a screen, and this region has thirty-five. Light on every
+    // one of them is not a highlight, it is a texture.
+    stone: { tint: { color: "#2b2322", amount: 0.62 }, shapes: ["shard", "broken", "shard"] },
     // ASH IN THE AIR, ALL YEAR AND ALL DAY. The second and last user of `blow`
     // (MoteKit), and the pairing is deliberate: the long grass's air is seed
     // going sideways in sunlight, and this is the same motion with the light
@@ -2026,10 +2043,9 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     crownGaps: [0, 0, 0, 1, 1],
     crownOverlap: 2,
     trunkHeight: 18,
-    // Just under the half the tint rule allows (sim/biome.test.ts §stone): a tint
-    // is a direction and never a replacement, and the one region that would most
-    // like its rock to be a different material is the one that must not have it.
-    stone: { tint: { color: "#3d3129", amount: 0.46 }, shapes: ["shard", "broken", "shard"] },
+    // The cinders' basalt, to the digit. See its note for why this one row is
+    // allowed past the tint cap.
+    stone: { tint: { color: "#2b2322", amount: 0.62 }, shapes: ["shard", "broken", "shard"] },
     // THE CINDERS' AIR, TO THE DIGIT. It was thicker here for a draft — more ash
     // nearer where it is coming from, which is a nice sentence — and
     // `content/decor.test.ts` counts DISTINCT airs rather than rows, so a density
