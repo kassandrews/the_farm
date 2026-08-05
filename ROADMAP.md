@@ -53,7 +53,10 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   soft furniture that costs it.
 - **Phase 3e — the junk economy, complete.** The ground has things in it,
   digging finds them, and the Gremlin's heap turns them into finishes.
-- Menu with New town / sound toggle; PWA shell; 630 tests.
+- Menu with New town / sound + music toggles; PWA shell; 630 tests.
+- **Phase 15 — the soundtrack, complete.** Nine generated pieces, day and night
+  setlists, and an arrangement that assembles itself as you walk into town. See
+  below.
 - **Phase 3f — the museum, complete.** The table, the sim, schema v12, the
   gallery it stands in (v13), Corrigal's panel, the away event, and Margfrom's
   perk. Two wings, donation is a gift that returns nothing, the record has no
@@ -7171,6 +7174,98 @@ you. That order is not hypothetical — `witness` warms whoever stands near you
 while you work, so you can reach `familiar` with somebody you have never spoken
 to, and Pesto handing paint to a stranger is what a player who builds near the
 plaza would have got.
+
+## Phase 15 — the soundtrack (4 Aug 2026)
+
+The game had cues and a hum. It now has music: `content/music.ts` (the
+setlist), `sim/score.ts` (where you are and what time it is), and the engine in
+`ui/audio.ts §the score`. No assets, no schema change, one new menu switch.
+
+Designed at a browser rather than on paper — four throwaway spikes, each one
+answering the question the last one raised, and the settled calls below are all
+things a spike changed our mind about. DESIGN.md §"Sound and music" is the
+short version; this is why.
+
+### The settled calls (don't relitigate)
+
+- **Lofi in town, ambient in the wild — but ONE engine.** The first spike built
+  them as two engines to A/B. The comparison is what killed the idea: muting the
+  drums on the lofi one lands most of the way to the ambient one, because the
+  distance between the two genres is articulation, not harmony. Two engines
+  would have meant two of everything and a cross-fade between them.
+- **Layers, not cross-fades.** Same key, same tempo, same four chords the whole
+  way out; position sets a gain per part. Game audio calls this vertical
+  remixing, and the alternative — cutting between pieces — is what a radio
+  losing signal sounds like. The doorway case is the one that decides it: you
+  will step out of town for eight seconds and back, constantly.
+- **Hysteresis was in the spike and is NOT in the game.** The spike had a hold
+  timer so the music only believed a position you had kept for ten seconds, and
+  demonstrably needed it — without it, wagging the marker across the tree line
+  made the mix lurch. The argument for leaving it out here is that two other
+  things already cover the same ground: zone gains move on a 4.5s time constant,
+  and `settledness` has a ten-tile plateau around each anchor, so stepping out
+  of a doorway barely moves the number. **This is reasoned, not heard** — if
+  walking in and out of the shop turns out to pump the drums, the hold timer is
+  the fix and it is about fifteen lines.
+- **Two anchors, plaza and homestead.** One anchor would mean the reward for
+  building somewhere with a view is that your own kitchen has no floor under the
+  music. `settledness` takes whichever is nearer.
+- **Biomes stay out of it.** DESIGN says biomes are colour and density and
+  nothing else. A biome that changed the music would be a biome that meant
+  something.
+- **Nothing fades. Parts arrive.** A master-gain ramp sounds like a master-gain
+  ramp. The arrangement envelope — one number, read through a per-layer window —
+  is the whole trick, and it is what makes "you cannot point at the moment it
+  started" true rather than aspirational.
+- **Assemble time is shorter in town.** 16s settled, 30s wild. The spike used
+  one number for both and it was wrong at one end: thirty seconds of pads before
+  a beat is atmospheric in a field and simply slow on the plaza, where the beat
+  is the point.
+- **Silence is the seam, not just the rest.** The next piece is chosen during
+  the quiet, which is why key, tempo, progression and drum pattern can all
+  change with nothing to hear. This fell out of asking for variety and turned
+  out to be the better half of the answer.
+- **Three minutes on, five off — eight at night.** Minecraft's tracks run about
+  three to four minutes with a great deal more silence between them than that;
+  the ratio is the point, and the first spike ran at about 70% duty cycle, which
+  is a livestream rather than a game.
+- **Night gets its own pieces, not the day ones dimmed.** Three of them, slower
+  than anything in daylight, with `hush` under them. Dawn counts as night and
+  dusk does not — `sim/time.ts` already draws that line for the ground palette.
+- **Music has its own switch.** Plenty of people want the shovel and not the
+  soundtrack. Global mute still takes both; it is the bigger hammer, not a peer.
+- **Voice leading, not register folding.** Each chord's notes move to whichever
+  octave sits nearest the note that voice just played. Folding every chord into
+  a fixed window independently is correct and sounds stiff, most audibly in the
+  flat keys — `Half Six` is the row that exposed it.
+- **`unlock()` exists because the score has no gesture of its own.** Cues ride
+  in on the action that caused them; the score runs off the frame loop and would
+  otherwise build an AudioContext on frame one, before anyone has touched
+  anything. That is both the rule at the top of `ui/audio.ts` and a browser
+  warning logged once a frame — caught in the browser, invisible to the suite.
+
+### Parked (argued for, not built)
+
+- **Interiors.** Standing inside a building currently reads as wherever the
+  building is. A room could damp the top end and pull the reverb in, which is
+  cheap; what stopped it is that `sim/rooms.ts` recomputes and the music would
+  need to not care about a wall being knocked through mid-piece.
+- **Festivals.** The plaza stage is the one place in the game with a reason to
+  override the setlist outright. Wants a piece written for it, not a rule.
+- **The Cube.** It hums at a fixed 55Hz and the score does not know. Tuning the
+  drone to the hum when you are near it, or the reverse, is a nice idea and a
+  trap: the hum confirms a landmark and must not become a musical event.
+- **Seasons.** Winter could bias the pool toward the sparser rows. Cheap, but it
+  is a fifth thing reading the clock and none of the other four sound like it.
+
+### What this phase owes, procedurally
+
+Unit tests cannot hear anything. `sim/score.test.ts` measures the numbers the
+engine is handed — 35 of them — and that is the whole of what is assertable.
+Everything about whether it SOUNDS right was settled in a browser, and the two
+bugs found this phase (the autoplay warning, the stiff flat keys) were both
+invisible to the suite. Verify audio changes by listening, and by counting
+oscillator constructions if you need evidence a scheduler is running.
 
 ## Known gaps and loose ends
 

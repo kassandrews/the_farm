@@ -62,6 +62,7 @@ import type { CharId, NewcomerId } from "../content/cast";
 import { isNewcomer, isSecret, CAST, charDef, livesSomewhere } from "../content/cast";
 import { present } from "../sim/presence";
 import { humLevel } from "../sim/hum";
+import { settledness, nightMusic } from "../sim/score";
 import {
   openCommission,
   commissionFor,
@@ -2303,9 +2304,19 @@ export class App {
         soundBtn.textContent = soundLabel();
         audio.play("menu"); // silent when it's just been muted — that's the confirmation
       });
+      // Its own switch, and deliberately not a sub-setting of Sound: plenty of
+      // people want the shovel and not the soundtrack. Global mute still takes
+      // both — it is the bigger hammer, not a peer (ui/audio.ts §the score).
+      const musicLabel = () => (audio.isMusicOff() ? "Music: off" : "Music: on");
+      const musicBtn = choiceBtn(musicLabel(), () => {
+        audio.toggleMusic();
+        musicBtn.textContent = musicLabel();
+        audio.play("menu");
+      });
       body.append(
         primaryBtn("Resume", close),
         soundBtn,
+        musicBtn,
         choiceBtn("New town…", () => {
           // Second step: confirm, because a new town erases this one.
           body.replaceChildren(
@@ -2323,6 +2334,14 @@ export class App {
 
   // --- Input ------------------------------------------------------------------
   private wireInput(): void {
+    // The score runs off the frame loop rather than off an action, so it has no
+    // gesture of its own to ride in on. These two lines are it — anywhere the
+    // player touches the page, once, and the soundtrack is allowed to exist
+    // (ui/audio.ts §unlock). Cues don't need it; they already are a gesture.
+    const unlock = () => audio.unlock();
+    window.addEventListener("pointerdown", unlock, { once: true, capture: true });
+    window.addEventListener("keydown", unlock, { once: true, capture: true });
+
     this.canvas.addEventListener("pointerdown", (e) => {
       if (this.modalOpen || !this.world) return;
 
@@ -3245,10 +3264,18 @@ export class App {
     }
 
     if (this.world) {
-      this.renderer.draw(this.world, Date.now());
+      // One reading of the wall clock for the whole frame: the sky tint and the
+      // setlist both hang off the hour, and two calls could straddle a boundary.
+      const wallNow = Date.now();
+      this.renderer.draw(this.world, wallNow);
       // The hum is a fact about distance, so the number comes from sim
       // (sim/hum.ts) and this line is the whole of the UI's part in it.
       audio.setHum(humLevel(this.world));
+      // Same shape as the hum: the decisions are sim's (how settled this spot
+      // is, whether it's dark), the oscillators are the audio module's, and
+      // this line is the whole of the UI's part in it. `now` comes from the
+      // frame so the setlist and the sky tint can never disagree about the hour.
+      audio.setScore(settledness(this.world), nightMusic(wallNow));
       this.hud.clock.textContent = clockLabel(Date.now());
       // From the TILE, not from `player.x`: the player is a point moving
       // continuously across cells, and a reference reading off the float would
@@ -3383,7 +3410,7 @@ function buildHud(
 ): HudRefs {
   const menu = el("button", { class: "menu-btn", ariaLabel: "Menu" }, [iconEl("menu")]);
   menu.addEventListener("click", onMenu);
-  hoverHint(menu, "Menu — sound, and starting a new town.");
+  hoverHint(menu, "Menu — sound, music, and starting a new town.");
   const satchel = el("button", { class: "menu-btn satchel-btn", ariaLabel: "Satchel" }, [iconEl("satchel")]);
   // Third in the corner the hands already reach for. It sits with the satchel
   // rather than in the menu because the menu is for the GAME (sound, a new

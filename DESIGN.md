@@ -1248,6 +1248,41 @@ written by the same hand.
 Discovery is the signature: secrets are never listed, hinted at only
 obliquely, and never spoiled by UI (no "???" slots for the hidden).
 
+## Sound and music
+
+Everything you hear is **generated** — oscillators and filtered noise, no
+audio files. That is a constraint with a payoff: the PWA works offline by
+construction and there is nothing to download.
+
+**Cues are events; the score is a place.** A cue is a noise because you did
+something — a shovel, a board, a door. Two things in the game make noise
+whether or not you act: the Humming Cube, and the soundtrack.
+
+**The soundtrack is one engine and a table of pieces.** A piece is a root, a
+mode, four scale degrees and a feel; every chord is derived, so a plain
+triad is unreachable and nothing can be out of key. Six pieces by day, three
+after dark — the night ones are sparser and slower, not the day ones with
+the lights off.
+
+**Where you are changes the arrangement, never the song.** Walking out of
+town does not fade to different music, it takes the drums off the music
+already playing: full band on the plaza and at your own claim, held chords
+out in the fields, nothing but a drone underground. Cross-fading two pieces
+is what a radio losing signal sounds like.
+
+**There is far more silence than music.** Three minutes of a piece, then
+five of quiet — eight at night. A soundtrack that is always on is one you
+mute in week two. The silence also earns its keep: the next piece is chosen
+inside it, so key and tempo can change with no seam to hear.
+
+**Nothing starts and nothing stops.** Parts arrive in order over about
+twenty seconds — pads, then keys, then bass, then drums — and leave in
+reverse. A master-volume fade sounds like somebody turning a knob. You
+should never be able to point at the moment the music began.
+
+**Muting hides nothing.** As with the hum, no sound is the only way to learn
+anything, and music has its own switch separate from the rest.
+
 ## Platform
 
 One responsive **web app (installable PWA)**. Touch-first design —
