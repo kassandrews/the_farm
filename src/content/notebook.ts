@@ -41,7 +41,6 @@ export type ObservationId =
   | "the-fen"
   | "the-blossom"
   | "the-granite"
-  | "the-heath"
   | "the-long-grass"
   | "the-redwoods"
   | "the-giants"
@@ -125,17 +124,9 @@ export const OBSERVATIONS: ObservationDef[] = [
     line: "Rock, with a little turf over it here and there as a courtesy. The trees stand about one to a hillside and each looks to have picked the spot itself.",
   },
   {
-    id: "the-heath",
-    source: "noticed",
-    // The joke is the surveyor's, not the region's: a place with no trees in it
-    // is described entirely by what it is not, which is how people actually talk
-    // about heathland.
-    line: "Bushes, all of them about waist high and none of them going to be anything else. I can see the whole of it from the middle of it, which no wood has ever let me do.",
-  },
-  {
     id: "the-long-grass",
     source: "noticed",
-    line: "Grass to the knee for as far as it goes, and something coming off it sideways all afternoon. Seed, I think. It is not settling anywhere I can see.",
+    line: "Grass to the knee for as far as it goes, with bushes standing about in it at intervals nobody arranged. Something comes off the grass sideways all afternoon. Seed, I think. It is not settling anywhere I can see.",
   },
   {
     id: "the-redwoods",

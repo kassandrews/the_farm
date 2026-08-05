@@ -223,6 +223,17 @@ describe("the redwood stands, and the giants in some of them", () => {
    *  enough that `onLand`'s sixteen bearings still run in a suite. */
   const INSTANCES = [0, 1, 2, 3];
 
+  // THE SWEEPS IN HERE CARRY THEIR OWN TIMEOUT, and it is a statement about what
+  // they are rather than a workaround. Each one is a PROOF over hundreds of seeds
+  // and four spots — the kind of assertion that catches a siting bug on the seed
+  // nobody tested — and `biomeAt` grew a ring window when the stands arrived, so
+  // they run a few seconds each. At vitest's 5s default they passed alone and
+  // timed out under a full parallel suite, which is the worst possible failure
+  // mode: a red build that goes green when you re-run it, on a test that is not
+  // actually flaky. Twenty seconds is far above what they take and far below
+  // anything that would hide a real regression.
+  const SWEEP = 20_000;
+
   it("puts a wood on every ring, on every seed and every spot", () => {
     // The recurrence is the whole difference between this and the blossom rows:
     // one per town would say the world runs out of woods, on a map that does not
@@ -240,7 +251,7 @@ describe("the redwood stands, and the giants in some of them", () => {
         }
       }
     }
-  });
+  }, SWEEP);
 
   it("never lands in the sea, on any spot", () => {
     // The blossom rows' test, and the reason it has to be repeated rather than
@@ -289,7 +300,7 @@ describe("the redwood stands, and the giants in some of them", () => {
         }
       }
     }
-  });
+  }, SWEEP);
 
   it("keeps the giants at the heart of a wood, and never anywhere else", () => {
     // Two claims in one sweep, and the second is the one that matters: you reach
@@ -307,7 +318,7 @@ describe("the redwood stands, and the giants in some of them", () => {
         }
       }
     }
-  });
+  }, SWEEP);
 
   it("gives about one wood in four its giants", () => {
     // A RATE, NOT A QUOTA (sim/world.ts §GIANTS_IN). There is no last stand and
@@ -398,7 +409,12 @@ describe("the world gets stranger the farther out you go", () => {
         }
       }
     }
-  });
+    // Twenty seconds for the reason the redwood sweeps have it (see SWEEP up in
+    // that describe): this walks 60 seeds over a 130-tile square asking `biomeAt`,
+    // and `biomeAt` grew a ring window when the stands arrived. It passed alone
+    // and timed out in a full parallel suite, which is a red build that goes green
+    // on a re-run — the worst kind.
+  }, 20_000);
 
   /** The share of a ring that came up one of the three far regions. Sampled on a
    *  circle rather than a box so it is a distance being measured and not an area. */

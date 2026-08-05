@@ -543,6 +543,13 @@ The rules do not bend for any of this. Sited or rolled, near or far, common or
 one in four, a region is colour, density and silhouette, and the biggest tree in
 the world chops into the same eight wood as the smallest.
 
+**A region is a mixture, not a demonstration.** Open country was built once as a
+matched pair — a heath that was all bushes and a plain that was all grass, each
+making its point cleanly — and neither was a place. Somewhere real has several
+scales of plant in it at once: tussock, bush, tree, in descending order of how
+much of it there is. A row with exactly one idea in it is a swatch, however well
+that idea is executed.
+
 ### Ground that is not turf
 
 A region's ground may vary **within itself**, on a field of its own — bare rock
@@ -619,12 +626,12 @@ repaint, on exactly the terms a season is.
 design one.** The near weights reproduce the world as it generated before biomes
 drifted at all, and a region inserted among them re-landscapes ground people have
 built on. So every region added from now on is far-only — including the plainly
-ordinary ones, a granite country, a heath, a prairie. None of them is strange;
-they are simply where there is room.
+ordinary ones, a granite country, a plain of long grass. Neither is strange; they
+are simply where there is room.
 
-Which means **a new far row is scaled in, never appended flat.** Three ordinary
-rows dropped on the end would have taken the strange three from 63% of the
-plateau to 36% without anybody deciding to, and the far country would have got
+Which means **a new far row is scaled in, never appended flat.** Ordinary rows
+dropped on the end would have taken the strange three from 63% of the plateau
+toward a third without anybody deciding to, and the far country would have got
 blander every time it got bigger. The two numbers to hold when adding one: the
 strange rows keep about half the roll, and the five familiar ones keep about a
 quarter, at any distance.

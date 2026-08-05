@@ -58,7 +58,7 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   setlists, and an arrangement that assembles itself as you walk into town. See
   below.
 - **Phase 16 — four new regions, complete.** The granite, the redwoods (with the
-  giants), the heath and the long grass. Rock as a landscape
+  giants), and the long grass. Rock as a landscape
   (rolled, far, with bare sheets on a long field), and redwood stands sited on a
   ring that recurs outward — about one in four with a grove of giants at its
   heart. No schema change; the near world is untouched by construction. See
@@ -7353,32 +7353,38 @@ function of (seed, x, y) and are stored nowhere.
   string allocations a tile is enough to blow a 5s budget — hence `standCache`,
   one world, an array by index.
 
-### Same day: the heath and the long grass
+### Same day: the long grass — and the pair that became one region
 
-Two more rolled far regions, both open country, built to read against each other
-and against the granite. `render/renderer.ts` grew one mote field and a shrub
-jitter; everything else is table rows.
+Open country, built first as TWO regions and shipped as one. The heath (all
+bushes) and the prairie (all grass) each made their point cleanly and neither was
+a place: somewhere real has several scales of plant in it at once. The heath row
+was deleted an hour after it landed and its bushes, its waxcaps and its autumn
+bloom moved into the long grass, which now has tussock, bush and tree in
+descending order of how much of it there is — more scales than any other row here,
+and most of why it reads as somewhere rather than as a swatch. **That correction
+is the settled call**: a region with exactly one idea in it is a diagram.
 
-- **The heath is a canopy at knee height**, and it cost nothing to draw: `shrubs`
-  has existed since the glimmer, and `drawShrub` already takes its width from the
-  region's own `crownRows` — so a region that is nearly all shrub gets its own
-  bush out of a crown it almost never draws. 1.8× is 18% of cells (a shrub is
-  solid), which is bushy and walkable where the pines' 22% is a wall.
+- **The bushes cost nothing to draw.** `shrubs` has existed since the glimmer, and
+  `drawShrub` takes its width from the region's own `crownRows` — so the scrub out
+  here is a small version of the lone oak, and no new sprite was written. 0.55 is
+  5.5% of cells: lumps on the horizon, still unmistakably grass.
 - **It is not a wood you can farm, and the arithmetic is now a test.** The old
   far-country check compared trees, rocks and mushrooms key by key, which cannot
   see `shrubs` at all — no near row has any, so a raw comparison would have said
-  the heath is infinitely richer than home. It compares WOOD PER CELL now: the
-  heath is 0.36, the pinewood 1.76, forty tiles from the plaza.
-- **The long grass is the only region whose character is the wind.** `blow` (new)
-  is a horizontal displacement over the mote's cycle — `drift`'s twin, not a
-  bigger `sway`, which oscillates and comes back. One region has one, and the
-  mote test now guards the count that actually matters: how many kits are running
-  RIGHT NOW (four), not how many exist (six).
-- **Adding far rows means SCALING the far column, not appending to it.** Three
-  ordinary rows dropped on the end would have taken the strange three from 63% of
-  the plateau to 36% by arithmetic nobody chose. Dusk, glimmer and glass went up
-  instead; the familiar five hold a quarter. Written into DESIGN §"stranger the
-  farther out".
+  the long grass is infinitely richer than home. It compares WOOD PER CELL now:
+  0.11 out there against the pinewood's 1.76, forty tiles from the plaza.
+- **The wind is the region.** `blow` (new) is a horizontal displacement over a
+  mote's cycle — `drift`'s twin, not a bigger `sway`, which oscillates and comes
+  back. One region has one, and the mote test now guards the count that matters:
+  how many kits are running RIGHT NOW (four), not how many exist (six).
+- **Asters in autumn, not coneflowers in summer.** Both are true of grassland; the
+  autumn one is worth more, because autumn was the only season in the whole file
+  with no signature — the largest crown swing in `seasons.ts` and a bare floor
+  under it.
+- **Adding far rows means SCALING the far column, not appending to it.** Ordinary
+  rows dropped on the end would have taken the strange three from 63% of the
+  plateau toward a third by arithmetic nobody chose. Dusk, glimmer and glass went
+  up instead; the familiar five hold a quarter. Now in DESIGN.
 
 **What the screen changed, again.** Every one of these was invisible in the table:
 
@@ -7390,17 +7396,22 @@ jitter; everything else is table rows.
   exemption by name, so nobody inherits it by accident.
 - **Four tussocks that differ only in which blade leans are one glyph.** They
   differ in height and width now — that is what the eye sorts on.
-- **Every bush in a region was exactly the same width**, which was invisible
-  under trees and was the whole picture on the heath: a field of identical mounds
-  reads as printed. ±1 off the tile's own salt.
-- **The gorse turned brown in October** — the month the heather is out, so the
+- **Every bush in a region was exactly the same width**, which was invisible under
+  trees and was the whole picture out here: a field of identical mounds reads as
+  printed. ±1 off the tile's own salt, which quietly improves the glimmer and the
+  redwoods too.
+- **The scrub turned bronze in October** — the month the asters are out, so the
   one time of year the place is worth walking to was the one time it looked like
-  nothing. Gorse and heather are evergreen: the crown tint holds at 0.78, the
-  pinewood's argument word for word.
-- **A heath is not a fly agaric host** (no birch, no pine): the whitelist asked
-  again, and the answer is waxcaps — orange, not scarlet, which is the exact
+  nothing. Dry-country scrub is evergreen: the crown tint holds at 0.72 and the
+  GRASS goes over, which is what autumn on a plain actually looks like. The same
+  mistake was made and fixed twice in an hour, once on each version of this row.
+- **Old grassland is not a fly agaric host** (no birch, no pine): the whitelist
+  asked, and the answer is waxcaps — orange, not scarlet, which is the exact
   distinction that test exists to force.
-
+- **Two sweeps carry their own 20s timeout.** `biomeAt` grew a ring window when the
+  stands arrived, and the proof-sized sweeps passed alone while timing out under a
+  full parallel suite — a red build that goes green on a re-run, which is the worst
+  kind of failure to leave lying around.
 
 ## Known gaps and loose ends
 

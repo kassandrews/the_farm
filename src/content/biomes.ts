@@ -119,7 +119,6 @@ export type BiomeId =
   | "glimmer"
   | "glass"
   | "granite"
-  | "heath"
   | "prairie"
   // Sited, not rolled — like the blossom rows, and for the same reason. See
   // BIOMES.redwoods.
@@ -1645,134 +1644,32 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     },
   },
 
-  /** A CANOPY AT KNEE HEIGHT — the first region in the game with no trees in it
-   *  worth the name, and the only one you can see all the way across while
-   *  standing in something.
+  /** GRASS, BUSHES, AND THE ODD TREE — one open country rather than two, and the
+   *  correction is worth recording because it was a real design error. This
+   *  shipped for an afternoon as a PAIR of regions: a heath that was all bushes
+   *  and a prairie that was all grass, each pure, each making its point cleanly
+   *  and neither of them being a place. Open country is mixed. A plain with
+   *  scattered scrub in it and one tree on the skyline is a thing everybody has
+   *  seen; a plain with nothing but bushes and a separate plain with nothing but
+   *  grass are two diagrams.
    *
-   *  THE BUSHES ARE THE POINT AND THEY COST NOTHING TO DRAW. `shrubs` has existed
-   *  since the glimmer asked for undergrowth, and `drawShrub` takes its width
-   *  from the region's own `crownRows` — so a region that is nearly all shrub
-   *  gets its own bush silhouette out of a crown it almost never draws. That is
-   *  why this row exists at all: the game could already say it and nothing had.
+   *  So the bushes came here and the other row went. What is left is one region
+   *  with three scales of plant in it — tussock, bush, tree, in that order of how
+   *  much of it there is — which is more than any other row in this file has, and
+   *  is most of why it reads as somewhere rather than as a swatch.
    *
-   *  IT IS NOT A WOOD YOU CAN FARM. A shrub is a gathered node (two wood), and
-   *  this row is far country, so the payout-for-distance question has to be asked
-   *  and answered with the arithmetic rather than waved at. Shrubs are 0.1 base ×
-   *  1.8 = 18% of cells at two wood, which is 0.36 wood a cell. The PINEWOOD is
-   *  0.1 × 2.2 = 22% of cells at eight, which is 1.76 — five times as much, forty
-   *  tiles from the plaza. Walking out here to cut bushes is the worst wood in the
-   *  game by a distance, and `sim/biome.test.ts` measures exactly this now.
+   *  THE BUSHES COST NOTHING TO DRAW, which is why they could be folded in at
+   *  all. `shrubs` has existed since the glimmer asked for undergrowth, and
+   *  `drawShrub` takes its width from the region's own `crownRows` — so the
+   *  scrub out here is a small version of the lone oak below, and no new sprite
+   *  was written for any of it.
    *
-   *  NO DEADWOOD, and that is the region rather than an omission: nothing here is
-   *  big enough to fall over. */
-  heath: {
-    id: "heath",
-    name: "the heath",
-    // Almost nothing. What trees there are stand alone and lean — see
-    // `crownRows`, which is a hawthorn that has been leant on by the wind for
-    // thirty years and is also, in this region, what a gorse bush is made of.
-    trees: 0.06,
-    rocks: 0.8,
-    mushrooms: 0.02,
-    water: 0,
-    // The densest undergrowth in the game by a factor of three, and still
-    // walkable: a shrub is solid, so this is 18% of cells occupied — bushy, with
-    // ways through it — where the pines at 2.2 put 22% of cells in your way and
-    // are the region you cannot see across.
-    shrubs: 1.8,
-    // DUN, AND DARKER THAN ANYTHING DRY IN THE FILE. The scrub is bleached to
-    // (181,194,114) and the prairie below is honey; peat is neither. This lands
-    // near (127,136,83) — the same value as a wood's floor with none of a wood's
-    // green, which is what the ground between heather actually looks like.
-    ground: { color: "#8a7048", amount: 0.75 },
-    tuft: { color: "#94825a", amount: 0.7 },
-    // Wiry. Blades and grit, one cluster in three — nothing here grows soft.
-    tufts: ["blades", "blades", "dot", "cluster"],
-    // THE BUSH COLOUR, not a canopy colour, which is what makes this row's
-    // `crown` the most visible number in it: 18% of the cells on screen are
-    // wearing it. Gorse-dark and slightly grey, so the heather has something to
-    // be bright against.
-    //
-    // HELD AS HARD AS THE PINEWOOD'S, AND FOR THE PINEWOOD'S REASON WORD FOR
-    // WORD: gorse and heather are evergreen, and they do not turn. Photographed
-    // in October at 0.62 the bushes went olive-brown over brown ground and the
-    // region read as a desert with lumps in it — which is also the month the
-    // heather is out, so the one time of year this place is worth walking to was
-    // the one time it looked like nothing. At 0.78 the season moves the ground
-    // and leaves the plants alone, which is what an autumn heath actually is:
-    // dark green, purple, and everything around it going over.
-    crown: { color: "#3a4a2c", amount: 0.78 },
-    trunk: { color: "#6a5a44", amount: 0.4 },
-    // LOW AND WIDE AND SHORT-STEMMED, which serves both jobs this array has to
-    // do here. As a tree it is a wind-flattened hawthorn — the scrub's shape with
-    // the height taken out. As a BUSH it is the widest stretch of that, which is
-    // the six half-widths in the middle: a thirteen-pixel mound, near enough a
-    // tile, which is what a gorse bush is.
-    crownRows: [2, 4, 5, 6, 6, 6, 5, 4, 3],
-    trunkHeight: 12,
-    // Half buried and lichened over. Rounded, because anything sharp out here
-    // went under the peat a long time ago.
-    stone: { tint: { color: "#6d6a58", amount: 0.3 }, shapes: ["boulder", "slab", "boulder"] },
-    // HEATHER, IN AUTUMN — and the season is the whole reason this bloom is
-    // worth having. Every flower in this file opens in spring except the blossom
-    // rows' daisies, which have no season at all, so autumn has been the one
-    // season with nothing coming up in it: the largest crown swing in
-    // `seasons.ts` and a bare floor underneath. Calluna vulgaris flowers in
-    // August and September and IS the heath — the plant the place is named after,
-    // arriving in the month the rest of the world is going over.
-    //
-    // A MAT, NOT A STALK. Everything else that blooms here is a head on a stem;
-    // heather is a low woody mound covered in tiny bells, so it is drawn as a
-    // clump of dots with barely any stem at all. At this size that reads as
-    // ground going purple, which is exactly what a heath in September does.
-    bloom: {
-      season: "autumn",
-      // The densest bloom in the file, past the birches' spring carpet, and the
-      // argument is theirs: a carpet is what it does. Calluna in flower is not a
-      // scatter of flowers on a heath — for six weeks it IS the heath, which is
-      // the only reason anybody has ever driven out to look at one.
-      density: 0.22,
-      accent: "#a06fb0",
-      core: "#d8b6e2",
-      marks: [
-        ["oo.", "o*o", ".x."],
-        [".oo", "o*o", "x.."],
-        ["o.o", "ooo", ".x."],
-      ],
-    },
-    // A WAXCAP, and the whitelist in `render/palette.test.ts` is what asked. The
-    // default red is a fly agaric, which needs an ectomycorrhizal partner and
-    // therefore a BIRCH, PINE or SPRUCE — and this row has 0.06 trees, none of
-    // them any of those. What actually fruits on old acid grassland and heath is
-    // the waxcaps, which are the reason heathland turns up in fungus books at
-    // all: squat, glossy, and orange rather than scarlet.
-    //
-    // Orange and not red is the whole distinction the whitelist exists to force,
-    // and at this size it holds: the fly agaric reads by its white speck on a
-    // pure red dome, and this is a warmer, browner, duller thing with no speck to
-    // be seen against.
-    mushroomCap: { cap: "#d98b3a", lit: "#edb164", gills: "#8f5320" },
-    // Wiry tussocks and old spines. No flowers here — the bloom above is the
-    // region's one colour and it gets three months of the year.
-    decor: {
-      density: 0.12,
-      marks: [
-        ["x.x", ".x.", ".x."],
-        ["x..", ".x.", ".x."],
-        ["..x", ".x.", ".x."],
-      ],
-    },
-  },
-
-  /** GROUND COVER AND NOTHING ELSE, and the only region whose character is the
-   *  WIND rather than the light.
-   *
-   *  THE DANGER WAS THAT IT IS THE MEADOW WITH LESS IN IT, which is a real risk
-   *  and not a rhetorical one — the meadow is already open, already green, and
-   *  already the ground you know. What makes this a different sentence is
-   *  everything being taller: the tallest ground marks in the file, at the
-   *  highest density any kit has ever had, over a floor with no rocks and
-   *  essentially no trees. You are standing IN it rather than on it.
+   *  IT IS NOT A WOOD YOU CAN FARM. A shrub is a gathered node (two wood) and
+   *  this row is far country, so the payout-for-distance question has to be
+   *  answered with arithmetic rather than waved at: 0.55 × 0.1 = 5.5% of cells at
+   *  two wood is 0.11 a cell, against the PINEWOOD's 22% at eight, which is 1.76,
+   *  forty tiles from the plaza. Sixteen times as much wood at home, and
+   *  `sim/biome.test.ts` measures exactly this.
    *
    *  AND THE AIR MOVES ACROSS. Every other mote in the game rises or falls
    *  (`drift`); this is the only one that travels sideways (`blow`), and that is
@@ -1784,13 +1681,24 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // ONE TREE A SCREEN AND A HALF, and it is a bur oak with a crown wider than
     // anything but the blossom's: the lone tree in the open is a shape everybody
     // recognises, and it only reads as lone if the next one is out of sight.
-    trees: 0.03,
+    trees: 0.04,
     // The emptiest ground in the game — a twentieth of the meadow's rock, where
     // even the fen has four times that. There is nothing underfoot here but
     // grass, and that is a claim the numbers have to make or it is only a mood.
     rocks: 0.05,
-    mushrooms: 0,
+    // WAXCAPS, and they came over with the bushes. Old unploughed grassland is
+    // the waxcap's habitat — it is the reason grassland turns up in fungus books
+    // at all — and it is also the one honest cap for a region with no birch and
+    // no pine in it, which is what `render/palette.test.ts`'s whitelist asks. Thin
+    // on the ground: this is a place you find one, not a place you forage.
+    mushrooms: 0.03,
     water: 0,
+    // SOME BUSHES. Not a heath's 1.8 and not the glimmer's understory either —
+    // 5.5% of cells, which is roughly one in a small clearing's worth of ground:
+    // enough that the horizon has lumps on it and you walk around things, few
+    // enough that the region is still grass. Scattered scrub is what open country
+    // does when nobody is grazing it.
+    shrubs: 0.55,
     // HONEY, NOT BLEACHED. Measured against the two rows it could be confused
     // with: the meadow is (139,191,90) and the scrub (181,194,114), and this
     // lands near (158,168,87) — a step darker and warmer than both, which is
@@ -1801,8 +1709,28 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // about equal uprights reading as a gate does not apply, because at this
     // density they are not marks on a lawn — they are the lawn.
     tufts: ["blades", "blades", "cluster"],
-    crown: { color: "#6f8a4a", amount: 0.4 },
+    // TWO JOBS FOR ONE TINT, since the bushes wear it too and there are twenty
+    // times as many of them as there are trees. Darker and greyer than the grass
+    // it stands in: a bush on a plain reads as a bush by being the one solid dark
+    // thing out there.
+    //
+    // HELD HARD, AND OCTOBER IS WHY. At 0.55 the season pulled the scrub the same
+    // bronze as the grass and the region photographed as brown lumps on brown —
+    // which is the entire point of having bushes gone, in the month the asters
+    // are out and the place is worth walking to. Scrub in dry country is
+    // evergreen; the GRASS is what goes over. So the plants hold their green at
+    // 0.72 and the ground turns underneath them, which is what the eye reads as
+    // autumn on a plain rather than as a plain that has been recoloured.
+    crown: { color: "#5d7a44", amount: 0.72 },
     trunk: { color: "#6b5236", amount: 0.3 },
+    // A WAXCAP, and `render/palette.test.ts`'s whitelist is what asked. The
+    // default red is a fly agaric, which is ectomycorrhizal and needs a BIRCH,
+    // PINE or SPRUCE to partner; this row has 0.04 trees and none of them is any
+    // of those. What actually fruits on old unploughed grassland is the waxcaps —
+    // squat, glossy, and orange rather than scarlet, which is exactly the
+    // distinction the whitelist exists to force. No white speck to be seen
+    // against, either, which is half of what makes the default read as an amanita.
+    mushroomCap: { cap: "#d98b3a", lit: "#edb164", gills: "#8f5320" },
     // A LONE OAK: wide, low-shouldered, and the second-widest crown in the file
     // after the cherries'. A tree with nothing near it grows out rather than up,
     // which is the whole reason this shape is different from the wood's.
@@ -1870,25 +1798,29 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         ["x.....x", ".x...x.", ".x.x.x.", "..xxx.."],
       ],
     },
-    // CONEFLOWERS, IN SUMMER — the first summer bloom in the file, and the season
-    // is the plant's rather than a gap-filling exercise: the tallgrass prairie
-    // flowers in July and August, which is the one time of year it is not simply
-    // grass.
+    // ASTERS, IN AUTUMN — and the season is the one number here that changed when
+    // the bushes arrived. As a coneflower it was summer, which is true of a
+    // prairie and left autumn where it has always been: the only season with no
+    // signature in the whole file, carrying the largest crown swing in
+    // `seasons.ts` and a bare floor under it. Asters and goldenrod are what
+    // actually flowers on grassland in September and October, so the honest plant
+    // and the missing season turn out to be the same choice.
     //
-    // PURPLE WITH A DARK EYE, and both halves are forced. Yellow was the obvious
-    // choice (black-eyed susan) and it is unreadable on a honey ground; and the
-    // scrub already owns a magenta head on a stem, so this needs a silhouette of
-    // its own. A coneflower's petals DROOP away from a raised centre, so the
-    // petals sit below the eye rather than around it — the only flower here that
-    // hangs, and the only `core` in the file that is darker than its petals.
+    // PURPLE WITH A GOLD EYE, and both halves are forced. Yellow petals were the
+    // obvious pick and are unreadable on honey-coloured ground; and the scrub
+    // already owns a magenta head on a stem, so this needs a silhouette of its
+    // own. An aster's petals are narrow and many, radiating flat from a small
+    // bright centre — so this is the only flower in the file drawn as a ring of
+    // separate points with a lit middle, and it reads as a starburst at three
+    // pixels, which is what the plant is named for.
     bloom: {
-      season: "summer",
+      season: "autumn",
       density: 0.11,
-      accent: "#c07ab8",
-      core: "#6a4a2a",
+      accent: "#b678c0",
+      core: "#e8c04a",
       marks: [
-        ["o.*.o", ".ooo.", "..x..", "..x..", "..x.."],
-        ["o.*.o", ".o.o.", "..x..", "..x..", "..x.."],
+        ["o.o.o", ".o*o.", "o.o.o", "..x..", "..x.."],
+        [".o.o.", "o.*.o", ".o.o.", "..x..", "..x.."],
       ],
     },
     // SEED FLUFF, GOING ACROSS. The row this region is for: nothing else in the
@@ -2306,11 +2238,11 @@ export const FIELD_WEIGHTS: [BiomeId, FieldWeight][] = [
   // THEIR NUMBERS WENT UP WHEN THE ORDINARY FAR ROWS ARRIVED, and that is a share
   // being defended rather than a change of mind about how strange the world is.
   // These three were 4.0 of 6.4 out there — 63% — when they were the only rows
-  // with a far weight at all. Granite, heath and long grass are ordinary places
-  // that happen to be far away (they are far-only because the `near` column is
-  // frozen for saves, not because there is anything odd about a heath), and three
-  // of them appended flat would have quietly taken the plateau down to 36%
-  // strange. Scaled instead: 5.0 of 10.1, which is half.
+  // with a far weight at all. The granite and the long grass are ordinary places
+  // that happen to be far away — they are far-only because the `near` column is
+  // frozen for saves, not because there is anything odd about a plain — and rows
+  // like that appended flat would have quietly taken the plateau down to a third
+  // strange. Scaled instead: 5.0 of 9.5, which is a little over half.
   ["dusk", { near: 0, far: 2.0 }],
   ["glimmer", { near: 0, far: 1.7 }],
   // The rarest, because it is the loudest. Glass is the one you walk into and
@@ -2334,8 +2266,10 @@ export const FIELD_WEIGHTS: [BiomeId, FieldWeight][] = [
   // a world with none of where you came from in it has stopped having anywhere to
   // be from. Adding a far row means scaling, never appending flat.
   ["granite", { near: 0, far: 1.0 }],
-  ["heath", { near: 0, far: 0.9 }],
-  ["prairie", { near: 0, far: 0.8 }],
+  // The heaviest of the three ordinary far rows, because it is the one that is
+  // easiest to be in: open, crossable, and with something on the horizon in every
+  // direction. A plateau you can walk across wants somewhere to walk.
+  ["prairie", { near: 0, far: 1.1 }],
 ];
 
 export function biomeDef(id: BiomeId): BiomeDef {
