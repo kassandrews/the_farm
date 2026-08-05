@@ -180,7 +180,15 @@ select {
   right: 132px;
   bottom: 16px;
   width: max-content;
-  max-width: 100%;
+  /* THE INSETS, NOT 100%. A percentage max-width resolves against the
+     containing block — the full-width `.hud` — and not against the band the
+     `left`/`right` insets carve out, so `100%` let the bar be as wide as the
+     whole window. Over-constrained (both insets AND a width), the extra went
+     into the auto margins as negative space and the bar hung out of BOTH ends
+     of its band. The right-hand end is where the modifier slot rides, so what
+     you saw was the undo button sitting underneath the BUILD/DONE button.
+     `calc(100% - 144px)` is those two insets added up, which is the band. */
+  max-width: calc(100% - 144px);
   margin: 0 auto;
   display: none;
   flex-direction: column;
