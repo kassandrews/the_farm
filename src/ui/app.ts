@@ -3068,10 +3068,26 @@ export class App {
     const y = Math.round(wpt.y);
     const key = `${x},${y}`;
     if (this.painted.has(key)) return;
+    // Everything but the cell the stroke opened on is a SWEEP, and the sim
+    // treats the two differently in one place: a wall swept across a window
+    // leaves it standing, while a wall tapped onto one replaces it (game.ts
+    // §"A sweep does not take out an opening"). `painted` is the stroke's own
+    // cell set, so its emptiness is exactly "this is the first cell" — no
+    // second piece of state to keep in step with it.
+    const sweeping = this.painted.size > 0;
     this.painted.add(key);
 
     captureCell(this.world, x, y); // before the edit — it snapshots the old state
-    const res = buildAt(this.world, this.buildTool, x, y, Date.now(), this.facing, this.layer());
+    const res = buildAt(
+      this.world,
+      this.buildTool,
+      x,
+      y,
+      Date.now(),
+      this.facing,
+      this.layer(),
+      sweeping,
+    );
     // Only speak up when something happened or the player is actually short of
     // materials. Dragging across ground you can't build on shouldn't natter.
     if (res.changed) {

@@ -1447,8 +1447,9 @@ export function buildAt(
   now: number,
   facing: Facing = "s",
   layer: Layer = "surface",
+  sweeping = false,
 ): BuildResult {
-  const res = placeOrRemove(world, tool, x, y, now, facing, layer);
+  const res = placeOrRemove(world, tool, x, y, now, facing, layer, sweeping);
   if (res.changed) freezeBuilt(world);
   return res;
 }
@@ -1467,6 +1468,11 @@ function placeOrRemove(
    *  down there. Reaching this function with a wall and "under" would be a bug
    *  upstream, so the structure paths below simply don't consider it. */
   layer: Layer = "surface",
+  /** True for every cell of a drag except the one it started on. A sweep is a
+   *  gesture about a RUN and a tap is a decision about a CELL, and the only
+   *  place the difference matters is a wall meeting a door or a window — see
+   *  the opening gate below. */
+  sweeping = false,
 ): BuildResult {
   // The sim's own refusal, not a duplicate of the palette's. The UI hides what it
   // can't offer, and this makes the hiding cosmetic rather than load-bearing: a
@@ -1539,6 +1545,41 @@ function placeOrRemove(
   // than the truth.
   if (refusesConstruction(world, x, y, layer)) {
     return { changed: false, message: "Not on this ground ... The dark trees were here first.", broke: false };
+  }
+
+  // A SWEEP DOES NOT TAKE OUT AN OPENING; A TAP STILL DOES.
+  //
+  // Repainting a house is a drag along the run, and the run has windows and a
+  // door in it. Every one of those cells took the wall the stroke was carrying
+  // — silently, at full price when the finish crossed a material — so the only
+  // way to reach the wall around your own window was to lose the window. That
+  // is the free-refinish axis (DESIGN §Materials) failing at exactly the cells
+  // a house is worth looking at.
+  //
+  // Nothing is lost by declining, because an opening has no shell finish of its
+  // own to repaint: it derives one from the run it is set into (structures
+  // §shellFinish), so painting AROUND it is what repaints it. The window ends
+  // up granite either way; the difference is whether it is still a window.
+  //
+  // NOT A FLAT REFUSAL, though, because painting a wall over a doorway is the
+  // way you fill one back in — the mirror of "painting a door over a wall is
+  // how you cut a doorway" (structures §canPlaceStructure), and two tests seal
+  // a house with exactly that gesture. So the rule is about the GESTURE: a tap
+  // is a decision about one cell and still replaces what is standing there, a
+  // sweep is about a run and leaves its openings alone.
+  //
+  // Said before affordability, like the ground gate above and for the same
+  // reason: quoting a price for a cell that is going to decline you is a worse
+  // answer than the truth.
+  if (sweeping && tool === "wall") {
+    const standing = structureAt(world, x, y);
+    if (standing && standing.id !== "wall") {
+      return {
+        changed: false,
+        message: `A ${structureDef(standing.id).name.toLowerCase()} is set into that ... The wall around it follows the run.`,
+        broke: false,
+      };
+    }
   }
 
   const finish = loadedFinish(world, tool);

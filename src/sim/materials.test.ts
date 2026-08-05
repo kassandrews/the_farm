@@ -5,6 +5,7 @@ import { gather, nodeAt, nodeNear, updateRegrowth, pendingRegrowth, updateReclai
 import { tileAt, setTile, tileKey, generatedTile, dig, sink, RECLAIM_MS, floorFinish } from "./world";
 import { GRASS, DIRT, TREE, ROCK, FLOOR, MUSHROOM, FARMLAND, SHAFT } from "../content/tiles";
 import { NODES } from "../content/nodes";
+import { shellFinish } from "./structures";
 
 const HOUR = 3_600_000;
 
@@ -621,6 +622,48 @@ describe("cost follows the material; the look is free within one", () => {
     const again = buildAt(w, "floor", a.x, a.y, 1000);
     expect(again.changed).toBe(false);
     expect(count(w.inventory, "wood")).toBe(wood0);
+  });
+
+  it("sweeps a repaint along a run without eating the window in it", () => {
+    // Repainting a house is a drag along the run, and the run has openings in
+    // it. Each of those cells used to take the wall the stroke was carrying,
+    // so the only way to reach the wall around your own window was to lose the
+    // window — and be charged stone for the privilege.
+    const w = freshWorld();
+    add(w.inventory, "wood", 40);
+    add(w.inventory, "stone", 40);
+    w.skins.unlocked.push("granite");
+    const a = findNode(w, GRASS);
+    for (let i = 0; i < 3; i++) setTile(w, a.x + i, a.y, GRASS);
+    buildAt(w, "wall", a.x, a.y, 1000);
+    buildAt(w, "window", a.x + 1, a.y, 1000);
+    buildAt(w, "wall", a.x + 2, a.y, 1000);
+
+    w.skins.selected.wall = "granite";
+    const stone0 = count(w.inventory, "stone");
+    // One stroke: the cell it opens on, then two swept.
+    expect(buildAt(w, "wall", a.x, a.y, 1000, "s", "surface", false).changed).toBe(true);
+    const over = buildAt(w, "wall", a.x + 1, a.y, 1000, "s", "surface", true);
+    expect(buildAt(w, "wall", a.x + 2, a.y, 1000, "s", "surface", true).changed).toBe(true);
+
+    expect(over.changed).toBe(false);
+    expect(w.build[tileKey(a.x + 1, a.y)].id).toBe("window"); // still a window
+    // Two walls' worth of stone, and nothing at all for the cell it declined.
+    expect(count(w.inventory, "stone")).toBe(stone0 - buildCost("wall", "granite").stone! * 2);
+    // And the window's shell follows the run it is set into, which is the
+    // whole reason nothing was lost by leaving it alone.
+    expect(shellFinish(w, a.x + 1, a.y)).toBe("granite");
+  });
+
+  it("still fills a doorway back in when you TAP a wall onto it", () => {
+    // The mirror of cutting a doorway by painting a door over a wall, and the
+    // reason the rule above is about the gesture rather than a flat refusal.
+    const w = freshWorld();
+    add(w.inventory, "wood", 40);
+    const a = findNode(w, GRASS);
+    buildAt(w, "door", a.x, a.y, 1000);
+    expect(buildAt(w, "wall", a.x, a.y, 1000).changed).toBe(true);
+    expect(w.build[tileKey(a.x, a.y)].id).toBe("wall");
   });
 
   it("refunds what a thing was WEARING, not what you happen to be holding", () => {
