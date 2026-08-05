@@ -222,13 +222,13 @@ export interface BiomeDef {
    *  leaves the crown floating above where the tile actually is. */
   trunkHeight?: number;
 
-  /** Extra pixels of trunk EITHER SIDE of the ordinary four. Optional; 0 —
+  /** Extra pixels of trunk EITHER SIDE of the ordinary five. Optional; 0 —
    *  which is every region but the giants, and is why nothing that already
    *  stands anywhere moved when this arrived.
    *
    *  HEIGHT WAS ONLY HALF OF BIG, exactly as `crownRows` was only half of tall.
    *  A giant sequoia's whole claim is girth: it is the trunk you cannot get
-   *  round, and drawn at the world's ordinary four pixels a sixty-pixel one
+   *  round, and drawn at the world's ordinary five pixels a sixty-pixel one
    *  reads as a very tall ordinary tree — a mast, which is the opposite of the
    *  thing. Three attempts at saying "giant" with height alone all came out as
    *  the birch's sentence spoken louder.
@@ -236,9 +236,11 @@ export interface BiomeDef {
    *  IT DOES NOT MOVE THE CENTRE. The trunk grows symmetrically about its own
    *  column, so the crown's midline, the bark grid's midline and the `crownGaps`
    *  notch all still land where they always did — which is what keeps this one
-   *  number rather than a second coordinate system for wide trees.
+   *  number rather than a second coordinate system for wide trees. That only
+   *  holds because the base width is ODD; it was even for a while and the whole
+   *  tree hung half a pixel off its stem (renderer.ts §trunk).
    *
-   *  Keep it small. The trunk is 4 + 2× this, and half a tile (8px) is already
+   *  Keep it small. The trunk is 5 + 2× this, and half a tile (8px) is already
    *  a tree you cannot see past; wider and the sprite stops being a tree in a
    *  wood and becomes a wall with leaves on it. */
   trunkGirth?: number;

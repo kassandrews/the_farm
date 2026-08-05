@@ -397,6 +397,16 @@ const ROOF_PITCH_FALL = 0.045;
  *  which now varies per biome (content/biomes.ts) — so nothing may assume 24. */
 const TRUNK_H = 16;
 
+/** The trunk's horizontal span, as an offset from the tree's centre COLUMN and a
+ *  width. Odd at every girth, because every other part of the sprite — crown,
+ *  bark grid, `crownGaps` notch, contact shadow, orb spots — is centred on that
+ *  column rather than on a seam between two. It has been broken twice by someone
+ *  making the trees bigger (once the crown, once the stem), which is why the
+ *  arithmetic lives out here with a test on it rather than inline in `drawTree`. */
+export function trunkSpan(girth: number): { dx: number; w: number } {
+  return { dx: -2 - girth, w: 5 + girth * 2 };
+}
+
 /** The rocks. Half-widths per row, read exactly like a tree's crown — one
  *  fillRect per row, `rows[r]` either side of centre, nothing off the pixel grid.
  *
@@ -4416,9 +4426,18 @@ export class Renderer {
     // and meet her in a stand you can barely make out.
     const bark = dark ? (night ? "#2b1d16" : "#3f2a1e") : night ? "#4a3628" : "#6b4a33";
     const barkDark = dark ? (night ? "#1f150f" : "#2f1e15") : night ? "#3a2a1e" : "#573a28";
-    // Four px, not three: a 3px stem under a 40px tree reads as a sapling that
+    // Five px, not three: a 3px stem under a 40px tree reads as a sapling that
     // grew a hat. The dark side stays one px, so the light/dark split that gives
     // the trunk its round still lands where the bark dashes expect it.
+    //
+    // ODD, AND IT WAS FOUR FOR A WHILE — which is the crown's old bug wearing the
+    // trunk's clothes. Everything about this sprite is centred on the COLUMN cx:
+    // the crown (`rows[r] * 2 + 1`), the bark grid, the `crownGaps` notch, the
+    // contact shadow, the orb spots. A four-pixel stem spans cx-2..cx+1, whose
+    // centre is the SEAM at cx-0.5, so the whole tree hung half a pixel to the
+    // left of its own trunk — invisible while the trees were small and obvious
+    // the moment they got big enough to look at. Growing the stem is what this
+    // wanted; growing it to an even width is what broke it.
     //
     // GIRTH GROWS IT SYMMETRICALLY, and the dark side grows WITH it — a shaded
     // edge that stayed one pixel on an eight-pixel stem is a line drawn beside a
@@ -4428,9 +4447,10 @@ export class Renderer {
     const girth = biome?.trunkGirth ?? 0;
     const shade = 1 + Math.round(girth / 1.5);
     ctx.fillStyle = biome ? mixHex(bark, biome.trunk) : bark;
-    ctx.fillRect(cx - 2 - girth, base - trunkH, 4 + girth * 2, trunkH);
+    const stem = trunkSpan(girth);
+    ctx.fillRect(cx + stem.dx, base - trunkH, stem.w, trunkH);
     ctx.fillStyle = biome ? mixHex(barkDark, biome.trunk) : barkDark;
-    ctx.fillRect(cx + 2 + girth - shade, base - trunkH, shade, trunkH);
+    ctx.fillRect(cx + stem.dx + stem.w - shade, base - trunkH, shade, trunkH);
 
     // The birches' dashes. Drawn BEFORE the crown, so the rows that hang beside
     // the trunk cover the marks they would overlap rather than leaving scars
@@ -4448,8 +4468,11 @@ export class Renderer {
       // one material in two lights, and a dash that stayed charcoal while the
       // stem went blue would read as a hole in the tree after dark.
       ctx.fillStyle = night ? mixHex(barkArt.color, { color: "#2a3140", amount: 0.45 }) : barkArt.color;
-      // Centred on the stem and as wide as the stem is: three columns on an
-      // ordinary trunk, and `trunkGirth` more either side on a fat one. Bounded
+      // Centred on the stem, one column in from each edge of it: three columns
+      // on an ordinary five-pixel trunk, and `trunkGirth` more either side on a
+      // fat one. The inset is deliberate — a dash that ran to the lit edge and
+      // over the shaded one would flatten the round the two-tone stem is for.
+      // Bounded
       // by the ROW's own length rather than by a literal 3, so a grid written
       // narrow on a wide tree draws what it has instead of reading off its end —
       // the same forgiveness the row count already had.
