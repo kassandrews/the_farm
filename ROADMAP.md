@@ -7477,8 +7477,18 @@ stored id moves; no schema change anywhere.
   it is not: at 0.46 they measured (111,103,94) against a floor of (66,58,56).
   The burnt rows go to 0.62 and the cap carries their names, because their stone
   genuinely is basalt; they stay bounded because a rock the colour of the ash is
-  the same bug from the other side. Measured after: rock (85,78,74), ash
-  (64,56,54), lava crust (36,26,26).
+  the same bug from the other side. They are the same cooled rock the lake has a
+  lid of, so they end up the same colour as it: rock body (36,26,26), which is
+  `content/tiles.ts` §LAVA's fill exactly, against ash of (67,58,54).
+- **Aiming a tint AT the colour you want undershoots.** 0.92 of the crust's own
+  hex came out (44,35,34) — eight levels light, because a tint is a lerp and 8%
+  of a pale base is still 11 levels of pale. The target has to sit UNDER the
+  colour you are after (#1b1011), which is the dusk row's old lesson applied to
+  the last 8% rather than the first 60.
+- **And it stops short of 1.0 on purpose.** One number pulls the stone's lit, body
+  and shaded greys together, so at 1.0 all three arrive at once and a rock is a
+  flat silhouette. Six levels of modelling survive at 0.92, which is what says
+  "object" rather than "hole in the ground".
 - **The caldera's "thicker air" made it a second kind of air**, which the mote
   guard caught. That guard now counts DISTINCT airs rather than rows, since the
   caldera's ash is the cinders' ash; and it has a clause that may never move —

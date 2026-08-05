@@ -977,10 +977,16 @@ describe("stone", () => {
       // that any ground a rock sits on is lighter than the rock. On ash it is not:
       // at 0.46 the cinders' boulders measured (111,103,94) against a floor of
       // (66,58,56), which is a granite rock from somewhere else lying on a burnt
-      // plain. Their stone genuinely IS nearly black, so they may say so — and
-      // they stay bounded, because a rock the colour of the ash is the same bug
-      // from the other side.
-      const cap = def.id === "cinder" || def.id === "caldera" ? 0.7 : 0.5;
+      // plain. Their stone is the same cooled rock the lava lake has a lid of, so
+      // it is allowed to be that colour.
+      //
+      // STILL SHORT OF 1.0, AND THAT IS THE REAL RULE HERE. The stone's lit, body
+      // and shaded greys are pulled toward one colour by one number, so at 1.0 all
+      // three arrive together and the rock is a flat silhouette — which is the
+      // thing this assertion has always been about, one step past where it used to
+      // catch it. At 0.92 eight levels survive between the lit row and the foot,
+      // and a rock still reads as a rounded object rather than a hole.
+      const cap = def.id === "cinder" || def.id === "caldera" ? 0.95 : 0.5;
       if (def.stone?.tint) expect(def.stone.tint.amount, def.id).toBeLessThan(cap);
     }
   });

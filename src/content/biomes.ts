@@ -1951,27 +1951,40 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     trunkHeight: 22,
     // Fresh-broken and dark, with the region's own warmth in it. Shards and
     // broken pieces only: this rock was thrown, not weathered.
-    // BASALT, AND THE ONLY ROCK IN THE GAME ALLOWED PAST THE HALF-WAY LINE.
-    // `sim/biome.test.ts` §stone caps a stone tint under 0.5 — a tint is a
-    // direction and never a replacement, and past that the rock stops being
-    // stone-coloured — and at 0.46 these measured (111,103,94) on ash of
-    // (66,58,56): mid-grey boulders lying on a burnt plain, which is the
-    // glimmer's warm-grey-stone-on-teal complaint again and worse, because here
-    // the rock genuinely is nearly black.
+    // BASALT, AND THE ROCK IS THE CRUST. `content/tiles.ts` §LAVA fills at
+    // #241a1a and this aims at exactly that hex: these boulders are pieces of the
+    // same cooled rock the lake has a lid of, so they are the same colour as it,
+    // and the region finally has one material running through the ground, the
+    // lumps on it and the thing in the middle.
     //
-    // What the rule protects is that a rock still READS as a rock, and at 0.62 it
-    // does: the fill lands near (85,78,74) with its lit shoulder at (91,84,80) and
-    // its shade at (76,70,66) — a clear step above the ground, with every bit of
-    // the modelling that says "object" rather than "stain" intact. Any darker and
-    // it starts disappearing into the ash, which is the same bug from the other
-    // side and the reason this is 0.62 and not 0.8.
+    // THREE GOES TO GET HERE, every one of them a measurement off a screenshot.
+    // At the tint cap (0.46) they came out (111,103,94) on ash of (66,58,56) —
+    // granite dropped on a burnt plain. At 0.62 they came out (85,78,74), which
+    // is basalt-ish and still nowhere near. At 0.92 of the crust's own hex they
+    // came out (44,35,34), which is eight levels light of it, because a tint is a
+    // LERP and 8% of a pale base is still 11 levels of pale.
+    //
+    // SO THE TARGET AIMS UNDER IT. #1b1011 is darker than any pixel this is meant
+    // to produce, chosen so that the BODY row lands on #241a1a exactly — the fill
+    // in content/tiles.ts §LAVA, the lid on the lake at the middle of the region.
+    // Aiming at the colour you want is the natural mistake and it undershoots by
+    // whatever fraction of the base survives; the dusk row wrote the same lesson
+    // about ground tints and this is it applied to the last 8%.
+    //
+    // 0.92 IS AS FAR AS THIS MECHANISM GOES, and the reason is worth writing down
+    // for whoever wants 1.0 next. The stone's three greys — lit shoulder, body,
+    // shaded foot — are pulled toward one colour by one number, so the higher the
+    // amount the closer together they land: at 0.92 there are eight levels between
+    // the lit row and the foot, which is enough to read as a rounded thing, and at
+    // 1.0 there are none and it is a flat silhouette. The modelling is what says
+    // "object" rather than "hole in the ground".
     //
     // NO GLINT, deliberately, and it was tempting: the glimmer's stone catches a
     // spark of its region's own light, and an ember caught on basalt beside a lava
     // lake is that idea exactly. Its own note says why not — a glint is affordable
     // at about one rock a screen, and this region has thirty-five. Light on every
     // one of them is not a highlight, it is a texture.
-    stone: { tint: { color: "#2b2322", amount: 0.62 }, shapes: ["shard", "broken", "shard"] },
+    stone: { tint: { color: "#1b1011", amount: 0.92 }, shapes: ["shard", "broken", "shard"] },
     // ASH IN THE AIR, ALL YEAR AND ALL DAY. The second and last user of `blow`
     // (MoteKit), and the pairing is deliberate: the long grass's air is seed
     // going sideways in sunlight, and this is the same motion with the light
@@ -2045,7 +2058,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     trunkHeight: 18,
     // The cinders' basalt, to the digit. See its note for why this one row is
     // allowed past the tint cap.
-    stone: { tint: { color: "#2b2322", amount: 0.62 }, shapes: ["shard", "broken", "shard"] },
+    stone: { tint: { color: "#1b1011", amount: 0.92 }, shapes: ["shard", "broken", "shard"] },
     // THE CINDERS' AIR, TO THE DIGIT. It was thicker here for a draft — more ash
     // nearer where it is coming from, which is a nice sentence — and
     // `content/decor.test.ts` counts DISTINCT airs rather than rows, so a density
