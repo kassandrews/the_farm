@@ -68,8 +68,16 @@ describe("decor kits", () => {
         // The tuft covers 38% and is the texture that makes grass read as grass.
         // Decor is the layer above it; at a comparable density the ground stops
         // being ground and becomes pattern.
+        //
+        // ONE EXEMPTION, BY NAME, AND IT IS NOT A LOOSENING. The rule holds for
+        // every kit that is things lying ON ground, which is all of them but one.
+        // The long grass has no trees, no rocks and no undergrowth: its kit is
+        // the vegetation rather than the litter, so the ceiling was stopping the
+        // region from having any content at all — at 0.24 it photographed as an
+        // empty field with weeds in it. Named rather than raised, so that a
+        // second region wanting this has to come and add itself here and say why.
         expect(kit.density).toBeGreaterThan(0);
-        expect(kit.density).toBeLessThan(0.25);
+        expect(kit.density).toBeLessThan(id === "prairie" ? 0.5 : 0.25);
       });
     });
   }
@@ -99,7 +107,26 @@ describe("motes", () => {
     // is a weaker guard than it was and the reason is in the test above: two of
     // these five are dark for nine months of the year, so what is actually rare
     // is a region with air in it TONIGHT.
-    expect(kits.length).toBeLessThanOrEqual(5);
+    //
+    // Raised again for the long grass, whose air is the region — the only mote
+    // in the game that TRAVELS rather than rising or falling (MoteKit §blow), in
+    // the one place whose character is the wind rather than the light.
+    expect(kits.length).toBeLessThanOrEqual(6);
+  });
+
+  it("keeps the always-on ones rarer still", () => {
+    // THE GUARD THE COUNT ABOVE WAS ALWAYS TRYING TO BE, now that it has been
+    // raised twice and had to explain itself both times. A summer-evening kit is
+    // absent from all but a few hours of the year, so counting it beside a kit
+    // that runs at noon in February measures the wrong thing. What "most regions
+    // have no air" has to mean is that most regions have no air RIGHT NOW.
+    //
+    // Four of fourteen: the blossom's petals, the glimmer's spores, the dusk's
+    // fireflies and the long grass's seed. Each one is a region you walk to on
+    // purpose, which is the MoteKit doc's own test for whether air is worth
+    // having — arriving somewhere should feel like arriving.
+    const always = kits.filter(([, k]) => !k.season && !k.evening);
+    expect(always.length).toBeLessThanOrEqual(4);
   });
 
   it("actually moves", () => {

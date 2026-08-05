@@ -615,6 +615,20 @@ strangeness lives entirely inside the flat, one-storey world — no floating lan
 no impossible geometry, no stacked terrain. The world's odd colours are a
 repaint, on exactly the terms a season is.
 
+**New country has to be far country, and that is a save fact rather than a
+design one.** The near weights reproduce the world as it generated before biomes
+drifted at all, and a region inserted among them re-landscapes ground people have
+built on. So every region added from now on is far-only — including the plainly
+ordinary ones, a granite country, a heath, a prairie. None of them is strange;
+they are simply where there is room.
+
+Which means **a new far row is scaled in, never appended flat.** Three ordinary
+rows dropped on the end would have taken the strange three from 63% of the
+plateau to 36% without anybody deciding to, and the far country would have got
+blander every time it got bigger. The two numbers to hold when adding one: the
+strange rows keep about half the roll, and the five familiar ones keep about a
+quarter, at any distance.
+
 The escalation **reaches a plateau and holds it**. On an infinite map, "keeps
 getting stranger forever" is a promise that ends in noise: the far country has a
 character rather than an ever-climbing scale. And the ordinary never falls to

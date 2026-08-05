@@ -465,6 +465,19 @@ describe("the world gets stranger the farther out you go", () => {
     for (const k of ["trees", "rocks", "mushrooms"] as const) {
       expect(most(far, k)).toBeLessThanOrEqual(most(near, k));
     }
+    // AND THE SAME QUESTION ASKED IN WOOD, which the per-key check above cannot
+    // ask. `shrubs` is a gathered node too (two wood against a tree's eight) and
+    // no NEAR row has any at all, so comparing the raw densities would say the
+    // heath is infinitely richer than the near world and be measuring nothing.
+    // What the promise is actually about is how much material a cell of a region
+    // hands back, so that is what gets compared: the heath is 18% of cells at two
+    // wood — 0.36 a cell — against the pinewood's 22% at eight, which is 1.76,
+    // forty tiles from the plaza. Five times as much wood at home.
+    const wood = (b: (typeof near)[number]) =>
+      b.trees * NODES.tree.density * NODES.tree.yield +
+      (b.shrubs ?? 0) * NODES.shrub.density * NODES.shrub.yield;
+    expect(Math.max(...far.map(wood))).toBeLessThanOrEqual(Math.max(...near.map(wood)));
+
     // And no standing water out there: a region you cannot cross is a wall, and
     // one you found after a nine-hundred-tile walk is the worst place for a wall.
     for (const b of far) expect(b.water).toBe(0);

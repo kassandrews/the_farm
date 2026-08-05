@@ -57,7 +57,8 @@ DESIGN.md, if it's a rule about the game rather than about build order).
 - **Phase 15 — the soundtrack, complete.** Nine generated pieces, day and night
   setlists, and an arrangement that assembles itself as you walk into town. See
   below.
-- **Phase 16 — the granite and the redwoods, complete.** Rock as a landscape
+- **Phase 16 — four new regions, complete.** The granite, the redwoods (with the
+  giants), the heath and the long grass. Rock as a landscape
   (rolled, far, with bare sheets on a long field), and redwood stands sited on a
   ring that recurs outward — about one in four with a grove of giants at its
   heart. No schema change; the near world is untouched by construction. See
@@ -7351,6 +7352,54 @@ function of (seed, x, y) and are stored nowhere.
   this one is on `biomeAt`'s path, which runs per visible tile per frame. Two
   string allocations a tile is enough to blow a 5s budget — hence `standCache`,
   one world, an array by index.
+
+### Same day: the heath and the long grass
+
+Two more rolled far regions, both open country, built to read against each other
+and against the granite. `render/renderer.ts` grew one mote field and a shrub
+jitter; everything else is table rows.
+
+- **The heath is a canopy at knee height**, and it cost nothing to draw: `shrubs`
+  has existed since the glimmer, and `drawShrub` already takes its width from the
+  region's own `crownRows` — so a region that is nearly all shrub gets its own
+  bush out of a crown it almost never draws. 1.8× is 18% of cells (a shrub is
+  solid), which is bushy and walkable where the pines' 22% is a wall.
+- **It is not a wood you can farm, and the arithmetic is now a test.** The old
+  far-country check compared trees, rocks and mushrooms key by key, which cannot
+  see `shrubs` at all — no near row has any, so a raw comparison would have said
+  the heath is infinitely richer than home. It compares WOOD PER CELL now: the
+  heath is 0.36, the pinewood 1.76, forty tiles from the plaza.
+- **The long grass is the only region whose character is the wind.** `blow` (new)
+  is a horizontal displacement over the mote's cycle — `drift`'s twin, not a
+  bigger `sway`, which oscillates and comes back. One region has one, and the
+  mote test now guards the count that actually matters: how many kits are running
+  RIGHT NOW (four), not how many exist (six).
+- **Adding far rows means SCALING the far column, not appending to it.** Three
+  ordinary rows dropped on the end would have taken the strange three from 63% of
+  the plateau to 36% by arithmetic nobody chose. Dusk, glimmer and glass went up
+  instead; the familiar five hold a quarter. Written into DESIGN §"stranger the
+  farther out".
+
+**What the screen changed, again.** Every one of these was invisible in the table:
+
+- **Grass density was the wrong knob three times running.** Single 3×5 blades at
+  0.24 read as an empty field with weeds; clumping them changed nothing; 0.45
+  changed nothing either. A 3×5 mark is six pixels of ink in a 256-pixel cell, so
+  the eye was reading the ground because the ground was what was there. 7×6
+  tussocks at 0.32 fixed it. `content/decor.test.ts` carries the over-ceiling
+  exemption by name, so nobody inherits it by accident.
+- **Four tussocks that differ only in which blade leans are one glyph.** They
+  differ in height and width now — that is what the eye sorts on.
+- **Every bush in a region was exactly the same width**, which was invisible
+  under trees and was the whole picture on the heath: a field of identical mounds
+  reads as printed. ±1 off the tile's own salt.
+- **The gorse turned brown in October** — the month the heather is out, so the
+  one time of year the place is worth walking to was the one time it looked like
+  nothing. Gorse and heather are evergreen: the crown tint holds at 0.78, the
+  pinewood's argument word for word.
+- **A heath is not a fly agaric host** (no birch, no pine): the whitelist asked
+  again, and the answer is waxcaps — orange, not scarlet, which is the exact
+  distinction that test exists to force.
 
 
 ## Known gaps and loose ends

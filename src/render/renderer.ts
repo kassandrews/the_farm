@@ -2368,8 +2368,12 @@ export class Renderer {
    *  seen against. Same walk, same hashes, one branch. */
   private drawMotes(world: WorldState, t: number, sources: boolean): void {
     const ctx = this.ctx;
-    const x0 = Math.floor(this.cam.x - this.sw / (2 * TILE)) - 1;
-    const x1 = Math.ceil(this.cam.x + this.sw / (2 * TILE)) + 1;
+    // PAST BOTH SIDE EDGES TOO, since `blow` arrived: a seed head anchored a
+    // tile off the left of the screen is well inside it by the end of its cycle,
+    // and at ±1 the wind blew in from nowhere a tile into the frame. Same
+    // argument as the vertical margin below, one axis over.
+    const x0 = Math.floor(this.cam.x - this.sw / (2 * TILE)) - 3;
+    const x1 = Math.ceil(this.cam.x + this.sw / (2 * TILE)) + 3;
     // Reaching PAST BOTH EDGES, because a mote is drawn away from the cell that
     // anchors it: a spore rises out of the cell below the screen and a petal
     // falls in from the cell above it. The first cut extended the bottom only,
@@ -2413,7 +2417,14 @@ export class Renderer {
         const size = kit.size ?? 1;
         const px = this.sceneX(tx) - TILE / 2 + 2 + Math.floor(g * (TILE - 4));
         const py = this.sceneY(ty) - TILE / 2 + Math.floor(((g * 91) % 1) * TILE);
-        const x = px + Math.sin(p * Math.PI * 2 + g * 6.3) * kit.sway;
+        // TRAVEL SIDEWAYS IS NOT SWAY. `sway` is an oscillation — it returns to
+        // where it started, which is what a petal falling or a spore rising does
+        // while the air is still. `blow` is the air not being still: a straight
+        // displacement over the cycle, exactly as `drift` is on the other axis,
+        // so a seed head crosses the screen instead of wobbling on the spot.
+        // Nothing else in the file has one, and the long grass is the only region
+        // whose character is the WIND rather than the light.
+        const x = px + Math.sin(p * Math.PI * 2 + g * 6.3) * kit.sway + p * (kit.blow ?? 0);
         const y = py - p * kit.drift;
         // Fade at both ends so the loop has no seam in it — or, for a flasher,
         // dark for most of the cycle and briefly not. A firefly that faded up
@@ -3980,6 +3991,19 @@ export class Renderer {
     let peak = 0;
     for (const w of src) peak = Math.max(peak, w);
     peak = Math.max(3, Math.round(peak * 0.6));
+    // AND ONE PIXEL EITHER WAY, off the tile's own hash. Every bush in a region
+    // was exactly the same width, which was invisible while undergrowth was a
+    // scatter under trees and became the whole picture on the heath, where 18% of
+    // the cells are shrubs and there is nothing else in the frame: a field of
+    // identical mounds reads as printed rather than grown, which is the same
+    // finding `marks` records about a single decor glyph. A third narrower, a
+    // third wider, a third as drawn — enough that no two neighbours have to
+    // agree, and not enough to make any of them a different plant.
+    //
+    // Its own salt, not `h`: `h` already chose the sideways jitter above, and a
+    // bush whose width tracked which way it sat would be one lump of variation
+    // pretending to be two.
+    peak = Math.max(3, peak + Math.floor(decoHash(tx, ty, world.seed ^ 0x2f19) * 3) - 1);
     // BOTTOM-HEAVY, NOT SYMMETRICAL. The first dome closed to a point at both
     // ends, which is a berry: a plant tapering back in as it reaches the soil
     // reads as floating just above it, and the contact shadow (sized off the last
