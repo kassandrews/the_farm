@@ -565,6 +565,38 @@ surface (CLAUDE.md §per-cell edges). Put it on a long, smooth field instead and
 nothing about it can line up with the grid — the same answer the fen's ponds and
 the ground roll already arrived at.
 
+### Nothing in the world can hurt you
+
+It was never written down, because nothing had ever tested it: there is no
+health, no stamina, no damage and no fail state anywhere in the sim, and no
+content had wanted any. A volcano wants it, which is exactly why the rule goes in
+the doc now rather than staying folklore in a test comment.
+
+**Molten rock is solid, and that is all it is.** Lava blocks you the way deep
+water blocks you — an obstacle with a good view, a thing you walk around. It does
+not burn, does not chase, does not warn, and nothing anywhere counts what it did
+to you. The most dramatic object in the world is a wall you can see through, and
+that is the correct joke for this town.
+
+The same test applies to anything added later: if a thing on the map would make a
+player careful, it is out. Careful is a different game.
+
+### Terrain that is a light source
+
+The world may hold **ground that gives light**, not only things floating over it.
+Until the cinders, every light in the game was small and in the air — a firefly, a
+spark, an orb, a lamp on a post — and the ground was only ever lit.
+
+It obeys the lamp's rule exactly, one scale up: **a source must be the brightest
+thing in its own light**. The seams in a lava field are hotter than the halo they
+throw, or the glow reads as paint on a rock. And it works only through the night
+wash, like a lamp: a suggestion at noon, and after dark the only light for a
+hundred tiles in any direction — which is the whole reason to walk out there at
+an hour you would otherwise be indoors.
+
+It is still **stateless**. Nothing stores heat, nothing cools, nothing spreads.
+The seams breathe on the clock the way the water ripples on it.
+
 ### Living light, and the animals that stay out
 
 The world may hold **light and motion that reads as alive** — a firefly's flash

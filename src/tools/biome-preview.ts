@@ -24,7 +24,7 @@
 
 import { BIOMES, type BiomeId } from "../content/biomes";
 import { newWorld } from "../sim/game";
-import { biomeAt, blossomCentre, generatedTile, redwoodCentre } from "../sim/world";
+import { biomeAt, blossomCentre, generatedTile, redwoodCentre, calderaCentre } from "../sim/world";
 import { tileDef } from "../content/tiles";
 import { Renderer } from "../render/renderer";
 import type { WorldState } from "../sim/types";
@@ -54,7 +54,7 @@ const TOWN_CLEAR = 46;
 /** The rows whose colour comes up with distance — sim/world.ts's `FAR_ROWS`,
  *  named again here rather than exported, because a preview page reaching into
  *  the generator for a private set is a coupling nobody wants to maintain. */
-const FAR = new Set<BiomeId>(["dusk", "glimmer", "glass", "granite"]);
+const FAR = new Set<BiomeId>(["dusk", "glimmer", "glass", "granite", "cinder"]);
 
 /** The clocks worth judging against. Season and day/night both come from `now`
  *  (the renderer resolves its whole palette from it), so this one control moves
@@ -119,6 +119,13 @@ function findRegion(seed: number, id: BiomeId): { x: number; y: number } | null 
   // a five-tile disc inside a wood — the general search's margin check would
   // reject the middle of one, and the page would report the largest thing in the
   // world as absent.
+  if (id === "caldera") {
+    for (let i = 0; i < 8; i++) {
+      const c = calderaCentre(seed, spot, i);
+      if (biomeAt(seed, spot, c.x, c.y) === "caldera") return { x: c.x, y: c.y + 8 };
+    }
+    return null;
+  }
   if (id === "redwoods" || id === "giants") {
     for (let i = 0; i < 8; i++) {
       const c = redwoodCentre(seed, spot, i);

@@ -32,6 +32,7 @@ import {
   HUM_CUBE,
   SAND,
   SHALLOW,
+  LAVA,
   CLOUD,
   CLOUD_THIN,
   SKY_STAIR,
@@ -362,6 +363,27 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     // cannot.
     const terrain = biomeDef(biomeAt(seed, spot, x, y));
     const grew = biomeDef(scatterRegion(seed, spot, x, y));
+
+    // MOLTEN ROCK, BEFORE THE WATER AND BEFORE EVERYTHING THAT GROWS. Two
+    // separate things, and both are shaped land rather than scatter, which is why
+    // they sit here with the water and not down among the trees:
+    //
+    //   • the caldera's LAKE — authored, a disc at the centre of a sited region,
+    //     exactly as the giants are a disc at the centre of a wood; and
+    //   • the cinders' SEAMS — the fen's pond field on its own salt, so they are
+    //     blobs several tiles across and never a lone recoloured cell.
+    //
+    // Before the water on purpose. A stream is a global channel and one will run
+    // across a caldera sooner or later; where they meet, the lake wins, because a
+    // river with a hole of lava in it is a stranger picture than a river that
+    // stops at one. Nobody remarks on either.
+    //
+    // Kept out of the town by the same `nearHome` guard everything in this block
+    // is under, and by distance: the nearest caldera is 247 tiles out and the
+    // cinders are far country. There is a test that sweeps the town for it anyway,
+    // because "it cannot happen" is what every generator bug has said first.
+    if (inLavaLake(seed, spot, x, y)) return LAVA;
+    if (terrain.lava && pondDepth(seed, x, y, terrain.lava, LAVA_SALT) > 0) return LAVA;
 
     // Water, and the shore it makes. Every kind at once, deepest wins, and the
     // tile is four thresholds on the depth (see `waterAt` / `waterTile`).
@@ -995,40 +1017,81 @@ export function blossomCentre(seed: number, spot: HomesteadSpot): { x: number; y
 // field, and the only thing borrowed is how you ask "which instance, if any, is
 // this tile inside".
 
-/** Where the first stand is. Past the blossom rows (72) and past the nearest
- *  found place (96): everything nearer than this is either named in dialogue or
- *  small enough to walk through by accident, and this is neither. */
-const REDWOOD_RING = 168;
-
-/** How much further out the next one is. Shared with no other ring in the game,
- *  for `content/found.ts`'s reason — two things on the same spacing eventually
- *  pair up at the same radius over and over, and a player who noticed would have
- *  a rule instead of a place. */
-const REDWOOD_SPACING = 191;
-
-/** How wide a stand is. Well over twice the blossom rows, because this is the
- *  one region you are meant to be INSIDE rather than at: at radius 9 you can see
- *  out of a wood from its middle, and a redwood wood whose far edge is visible
- *  from its near edge is a copse.
+/** A REGION SITED ON A RING, RECURRING OUTWARD FOREVER — the redwood stands'
+ *  shape, generalised the moment a second thing wanted it (the caldera).
  *
- *  IT GREW FROM 17 BECAUSE OF THE FADE, and that is the edgeMix docblock's rule
- *  arriving from the other direction. This floor is the steepest colour change in
- *  the near world — grass to duff is ninety-six levels of green, twice the widest
- *  gap any region border has to cross — so it needs the fade to be twice as long
- *  as a border's, and `sim/biome.test.ts` §"never steps" measured it at 14 before
- *  it was. A twenty-tile approach through a seventeen-tile disc leaves a core of
- *  five, which dissolves the thing the edge was drawn around. So the wood is
- *  bigger instead: fourteen tiles of full-strength redwood at the middle, and the
- *  rest of the way in is the treeline thickening. */
-export const REDWOOD_RADIUS = 24;
+ *  Two of these is where a pattern earns a type. Everything here was written
+ *  inline for the woods and every line of it is the same for a volcano: a first
+ *  ring, a spacing nothing else shares, a radius, the dry margin its own width
+ *  demands, and a salt so two regions on nearby rings never share a bearing.
+ *
+ *  THE CACHE LIVES IN THE DEF, and that is not a style flourish — see
+ *  `ringCentre`. These are asked per visible tile per frame, and the first
+ *  version keyed a shared Map on a template string and timed a test suite out
+ *  building keys. One world, one array per region, no allocation. */
+interface RingRegion {
+  ring: number;
+  spacing: number;
+  radius: number;
+  /** How much dry ground the centre wants around it — its own radius plus a
+   *  beach. Passed to `onLand` rather than raising LANDMARK_MARGIN, which would
+   *  re-site every grove, cube and orchard in every live save. */
+  margin: number;
+  salt: number;
+  cache: { seed: number; spot: string; at: ({ x: number; y: number } | undefined)[] };
+}
 
-/** How much dry ground one wants around its centre — its own radius and a beach,
- *  the same sum LANDMARK_MARGIN is for the narrower landmarks. Passed rather than
- *  raising that constant; see its note for why that is not a style choice. */
-const REDWOOD_MARGIN = 30;
+/** The redwood stands. First ring past the blossom rows (72) and the nearest
+ *  found place (96): everything nearer is either named in dialogue or small
+ *  enough to walk through by accident, and a wood is neither.
+ *
+ *  RADIUS 24, AND IT GREW FROM 17 BECAUSE OF THE FADE — the edgeMix rule arriving
+ *  from the other direction. That floor is the steepest colour change in the near
+ *  world (grass to duff is ninety-six levels of green), so it needs a fade twice
+ *  a border's, and a twenty-tile approach through a seventeen-tile disc leaves a
+ *  core of five, which dissolves the thing the edge was drawn around. The wood is
+ *  bigger instead: fourteen tiles of full-strength redwood in the middle, and the
+ *  rest of the way in is the treeline thickening.
+ *
+ *  The spacing is shared with no other ring in the game, for content/found.ts's
+ *  reason: two things on the same spacing eventually pair up at the same radius
+ *  over and over, and a player who noticed would have a rule instead of a place. */
+const REDWOODS: RingRegion = {
+  ring: 168,
+  spacing: 191,
+  radius: 24,
+  margin: 30,
+  salt: 0x2b9f,
+  cache: { seed: -1, spot: "", at: [] },
+};
 
-/** The stand of giants at the middle of one, in tiles. Small on purpose: a grove
- *  of giants is the HEART of a wood and not the wood, so you walk through
+/** The caldera. Further out than the woods and rarer, because it is the loudest
+ *  place in the world that is not one of the strange three — and its own ring so
+ *  that finding one is a different walk from finding the other.
+ *
+ *  Radius 20 with a five-tile lake at the middle, which is the number the whole
+ *  region turns on: the ring of ash around the lava has to be wide enough to walk
+ *  all the way round inside the disc, or the thing you came to see is a wall
+ *  (content/biomes.ts §cinder, and the fen's rule before it). */
+const CALDERA: RingRegion = {
+  ring: 247,
+  spacing: 233,
+  radius: 20,
+  margin: 26,
+  salt: 0x71c3,
+  cache: { seed: -1, spot: "", at: [] },
+};
+
+/** The lake of molten rock at a caldera's centre, in tiles. A quarter of the
+ *  disc's own radius: big enough that you cannot see across it without walking,
+ *  small enough that fifteen tiles of ash go round it on every bearing. */
+export const LAKE_RADIUS = 5;
+
+export const REDWOOD_RADIUS = REDWOODS.radius;
+export const CALDERA_RADIUS = CALDERA.radius;
+
+/** The stand of giants at the middle of a wood, in tiles. Small on purpose: a
+ *  grove of giants is the HEART of a wood and not the wood, so you walk through
  *  ordinary redwoods to reach it and out through them again. */
 export const GIANTS_RADIUS = 5;
 
@@ -1041,55 +1104,92 @@ export const GIANTS_RADIUS = 5;
  *  a thing that happened rather than a thing that happens.  */
 const GIANTS_IN = 4;
 
-/** Where a redwood stand is, per instance. Memoised per (index, seed, spot) the
- *  way every landmark centre is — this is arithmetic, not state.
+/** Where one instance of a ring-sited region is. Memoised per (seed, spot) in
+ *  the def's own array — this is arithmetic, not state.
  *
- *  Exported for the tests, exactly as `blossomCentre` is: "there is a wood on
- *  every ring on every seed and none of it is in the sea" is not a question you
- *  can ask by sweeping tiles, because at these radii the sweep is a million
- *  points and the wood is a disc of eighteen hundred. */
+ *  NOT `memoCentre`, WHICH IS WHAT IT WAS AND WHAT TIMED A SUITE OUT. Every other
+ *  landmark centre is looked up once per landmark; these are on `biomeAt`'s path,
+ *  which runs per visible ground tile per frame and per tile of every sweep in
+ *  the tests. At that rate `${tag}:${seed}:${spot}` is two string allocations a
+ *  tile, and the near-world sweep spent its whole budget building keys for a
+ *  lookup that hit every time. A session plays one world, so one (seed, spot) and
+ *  an array by index is the whole requirement. */
+function ringCentre(
+  def: RingRegion,
+  seed: number,
+  spot: HomesteadSpot,
+  index: number,
+): { x: number; y: number } {
+  if (def.cache.seed !== seed || def.cache.spot !== spot) {
+    def.cache.seed = seed;
+    def.cache.spot = spot;
+    def.cache.at = [];
+  }
+  let at = def.cache.at[index];
+  if (at === undefined) {
+    at = onLand(
+      seed,
+      spot,
+      def.ring + index * def.spacing,
+      (hash2(index, 0, seed ^ def.salt) / 4294967296) * Math.PI * 2,
+      def.margin,
+    );
+    def.cache.at[index] = at;
+  }
+  return at;
+}
+
+/** Which instance of a ring-sited region a tile is inside, and how far it is from
+ *  that instance's centre. Null when it is inside none.
+ *
+ *  The ring window is `foundSiteAt`'s exactly (sim/found.ts): a centre sits on
+ *  its ring to within a tile's rounding, so anything further from the ring than
+ *  the footprint plus that rounding is outside every instance, and the whole
+ *  question costs two subtractions for almost every tile in the world. `reach`
+ *  widens the window for the turf blend, which has to find a region it is NEAR as
+ *  well as one it is in. */
+function ringSiteAt(
+  def: RingRegion,
+  seed: number,
+  spot: HomesteadSpot,
+  x: number,
+  y: number,
+  reach = 0,
+): { index: number; d: number } | null {
+  const r = Math.hypot(x, y);
+  const slack = def.radius + reach + 2;
+  const lo = Math.ceil((r - slack - def.ring) / def.spacing);
+  const hi = Math.floor((r + slack - def.ring) / def.spacing);
+  for (let i = Math.max(0, lo); i <= hi; i++) {
+    const c = ringCentre(def, seed, spot, i);
+    const d = Math.hypot(x - c.x, y - c.y);
+    if (d <= def.radius + reach + 0.5) return { index: i, d };
+  }
+  return null;
+}
+
+/** Where a redwood stand is, per instance. Exported for the tests and the
+ *  screenshot script, exactly as `blossomCentre` is: "there is a wood on every
+ *  ring on every seed and none of it is in the sea" is not a question you can ask
+ *  by sweeping tiles, because at these radii the sweep is a million points and
+ *  the wood is a disc of eighteen hundred. */
 export function redwoodCentre(
   seed: number,
   spot: HomesteadSpot,
   index: number,
 ): { x: number; y: number } {
-  if (standCache.seed !== seed || standCache.spot !== spot) {
-    standCache.seed = seed;
-    standCache.spot = spot;
-    standCache.at = [];
-  }
-  let at = standCache.at[index];
-  if (at === undefined) {
-    at = onLand(
-      seed,
-      spot,
-      REDWOOD_RING + index * REDWOOD_SPACING,
-      (hash2(index, 0, seed ^ 0x2b9f) / 4294967296) * Math.PI * 2,
-      REDWOOD_MARGIN,
-    );
-    standCache.at[index] = at;
-  }
-  return at;
+  return ringCentre(REDWOODS, seed, spot, index);
 }
 
-/** ONE WORLD'S STANDS, IN AN ARRAY — and not `memoCentre`, which is what this
- *  was first and what made a suite time out.
- *
- *  The difference is where it is asked from. Every other landmark centre is
- *  looked up once per landmark; this one is on `biomeAt`'s path, which runs per
- *  visible ground tile per frame and per tile of every sweep in the tests. At
- *  that rate `${tag}:${seed}:${spot}` is two string allocations a tile, and the
- *  near-world sweep — sixty seeds over a couple of hundred tiles square — spent
- *  its whole budget building keys for a lookup that hits every time.
- *
- *  A session plays one world, so a cache of one (seed, spot) with an array by
- *  index is the whole requirement, and a test that walks seeds in its outer loop
- *  refills it once per seed rather than once per tile. */
-const standCache: { seed: number; spot: string; at: ({ x: number; y: number } | undefined)[] } = {
-  seed: -1,
-  spot: "",
-  at: [],
-};
+/** Where a caldera is, per instance. Same argument as the woods', and one more:
+ *  a lake of lava is five tiles across and no sweep would ever land on it. */
+export function calderaCentre(
+  seed: number,
+  spot: HomesteadSpot,
+  index: number,
+): { x: number; y: number } {
+  return ringCentre(CALDERA, seed, spot, index);
+}
 
 /** Does this instance carry the giants? Its own salted hash, so it is a fact
  *  about that stand and not about the order you found them in. */
@@ -1099,30 +1199,40 @@ function hasGiants(seed: number, spot: HomesteadSpot, index: number): boolean {
 }
 
 /** Which redwood stand a tile is in, if any, and whether it is in the giants at
- *  the middle of it.
- *
- *  The ring window is `foundSiteAt`'s exactly (sim/found.ts): a centre sits on
- *  its ring to within a tile's rounding, so anything further from the ring than
- *  the footprint plus that rounding is outside every instance, and the whole
- *  question costs two subtractions for almost every tile in the world. This is
- *  asked per visible ground tile per frame, so that matters. */
+ *  the middle of it. */
 function redwoodSiteAt(
   seed: number,
   spot: HomesteadSpot,
   x: number,
   y: number,
 ): { index: number; giants: boolean } | null {
-  const r = Math.hypot(x, y);
-  const slack = REDWOOD_RADIUS + 2;
-  const lo = Math.ceil((r - slack - REDWOOD_RING) / REDWOOD_SPACING);
-  const hi = Math.floor((r + slack - REDWOOD_RING) / REDWOOD_SPACING);
-  for (let i = Math.max(0, lo); i <= hi; i++) {
-    const c = redwoodCentre(seed, spot, i);
-    const d = Math.hypot(x - c.x, y - c.y);
-    if (d > REDWOOD_RADIUS + 0.5) continue;
-    return { index: i, giants: d <= GIANTS_RADIUS && hasGiants(seed, spot, i) };
-  }
-  return null;
+  const at = ringSiteAt(REDWOODS, seed, spot, x, y);
+  if (!at) return null;
+  return { index: at.index, giants: at.d <= GIANTS_RADIUS && hasGiants(seed, spot, at.index) };
+}
+
+/** Is this tile the lava at the middle of a caldera? Asked by `generatedTile`,
+ *  which is why it is a separate question from `biomeAt`: the lake is TILES and
+ *  the region around it is a palette, and the two have different radii.
+ *
+ *  LOBED, NOT ROUND, and the screen is what insisted. A true disc of radius five
+ *  quantised onto the tile grid photographs as a RECTANGLE with a couple of steps
+ *  in it — at this camera you are looking at eleven tiles across, so a circle has
+ *  nowhere near enough cells to read as a curve, and the eye finds the straight
+ *  runs immediately. The wobble is `clearingRadius`'s exactly: two sine terms on
+ *  the bearing with seeded phases, so the shore comes out in bays and headlands
+ *  and no two calderas are the same shape. ±25% of the radius, which is enough to
+ *  break every straight run and not enough to reach the ring of ash the whole
+ *  region depends on being walkable. */
+function inLavaLake(seed: number, spot: HomesteadSpot, x: number, y: number): boolean {
+  const at = ringSiteAt(CALDERA, seed, spot, x, y);
+  if (!at) return false;
+  const c = ringCentre(CALDERA, seed, spot, at.index);
+  const th = Math.atan2(y - c.y, x - c.x);
+  const pa = (hash2(at.index, 1, seed ^ 0x71c3) / 4294967296) * Math.PI * 2;
+  const pb = (hash2(at.index, 2, seed ^ 0x71c3) / 4294967296) * Math.PI * 2;
+  const wobble = 0.62 * Math.sin(th * 3 + pa) + 0.38 * Math.sin(th * 5 + pb);
+  return at.d <= LAKE_RADIUS * (1 + 0.25 * wobble);
 }
 
 /** Which found place a tile belongs to, if any (Phase 7b).
@@ -1169,6 +1279,14 @@ export function biomeAt(seed: number, spot: HomesteadSpot, x: number, y: number)
   // roll is what happens where nothing has been stated.
   const rw = redwoodSiteAt(seed, spot, x, y);
   if (rw) return rw.giants ? "giants" : "redwoods";
+
+  // The calderas, after the woods and before the field. A burnt disc and a wood
+  // can only collide if two independent bearings put them at the same place at
+  // nearly the same radius, which is rare and which nobody could tell from a
+  // decision — but it has to be decided somewhere, or the same tile answers
+  // differently depending on who asked. The wood wins, because a lake of lava in
+  // a redwood grove is the more obviously wrong of the two pictures.
+  if (ringSiteAt(CALDERA, seed, spot, x, y)) return "caldera";
 
   const w = biomeWarp(seed, x, y);
   const site = nearestSite(seed, w.x, w.y);
@@ -1562,34 +1680,37 @@ export function regionParts(
   const bd = Math.hypot(x - b.x, y - b.y);
   parts = overlay(parts, "blossom", edgeMix(bd - BLOSSOM_RADIUS, BLOSSOM_RADIUS / 3));
 
-  // The redwood stands, and the giants inside them — the same overlay, in the
-  // same order `biomeAt` resolves them, so the tint can never disagree with the
-  // region a tile actually is.
+  // The redwood stands and the calderas — the same overlay, in the same order
+  // `biomeAt` resolves them, so the tint can never disagree with the region a
+  // tile actually is.
   //
   // FOUND BY RING RATHER THAN BY DISTANCE TO ONE CENTRE, because unlike the
-  // blossom rows there is more than one of these; the window arithmetic is
-  // `redwoodSiteAt`'s and this asks the same question one radius wider, since a
-  // tile OUTSIDE a stand still needs its share of the stand's colour to fade in.
-  const r = Math.hypot(x, y);
-  const slack = REDWOOD_RADIUS + REDWOOD_BLEND + 2;
-  const lo = Math.ceil((r - slack - REDWOOD_RING) / REDWOOD_SPACING);
-  const hi = Math.floor((r + slack - REDWOOD_RING) / REDWOOD_SPACING);
-  for (let i = Math.max(0, lo); i <= hi; i++) {
-    const c = redwoodCentre(seed, spot, i);
-    const d = Math.hypot(x - c.x, y - c.y);
+  // blossom rows there is more than one of each; `ringSiteAt` takes a `reach`
+  // for exactly this, since a tile OUTSIDE a disc still needs its share of that
+  // disc's colour to fade in.
+  const wood = ringSiteAt(REDWOODS, seed, spot, x, y, REDWOOD_BLEND);
+  if (wood) {
     // A FIXED FADE, NOT A THIRD OF THE RADIUS. The blossom rows divide their own
     // radius because nine tiles across is barely a place and a wide fade would
     // eat its middle. This is the opposite problem: the disc has middle to spare
     // and the COLOUR is the extreme one, so the fade is sized to the colour —
-    // see REDWOOD_RADIUS, which was grown to afford it.
-    parts = overlay(parts, "redwoods", edgeMix(d - REDWOOD_RADIUS, REDWOOD_BLEND));
+    // see REDWOODS.radius, which was grown to afford it.
+    parts = overlay(parts, "redwoods", edgeMix(wood.d - REDWOODS.radius, REDWOOD_BLEND));
     // And the giants over that. Their palette is the redwoods' to the digit
     // (content/biomes.ts §giants), so this overlay currently changes not one
     // pixel of turf — it is here so that the day one of those numbers moves, the
     // ground under the giants moves with it instead of quietly staying behind.
-    if (hasGiants(seed, spot, i)) {
-      parts = overlay(parts, "giants", edgeMix(d - GIANTS_RADIUS, GIANTS_RADIUS / 3));
+    if (hasGiants(seed, spot, wood.index)) {
+      parts = overlay(parts, "giants", edgeMix(wood.d - GIANTS_RADIUS, GIANTS_RADIUS / 3));
     }
+  }
+
+  // The calderas, on the same terms and with the same wide fade. Ash is the
+  // steepest ground colour in the game — further from grass than the redwood duff
+  // is — so if anything wants a longer approach than a border's, it is this.
+  const burn = ringSiteAt(CALDERA, seed, spot, x, y, REDWOOD_BLEND);
+  if (burn) {
+    parts = overlay(parts, "caldera", edgeMix(burn.d - CALDERA.radius, REDWOOD_BLEND));
   }
 
   return parts;
@@ -2780,7 +2901,18 @@ const PONDS_PER_WATER =
  *  a sand rim and lets two or three merged centres grow a middle you can't
  *  wade. The waterline is unchanged: `d > 0` is the same set of cells `dist <= r`
  *  named, bar exact equality. */
-function pondDepth(seed: number, x: number, y: number, chance: number): number {
+function pondDepth(
+  seed: number,
+  x: number,
+  y: number,
+  chance: number,
+  // THE SALT IS WHY THIS TAKES ONE. The fen's ponds and the cinders' lava seams
+  // are the same geometry — blobs on a coarse lattice, never per cell — and the
+  // only thing that must differ is WHERE they land, or every lava seam in the
+  // world would be a fen pond that caught fire. Defaulted to the fen's own value
+  // so that function is byte-identical to what it was; there is a test.
+  salt = 0,
+): number {
   if (chance <= 0) return -Infinity;
   let best = -Infinity;
   const cx = Math.floor(x / POND_CELL);
@@ -2796,20 +2928,28 @@ function pondDepth(seed: number, x: number, y: number, chance: number): number {
       // candidate being a pond the ponds merge and the region becomes a lake,
       // which is a wall and not a place.
       const density = Math.min(0.85, chance * PONDS_PER_WATER);
-      if (hash2(mx, my, seed ^ 0x0e05) / 4294967296 >= density) continue;
+      if (hash2(mx, my, seed ^ 0x0e05 ^ salt) / 4294967296 >= density) continue;
       // Two salts rather than swapped arguments — see `scatterCentre`, which
       // inherited this line's bug and is where it is explained. On the diagonal
       // the swapped version hands back the same number twice.
-      const px = (mx + 0.2 + (hash2(mx, my, seed ^ 0x2b1f) / 4294967296) * 0.6) * POND_CELL;
-      const py = (my + 0.2 + (hash2(mx, my, seed ^ 0x2b1f ^ 0x51ed) / 4294967296) * 0.6) * POND_CELL;
+      const px =
+        (mx + 0.2 + (hash2(mx, my, seed ^ 0x2b1f ^ salt) / 4294967296) * 0.6) * POND_CELL;
+      const py =
+        (my + 0.2 + (hash2(mx, my, seed ^ 0x2b1f ^ 0x51ed ^ salt) / 4294967296) * 0.6) * POND_CELL;
       const r =
         POND_MIN_RADIUS +
-        (hash2(mx, my, seed ^ 0x6a3c) / 4294967296) * (POND_MAX_RADIUS - POND_MIN_RADIUS);
+        (hash2(mx, my, seed ^ 0x6a3c ^ salt) / 4294967296) * (POND_MAX_RADIUS - POND_MIN_RADIUS);
       best = Math.max(best, r - Math.hypot(px - x, py - y));
     }
   }
   return best;
 }
+
+/** The cinders' seams run on the fen's geometry and their own hash. One number,
+ *  named, because a magic constant in a call to `pondDepth` is exactly the kind
+ *  of thing that gets copied to a second caller and quietly makes two features
+ *  the same shape. */
+const LAVA_SALT = 0x4f21;
 
 /** Whether a cell is close enough to the grove to be part of its setting.
  *
@@ -3073,10 +3213,17 @@ export function refusesFooting(world: WorldState, x: number, y: number): boolean
  *  Terraforming is always free (DESIGN §Materials) and that has to include the
  *  water or it's a slogan — so this costs nothing, needs no material, and is not
  *  gated on the size of what you're filling. Someone may fill the ocean. It will
- *  take them a while. */
+ *  take them a while.
+ *
+ *  AND THE LAVA, on exactly those terms. It was tempting to make this the one
+ *  hole you cannot fill in, and every version of that argument turned out to be
+ *  about DANGER — which this game does not have, anywhere, at all. A player who
+ *  wants to shovel a caldera flat over several evenings is doing the thing the
+ *  sentence above promises they may do, and the alternative is a special case
+ *  that exists only to say no. Nobody in town remarks on it. */
 export function canFill(world: WorldState, x: number, y: number): boolean {
   const t = tileAt(world, x, y);
-  return t === WATER || t === SHALLOW;
+  return t === WATER || t === SHALLOW || t === LAVA;
 }
 
 /** Fill water in. Leaves SAND — you filled it with the shore, and the new shore

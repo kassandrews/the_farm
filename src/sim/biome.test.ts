@@ -23,12 +23,15 @@ import {
   foundPlaceAt,
   waterKindAt,
   redwoodCentre,
+  calderaCentre,
+  CALDERA_RADIUS,
+  LAKE_RADIUS,
 } from "./world";
 import { BIOMES, FIELD_WEIGHTS, type BiomeId } from "../content/biomes";
 import { FOUND } from "../content/found";
 import { GRASS, tileDef } from "../content/tiles";
 import { biomeSkin, blendRegions } from "../render/palette";
-import { ROCK, WATER, SHALLOW, SAND, SHRUB, DIRT, STUMP, LOG, TREE } from "../content/tiles";
+import { ROCK, WATER, SHALLOW, SAND, SHRUB, DIRT, STUMP, LOG, TREE, LAVA } from "../content/tiles";
 import { NODES, nodeForTile } from "../content/nodes";
 import type { HomesteadSpot } from "./types";
 
@@ -358,6 +361,91 @@ describe("the redwood stands, and the giants in some of them", () => {
     for (const id of ["redwoods", "giants"] as const) {
       expect(BIOMES[id].water).toBe(0);
       expect(BIOMES[id].mushrooms).toBeLessThanOrEqual(BIOMES.fen.mushrooms);
+    }
+  });
+});
+
+describe("the cinders, and the caldera", () => {
+  const SWEEP = 20_000;
+
+  it("puts a caldera on every ring, with a lake at the middle of it", () => {
+    for (let seed = 1; seed <= 80; seed++) {
+      for (const spot of SPOTS) {
+        for (const i of [0, 1, 2]) {
+          const c = calderaCentre(seed, spot, i);
+          expect(Math.abs(Math.hypot(c.x, c.y) - (247 + i * 233))).toBeLessThan(1);
+          expect(biomeAt(seed, spot, c.x, c.y)).toBe("caldera");
+          expect(generatedTile(seed, spot, c.x, c.y)).toBe(LAVA);
+        }
+      }
+    }
+  }, SWEEP);
+
+  it("keeps a ring of ash you can walk all the way round the lake", () => {
+    // THE FEN'S RULE, AT THE ONE PLACE IT IS HARDEST TO KEEP: a region you cannot
+    // cross is a wall rather than a place, and one you walked two hundred and
+    // fifty tiles to reach is the worst possible place to put a wall. So the lake
+    // has to be an OBSTACLE — something with a way round — and that is a fact
+    // about geometry that only a sweep can check.
+    //
+    // Asked as "is there a walkable ring": on sixteen bearings out of the centre,
+    // the first tile past the lava must be something you can stand on, and it must
+    // arrive well inside the disc rather than outside it.
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const i of [0, 1]) {
+        const c = calderaCentre(seed, "forest", i);
+        for (let a = 0; a < 16; a++) {
+          const th = (a / 16) * Math.PI * 2;
+          let free = 0;
+          for (let r = LAKE_RADIUS + 1; r <= CALDERA_RADIUS - 2; r++) {
+            const x = c.x + Math.round(Math.cos(th) * r);
+            const y = c.y + Math.round(Math.sin(th) * r);
+            if (!tileDef(generatedTile(seed, "forest", x, y)).solid) free++;
+          }
+          // Most of the way out from the lake to the rim is open ash. Not all of
+          // it: snags, rocks and the odd river are allowed to be in the way, and a
+          // ring with nothing in it at all would be a running track.
+          expect(free, `seed ${seed} bearing ${a}`).toBeGreaterThan(6);
+        }
+      }
+    }
+  }, SWEEP);
+
+  it("never puts lava anywhere the town can reach", () => {
+    // "It cannot happen" is what every generator bug has said first. The nearest
+    // caldera is 247 tiles out and the cinders are far country, so this should be
+    // impossible twice over — which is exactly the kind of claim that is worth two
+    // seconds of sweeping on a thousand seeds.
+    for (const spot of SPOTS) {
+      for (let seed = 1; seed <= 400; seed++) {
+        for (let y = -40; y <= 40; y += 2) {
+          for (let x = -40; x <= 40; x += 2) {
+            if (generatedTile(seed, spot, x, y) === LAVA) {
+              throw new Error(`seed ${seed} ${spot}: lava at (${x},${y})`);
+            }
+          }
+        }
+      }
+    }
+  }, SWEEP);
+
+  it("gives lava nothing to gather and nowhere to walk", () => {
+    // The biggest temptation in the file, checked rather than trusted: a volcano
+    // is where a far region would most like to hold a material the near ones
+    // don't, and DESIGN §Biomes says it may not. There is no obsidian.
+    expect(nodeForTile(LAVA, "surface")).toBe(null);
+    expect(tileDef(LAVA).solid).toBe(true);
+    expect(tileDef(LAVA).diggable).toBeFalsy();
+  });
+
+  it("keeps the burnt rows the poorest ground in the game", () => {
+    // Not a general invariant — the far-country test above covers that — but the
+    // specific claim this region makes about itself: nothing grows here.
+    for (const id of ["cinder", "caldera"] as const) {
+      expect(BIOMES[id].mushrooms).toBe(0);
+      expect(BIOMES[id].shrubs).toBeUndefined();
+      expect(BIOMES[id].deadwood).toBeUndefined();
+      expect(BIOMES[id].trees).toBeLessThan(BIOMES.meadow.trees);
     }
   });
 });

@@ -57,8 +57,9 @@ DESIGN.md, if it's a rule about the game rather than about build order).
 - **Phase 15 — the soundtrack, complete.** Nine generated pieces, day and night
   setlists, and an arrangement that assembles itself as you walk into town. See
   below.
-- **Phase 16 — four new regions, complete.** The granite, the redwoods (with the
-  giants), and the long grass. Rock as a landscape
+- **Phase 16 — six new regions, complete.** The granite, the redwoods (with the
+  giants), the long grass, and the cinders (with the caldera at the heart of
+  one). Also the first terrain in the game that is a light source. Rock as a landscape
   (rolled, far, with bare sheets on a long field), and redwood stands sited on a
   ring that recurs outward — about one in four with a grove of giants at its
   heart. No schema change; the near world is untouched by construction. See
@@ -7412,6 +7413,68 @@ is the settled call**: a region with exactly one idea in it is a diagram.
   stands arrived, and the proof-sized sweeps passed alone while timing out under a
   full parallel suite — a red build that goes green on a re-run, which is the worst
   kind of failure to leave lying around.
+
+### Same day again: the cinders and the caldera
+
+The volcano, which is not a mountain — DESIGN §Biomes has no height axis, so a
+cone was never expressible. What is expressible is everything at ground level,
+which turns out to be most of what a volcano is from a few feet away: black ash,
+trees that died standing, molten rock you walk around, ash falling all day, and
+after dark the only light for a hundred tiles.
+
+Two rows, one new tile, one new light. `LAVA` is TileId 28, appended so no
+stored id moves; no schema change anywhere.
+
+### The settled calls (don't relitigate)
+
+- **Nothing in the world can hurt you, and it is in DESIGN now.** There is no
+  health, no stamina and no damage in the sim, and no content had ever tested
+  that. Lava is solid the way deep water is solid. If a thing on the map would
+  make a player careful, it is out.
+- **Lava is not a material.** No obsidian, no ore, no "cooled lava" item, no node
+  row. A volcano is where a far region would most like to break DESIGN §Biomes,
+  and there is a test.
+- **It is fillable, like any other water.** Terraforming is free and unlimited
+  ("someone may fill the ocean"), and every argument for making this the one hole
+  you cannot fill turned out to be an argument about danger, which this game does
+  not have. Someone may shovel a caldera flat. Nobody will remark on it.
+- **The cinders roll; the caldera is sited.** Burnt plain you happen into, with
+  seams on the fen's pond field at the fen's own 4%; and a disc at ring 247 that
+  recurs outward, bringing its own cinders, with a lake at the heart. A pool of
+  lava in a birch wood is a prop; twenty tiles of ash around it is a place that
+  happened.
+- **`pondDepth` grew a salt argument**, defaulted to the fen's own value so that
+  field is byte-identical. The fen's ponds and the lava seams are the same
+  geometry and must never be the same PLACES.
+- **The ring siting is one helper now.** Two regions wanted it (`RingRegion`,
+  `ringCentre`, `ringSiteAt`), and the per-tile cache lives in the def — see the
+  redwoods' note about what a template-string cache key did to a test suite.
+
+### What the screen changed
+
+- **The ash target had to be VIOLET.** Drafted at a sensible warm charcoal it
+  measured (68,68,51) — olive. Grass starts at (139,191,90) and a tint is a lerp,
+  so the blue channel has the least distance to travel and arrives high: anything
+  aimed straight at "dark brown-grey" lands on dark green-grey. Aim at #3b2b34
+  and it arrives at (66,58,56). The dusk row wrote half of this lesson down years
+  ago; this is the other half.
+- **A disc of radius five is a RECTANGLE.** Eleven tiles across is nowhere near
+  enough cells for a circle to read as a curve. The lake is lobed now, by
+  `clearingRadius`'s two-sine wobble on the bearing.
+- **The lake was darkest at its centre**, because only rim cells threw a halo —
+  all the light on the ash outside and none in the fire. A sixth of the interior
+  now throws one too.
+- **One to three cracks a tile read as orange sticks.** Three to five, with
+  lengths that vary, read as fire under a crust.
+- Snag gaps had to move: a gap is only legal where it is open to the outside, and
+  `render/palette.test.ts` caught the first draft putting one halfway up a trunk.
+  The caldera's snags are shorter than the plain's for the same test's other
+  clause — two regions may not share an outline unless their colour differs — and
+  the honest answer was that a snag nearer the middle has less of itself left.
+- **The caldera's "thicker air" made it a second kind of air**, which the mote
+  guard caught. That guard now counts DISTINCT airs rather than rows, since the
+  caldera's ash is the cinders' ash; and it has a clause that may never move —
+  the meadow and the pines get air on a summer evening and at no other time.
 
 ## Known gaps and loose ends
 

@@ -42,6 +42,8 @@ export type ObservationId =
   | "the-blossom"
   | "the-granite"
   | "the-long-grass"
+  | "the-cinders"
+  | "the-caldera"
   | "the-redwoods"
   | "the-giants"
   | "the-sea"
@@ -127,6 +129,20 @@ export const OBSERVATIONS: ObservationDef[] = [
     id: "the-long-grass",
     source: "noticed",
     line: "Grass to the knee for as far as it goes, with bushes standing about in it at intervals nobody arranged. Something comes off the grass sideways all afternoon. Seed, I think. It is not settling anywhere I can see.",
+  },
+  {
+    id: "the-cinders",
+    source: "noticed",
+    line: "Ground that has been on fire and has not entirely stopped. The trees are still standing and none of them is alive. Nothing has grown back and it does not look recent.",
+  },
+  {
+    id: "the-caldera",
+    source: "noticed",
+    // THE BEAT, and it works by being a note rather than a reaction — the whole
+    // register of this journal. Nobody in town has mentioned it; there is nothing
+    // to be done about it; it is simply written down, with the one practical
+    // observation a surveyor would actually make.
+    line: "A lake of it, at the middle, still going. I walked round the whole thing at what I judged to be a sensible distance. Nobody has filed anything about this.",
   },
   {
     id: "the-redwoods",

@@ -235,6 +235,31 @@ export const SHRUB: TileId = 25;
 export const STUMP: TileId = 26;
 export const LOG: TileId = 27;
 
+/** Molten rock. The only terrain in the game that is a LIGHT SOURCE, and the
+ *  first thing on the ground that is brighter than the palette.
+ *
+ *  SOLID, EXACTLY AS DEEP WATER IS SOLID, and that is the whole of what it does
+ *  to you. Nothing in this game can hurt anybody — there is no health, no
+ *  stamina, no damage anywhere in the sim — so a lake of lava is a thing you walk
+ *  around, not a thing that punishes you for walking into it. That is also the
+ *  joke: the most dramatic object in the world is an obstacle with a good view.
+ *
+ *  IT YIELDS NOTHING AND IS NOT A MATERIAL. There is no obsidian, no ore, no
+ *  "cooled lava" item, and `content/nodes.ts` has no row for it. A far region may
+ *  never hold something the near ones don't (DESIGN §Biomes), and the most
+ *  tempting place in the game to break that rule is a volcano.
+ *
+ *  FILLABLE, LIKE ANY OTHER WATER. Terraforming is free and unlimited — §Materials
+ *  says out loud that someone may fill the ocean and it will take them a while —
+ *  so the shovel works here too, and nobody needs a special case explaining why
+ *  this particular hole is the one you cannot fill in.
+ *
+ *  The colours are the CRUST, dark and cooling. The light comes from the cracks,
+ *  which the renderer draws, because a flat orange square is a warning sign and a
+ *  black crust with fire in its seams is a lava field. No `roll`: the crust has
+ *  its own texture and a second one fights it. */
+export const LAVA: TileId = 28;
+
 export const TILES: Record<TileId, TileDef> = {
   [GRASS]: {
     id: GRASS,
@@ -361,6 +386,17 @@ export const TILES: Record<TileId, TileDef> = {
     color: "#8bbf5a",
     top: "#98cc63",
     shade: "#76a54a",
+    solid: true,
+  },
+  [LAVA]: {
+    id: LAVA,
+    name: "Lava",
+    // Crust, not fire. Near-black with the warmth left in it — the ash's colour
+    // one step darker, so a lava field reads as the same ground gone wrong rather
+    // than as an object lying on it.
+    color: "#241a1a",
+    top: "#31241f",
+    shade: "#180f10",
     solid: true,
   },
   [MUSHROOM]: {

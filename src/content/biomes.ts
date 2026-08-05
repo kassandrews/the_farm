@@ -120,10 +120,12 @@ export type BiomeId =
   | "glass"
   | "granite"
   | "prairie"
+  | "cinder"
   // Sited, not rolled — like the blossom rows, and for the same reason. See
   // BIOMES.redwoods.
   | "redwoods"
-  | "giants";
+  | "giants"
+  | "caldera";
 
 export interface BiomeDef {
   id: BiomeId;
@@ -172,6 +174,20 @@ export interface BiomeDef {
    *  Read as PONDS, not as cells (see `inPond` in sim/world.ts). A per-cell roll
    *  put down lone bright squares instead of water. */
   water: number;
+
+  /** How much of the ground is MOLTEN — the same number `water` is, for the same
+   *  field, and read the same way: as blobs and never as cells (`pondDepth` in
+   *  sim/world.ts, on its own salt). Optional, and only the cinders have any.
+   *
+   *  IT IS SOLID AND IT IS NOT A HAZARD. Lava blocks you exactly as deep water
+   *  blocks you, because nothing in this game can hurt anybody — see
+   *  content/tiles.ts §LAVA, where that argument lives with the tile it is about.
+   *  So this number answers the fen's question and not a new one: how much of a
+   *  region is a thing you have to go round, and the fen's answer holds here too —
+   *  keep it LOW, because a region you cannot cross is a wall rather than a
+   *  place, and one you walked six hundred tiles to reach is the worst possible
+   *  place to put a wall. */
+  lava?: number;
 
   // --- What it looks like -----------------------------------------------------
   /** The ground under everything. */
@@ -1848,6 +1864,199 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     },
   },
 
+  /** BURNT COUNTRY, AND THE ONLY GROUND IN THE GAME THAT IS ON FIRE. Black ash,
+   *  trees that died standing, and seams of molten rock you walk around.
+   *
+   *  THERE IS NO MOUNTAIN AND THERE WAS NEVER GOING TO BE ONE. DESIGN §Biomes:
+   *  strangeness is never taller, there is no height axis, and the whole world is
+   *  one flat storey. A cone, a rim, a crater you look down into — none of them
+   *  is expressible, and trying would have been the first thing in this game to
+   *  claim an elevation. What IS expressible is everything at ground level, which
+   *  turns out to be most of what a volcano actually is from a few feet away: the
+   *  colour of the ground, what is standing on it, what is coming out of the sky,
+   *  and the light.
+   *
+   *  NOTHING HERE CAN HURT YOU, because nothing anywhere in this game can hurt
+   *  anybody — there is no health, no stamina and no damage in the sim. Lava is
+   *  solid the way deep water is solid: an obstacle with a good view. That is the
+   *  joke and it is the correct joke for this town.
+   *
+   *  IT IS ALSO THE POOREST GROUND IN THE GAME, which is the far-country promise
+   *  kept where it is hardest to keep: no mushrooms, no undergrowth, no fallen
+   *  wood, and snags at a fifth of the meadow's tree density. You walk out here
+   *  for the look and you carry home less than you would from your own lawn. */
+  cinder: {
+    id: "cinder",
+    name: "the cinders",
+    // Snags. A fifth of the meadow's trees and every one of them dead — see
+    // `crownRows`, which is the shape doing that work rather than a second tile.
+    trees: 0.2,
+    // Volcanic bombs, and the shape list is the whole of what makes them that:
+    // shards and broken pieces, nothing rounded, because none of this has been
+    // lying here long enough to wear.
+    rocks: 1.0,
+    // NOTHING GROWS, and these two zeroes are the region's strongest sentence.
+    // The fen is the mushroomiest place there is; this is the only wooded-looking
+    // country in the file with not one mushroom in it.
+    mushrooms: 0,
+    water: 0,
+    // FOUR PERCENT, WHICH IS THE FEN'S NUMBER AND NOT A FRACTION MORE. The fen's
+    // note is the argument, unchanged: water is solid and a region you cannot
+    // cross is a wall rather than a place. Lava is more dramatic than water and
+    // is exactly as impassable, so the temptation to turn this up is exactly the
+    // temptation to build a wall six hundred tiles from home.
+    lava: 0.04,
+    // ASH, AND THE TARGET IS VIOLET, WHICH IS THE FILE'S OLDEST TRAP. Drafted at
+    // a sensible warm charcoal (#3a332e at 0.88) it measured (68,68,51) on screen
+    // — olive, because grass starts at (139,191,90) and a tint is a lerp: the blue
+    // channel has the least distance to travel and arrives high, so anything aimed
+    // straight at "dark brown-grey" lands on dark GREEN-grey. The dusk row learned
+    // this first and wrote it down ("the target has to be darker than it looks");
+    // this is the same arithmetic one step further, and the answer is to aim at a
+    // colour that is not the colour you want.
+    //
+    // #3b2b34 at 0.9 lands near (66,58,56): a hair warm, near-neutral, and by a
+    // long way the darkest ground in the game — the fen's murk is (115,152,80) and
+    // the redwood duff (110,84,44).
+    ground: { color: "#3b2b34", amount: 0.9 },
+    tuft: { color: "#453843", amount: 0.88 },
+    // GRIT, AND NOT ONE PLANT. Every other region's tuft list is a claim about
+    // what grows there; this one is a claim that nothing does. Dots only would
+    // have been the obvious version and reads as static — one blade in four, dead
+    // and still standing, is what makes the dots read as grit rather than noise.
+    tufts: ["dot", "dot", "dot", "blades"],
+    // The crown ink, which on a dead tree is what the BRANCHES are drawn in. Near
+    // black, and pulled hard: nothing here takes a season.
+    crown: { color: "#2b241f", amount: 0.85 },
+    // Charred. The darkest trunk in the file — darker than the grove's, which
+    // until now was the only near-black wood in the game.
+    trunk: { color: "#241c18", amount: 0.75 },
+    // A SNAG: a bare stem with a few stubs of branch near the top and nothing
+    // else. Two and three half-widths where a living crown carries six or eight,
+    // and short, so the silhouette is mostly trunk — which is what a dead tree is
+    // and what no other row in this file has ever drawn.
+    //
+    // The gaps are what stop it reading as a small tree. A crown this narrow with
+    // solid rows is a spike; with the middle open on the rows that overlap the
+    // trunk, the eye reads branches leaving a stem (see `crownGaps` — open
+    // downward, showing bark, which is the legal kind).
+    crownRows: [1, 2, 1, 3, 2, 3, 3, 2],
+    // GAPPED ONLY WHERE A GAP IS LEGAL, which is the three rows that come down
+    // beside the trunk (see BiomeDef.crownGaps, and `render/palette.test.ts`,
+    // which caught the first draft putting one halfway up). Open downward, showing
+    // bark: on a living tree that is the underside of a canopy, and on a dead one
+    // it is the thing itself — branches leaving a bare stem with sky between them.
+    crownGaps: [0, 0, 0, 0, 0, 1, 1, 1],
+    crownOverlap: 3,
+    trunkHeight: 22,
+    // Fresh-broken and dark, with the region's own warmth in it. Shards and
+    // broken pieces only: this rock was thrown, not weathered.
+    // Just under the half the tint rule allows (sim/biome.test.ts §stone): a tint
+    // is a direction and never a replacement, and the one region that would most
+    // like its rock to be a different material is the one that must not have it.
+    stone: { tint: { color: "#3d3129", amount: 0.46 }, shapes: ["shard", "broken", "shard"] },
+    // ASH IN THE AIR, ALL YEAR AND ALL DAY. The second and last user of `blow`
+    // (MoteKit), and the pairing is deliberate: the long grass's air is seed
+    // going sideways in sunlight, and this is the same motion with the light
+    // taken out of it. Falling rather than rising — `drift` is negative — because
+    // ash is the one thing in the sky that is on its way down.
+    //
+    // PALE GREY AND NO CORE. A core is the ink of a SOURCE (a firefly, a spark,
+    // an orb) and ash is the opposite of a source: it is the thing the light has
+    // gone out of. Against a near-black floor a plain grey speck reads perfectly
+    // well without any help.
+    motes: {
+      density: 0.09,
+      color: "#b6afa6",
+      drift: -14,
+      blow: 9,
+      sway: 2,
+      period: 7,
+      size: 1,
+    },
+    // BONES OF THINGS, and the sparsest kit in the file bar the glimmer's. Two
+    // fallen sticks and a scatter of grit — no flower, no fern, no seasonal
+    // anything, because this is the one region where a bloom would be a lie.
+    decor: {
+      density: 0.06,
+      accent: "#6a5b4e",
+      marks: [
+        ["x..", ".x.", "..x"],
+        ["..x", ".x.", "x.."],
+        ["oo", "o."],
+      ],
+    },
+  },
+
+  /** THE LAKE AT THE MIDDLE OF IT — sited, recurring outward, and the one place
+   *  in the world you arrive at rather than cross.
+   *
+   *  THE REDWOODS' PATTERN EXACTLY, one escalation up: a disc of country at a
+   *  known ring, on its own bearing, appearing again further out forever. The
+   *  giants taught that arriving somewhere is worth more than happening into it,
+   *  and this is the version of that with a light in the middle.
+   *
+   *  IT BRINGS ITS OWN CINDERS, which is why this is a region and not a lake
+   *  tile. A pool of lava in a birch wood is a prop; a lake of it at the centre of
+   *  twenty tiles of burnt ground is a place that happened. So the palette is the
+   *  cinders' to the digit — same ash, same snags, same air — and the only
+   *  difference is that here there is more of it and nothing at all survived. */
+  caldera: {
+    id: "caldera",
+    name: "the caldera",
+    // Fewer, and nearer the middle there are none: the disc is mostly open ash.
+    trees: 0.08,
+    rocks: 1.2,
+    mushrooms: 0,
+    water: 0,
+    // NO SEAMS OF ITS OWN. The lake is authored — a disc at the centre, placed by
+    // sim/world.ts the way the giants are — so scattering blobs on top of it
+    // would put spots of lava in the ring you are meant to be able to walk round.
+    ground: { color: "#3b2b34", amount: 0.9 },
+    tuft: { color: "#453843", amount: 0.88 },
+    tufts: ["dot", "dot", "dot", "blades"],
+    crown: { color: "#2b241f", amount: 0.85 },
+    trunk: { color: "#241c18", amount: 0.75 },
+    // SHORTER AND BARER THAN THE PLAIN OUTSIDE, and `render/palette.test.ts` is
+    // what asked for it: two regions may not share an outline unless their colour
+    // is unmistakably different, and this row is the cinders' palette to the
+    // digit. The answer is not paint — it is that a snag nearer the middle of the
+    // burn has less of itself left. Five rows against eight, on a shorter stem.
+    crownRows: [1, 2, 1, 2, 2],
+    crownGaps: [0, 0, 0, 1, 1],
+    crownOverlap: 2,
+    trunkHeight: 18,
+    // Just under the half the tint rule allows (sim/biome.test.ts §stone): a tint
+    // is a direction and never a replacement, and the one region that would most
+    // like its rock to be a different material is the one that must not have it.
+    stone: { tint: { color: "#3d3129", amount: 0.46 }, shapes: ["shard", "broken", "shard"] },
+    // THE CINDERS' AIR, TO THE DIGIT. It was thicker here for a draft — more ash
+    // nearer where it is coming from, which is a nice sentence — and
+    // `content/decor.test.ts` counts DISTINCT airs rather than rows, so a density
+    // of its own made this a second kind of air in the world rather than the same
+    // ash over a different part of the same burn. The count was right and the
+    // sentence was decoration. What tells you that you have arrived is the light
+    // off the lake, which is a thing no other region has at all.
+    motes: {
+      density: 0.09,
+      color: "#b6afa6",
+      drift: -14,
+      blow: 9,
+      sway: 2,
+      period: 7,
+      size: 1,
+    },
+    decor: {
+      density: 0.06,
+      accent: "#6a5b4e",
+      marks: [
+        ["x..", ".x.", "..x"],
+        ["..x", ".x.", "x.."],
+        ["oo", "o."],
+      ],
+    },
+  },
+
   /** The one you go and find. Not rolled from the field like the others — it is
    *  SITED, once per town, on its own bearing, exactly the way the grove and the
    *  cube are (sim/world.ts).
@@ -2242,12 +2451,12 @@ export const FIELD_WEIGHTS: [BiomeId, FieldWeight][] = [
   // that happen to be far away — they are far-only because the `near` column is
   // frozen for saves, not because there is anything odd about a plain — and rows
   // like that appended flat would have quietly taken the plateau down to a third
-  // strange. Scaled instead: 5.0 of 9.5, which is a little over half.
-  ["dusk", { near: 0, far: 2.0 }],
-  ["glimmer", { near: 0, far: 1.7 }],
+  // strange. Scaled instead, every time one arrives: 5.3 of 10.6, which is half.
+  ["dusk", { near: 0, far: 2.1 }],
+  ["glimmer", { near: 0, far: 1.8 }],
   // The rarest, because it is the loudest. Glass is the one you walk into and
   // stop, and a plateau made mostly of it would be wallpaper by the second one.
-  ["glass", { near: 0, far: 1.3 }],
+  ["glass", { near: 0, far: 1.4 }],
   // APPENDED, AND THAT IS A COMPATIBILITY RULE RATHER THAN A HABIT. `near: 0`
   // contributes nothing to the cumulative walk at strangeness 0, so the near
   // world still rolls the old six-slot array tile for tile — which is the whole
@@ -2270,6 +2479,12 @@ export const FIELD_WEIGHTS: [BiomeId, FieldWeight][] = [
   // easiest to be in: open, crossable, and with something on the horizon in every
   // direction. A plateau you can walk across wants somewhere to walk.
   ["prairie", { near: 0, far: 1.1 }],
+  // The cinders are the rarest of the ordinary far rows and the only one that is
+  // rare on purpose rather than by arithmetic. It is the loudest thing out there
+  // that is not one of the strange three — black ground, dead trees, fire in the
+  // seams — and the glass wood's note applies to it word for word: a plateau made
+  // mostly of the loudest thing is wallpaper by the second one.
+  ["cinder", { near: 0, far: 0.8 }],
 ];
 
 export function biomeDef(id: BiomeId): BiomeDef {

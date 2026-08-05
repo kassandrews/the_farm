@@ -103,30 +103,42 @@ describe("motes", () => {
     // rather than a correctness one, here so that adding another is a decision
     // somebody takes on purpose.
     //
-    // Raised from three when the meadow and the pines got fireflies. The count
-    // is a weaker guard than it was and the reason is in the test above: two of
-    // these five are dark for nine months of the year, so what is actually rare
-    // is a region with air in it TONIGHT.
-    //
-    // Raised again for the long grass, whose air is the region — the only mote
-    // in the game that TRAVELS rather than rising or falling (MoteKit §blow), in
-    // the one place whose character is the wind rather than the light.
-    expect(kits.length).toBeLessThanOrEqual(6);
+    // COUNTED BY DISTINCT AIR, NOT BY ROW, which is the third rewrite of this
+    // guard and the first one that measures the thing it is named after. A raw
+    // row count says the caldera doubled the world's air; it did not — the
+    // caldera's ash IS the cinders' ash, the same kit copied for the same reason
+    // the giants copy the redwoods' floor, and two rows of one region family are
+    // one thing you can see. What a player meets is a KIND of air in a place, so
+    // that is what gets counted.
+    const distinct = new Set(kits.map(([, k]) => JSON.stringify(k)));
+    expect(distinct.size).toBeLessThanOrEqual(7);
   });
 
-  it("keeps the always-on ones rarer still", () => {
-    // THE GUARD THE COUNT ABOVE WAS ALWAYS TRYING TO BE, now that it has been
-    // raised twice and had to explain itself both times. A summer-evening kit is
+  it("keeps the always-on ones rarer still, and out of the near world entirely", () => {
+    // THE GUARD THE COUNT ABOVE WAS ALWAYS TRYING TO BE. A summer-evening kit is
     // absent from all but a few hours of the year, so counting it beside a kit
     // that runs at noon in February measures the wrong thing. What "most regions
     // have no air" has to mean is that most regions have no air RIGHT NOW.
     //
-    // Four of fourteen: the blossom's petals, the glimmer's spores, the dusk's
-    // fireflies and the long grass's seed. Each one is a region you walk to on
-    // purpose, which is the MoteKit doc's own test for whether air is worth
-    // having — arriving somewhere should feel like arriving.
+    // Five distinct ones, and every one of them is somewhere you went on purpose:
+    // the blossom rows' petals, the glimmer's spores, the dusk's fireflies, the
+    // long grass's seed and the cinders' ash. That is the MoteKit doc's own test
+    // for whether air is worth having — arriving somewhere should feel like
+    // arriving — and it is why the number may grow when a destination does.
     const always = kits.filter(([, k]) => !k.season && !k.evening);
-    expect(always.length).toBeLessThanOrEqual(4);
+    expect(new Set(always.map(([, k]) => JSON.stringify(k))).size).toBeLessThanOrEqual(5);
+
+    // AND THE CLAUSE THAT MAY NEVER MOVE. Everything above is about the far
+    // country and the sited places. The world you live in — the meadow and the
+    // pines, the two regions a town is actually made of — gets air on a summer
+    // evening and at no other time, which is what keeps "most regions have no
+    // air" true in the way that matters: most of the time, where you are.
+    for (const id of ["meadow", "pinewood"] as const) {
+      const kit = BIOMES[id].motes;
+      if (!kit) continue;
+      expect(kit.season, id).toBeTruthy();
+      expect(kit.evening, id).toBe(true);
+    }
   });
 
   it("actually moves", () => {

@@ -20,14 +20,16 @@ import {
   cubeSite,
   homesteadOrigin,
   isleCap,
+  biomeAt,
 } from "./world";
 import { newWorld, contextAction, playerTile, tick } from "./game";
 import { canPlaceStructure } from "./structures";
 import { canPlaceFurniture } from "./furniture";
 import { updateReclaim } from "./gather";
 import { findPath } from "./path";
-import { WATER, SHALLOW, SAND, GRASS, FLOOR, TREE } from "../content/tiles";
+import { WATER, SHALLOW, SAND, GRASS, FLOOR, TREE, LAVA } from "../content/tiles";
 import { WATER_KINDS } from "../content/water";
+import { BIOMES } from "../content/biomes";
 import { allTownBuildings } from "../content/town";
 import type { HomesteadSpot } from "./types";
 
@@ -800,4 +802,82 @@ describe("the homestead is never wet", () => {
       }
     }
   }, TRANSECT);
+});
+
+describe("the two blob fields — the fen's ponds and the cinders' lava", () => {
+  /** What fraction of a region's cells a feature actually covers, measured the
+   *  only way that is honest: by generating the region and counting.
+   *
+   *  `hit` is asked per cell rather than a tile id being compared, because the
+   *  fen's own question is not "is this wet" — a stream crossing a fen is wet and
+   *  is not the fen's doing. Asking `waterKindAt` for a POND measures the field
+   *  this test is actually about, and the first draft of it measured everything
+   *  wet and reported the fen at 21% against a declared 6%. */
+  function coverage(id: "fen" | "cinder", hit: (x: number, y: number, seed: number) => boolean) {
+    let cells = 0;
+    let hits = 0;
+    for (const seed of [3, 17, 93, 404]) {
+      // A ring wide enough to contain several regions of the kind we want. The
+      // cinders are far country and are the rarest row out there, so they need a
+      // much longer sweep than a fen forty tiles from home.
+      const from = id === "fen" ? 60 : 900;
+      const span = id === "fen" ? 220 : 700;
+      for (let r = from; r < from + span; r += 2) {
+        for (let a = 0; a < 24; a++) {
+          const th = (a / 24) * Math.PI * 2;
+          const x = Math.round(Math.cos(th) * r);
+          const y = Math.round(Math.sin(th) * r);
+          if (biomeAt(seed, "forest", x, y) !== id) continue;
+          cells++;
+          if (hit(x, y, seed)) hits++;
+        }
+      }
+    }
+    expect(cells).toBeGreaterThan(400); // or the measurement means nothing
+    return hits / cells;
+  }
+
+  it("floods the fen at about the fraction it claims", () => {
+    // THE BUG THIS WHOLE FILE EXISTS FOR (see its header): a fen 1.3% under water
+    // while its row claimed ten. `pondDepth` grew a salt argument when the lava
+    // arrived, defaulted to the fen's own value so nothing moved — and "nothing
+    // moved" is a claim, so here it is measured. Loose bounds on purpose: ponds
+    // merge and clip against shores, so the delivered fraction is never the
+    // declared one exactly. What it must not be is zero, or double.
+    const got = coverage("fen", (x, y, seed) => waterKindAt(seed, "forest", x, y) === "pond");
+    expect(got).toBeGreaterThan(BIOMES.fen.water * 0.4);
+    expect(got).toBeLessThan(BIOMES.fen.water * 3);
+  }, 20_000);
+
+  it("burns the cinders at about the fraction they claim", () => {
+    const got = coverage(
+      "cinder",
+      (x, y, seed) => generatedTile(seed, "forest", x, y) === LAVA,
+    );
+    expect(got).toBeGreaterThan(BIOMES.cinder.lava! * 0.4);
+    expect(got).toBeLessThan(BIOMES.cinder.lava! * 3);
+  }, 20_000);
+
+  it("keeps a way across the burnt country", () => {
+    // The fen's rule, and the reason the number above may never be turned up: a
+    // region you cannot cross is a wall rather than a place. Measured as the
+    // thing a player actually experiences — walk a straight line through the
+    // cinders and you should not be stopped by lava more than occasionally.
+    let blocked = 0;
+    let steps = 0;
+    for (const seed of [3, 17, 93]) {
+      for (let r = 900; r < 1700; r += 3) {
+        for (let a = 0; a < 16; a++) {
+          const th = (a / 12) * Math.PI * 2;
+          const x = Math.round(Math.cos(th) * r);
+          const y = Math.round(Math.sin(th) * r);
+          if (biomeAt(seed, "forest", x, y) !== "cinder") continue;
+          steps++;
+          if (generatedTile(seed, "forest", x, y) === LAVA) blocked++;
+        }
+      }
+    }
+    expect(steps).toBeGreaterThan(200);
+    expect(blocked / steps).toBeLessThan(0.12);
+  }, 20_000);
 });

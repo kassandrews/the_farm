@@ -38,7 +38,7 @@
 //     the only region that generates water can never be found.
 
 import { drive } from "./drive.mjs";
-import { biomeAt, blossomCentre, generatedTile, redwoodCentre } from "../src/sim/world.ts";
+import { biomeAt, blossomCentre, generatedTile, redwoodCentre, calderaCentre } from "../src/sim/world.ts";
 import { BIOMES, type BiomeId } from "../src/content/biomes.ts";
 import { WATER } from "../src/content/tiles.ts";
 import type { HomesteadSpot } from "../src/sim/types.ts";
@@ -47,7 +47,7 @@ const OUT = process.argv[2] ?? ".";
 
 /** The regions distance makes likely rather than the field rolling flat — they
  *  need a much longer spiral to find. See findBiome. */
-const FAR = new Set<BiomeId>(["dusk", "glimmer", "glass", "granite"]);
+const FAR = new Set<BiomeId>(["dusk", "glimmer", "glass", "granite", "cinder"]);
 
 // TIME=2026-07-24T23:00:00 to shoot the same regions after dark. Half of what a
 // region is made of has a night value — bark, crowns, motes, orbs — and the
@@ -88,6 +88,16 @@ function findBiome(id: BiomeId): { x: number; y: number } | null {
   // are asked for by walking outward through the instances until one of them has
   // them — about one in four does, and `usable`'s ten-tile neighbour check would
   // reject a five-tile disc even when standing in the middle of it.
+  // The caldera, asked for rather than searched for — same as the woods, and with
+  // a second reason: you want the shot to be OF the lake, and a spiral would find
+  // the ash at the rim first every time.
+  if (id === "caldera") {
+    for (let i = 0; i < 8; i++) {
+      const c = calderaCentre(seed, spot, i);
+      if (biomeAt(seed, spot, c.x, c.y) === "caldera") return { x: c.x, y: c.y + 8 };
+    }
+    return null;
+  }
   if (id === "redwoods" || id === "giants") {
     for (let i = 0; i < 8; i++) {
       const c = redwoodCentre(seed, spot, i);

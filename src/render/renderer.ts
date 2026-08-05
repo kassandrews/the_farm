@@ -628,6 +628,14 @@ const SHAFT_LIGHT_R = 3.2; // tiles
  *  a line are what light the place. */
 const LAMP_GLOW = 0.2;
 const LAMP_GLOW_R = 3.6; // tiles
+
+/** A lava shore's pool of light. Weaker than a lamp's and wider, because these
+ *  are drawn one per RIM CELL and are meant to add up along a shoreline — a
+ *  lamp's own 0.2 apiece saturated a lake edge to flat orange and took the
+ *  texture out of the ash, which is the four-lamps-in-a-corridor failure with a
+ *  different light source. */
+const LAVA_GLOW = 0.09;
+const LAVA_GLOW_R = 4.2; // tiles
 /** Where the flame is, in px above the BASE of the lamp's cell — the same datum
  *  `drawFurniture` measures every standing thing from, which is a raised thing's
  *  southern edge and NOT the cell's centre.
@@ -830,6 +838,16 @@ export class Renderer {
    *  the one thing in the game that makes light where it is put (Phase 5a).
    *  Bounded by the screen, exactly like litShafts above. */
   private litLamps: { x: number; y: number }[] = [];
+  /** Lava cells that have a NON-lava neighbour — the shore of a lava field, and
+   *  the only cells that get a halo.
+   *
+   *  THE INTERIOR NEEDS NONE, which is a cost decision that turned out to be the
+   *  better picture as well. A caldera's lake is about eighty cells on screen and
+   *  a radial gradient each is eighty gradients a frame for a glow that is
+   *  entirely hidden under the next cell's; what you actually see of a lava field
+   *  at night is the light spilling onto the ASH around it, and that is exactly
+   *  what the rim draws. */
+  private lavaRim: { x: number; y: number }[] = [];
   /** The frame's colours — hour and month — set at the top of `draw`. Held on
    *  the renderer rather than threaded as an eleventh parameter through
    *  `drawChunkTiles`: the month is a fact about the FRAME, not about a chunk. */
@@ -1098,6 +1116,7 @@ export class Renderer {
     this.litShafts.length = 0;
     this.litLamps.length = 0;
     this.litWindows.length = 0;
+    this.lavaRim.length = 0;
     this.drawTiles(world, t, night, layer);
     if (this.buildView && ground) this.drawBuildGrid();
     if (ground) {
@@ -1159,6 +1178,12 @@ export class Renderer {
       // argument means is "how much light to add", and above ground at midnight
       // the answer is all of it. Clamped, so dusk and dawn stay hints of warmth.
       this.drawLampGlow(Math.min(1, tint.darkness * 2));
+      // AND THE LAVA, on the lamps' terms exactly: a source glows back through
+      // the wash and only through it, scaled by how dark it actually is. By day
+      // the seams carry it alone (they are drawn bright in the tile pass); after
+      // dark this is the only light for a hundred tiles in any direction, and the
+      // first terrain in the game that is a light source at all.
+      this.drawLavaGlow(Math.min(1, tint.darkness * 2));
       // AND THE FIREFLIES, for exactly the reason the lamps are here.
       //
       // They were drawn with the petals, under this fill — so the wash went over
@@ -1544,6 +1569,57 @@ export class Renderer {
             const rx = px + 3 + ((Math.sin(t * 1.5 + tx * 1.7 + ty) * 0.5 + 0.5) * (TILE - 6)) | 0;
             ctx.fillRect(rx, py + 3 + Math.floor((h * 47) % 11), 2, 1);
           }
+        } else if (def.name === "Lava") {
+          // CRACKS, NOT A SURFACE. A flat orange square is a warning sign; a dark
+          // crust with fire in its seams is a lava field, and the difference is
+          // entirely in how much of the tile is lit — a few pixels, against a
+          // near-black fill that is doing the rest of the work.
+          //
+          // Hashed on the WORLD coordinate and placed at a hashed height, which is
+          // the ripple's own fix for the same trap: a mark in every cell at a
+          // fixed offset is a dotted line at the tile pitch, and a lake of it read
+          // as ruled paper (CLAUDE.md §per-cell edges, the fifth costume).
+          //
+          // BREATHING, NOT FLICKERING. Rock cools and reheats slowly; a fast
+          // flicker is a campfire, and eighty cells of campfire is a strobe. The
+          // phase comes off the cell's own hash so no two seams pulse together.
+          const h = decoHash(tx, ty, world.seed ^ 0x51fa);
+          // THREE TO FIVE, and it was one to three. At the lower count the seams
+          // photographed as orange sticks lying on brown ground — too few marks,
+          // too much crust between them, and nothing joining up across a cell
+          // boundary. A lava field is mostly crust and the fire has to be
+          // CONTINUOUS enough to read as one thing under it.
+          const cracks = 3 + Math.floor(h * 3);
+          for (let i = 0; i < cracks; i++) {
+            const g = decoHash(tx * 3 + i * 7, ty * 5 - i * 3, world.seed ^ 0x2ad7);
+            // Longer, and the length varies more: a run of equal dashes is a
+            // dotted line however it is scattered.
+            const len = 2 + Math.floor(((g * 17) % 1) * 5);
+            const vertical = ((g * 31) % 1) > 0.5;
+            const cx = px + 2 + Math.floor(g * (TILE - 4 - (vertical ? 1 : len)));
+            const cy = py + 2 + Math.floor(((g * 61) % 1) * (TILE - 4 - (vertical ? len : 1)));
+            const q = 0.55 + 0.45 * Math.sin(t * 0.8 + g * 6.3);
+            // Two inks, the lamp's rule: the seam's own centre is the brightest
+            // thing in its own light, or the halo below reads as paint on a rock.
+            ctx.fillStyle = `rgba(255,138,44,${(0.55 + 0.4 * q).toFixed(3)})`;
+            ctx.fillRect(cx, cy, vertical ? 1 : len, vertical ? len : 1);
+            if (q > 0.75) {
+              ctx.fillStyle = `rgba(255,226,170,${(0.5 * q).toFixed(3)})`;
+              ctx.fillRect(cx, cy, 1, 1);
+            }
+          }
+          // The shore, and a scatter of the middle — see `lavaRim`. The rim was
+          // the whole of it for one draft and the lake came out DARKEST AT ITS
+          // CENTRE, which is backwards: the light was all on the ash outside and
+          // the middle of the fire was the dimmest thing in frame. A sixth of the
+          // interior, on its own hash, puts pools of heat in the body of it
+          // without paying for a gradient per cell.
+          const edge =
+            groundIdOf(tileAt(world, tx + 1, ty)) !== groundId ||
+            groundIdOf(tileAt(world, tx - 1, ty)) !== groundId ||
+            groundIdOf(tileAt(world, tx, ty + 1)) !== groundId ||
+            groundIdOf(tileAt(world, tx, ty - 1)) !== groundId;
+          if (edge || h > 0.84) this.lavaRim.push({ x: tx, y: ty });
         } else if (def.name === "Grass") {
           // Stable tuft speckle so grass reads as texture, not flat paint.
           const h = decoHash(tx, ty, world.seed);
@@ -2186,6 +2262,34 @@ export class Renderer {
       // the brightest thing in its own light.
       ctx.fillStyle = `rgba(255,236,190,${(0.55 * strength).toFixed(3)})`;
       ctx.fillRect(Math.round(cx) - 2, Math.round(cy) - 2, 4, 4);
+    }
+    ctx.globalCompositeOperation = prev;
+  }
+
+  /** The light off a lava field: a warm pool on the ash around its shore.
+   *
+   *  The lamp's shape and the lamp's argument (see `drawLampGlow`), with one
+   *  difference that matters — a lamp is a point and this is an EDGE, so the pools
+   *  are meant to overlap. Each rim cell contributes a small one and a shoreline
+   *  of them adds up to a lit bank, which is what fire in the ground actually does
+   *  to the country beside it. Hence the low per-cell alpha: at a lamp's 0.2 a
+   *  lake rim saturated to flat orange and the ash stopped having any texture,
+   *  which is the same failure four lamps in a corridor produced. */
+  private drawLavaGlow(strength: number): void {
+    if (this.lavaRim.length === 0 || strength <= 0.02) return;
+    const ctx = this.ctx;
+    const prev = ctx.globalCompositeOperation;
+    ctx.globalCompositeOperation = "lighter";
+    const r = LAVA_GLOW_R * TILE;
+    for (const cell of this.lavaRim) {
+      const cx = this.sceneX(cell.x);
+      const cy = this.sceneY(cell.y);
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, `rgba(255,150,60,${(LAVA_GLOW * strength).toFixed(3)})`);
+      g.addColorStop(0.45, `rgba(255,120,40,${(LAVA_GLOW * strength * 0.35).toFixed(3)})`);
+      g.addColorStop(1, "rgba(255,110,40,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
     }
     ctx.globalCompositeOperation = prev;
   }
