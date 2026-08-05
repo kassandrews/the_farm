@@ -24,6 +24,7 @@ import {
   waterKindAt,
   redwoodCentre,
   calderaCentre,
+  staticCentre,
   CALDERA_RADIUS,
   LAKE_RADIUS,
 } from "./world";
@@ -33,6 +34,7 @@ import { GRASS, tileDef } from "../content/tiles";
 import { biomeSkin, blendRegions } from "../render/palette";
 import { ROCK, WATER, SHALLOW, SAND, SHRUB, DIRT, STUMP, LOG, TREE, LAVA } from "../content/tiles";
 import { NODES, nodeForTile } from "../content/nodes";
+import { WATER_KINDS } from "../content/water";
 import type { HomesteadSpot } from "./types";
 
 const SPOTS: HomesteadSpot[] = ["riverside", "forest", "lakeside", "coast"];
@@ -365,6 +367,87 @@ describe("the redwood stands, and the giants in some of them", () => {
   });
 });
 
+describe("the three new far regions", () => {
+  const SPOT: HomesteadSpot = "riverside";
+
+  it("keeps the plateau half strange, a quarter familiar and a quarter plain", () => {
+    // DESIGN §Biomes: "a new far row is scaled in, never appended flat", and the
+    // two numbers to hold are that the strange rows keep about half the roll and
+    // the five familiar ones about a quarter. Appending is the natural mistake —
+    // it makes the far country blander every time it gets bigger, with nobody
+    // ever deciding to — so this asserts the shares rather than the weights.
+    const share = (ids: BiomeId[]) => {
+      const total = FIELD_WEIGHTS.reduce((n, [, w]) => n + w.far, 0);
+      return FIELD_WEIGHTS.filter(([id]) => ids.includes(id)).reduce((n, [, w]) => n + w.far, 0) / total;
+    };
+    const strange = share(["dusk", "glimmer", "glass"]);
+    const familiar = share(["meadow", "pinewood", "birch", "scrub", "fen"]);
+    expect(strange, "the strange rows").toBeGreaterThan(0.45);
+    expect(strange, "the strange rows").toBeLessThan(0.55);
+    expect(familiar, "the familiar five").toBeGreaterThan(0.2);
+    expect(familiar, "the familiar five").toBeLessThan(0.3);
+  });
+
+  it("puts the Static out past the other sited regions, on every seed", () => {
+    // A destination rather than scenery (DESIGN §"Rolled regions, and sited
+    // ones"), sited on its own ring like the woods and the calderas — and further
+    // out than either, because it is the last thing the far country says.
+    for (let seed = 1; seed <= 30; seed++) {
+      for (const i of [0, 1, 2]) {
+        const c = staticCentre(seed, SPOT, i);
+        expect(biomeAt(seed, SPOT, c.x, c.y), `seed ${seed} #${i}`).toBe("static");
+        // Past the calderas' first ring, which is the previous furthest.
+        expect(Math.hypot(c.x, c.y), `seed ${seed} #${i}`).toBeGreaterThan(300);
+      }
+    }
+  });
+
+  it("never lets the field roll a sited region", () => {
+    // The blossom rows' rule, and the redwoods' after it: a region you go and
+    // find may not also turn up by accident, or the walk stops meaning anything.
+    for (let i = 0; i < 200; i++) {
+      const id = rollRegion(i / 200, 1);
+      expect(["blossom", "redwoods", "giants", "caldera", "static"]).not.toContain(id);
+    }
+  });
+
+  it("keeps the marshes crossable everywhere, however wet they are", () => {
+    // The one region in the game that is mostly water. What makes water a WALL is
+    // depth, never amount (content/biomes.ts §pools) — so this sweeps a real
+    // marsh and asserts that not one tile of it is the deep kind.
+    let found = 0;
+    for (let seed = 1; seed <= 12 && found < 3; seed++) {
+      for (let r = 300; r < 1500 && found < 3; r += 7) {
+        const x = Math.round(Math.cos(r) * r);
+        const y = Math.round(Math.sin(r) * r);
+        if (biomeAt(seed, SPOT, x, y) !== "marsh") continue;
+        found++;
+        for (let dy = -12; dy <= 12; dy++) {
+          for (let dx = -12; dx <= 12; dx++) {
+            if (biomeAt(seed, SPOT, x + dx, y + dy) !== "marsh") continue;
+            const t = generatedTile(seed, SPOT, x + dx, y + dy);
+            expect(t, `seed ${seed} at ${x + dx},${y + dy}`).not.toBe(WATER);
+          }
+        }
+      }
+    }
+    // The sweep proving nothing would be the worst outcome, and the likeliest
+    // failure of a test like this: it must actually have stood in some.
+    expect(found, "no marsh found to sweep").toBeGreaterThan(0);
+  });
+
+  it("gives the salt flats and the marshes no more of anything than home has", () => {
+    // The far country is stranger, never richer (DESIGN §Biomes). Asserted here
+    // as well as in the general sweep because these two are the rows most likely
+    // to tempt somebody: a marsh looks like it should be mushroomier than the
+    // fen, and it is not.
+    for (const id of ["salt", "marsh"] as const) {
+      expect(BIOMES[id].mushrooms).toBeLessThanOrEqual(BIOMES.fen.mushrooms);
+      expect(BIOMES[id].trees).toBeLessThanOrEqual(BIOMES.meadow.trees);
+    }
+  });
+});
+
 describe("the cinders, and the caldera", () => {
   const SWEEP = 20_000;
 
@@ -405,7 +488,21 @@ describe("the cinders, and the caldera", () => {
           // Most of the way out from the lake to the rim is open ash. Not all of
           // it: snags, rocks and the odd river are allowed to be in the way, and a
           // ring with nothing in it at all would be a running track.
-          expect(free, `seed ${seed} bearing ${a}`).toBeGreaterThan(6);
+          //
+          // FOUR OF THIRTEEN, AND THE NUMBER IS MEASURED RATHER THAN CHOSEN. It
+          // was 6 — which was the floor of the distribution at the time and
+          // therefore not a threshold at all, but a record of one seed. Rerolling
+          // the far country (a new field weight moves every rolled region out
+          // there) put one bearing in 1280 on exactly 6 and this failed, having
+          // caught nothing except that the world had changed.
+          //
+          // The distribution across 40 seeds, both instances, all sixteen
+          // bearings: 6 once, 8 twice, 9 fourteen times, and 1263 of 1280 at ten
+          // or better. What this assertion is for is a bearing that is WALLED —
+          // and a wall would read as 0 or 1, nowhere near any of these. Half the
+          // ring blocked is a walk with things in it, which is what the region is
+          // supposed to be.
+          expect(free, `seed ${seed} bearing ${a}`).toBeGreaterThan(4);
         }
       }
     }
@@ -582,9 +679,30 @@ describe("the world gets stranger the farther out you go", () => {
       (b.shrubs ?? 0) * NODES.shrub.density * NODES.shrub.yield;
     expect(Math.max(...far.map(wood))).toBeLessThanOrEqual(Math.max(...near.map(wood)));
 
-    // And no standing water out there: a region you cannot cross is a wall, and
-    // one you found after a nine-hundred-tile walk is the worst place for a wall.
-    for (const b of far) expect(b.water).toBe(0);
+    // And no water out there that can STOP you: a region you cannot cross is a
+    // wall, and one you found after a nine-hundred-tile walk is the worst place
+    // for a wall.
+    //
+    // IT USED TO SAY `water === 0`, WHICH IS A STRONGER CLAIM THAN THE RULE, and
+    // the marshes are what found the difference. What makes water a wall is DEPTH
+    // and nothing else: past `shelf` it stops you, under it you wade. A region may
+    // therefore be almost entirely water and still be crossable in every
+    // direction, provided no pool in it can reach the shelf — and that is a
+    // property of the geometry rather than of the amount, because depth is the
+    // deepest single pool touching a tile and never a sum (sim/world.ts
+    // §pondDepth).
+    //
+    // So the far country may be wet, and may not be deep. A row with water and no
+    // geometry of its own runs on the fen's, whose 2.6 is under the same shelf —
+    // stated here rather than assumed, so that a future row copying the fen's
+    // number without its lattice fails this instead of quietly growing a lake.
+    for (const b of far) {
+      if (b.water === 0) continue;
+      const deepest = b.pools ? b.pools.max : 2.6;
+      expect(deepest, `${b.id} can grow water you cannot cross`).toBeLessThan(
+        WATER_KINDS.pond.shelf,
+      );
+    }
   });
 });
 

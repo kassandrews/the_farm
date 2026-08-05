@@ -393,7 +393,7 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     // out of the homestead clearing by the `nearHome` guard above, which is what
     // promises you always arrive somewhere you can stand.
     if (!nearGrove(seed, spot, x, y)) {
-      const at = waterAt(seed, spot, x, y, terrain.water);
+      const at = waterAt(seed, spot, x, y, terrain.water, terrain.pools);
       const wet = waterTile(at);
       // The town's own crossing, where it has one. Only the water itself is
       // decked — the shore either side is left as shore, so a bridge reads as a
@@ -1082,6 +1082,41 @@ const CALDERA: RingRegion = {
   cache: { seed: -1, spot: "", at: [] },
 };
 
+/** THE STATIC — the furthest-out sited region there is, and the last thing the
+ *  far country has to say (content/biomes.ts §static).
+ *
+ *  ITS RING IS THE ROW'S WHOLE ARGUMENT ABOUT PLACEMENT. The woods start at 168
+ *  and the calderas at 247, both comfortably inside the strangeness ramp
+ *  (STRANGE_FROM 200, STRANGE_TO 900) — you can meet either before the world has
+ *  finished getting odd. This one starts at 604, which is deep in the drift, so by
+ *  the time you can find one you have already walked through violet woods and
+ *  glowing ground and a wood the light goes through. It is the last note and it
+ *  needs everything before it to have been played.
+ *
+ *  Not past the plateau, though, and that is deliberate too: 900 is where the
+ *  world stops getting stranger, and a region sited beyond it would be a thing
+ *  the escalation never reaches — a separate game at the end of a walk. This sits
+ *  inside the last third of the ramp, which is the strangest country that is still
+ *  the same country.
+ *
+ *  RADIUS 16, the smallest of the three ring regions. Two reasons that agree: a
+ *  glitch is a thing you find the edge of (you have to be able to stand in
+ *  correct grass and look into it, or there is nothing to compare against), and
+ *  the effect is the loudest in the game, which is the glass wood's argument for
+ *  rarity applied to size instead of frequency.
+ *
+ *  Its own spacing, sharing no number with any other ring in the game — the found
+ *  places' rule: two things on one spacing eventually pair up at the same radius
+ *  over and over, and a player who noticed would have a rule instead of a place. */
+const STATIC: RingRegion = {
+  ring: 604,
+  spacing: 271,
+  radius: 16,
+  margin: 22,
+  salt: 0x3d0f,
+  cache: { seed: -1, spot: "", at: [] },
+};
+
 /** The lake of molten rock at a caldera's centre, in tiles. A quarter of the
  *  disc's own radius: big enough that you cannot see across it without walking,
  *  small enough that fifteen tiles of ash go round it on every bearing. */
@@ -1191,6 +1226,18 @@ export function calderaCentre(
   return ringCentre(CALDERA, seed, spot, index);
 }
 
+/** Where a patch of the Static is, per instance. Exported for the same two
+ *  reasons the woods' and the calderas' centres are: a disc of sixteen tiles six
+ *  hundred out is not a thing a test sweep would ever land on, and the preview
+ *  page has to be able to ask where one is rather than search for it. */
+export function staticCentre(
+  seed: number,
+  spot: HomesteadSpot,
+  index: number,
+): { x: number; y: number } {
+  return ringCentre(STATIC, seed, spot, index);
+}
+
 /** Does this instance carry the giants? Its own salted hash, so it is a fact
  *  about that stand and not about the order you found them in. */
 function hasGiants(seed: number, spot: HomesteadSpot, index: number): boolean {
@@ -1287,6 +1334,15 @@ export function biomeAt(seed: number, spot: HomesteadSpot, x: number, y: number)
   // differently depending on who asked. The wood wins, because a lake of lava in
   // a redwood grove is the more obviously wrong of the two pictures.
   if (ringSiteAt(CALDERA, seed, spot, x, y)) return "caldera";
+
+  // The Static, last of the sited regions and lowest priority of them, which is
+  // the same tie-break the caldera just took one line up: on the vanishingly rare
+  // seed where two independent bearings land a glitch on top of a lake of lava,
+  // the thing that was already there wins. Its ring is 604 and the calderas' is
+  // 247 on a spacing of 233, so this can only happen where a far caldera ring
+  // brushes the first static one — which is why it is decided rather than left to
+  // whichever function is asked first.
+  if (ringSiteAt(STATIC, seed, spot, x, y)) return "static";
 
   const w = biomeWarp(seed, x, y);
   const site = nearestSite(seed, w.x, w.y);
@@ -1711,6 +1767,21 @@ export function regionParts(
   const burn = ringSiteAt(CALDERA, seed, spot, x, y, REDWOOD_BLEND);
   if (burn) {
     parts = overlay(parts, "caldera", edgeMix(burn.d - CALDERA.radius, REDWOOD_BLEND));
+  }
+
+  // And the Static, last, in `biomeAt`'s own order.
+  //
+  // A FADE IS WHAT KEEPS IT A PLACE. Every other region blends at its edge
+  // because a hard colour step is a seam you can stand on; this one blends
+  // because a rendering fault does not have a five-tile approach. The wrong
+  // colours arriving GRADUALLY is most of what tells a player that somebody meant
+  // this — see content/biomes.ts §static, where that argument is made in full.
+  // Sized to the disc rather than to the colour (a third of the radius, the
+  // blossom rows' rule): at sixteen tiles a fixed ten-tile fade would leave it no
+  // middle to be wrong in.
+  const glitch = ringSiteAt(STATIC, seed, spot, x, y, STATIC.radius / 3);
+  if (glitch) {
+    parts = overlay(parts, "static", edgeMix(glitch.d - STATIC.radius, STATIC.radius / 3));
   }
 
   return parts;
@@ -2630,6 +2701,10 @@ function waterAt(
   x: number,
   y: number,
   wet: number,
+  /** The region's own pool geometry, where it has one (content/biomes.ts
+   *  §pools). Passed alongside `wet` rather than looked up, for the same reason
+   *  `wet` is: this function sits under `onLand` and may not ask `biomeAt`. */
+  pools?: PoolGeometry,
 ): { d: number; kind: WaterKindId } | null {
   let best: { d: number; kind: WaterKindId } | null = null;
   let bestRank = 0;
@@ -2661,7 +2736,7 @@ function waterAt(
   const cap = townChannelCap(x, y);
   consider(Math.min(cap, channelKindDepth(seed, spot, "river", 0x21be, x, y)), "river");
   consider(Math.min(cap, channelKindDepth(seed, spot, "stream", 0x57e4, x, y)), "stream");
-  if (wet > 0) consider(pondDepth(seed, x, y, wet), "pond");
+  if (wet > 0) consider(pondDepth(seed, x, y, wet, 0, pools), "pond");
   return best;
 }
 
@@ -2768,7 +2843,8 @@ export function waterKindAt(
   x: number,
   y: number,
 ): WaterKindId | null {
-  const at = waterAt(seed, spot, x, y, biomeDef(biomeAt(seed, spot, x, y)).water);
+  const here = biomeDef(biomeAt(seed, spot, x, y));
+  const at = waterAt(seed, spot, x, y, here.water, here.pools);
   return at && waterTile(at) !== null ? at.kind : null;
 }
 
@@ -2881,16 +2957,83 @@ const POND_CELL = 11;
 const POND_MIN_RADIUS = 1.2;
 const POND_MAX_RADIUS = 2.6;
 
-/** Candidate centres per unit of `water`, so the region's number keeps meaning
- *  "roughly what fraction of the ground is wet" now that one centre covers many
- *  cells. Derived rather than tuned: a pond of the average radius covers about
- *  πr² of the POND_CELL² a centre is responsible for.
+/** A lattice of pools: how far apart the centres sit and how big they get. The
+ *  fen's three constants above, made a parameter the day a second region wanted
+ *  water of a different SHAPE rather than a different amount (the marshes; see
+ *  content/biomes.ts §pools). */
+export interface PoolGeometry {
+  cell: number;
+  min: number;
+  max: number;
+  /** How far the waterline wanders off the circle, as a fraction of the pool's
+   *  own radius. Optional; 0 — which is the fen, whose ponds are small enough
+   *  that a circle reads as a puddle.
+   *
+   *  THE LAVA LAKE'S LESSON, ONE SCALE DOWN. A true disc quantised onto the tile
+   *  grid photographs as a RECTANGLE with steps in it: at five tiles across
+   *  there are nowhere near enough cells for a curve, so the eye finds the
+   *  straight runs immediately. The marshes are made almost entirely of
+   *  waterline, so the first cut came out as a bay of blue boxes — the region
+   *  reading as tiling, which is the failure this file names most often.
+   *
+   *  Two sine terms on the bearing with seeded phases, exactly as `inLavaLake`
+   *  does it, so a pool comes out in headlands and inlets and no two pools are
+   *  the same shape.
+   *
+   *  IT COUNTS AGAINST `max`. The deepest water a region can grow is
+   *  `max × (1 + wobble)`, which is what has to stay under
+   *  `WATER_KINDS.pond.shelf` for the crossing promise to hold — see
+   *  content/biomes.ts §pools, and sim/water.test.ts, which asserts the product
+   *  rather than the field. */
+  wobble?: number;
+}
+
+/** The fen's own, quoted from the constants above so that passing nothing and
+ *  passing this are provably the same call. */
+const FEN_POOLS: PoolGeometry = {
+  cell: POND_CELL,
+  min: POND_MIN_RADIUS,
+  max: POND_MAX_RADIUS,
+};
+
+/** Candidate centres per unit of `water`, so a region's number keeps meaning
+ *  "roughly what fraction of the ground is wet" even though one centre covers
+ *  many cells. Derived rather than tuned: a pool of the average radius covers
+ *  about πr² of the cell² a centre is responsible for.
  *
- *  It was a hand-guessed 3.2 first, which produced a fen 1.3% under water when it
- *  claimed 10% — measured, not eyeballed, because "there is no water on screen"
- *  and "the water is off screen" look identical from one screenshot. */
-const PONDS_PER_WATER =
-  (POND_CELL * POND_CELL) / (Math.PI * ((POND_MIN_RADIUS + POND_MAX_RADIUS) / 2) ** 2);
+ *  It was a hand-guessed constant first, which produced a fen 1.3% under water
+ *  when it claimed 10% — measured, not eyeballed, because "there is no water on
+ *  screen" and "the water is off screen" look identical from one screenshot. A
+ *  function of the geometry since the marshes brought a second lattice; on the
+ *  fen's it computes exactly the number that used to be written here. */
+function poolsPerWater(g: PoolGeometry): number {
+  return (g.cell * g.cell) / (Math.PI * ((g.min + g.max) / 2) ** 2);
+}
+
+/** How much of a lattice may be pools before the region stops having ground.
+ *
+ *  THE OLD CAP WAS 0.85 AND IT MEASURED THE WRONG THING, which nobody could have
+ *  noticed while one geometry existed. It capped the fraction of CANDIDATE
+ *  CENTRES that are real — and what that means on the ground depends entirely on
+ *  how much a centre covers. On the fen's wide lattice 0.85 is about a tenth of
+ *  the region wet; on a lattice half as wide it would be most of it. The number
+ *  it was defending ("a fen always keeps dry ground to walk on") is about the
+ *  GROUND, so that is what it should be stated in.
+ *
+ *  `1 - e^(-λA)` is the fraction of ground under at least one pool, for centres
+ *  at density λ each covering area A. Holding that under 55% leaves better than
+ *  two fifths of any region dry however close its lattice is, which is what keeps
+ *  an archipelago an archipelago rather than a lake with debris in it.
+ *
+ *  IT BINDS ON NOTHING THAT EXISTED. The fen runs at 0.64 of its candidates and
+ *  the cinders' seams at 0.43, both well under either ceiling, so this rewrite
+ *  changes not one tile of either — which is the only reason it was allowed to
+ *  be a rewrite rather than a second cap sitting beside the first. There is a
+ *  test. */
+function poolCap(g: PoolGeometry): number {
+  const area = Math.PI * ((g.min + g.max) / 2) ** 2;
+  return Math.min(1, (-Math.log(1 - 0.55) * g.cell * g.cell) / area);
+}
 
 /** How far inside a pond this cell is, in tiles — the deepest of the candidates
  *  that reach it, or -Infinity where none do. `chance` is the region's `water`,
@@ -2912,11 +3055,15 @@ function pondDepth(
   // world would be a fen pond that caught fire. Defaulted to the fen's own value
   // so that function is byte-identical to what it was; there is a test.
   salt = 0,
+  /** The lattice to run on. Defaulted to the fen's, so every existing caller —
+   *  the fen's ponds, the cinders' seams — makes bit-for-bit the call it always
+   *  made. There is a test. */
+  g: PoolGeometry = FEN_POOLS,
 ): number {
   if (chance <= 0) return -Infinity;
   let best = -Infinity;
-  const cx = Math.floor(x / POND_CELL);
-  const cy = Math.floor(y / POND_CELL);
+  const cx = Math.floor(x / g.cell);
+  const cy = Math.floor(y / g.cell);
   // The 3x3 neighbourhood, because a pond near a cell edge reaches into the next
   // one — checking only our own cell would clip ponds along straight lines, which
   // is the bug we are here to fix wearing a smaller hat.
@@ -2927,19 +3074,29 @@ function pondDepth(
       // Capped below 1 so a fen always keeps dry ground to walk on: at every
       // candidate being a pond the ponds merge and the region becomes a lake,
       // which is a wall and not a place.
-      const density = Math.min(0.85, chance * PONDS_PER_WATER);
+      const density = Math.min(poolCap(g), chance * poolsPerWater(g));
       if (hash2(mx, my, seed ^ 0x0e05 ^ salt) / 4294967296 >= density) continue;
       // Two salts rather than swapped arguments — see `scatterCentre`, which
       // inherited this line's bug and is where it is explained. On the diagonal
       // the swapped version hands back the same number twice.
-      const px =
-        (mx + 0.2 + (hash2(mx, my, seed ^ 0x2b1f ^ salt) / 4294967296) * 0.6) * POND_CELL;
+      const px = (mx + 0.2 + (hash2(mx, my, seed ^ 0x2b1f ^ salt) / 4294967296) * 0.6) * g.cell;
       const py =
-        (my + 0.2 + (hash2(mx, my, seed ^ 0x2b1f ^ 0x51ed ^ salt) / 4294967296) * 0.6) * POND_CELL;
-      const r =
-        POND_MIN_RADIUS +
-        (hash2(mx, my, seed ^ 0x6a3c ^ salt) / 4294967296) * (POND_MAX_RADIUS - POND_MIN_RADIUS);
-      best = Math.max(best, r - Math.hypot(px - x, py - y));
+        (my + 0.2 + (hash2(mx, my, seed ^ 0x2b1f ^ 0x51ed ^ salt) / 4294967296) * 0.6) * g.cell;
+      const r = g.min + (hash2(mx, my, seed ^ 0x6a3c ^ salt) / 4294967296) * (g.max - g.min);
+      const d = Math.hypot(px - x, py - y);
+      // The shore in bays and headlands rather than on a circle — see
+      // PoolGeometry.wobble. Skipped entirely where a region hasn't asked, so the
+      // fen's ponds and the cinders' seams take the same arithmetic they always
+      // did.
+      if (g.wobble) {
+        const th = Math.atan2(y - py, x - px);
+        const pa = (hash2(mx, my, seed ^ 0x1d47 ^ salt) / 4294967296) * Math.PI * 2;
+        const pb = (hash2(mx, my, seed ^ 0x1d47 ^ 0x6b2a ^ salt) / 4294967296) * Math.PI * 2;
+        const w = 0.62 * Math.sin(th * 3 + pa) + 0.38 * Math.sin(th * 5 + pb);
+        best = Math.max(best, r * (1 + g.wobble * w) - d);
+        continue;
+      }
+      best = Math.max(best, r - d);
     }
   }
   return best;

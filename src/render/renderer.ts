@@ -82,6 +82,7 @@ import {
   seasonSkin,
   biomeSkin,
   blendRegions,
+  isBiomeGround,
   mixHex,
   type ScenePalette,
 } from "./palette";
@@ -115,6 +116,16 @@ import { SpriteCache, drawSpriteQuantized } from "./sprites";
 const clamp01 = (n: number): number => (n < 0 ? 0 : n > 1 ? 1 : n);
 
 const TILE = 16; // scene px per world tile (matches sprite CELL)
+
+/** How far a border tile's blend is nudged either way to break the stripes a
+ *  quantised gradient makes — see `turf`, where the whole argument lives.
+ *
+ *  ONE STEP WIDE, WHICH IS WHY IT IS THIS NUMBER. The fade runs over about ten
+ *  tiles (2 × BIOME_BLEND), so a region whose tint amount is 0.9 moves it by 0.09
+ *  a tile; a nudge of a whole step's width, centred, lets a tile land anywhere
+ *  inside its neighbours' band and the edge stops existing. Wider and the grain
+ *  itself becomes visible as noise; narrower and the stripes come back. */
+const BORDER_DITHER = 0.09;
 
 /** Is this tile part of the town square? The rectangle is inclusive and lives in
  *  sim/world.ts, where generation reads it — asked here rather than re-derived,
@@ -848,6 +859,17 @@ export class Renderer {
    *  at night is the light spilling onto the ASH around it, and that is exactly
    *  what the rim draws. */
   private lavaRim: { x: number; y: number }[] = [];
+
+  /** The two-ink patterns a dithered region's ground and crowns are filled with,
+   *  by colour pair — see `ditherFill`. Session-lived rather than per-frame: the
+   *  pairs are a small fixed set (four steps of ground roll, two inks, the season)
+   *  and building a 2×2 canvas is the one allocation in the tile loop. */
+  private dithers = new Map<string, CanvasPattern | null>();
+
+  /** Which way round the frame's 2×2 dither sits — see `ditherFill`. Set once
+   *  per draw, because the camera offset that decides it is one number for the
+   *  whole frame. */
+  private ditherPhase = 0;
   /** The frame's colours — hour and month — set at the top of `draw`. Held on
    *  the renderer rather than threaded as an eleventh parameter through
    *  `drawChunkTiles`: the month is a fact about the FRAME, not about a chunk. */
@@ -1212,6 +1234,11 @@ export class Renderer {
     const y0 = Math.floor(this.cam.y - this.sh / (2 * TILE)) - 1;
     const y1 = Math.ceil(this.cam.y + this.sh / (2 * TILE)) + 1;
 
+    // The frame's dither phase, resolved once (see `ditherFill`): where the
+    // world's even pixels have landed on screen this frame.
+    const ox = Math.round(this.sceneX(0) - TILE / 2) + Math.round(this.sceneY(0) - TILE / 2);
+    this.ditherPhase = ((ox % 2) + 2) % 2;
+
     const c0 = chunkCoordOf(x0, y0);
     const c1 = chunkCoordOf(x1, y1);
     for (let cy = c0.cy; cy <= c1.cy; cy++) {
@@ -1237,7 +1264,33 @@ export class Renderer {
    *  allocating a thousand of those costs more than walking nine sites twice.
    *  Same reasoning `biomeAt` gives for having no cache of its own. */
   private turf(world: WorldState, tx: number, ty: number): BiomeDef {
-    return blendRegions(regionParts(world.seed, world.homestead.spot, tx, ty));
+    const parts = regionParts(world.seed, world.homestead.spot, tx, ty);
+    const def = blendRegions(parts);
+    // ONE REGION, NOTHING TO DISSOLVE — and this early-out is also the promise
+    // that most of the world is bit-identical to what it was: the jitter below
+    // can only ever touch a tile that is between two regions.
+    if (parts.length === 1) return def;
+    // THE BLEND STEPS, BECAUSE COLOUR IS PER TILE. 8d softened the region border
+    // by fading one tint into the next, and that was measured against near
+    // regions, whose greens are a few RGB units apart. The far country broke the
+    // assumption twice over: the cinders' ash and the salt flats' crust are a
+    // hundred and fifty units from grass, so a ten-tile fade lands fifteen units a
+    // TILE — and a smooth gradient quantised onto cells is a flight of hard
+    // stripes, which is the band rule arriving from a direction nobody had
+    // guarded (photographed at both borders; the cinders had been doing it since
+    // they shipped).
+    //
+    // Dithering is the standard answer to a banded gradient and it is also this
+    // file's own habit — what cannot be blended gets rolled per cell (the decor
+    // kits, the flora pick, the Static's two inks). A hashed nudge of ±half a
+    // step, on the world coordinate so it never crawls, turns the stripes into
+    // grain: the eye integrates it into the same gradient without any edge in it.
+    //
+    // Ground and tuft take the SAME nudge, or the speckle drifts off the surface
+    // it is texture on.
+    const j = (decoHash(tx, ty, world.seed ^ 0x77af) - 0.5) * BORDER_DITHER;
+    const nudge = (t: Tint): Tint => ({ color: t.color, amount: clamp01(t.amount + j) });
+    return { ...def, ground: nudge(def.ground), tuft: nudge(def.tuft) };
   }
 
   /** Which region's decor kit this cell draws — its own, or a neighbour's.
@@ -1256,14 +1309,20 @@ export class Renderer {
    *  border moves together.
    *
    *  Picked off the mark's OWN hash, so a cell's kit never changes between
-   *  frames and never correlates with which mark it drew. */
-  private decorKit(
+   *  frames and never correlates with which mark it drew.
+   *
+   *  GENERIC IN THE SLOT, because the thing it is really doing is "give this cell
+   *  ONE of the regions it is between, by their own weights". That question is
+   *  the same for a fern kit, a bloom, what floats on the water, and whether the
+   *  ground here is being drawn wrong — see the Static, which frays at its edge
+   *  through exactly this dither. Pass `(d) => d` to get the whole row. */
+  private decorKit<T>(
     world: WorldState,
     tx: number,
     ty: number,
     h: number,
-    slot: (d: BiomeDef) => DecorKit | undefined = (d) => d.decor,
-  ): DecorKit | undefined {
+    slot: (d: BiomeDef) => T | undefined,
+  ): T | undefined {
     const parts = regionParts(world.seed, world.homestead.spot, tx, ty);
     if (parts.length === 1) return slot(parts[0].def);
     let r = h;
@@ -1272,6 +1331,232 @@ export class Renderer {
       if (r <= 0) return slot(p.def);
     }
     return slot(parts[parts.length - 1].def);
+  }
+
+  /** A ground tile's fill: its colour with the open-ground roll applied.
+   *
+   *  `groundTone` is smooth noise on the WORLD coordinate at an 11-and-29-tile
+   *  wavelength, so a light patch is half a screen across and its edges can never
+   *  line up with a cell — the band rule's own prescribed fix (CLAUDE.md), and
+   *  the reason this mixes continuously instead of stepping into shades.
+   *  Neighbouring tiles differ by well under a percent; the field has shape and
+   *  no seams.
+   *
+   *  Toward BLACK, and not toward the tile's own `shade`. The obvious version
+   *  mixed `color` into `shade`, and `shade` is the boundary lip — eight RGB
+   *  units from the fill, deliberately, because it is drawn as a 1px edge where
+   *  one material meets another. Running a whole field across it moved the green
+   *  by three units and photographed as no change at all. Darken only, never
+   *  lighten: mixing toward white desaturates, and grass that loses its green in
+   *  the bright patches reads as sun-bleach on a lawn nobody has left.
+   *
+   *  A laid floor gets nothing, because `finishFor` hands back a skin with no
+   *  `roll` on it — a made surface stays as flat as it was laid and takes a grain
+   *  instead.
+   *
+   *  `quantise` SNAPS IT TO FOUR STEPS, for the regions that are drawn wrong. A
+   *  smooth field means every tile in the world is very slightly its own colour,
+   *  which is exactly what a low-bitrate surface does NOT do — and it would give
+   *  the two-ink cache a fresh entry per tile. Snapped, the Static's floor comes
+   *  out in flat blocks with visible steps between them, which is what a picture
+   *  looks like when it has lost its depth. The effect and the arithmetic wanted
+   *  the same thing. */
+  private rolled(def: TileDef, tx: number, ty: number, seed: number, quantise = false): string {
+    if (!def.roll) return def.color;
+    const tone = groundTone(tx, ty, seed);
+    return mixHex(def.color, {
+      color: "#000000",
+      amount: (1 - (quantise ? Math.round(tone * 4) / 4 : tone)) * def.roll,
+    });
+  }
+
+  /** THE TWO-INK FILL — a 2×2 checker of `a` and `b`, as a pattern.
+   *
+   *  PHASED OFF THE WORLD, NOT THE CELL, which is the whole of what makes this
+   *  legal (content/biomes.ts §dither, and CLAUDE.md §per-cell edges). A checker
+   *  laid inside each tile would put an identical two-pixel pattern in every cell
+   *  and the ground would read as tiling; run across the world it is a surface
+   *  drawn at a coarser resolution, which is what the Static is claiming to be.
+   *
+   *  The phase is a fact about the FRAME and not about a tile: every tile shares
+   *  the camera's offset and TILE is even, so the parity of a tile's screen corner
+   *  is the same for all of them (and for the trees standing on them, which take
+   *  the same dither). It is resolved once per draw in `drawTiles`. At odd parity
+   *  the two inks are simply swapped, which is the same checker seen from one
+   *  pixel over — so no transform is ever applied to the pattern.
+   *
+   *  CACHED BY PAIR, and the cache is why the ground roll is quantised where a
+   *  region dithers: a continuous roll means a fresh colour per tile, and a fresh
+   *  pattern per tile would allocate a canvas for every cell on screen every
+   *  frame. Four steps of roll times two inks is a handful of entries for the
+   *  life of the session.
+   *
+   *  Returns null if the context refuses a pattern, and the caller falls back to
+   *  the flat ink — a region that came out a plain wrong colour is a worse
+   *  picture, not a broken one. */
+  private ditherFill(a: string, b: string): CanvasPattern | null {
+    const swap = this.ditherPhase === 1;
+    const key = swap ? `${b}|${a}` : `${a}|${b}`;
+    let pat = this.dithers.get(key);
+    if (pat === undefined) {
+      const cell = document.createElement("canvas");
+      cell.width = 2;
+      cell.height = 2;
+      const g = cell.getContext("2d")!;
+      const [p, q] = swap ? [b, a] : [a, b];
+      g.fillStyle = p;
+      g.fillRect(0, 0, 1, 1);
+      g.fillRect(1, 1, 1, 1);
+      g.fillStyle = q;
+      g.fillRect(1, 0, 1, 1);
+      g.fillRect(0, 1, 1, 1);
+      pat = this.ctx.createPattern(cell, "repeat");
+      this.dithers.set(key, pat);
+    }
+    return pat;
+  }
+
+  /** THE PLATES a cracked flat is broken into — the part of the network that
+   *  crosses this cell.
+   *
+   *  A LATTICE OF POINTS, JOINED TO THEIR NEIGHBOURS. Each lattice cell holds one
+   *  jittered point; each point draws a line to the point east of it and the point
+   *  south of it. That is a connected web with no ends in it, and the plates are
+   *  the holes between the lines — which is what dried mud actually is, and what
+   *  no per-cell mark could ever be.
+   *
+   *  WHY THIS MAY EXIST WHERE A BEVEL MAY NOT. The band rule is about a mark drawn
+   *  once per CELL, which pairs across the grid into stripes. These lines know
+   *  nothing about cells: the lattice is six tiles wide, the endpoints are jittered
+   *  off it, and a line crosses a tile wherever it happens to. Nothing here can
+   *  line up with the tile grid because nothing here has ever been told where the
+   *  tile grid is.
+   *
+   *  Rasterised by stepping the longer axis and clipping to the tile, so a line
+   *  costs about its own length in the cells it actually touches and nothing
+   *  anywhere else. The 3×3 lattice neighbourhood is the same margin `pondDepth`
+   *  keeps and for the same reason — a segment starting two lattice cells away can
+   *  still cross this one. */
+  private drawCracks(
+    px: number,
+    py: number,
+    tx: number,
+    ty: number,
+    seed: number,
+    kit: { color: string; period: number; alpha: number },
+  ): void {
+    const ctx = this.ctx;
+    const cell = kit.period;
+    const cx = Math.floor(tx / cell);
+    const cy = Math.floor(ty / cell);
+    // The point this lattice cell owns, in tiles. Two salts rather than swapped
+    // arguments — the diagonal bug `pondDepth` documents.
+    const point = (mx: number, my: number): { x: number; y: number } => ({
+      x: (mx + 0.15 + (hash2(mx, my, seed ^ 0x71ab) / 4294967296) * 0.7) * cell,
+      y: (my + 0.15 + (hash2(mx, my, seed ^ 0x71ab ^ 0x2c5f) / 4294967296) * 0.7) * cell,
+    });
+    ctx.fillStyle = kit.color;
+    ctx.globalAlpha = kit.alpha;
+    // A KINK IN THE MIDDLE OF EVERY LINE. Straight point-to-point segments drew a
+    // web of perfectly ruled lines — a Voronoi diagram, which is what the lattice
+    // literally is and not what a broken surface looks like. Cracked ground turns
+    // at its junctions AND between them, so each edge is bent at its midpoint by
+    // a hashed offset perpendicular to itself. Two segments where there was one,
+    // and the flat stops reading as a drawing of a map.
+    const bend = (
+      a: { x: number; y: number },
+      b: { x: number; y: number },
+      salt: number,
+    ): { x: number; y: number } => {
+      const h = hash2(Math.round(a.x * 4), Math.round(b.y * 4), seed ^ salt) / 4294967296;
+      const nx = -(b.y - a.y);
+      const ny = b.x - a.x;
+      const k = (h - 0.5) * 0.22;
+      return { x: (a.x + b.x) / 2 + nx * k, y: (a.y + b.y) / 2 + ny * k };
+    };
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const a = point(cx + dx, cy + dy);
+        const ends = [point(cx + dx + 1, cy + dy), point(cx + dx, cy + dy + 1)];
+        for (const b of [
+          [a, bend(a, ends[0], 0x4c1d)],
+          [bend(a, ends[0], 0x4c1d), ends[0]],
+          [a, bend(a, ends[1], 0x9e33)],
+          [bend(a, ends[1], 0x9e33), ends[1]],
+        ].map(([p, q]) => ({ from: p, to: q }))) {
+          // In world PIXELS, and clipped to this tile before anything is drawn:
+          // most of the six segments in the neighbourhood miss it entirely.
+          const ax = b.from.x * TILE;
+          const ay = b.from.y * TILE;
+          const bx = b.to.x * TILE;
+          const by = b.to.y * TILE;
+          const wx = tx * TILE;
+          const wy = ty * TILE;
+          if (Math.max(ax, bx) < wx || Math.min(ax, bx) > wx + TILE) continue;
+          if (Math.max(ay, by) < wy || Math.min(ay, by) > wy + TILE) continue;
+          const steps = Math.ceil(Math.max(Math.abs(bx - ax), Math.abs(by - ay)));
+          for (let i = 0; i <= steps; i++) {
+            const lx = Math.round(ax + ((bx - ax) * i) / steps);
+            const ly = Math.round(ay + ((by - ay) * i) / steps);
+            if (lx < wx || lx >= wx + TILE || ly < wy || ly >= wy + TILE) continue;
+            ctx.fillRect(px + (lx - wx), py + (ly - wy), 1, 1);
+          }
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** The ink a decor mark's stem is drawn in.
+   *
+   *  FOLIAGE INK, NOT THE TUFT'S. The first cut drew decor in the tuft colour and
+   *  was invisible on screen — which is 8c's own mistake repeated: reaching for
+   *  the nearest existing colour, when the tuft is a speckle deliberately a few
+   *  units off the grass it sits on. A fern is a small plant, so it takes the
+   *  colour the region's CANOPY takes, and it seasons with it for free.
+   *
+   *  Stated rather than inherited from `ctx.fillStyle`, which holds the tuft
+   *  colour only on cells that happened to draw a tuft and whatever the last call
+   *  left behind on the rest. */
+  private stemInk(world: WorldState, tx: number, ty: number): string {
+    return mixHex(this.palette.crown, this.turf(world, tx, ty).crown);
+  }
+
+  /** One mark from a kit, placed inside a cell.
+   *
+   *  ONE FUNCTION FOR THREE SLOTS — the year-round decor, the bloom, and now what
+   *  floats on the marshes' water. It was written twice inline and copied a third
+   *  time before this existed, and the third copy is what made the case: the
+   *  placement rule below (inset by a pixel, so two marks in neighbouring cells
+   *  can never touch and pair edges into a lattice) is the band rule, and a rule
+   *  living in three places is a rule that will shortly be true in two of them.
+   *
+   *  `p` is the caller's own hash — each slot passes a different one, which is
+   *  what keeps a bloom off the ferns' cells and the lilies off both. */
+  private drawKitMark(kit: DecorKit, px: number, py: number, p: number, stem: string): void {
+    const ctx = this.ctx;
+    const mark = kit.marks[Math.floor(p * kit.marks.length) % kit.marks.length];
+    const mh = mark.length;
+    const mw = Math.max(...mark.map((r) => r.length));
+    // INSET BY A PIXEL on every side — see above.
+    const ox = px + 1 + Math.floor(((p * 97) % 1) * (TILE - mw - 1));
+    const oy = py + 1 + Math.floor(((p * 883) % 1) * (TILE - mh - 1));
+    for (let r = 0; r < mh; r++) {
+      for (let c = 0; c < mark[r].length; c++) {
+        const ch = mark[r][c];
+        if (ch === ".") continue;
+        // Three inks: `*` the eye, `o` the petals, anything else the stem. The
+        // eye falls back to the petal colour, so a kit that never uses `*` is
+        // unchanged.
+        ctx.fillStyle =
+          ch === "*"
+            ? (kit.core ?? kit.accent ?? stem)
+            : ch === "o"
+              ? (kit.accent ?? stem)
+              : stem;
+        ctx.fillRect(ox + c, oy + r, 1, 1);
+      }
+    }
   }
 
   /** Is this kit's month the one we are in?
@@ -1437,13 +1722,15 @@ export class Renderer {
         // A FINISH IS ASKED FIRST AND WINS OUTRIGHT — and that now settles the
         // biome too, on the same argument: a whitewashed floor is whitewashed in
         // the fen. Only untouched natural ground gets the region's colour.
-        const def =
-          finishFor(world, groundId, tx, ty) ??
-          biomeSkin(
-            seasonSkin(tileDef(groundId), groundId, this.palette),
-            groundId,
-            this.turf(world, tx, ty),
-          );
+        // ASKED ONCE AND HANDED ON. The ground fill, the cracks and the dither all
+        // want the tile's blended region, and `turf` is deliberately not memoized
+        // (see its docblock) — so the saving is in not asking three times rather
+        // than in a cache.
+        const turf = this.turf(world, tx, ty);
+        // The season's answer, kept, because the region's SECOND ink is applied to
+        // it rather than to the first ink — see the dither below.
+        const seasoned = seasonSkin(tileDef(groundId), groundId, this.palette);
+        const def = finishFor(world, groundId, tx, ty) ?? biomeSkin(seasoned, groundId, turf);
         const px = Math.round(this.sceneX(tx) - TILE / 2);
         const py = Math.round(this.sceneY(ty) - TILE / 2);
         // Open ground rolls. `groundTone` is smooth noise on the WORLD
@@ -1474,13 +1761,53 @@ export class Renderer {
         // Darken only, never lighten: mixing toward white desaturates, and grass
         // that loses its green in the bright patches reads as sun-bleach on a
         // lawn nobody has left. 14% between the lightest patch and the darkest.
-        ctx.fillStyle = def.roll
-          ? mixHex(def.color, {
-              color: "#000000",
-              amount: (1 - groundTone(tx, ty, world.seed)) * def.roll,
-            })
-          : def.color;
+        // THE REGION THAT IS DRAWN WRONG, if this cell is in one. Picked per cell
+        // off the same weights the tint is blended from — the decor kit's dither,
+        // which is the house answer to "this thing cannot be half-applied" — so
+        // the Static frays into the ordinary wood around it a cell at a time
+        // rather than ending on a contour you could stand on. For that region in
+        // particular a frayed edge is not merely acceptable, it is the correct
+        // picture: the fault gets patchier as the signal improves.
+        //
+        // Natural ground only, like every other thing a region paints (see
+        // `isBiomeGround`): a laid floor is the player's, and a floor that came
+        // out in the wrong colours would be a bug in a house rather than a
+        // landscape.
+        //
+        // ONE PICK FOR BOTH TEXTURES. The cracks want the same question answered
+        // — which region's surface is this cell's — so the whole row comes back
+        // and the two read off it. Two picks on two hashes would let a cell take
+        // the flats' cracks and its neighbour's dither, which is a surface made of
+        // two places.
+        const paint = isBiomeGround(groundId)
+          ? this.decorKit(world, tx, ty, decoHash(tx, ty, world.seed ^ 0x2f6d), (d) => d)
+          : undefined;
+        const wrong = paint?.dither;
+        const fill = this.rolled(def, tx, ty, world.seed, !!wrong);
+        // BOTH INKS ARE APPLIED TO THE SAME BASE, which is the difference between
+        // a dither and a shadow. Tinting the second ink onto the FIRST was the
+        // first cut and it measured four RGB units apart: a tint is a lerp, so
+        // pulling an already-pulled colour 62% of the way toward a third one lands
+        // it next to where it started, and the Static came out a plain grey wood.
+        // Pulled from the season's own green, the two land as far apart as their
+        // hexes actually are, and the ground stops being able to decide.
+        ctx.fillStyle = wrong
+          ? (this.ditherFill(
+              fill,
+              this.rolled(
+                biomeSkin(seasoned, groundId, { ...turf, ground: wrong.ground }),
+                tx,
+                ty,
+                world.seed,
+                true,
+              ),
+            ) ?? fill)
+          : fill;
         ctx.fillRect(px, py, TILE, TILE);
+        // THE PLATES, where a region's ground is broken into them. Drawn over the
+        // fill and under everything else, because a crack is IN the surface: the
+        // tuft, the decor and anything standing here all sit on top of it.
+        if (paint?.cracks) this.drawCracks(px, py, tx, ty, world.seed, paint.cracks);
         // Paving: generated ground that somebody nonetheless LAID, which is the
         // plaza and nothing else. Same `drawGrain` and the same `GRAIN.stone`
         // periods a flagstone floor uses, so a square and a floor are cut from
@@ -1569,6 +1896,37 @@ export class Renderer {
             const rx = px + 3 + ((Math.sin(t * 1.5 + tx * 1.7 + ty) * 0.5 + 0.5) * (TILE - 6)) | 0;
             ctx.fillRect(rx, py + 3 + Math.floor((h * 47) % 11), 2, 1);
           }
+          // WHAT FLOATS, on the shallows only (content/biomes.ts §float). The
+          // marshes' lily pads, lotuses, stepping stones and boards.
+          //
+          // THE SHALLOWS AND NOT THE DEEP, which is a rule about what a mark can
+          // honestly sit on rather than about where it would look nice. A pad on
+          // deep water is a pad on a thing you cannot reach, and a stepping stone
+          // out there would be a route to nowhere — the one reading of this kit
+          // that would be a lie (see BiomeDef.float). The marshes have no deep
+          // water at all by construction, so in the region this is written for the
+          // distinction never comes up; it is here for the day a marsh borders a
+          // lake.
+          //
+          // Its own hashes throughout, sharing none with the ground decor: a lily
+          // on the same cells the ferns use would put the marsh's whole character
+          // on one lattice.
+          if (shallow) {
+            const fh = decoHash(tx, ty, world.seed ^ 0x1f7b);
+            const fkit = this.decorKit(
+              world,
+              tx,
+              ty,
+              decoHash(tx, ty, world.seed ^ 0x4e2d),
+              (d) => d.float,
+            );
+            if (fkit && fh < fkit.density && this.inSeason(fkit)) {
+              // The stem ink is the region's canopy colour, like every other kit
+              // — which on water is exactly right for a pad: a lily leaf is the
+              // same green as the leaves on the bank.
+              this.drawKitMark(fkit, px, py, decoHash(tx, ty, world.seed ^ 0x8b53), this.stemInk(world, tx, ty));
+            }
+          }
         } else if (def.name === "Lava") {
           // CRACKS, NOT A SURFACE. A flat orange square is a warning sign; a dark
           // crust with fire in its seams is a lava field, and the difference is
@@ -1632,7 +1990,16 @@ export class Renderer {
             // Tinted with the region, because the speckle is texture ON the
             // ground and a tuft that stayed meadow-green over bleached scrub
             // detaches from the surface it belongs to.
-            ctx.fillStyle = mixHex(this.palette.tuft, this.turf(world, tx, ty).tuft);
+            // THE SPECKLE TAKES THE SECOND INK TOO, where a region has one, and
+            // it takes it per MARK rather than per pixel: a tuft is three pixels
+            // and a checker inside one is a colour nobody can resolve. Half the
+            // marks in the wrong green is the same sentence the ground is making
+            // at a scale the eye can actually see it at.
+            const speck = mixHex(this.palette.tuft, turf.tuft);
+            ctx.fillStyle =
+              paint?.dither && ((h * 977) % 1) > 0.5
+                ? mixHex(speck, paint.dither.tuft)
+                : speck;
             const gx = px + 2 + Math.floor(h * 9);
             const gy = py + 4 + Math.floor((h * 53) % 9);
             // THREE tufts, not one. Every blade in the world used to be the same
@@ -1709,48 +2076,14 @@ export class Renderer {
           // walk over the weights fed a number that small hands the first part
           // the cell every time. The dither would have been dead code that
           // measured as working.
-          const kit = this.decorKit(world, tx, ty, decoHash(tx, ty, world.seed ^ 0x51ab));
+          const kit = this.decorKit(world, tx, ty, decoHash(tx, ty, world.seed ^ 0x51ab), (d) => d.decor);
           if (kit && dh < kit.density && this.inSeason(kit)) {
             // A SECOND, INDEPENDENT HASH picks the mark and places it. Reusing
             // `dh` would tie both to the same number that just passed a `<`
             // test, so every mark would come from the low end of the range —
             // one shape, in one corner, forever.
             const p = decoHash(tx, ty, world.seed ^ 0x77c3);
-            const mark = kit.marks[Math.floor(p * kit.marks.length) % kit.marks.length];
-            const mh = mark.length;
-            const mw = Math.max(...mark.map((r) => r.length));
-            // INSET BY A PIXEL on every side, which is what the band rule needs
-            // here: two marks in adjacent cells can then never touch, so they
-            // cannot pair edges into a lattice however densely they land.
-            const ox = px + 1 + Math.floor(((p * 97) % 1) * (TILE - mw - 1));
-            const oy = py + 1 + Math.floor(((p * 883) % 1) * (TILE - mh - 1));
-            // FOLIAGE INK, NOT THE TUFT'S. The first cut drew decor in the tuft
-            // colour and was invisible on screen — which is 8c's own mistake
-            // repeated: reaching for the nearest existing colour, when the tuft
-            // is a speckle deliberately a few units off the grass it sits on.
-            // A fern is a small plant, so it takes the colour the region's
-            // CANOPY takes, and it seasons with it for free.
-            //
-            // Stated rather than inherited from `ctx.fillStyle`, which holds the
-            // tuft colour only on cells that happened to draw a tuft and
-            // whatever the last call left behind on the rest.
-            const stem = mixHex(this.palette.crown, this.turf(world, tx, ty).crown);
-            for (let r = 0; r < mh; r++) {
-              for (let c = 0; c < mark[r].length; c++) {
-                const ch = mark[r][c];
-                if (ch === ".") continue;
-                // Three inks: `*` the eye, `o` the petals, anything else the
-                // stem. The eye falls back to the petal colour, so a kit that
-                // never uses `*` is unchanged.
-                ctx.fillStyle =
-                  ch === "*"
-                    ? (kit.core ?? kit.accent ?? stem)
-                    : ch === "o"
-                      ? (kit.accent ?? stem)
-                      : stem;
-                ctx.fillRect(ox + c, oy + r, 1, 1);
-              }
-            }
+            this.drawKitMark(kit, px, py, p, this.stemInk(world, tx, ty));
           }
 
           // THE SECOND KIT, on its own four hashes throughout. Sharing any of
@@ -1768,28 +2101,7 @@ export class Renderer {
           );
           if (bkit && bh < bkit.density && this.inSeason(bkit)) {
             const p = decoHash(tx, ty, world.seed ^ 0x3ac9);
-            const mark = bkit.marks[Math.floor(p * bkit.marks.length) % bkit.marks.length];
-            const mh = mark.length;
-            const mw = Math.max(...mark.map((r) => r.length));
-            const ox = px + 1 + Math.floor(((p * 97) % 1) * (TILE - mw - 1));
-            const oy = py + 1 + Math.floor(((p * 883) % 1) * (TILE - mh - 1));
-            const stem = mixHex(this.palette.crown, this.turf(world, tx, ty).crown);
-            for (let r = 0; r < mh; r++) {
-              for (let c = 0; c < mark[r].length; c++) {
-                const ch = mark[r][c];
-                if (ch === ".") continue;
-                // Three inks: `*` the eye, `o` the petals, anything else the
-                // stem. The eye falls back to the petal colour, so a kit that
-                // never uses `*` is unchanged.
-                ctx.fillStyle =
-                  ch === "*"
-                    ? (bkit.core ?? bkit.accent ?? stem)
-                    : ch === "o"
-                      ? (bkit.accent ?? stem)
-                      : stem;
-                ctx.fillRect(ox + c, oy + r, 1, 1);
-              }
-            }
+            this.drawKitMark(bkit, px, py, p, this.stemInk(world, tx, ty));
           }
         } else if (def.name === "Sand") {
           // Grain, on the same terms as the grass tuft: a hash of the WORLD
@@ -2609,6 +2921,34 @@ export class Renderer {
             ctx.fillRect(rx, ry, size - 1, size - 1);
           }
           ctx.globalCompositeOperation = prevOp;
+          continue;
+        }
+        if (kit.shape === "noise") {
+          // A SAMPLE, NOT A BODY. Everything else in this function draws a thing
+          // travelling along a path; this draws a pixel that is in one place for a
+          // frame or two and then in another, which is what a bad signal looks
+          // like and what nothing alive does.
+          //
+          // The jump comes from quantising the CLOCK and hashing the result: the
+          // step number is `t / period`, so the mote holds still between steps and
+          // teleports on them. Sway, drift and the smooth envelope above are all
+          // deliberately bypassed — they are the machinery of air, and this is not
+          // air. (`drift` still has to be non-zero in the row, because every kit
+          // is asserted to move; it just does not move like this.)
+          const step = Math.floor(t / kit.period);
+          const j = decoHash(tx * 31 + step, ty * 17 - step, world.seed ^ 0x6ea2);
+          // Half the steps are BLANK, which is most of what makes it read as
+          // noise rather than as a swarm: a pixel that is always somewhere is a
+          // thing moving about, and a pixel that is sometimes nowhere is a fault.
+          if (j > 0.5) continue;
+          const nx = Math.round(this.sceneX(tx) - TILE / 2 + Math.floor(((j * 419) % 1) * TILE));
+          const ny = Math.round(this.sceneY(ty) - TILE / 2 + Math.floor(((j * 733) % 1) * TILE));
+          // Flat, and at a fixed alpha rather than the cycle's fade — a fade in
+          // and out is a thing arriving and leaving, and this is a thing being
+          // WRONG, which happens all at once.
+          ctx.globalAlpha = 0.75;
+          ctx.fillStyle = kit.color;
+          ctx.fillRect(nx, ny, size, size);
           continue;
         }
         if (kit.shape === "spark") {
@@ -3935,7 +4275,21 @@ export class Renderer {
         : "#3a4a34"
       : mixHex(this.palette.crownLit, biome!.crown);
     const top = base - height;
-    ctx.fillStyle = crown;
+    // AND THE CROWNS COME OUT WRONG TOO, where the region says so. The largest
+    // colour mass on screen is the one that has to carry the Static's whole
+    // sentence — a floor drawn at a coarser bitrate under trees drawn cleanly
+    // would read as a paint job on the grass rather than as the place being
+    // rendered badly.
+    //
+    // The HARD region, like every other thing about a tree: a crown cannot be
+    // half-dithered any more than a pine can be half a birch. `biome` here is
+    // already the region the tree actually grew from (`scatterSkin`), so the
+    // treeline dithers by which tree is which, exactly as it does at every other
+    // border in the world.
+    const wrong = biome?.dither;
+    const ink = (c: string): string | CanvasPattern =>
+      wrong ? (this.ditherFill(c, mixHex(c, wrong.crown)) ?? c) : c;
+    ctx.fillStyle = ink(crown);
     for (let r = 0; r < rows.length; r++) {
       const g = gaps?.[r] ?? 0;
       // ODD WIDTH, AND IT WAS EVEN FOR A LONG TIME. The trunk is three pixels at
@@ -3973,7 +4327,7 @@ export class Renderer {
     // clamped to the array so the shortest crowns can't run off the end. The
     // fraction is UNDER A HALF-AND-A-BIT on purpose: at 0.7 the blossom's crowns
     // came out more lit than shaded, which inverts what a highlight is.
-    ctx.fillStyle = crownLit;
+    ctx.fillStyle = ink(crownLit);
     const litRows = Math.min(rows.length - 1, Math.max(6, Math.round(rows.length * 0.6)));
     for (let r = 1; r <= litRows; r++) {
       // Light lands on the LEFT lobe when a row is split — the lit side is the

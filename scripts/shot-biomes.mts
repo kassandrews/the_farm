@@ -38,7 +38,14 @@
 //     the only region that generates water can never be found.
 
 import { drive } from "./drive.mjs";
-import { biomeAt, blossomCentre, generatedTile, redwoodCentre, calderaCentre } from "../src/sim/world.ts";
+import {
+  biomeAt,
+  blossomCentre,
+  generatedTile,
+  redwoodCentre,
+  calderaCentre,
+  staticCentre,
+} from "../src/sim/world.ts";
 import { BIOMES, type BiomeId } from "../src/content/biomes.ts";
 import { WATER } from "../src/content/tiles.ts";
 import type { HomesteadSpot } from "../src/sim/types.ts";
@@ -69,7 +76,10 @@ function usable(id: BiomeId, x: number, y: number): boolean {
   ]) {
     if (biomeAt(seed, spot, x + dx, y + dy) !== id) return false;
   }
-  if (id === "fen") return true; // it is supposed to be wet
+  // Both wet regions are supposed to be wet. The marshes are MOSTLY water by
+  // design (content/biomes.ts §marsh), so the sea check would reject every tile
+  // in one and report the region as absent.
+  if (id === "fen" || id === "marsh") return true;
   let wet = 0;
   for (let dy = -8; dy <= 8; dy++) {
     for (let dx = -14; dx <= 14; dx++) {
@@ -95,6 +105,15 @@ function findBiome(id: BiomeId): { x: number; y: number } | null {
     for (let i = 0; i < 8; i++) {
       const c = calderaCentre(seed, spot, i);
       if (biomeAt(seed, spot, c.x, c.y) === "caldera") return { x: c.x, y: c.y + 8 };
+    }
+    return null;
+  }
+  // The Static, on the same argument as the caldera: a sited disc, six hundred
+  // tiles out, that no spiral would land in.
+  if (id === "static") {
+    for (let i = 0; i < 8; i++) {
+      const c = staticCentre(seed, spot, i);
+      if (biomeAt(seed, spot, c.x, c.y) === "static") return c;
     }
     return null;
   }

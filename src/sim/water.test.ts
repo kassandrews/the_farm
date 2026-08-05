@@ -405,6 +405,32 @@ describe("small water is fordable, and nothing had to say so", () => {
     expect(river.channel!.halfMax).toBeGreaterThan(river.shelf);
   });
 
+  it("keeps every region's own pools under the shelf, geometry and all", () => {
+    // THE SAME PROMISE AS THE STREAM'S, FOR THE ROW THAT BROKE THE ASSUMPTION.
+    // A pond is fordable because POND_MAX_RADIUS is under the pond shelf, and
+    // that held while one geometry existed. The marshes brought their own
+    // (content/biomes.ts §pools) — closer centres, and a waterline that wanders
+    // off the circle — so the deepest water a region can grow is now
+    // `max × (1 + wobble)`, and it is the PRODUCT that has to stay under the
+    // shelf. Asserting the field alone would pass the day somebody adds a
+    // wobble of 0.5 to a max of 2.8 and quietly grows a wall six hundred tiles
+    // from home.
+    //
+    // Depth is the deepest single pool touching a tile and never a sum — see
+    // `pondDepth`, which takes a max — which is what makes this arithmetic and
+    // not a sweep.
+    for (const b of Object.values(BIOMES)) {
+      if (!b.pools) continue;
+      const deepest = b.pools.max * (1 + (b.pools.wobble ?? 0));
+      expect(deepest, `${b.id} can grow water you cannot cross`).toBeLessThan(
+        WATER_KINDS.pond.shelf,
+      );
+      // And it must actually have a middle to be a region rather than a puddle
+      // field: a max under the min is a row somebody edited in the wrong order.
+      expect(b.pools.max, b.id).toBeGreaterThan(b.pools.min);
+    }
+  });
+
   it("keeps every pinching channel's narrows fordable", () => {
     // The river's half of the promise, and until now it lived only in a comment.
     // A river is allowed to be deep, so it needs the fords its pinch cuts — and

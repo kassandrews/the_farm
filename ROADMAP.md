@@ -57,6 +57,12 @@ DESIGN.md, if it's a rule about the game rather than about build order).
 - **Phase 15 — the soundtrack, complete.** Nine generated pieces, day and night
   setlists, and an arrangement that assembles itself as you walk into town. See
   below.
+- **Phase 17 — three more regions, complete.** The salt flats (rolled, rare,
+  cracked white crust with the air going up), the marshes (rolled, mostly water
+  and all of it wadeable, with lily pads and boards on it), and the Static
+  (sited on a ring at 604, drawn in two inks on a dither, with a Moment of its
+  own). No schema change. Also fixed: high-contrast region borders had been
+  banding since the cinders shipped. See below.
 - **Phase 16 — six new regions, complete.** The granite, the redwoods (with the
   giants), the long grass, and the cinders (with the caldera at the heart of
   one). Also the first terrain in the game that is a light source. Rock as a landscape
@@ -7493,6 +7499,125 @@ stored id moves; no schema change anywhere.
   guard caught. That guard now counts DISTINCT airs rather than rows, since the
   caldera's ash is the cinders' ash; and it has a clause that may never move —
   the meadow and the pines get air on a summer evening and at no other time.
+
+## Phase 17 — the salt flats, the marshes, and the Static (4 Aug 2026)
+
+Three regions, and each one needed a mechanism the file did not have: a crack
+network, a pool lattice of its own, and a second ink. `content/biomes.ts` grew
+three rows and four fields (`cracks`, `pools`, `dither`, `float`);
+`sim/world.ts` grew a ring region and a generalised `pondDepth`;
+`render/renderer.ts` grew a pattern fill, a crack rasteriser and a mote shape.
+No schema change — biomes are still a total function of (seed, x, y), stored
+nowhere.
+
+**What they are.** The **salt flats**: white crust to the horizon, cracked into
+plates about six tiles across, almost nothing growing, and the only air in the
+game that goes UP. The third sparse region, and the one that is cold about it —
+it sits beside the cinders and the caldera as the same amount of nothing at the
+opposite temperature. The **marshes**: water with country in it rather than
+country with pools in it, all of it wadeable by construction, with lily pads,
+lotuses, stepping stones and a few boards laid across it by nobody in
+particular. The **Static**: sited on a ring at 604 tiles, ground and trees drawn
+in two inks on a 2×2 dither, crowns quantised into blocks, and air made of
+pixels that jump instead of drifting — a place that is being rendered wrong, on
+purpose.
+
+### The settled calls (don't relitigate)
+
+- **Salt and marsh are rolled; the Static is sited.** A flat and a marsh are
+  country you cross, so they belong to the field. A glitch is somewhere you
+  arrive, so it is a disc on its own ring recurring outward forever (604, then
+  every 271) like the redwoods and the calderas — and further out than either,
+  because it is the last sentence the far country has to say and wants everything
+  before it to have been played first.
+- **The far column was SCALED, not appended, and that is the third time.** Two
+  ordinary far rows arriving at once would have taken the strange three from half
+  the plateau to 44% and the familiar five from a quarter to a fifth, with nobody
+  deciding to. The whole column was restated to hold DESIGN's two numbers: 6.0
+  strange, 3.0 familiar, 3.0 ordinary-far, 12.0 total. There is a test on the
+  SHARES now, so the next row has to do the same arithmetic.
+- **What moved on live saves: far terrain, again.** Changing any far weight
+  changes the total in `rollRegion`, so region identity past ~200 tiles shifts.
+  Inside 200 is provably untouched (the parity test). Same knowingly-accepted
+  class of change as Phase 7a and Phase 16.
+- **A region may be mostly water, because depth is what makes a wall.** The
+  marsh is ~40% wet and every pool in it is under `WATER_KINDS.pond.shelf` by
+  construction, so all of it wades. `pondDepth` now takes a `PoolGeometry`
+  (defaulted to the fen's, byte-identically) and the marsh runs its own: centres
+  4 tiles apart, radii 1.1–2.3, and a `wobble` that bends the waterline off the
+  circle. **The deepest water a region can grow is `max × (1 + wobble)`** and
+  that PRODUCT is what the crossing promise rests on — asserted in
+  `sim/water.test.ts` rather than left in a comment.
+- **The old pool cap measured the wrong thing.** It capped the fraction of
+  candidate CENTRES at 0.85, which means a tenth of the ground on the fen's wide
+  lattice and would mean drowning on a close one. It is now stated in the units
+  the rule is about — hold ground-under-water below 55% — and it binds on nothing
+  that existed (fen 0.64, cinders' seams 0.43), so both are unchanged.
+- **The stones and boards are PAINT.** `BiomeDef.float` is the decor kit drawn on
+  the shallows. They read as a route across water that was already crossable;
+  following them and ignoring them are equally valid and nothing knows which you
+  did. A stepping stone that was the only way across would be a lock with a key
+  made of scenery.
+- **Cracks are a network ruled across the WORLD, never a per-cell mark.** A crack
+  is a LINE, and a line inside every cell is the band rule's oldest trap. Jittered
+  lattice points joined to their neighbours, each edge kinked at its midpoint
+  (straight point-to-point segments drew a Voronoi diagram, which is what the
+  lattice literally is and not what broken ground looks like), and each tile draws
+  only the part that crosses it.
+- **The Static's two inks are pulled from the SAME base.** The first cut tinted
+  the second ink onto the first and they landed four RGB units apart — a tint is a
+  lerp, so pulling an already-pulled colour toward a third lands next to where it
+  started. From the season's own green they land 35 apart and 3.7 apart in
+  luma: unresolvable at 2px pitch, and impossible to ignore. Both halves are now
+  asserted in `render/palette.test.ts`.
+- **The glitch reaches ground and flora and stops there.** Not the player, not a
+  villager, not a building, not one pixel of the HUD — see DESIGN §"A place that
+  is drawn wrong" for the four decisions that keep it a place rather than a bug
+  report. The ground roll is quantised to four steps where a region dithers,
+  which came out as visible compression blocks and is the best accident in the
+  phase.
+- **It has a Moment, and it is the first keyed to a PLACE.** `the_static` — the
+  day you took somebody into the wrong-coloured country. `far_out` refuses to name
+  a distance because a number in a line is a number to beat; a region is different
+  (people name places), and one sited 604 tiles out cannot be stumbled into or
+  hurried. Seven voices, and not one of them explains it.
+
+### Found on screen, not in the suite
+
+- **High-contrast borders were STRIPED, and had been since the cinders shipped.**
+  8d's blend fades one tint into the next, which was measured against near
+  regions whose greens are a few units apart. Ash and salt crust are ~150 units
+  from grass, so a ten-tile fade lands 15 units a TILE — a smooth gradient
+  quantised onto cells, which is a flight of hard bands. **Fixed by dithering the
+  blend**: a hashed ±half-step nudge on border tiles only (`BORDER_DITHER`,
+  render/renderer.ts §turf), which is this file's own habit — what cannot be
+  blended gets rolled per cell. Tiles well inside a region are bit-identical.
+  **This changes every border in the game**, for the better in the two
+  photographs, and it is the thing in this phase most worth a second opinion.
+- **A lily pad drawn as a 3×3 ring is a PLUS SIGN**, and so is a lotus. Both
+  needed the kingcup's finding: a shape with a centre needs five pixels of width
+  before the petals can close round it. Pads are solid discs with one wedge cut.
+- **The marsh's mushrooms had to come down** from the fen's 0.1 to 0.06: they
+  only come up on LAND, and two fifths of this region is water, so the same
+  number lands half again as thickly on the ground you can stand on.
+- **Perf is fine.** 60fps in all three regions at 1600×900 (median 16ms), against
+  16ms in the meadow. The crack rasteriser is bounded by bbox rejection per tile
+  and the dither patterns are cached per colour pair — which is why the ground
+  roll had to be quantised where they are used.
+
+### Loose ends
+
+- **The marsh coastline is blocky**, and inherently so: any waterline quantised
+  onto 16px cells staircases, and this region is made almost entirely of
+  waterline. The wobble helps. If it still reads as blue boxes on a second look,
+  the knobs are `pools.cell` (finer lattice), `pools.wobble` and `water`.
+- **The flats' heat shimmer is subtle by daylight** — pale specks on pale ground.
+  It reads in motion and in the night shot. Worth a look before turning it up:
+  the alternative is dust motes over a desert, which is a different place.
+- **Nobody in town has a line about the flats or the marshes.** The Notebook has
+  a field note for each (which is where every other region is named), and the
+  Static has the Moment. A companion Moment for the other two would need a reason
+  to be there beyond "the region exists".
 
 ## Known gaps and loose ends
 

@@ -151,6 +151,18 @@ export function blendRegions(parts: { def: BiomeDef; w: number }[]): BiomeDef {
  *  opinion about water, about paving, or about anything a player made. */
 const BIOME_GROUND: TileId[] = [GRASS, MUSHROOM];
 
+/** Is this a tile a region is allowed to paint?
+ *
+ *  Exported because `biomeSkin` stopped being the only thing that needs to know.
+ *  The cracked plates on the salt flats and the Static's two-ink dither are both
+ *  region paint applied at the draw call rather than through a `TileDef`, and
+ *  both have to land on exactly the same set — or a region acquires an opinion
+ *  about water, paving, or a floor somebody laid, which is the bug the list was
+ *  written for in the first place. */
+export function isBiomeGround(id: TileId): boolean {
+  return BIOME_GROUND.includes(id);
+}
+
 /** A tile's appearance in a biome: the season's answer, pulled toward the
  *  region's ground colour. `top` and `shade` travel with it or the bevel at a
  *  material boundary stops matching the material it edges. */

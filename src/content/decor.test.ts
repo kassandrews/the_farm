@@ -8,9 +8,23 @@ import { MOTE_MAX } from "../render/renderer";
 
 const TILE = 16; // matches renderer.ts's scene px per tile
 
-const kits = Object.values(BIOMES)
-  .filter((b) => b.decor)
-  .map((b) => [b.id, b.decor!] as const);
+// EVERY SLOT, NOT JUST `decor`. There are three now — what grows all year, what
+// blooms for a season, and what floats on the water (content/biomes.ts §float) —
+// and all three go through the same draw call, so all three are under the same
+// rules. The bloom and the float kits were unguarded until the marshes added the
+// third one and the omission became obvious: a lily pad is a mark in a cell like
+// any other, and nothing but this file stops it being the wrong shape.
+const kits = Object.values(BIOMES).flatMap((b) =>
+  (
+    [
+      ["decor", b.decor],
+      ["bloom", b.bloom],
+      ["float", b.float],
+    ] as const
+  )
+    .filter(([, k]) => k)
+    .map(([slot, k]) => [`${b.id}.${slot}`, k!] as const),
+);
 
 describe("decor kits", () => {
   it("exist on some regions and not on the meadow", () => {
@@ -76,8 +90,16 @@ describe("decor kits", () => {
         // region from having any content at all — at 0.24 it photographed as an
         // empty field with weeds in it. Named rather than raised, so that a
         // second region wanting this has to come and add itself here and say why.
+        //
+        // AND A FLOAT KIT IS NOT ON THE TUFT AT ALL, which is why it answers to a
+        // different number rather than to an exemption. What floats sits on
+        // water, and water carries no speckle — so this kit is not the layer
+        // above a texture, it IS the texture, exactly as the tuft is on grass.
+        // Read against the tuft's own 38% instead: at the decor ceiling the
+        // marshes photographed as flat blue blocks with a few things on them.
         expect(kit.density).toBeGreaterThan(0);
-        expect(kit.density).toBeLessThan(id === "prairie" ? 0.5 : 0.25);
+        const ceiling = id.endsWith(".float") ? 0.38 : id.startsWith("prairie") ? 0.5 : 0.25;
+        expect(kit.density).toBeLessThan(ceiling);
       });
     });
   }
@@ -110,8 +132,20 @@ describe("motes", () => {
     // the giants copy the redwoods' floor, and two rows of one region family are
     // one thing you can see. What a player meets is a KIND of air in a place, so
     // that is what gets counted.
+    //
+    // NINE, FROM SEVEN, AND THE TWO THAT MOVED IT ARE BOTH THE AIR ITSELF. The
+    // salt flats and the Static do not have air the way the blossom rows have
+    // petals — something pretty happening over a place that would still be that
+    // place without it. Heat coming off a white crust IS the flats (there is
+    // nothing else on them), and pixel noise IS the Static (a glitch you cannot
+    // see is a colour scheme). Refusing them would not have bought restraint; it
+    // would have bought two regions that could not say what they were.
+    //
+    // The guard still guards. What it is against is the fifth wood with drifting
+    // pollen in it, and every row that has ever raised this number has been a
+    // destination whose whole character was in the air.
     const distinct = new Set(kits.map(([, k]) => JSON.stringify(k)));
-    expect(distinct.size).toBeLessThanOrEqual(7);
+    expect(distinct.size).toBeLessThanOrEqual(9);
   });
 
   it("keeps the always-on ones rarer still, and out of the near world entirely", () => {
@@ -125,8 +159,16 @@ describe("motes", () => {
     // long grass's seed and the cinders' ash. That is the MoteKit doc's own test
     // for whether air is worth having — arriving somewhere should feel like
     // arriving — and it is why the number may grow when a destination does.
+    //
+    // SEVEN NOW, and the two new ones are the flats' heat and the Static's noise
+    // — both always-on, because a place whose character is the air cannot have
+    // that character only in August. See the note on the count above for why they
+    // were allowed at all; what matters here is that they are still both places
+    // you walked a very long way to, which is the test this number is really
+    // keeping. The moment somewhere you pass through on the way home has air of
+    // its own, this should fail and stay failed.
     const always = kits.filter(([, k]) => !k.season && !k.evening);
-    expect(new Set(always.map(([, k]) => JSON.stringify(k))).size).toBeLessThanOrEqual(5);
+    expect(new Set(always.map(([, k]) => JSON.stringify(k))).size).toBeLessThanOrEqual(7);
 
     // AND THE CLAUSE THAT MAY NEVER MOVE. Everything above is about the far
     // country and the sited places. The world you live in — the meadow and the

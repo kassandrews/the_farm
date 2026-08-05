@@ -259,6 +259,13 @@ export const MEMORY_PRIORITY: MemoryKind[] = [
   // somewhere nobody has ever been, where the far country is merely somewhere
   // nobody bothered to arrange.
   "far_out",
+  // THE FOURTH MOMENT, AND IT OUTRANKS THE OTHER WALK. `far_out` is the edge of
+  // the survey, which is a distance anybody could walk in any direction; this is
+  // a sited region on a ring at six hundred tiles that you had to find. Rarity
+  // plus company is what this whole list is sorted by, and nothing below the cube
+  // is rarer than an afternoon spent standing in the one place in the world that
+  // is drawn wrong.
+  "the_static",
   // The games (sim/play.ts). Above `company` because a game is a walk PLUS a
   // specific thing the two of you did on it; below the places above, because
   // those are afternoons almost nobody in the town has had. The line here is

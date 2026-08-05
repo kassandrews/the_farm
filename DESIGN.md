@@ -565,6 +565,67 @@ surface (CLAUDE.md §per-cell edges). Put it on a long, smooth field instead and
 nothing about it can line up with the grid — the same answer the fen's ponds and
 the ground roll already arrived at.
 
+Ground paint may also be a **network rather than a field** — the cracked plates
+of the salt flats, a web of hairlines several tiles to a plate. The rule it obeys
+is the same one stated the other way round: a crack is a LINE, and a line drawn
+inside every cell is the band rule's oldest trap, so the network is ruled across
+the **world** on a lattice of its own and each cell draws only the part of it
+that happens to cross. A plate is bigger than a tile, so no crack ever ends on a
+cell edge and none of them line up. It is still paint: no tile, no solidity, no
+yield, and a house sits on it as on grass.
+
+### A region may be mostly water
+
+Water may be **most of a region's ground**, provided none of it is deep. The
+marshes are the case: a lattice of small pools, close enough together to run into
+one another, with islands between them — water with country in it rather than
+country with pools in it.
+
+Nothing about the crossing promise bends for this, because that promise was never
+about how much water there is. What makes water a wall is **depth** (§Water): past
+the shelf it stops you, under it you wade. A region whose pools cannot reach the
+shelf is crossable in every direction however wet it is — and that is a fact about
+its geometry, checked as arithmetic rather than trusted.
+
+What such a region costs you is **pace**, which is the shallows' existing rule and
+not a new one: you cross a marsh at a marsh's speed. That is the only mechanical
+thing any far region does, and it is allowed because it delays and never blocks.
+
+**Things laid across the water are decoration, and must stay decoration.** Stepping
+stones and boards read as a route; they are somebody's opinion about where to walk,
+laid over water that was already crossable. Following them is exactly as valid as
+ignoring them and wading, and nothing anywhere knows which you did. A stepping
+stone that was the only way across would be a lock with a key made of scenery.
+
+### A place that is drawn wrong
+
+The world may hold a region whose **rendering is the content** — ground and trees
+in two inks alternating on a dither finer than anything else in the world, drawn
+as though the picture there were short of a bit. The Static is the one, and it is
+the furthest thing out.
+
+This is a new kind of sentence for a biome and it needs its own fence, because a
+player who thinks they have found a **bug** cannot enjoy a place, and would be
+right to file it. What keeps it on the correct side of that line is not taste, it
+is four decisions:
+
+- **It is regional and it has a soft edge**, like every other region. A fault does
+  not fade in over five tiles. A place does.
+- **It is stable.** Walk out and back and the same trees are the same wrong
+  colours, because it is a total function of (seed, x, y) exactly as the meadow
+  is. A bug would be different on the way back.
+- **It never touches the player, the villagers, the buildings, or one pixel of
+  the interface.** You are a correct thing standing in a place that is being drawn
+  badly. The moment the glitch reaches the frame around the world it stops being
+  scenery and becomes a fault report.
+- **Nothing about it is broken in a way that costs anything.** It gathers, grows,
+  builds and paths exactly like the meadow, because it is the meadow's rules
+  wearing bad paint. It gates nothing and yields nothing new, like every other
+  far region.
+
+And **somebody has a name for it**, which is the last proof that it is a place:
+people do not name a rendering error, they name a valley.
+
 ### Nothing in the world can hurt you
 
 It was never written down, because nothing had ever tested it: there is no
@@ -1284,6 +1345,13 @@ lost, and nothing anywhere counts them.
   adds is the second record — the one that exists only because you were not
   alone. That is the feature: not that the sky was busy, but that you and Eloise
   both remember it being busy.
+- **A Moment may be keyed to a PLACE, and only a place like the Static.** The
+  walk to the edge of the survey is keyed to a distance, deliberately — a number
+  in a line is a number to beat. A region is different: naming one is the
+  wayfinding system doing its job (§Biomes — people name places), and a region
+  sited six hundred tiles out on a ring cannot be stumbled into, farmed, or
+  hurried. What is remembered is not that you went far; it is that you took
+  somebody somewhere strange.
 - **Triggers are unstated and unoptimizable.** A surfaced, farmable condition
   ("watch a sunrise with six villagers") becomes an objective the moment players
   work it out. Nothing announces what qualifies, no UI hints at one, and the set

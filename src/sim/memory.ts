@@ -97,6 +97,20 @@ export type MemoryKind =
   // had to be written; the other two Moments reuse field notes that already
   // existed. And there is NO SNOW in it, on purpose — see that entry.
   | "winter_came"
+  // The day you took somebody into the Static — the sited region six hundred
+  // tiles out whose colours come out wrong (content/biomes.ts §static). In
+  // `oneShot`, on `far_out`'s argument exactly: it is somewhere the two of you
+  // have either been together or you haven't, and the second visit is the same
+  // fact about the same afternoon.
+  //
+  // IT IS THE ONLY MOMENT KEYED TO A PLACE YOU CAN POINT AT, and it is allowed
+  // to be because of what the place is. `far_out` refuses to name a distance
+  // because a number in a line is a number to beat; this names a REGION, which
+  // is the wayfinding system doing its job (DESIGN §Biomes — people name
+  // places). Nothing about it can be farmed: there is no yield out there, the
+  // walk is its own reward, and the payout is that somebody remembers being
+  // taken somewhere strange with you.
+  | "the_static"
   // --- Games (sim/play.ts) ----------------------------------------------------
   //
   // A game of hide and seek that reached its end, and an I Spy that did. Two
@@ -149,7 +163,7 @@ const MAX_MEMORIES = 64; // a bounded ring; the town lives at hour forty, not fo
  *  doesn't stack five identical "you built that?" memories. Imports and
  *  repeatable events (harvests) may recur. */
 export function remember(log: MemoryLog, ev: MemoryEvent): MemoryLog {
-  const oneShot: MemoryKind[] = ["built_floor", "dug", "planted", "arrived", "housed", "raised_by", "raised_favorite", "hum", "far_out", "introduced"];
+  const oneShot: MemoryKind[] = ["built_floor", "dug", "planted", "arrived", "housed", "raised_by", "raised_favorite", "hum", "far_out", "the_static", "introduced"];
   if (oneShot.includes(ev.kind) && log.some((m) => m.kind === ev.kind)) return log;
   // An answer is one-shot PER ANSWER: the same words again are the same fact.
   if (ev.kind === "answered" && log.some((m) => m.kind === ev.kind && m.value === ev.value)) return log;

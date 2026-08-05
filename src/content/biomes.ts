@@ -121,11 +121,14 @@ export type BiomeId =
   | "granite"
   | "prairie"
   | "cinder"
+  | "salt"
+  | "marsh"
   // Sited, not rolled — like the blossom rows, and for the same reason. See
   // BIOMES.redwoods.
   | "redwoods"
   | "giants"
-  | "caldera";
+  | "caldera"
+  | "static";
 
 export interface BiomeDef {
   id: BiomeId;
@@ -463,6 +466,109 @@ export interface BiomeDef {
     to: number;
   };
 
+  /** THE GROUND BROKEN INTO PLATES — a web of hairline cracks lying across the
+   *  surface, several tiles to a plate. The salt flats', and nobody else's.
+   *
+   *  IT IS THE SHEET'S ARGUMENT ONE STEP ON. Bare rock had to be a low-frequency
+   *  FIELD because a recoloured cell is a hard square (§sheet). A crack is worse
+   *  than a square: it is a LINE, and a line drawn inside every cell of a
+   *  continuous surface is the band rule's oldest trap — the roof shingles, the
+   *  wall side-runs, the ground bevel, all of them a mark at the tile pitch. What
+   *  makes this legal is that the network is ruled across the WORLD: jittered
+   *  points on a lattice of its own, joined to their neighbours, and each tile
+   *  draws only the part of a line that happens to cross it. A plate is bigger
+   *  than a tile, so no crack ever ends at a cell edge and none of them line up.
+   *
+   *  IT IS PAINT, exactly as a sheet is. No tile, no solidity, nothing to
+   *  gather, nothing that blocks a build; you may put a house on a cracked flat
+   *  and the cracks go under the floor like grass does. The flats are the emptiest
+   *  ground in the game and this is the only thing on them, which is why it is
+   *  allowed to be the one texture that reaches all the way across a region. */
+  cracks?: {
+    /** The hairline itself. Drawn at a low alpha over the region's own ground —
+     *  a crack is a shadow in a surface, not a drawn-on line. */
+    color: string;
+    /** How far apart the lattice points are, in TILES. This is the size of a
+     *  plate, and it wants to be several: at one or two the web is a net and the
+     *  flat reads as tiling, which is the exact failure the note above is about. */
+    period: number;
+    /** 0 (invisible) to 1 (the full ink). Low: on ground this pale a crack at
+     *  full strength is a drawn line, and what we want is the surface being
+     *  slightly broken. */
+    alpha: number;
+  };
+
+  /** THE GEOMETRY OF THIS REGION'S STANDING WATER, where the fen's does not fit.
+   *  Optional; the fen's own constants otherwise (sim/world.ts §pondDepth), which
+   *  is every other region with any `water` at all.
+   *
+   *  WHY THE FEN'S KNOB WOULD NOT REACH. `water` is a fraction and the geometry
+   *  under it is fixed — ponds of radius 1.2–2.6 on an eleven-tile lattice — so
+   *  the wettest a region can be is about a tenth of its ground, whatever number
+   *  you write. That is right for a fen, which is damp country with pools in it,
+   *  and it cannot express a marsh, which is water with country in it. Turning
+   *  `water` up past the cap does nothing at all, which is the worst kind of
+   *  knob: one that stops responding without saying so.
+   *
+   *  `max` IS THE CROSSING PROMISE AND IT IS NOT DECORATIVE. Depth is the deepest
+   *  single pool reaching a tile (never a sum), so the deepest water a region can
+   *  have is exactly `max` — and `WATER_KINDS.pond.shelf` is 3. Keep this under
+   *  it and every pool in the region wades; raise it over and the region grows
+   *  water you cannot cross, which six hundred tiles from home is a wall (§water
+   *  above, and the fen's note, and the cinders' after it). There is a test. */
+  pools?: {
+    /** Tiles between candidate centres. Smaller than the fen's makes water the
+     *  ground rather than a thing in it. */
+    cell: number;
+    /** Pool radii, in tiles. See the promise above about `max`. */
+    min: number;
+    max: number;
+    /** How far the waterline wanders off the circle, as a fraction of the radius
+     *  — the lava lake's two sines, one scale down (sim/world.ts §PoolGeometry).
+     *  A pool small enough to see all of quantises onto the tile grid as a
+     *  rectangle, and a region made almost entirely of waterline came out as a
+     *  bay of blue boxes without this.
+     *
+     *  IT COUNTS AGAINST `max`: the deepest water is `max × (1 + wobble)`, and
+     *  that product is what must stay under the shelf. */
+    wobble?: number;
+  };
+
+  /** THE SECOND INK — the region drawn in two colours alternating on a 2×2
+   *  dither instead of one. The Static's, and nobody else's.
+   *
+   *  WHAT IT IS FOR. Every other row here says "this place is a colour". This one
+   *  says "this place is being drawn wrong", and a single wrong colour cannot say
+   *  it — a violet meadow is a violet meadow, which is the dusk, and the dusk is
+   *  merely eerie. What reads as a rendering fault is two inks the ground cannot
+   *  decide between, at a pitch finer than anything else in the world: not a
+   *  palette, a BITRATE.
+   *
+   *  ON THE WORLD PIXEL, NEVER THE CELL, and this is the band rule again with the
+   *  finest teeth it has yet been given. A 2×2 checker phased off the tile would
+   *  put an identical pattern in every cell and the ground would read as tiling
+   *  — the venetian blind at two-pixel pitch. Phased off the world it runs
+   *  unbroken under everything, which is what a low-resolution surface looks
+   *  like: the picture is coarse, the picture is not made of squares.
+   *
+   *  IT REACHES GROUND AND FLORA AND STOPS THERE. Not the player, not a villager,
+   *  not a building, not one pixel of the HUD. You are a correct thing standing
+   *  in a place that is being drawn badly — which is the whole joke, and also the
+   *  line that keeps this a BIOME rather than a screen effect. A glitch that
+   *  reached the interface would be indistinguishable from the game being broken,
+   *  and a player cannot enjoy a place they think is a bug report. */
+  dither?: {
+    /** The alternate ground ink. Pulled from the same base and by the same
+     *  machinery as `ground`, so the two travel together through the season and
+     *  the night wash and the pair never comes apart. */
+    ground: Tint;
+    /** The alternate speckle — picked per MARK rather than per pixel, because a
+     *  tuft is three pixels and a dither inside one is a colour nobody can see. */
+    tuft: Tint;
+    /** The alternate crown. The largest wrong surface on screen. */
+    crown: Tint;
+  };
+
   /** What else grows here. Optional, and the meadow deliberately has none. */
   decor?: DecorKit;
 
@@ -475,6 +581,27 @@ export interface BiomeDef {
    *  list would invite a third and a fourth, and the ground has room for about
    *  two kinds of small thing before it stops reading as ground. */
   bloom?: DecorKit;
+
+  /** WHAT FLOATS ON THE WATER — the same kit shape as `decor`, drawn on the
+   *  SHALLOWS instead of on grass. The marshes', and nobody else's.
+   *
+   *  A THIRD SLOT, AND THE ARGUMENT AGAINST A THIRD SLOT SURVIVES IT. `bloom`'s
+   *  note says two is the limit because the ground has room for about two kinds
+   *  of small thing before it stops being ground — and that is a statement about
+   *  the GRASS. This lands on water, which until now carried nothing anywhere in
+   *  the world, so it competes with none of it: a cell is either turf or it is
+   *  wet, and no cell ever draws both.
+   *
+   *  IT IS PAINT, LIKE EVERY OTHER MARK. A lily pad blocks nobody, yields
+   *  nothing, is stored nowhere and slows no one down — the marsh is wadeable
+   *  because of its POOL GEOMETRY (see `pools`), and not one pixel of this either
+   *  helps or hinders. That matters most for the things in this kit that look
+   *  like a route: the stepping stones and the boards are somebody's opinion
+   *  about where to walk, laid across water that was already crossable. Reading
+   *  them as a bridge and following them is a perfectly good way to cross the
+   *  marsh, and so is ignoring them and wading, and the game will never tell you
+   *  which you did. */
+  float?: DecorKit;
 
   /** What drifts in the air here. Optional, and MOST REGIONS HAVE NONE — see
    *  MoteKit. */
@@ -555,8 +682,17 @@ export interface MoteKit {
    *  which is how you twinkle without rotating anything: a pixel-art mote may
    *  never be turned by `ctx.rotate` (CLAUDE.md §Sprite rendering resamples it
    *  off the grid), so the glitter has to come from the SHAPE changing rather
-   *  than from the thing spinning. Same trick as the tuft's three silhouettes. */
-  shape?: "dot" | "spark";
+   *  than from the thing spinning. Same trick as the tuft's three silhouettes.
+   *
+   *  `noise` is the Static's, and it is the one mote in the file that does not
+   *  TRAVEL. Everything else here drifts: a petal falls, a spore rises, ash blows
+   *  east, and that motion is what makes it air. This one JUMPS — it holds a
+   *  position for a fraction of a second and is somewhere else after, snapped to
+   *  whole pixels — which is the difference between something in the air and
+   *  something wrong with the picture. Drawn flat and never additive: a stuck
+   *  pixel is not a light, and a hot core would make the region twinkle, which is
+   *  the glimmer's sentence and the opposite of this one. */
+  shape?: "dot" | "spark" | "noise";
 
   /** Blink instead of fading in and out. A firefly is dark most of the time and
    *  briefly not; a smooth fade reads as a floating lamp. */
@@ -2018,6 +2154,310 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     },
   },
 
+  /** THE THIRD SPARSE PLACE, AND THE ONE THAT IS COLD ABOUT IT.
+   *
+   *  The cinders and the caldera are empty because something happened to them.
+   *  This is empty because nothing ever did: white crust to the horizon, a crack
+   *  network the only thing drawn on it, and the air going UP. It sits beside the
+   *  burnt country as the same amount of nothing at the opposite temperature,
+   *  which is the whole reason to have a third one — a sparse region is a mood,
+   *  and one mood is not a set.
+   *
+   *  THE EMPTINESS IS THE CONTENT, so the numbers below are lower than anything
+   *  else in the file and that is the row rather than a placeholder. Every other
+   *  region answers "what grows here"; this one answers "nothing", and then has
+   *  to be worth walking across anyway. What it has instead of growth is SURFACE:
+   *  the plates (§cracks), and heat coming off them.
+   *
+   *  IT IS STILL NOT A HAZARD AND NOT A GATE. Nothing here is hot, nothing here
+   *  is dry in a way the game counts, and there is no water to run out of —
+   *  DESIGN §"Nothing in the world can hurt you" holds exactly as it holds over
+   *  the lava. A desert that made you careful would be a different game; this one
+   *  is a long white room you can walk through, and the reward for crossing it is
+   *  that you crossed it.
+   *
+   *  RARE, BY THE SAME ARGUMENT THE GLASS WOOD AND THE CINDERS MAKE. It is the
+   *  loudest kind of quiet there is, and a plateau with much of it in it would be
+   *  a world with a hole in the middle. See FIELD_WEIGHTS. */
+  salt: {
+    id: "salt",
+    name: "the salt flats",
+    // THE LOWEST TREE COUNT IN THE GAME by a factor of four — the cinders' snags
+    // are 0.2 and they are a WOOD by comparison. Not zero, and the argument is
+    // the prairie's in reverse: a horizon with absolutely nothing on it has no
+    // scale, so you cannot tell whether you have walked a long way or a short
+    // one. One bleached stem every few screens is what makes the emptiness
+    // measurable, which is what makes it read as emptiness rather than as an
+    // unfinished region.
+    trees: 0.05,
+    // Ditto, and lower still. What stone there is lies flat (see `stone`).
+    rocks: 0.12,
+    // Nothing grows and nothing rots. The second region in the file with no
+    // mushrooms at all, and it keeps the count where §Materials wants it: the
+    // far country is stranger, never richer.
+    mushrooms: 0,
+    water: 0,
+    // WHITE IS THE HARDEST TINT IN THIS FILE and the arithmetic is the cinders'
+    // trap pointed the other way. Grass is (139,191,90): the GREEN channel is
+    // already high and the blue is a long way down, so a tint aimed straight at a
+    // neutral white lands minty — the pale draft (#f2f2f2 at 0.9) measured
+    // (234,236,235), which is a white with a green cast that you cannot
+    // un-see once the salt is next to a cloud.
+    //
+    // So the target leans off-neutral in the opposite direction: green a little
+    // under, red and blue a little over. #f7eff3 at 0.9 lands on (236,234,228) —
+    // faintly warm, faintly pink, and by a long way the brightest ground in the
+    // game (the glass wood's floor is (193,214,210), and that was the previous
+    // record).
+    ground: { color: "#f7eff3", amount: 0.9 },
+    // The crust, one step down. It has to be visible against ground this bright
+    // or the speckle disappears and the flats go completely flat — which is a
+    // temptation worth naming, because "completely flat" sounds like the brief.
+    // It isn't: a surface with no texture at all reads as a hole in the render,
+    // not as a place.
+    tuft: { color: "#ded4d6", amount: 0.85 },
+    // GRIT AND ONE DEAD STEM, which is the cinders' list to the letter and the
+    // only thing the two regions share. Dots alone read as static (the cinders
+    // found that first); one upright in four is what makes the rest read as
+    // crystal rather than as noise. Two regions may share a tuft list — it is
+    // three pixels — where they may not share a crown, and these two are as far
+    // apart on colour as anything in the file.
+    tufts: ["dot", "dot", "dot", "blades"],
+    // Bleached rather than charred, which is the whole distinction between this
+    // region's dead trees and the cinders'. Same fact — a tree that died — with
+    // the sun on it for a hundred years instead of a fire in it for a night.
+    crown: { color: "#bdaaa5", amount: 0.85 },
+    trunk: { color: "#c9bfb4", amount: 0.7 },
+    // SHORTER AND STUBBIER THAN THE CINDERS' SNAG, which `render/palette.test.ts`
+    // requires (two regions may not share an outline unless the colour is
+    // unmistakable) and which is also just true: a stem that has stood in the
+    // open for decades has lost its branches, where a burnt one still has the
+    // stubs. Six rows against eight, and the widest row is 3.
+    crownRows: [1, 2, 1, 2, 3, 2],
+    // Open downward against the trunk — the legal kind, and the only kind (see
+    // BiomeDef.crownGaps).
+    crownGaps: [0, 0, 0, 0, 1, 1],
+    crownOverlap: 2,
+    trunkHeight: 19,
+    // SLABS, ALMOST ONLY. Everything on a flat lies flat: there is no soil to
+    // stand a stone up in and nothing to have thrown it. The one `broken` in the
+    // list is what stops three identical slabs a screen reading as a stamp.
+    stone: { tint: { color: "#e6e2e0", amount: 0.46 }, shapes: ["slab", "slab", "broken"] },
+    // THE PLATES. See BiomeDef.cracks for why this may exist while the ground
+    // bevel may not — the network is ruled across the world and a plate is six
+    // tiles, so no line here ever ends on a cell edge.
+    //
+    // A COOL GREY AT HALF STRENGTH. Drawn at full it is a pen line and the flat
+    // becomes a diagram; at a third it vanished against ground this bright. What
+    // is wanted is a surface with breaks in it, and a break in a white surface is
+    // a thin shadow.
+    cracks: { color: "#a89f9c", period: 4, alpha: 0.5 },
+    // HEAT, AND IT IS THE ONLY AIR IN THE GAME THAT GOES STRAIGHT UP. The
+    // glimmer's spores rise too, but they rise the way a spore does — slowly,
+    // sideways, catching the light. This is the surface giving back what it took
+    // all day: faster, straighter, and pale enough to be nearly the colour of the
+    // ground it is coming off, so what you see is the air moving rather than
+    // anything in it.
+    //
+    // NO CORE AND NO GLINT. A core is the ink of a SOURCE (MoteKit), and heat is
+    // not a light — it is the least substantial thing in the file, and the moment
+    // it has a hot centre it becomes a spark over a fire, which is the region six
+    // hundred tiles that way.
+    //
+    // A SHORT PERIOD FOR ONCE, and the doc's "anything brisk reads as an insect"
+    // survives it: that rule is about BODIES, and about horizontal motion. Nothing
+    // alive rises straight up in a still line, which is why five seconds here
+    // reads as convection rather than as a fly.
+    motes: {
+      density: 0.07,
+      color: "#efe0c6",
+      // POSITIVE, which is the whole sentence. Everything the player has met that
+      // moves in the air out here comes DOWN — the petals, the ash. Nine hundred
+      // tiles out, the ground exhales.
+      drift: 15,
+      sway: 4,
+      period: 5,
+      size: 1,
+    },
+    // THE SPARSEST KIT IN THE FILE, past the cinders' bones. Salt crystal, in two
+    // sizes, and nothing else: no stem, no flower, no fallen anything, because
+    // there has never been anything here to fall. The accent is a pale that reads
+    // as a facet catching light rather than as an object.
+    decor: {
+      density: 0.04,
+      accent: "#ffffff",
+      marks: [["o.", ".o"], ["oo"], [".o.", "o.o"]],
+    },
+  },
+
+  /** WATER WITH COUNTRY IN IT — the fen's idea past the point where it stops
+   *  being the fen's idea.
+   *
+   *  THE FEN IS DAMP GROUND WITH POOLS; THIS IS POOLS WITH GROUND BETWEEN THEM.
+   *  That is a difference of kind and not of degree, and it could not be reached
+   *  by turning the fen's `water` up — the geometry under that number caps out at
+   *  about a tenth of a region (see BiomeDef.pools, which exists because of this
+   *  row). What you get with its own lattice is an archipelago: islands a few
+   *  tiles across, water between them, and a way through in every direction.
+   *
+   *  YOU ARE NEVER STOPPED AND YOU ARE OFTEN SLOWED, which is the only mechanical
+   *  thing any of the three new regions does and it is the shallows' existing
+   *  rule rather than a new one. Every pool here is under `WATER_KINDS.pond.shelf`
+   *  by construction, so all of it wades at the shallows' own 0.6× — the marsh is
+   *  a place you cross at a marsh's pace. Nothing is deep, nothing is a wall, and
+   *  no crossing anywhere is required.
+   *
+   *  THE STONES AND THE BOARDS ARE PAINT, and deliberately so. See `float`: they
+   *  are somebody's opinion about where to walk, laid over water that was already
+   *  crossable, and following them is exactly as valid as ignoring them and
+   *  wading. A stepping stone that was the ONLY way across would be a lock with a
+   *  key made of scenery, which is the thing §Biomes forbids in its plainest
+   *  form.
+   *
+   *  IT IS PEACEFUL WITHOUT BEING THE SEA. The sea is a horizon and an edge; this
+   *  is enclosed, green, and small-scale — every view has a far bank in it. */
+  marsh: {
+    id: "marsh",
+    name: "the marshes",
+    // Islands are small, so a tree is a landmark on one rather than a canopy over
+    // it. Under the fen's, and the fen is not a dense wood either.
+    trees: 0.45,
+    // Almost nothing stands on ground this soft. The fen's number, near enough.
+    rocks: 0.18,
+    // WET GROUND IS MUSHROOM GROUND, and this is the wettest there is — but it is
+    // NOT the mushroomiest, and the gap is deliberate. §Biomes: a region may
+    // change what its mushrooms look like and may never have more of them for
+    // being far out. The fen keeps 0.12 because the fen is the mushroomiest place
+    // there is and it is a region you can reach on your first afternoon.
+    //
+    // AND IT CAME DOWN AFTER LOOKING, from the 0.1 that reads as the fen's number
+    // on paper. Mushrooms only come up on LAND, and this region is two fifths
+    // water — so the same density lands half again as thickly on the ground you
+    // can actually stand on, and the first screenshot had a dozen of them on one
+    // island. A number that means "how mushroomy is it" has to be read against
+    // how much ground there is.
+    mushrooms: 0.06,
+    // Sodden and going. The fen's argument word for word — nobody looks at a log
+    // in a bog and thinks firewood — and this ground is wetter.
+    deadwood: 1.2,
+    // READ AGAINST `pools` BELOW, NOT AGAINST THE FEN'S 0.06. The knob still means
+    // "how much of it is water", but the geometry underneath is this region's own,
+    // so the same number would mean something different. Measured at about a third
+    // of the ground wet, which is what leaves islands you can see the shape of.
+    water: 0.46,
+    // ITS OWN LATTICE: centres less than half as far apart as the fen's, and
+    // pools wide enough that neighbours run together — which is what turns a
+    // scatter of ponds into a network of channels with land between them rather
+    // than a field with puddles in it. About two fifths of the region comes out
+    // wet, measured.
+    //
+    // `max × (1 + wobble)` IS 2.93 AGAINST A SHELF OF 3, and that product is the
+    // whole crossing promise: depth is the deepest single pool reaching a tile
+    // and never a sum, so no water in this region can reach the depth that stops
+    // you. Raise either number and the other has to come down. There is a test,
+    // and it asserts the product rather than the field.
+    pools: { cell: 4, min: 1.1, max: 2.3, wobble: 0.3 },
+    // GREEN AND FRESH, WHICH IS THE WHOLE DISTANCE FROM THE FEN. The fen is murk
+    // — a wet place going brown — and this is a wet place doing well: standing
+    // water with light on it, sedge and lotus, everything growing. Measured
+    // (137,178,101) against the fen's (115,152,80): the same family, a stop
+    // brighter and a shade cooler.
+    ground: { color: "#82a878", amount: 0.4 },
+    tuft: { color: "#6f9c62", amount: 0.45 },
+    // EVERYTHING IS GROWING — the fen's list, and for the fen's reason: there is
+    // no patch of this region that is merely dirt with a speck on it. Blades
+    // rather than the fen's second sprout, because sedge is what comes up between
+    // pools.
+    tufts: ["sprout", "cluster", "blades"],
+    crown: { color: "#3c6b45", amount: 0.4 },
+    trunk: { color: "#4a4030", amount: 0.35 },
+    // Low, sunk and soft-edged. Slabs and boulders, like the fen — but paler,
+    // because this water is clear and the fen's is not.
+    stone: { tint: { color: "#5d7368", amount: 0.28 }, shapes: ["slab", "boulder", "slab"] },
+    // NOT RED, AND THE WHITELIST IN render/palette.test.ts IS WHERE THAT DECISION
+    // HAD TO BE MADE. The default cap is a fly agaric, which partners birch and
+    // pine on well-drained acid soil — the fen's own note works out the ecology,
+    // and a marsh is the same habitat the fen is only wetter. So this goes the
+    // fen's way rather than the dusk's.
+    //
+    // Ochre rather than the fen's inkcap grey, because the two wet regions should
+    // not be the same wet region: the fen is a place going brown in the dark and
+    // this is a place growing in the light. A warm cap on a green floor reads at a
+    // glance and stays clear of the lotus's own pale yellow, which is out on the
+    // water where nothing is gathered.
+    mushroomCap: { cap: "#c8a86a", lit: "#e2c791", gills: "#7f6540" },
+    // Tall and notched, like the fen's — what comes up on ground that never dries
+    // out. Same silhouette, same item, and the shape says the habitat rather than
+    // the species (see MushroomShape).
+    mushroomShape: "bell",
+    // SPREADING RATHER THAN WEEPING, which is what keeps this off the fen's
+    // outline: a fen tree leans over its own water in a long narrow fall of
+    // foliage, and a marsh tree on a two-tile island puts its weight sideways
+    // because there is nowhere else to put it. Wide, flat-topped, and shorter than
+    // anything else that grows in water.
+    crownRows: [4, 6, 7, 8, 8, 8, 8, 8, 7, 6, 5, 4],
+    // Down beside the trunk, so the crown sits ON the island rather than floating
+    // over it.
+    crownOverlap: 2,
+    // Sedge, in clumps, and the odd tussock. Shorter than the fen's four-row reeds
+    // by a row: those are what says "this ground is wet", and here the WATER says
+    // it, so the marks can be the plants rather than the announcement.
+    decor: {
+      density: 0.15,
+      accent: "#c9d98a",
+      marks: [
+        ["x.x", "x.x", ".x."],
+        [".x.", "x.x", "x.x"],
+        ["x.o", "xx.", ".x."],
+      ],
+    },
+    // WHAT FLOATS. Four marks, and between them they are the entire reason to
+    // walk out here (see BiomeDef.float for what they may not be):
+    //
+    //   - a lily pad, notched, which is the shape everyone knows;
+    //   - a smaller pad beside it, so a patch is a patch and not a stamp;
+    //   - a lotus — pale petals round a bright centre, the one bloom in the game
+    //     that opens on water;
+    //   - two boards, laid end to end, and a stepping stone at the end of them.
+    //
+    // The stones and the boards use `accent` and the pads use the region's own
+    // tuft ink, which is what keeps the vegetation reading as part of the marsh
+    // and the built things reading as somebody's.
+    float: {
+      // A THIRD OF THE WATER CARRIES SOMETHING, which is high for a kit and is
+      // this region's whole answer to a problem the fen never had: at a fifth,
+      // the marsh photographed as flat blue blocks with a few things on them.
+      // Open water is most of the view here, so what is ON it has to be doing the
+      // work the tuft does on grass — texture, at a density you read as surface
+      // rather than as objects.
+      density: 0.32,
+      accent: "#e8e4d6",
+      core: "#f3d16a",
+      marks: [
+        // THE PAD, AND IT IS SOLID. The first cut drew it as a ring — three by
+        // three with a hole — which at this size is not a leaf with a notch in
+        // it, it is four corner pixels, and on water it read as a ripple. A lily
+        // pad is a filled disc with ONE wedge cut to the middle, and the wedge is
+        // the whole recognition: without it the shape is a stone.
+        [".xxx.", "xx.xx", "xxxxx", ".xxx."],
+        // A smaller one beside it, so a patch is a patch rather than a stamp. Two
+        // by two and solid: at three wide with a hole in it, a pad is a PLUS SIGN,
+        // which is what the first cut of both of these came out as.
+        ["xx", "xx"],
+        // The lotus, open. The eye is enclosed by petals on all four sides — the
+        // kingcup's finding, which is the only other flower in the file with a
+        // centre, and which needed five pixels of width for the same reason: at
+        // three, petals-around-a-centre is a cross.
+        [".ooo.", "oo*oo", ".ooo."],
+        // Boards, laid end to end, with a stone to step off them onto. Straight,
+        // because somebody put them there and nothing else out here is straight —
+        // and long enough to read as a plank rather than as two pale specks.
+        ["oooo.", "....o"],
+        ["o....", ".oooo"],
+      ],
+    },
+  },
+
   /** THE LAKE AT THE MIDDLE OF IT — sited, recurring outward, and the one place
    *  in the world you arrive at rather than cross.
    *
@@ -2084,6 +2524,140 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         ["oo", "o."],
       ],
     },
+  },
+
+  /** A PLACE THAT IS BEING DRAWN WRONG, ON PURPOSE, AND THE FURTHEST THING OUT.
+   *
+   *  Sited and recurring, like the redwood stands and the calderas, on a ring
+   *  further than either — because this is the last sentence the far country has
+   *  to say, and it should be the one you meet last. Everything before it says
+   *  the world is stranger out here. This one says the world is being RENDERED
+   *  out here, and something is wrong with the renderer.
+   *
+   *  HOW IT SAYS IT. Two inks the ground cannot decide between, alternating on a
+   *  two-pixel dither (see BiomeDef.dither) — a surface at a coarser bitrate than
+   *  the rest of the world. Trees whose crowns are drawn in steps rather than
+   *  curves, as though something quantised them. And air made of pixels that do
+   *  not drift but JUMP (MoteKit §noise). Not one of the three is a colour; all
+   *  three are the picture being made badly, which is a thing no biome in this
+   *  file has ever been.
+   *
+   *  IT IS FULLY INTENTIONAL AND IT MUST READ THAT WAY. The risk this row carries
+   *  is unique in the game: a player who thinks they have found a BUG cannot enjoy
+   *  it, and will file it, and be right to. Everything that keeps it on the right
+   *  side of that line is a decision rather than an accident —
+   *
+   *   - The wrongness is REGIONAL and it has a soft edge, like every other region
+   *     (regionParts overlays it with a fade). A glitch does not fade in over five
+   *     tiles. A place does.
+   *   - It is STABLE. Walk out and back and the same trees are the same wrong
+   *     colours, because this is a total function of (seed, x, y) exactly as the
+   *     meadow is. A bug would be different on the way back.
+   *   - It NEVER TOUCHES the player, the villagers, the buildings, the HUD or one
+   *     pixel of the interface. You are a correct thing standing in a wrong place.
+   *     The moment the glitch reaches the frame around the world it stops being
+   *     scenery and starts being a fault report.
+   *   - Nothing here is broken in a way that COSTS anything. It gathers, grows,
+   *     builds and paths exactly like the meadow, because it is the meadow's rules
+   *     wearing bad paint.
+   *
+   *  AND IT HAS SOMEBODY'S NAME FOR IT. `the static` is what a villager calls it,
+   *  which is the last and best proof that it is a place: people do not name a
+   *  rendering error, they name a valley. */
+  static: {
+    id: "static",
+    name: "the static",
+    // ORDINARY DENSITIES, and that is the joke doing its work rather than a row
+    // left untuned. Every other far region says what it is by how much of it
+    // there is — the cinders are bare, the glass wood is thin, the flats are
+    // empty. This one is an ORDINARY WOOD, at the meadow's own densities, that
+    // happens to be coming out wrong. Thinning it would have made it a strange
+    // place with a glitch on top; leaving it alone makes the glitch the only
+    // thing that is strange, which is much worse in the way that is wanted.
+    trees: 1,
+    rocks: 1,
+    mushrooms: 0.05,
+    water: 0,
+    // THE FIRST INK. A cold grey-violet with no green left in it, which is
+    // already wrong for ground — but only slightly, and only until the second ink
+    // arrives beside it.
+    ground: { color: "#7c7a92", amount: 0.62 },
+    tuft: { color: "#8f8aa6", amount: 0.6 },
+    // THE SECOND. Not a shade of the first — a different HUE at nearly the same
+    // brightness, which is the specific relationship that reads as an encoding
+    // error rather than as dappled light. Two greys at different values are
+    // shadow; two colours at one value are a palette that has lost a bit of
+    // depth, and at 2px pitch the eye cannot resolve either one and gets an
+    // unstable third colour instead. That instability IS the effect, and it is
+    // the reason both inks are stated rather than one being derived.
+    dither: {
+      // A SICKLY GREEN AGAINST THE MAUVE, and the distance between the two hexes
+      // is the whole effect. Measured on screen: the floor's inks land on
+      // (130,148,125) and (112,168,102) — near enough the same brightness, twenty
+      // units apart in hue, which is a pair the eye cannot resolve at two-pixel
+      // pitch and cannot ignore either. The first draft put them four units apart
+      // (see the renderer's note on which base a tint is pulled from) and the
+      // region came out as a plain grey wood.
+      ground: { color: "#5f9a6d", amount: 0.62 },
+      tuft: { color: "#74b184", amount: 0.6 },
+      crown: { color: "#4a5a7e", amount: 0.6 },
+    },
+    // Same relationship one layer up: the crowns disagree with themselves the way
+    // the ground does, in the other direction, so nothing on screen agrees with
+    // anything.
+    crown: { color: "#5f7355", amount: 0.6 },
+    trunk: { color: "#4b4652", amount: 0.5 },
+    // QUANTISED, and this is the one silhouette in the file drawn as an argument
+    // rather than as a plant. Every other crown here is a curve approximated in
+    // pixels — a taper, a lump, a fall. This one is three flat runs with hard
+    // steps between them: the shape a tree would be if something had rounded it
+    // to the nearest four pixels. Nothing about it is organic and everything
+    // about it is deliberate, which is exactly the sentence the region is making.
+    //
+    // It also keeps `render/palette.test.ts` happy for a reason that is worth
+    // saying out loud: no other region has an outline anything like this, so the
+    // Static can never be mistaken for a wood you have already been in.
+    crownRows: [4, 4, 4, 4, 8, 8, 8, 8, 8, 8, 4, 4, 4, 4],
+    // Down beside the trunk, so the block sits on the tree.
+    crownOverlap: 2,
+    // Stone in the wrong colour too, and shards — a rock that came out of this
+    // ground at a right angle. It still gathers into plain `stone`, like every
+    // other rock in the world.
+    stone: { tint: { color: "#6d6b84", amount: 0.42 }, shapes: ["shard", "broken", "shard"] },
+    // THE PIXEL NOISE. Small, dim, everywhere, and the only mote in the file that
+    // does not travel — see MoteKit §noise. The density is the highest in the
+    // table and it is still under a tenth of cells: a screen of this is a dozen
+    // specks appearing and disappearing at the corner of your eye, which is what
+    // a bad signal looks like. Turn it up and the region becomes a snowstorm,
+    // which is weather, which this game does not have.
+    motes: {
+      density: 0.09,
+      color: "#c6c2d8",
+      // IT HAS TO MOVE A LITTLE OR IT IS A DECAL. One pixel over a whole cycle,
+      // which the jump below swamps entirely — this is here so the mote is air
+      // rather than a mark on the ground, and there is a test that every kit
+      // drifts.
+      drift: 1,
+      sway: 0,
+      // A THIRD OF A SECOND, which is a rate nothing else in the file goes near
+      // and the reason it may: this is not a body moving (see MoteKit's "anything
+      // brisk reads as an insect"), it is a sample being taken. Slower and it
+      // reads as slow snow; faster and it stops resolving into individual pixels
+      // and becomes a grey haze.
+      period: 0.34,
+      shape: "noise",
+      size: 1,
+    },
+    // The floor's own wrongness, in marks: short vertical runs and a lone pixel,
+    // in the crown ink rather than the tuft's. Nothing here is a plant, and that
+    // is the point — it is what the ground cover would look like if you could not
+    // quite make it out.
+    decor: {
+      density: 0.07,
+      marks: [["x", "x"], ["x.", ".x"], ["xx"], ["x"]],
+    },
+    // Mushrooms in the wrong colour, like everything else. Still a `mushroom`.
+    mushroomCap: { cap: "#8f86a8", lit: "#b3aac9", gills: "#5a5470" },
   },
 
   /** The one you go and find. Not rolled from the field like the others — it is
@@ -2460,15 +3034,15 @@ export const FIELD_WEIGHTS: [BiomeId, FieldWeight][] = [
   // Ordinary ground stays the commonest single thing in the world even at the
   // plateau, which is the tuning knob for how strange the far country feels: a
   // world with no familiar ground in it has stopped having anywhere to be from.
-  ["meadow", { near: 2, far: 0.7 }],
-  ["pinewood", { near: 1, far: 0.4 }],
-  ["birch", { near: 1, far: 0.4 }],
-  ["scrub", { near: 1, far: 0.4 }],
+  ["meadow", { near: 2, far: 0.88 }],
+  ["pinewood", { near: 1, far: 0.5 }],
+  ["birch", { near: 1, far: 0.5 }],
+  ["scrub", { near: 1, far: 0.5 }],
   // The fen decays least of the four. It is already the odd one near town — murky,
   // mushroomy, standing water — so it is the hinge between the ordinary regions
   // and the strange ones, and the drift outward reads as continuous rather than as
   // one set of regions being swapped for another.
-  ["fen", { near: 1, far: 0.5 }],
+  ["fen", { near: 1, far: 0.62 }],
   // The strange three, in the order they take over. Dusk is the commonest because
   // it is the mildest — a familiar wood at the wrong hour — so the first thing the
   // far country says is "the light is off here", not "you are somewhere else".
@@ -2481,11 +3055,11 @@ export const FIELD_WEIGHTS: [BiomeId, FieldWeight][] = [
   // frozen for saves, not because there is anything odd about a plain — and rows
   // like that appended flat would have quietly taken the plateau down to a third
   // strange. Scaled instead, every time one arrives: 5.3 of 10.6, which is half.
-  ["dusk", { near: 0, far: 2.1 }],
-  ["glimmer", { near: 0, far: 1.8 }],
+  ["dusk", { near: 0, far: 2.4 }],
+  ["glimmer", { near: 0, far: 2.0 }],
   // The rarest, because it is the loudest. Glass is the one you walk into and
   // stop, and a plateau made mostly of it would be wallpaper by the second one.
-  ["glass", { near: 0, far: 1.4 }],
+  ["glass", { near: 0, far: 1.6 }],
   // APPENDED, AND THAT IS A COMPATIBILITY RULE RATHER THAN A HABIT. `near: 0`
   // contributes nothing to the cumulative walk at strangeness 0, so the near
   // world still rolls the old six-slot array tile for tile — which is the whole
@@ -2503,17 +3077,41 @@ export const FIELD_WEIGHTS: [BiomeId, FieldWeight][] = [
   // and that is the number DESIGN §"the world gets stranger" is actually about:
   // a world with none of where you came from in it has stopped having anywhere to
   // be from. Adding a far row means scaling, never appending flat.
-  ["granite", { near: 0, far: 1.0 }],
+  //
+  // THE THIRD TIME THIS COLUMN HAS BEEN SCALED, and the arithmetic is written out
+  // here so the fourth person does not have to re-derive it. Two ordinary far rows
+  // arrived at once — a salt flat and a marsh — which took the ordinary-far group
+  // from three rows to five. Appended flat they would have pushed the strange
+  // three from a half of the plateau down to about 44% and the familiar five from
+  // a quarter to a fifth, which is the drift DESIGN §Biomes forbids: the far
+  // country getting blander every time it gets bigger.
+  //
+  // So the whole column was restated to hold the two numbers the doc names. At the
+  // plateau: 6.0 strange, 3.0 familiar, 3.0 ordinary-far, 12.0 total — a half, a
+  // quarter and a quarter, which is what it was before these two rows and what it
+  // must be after the next one.
+  ["granite", { near: 0, far: 0.7 }],
   // The heaviest of the three ordinary far rows, because it is the one that is
   // easiest to be in: open, crossable, and with something on the horizon in every
   // direction. A plateau you can walk across wants somewhere to walk.
-  ["prairie", { near: 0, far: 1.1 }],
+  ["prairie", { near: 0, far: 0.8 }],
   // The cinders are the rarest of the ordinary far rows and the only one that is
   // rare on purpose rather than by arithmetic. It is the loudest thing out there
   // that is not one of the strange three — black ground, dead trees, fire in the
   // seams — and the glass wood's note applies to it word for word: a plateau made
   // mostly of the loudest thing is wallpaper by the second one.
-  ["cinder", { near: 0, far: 0.8 }],
+  ["cinder", { near: 0, far: 0.55 }],
+  // THE MARSHES, at about the middle of the ordinary far rows. Wet country is the
+  // one kind of place the near world already has (the fen), so a player meeting
+  // this has something to compare it against — which is exactly what makes the
+  // difference between damp ground with pools in it and an archipelago legible,
+  // and the reason it can afford to be commoner than the flats.
+  ["marsh", { near: 0, far: 0.65 }],
+  // THE RAREST ROW IN THE TABLE, under even the cinders, and the third region to
+  // be rare because it is loud rather than because the arithmetic worked out that
+  // way. The glass wood's note is the argument and it is stronger here: a plateau
+  // with much white nothing in it is not a strange world, it is an unfinished one.
+  ["salt", { near: 0, far: 0.3 }],
 ];
 
 export function biomeDef(id: BiomeId): BiomeDef {

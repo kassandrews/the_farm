@@ -24,7 +24,14 @@
 
 import { BIOMES, type BiomeId } from "../content/biomes";
 import { newWorld } from "../sim/game";
-import { biomeAt, blossomCentre, generatedTile, redwoodCentre, calderaCentre } from "../sim/world";
+import {
+  biomeAt,
+  blossomCentre,
+  generatedTile,
+  redwoodCentre,
+  calderaCentre,
+  staticCentre,
+} from "../sim/world";
 import { tileDef } from "../content/tiles";
 import { Renderer } from "../render/renderer";
 import type { WorldState } from "../sim/types";
@@ -126,6 +133,15 @@ function findRegion(seed: number, id: BiomeId): { x: number; y: number } | null 
     }
     return null;
   }
+  // The Static, same argument again: a sixteen-tile disc six hundred tiles out is
+  // not a thing a ring sweep would ever land on.
+  if (id === "static") {
+    for (let i = 0; i < 8; i++) {
+      const c = staticCentre(seed, spot, i);
+      if (biomeAt(seed, spot, c.x, c.y) === "static") return c;
+    }
+    return null;
+  }
   if (id === "redwoods" || id === "giants") {
     for (let i = 0; i < 8; i++) {
       const c = redwoodCentre(seed, spot, i);
@@ -154,7 +170,14 @@ function findRegion(seed: number, id: BiomeId): { x: number; y: number } | null 
       return d.name === "Water" || d.name === "Shallow water";
     };
     if (wet(x, y)) return false;
-    if (id !== "fen" && (wet(x - 6, y) || wet(x + 6, y) || wet(x, y - 6) || wet(x, y + 6))) {
+    // The marshes are exempt for the fen's reason, harder: a marsh swatch with no
+    // water in it is a picture of the one part of the region that is not the
+    // region. It still has to be dry UNDERFOOT, so the camera stands on an island.
+    if (
+      id !== "fen" &&
+      id !== "marsh" &&
+      (wet(x - 6, y) || wet(x + 6, y) || wet(x, y - 6) || wet(x, y + 6))
+    ) {
       return false;
     }
     return true;

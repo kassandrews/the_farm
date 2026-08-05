@@ -729,6 +729,48 @@ const FAR_OUT_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
   ],
 };
 
+/** The wrong-coloured country, and NOT ONE LINE EXPLAINS IT.
+ *
+ *  The region's own rule (content/biomes.ts §static) is that it is a place and
+ *  not a fault, and this bank is where that is either sold or lost: a villager
+ *  who said "something is broken out there" would file the bug the region spends
+ *  its whole design avoiding, and one who said "how strange, the renderer" would
+ *  be reading the source at you. So everybody here does what a person does with
+ *  something they cannot account for — describes it exactly, declines to explain
+ *  it, and changes the subject to how they felt about being there.
+ *
+ *  No value: there is one Static, however many patches of it there turn out to
+ *  be, and a line that counted them would be a collection. */
+const STATIC_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
+  scholar: [
+    () => "The colours were wrong and I could not tell you which ones ... I checked my notes against the ground twice. The notes were fine.",
+    () => "I have no category for it. None. I walked about in it for an hour being wrong about everything and I enjoyed that far more than I should.",
+  ],
+  dog: [
+    () => "The trees were the WRONG GREEN! Every single one! I checked a LOT of them!",
+    () => "It looked funny out there and it SMELLED completely normal. That's the bit I keep thinking about.",
+    () => "I didn't like it and I want to go back. Both of those! At once!",
+  ],
+  blob: [
+    () => "Wonderful lighting, appalling colour grade ... I have never been so badly lit and I have been lit by a bonfire.",
+    () => "The whole place looked like a room somebody had described to a painter over the telephone.",
+  ],
+  menace: [
+    () => "You walked me somewhere that is doing something, and neither of us knows what ... I did not hate it.",
+    () => "That place is wrong and it is wrong on purpose. I respect that more than I can currently say out loud.",
+  ],
+  gremlin: [
+    () => "Everything out there's the wrong colour so nobody'll notice if a bit of it goes missing. I didn't take any. I THOUGHT about it.",
+    () => "Bits of the air were flickering! Little ones! I tried to catch one and there wasn't one.",
+  ],
+  carrot: [
+    () => "I stood in it a while ... Nothing out there wanted anything from me, including the ground. That was all right.",
+  ],
+  office: [
+    () => "I have looked. There is no form for a place that is the wrong colour, and I am not going to be the one who drafts it.",
+  ],
+};
+
 /** The value is the YEAR, and not one line says it aloud. It is in the log so
  *  that two winters are two memories (sim/memory.ts); a villager announcing the
  *  date would be reading the save file at you. */
@@ -765,6 +807,7 @@ const WINTER_LINES: Partial<Record<AdultForm, ((v: string) => string)[]>> = {
 for (const [kind, table] of [
   ["shower", SHOWER_LINES],
   ["far_out", FAR_OUT_LINES],
+  ["the_static", STATIC_LINES],
   ["winter_came", WINTER_LINES],
   ["answered", ANSWERED_LINES],
 ] as const) {

@@ -52,6 +52,7 @@ import { skyPhaseAt, isNight } from "./time";
 import { roofRoomAt } from "./rooms";
 import { seasonAt } from "./seasons";
 import { FAR_OUT, outFrom } from "./notebook";
+import { biomeAt } from "./world";
 
 /** How close somebody has to be to have been there with you.
  *
@@ -122,6 +123,26 @@ export const MOMENTS: MomentDef[] = [
   //
   // NOT in `oneShot` (see sim/memory.ts): winter is a different winter each
   // time, the same way a festival is a different night each time.
+  // The day you took somebody into the wrong-coloured country. The rarest Moment
+  // there is, by a distance: the Static is sited on a ring at 604 tiles
+  // (sim/world.ts §STATIC), so this cannot happen by accident, cannot happen
+  // early, and cannot happen at all unless you walked somebody most of a day's
+  // travel to look at something that gives you nothing.
+  //
+  // KEYED ON THE REGION AND NOT A RADIUS, which is the opposite call from
+  // `far_out` one entry up — and the difference is what each is about. That one
+  // is about the edge of the arranged world, which is a distance; this is about a
+  // PLACE, and the place is the whole content of it.
+  //
+  // No companion check, for `far_out`'s reason: the presence test in `beside` is
+  // the companion test, and a second one is only a way for the two to disagree.
+  {
+    kind: "the_static",
+    when: (w) =>
+      w.player.layer === "surface" &&
+      biomeAt(w.seed, w.homestead.spot, Math.round(w.player.x), Math.round(w.player.y)) ===
+        "static",
+  },
   {
     kind: "winter_came",
     when: (w, now) => underTheSky(w) && seasonAt(now).id === "winter",

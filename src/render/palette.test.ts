@@ -181,6 +181,37 @@ function dist(a: string, b: string): number {
   return Math.hypot(ar - br, ag - bg, ab - bb);
 }
 
+describe("the regions that are drawn wrong", () => {
+  // The Static's two inks (content/biomes.ts §dither). Everything here is a
+  // measurement off the real tint machinery rather than a reading of the hexes,
+  // because a tint is a lerp and the hexes are not what lands on screen — which
+  // is exactly the bug this guards: the first draft applied the second ink to
+  // the FIRST one instead of to the season's own green, and the two came out
+  // four RGB units apart. It measured as "the dither is working" and
+  // photographed as an ordinary grey wood.
+  const GRASS_HEX = "#8bbf5a";
+  const px = (h: string): number[] => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const luma = ([r, g, b]: number[]): number => 0.299 * r + 0.587 * g + 0.114 * b;
+
+  for (const b of Object.values(BIOMES)) {
+    if (!b.dither) continue;
+    it(`${b.id} states two inks the eye cannot resolve and cannot ignore`, () => {
+      const one = px(mixHex(GRASS_HEX, b.ground));
+      const two = px(mixHex(GRASS_HEX, b.dither!.ground));
+      const apart = Math.hypot(one[0] - two[0], one[1] - two[1], one[2] - two[2]);
+      // FAR ENOUGH APART TO BE FELT. Measured at 35 on the Static; under about
+      // twenty and the ground is one colour with a rounding error in it.
+      expect(apart, `${b.id}: the two inks are the same colour`).toBeGreaterThan(20);
+      // AND CLOSE ENOUGH IN VALUE TO BE UNRESOLVABLE, which is the half that
+      // makes it a bitrate rather than a texture. Two colours at different
+      // brightness dither into visible stipple — light and shade, which reads as
+      // dappling; two at one brightness dither into an unstable third colour,
+      // which is what a picture short of a bit looks like. Measured at 3.7.
+      expect(Math.abs(luma(one) - luma(two)), `${b.id}: one ink is brighter`).toBeLessThan(14);
+    });
+  }
+});
+
 describe("crown silhouettes", () => {
   it("gives every biome a shape, and the meadow the one the game always drew", () => {
     // The meadow's tree is the town's tree. If this changes, the view from the

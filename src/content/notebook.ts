@@ -44,6 +44,9 @@ export type ObservationId =
   | "the-long-grass"
   | "the-cinders"
   | "the-caldera"
+  | "the-salt-flats"
+  | "the-marshes"
+  | "the-static"
   | "the-redwoods"
   | "the-giants"
   | "the-sea"
@@ -143,6 +146,30 @@ export const OBSERVATIONS: ObservationDef[] = [
     // to be done about it; it is simply written down, with the one practical
     // observation a surveyor would actually make.
     line: "A lake of it, at the middle, still going. I walked round the whole thing at what I judged to be a sensible distance. Nobody has filed anything about this.",
+  },
+  {
+    id: "the-salt-flats",
+    source: "noticed",
+    // The surveyor's register applied to the emptiest place there is: a
+    // measurement, a fact, and no adjective anywhere. The joke is that the one
+    // thing worth recording about somewhere with nothing in it is the nothing.
+    line: "White ground, cracked into plates about six paces across. I counted forty-one plates and then stopped counting. Nothing grows. The air comes up off it rather than down onto it.",
+  },
+  {
+    id: "the-marshes",
+    source: "noticed",
+    line: "More water than ground, and none of it deep enough to matter. Somebody has put stones and a few boards across some of it. They do not go anywhere in particular and neither does anyone.",
+  },
+  {
+    id: "the-static",
+    source: "noticed",
+    // THE ONE THAT MUST NOT EXPLAIN ITSELF. The Notebook is a surveyor's register
+    // and the register's whole discipline is writing down what was seen — so this
+    // records the symptom exactly, declines the theory, and files it. A line that
+    // reached for an explanation would turn the strangest place in the world into
+    // a puzzle with an answer, which is the found places' rule (§secrets are never
+    // spoiled) applied to a region.
+    line: "The colours here are wrong in a way I cannot put a word to. Not faded. Not dark. As though whatever does the colouring has less of it to work with out here. The trees are the worst of it. I have written this down twice and both entries say the same thing, so it is not me.",
   },
   {
     id: "the-redwoods",
