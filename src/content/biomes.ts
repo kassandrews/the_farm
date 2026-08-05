@@ -451,6 +451,31 @@ export interface BiomeDef {
      *  than a landscape, and a short wavelength makes a STEEP field, which turns
      *  the fade below into a cliff however wide the window is. */
     period: number;
+    /** How much of what GROWS survives on the sheet, as a multiplier that reaches
+     *  its full strength where the sheet does. Optional; 1 — nothing thins — which
+     *  is what a sheet that is a different kind of ground rather than an absence
+     *  of it wants (the long grass's swathes).
+     *
+     *  BALD GROUND WITH A BUSH ON IT IS NOT BALD, which is the whole of why this
+     *  exists. The sheet is paint and the scatter is generation, so until now the
+     *  two knew nothing about each other: the scrub's bare dirt came out carrying
+     *  exactly as many bushes as the turf beside it, which reads as a stain on the
+     *  ground rather than as ground with nothing on it.
+     *
+     *  IT IS THE ONE PLACE PAINT REACHES GENERATION, and it is allowed because it
+     *  stays a total function of (seed, x, y) — the same field, sampled by the
+     *  same call, in a generator that already samples three others. What it costs
+     *  is that a sheet now moves SOLIDITY: a region that grows one where somebody
+     *  has built is a region that can put a bush in a house. Near rows are open for
+     *  this pass by decision (ROADMAP), and a future sheet on a shipped near row
+     *  has to think about it again.
+     *
+     *  PLANTS ONLY, and stones deliberately keep their density. Rock lying on bare
+     *  dirt is desert pavement and rock lying on a granite dome is what a dome
+     *  does; it is the vegetation that has nowhere to put its roots. Thinning both
+     *  would leave a smooth empty patch, which is a hole in the ground rather than
+     *  a place in it. */
+    bare?: number;
     /** Where the rock starts and where it is complete, as values of the field.
      *  The field is bilinear value noise, so it is bell-shaped rather than flat:
      *  a tenth of it is over 0.8 and a quarter over 0.7, which is why these are
@@ -1393,6 +1418,13 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       period: 22,
       from: 0.40,
       to: 0.72,
+      // A FIFTH OF THE PLANTS, which is what makes it bald rather than stained.
+      // Not zero: a bush hanging on in the middle of a bare patch is the thing
+      // that says the patch is dry rather than paved, and an empty circle with a
+      // hard population edge would read as a clearing somebody made. The stones
+      // stay — dirt with stones on it is desert pavement, and it is what stops
+      // this being a hole in the ground.
+      bare: 0.2,
     },
     // Dry twigs, pale grit, and one thorn bush. No flowers: this is the row that
     // reads as parched, and a bloom would undo it — the thistle in spring is the
@@ -1989,6 +2021,12 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       period: 33,
       from: 0.36,
       to: 0.7,
+      // A THIRD, AND NOT A FIFTH LIKE THE SCRUB'S. Bare rock is harder ground than
+      // bare dirt, but this region's whole picture is the one pine standing on the
+      // dome — a tree growing where you can see it has no business growing — so
+      // the sheets have to keep enough of them to put one there. Any lower and the
+      // rock is empty; any higher and there is nothing remarkable about the tree.
+      bare: 0.35,
     },
     // A narrow tiered conifer, stepped like the pinewood's and a pixel thinner
     // at the shoulders: a tree with room on every side does not have to reach,

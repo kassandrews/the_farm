@@ -7785,6 +7785,17 @@ render-path or scatter-free.
    *(Three regions now use `sheet` — bald ground, swathes, bare rock. A fourth
    should have to argue: it is the only tool for large-scale ground variation, and
    a tool that answers every question stops being an answer.)*
+
+   **And a sheet now thins what grows on it** (`sheet.bare`), because bald ground
+   with a bush on it is not bald — it is a stain. This is the one place paint
+   reaches generation: the same field, sampled by the same call, in a generator
+   that already samples three others. It moves SOLIDITY, which is only affordable
+   because the near column is open for this pass. Scrub 0.2, granite 0.35 (the
+   rock keeps enough trees for the lone-pine-on-a-dome picture the row is for),
+   long grass unset — its swathes are more grass, not less. **Stones are
+   deliberately exempt**: rock on bare dirt is desert pavement, and thinning both
+   would leave a smooth empty patch, which is a hole in the ground rather than a
+   place in it.
 3. **The granite.** The sheets are the row's whole point and a swatch of it can
    come up with none in frame; its stone list is two shapes on purpose, which
    leaves the ground doing all the work alone.

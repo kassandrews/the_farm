@@ -411,15 +411,36 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     // to in order to get away from trees. The spot now bends the biome FIELD
     // instead (`biomeAt`), which puts a treeline where the town's meadow ends,
     // about thirty tiles out, and leaves the far country alone.
+    // WHAT THE BARE GROUND WILL CARRY. Where a region's sheet says the ground is
+    // dirt or rock rather than turf, the things that GROW thin out on it — see
+    // content/biomes.ts §sheet `bare`. One multiplier, applied to every plant and
+    // to none of the stones, and 1 for every region that does not ask.
+    //
+    // Sampled off the same field the paint uses, so the bald patch you can see is
+    // the bald patch that is empty. Reading the two from different fields would be
+    // two facts about one place, which is how the mailbox ended up with its flag
+    // up on an empty box.
+    //
+    // THE ONE PLACE THEY CAN DISAGREE is a region border, and it is small enough
+    // to leave: the paint scales a sheet by the region's share and may drop it
+    // altogether (render/palette.ts §sharpenRegions, the granite's outcrop rule),
+    // where this reads the field raw off whichever region the cell's flora rolled
+    // from. So a cell just outside the rock can be thinned as though it were on
+    // it. That is the same dither the treeline already runs on — the cell grew as
+    // if it were granite, so it is thin as if it were granite — and the honest
+    // alternative, painting rock where no rock is, would be worse.
+    const kit = grew.sheet;
+    const thin =
+      kit?.bare === undefined ? 1 : 1 - (1 - kit.bare) * sheetAt(seed, x, y, kit);
     const treeRoll = hash2(x, y, seed ^ 0x7a11) / 4294967296;
-    const density = NODES.tree.density * grew.trees;
+    const density = NODES.tree.density * grew.trees * thin;
     if (treeRoll < density) return TREE;
     // Shrubs, on their own hash and AFTER the trees — a cell that grew a tree
     // stays a tree, so turning shrubs up in a region thickens its undergrowth
     // instead of thinning its canopy. Zero in every region that doesn't ask.
     if (
       grew.shrubs &&
-      hash2(x, y, seed ^ 0x5e2b) / 4294967296 < NODES.shrub.density * grew.shrubs
+      hash2(x, y, seed ^ 0x5e2b) / 4294967296 < NODES.shrub.density * grew.shrubs * thin
     ) {
       return SHRUB;
     }
@@ -448,7 +469,7 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
 
     // Ground clutter, on its own hashes so turning it up somewhere doesn't
     // reshuffle where that region's trees stand.
-    if (grew.mushrooms > 0 && hash2(x, y, seed ^ 0x3f07) / 4294967296 < grew.mushrooms) {
+    if (grew.mushrooms > 0 && hash2(x, y, seed ^ 0x3f07) / 4294967296 < grew.mushrooms * thin) {
       return MUSHROOM;
     }
   }
