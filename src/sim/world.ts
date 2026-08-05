@@ -1541,6 +1541,16 @@ export interface RegionPart {
   id: BiomeId;
   def: BiomeDef;
   w: number;
+  /** True on the share that is BARE ROCK rather than the region's turf — the
+   *  granite's sheets, split out below.
+   *
+   *  Carried because the render path has to be able to tell the two apart:
+   *  `sharpenRegions` gives an outcrop a different edge from the turf around it
+   *  (content/biomes.ts §edge), and both shares wear the same `id` by
+   *  construction — a sheet is the same region in a different state, which is
+   *  exactly why it was split rather than overlaid. Nothing in generation reads
+   *  it; `scatterRegion` walks `id`, and both shares answer the same. */
+  bare?: boolean;
 }
 
 /** 1 well inside an edge, 0 well outside, 0.5 exactly on it. `d` is signed
@@ -1721,7 +1731,12 @@ export function regionParts(
     if (!kit) return [p];
     const s = sheetAt(seed, x, y, kit);
     if (s <= 0) return [p];
-    const bare = { ...p, def: { ...p.def, ground: kit.ground, tuft: kit.tuft }, w: p.w * s };
+    const bare = {
+      ...p,
+      def: { ...p.def, ground: kit.ground, tuft: kit.tuft },
+      w: p.w * s,
+      bare: true,
+    };
     return s >= 1 ? [bare] : [{ ...p, w: p.w * (1 - s) }, bare];
   });
 

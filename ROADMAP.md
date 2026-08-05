@@ -7698,6 +7698,38 @@ and the cinders and the caldera take the second.
   sets the amount to zero or swaps the field for a constant — an edit every other
   assertion would sail past.
 
+### The fifth pass: rock does not get greener
+
+Asked what the granite's edges were doing, and the photograph answered: a sheet of
+bare rock running up to the border came out as **ten tiles of sage** — the rock's
+grey mixed with the neighbour's green, which is neither rock nor turf and is a
+colour this world does not otherwise contain. Rock is not a surface that shades
+off; it is a thing, and soil either covers it or does not.
+
+`edge: "outcrop"` is the third treatment, and the only one that is about a SHARE
+of a region rather than the region:
+
+- **The sheet stops being diluted and starts being rarer.** Each outcrop keeps its
+  own colour; the field has to be stronger to put one down the further out the
+  region's share falls (`OUTCROP_FLOOR` 0.32, `OUTCROP_RETREAT` 0.62), so the
+  margin comes out as rock still poking through turf past where the rock country
+  stops, thinning to the last one.
+- **The sheet's strength is recovered by division, not re-sampled.** The bare
+  share was split off as `region weight × field`, so dividing it back out gives
+  the field undiluted — which is the number the decision has to be made on, since
+  the diluted one falls simply because you are near a border, which is not a thing
+  rock does. `RegionPart.bare` marks the share; nothing in generation reads it
+  (`scatterRegion` walks `id`, and both shares answer the same).
+- **Inside the region, nothing changed.** A sheet's own soft window is deliberate
+  — turf to bare rock is a bigger colour change than most borders make, and a
+  narrow window is a cliff in the middle of the country — and the existing
+  no-steps sweep still guards it.
+- **The test asserts the absence of the middle**: in the border zone a tile is
+  rock or it is not, and nothing may land between. Measured 116 rock tiles with
+  everything else 50+ away and the band from 10 to 45 empty. It also asserts the
+  rock is still THERE, since a treatment that deleted every sheet near a border
+  would pass the first half.
+
 ### Loose ends
 
 - **The marsh coastline is blocky**, and inherently so: any waterline quantised

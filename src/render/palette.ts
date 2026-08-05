@@ -15,7 +15,7 @@
 import type { TileDef, TileId } from "../content/tiles";
 import { GRASS, MUSHROOM } from "../content/tiles";
 import type { SeasonDef } from "../content/seasons";
-import type { BiomeDef, Tint } from "../content/biomes";
+import type { BiomeDef, BiomeId, Tint } from "../content/biomes";
 
 /** Everything that varies by hour and by month, for one frame. */
 export interface ScenePalette {
@@ -106,6 +106,19 @@ export function mixHex(base: string, tint: Tint): string {
 /** "Leave it alone", for a part that has nothing to say about a colour. */
 const NO_TINT: Tint = { color: "#000000", amount: 0 };
 
+/** How strong a sheet's field must be to put bare rock down inside a border
+ *  zone, and how much stronger again by the far side of it (content/biomes.ts
+ *  §edge, `outcrop`).
+ *
+ *  A THIRD, CLIMBING TO NEARLY ALL OF IT. The floor is what stops the border
+ *  zone growing a haze of weak sheet where the country inside has a gradient;
+ *  the climb is the thinning itself, and at the far edge only the middle of a
+ *  large sheet is still rock. Both were read off the screen rather than chosen:
+ *  the failure they are tuned against is a sheet that stops dead in a straight
+ *  line, which happens when the floor is high and the climb is short. */
+const OUTCROP_FLOOR = 0.32;
+const OUTCROP_RETREAT = 0.62;
+
 /** Resolve any region that does not fade at its edge (content/biomes.ts §edge),
  *  BEFORE the shares are blended.
  *
@@ -134,13 +147,44 @@ const NO_TINT: Tint = { color: "#000000", amount: 0 };
  *
  *  Untouched when nothing in the neighbourhood has an edge, which is every tile
  *  in the world but a few hundred per region that does. */
-export function sharpenRegions<T extends { def: BiomeDef; w: number }>(
+export function sharpenRegions<T extends { id: BiomeId; def: BiomeDef; w: number; bare?: boolean }>(
   parts: T[],
   fray = 0,
 ): T[] {
   if (parts.length === 1) return parts;
   const edged = parts.filter((p) => p.def.edge);
   if (edged.length === 0) return parts;
+
+  // AN OUTCROP THINS RATHER THAN DIMMING, and it is the only mode that looks at
+  // one SHARE of a region rather than at the region (content/biomes.ts §edge).
+  //
+  // The sheet's own strength is recoverable without re-sampling the field: the
+  // bare share was split off as `region weight × field`, so dividing it back out
+  // gives the field undiluted. That is the number the decision has to be made on
+  // — the diluted one is the bug, since it falls simply because you are near a
+  // border, which is not a thing rock does.
+  const rock = edged.find((p) => p.def.edge === "outcrop");
+  if (rock) {
+    const own = parts.filter((p) => p.id === rock.id);
+    // Inside the region there is nothing to resolve: every share is this region's,
+    // and a sheet's soft window in there is deliberate (§sheet).
+    if (own.length === parts.length) return parts;
+    const total = own.reduce((n, p) => n + p.w, 0);
+    const bare = own.find((p) => p.bare);
+    if (bare && total > 0) {
+      const field = bare.w / total;
+      // How strong the field has to be to put rock down here: a floor everywhere
+      // in the border zone, climbing as the region's share falls away. At the far
+      // side only the middles of the biggest sheets survive, and then nothing.
+      const need = OUTCROP_FLOOR + (1 - total) * OUTCROP_RETREAT;
+      if (field >= need) return [{ ...bare, w: 1 }];
+    }
+    // No rock on this tile: the sheet share goes, and the region's turf blends
+    // with its neighbours exactly as any other pair of turfs does.
+    const rest = parts.filter((p) => !p.bare);
+    const left = rest.reduce((n, p) => n + p.w, 0);
+    return left > 0 ? rest.map((p) => ({ ...p, w: p.w / left })) : parts;
+  }
 
   // The heaviest of the edged regions, AFTER the fray is added — two of them can
   // meet (a caldera sited in the cinders is the case that exists), and only one

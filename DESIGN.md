@@ -492,10 +492,18 @@ There are two ways a place ends, and they are not the same picture:
   all-or-nothing answer with a low-frequency field pushing the line a few tiles in
   and out along its length. A blend across a burn says the fire faded out, which
   fire does not do; a straight line says somebody mowed it.
+- **An outcrop.** The granite: what ends here is not a surface but a *thing*, and
+  rock does not get greener as you walk away from it — soil covers it or it does
+  not. So its bare sheets stop being diluted at the border and start being
+  **rarer**: each outcrop keeps its own colour, and the ground has to be more
+  strongly rock to put one down the further out you are. Country interfingering,
+  which is what the margin of rock country does.
 
 A declared edge is **colour only, and never moves a border**. What answers sharply
 is the ground; the flora still dithers across, so the trees thin out over the
-approach to a pan and live ones stand inside the margin of a burn. And anything
+approach to a pan and live ones stand inside the margin of a burn. A region's own
+*internal* variation keeps its soft edges either way — a sheet of rock inside the
+granite still has soil thinning over it, because that gradient is a real one. And anything
 that *flows* across it still fades, because water carries the place downstream
 where the ground cannot.
 

@@ -658,6 +658,22 @@ export interface BiomeDef {
    *    along its length. A blend across a burn says the fire faded out, which is
    *    not a thing fire does; a straight line says somebody mowed it.
    *
+   *  - `outcrop` — the granite. Neither of the above, because what ends here is
+   *    not a surface but a THING: bare rock. Rock does not get greener as you
+   *    walk away from it; soil covers it, or it does not. So at this region's
+   *    border its sheets stop being diluted and start being RARER — each outcrop
+   *    keeps its own colour and the field has to be stronger to put one down the
+   *    further out you are, until the last one. Country interfingering, which is
+   *    what a batholith's margin does: a scatter of rock still poking through
+   *    turf well past where the rock country stops.
+   *
+   *    It reaches the SHEETS ONLY. The granite's turf is turf, and turf fading
+   *    into turf is precisely the case the blend was written for, so it keeps the
+   *    ordinary fade. And inside the region nothing changes at all — a sheet's
+   *    own soft window is deliberate (see §sheet: turf to bare rock is a bigger
+   *    colour change than most borders make, and a narrow window puts a cliff in
+   *    the middle of the country).
+   *
    *  The field is the whole of why `fray` is not simply noise. A per-cell roll
    *  across the transition is a dithered gradient — visibly a computer easing
    *  between two colours — where a field several tiles long comes out as lobes,
@@ -673,7 +689,7 @@ export interface BiomeDef {
    *
    *  And anything that FLOWS still fades (see `waterTint`): a stream carries the
    *  pan downstream, so the milk has somewhere to go. Crust and ash do not flow. */
-  edge?: "hard" | "fray";
+  edge?: "hard" | "fray" | "outcrop";
 
   /** THE COLOUR OF THE WATER THAT CROSSES THIS REGION. Optional, and the salt
    *  flats are the only row with one.
@@ -1824,6 +1840,12 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
    *  rather than relearning. */
   granite: {
     id: "granite",
+    // ROCK DOES NOT GET GREENER. At this region's border the sheets thin instead
+    // of dimming — see BiomeDef.edge §outcrop. Found on screen: with the ordinary
+    // fade, a sheet running up to the border came out as ten tiles of sage, which
+    // is neither rock nor turf and is a colour this world does not otherwise
+    // contain.
+    edge: "outcrop",
     name: "the granite",
     // The emptiest canopy in the game by a distance — a quarter of the meadow's,
     // and less than the scrub's. A tree out here is an event: one Jeffrey pine

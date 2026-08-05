@@ -939,6 +939,59 @@ describe("the turf blends across a region border", () => {
     }
   });
 
+  it("never dilutes an outcrop, because rock does not get greener", () => {
+    // THE THIRD EDGE TREATMENT (content/biomes.ts §edge, `outcrop`), and the one
+    // that is about a share of a region rather than the region. With the ordinary
+    // fade, a sheet of bare rock running up to the granite's border came out as
+    // ten tiles of SAGE — the rock's grey mixed with the neighbour's green, which
+    // is neither rock nor turf and is a colour this world does not otherwise
+    // contain. Rock does not get greener as you walk away from it; soil covers
+    // it, or it does not.
+    //
+    // So this asserts the ABSENCE OF THE MIDDLE. In the border zone — tiles where
+    // the granite has a share and somebody else does too — a tile is either bare
+    // rock or it is not, and nothing may land between the two. Measured: 116
+    // tiles of rock, everything else 50 or further from it, and the band between
+    // 10 and 45 empty.
+    //
+    // Inside the region is deliberately excluded, and that is not a loophole: a
+    // sheet's own soft window is the thing §sheet argues for at length, and the
+    // test below is what protects it.
+    const px = (h: string): number[] => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const rock = px(
+      biomeSkin(tileDef(GRASS), GRASS, {
+        ...BIOMES.granite,
+        ground: BIOMES.granite.sheet!.ground,
+      }).color,
+    );
+    let stone = 0;
+    let zone = 0;
+    for (const seed of [3, 17, 93]) {
+      for (let r = 900; r < 1500; r += 7) {
+        const x0 = Math.round(Math.cos(r) * r);
+        const y0 = Math.round(Math.sin(r) * r);
+        if (biomeAt(seed, SPOT, x0, y0) !== "granite") continue;
+        for (let i = -20; i < 40; i++) {
+          const raw = regionParts(seed, SPOT, x0 + i, y0);
+          const mine = raw.some((p) => p.id === "granite");
+          // The border zone proper: this region and somebody else, both present.
+          if (!mine || raw.every((p) => p.id === "granite")) continue;
+          zone++;
+          const c = px(
+            biomeSkin(tileDef(GRASS), GRASS, blendRegions(sharpenRegions(raw))).color,
+          );
+          const d = Math.hypot(c[0] - rock[0], c[1] - rock[1], c[2] - rock[2]);
+          if (d < 10) stone++;
+          else expect(d, `sage at ${x0 + i},${y0} on seed ${seed}`).toBeGreaterThan(45);
+        }
+      }
+    }
+    expect(zone, "no granite border zone found to sweep").toBeGreaterThan(50);
+    // And there is still rock out there: an edge treatment that simply deleted
+    // every sheet near a border would pass everything above.
+    expect(stone, "the outcrops all vanished at the border").toBeGreaterThan(20);
+  });
+
   it("never steps out on the granite either, where the ground itself changes", () => {
     // THE NEAR SWEEP ABOVE CANNOT SEE THIS. It samples ±200 tiles, and the
     // granite is a far row — impossible inside 200 by construction — so the one
