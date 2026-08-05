@@ -374,6 +374,9 @@ export const NOTICED_WHEN: Partial<Record<ObservationId, Trigger>> = {
   "glass-country": (w) => surfaceBiome(w) === "glass",
   "the-fen": (w) => surfaceBiome(w) === "fen",
   "the-blossom": (w) => surfaceBiome(w) === "blossom",
+  "the-granite": (w) => surfaceBiome(w) === "granite",
+  "the-redwoods": (w) => surfaceBiome(w) === "redwoods",
+  "the-giants": (w) => surfaceBiome(w) === "giants",
 
   "the-sea": (w) => beside(w, "sea"),
   "poled-pond": (w) => standingIn(w, "poledpond"),

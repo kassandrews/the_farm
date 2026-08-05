@@ -57,6 +57,11 @@ DESIGN.md, if it's a rule about the game rather than about build order).
 - **Phase 15 — the soundtrack, complete.** Nine generated pieces, day and night
   setlists, and an arrangement that assembles itself as you walk into town. See
   below.
+- **Phase 16 — the granite and the redwoods, complete.** Rock as a landscape
+  (rolled, far, with bare sheets on a long field), and redwood stands sited on a
+  ring that recurs outward — about one in four with a grove of giants at its
+  heart. No schema change; the near world is untouched by construction. See
+  below.
 - **Phase 3f — the museum, complete.** The table, the sim, schema v12, the
   gallery it stands in (v13), Corrigal's panel, the away event, and Margfrom's
   perk. Two wings, donation is a gift that returns nothing, the record has no
@@ -7266,6 +7271,87 @@ Everything about whether it SOUNDS right was settled in a browser, and the two
 bugs found this phase (the autoplay warning, the stiff flat keys) were both
 invisible to the suite. Verify audio changes by listening, and by counting
 oscillator constructions if you need evidence a scheduler is running.
+
+## Phase 16 — the granite and the redwoods (4 Aug 2026)
+
+Two regions, placed two different ways on purpose, and a third that only some
+worlds' redwoods have. `content/biomes.ts` grew three rows (`granite`,
+`redwoods`, `giants`), `sim/world.ts` grew a siting function and a ground field,
+`render/renderer.ts` grew one number. No schema change: biomes are a total
+function of (seed, x, y) and are stored nowhere.
+
+### The settled calls (don't relitigate)
+
+- **The `near` column of `FIELD_WEIGHTS` is frozen, and new rows are APPENDED.**
+  It sums to 6 in table order and reproduces the pre-7a array tile for tile; a
+  row inserted with a near weight re-landscapes every live save, and the failure
+  is a tree standing inside a house somebody already built. Granite is
+  `{ near: 0, far: 1.2 }` at the foot of the table for exactly this reason, and
+  `sim/biome.test.ts`'s parity test is the proof.
+- **What DID move: far terrain.** Adding any far weight changes the total in
+  `rollRegion`, so region identity past ~200 tiles shifts on existing saves.
+  Everything inside 200 is provably untouched. This was accepted knowingly —
+  building 200 tiles out is vanishingly rare, and it is the same class of change
+  Phase 7a itself shipped.
+- **Granite is rolled; the redwoods are sited.** Granite is country you cross —
+  broad, open, rocky — so it belongs to the field. A redwood wood is somewhere
+  you arrive, so it is a disc at a known ring, and it RECURS outward forever on
+  its own ring and spacing (168, then every 191) the way a found place does. One
+  per town would say the world runs out of woods.
+- **One stand in four has giants at its heart, and it is a RATE.** Hashed off the
+  instance's own site, so it is a fact about that wood. No marker, no list, no
+  count, and no last one — DESIGN §Found places' rule arriving inside a region.
+- **The giants are the same wood at a different size.** Identical palette, half
+  the density, `trunkGirth` 2 and a 34-row crown: about 74px, four and a half
+  tiles. Nothing announces the crossing; you notice by looking up. And it chops
+  into the same eight wood, which is the biggest temptation in the file and is
+  now a test.
+- **`LANDMARK_MARGIN` did not move.** The redwood disc is nearly three times the
+  blossom rows' and wants more clearance, but raising that constant re-sites
+  every existing grove, cube and orchard. `onLand` took an optional margin
+  instead; the default path is byte-identical.
+- **Bare rock is PAINT, on a long field.** The granite's sheets (`BiomeDef.sheet`)
+  recolour ground and tuft across patches ~33 tiles wide — no tile, no solidity,
+  no yield. It is the scrub's twice-rejected dry patches done the way this
+  codebase already knows to do it: the failure was that they were CELLS, and the
+  fix is the fen's ponds' fix. Without them the region photographed as a rocky
+  meadow, which is the scrub's sentence in a cooler colour.
+
+### What the screen changed
+
+- **Height alone did not say "giant".** At 26 crown rows a giant read as a fat
+  pole with an ordinary crown on it. `crownRows` is height, so mass needed rows,
+  not width — 34 of them, holding full width for fourteen.
+- **The granite's turf had to go grey before the rock read as rock.** At
+  `#a9aa9c`/0.8 it measured (152,163,133) on screen — greyer than the birches but
+  still plainly a green field. 0.9 of a neutral target closes the red/green gap
+  to about four, and the sheets sit on top of that rather than fighting it.
+- **The redwood floor was olive before it was duff**, and the fix was hue rather
+  than value: green is the stubborn channel, so the target went redder and the
+  amount up to 0.88.
+
+### What the tests changed
+
+- **The disc's fade sized its RADIUS.** Grass to duff is ninety-six levels of
+  green, twice any region border, so it needs twice a border's fade — and a
+  20-tile approach through a 17-tile disc leaves a core of five. The wood grew to
+  24 instead. `§"never steps"` measured the cliff at 14 before that.
+- **A redwood is not a fly agaric host.** The whitelist in
+  `render/palette.test.ts` asked, and "it is a conifer" turned out to be the
+  wrong defence: coast redwood is arbuscular, not ectomycorrhizal. Cream caps.
+- **The step test could not see the granite**, because it sweeps ±200 tiles and
+  the granite is a far row. Its own sweep, run only where a tile is ALL granite —
+  the far country's own borders measure 20 with the sheets off, which is a
+  pre-existing property of extreme tints and would have swamped the measurement.
+- **A wide disc cannot promise four dry rim points.** 4% of stands touch a lake
+  or the sea somewhere on their edge, and a wood coming down to a shore is a good
+  thing to walk into. The test asks that a stand is three-quarters dry and that
+  its centre is somewhere you can stand.
+- **`memoCentre` timed a suite out.** Every other landmark centre is asked once;
+  this one is on `biomeAt`'s path, which runs per visible tile per frame. Two
+  string allocations a tile is enough to blow a 5s budget — hence `standCache`,
+  one world, an array by index.
+
 
 ## Known gaps and loose ends
 

@@ -518,6 +518,46 @@ So the test for anything added to a kit is not "does it fit the palette" but
 **"can you carry it home?"** If you can, it is the mushroom wearing a hat and it
 answers to the mushroom's rules. If you can't, it is free.
 
+### Rolled regions, and sited ones
+
+Most regions are **rolled**: a field decides which one owns a patch of country,
+and you happen into them. A few are **sited** — placed at a real coordinate on
+their own bearing, so you go and find them. The blossom rows were the first and
+are one per town, because being the only one is what makes an arrival able to ask
+to live there.
+
+A sited region may also **recur outward forever**, on a ring and a spacing of its
+own, exactly as a found place does — that is what the redwood stands are. The
+argument is the found places' argument applied to country: one per town says the
+world runs out of woods, on a map that does not run out. Walking further has to
+keep finding more.
+
+And a sited region may have **a heart that only some of them have**. About one
+redwood stand in four holds a grove of giants, decided by a hash of that stand's
+own site. Nothing marks which; you reach it by walking into an ordinary wood and
+continuing. It is the found places' rule about secrets — no pin, no list, no
+count — arriving inside a region rather than beside one. A rate, never a quota:
+there is no last one and nothing anywhere may tell you how many you have seen.
+
+The rules do not bend for any of this. Sited or rolled, near or far, common or
+one in four, a region is colour, density and silhouette, and the biggest tree in
+the world chops into the same eight wood as the smallest.
+
+### Ground that is not turf
+
+A region's ground may vary **within itself**, on a field of its own — bare rock
+in sheets across the granite, tens of tiles wide. It is **paint and nothing
+else**: no tile, no solidity, no yield, nothing to gather, and a house may be
+built on it exactly as on grass.
+
+The wavelength is the whole rule. Bare ground was tried twice as a per-cell roll
+and thrown out both times, because one recoloured cell on open turf is a hard
+square and a scatter of them tiles the ground into a checkerboard. A feature that
+occupies exactly one cell of a continuous surface stops the surface reading as a
+surface (CLAUDE.md §per-cell edges). Put it on a long, smooth field instead and
+nothing about it can line up with the grid — the same answer the fen's ponds and
+the ground roll already arrived at.
+
 ### Living light, and the animals that stay out
 
 The world may hold **light and motion that reads as alive** — a firefly's flash

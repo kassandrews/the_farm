@@ -24,7 +24,7 @@
 
 import { BIOMES, type BiomeId } from "../content/biomes";
 import { newWorld } from "../sim/game";
-import { biomeAt, blossomCentre, generatedTile } from "../sim/world";
+import { biomeAt, blossomCentre, generatedTile, redwoodCentre } from "../sim/world";
 import { tileDef } from "../content/tiles";
 import { Renderer } from "../render/renderer";
 import type { WorldState } from "../sim/types";
@@ -54,7 +54,7 @@ const TOWN_CLEAR = 46;
 /** The rows whose colour comes up with distance — sim/world.ts's `FAR_ROWS`,
  *  named again here rather than exported, because a preview page reaching into
  *  the generator for a private set is a coupling nobody wants to maintain. */
-const FAR = new Set<BiomeId>(["dusk", "glimmer", "glass"]);
+const FAR = new Set<BiomeId>(["dusk", "glimmer", "glass", "granite"]);
 
 /** The clocks worth judging against. Season and day/night both come from `now`
  *  (the renderer resolves its whole palette from it), so this one control moves
@@ -113,6 +113,21 @@ function findRegion(seed: number, id: BiomeId): { x: number; y: number } | null 
   if (id === "blossom") {
     const b = blossomCentre(seed, spot);
     return { x: Math.round(b.x), y: Math.round(b.y) };
+  }
+  // The redwood stands, same argument one size up: sited on a ring that recurs,
+  // so they are asked for rather than searched for. The GIANTS in particular are
+  // a five-tile disc inside a wood — the general search's margin check would
+  // reject the middle of one, and the page would report the largest thing in the
+  // world as absent.
+  if (id === "redwoods" || id === "giants") {
+    for (let i = 0; i < 8; i++) {
+      const c = redwoodCentre(seed, spot, i);
+      if (biomeAt(seed, spot, c.x, c.y) === id) return c;
+      if (id === "redwoods" && biomeAt(seed, spot, c.x + 12, c.y) === "redwoods") {
+        return { x: c.x + 12, y: c.y };
+      }
+    }
+    return null;
   }
   const inside = (x: number, y: number): boolean => {
     if (Math.hypot(x, y) < TOWN_CLEAR) return false;

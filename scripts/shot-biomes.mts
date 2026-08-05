@@ -38,7 +38,7 @@
 //     the only region that generates water can never be found.
 
 import { drive } from "./drive.mjs";
-import { biomeAt, blossomCentre, generatedTile } from "../src/sim/world.ts";
+import { biomeAt, blossomCentre, generatedTile, redwoodCentre } from "../src/sim/world.ts";
 import { BIOMES, type BiomeId } from "../src/content/biomes.ts";
 import { WATER } from "../src/content/tiles.ts";
 import type { HomesteadSpot } from "../src/sim/types.ts";
@@ -47,7 +47,7 @@ const OUT = process.argv[2] ?? ".";
 
 /** The regions distance makes likely rather than the field rolling flat — they
  *  need a much longer spiral to find. See findBiome. */
-const FAR = new Set<BiomeId>(["dusk", "glimmer", "glass"]);
+const FAR = new Set<BiomeId>(["dusk", "glimmer", "glass", "granite"]);
 
 // TIME=2026-07-24T23:00:00 to shoot the same regions after dark. Half of what a
 // region is made of has a night value — bark, crowns, motes, orbs — and the
@@ -83,6 +83,22 @@ function usable(id: BiomeId, x: number, y: number): boolean {
  *  the nearest example, which is also the one a player would actually meet. */
 function findBiome(id: BiomeId): { x: number; y: number } | null {
   if (id === "blossom") return blossomCentre(seed, spot);
+  // THE SITED WOODS. Searching for these by spiral would work and would be the
+  // wrong tool: they are discs at known rings, so ask where they are. The giants
+  // are asked for by walking outward through the instances until one of them has
+  // them — about one in four does, and `usable`'s ten-tile neighbour check would
+  // reject a five-tile disc even when standing in the middle of it.
+  if (id === "redwoods" || id === "giants") {
+    for (let i = 0; i < 8; i++) {
+      const c = redwoodCentre(seed, spot, i);
+      if (biomeAt(seed, spot, c.x, c.y) === id) return c;
+      // The ordinary wood is anywhere off the heart of the same stand.
+      if (id === "redwoods" && biomeAt(seed, spot, c.x + 12, c.y) === "redwoods") {
+        return { x: c.x + 12, y: c.y };
+      }
+    }
+    return null;
+  }
   // THE FAR COUNTRY IS FAR (Phase 7a). Dusk, glimmer and glass are impossible
   // inside 200 tiles and only common past the plateau at 900, so the old 600-tile
   // spiral would have reported them missing on most seeds and been believed. The

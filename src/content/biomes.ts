@@ -117,7 +117,12 @@ export type BiomeId =
   // near town. See FIELD_WEIGHTS at the foot of this file.
   | "dusk"
   | "glimmer"
-  | "glass";
+  | "glass"
+  | "granite"
+  // Sited, not rolled — like the blossom rows, and for the same reason. See
+  // BIOMES.redwoods.
+  | "redwoods"
+  | "giants";
 
 export interface BiomeDef {
   id: BiomeId;
@@ -197,6 +202,27 @@ export interface BiomeDef {
    *  leaves the crown floating above where the tile actually is. */
   trunkHeight?: number;
 
+  /** Extra pixels of trunk EITHER SIDE of the ordinary four. Optional; 0 —
+   *  which is every region but the giants, and is why nothing that already
+   *  stands anywhere moved when this arrived.
+   *
+   *  HEIGHT WAS ONLY HALF OF BIG, exactly as `crownRows` was only half of tall.
+   *  A giant sequoia's whole claim is girth: it is the trunk you cannot get
+   *  round, and drawn at the world's ordinary four pixels a sixty-pixel one
+   *  reads as a very tall ordinary tree — a mast, which is the opposite of the
+   *  thing. Three attempts at saying "giant" with height alone all came out as
+   *  the birch's sentence spoken louder.
+   *
+   *  IT DOES NOT MOVE THE CENTRE. The trunk grows symmetrically about its own
+   *  column, so the crown's midline, the bark grid's midline and the `crownGaps`
+   *  notch all still land where they always did — which is what keeps this one
+   *  number rather than a second coordinate system for wide trees.
+   *
+   *  Keep it small. The trunk is 4 + 2× this, and half a tile (8px) is already
+   *  a tree you cannot see past; wider and the sprite stops being a tree in a
+   *  wood and becomes a wall with leaves on it. */
+  trunkGirth?: number;
+
   /** Dark marks on the bark. Optional, and the birches are the only species so
    *  far that has any — every other trunk here is a plain three-pixel post.
    *
@@ -204,10 +230,15 @@ export interface BiomeDef {
    *  are what makes it read as a birch rather than as a painted pole, and they
    *  are the one detail of this tree everybody can name without being asked.
    *
-   *  A grid per variant, three characters wide (the trunk's own columns) and read
-   *  from the TOP of the trunk down; `x` is a mark, anything else is bark. Rows
-   *  past the end of a grid are blank, so a grid written for one trunk height
-   *  still works on a shorter one.
+   *  A grid per variant, read from the TOP of the trunk down; `x` is a mark,
+   *  anything else is bark. Rows past the end of a grid are blank, so a grid
+   *  written for one trunk height still works on a shorter one.
+   *
+   *  THREE CHARACTERS WIDE, PLUS `trunkGirth` EITHER SIDE — the trunk's own
+   *  columns, whatever they currently are. The grid is centred on the stem, so
+   *  a birch's three stay three and the giants' widen with the tree rather than
+   *  drifting off the side of it. A row longer than the trunk is clipped, which
+   *  is the same forgiveness the row count already had.
    *
    *  SEVERAL VARIANTS, PICKED BY THE TILE — the same argument as ROCK_SHAPES and
    *  the opposite of the orbs'. An orb arrangement repeats because three lights
@@ -369,6 +400,51 @@ export interface BiomeDef {
    *  what every region but the fen grows. See MushroomShape for why this is
    *  allowed to exist at all, and what it is still not allowed to do. */
   mushroomShape?: MushroomShape;
+
+  /** BARE ROCK, IN SHEETS — the ground going stone across patches several tiles
+   *  wide, on a field of its own. The granite's, and nobody else's.
+   *
+   *  IT IS THE SCRUB'S DEAD IDEA, DONE THE WAY THIS FILE ALREADY KNOWS TO DO IT.
+   *  The scrub wanted bare ground twice and the screen threw it out both times,
+   *  because both attempts recoloured a CELL: one square of dirt on open turf is
+   *  a hard-edged square, and a scatter of them tiles the ground into a
+   *  checkerboard (CLAUDE.md §per-cell edges). That is not an argument against
+   *  bare ground. It is an argument against bare ground being a cell — and
+   *  sim/world.ts has answered it twice already, for the fen's ponds and for
+   *  `groundTone`: put the feature on a LOW-FREQUENCY FIELD and let it be tens of
+   *  tiles across, so nothing about it can line up with the grid.
+   *
+   *  WHAT IT MAY NOT BECOME. This is colour and nothing else — no tile, no
+   *  solidity, no yield, nothing to gather, nothing that blocks a build. A player
+   *  may put a house on a granite sheet, and the sheet will be under the floor
+   *  exactly as grass is. The moment it is a tile it is a material, and a region
+   *  that gates a material is the thing DESIGN §Biomes forbids.
+   *
+   *  It replaces `ground` and `tuft` where it is strongest and fades out where it
+   *  is not, blended by the same machinery that fades one region into the next —
+   *  which is what keeps it from having an edge anywhere. */
+  sheet?: {
+    ground: Tint;
+    tuft: Tint;
+    /** Wavelength of the field, in tiles. Big, for two reasons that happen to
+     *  agree: a sheet you can see the whole of from one spot is a boulder rather
+     *  than a landscape, and a short wavelength makes a STEEP field, which turns
+     *  the fade below into a cliff however wide the window is. */
+    period: number;
+    /** Where the rock starts and where it is complete, as values of the field.
+     *  The field is bilinear value noise, so it is bell-shaped rather than flat:
+     *  a tenth of it is over 0.8 and a quarter over 0.7, which is why these are
+     *  stated as thresholds and not as a percentage of ground covered. Measured,
+     *  not guessed — a "cover" number written as a fraction was the first cut and
+     *  it delivered a third of the region at a tenth of the strength.
+     *
+     *  THE WINDOW HAS TO BE WIDE, and `sim/biome.test.ts` §"never steps" is what
+     *  says so rather than taste: turf to bare rock is a bigger colour change
+     *  than most region borders make, and a narrow window lands all of it inside
+     *  a tile or two, which is a cliff — the same cliff the clearing seam was. */
+    from: number;
+    to: number;
+  };
 
   /** What else grows here. Optional, and the meadow deliberately has none. */
   decor?: DecorKit;
@@ -1439,6 +1515,117 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     mushroomCap: { cap: "#cfe0ea", lit: "#eef5fa", gills: "#a3bcc9" },
   },
 
+  /** ROCK AS A LANDSCAPE, which is the one thing the world did not have. The
+   *  scrub is dry ground with a great many stones lying on it; this is ground
+   *  that IS stone, with a little turf caught in it and the odd tree standing
+   *  where a seed found a crack. The distinction is the whole row, and it lives
+   *  almost entirely in `stone` below.
+   *
+   *  IT IS NOT RICHER THAN THE SCRUB AND MAY NEVER BE. Rocks gather into
+   *  `stone`, and this row is far-country (near 0 in FIELD_WEIGHTS), so a
+   *  density above the scrub's would be a payout curve for distance — the exact
+   *  thing the glimmer's mushrooms were pulled back from, and what
+   *  `sim/biome.test.ts` §"gives the far country nothing the near one hasn't
+   *  got" is watching for. 4.5 sits under the scrub's 5 on purpose: what makes
+   *  this the rocky country is not MORE rock, it is that the rock is the
+   *  ground.
+   *
+   *  WHY THERE ARE NO BARE-ROCK CELLS. Because the scrub tried it twice and the
+   *  screen threw it out both times (see its note): a lone recoloured cell on
+   *  open turf is a hard-edged square and a scatter of them checkerboards the
+   *  ground. So the rock is said with the tint, the silhouettes and the near
+   *  absence of trees, which is what the scrub learned and this row inherits
+   *  rather than relearning. */
+  granite: {
+    id: "granite",
+    name: "the granite",
+    // The emptiest canopy in the game by a distance — a quarter of the meadow's,
+    // and less than the scrub's. A tree out here is an event: one Jeffrey pine
+    // standing on a dome, which is the picture everybody has of this country.
+    trees: 0.25,
+    rocks: 4.5,
+    mushrooms: 0,
+    water: 0,
+    // A snag or two. Almost nothing rots at this exposure — what falls out here
+    // stays where it fell and bleaches — but there is little enough standing
+    // that there is little enough to fall, so this is the thinnest deadwood of
+    // any region that has it at all.
+    deadwood: 0.3,
+    // GREY-GREEN, AND MEASURED AGAINST THE TWO PALE ROWS IT COULD BE CONFUSED
+    // WITH. The birches land near (161,199,112) and the scrub near (181,194,114)
+    // — both light, both plainly grass. This lands near (163,174,143): the same
+    // brightness and almost no saturation left, which is what reads as thin turf
+    // over stone rather than as a meadow in the sun. Dropping the value instead
+    // was tried in the head and rejected: dark grey ground is the fen's move, and
+    // this is high open country with the light full on it.
+    ground: { color: "#a8a79a", amount: 0.9 },
+    tuft: { color: "#b8b7a8", amount: 0.85 },
+    // WHAT GROWS IN A CRACK. Mostly nothing — two dots to every mark that is a
+    // plant — and the plant is a cluster rather than a blade, because a tuft in
+    // a rock joint grows as a cushion and not as a stand of grass.
+    tufts: ["dot", "dot", "dot", "cluster"],
+    // Dusty and blue-ish, the way a pine looks in glare. Held hard, for the
+    // pinewood's reason: a conifer does not turn in October, and out here there
+    // is nothing else on screen to carry the season if this one does not refuse
+    // it.
+    crown: { color: "#3c5646", amount: 0.62 },
+    // Weathered pale. A tree that has been rained on and dried out at this
+    // altitude has bark closer to bone than to brown.
+    trunk: { color: "#8a7862", amount: 0.42 },
+    // A long bare bole. The single tree on the rock is a tall thin thing with
+    // its foliage held well above head height, which the ordinary 16 could not
+    // say — and here the trunk is doing what the birch's does, which is carrying
+    // the species on its own.
+    trunkHeight: 20,
+    // THE ROW. Palest stone in the game, pulled nearly twice as hard as the
+    // birches' — this is not a grey rock catching a pale region's light, it is
+    // the thing the region is made of.
+    //
+    // SCOURED, NOT CRACKED, and that is the sentence that separates this from the
+    // scrub for good. The scrub's ground broke: crags, broken halves, split
+    // slabs. This ground was ground down — domes and sheets, rounded and lying
+    // flat, with not one sharp silhouette in the list. Two shapes only, which is
+    // fewer than any other region has, because a landscape scoured by one process
+    // does not offer variety.
+    stone: { tint: { color: "#cbccc2", amount: 0.46 }, shapes: ["slab", "slab", "boulder"] },
+    // THE ROW THE REGION IS ACTUALLY FOR. Without this the granite photographed
+    // as a rocky meadow — pale green turf with a lot of stones lying on it, which
+    // is the scrub's sentence in a cooler colour and not "mostly rock" at all.
+    // Sheets are what makes the ground itself the stone.
+    //
+    // ABOUT A THIRD OF THE REGION, at a wavelength of twenty-seven tiles — rather
+    // more than a screen — so you walk on and off the rock several times crossing
+    // the region and are never looking at the whole of one sheet. Under the
+    // stones' own colour rather than over it: a boulder sitting on a sheet has to
+    // still read as a boulder, so the sheet stays the duller of the two.
+    sheet: {
+      ground: { color: "#c6c7bc", amount: 1 },
+      tuft: { color: "#d0d1c6", amount: 1 },
+      period: 33,
+      from: 0.36,
+      to: 0.7,
+    },
+    // A narrow tiered conifer, stepped like the pinewood's and a pixel thinner
+    // at the shoulders: a tree with room on every side does not have to reach,
+    // and one growing out of rock has not got the water to. Shorter in the crown
+    // than the pines, taller in the trunk, which is the same total height
+    // arranged to read as a lone tree instead of as a stand.
+    crownRows: [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6],
+    // GRIT AND CUSHIONS, and the sparsest kit in the file after the glimmer's.
+    // The ground here is mostly not soil, so most of it has nothing on it at
+    // all — a denser kit would be the one thing on screen arguing with every
+    // other thing on screen.
+    decor: {
+      density: 0.055,
+      accent: "#c6c7bc",
+      marks: [
+        ["oo", "o."], // chips off the sheet
+        [".o", "oo"],
+        ["xx.", "xxx"], // a cushion plant in a joint
+      ],
+    },
+  },
+
   /** The one you go and find. Not rolled from the field like the others — it is
    *  SITED, once per town, on its own bearing, exactly the way the grove and the
    *  cube are (sim/world.ts).
@@ -1517,6 +1704,260 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // A mote has to win against what it FLIES OVER, and here that is a lawn.
     motes: { density: 0.3, color: "#e79ec4", drift: -22, sway: 5, period: 9, size: 2 },
   },
+
+  // --- The redwoods, and what is at the middle of some of them ----------------
+  //
+  // SITED LIKE THE BLOSSOM ROWS, not rolled — see sim/world.ts §redwoodSiteAt —
+  // and for the blossom's reason turned up one notch: a region you happen into
+  // is scenery, and a wood you walked to is a destination. Unlike the blossom
+  // rows there is more than one of them: they recur outward forever on their own
+  // ring and spacing, the way a found place does, so walking further always
+  // finds another and none of them is the last.
+  //
+  // THE LIGHT HERE IS ON THE TRUNKS. Every other dark region in this file solves
+  // its own dimness somewhere else — the glimmer lights the floor, the dusk
+  // lights the air. This one lights neither: the floor is duff and the canopy is
+  // nearly black, and the one bright thing in the whole region is the bark. That
+  // is what a redwood wood actually looks like from inside, and it is the only
+  // sentence here that no other row is already saying.
+
+  /** The wood itself: dense, red-boled, and dim at the floor. */
+  redwoods: {
+    id: "redwoods",
+    name: "the redwoods",
+    // Denser than the pines, which held the record — but note where this row is
+    // NOT allowed to compete: it is sited at a fixed ring rather than rolled by
+    // distance, exactly as the blossom rows are (2.6), so a density above the
+    // field's is a lateral choice and never a payout for walking further. The
+    // far-country test measures the rolled rows and leaves the sited ones alone
+    // for precisely this reason.
+    trees: 2.4,
+    rocks: 0.2,
+    // Damp, shaded, deep litter. Under the fen's, which keeps the record where
+    // it belongs — the mushroomiest place there is stays the mushroomiest place
+    // there is.
+    mushrooms: 0.08,
+    water: 0,
+    // A wood that drops enormous limbs and keeps them. The floor of a real one
+    // is more fallen wood than standing anything, and this is the heaviest here
+    // — a shade over the pinewood's, which had held it.
+    deadwood: 1.25,
+    // SWORD FERN, and the second region ever to ask for undergrowth. The
+    // glimmer's note argued it on knee-height rhyme; this one argues it on the
+    // plainest ecology in the file — the understory of a coast redwood forest is
+    // ferns, to the point that a photograph without them looks wrong.
+    shrubs: 0.5,
+    // DUFF, NOT GRASS. Pulled harder than any ground in the file bar the dusk's,
+    // because the target is a long way from where it starts: grass is
+    // (139,191,90) and green is the stubborn channel, so anything gentler leaves
+    // an olive lawn under near-black trees. This lands near (112,89,53) — bare
+    // needle litter, which is what is actually underfoot in here.
+    ground: { color: "#6a4526", amount: 0.88 },
+    tuft: { color: "#855e38", amount: 0.75 },
+    // What comes up through litter: sorrel and small stuff, with plenty of bare
+    // duff between. No blades — there is no grass on this floor, and the two
+    // uprights would be the one mark claiming otherwise.
+    tufts: ["sprout", "cluster", "dot", "dot"],
+    // Near-black, and held nearly as hard as the pinewood's. A coast redwood is
+    // an evergreen conifer: it does not turn, and the canopy that makes this
+    // region dark has to stay dark in October or the whole reading goes with it.
+    crown: { color: "#1c3328", amount: 0.72 },
+    // THE ONE BRIGHT THING IN THE REGION, and the second trunk in the game to
+    // carry a species on its own (the birches were the first). Cinnamon, pulled
+    // past halfway so it arrives — the note on the birch's white is the lesson
+    // being reapplied: a stem tinted gently keeps most of the base brown and
+    // reads as an ordinary tree standing in a strange wood.
+    trunk: { color: "#a5522c", amount: 0.6 },
+    // The tallest ordinary trunk in the world — half again the birch's, which
+    // held the record at 20. The foliage sits above it in a narrow column, so
+    // what you are mostly looking at, standing in here, is bare red stem going
+    // up out of frame.
+    trunkHeight: 30,
+    // FLUTING, NOT DASHES. The birch's marks are horizontal because a birch's
+    // are; a redwood's bark is furrowed straight up and down, in runs long enough
+    // that at this size the RUN is the drawing and the individual pixels are not.
+    // Broken every few rows, because an unbroken column down a 30px trunk is a
+    // pinstripe and reads as something manufactured.
+    //
+    // Dark red-brown rather than charcoal: the birch's note says a true black
+    // mark on a pale trunk is a hole punched through the tree, and the same
+    // arithmetic applies to a bright one.
+    bark: {
+      color: "#5a2a18",
+      marks: [
+        [
+          "x..", "x..", "x..", "...", "..x", "..x", "..x", "..x", "...", "x..",
+          "x..", "x..", "x..", "...", "..x", "..x", "...", "x..", "x..", "x..",
+          "...", "..x", "..x", "..x",
+        ],
+        [
+          "..x", "..x", "...", "x..", "x..", "x..", "...", "..x", "..x", "..x",
+          "..x", "...", "x..", "x..", "x..", "...", "..x", "..x", "..x", "...",
+          "x..", "x..", "x..", "x..",
+        ],
+        [
+          "x..", "x..", "x..", "x..", "x..", "...", "..x", "..x", "..x", "...",
+          "x..", "x..", "...", "..x", "..x", "..x", "..x", "...", "x..", "x..",
+          "x..", "...", "..x", "..x",
+        ],
+      ],
+    },
+    // A COLUMN, NOT A CONE. Narrow all the way — six half-widths at its widest,
+    // where the fen's willow reaches eight — and held at that width for most of
+    // its length instead of tapering. That is what a crown looks like when it has
+    // grown in competition on every side: there is nowhere to spread, so it goes
+    // up. Twenty-two rows on a thirty-pixel trunk puts the foliage well up the
+    // tree, which is the other half of the same fact.
+    crownRows: [1, 2, 3, 4, 4, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 5, 5, 5, 4, 4, 3, 2],
+    // Wet, dark, and mostly buried. The fewest rocks of any region that has any,
+    // so this is nearly a note about what the floor is NOT.
+    stone: { tint: { color: "#4e4034", amount: 0.34 }, shapes: ["slab", "boulder"] },
+    // NOT RED, AND "IT IS A CONIFER" IS NOT THE DEFENCE IT LOOKS LIKE. The first
+    // draft kept the default cap on exactly that reasoning — fly agaric partners
+    // pine and spruce, a redwood is a conifer, done — and `render/palette.test.ts`
+    // asked the question its whitelist exists to force. Amanita muscaria is
+    // ectomycorrhizal, and coast redwood is one of the few conifers that does not
+    // form ectomycorrhizae at all; it is an arbuscular host. So this is the fen's
+    // situation precisely, wearing a family resemblance to a host as a disguise.
+    //
+    // Cream, and pale for the glass wood's stated reason rather than a new one: a
+    // gathered thing has to be findable, and this is the darkest floor in the
+    // game. Greyer than the glimmer's champagne — that one is lit and this one is
+    // merely light-coloured, which is a distinction the two regions would have to
+    // make if they ever stood next to each other, and they never will.
+    mushroomCap: { cap: "#ddd3b8", lit: "#f2ecd8", gills: "#9c9070" },
+    // REDWOOD SORREL for the decor: Oxalis oregana, which carpets these woods and
+    // essentially only these woods, and is the plant anybody who has stood in one
+    // remembers underfoot. Trefoil — three leaflets round a point — which is a
+    // shape nothing else in this file draws, so it reads as itself even where the
+    // green is nearly lost in the shade.
+    //
+    // The accent does NOT travel with the season (see DecorKit), which is what
+    // lets the one green thing on this floor stay green in October while the duff
+    // and the canopy do whatever the year is doing.
+    decor: {
+      density: 0.14,
+      accent: "#6f9a52",
+      marks: [
+        ["o.o", ".o.", ".x."],
+        ["o.o", ".o.", ".x.", ".x."],
+        [".o.", "o.o", ".x."],
+      ],
+    },
+  },
+
+  /** THE STAND OF GIANTS — the middle of about one redwood wood in four, and the
+   *  thing this whole pair of regions exists to arrive at.
+   *
+   *  IT IS THE SAME WOOD, NOT A DIFFERENT ONE. Every colour here is the
+   *  redwoods' own, unchanged, and that is the entire trick: nothing announces
+   *  that you have crossed into it, because nothing about the light or the
+   *  ground or the palette has changed. What changed is the SIZE of the trees,
+   *  which is a thing you notice by looking up rather than by being told — and
+   *  since there is no UI that names a region (see BiomeDef.name), nothing is
+   *  ever going to tell you.
+   *
+   *  FEWER TREES, NOT MORE. Half the redwoods' density: a grove of giants is
+   *  widely spaced, because each one has taken the space. It also keeps the walk
+   *  through it legible — trees this size at 2.4× would be a wall, and you would
+   *  arrive at the most impressive thing in the world and not be able to see it.
+   *
+   *  AND IT YIELDS EXACTLY WHAT EVERY OTHER TREE YIELDS. Eight wood. There is no
+   *  giant-sequoia material, no finish, no unlock; the reward for finding this is
+   *  that you found it. That is DESIGN §Biomes at its plainest, and this row is
+   *  the biggest temptation in the file to break it. */
+  giants: {
+    id: "giants",
+    name: "the giants",
+    trees: 1.1,
+    rocks: 0.15,
+    mushrooms: 0.06,
+    water: 0,
+    deadwood: 0.8,
+    shrubs: 0.25,
+    // The redwoods' floor, quoted rather than re-derived — see the header. If one
+    // of these ever changes, both change.
+    ground: { color: "#6a4526", amount: 0.88 },
+    tuft: { color: "#855e38", amount: 0.75 },
+    tufts: ["sprout", "cluster", "dot", "dot"],
+    crown: { color: "#1c3328", amount: 0.72 },
+    trunk: { color: "#a5522c", amount: 0.6 },
+    mushroomCap: { cap: "#ddd3b8", lit: "#f2ecd8", gills: "#9c9070" },
+    // Forty pixels of bare stem — two and a half tiles before the foliage starts,
+    // where the tallest thing in the rest of the world is a thirty-pixel redwood
+    // trunk. The sprite comes to about sixty-six, which is four tiles: the largest
+    // thing that has ever been drawn standing on this ground.
+    //
+    // The renderer takes the height from trunk plus crown, so occlusion stays
+    // honest for free, and `hideFactor` already fades any tree tall enough to
+    // swallow the player — which is how a tree this size is allowed to exist at
+    // all without a rule about where it may stand.
+    trunkHeight: 40,
+    // THE POINT OF THE WHOLE ROW. Eight pixels of trunk against everything else's
+    // four: this is the tree you cannot get round, and girth is what says so.
+    // Height alone said "mast" — see the note on `trunkGirth`.
+    trunkGirth: 2,
+    // The redwoods' fluting, widened to the stem it is now on. Same runs, same
+    // breaks, two more furrows — a bigger tree of the same species has more of
+    // the same bark, not different bark.
+    bark: {
+      color: "#5a2a18",
+      marks: [
+        [
+          ".x...x.", ".x...x.", ".x...x.", ".x.....", ".x...x.", ".....x.",
+          ".x...x.", ".x...x.", ".x.....", ".x...x.", ".x...x.", ".x...x.",
+          ".....x.", ".x...x.", ".x...x.", ".x.....", ".x...x.", ".x...x.",
+          ".x...x.", ".....x.", ".x...x.", ".x...x.", ".x.....", ".x...x.",
+          ".x...x.", ".x...x.", ".....x.", ".x...x.", ".x...x.", ".x...x.",
+        ],
+        [
+          "x..x..x", "x..x..x", "x..x...", "x..x..x", "...x..x", "x..x..x",
+          "x..x..x", "x.....x", "x..x..x", "x..x..x", "...x..x", "x..x..x",
+          "x..x..x", "x..x...", "x..x..x", "x..x..x", "x.....x", "x..x..x",
+          "...x..x", "x..x..x", "x..x..x", "x..x...", "x..x..x", "x..x..x",
+          "...x..x", "x..x..x", "x..x..x", "x.....x", "x..x..x", "x..x..x",
+        ],
+        [
+          ".x..x..", ".x..x..", "....x..", ".x..x..", ".x..x..", ".x.....",
+          ".x..x..", ".x..x..", ".x..x..", "....x..", ".x..x..", ".x..x..",
+          ".x.....", ".x..x..", ".x..x..", ".x..x..", "....x..", ".x..x..",
+          ".x..x..", ".x.....", ".x..x..", ".x..x..", ".x..x..", "....x..",
+          ".x..x..", ".x..x..", ".x.....", ".x..x..", ".x..x..", ".x..x..",
+        ],
+      ],
+    },
+    // ROUNDED, AND WIDER THAN A CONIFER IS ALLOWED TO BE. `crownRows` says past
+    // eight the crown overhangs its neighbours and that broadleaves may and
+    // conifers may not — this row takes the exception, on the grounds the rule
+    // was written for: at 1.1× density there ARE no neighbours to overhang. It is
+    // also true of the tree. An old giant sequoia has lost its spire and carries a
+    // heavy rounded head, which is exactly how you tell one from the young ones —
+    // so the silhouette is doing the same job the girth is.
+    // THIRTY-FOUR ROWS, AND THE LENGTH IS THE FIX. At twenty-six it photographed
+    // as a fat pole with an ordinary crown on it — the girth had arrived and the
+    // MASS had not, so beside a plain redwood the giant read as the same tree
+    // with a thicker stem. `crownRows` is height (see its doc), so the way to
+    // make a tree bigger rather than merely wider is to give it more rows, and
+    // hold the full width across most of them: this carries eight half-widths
+    // for fourteen rows in a row, where the wood outside carries six for six.
+    // The whole sprite comes to seventy-four pixels, four and a half tiles.
+    crownRows: [
+      2, 4, 5, 6, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 6, 6, 6, 5, 5, 4,
+      4, 3, 2,
+    ],
+    // The redwoods' sorrel, thinner. More light reaches this floor — the crowns
+    // are enormous but there are half as many of them — and a carpet as thick as
+    // the wood outside would argue with that.
+    decor: {
+      density: 0.1,
+      accent: "#6f9a52",
+      marks: [
+        ["o.o", ".o.", ".x."],
+        ["o.o", ".o.", ".x.", ".x."],
+        [".o.", "o.o", ".x."],
+      ],
+    },
+  },
 };
 
 /** How likely each biome is to be rolled, NEAR the town and FAR from it.
@@ -1576,6 +2017,19 @@ export const FIELD_WEIGHTS: [BiomeId, FieldWeight][] = [
   // The rarest, because it is the loudest. Glass is the one you walk into and
   // stop, and a plateau made mostly of it would be wallpaper by the second one.
   ["glass", { near: 0, far: 1.0 }],
+  // APPENDED, AND THAT IS A COMPATIBILITY RULE RATHER THAN A HABIT. `near: 0`
+  // contributes nothing to the cumulative walk at strangeness 0, so the near
+  // world still rolls the old six-slot array tile for tile — which is the whole
+  // proof `sim/biome.test.ts` rests on, and the reason a new region may never be
+  // inserted into the middle of this table with a near weight on it.
+  //
+  // NOT ONE OF THE STRANGE THREE, and it sits after them to say so: the granite
+  // is an ordinary place, merely a far one. Its weight is deliberately between
+  // the strange rows' and the ordinary rows' decayed ones — enough that the far
+  // country has somewhere plain and enormous in it, not so much that dusk,
+  // glimmer and glass stop being what the plateau is for. They still hold 4.0 of
+  // 7.6 out there, against 4.0 of 6.4 before this row existed.
+  ["granite", { near: 0, far: 1.2 }],
 ];
 
 export function biomeDef(id: BiomeId): BiomeDef {

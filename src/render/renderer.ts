@@ -3754,10 +3754,18 @@ export class Renderer {
     // Four px, not three: a 3px stem under a 40px tree reads as a sapling that
     // grew a hat. The dark side stays one px, so the light/dark split that gives
     // the trunk its round still lands where the bark dashes expect it.
+    //
+    // GIRTH GROWS IT SYMMETRICALLY, and the dark side grows WITH it — a shaded
+    // edge that stayed one pixel on an eight-pixel stem is a line drawn beside a
+    // trunk rather than the far side of a round thing. It is a third of the extra
+    // width plus the original pixel, which keeps the light/dark split near the
+    // quarter it has always sat at.
+    const girth = biome?.trunkGirth ?? 0;
+    const shade = 1 + Math.round(girth / 1.5);
     ctx.fillStyle = biome ? mixHex(bark, biome.trunk) : bark;
-    ctx.fillRect(cx - 2, base - trunkH, 4, trunkH);
+    ctx.fillRect(cx - 2 - girth, base - trunkH, 4 + girth * 2, trunkH);
     ctx.fillStyle = biome ? mixHex(barkDark, biome.trunk) : barkDark;
-    ctx.fillRect(cx + 1, base - trunkH, 1, trunkH);
+    ctx.fillRect(cx + 2 + girth - shade, base - trunkH, shade, trunkH);
 
     // The birches' dashes. Drawn BEFORE the crown, so the rows that hang beside
     // the trunk cover the marks they would overlap rather than leaving scars
@@ -3775,10 +3783,16 @@ export class Renderer {
       // one material in two lights, and a dash that stayed charcoal while the
       // stem went blue would read as a hole in the tree after dark.
       ctx.fillStyle = night ? mixHex(barkArt.color, { color: "#2a3140", amount: 0.45 }) : barkArt.color;
+      // Centred on the stem and as wide as the stem is: three columns on an
+      // ordinary trunk, and `trunkGirth` more either side on a fat one. Bounded
+      // by the ROW's own length rather than by a literal 3, so a grid written
+      // narrow on a wide tree draws what it has instead of reading off its end —
+      // the same forgiveness the row count already had.
+      const cols = 3 + girth * 2;
       for (let r = 0; r < grid.length && r < trunkH; r++) {
         const row = grid[r];
-        for (let c = 0; c < 3; c++) {
-          if (row[c] === "x") ctx.fillRect(cx - 1 + c, base - trunkH + r, 1, 1);
+        for (let c = 0; c < cols && c < row.length; c++) {
+          if (row[c] === "x") ctx.fillRect(cx - 1 - girth + c, base - trunkH + r, 1, 1);
         }
       }
     }

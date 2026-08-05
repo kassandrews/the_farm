@@ -356,21 +356,27 @@ describe("crown silhouettes", () => {
   });
 
   it("keeps bark marks on the bark", () => {
-    // A trunk is three pixels wide and `trunkHeight` tall, and the renderer
-    // indexes the grid straight into that rect. A row of the wrong width would
-    // silently drop its last mark; a grid taller than the trunk would author
-    // dashes nobody ever sees. Both are the kind of miss that survives a suite
-    // and shows up as "the birches look plain" three sessions later.
+    // A trunk is three pixels wide plus `trunkGirth` either side, and
+    // `trunkHeight` tall, and the renderer indexes the grid straight into that
+    // rect. A row of the wrong width would silently drop its last mark; a grid
+    // taller than the trunk would author dashes nobody ever sees. Both are the
+    // kind of miss that survives a suite and shows up as "the birches look plain"
+    // three sessions later.
+    //
+    // THE WIDTH IS DERIVED, NOT LITERAL, since `trunkGirth` arrived with the
+    // giants: a fat trunk wears a wider grid, and the one thing that must stay
+    // true is that the grid is exactly as wide as the stem it is drawn on.
     for (const b of Object.values(BIOMES)) {
       if (!b.bark) continue;
       const trunkH = b.trunkHeight ?? 10;
+      const cols = 3 + (b.trunkGirth ?? 0) * 2;
       // More than one, or a stand is the same tree printed twice — the argument
       // ROCK_SHAPES already had, and bark is far more visible than a rock.
       expect(b.bark.marks.length, b.id).toBeGreaterThan(1);
       for (const grid of b.bark.marks) {
         expect(grid.length, b.id).toBeLessThanOrEqual(trunkH);
         expect(grid.join("").includes("x"), b.id).toBe(true);
-        for (const row of grid) expect(row.length, `${b.id}: "${row}"`).toBe(3);
+        for (const row of grid) expect(row.length, `${b.id}: "${row}"`).toBe(cols);
       }
     }
   });

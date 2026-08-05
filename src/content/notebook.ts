@@ -40,6 +40,9 @@ export type ObservationId =
   | "glass-country"
   | "the-fen"
   | "the-blossom"
+  | "the-granite"
+  | "the-redwoods"
+  | "the-giants"
   | "the-sea"
   | "poled-pond"
   | "ring-grove"
@@ -113,6 +116,24 @@ export const OBSERVATIONS: ObservationDef[] = [
     id: "the-blossom",
     source: "noticed",
     line: "A wood in flower, out of all season and by itself. Nothing around it is in flower. It has not been remarked upon by anybody.",
+  },
+  {
+    id: "the-granite",
+    source: "noticed",
+    line: "Rock, with a little turf over it here and there as a courtesy. The trees stand about one to a hillside and each looks to have picked the spot itself.",
+  },
+  {
+    id: "the-redwoods",
+    source: "noticed",
+    line: "Trees with red bark, standing very close together and going up rather further than the light does. Nothing under them but sorrel, which seems to be enough.",
+  },
+  {
+    id: "the-giants",
+    source: "noticed",
+    // THE BEAT THE WHOLE REGION IS FOR, and it works by not saying anything the
+    // screen has not already said — the trees are the same trees, and the only
+    // new fact is the size. Nobody explains it. It is simply written down.
+    line: "The same trees as the wood outside, at a size the wood outside does not do. I could not get round one of them. I did try, and it is now in the record.",
   },
   {
     id: "the-sea",

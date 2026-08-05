@@ -977,6 +977,154 @@ export function blossomCentre(seed: number, spot: HomesteadSpot): { x: number; y
   );
 }
 
+// --- The redwood stands -------------------------------------------------------
+//
+// SITED LIKE THE BLOSSOM ROWS AND RECURRING LIKE A FOUND PLACE, which is a
+// combination nothing else in the world has, and each half of it is load-bearing.
+//
+// Sited, because a region you happen into is scenery and a wood you walked to is
+// somewhere you went (content/biomes.ts §redwoods). Recurring, because one per
+// town would say the world runs out of them — the found places' argument, made
+// there about secrets and true here about country: walking further has to keep
+// finding more, or the map has an edge made of contents.
+//
+// It reuses the found places' ring arithmetic rather than their table, and the
+// reason it is not simply a FoundDef is that a found place puts TILES down inside
+// somebody else's region. This puts down a region. That is a different kind of
+// thing — it has a palette, a canopy and a floor — so it belongs to the biome
+// field, and the only thing borrowed is how you ask "which instance, if any, is
+// this tile inside".
+
+/** Where the first stand is. Past the blossom rows (72) and past the nearest
+ *  found place (96): everything nearer than this is either named in dialogue or
+ *  small enough to walk through by accident, and this is neither. */
+const REDWOOD_RING = 168;
+
+/** How much further out the next one is. Shared with no other ring in the game,
+ *  for `content/found.ts`'s reason — two things on the same spacing eventually
+ *  pair up at the same radius over and over, and a player who noticed would have
+ *  a rule instead of a place. */
+const REDWOOD_SPACING = 191;
+
+/** How wide a stand is. Well over twice the blossom rows, because this is the
+ *  one region you are meant to be INSIDE rather than at: at radius 9 you can see
+ *  out of a wood from its middle, and a redwood wood whose far edge is visible
+ *  from its near edge is a copse.
+ *
+ *  IT GREW FROM 17 BECAUSE OF THE FADE, and that is the edgeMix docblock's rule
+ *  arriving from the other direction. This floor is the steepest colour change in
+ *  the near world — grass to duff is ninety-six levels of green, twice the widest
+ *  gap any region border has to cross — so it needs the fade to be twice as long
+ *  as a border's, and `sim/biome.test.ts` §"never steps" measured it at 14 before
+ *  it was. A twenty-tile approach through a seventeen-tile disc leaves a core of
+ *  five, which dissolves the thing the edge was drawn around. So the wood is
+ *  bigger instead: fourteen tiles of full-strength redwood at the middle, and the
+ *  rest of the way in is the treeline thickening. */
+export const REDWOOD_RADIUS = 24;
+
+/** How much dry ground one wants around its centre — its own radius and a beach,
+ *  the same sum LANDMARK_MARGIN is for the narrower landmarks. Passed rather than
+ *  raising that constant; see its note for why that is not a style choice. */
+const REDWOOD_MARGIN = 30;
+
+/** The stand of giants at the middle of one, in tiles. Small on purpose: a grove
+ *  of giants is the HEART of a wood and not the wood, so you walk through
+ *  ordinary redwoods to reach it and out through them again. */
+export const GIANTS_RADIUS = 5;
+
+/** One stand in this many has giants in it, by the instance's own hash.
+ *
+ *  IT IS NOT A COUNT AND CANNOT BE ONE. Instances run outward forever, so this
+ *  is a rate rather than a quota — there is no last one, no "three of four
+ *  found", and nothing anywhere that could tell you which kind you are walking
+ *  into until you are standing in it. Four is the number that makes finding one
+ *  a thing that happened rather than a thing that happens.  */
+const GIANTS_IN = 4;
+
+/** Where a redwood stand is, per instance. Memoised per (index, seed, spot) the
+ *  way every landmark centre is — this is arithmetic, not state.
+ *
+ *  Exported for the tests, exactly as `blossomCentre` is: "there is a wood on
+ *  every ring on every seed and none of it is in the sea" is not a question you
+ *  can ask by sweeping tiles, because at these radii the sweep is a million
+ *  points and the wood is a disc of eighteen hundred. */
+export function redwoodCentre(
+  seed: number,
+  spot: HomesteadSpot,
+  index: number,
+): { x: number; y: number } {
+  if (standCache.seed !== seed || standCache.spot !== spot) {
+    standCache.seed = seed;
+    standCache.spot = spot;
+    standCache.at = [];
+  }
+  let at = standCache.at[index];
+  if (at === undefined) {
+    at = onLand(
+      seed,
+      spot,
+      REDWOOD_RING + index * REDWOOD_SPACING,
+      (hash2(index, 0, seed ^ 0x2b9f) / 4294967296) * Math.PI * 2,
+      REDWOOD_MARGIN,
+    );
+    standCache.at[index] = at;
+  }
+  return at;
+}
+
+/** ONE WORLD'S STANDS, IN AN ARRAY — and not `memoCentre`, which is what this
+ *  was first and what made a suite time out.
+ *
+ *  The difference is where it is asked from. Every other landmark centre is
+ *  looked up once per landmark; this one is on `biomeAt`'s path, which runs per
+ *  visible ground tile per frame and per tile of every sweep in the tests. At
+ *  that rate `${tag}:${seed}:${spot}` is two string allocations a tile, and the
+ *  near-world sweep — sixty seeds over a couple of hundred tiles square — spent
+ *  its whole budget building keys for a lookup that hits every time.
+ *
+ *  A session plays one world, so a cache of one (seed, spot) with an array by
+ *  index is the whole requirement, and a test that walks seeds in its outer loop
+ *  refills it once per seed rather than once per tile. */
+const standCache: { seed: number; spot: string; at: ({ x: number; y: number } | undefined)[] } = {
+  seed: -1,
+  spot: "",
+  at: [],
+};
+
+/** Does this instance carry the giants? Its own salted hash, so it is a fact
+ *  about that stand and not about the order you found them in. */
+function hasGiants(seed: number, spot: HomesteadSpot, index: number): boolean {
+  const s = spot.charCodeAt(0);
+  return hash2(index, s, seed ^ 0x51a7) % GIANTS_IN === 0;
+}
+
+/** Which redwood stand a tile is in, if any, and whether it is in the giants at
+ *  the middle of it.
+ *
+ *  The ring window is `foundSiteAt`'s exactly (sim/found.ts): a centre sits on
+ *  its ring to within a tile's rounding, so anything further from the ring than
+ *  the footprint plus that rounding is outside every instance, and the whole
+ *  question costs two subtractions for almost every tile in the world. This is
+ *  asked per visible ground tile per frame, so that matters. */
+function redwoodSiteAt(
+  seed: number,
+  spot: HomesteadSpot,
+  x: number,
+  y: number,
+): { index: number; giants: boolean } | null {
+  const r = Math.hypot(x, y);
+  const slack = REDWOOD_RADIUS + 2;
+  const lo = Math.ceil((r - slack - REDWOOD_RING) / REDWOOD_SPACING);
+  const hi = Math.floor((r + slack - REDWOOD_RING) / REDWOOD_SPACING);
+  for (let i = Math.max(0, lo); i <= hi; i++) {
+    const c = redwoodCentre(seed, spot, i);
+    const d = Math.hypot(x - c.x, y - c.y);
+    if (d > REDWOOD_RADIUS + 0.5) continue;
+    return { index: i, giants: d <= GIANTS_RADIUS && hasGiants(seed, spot, i) };
+  }
+  return null;
+}
+
 /** Which found place a tile belongs to, if any (Phase 7b).
  *
  *  The wrapper exists so `onLand` stays private to this file: sim/found.ts needs
@@ -1012,6 +1160,15 @@ export function skyStairSiteAt(
 export function biomeAt(seed: number, spot: HomesteadSpot, x: number, y: number): BiomeId {
   const b = blossomCentre(seed, spot);
   if (Math.hypot(x - b.x, y - b.y) <= BLOSSOM_RADIUS) return "blossom";
+
+  // The redwood stands, after the blossom rows and before the field. Order is a
+  // decision and not an accident: the cherry trees are the region a villager can
+  // ASK to live in, so on the rare seed where the two discs touch, the one
+  // somebody is waiting on wins. Everything the field would have rolled here is
+  // overwritten either way — a sited region is a statement about a place, and the
+  // roll is what happens where nothing has been stated.
+  const rw = redwoodSiteAt(seed, spot, x, y);
+  if (rw) return rw.giants ? "giants" : "redwoods";
 
   const w = biomeWarp(seed, x, y);
   const site = nearestSite(seed, w.x, w.y);
@@ -1192,6 +1349,16 @@ function skinOf(seed: number, x: number, y: number, id: BiomeId): BiomeDef {
  *  tree inside a finished house — and nothing here is asked during generation. */
 const BIOME_BLEND = 5;
 
+/** How far a redwood stand's colour fades either side of its rim — twice a
+ *  region border's, because its floor is twice the colour change any border has
+ *  to cross. See `REDWOOD_RADIUS`, which was grown to afford this.
+ *
+ *  Declared HERE and not up beside the stand's other constants, which is where it
+ *  reads better and where it crashed: a `const` initialised from `BIOME_BLEND`
+ *  before that line has run is a temporal dead zone, and the whole module fails to
+ *  load. Constants derived from another live below it. */
+const REDWOOD_BLEND = 2 * BIOME_BLEND;
+
 /** A region's share of a tile's turf. One entry away from any border. */
 export interface RegionPart {
   /** WHICH region this share is. Carried so the scatter can pick ONE of them
@@ -1217,6 +1384,29 @@ export interface RegionPart {
  *  edge was drawn around. Softening a border must not cost you the region. */
 function edgeMix(d: number, span: number): number {
   const t = Math.min(1, Math.max(0, 0.5 - d / (2 * span)));
+  return t * t * (3 - 2 * t);
+}
+
+/** How much of this tile is bare rock, 0..1 — the granite's sheets.
+ *
+ *  `smoothNoise` at the kit's own wavelength, thresholded so that `cover` of the
+ *  region comes out above the line, with `fade` of the field's range spent
+ *  getting there. Deliberately the same field the ground roll uses and NOT a
+ *  hash: a hash answers per cell, and per cell is the one thing bare ground is
+ *  not allowed to be (content/biomes.ts §sheet).
+ *
+ *  Salted off the seed so a region's rock is that world's rock, and sampled on
+ *  the world coordinate so walking back finds the same sheet you left. */
+function sheetAt(
+  seed: number,
+  x: number,
+  y: number,
+  kit: { period: number; from: number; to: number },
+): number {
+  const n = smoothNoise(x, y, seed ^ 0x3c71, kit.period);
+  const t = (n - kit.from) / (kit.to - kit.from);
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
   return t * t * (3 - 2 * t);
 }
 
@@ -1346,6 +1536,21 @@ export function regionParts(
     };
   });
 
+  // BARE ROCK, WHERE A REGION HAS ANY (content/biomes.ts §sheet). Split rather
+  // than overlaid, and it is the forest clearing's move a few lines up: a share
+  // of a region turning into a different-looking version of ITSELF, which the
+  // blend then mixes like any other pair of shares. An overlay would have been a
+  // second region id sitting inside the first, which `biomeAt` would have had to
+  // agree with, and there is nothing for it to agree about — a sheet is paint.
+  parts = parts.flatMap((p) => {
+    const kit = p.def.sheet;
+    if (!kit) return [p];
+    const s = sheetAt(seed, x, y, kit);
+    if (s <= 0) return [p];
+    const bare = { ...p, def: { ...p.def, ground: kit.ground, tuft: kit.tuft }, w: p.w * s };
+    return s >= 1 ? [bare] : [{ ...p, w: p.w * (1 - s) }, bare];
+  });
+
   // The blossom disc goes over everything, which is the order `biomeAt` resolves
   // it in: it is the first thing that function asks. Unlike the clearing it is
   // not a property of one region — it is a landmark sited on a ring, and it may
@@ -1356,6 +1561,36 @@ export function regionParts(
   // has to still have a middle.
   const bd = Math.hypot(x - b.x, y - b.y);
   parts = overlay(parts, "blossom", edgeMix(bd - BLOSSOM_RADIUS, BLOSSOM_RADIUS / 3));
+
+  // The redwood stands, and the giants inside them — the same overlay, in the
+  // same order `biomeAt` resolves them, so the tint can never disagree with the
+  // region a tile actually is.
+  //
+  // FOUND BY RING RATHER THAN BY DISTANCE TO ONE CENTRE, because unlike the
+  // blossom rows there is more than one of these; the window arithmetic is
+  // `redwoodSiteAt`'s and this asks the same question one radius wider, since a
+  // tile OUTSIDE a stand still needs its share of the stand's colour to fade in.
+  const r = Math.hypot(x, y);
+  const slack = REDWOOD_RADIUS + REDWOOD_BLEND + 2;
+  const lo = Math.ceil((r - slack - REDWOOD_RING) / REDWOOD_SPACING);
+  const hi = Math.floor((r + slack - REDWOOD_RING) / REDWOOD_SPACING);
+  for (let i = Math.max(0, lo); i <= hi; i++) {
+    const c = redwoodCentre(seed, spot, i);
+    const d = Math.hypot(x - c.x, y - c.y);
+    // A FIXED FADE, NOT A THIRD OF THE RADIUS. The blossom rows divide their own
+    // radius because nine tiles across is barely a place and a wide fade would
+    // eat its middle. This is the opposite problem: the disc has middle to spare
+    // and the COLOUR is the extreme one, so the fade is sized to the colour —
+    // see REDWOOD_RADIUS, which was grown to afford it.
+    parts = overlay(parts, "redwoods", edgeMix(d - REDWOOD_RADIUS, REDWOOD_BLEND));
+    // And the giants over that. Their palette is the redwoods' to the digit
+    // (content/biomes.ts §giants), so this overlay currently changes not one
+    // pixel of turf — it is here so that the day one of those numbers moves, the
+    // ground under the giants moves with it instead of quietly staying behind.
+    if (hasGiants(seed, spot, i)) {
+      parts = overlay(parts, "giants", edgeMix(d - GIANTS_RADIUS, GIANTS_RADIUS / 3));
+    }
+  }
 
   return parts;
 }
@@ -2478,6 +2713,7 @@ function onLand(
   spot: HomesteadSpot,
   ring: number,
   a0: number,
+  margin = LANDMARK_MARGIN,
 ): { x: number; y: number } {
   let first = { x: 0, y: 0 };
   for (let i = 0; i < BEARINGS; i++) {
@@ -2486,13 +2722,20 @@ function onLand(
     if (i === 0) first = at;
     // A margin, not merely "not wet": a stand of trees whose far edge is in the
     // surf is the same bug with a smaller radius.
-    if (bigWaterDepth(seed, spot, at.x, at.y) < -LANDMARK_MARGIN) return at;
+    if (bigWaterDepth(seed, spot, at.x, at.y) < -margin) return at;
   }
   return first;
 }
 
 /** How much dry ground a landmark wants around its centre. Comfortably past the
- *  widest of them (the blossom rows, radius 9) plus its beach. */
+ *  widest of them (the blossom rows, radius 9) plus its beach.
+ *
+ *  IT IS A DEFAULT NOW, AND IT MAY NOT MOVE. The redwood stands are twice the
+ *  blossom rows' width and want more room than this — and raising the constant to
+ *  give it to them would re-run every landmark search in the game, which re-sites
+ *  the grove, the cube and the cherry trees on worlds people are living in. So the
+ *  wide thing passes its own (`REDWOOD_MARGIN`) and this number stays exactly
+ *  where it was, byte for byte, for everything that was already using it. */
 const LANDMARK_MARGIN = 14;
 
 // --- The Fen's ponds ----------------------------------------------------------

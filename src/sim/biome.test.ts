@@ -21,6 +21,8 @@ import {
   scatterRegion,
   scatterSkin,
   foundPlaceAt,
+  waterKindAt,
+  redwoodCentre,
 } from "./world";
 import { BIOMES, FIELD_WEIGHTS, type BiomeId } from "../content/biomes";
 import { FOUND } from "../content/found";
@@ -212,6 +214,140 @@ describe("the blossom rows", () => {
     // It has to be found. A copy turning up in a random band would cost it the
     // only thing that makes it worth the walk.
     expect(FIELD_WEIGHTS.map(([id]) => id)).not.toContain("blossom");
+  });
+});
+
+describe("the redwood stands, and the giants in some of them", () => {
+  /** The instances a test can reach without sweeping the whole plane. Four is
+   *  past the third spacing, which is far enough to prove "they recur" and near
+   *  enough that `onLand`'s sixteen bearings still run in a suite. */
+  const INSTANCES = [0, 1, 2, 3];
+
+  it("puts a wood on every ring, on every seed and every spot", () => {
+    // The recurrence is the whole difference between this and the blossom rows:
+    // one per town would say the world runs out of woods, on a map that does not
+    // run out.
+    for (let seed = 1; seed <= 120; seed++) {
+      for (const spot of SPOTS) {
+        for (const i of INSTANCES) {
+          const c = redwoodCentre(seed, spot, i);
+          // ON the ring, to the rounding of one tile — `onLand` keeps the radius
+          // exactly and rounds the point, which is what makes "you were going
+          // somewhere" true of every one of these.
+          expect(Math.abs(Math.hypot(c.x, c.y) - (168 + i * 191))).toBeLessThan(1);
+          const at = biomeAt(seed, spot, c.x, c.y);
+          expect(["redwoods", "giants"]).toContain(at);
+        }
+      }
+    }
+  });
+
+  it("never lands in the sea, on any spot", () => {
+    // The blossom rows' test, and the reason it has to be repeated rather than
+    // inherited: this disc is nearly three times as wide, so it goes through
+    // `onLand` with its own margin (REDWOOD_MARGIN), and a margin that was
+    // quietly too small would show up here and nowhere else. Rim samples for the
+    // same reason the orchard's has them — the sea's shelf is five tiles, so a
+    // wood standing in the surf can look merely damp at its middle.
+    //
+    // ASKED BY KIND AND BY SHARE, and both halves of that are corrections the
+    // first draft earned by failing.
+    //
+    // By KIND, because it forbade deep water at the rim and a river failed it. A
+    // river running through a redwood wood is the best thing that could happen to
+    // one — they grow along creeks — and `onLand` only ever steered landmarks
+    // clear of the two bodies that can actually strand one.
+    //
+    // By SHARE, because a disc this wide cannot promise four dry rim points and
+    // should not try: measured over 3200 stands, 4% of them touch a lake or the
+    // sea somewhere on their edge, and a wood coming down to a shore is a good
+    // thing to walk into rather than a siting failure. What must never happen is
+    // a wood that is mostly water. The worst case measured is 83% dry, so the bar
+    // is three quarters — comfortably under what the siting achieves and far
+    // above anything that would read as stranded.
+    const R = 24;
+    for (const spot of SPOTS) {
+      for (let seed = 1; seed <= 200; seed++) {
+        for (const i of INSTANCES) {
+          const c = redwoodCentre(seed, spot, i);
+          const big = (dx: number, dy: number) => {
+            const k = waterKindAt(seed, spot, c.x + dx, c.y + dy);
+            return k === "sea" || k === "lake";
+          };
+          // You always arrive somewhere you can stand.
+          expect(big(0, 0)).toBe(false);
+          let dry = 0;
+          let all = 0;
+          for (let dy = -R; dy <= R; dy += 3) {
+            for (let dx = -R; dx <= R; dx += 3) {
+              if (Math.hypot(dx, dy) > R) continue;
+              all++;
+              if (!big(dx, dy)) dry++;
+            }
+          }
+          expect(dry / all).toBeGreaterThan(0.75);
+        }
+      }
+    }
+  });
+
+  it("keeps the giants at the heart of a wood, and never anywhere else", () => {
+    // Two claims in one sweep, and the second is the one that matters: you reach
+    // the giants by walking through ordinary redwoods and out the other side, so
+    // a stand of them at the RIM — or standing on open ground — would have given
+    // away the arrival before you got to it.
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const i of INSTANCES) {
+        const c = redwoodCentre(seed, "forest", i);
+        for (let dy = -30; dy <= 30; dy++) {
+          for (let dx = -30; dx <= 30; dx++) {
+            if (biomeAt(seed, "forest", c.x + dx, c.y + dy) !== "giants") continue;
+            expect(Math.hypot(dx, dy)).toBeLessThanOrEqual(5);
+          }
+        }
+      }
+    }
+  });
+
+  it("gives about one wood in four its giants", () => {
+    // A RATE, NOT A QUOTA (sim/world.ts §GIANTS_IN). There is no last stand and
+    // nothing counts them, so the only thing to assert is that the hash is
+    // actually spreading — a rate that came out 0 would be a feature nobody ever
+    // meets, and one that came out 1 would be a wood that is always the same wood.
+    let stands = 0;
+    let withGiants = 0;
+    for (let seed = 1; seed <= 150; seed++) {
+      for (const i of INSTANCES) {
+        const c = redwoodCentre(seed, "forest", i);
+        stands++;
+        if (biomeAt(seed, "forest", c.x, c.y) === "giants") withGiants++;
+      }
+    }
+    const rate = withGiants / stands;
+    expect(rate).toBeGreaterThan(0.15);
+    expect(rate).toBeLessThan(0.35);
+  });
+
+  it("is not something the field can roll either", () => {
+    // Same claim the blossom rows make, and for a stronger reason: these are the
+    // only regions in the table whose whole point is that you went there.
+    const rolled = FIELD_WEIGHTS.map(([id]) => id);
+    expect(rolled).not.toContain("redwoods");
+    expect(rolled).not.toContain("giants");
+  });
+
+  it("yields exactly what every other wood yields", () => {
+    // The biggest temptation in content/biomes.ts, checked rather than trusted:
+    // a giant sequoia is eight wood, the same as a birch, because a biome is
+    // colour and density and never a material (DESIGN §Biomes). If this ever
+    // fails it will be because somebody added a `redwood` item, and the right fix
+    // is to delete it.
+    expect(NODES.tree.drop).toBe("wood");
+    expect(BIOMES.giants.trees).toBeLessThan(BIOMES.redwoods.trees);
+    for (const id of ["redwoods", "giants"] as const) {
+      expect(BIOMES[id].water).toBe(0);
+      expect(BIOMES[id].mushrooms).toBeLessThanOrEqual(BIOMES.fen.mushrooms);
+    }
   });
 });
 
@@ -492,6 +628,58 @@ describe("the turf blends across a region border", () => {
         }
       }
     }
+    expect(worst).toBeLessThanOrEqual(12);
+  });
+
+  it("never steps out on the granite either, where the ground itself changes", () => {
+    // THE NEAR SWEEP ABOVE CANNOT SEE THIS. It samples ±200 tiles, and the
+    // granite is a far row — impossible inside 200 by construction — so the one
+    // region whose GROUND has a second colour field on it (content/biomes.ts
+    // §sheet) was exactly the region the step test could not reach.
+    //
+    // It is worth its own sweep rather than a wider one: turf to bare rock is a
+    // bigger jump than any region border makes, and the whole defence is that the
+    // field carrying it is long-wavelength. Shorten `period` or narrow the window
+    // between `from` and `to` and this is what fails.
+    //
+    // ONLY WHERE THE TILE IS ALL GRANITE, and that restriction is a measurement
+    // rather than a convenience. Sweeping the region flat measures 20 with the
+    // sheets switched off — the far country's own borders are steeper than the
+    // near world's, because its tints are (dusk's violet against the glimmer's
+    // teal is twice any gap near town), and a triple point out there swings its
+    // weights by a tenth of a tile. That is a pre-existing property of the far
+    // rows and not this feature; folding it in would make the number here a
+    // measurement of the wrong thing, and a limit chosen to accommodate it would
+    // stop measuring anything at all. Inside one region there is nothing left in
+    // the answer but the sheet.
+    let worst = 0;
+    let found = 0;
+    const pureGranite = (x: number, y: number, seed: number): boolean =>
+      regionParts(seed, SPOT, x, y).every((p) => p.id === "granite");
+    for (const seed of [3, 17, 93]) {
+      for (let r = 900; r <= 1400 && found < 3; r += 7) {
+        const x0 = Math.round(Math.cos(r) * r);
+        const y0 = Math.round(Math.sin(r) * r);
+        if (biomeAt(seed, SPOT, x0, y0) !== "granite") continue;
+        found++;
+        for (let y = y0 - 40; y <= y0 + 40; y++) {
+          for (let x = x0 - 40; x <= x0 + 40; x++) {
+            if (!pureGranite(x, y, seed)) continue;
+            const a = turf(seed, x, y);
+            for (const [dx, dy] of [
+              [1, 0],
+              [0, 1],
+            ]) {
+              if (!pureGranite(x + dx, y + dy, seed)) continue;
+              const b = turf(seed, x + dx, y + dy);
+              worst = Math.max(worst, ...a.map((v, i) => Math.abs(v - b[i])));
+            }
+          }
+        }
+      }
+    }
+    expect(found).toBeGreaterThan(0); // or the sweep proved nothing
+    expect(worst).toBeGreaterThan(0); // and the sheets are actually on
     expect(worst).toBeLessThanOrEqual(12);
   });
 
