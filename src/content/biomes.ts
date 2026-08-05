@@ -1330,15 +1330,57 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         ["o.o", "o*o", ".o.", ".x.", ".x."],
       ],
     },
-    // Dry twigs and pale grit. No flowers: this is the row that reads as
-    // parched, and a bloom would undo it.
+    // BALD GROUND, IN PATCHES — the scrub's oldest dead idea, finally built the
+    // way this file learned to build it for the granite (§sheet).
+    //
+    // IT WAS REJECTED TWICE AS A CELL and both times correctly: one recoloured
+    // square of dirt on open turf is a hard square, and a scatter of them tiles
+    // the ground into a checkerboard (CLAUDE.md §per-cell edges). That was never
+    // an argument against bare ground in the scrub — it was an argument against
+    // bare ground being a CELL. On a long field it is the thing the region has
+    // always wanted: dry country is not evenly dry, and a swatch of the scrub was
+    // one flat olive from corner to corner, which is the one region in the game
+    // that looked unfinished rather than parched.
+    //
+    // A QUARTER OF IT, AND WARMER RATHER THAN PALER. The granite's sheets go
+    // toward its own cool grey; this goes toward dust — (184,164,118) against turf
+    // of (154,175,103), so the patches read as ground showing through rather than
+    // as a second kind of grass. Paler and it would start competing with the salt
+    // flats, which are the region whose whole claim is being the brightest floor
+    // in the game.
+    //
+    // SHORTER WAVELENGTH THAN THE GRANITE'S, because these are bald patches and
+    // not a landscape: 22 tiles is a little under a screen, so you cross several
+    // walking through, where the granite's 33 is a country you are on or off.
+    sheet: {
+      ground: { color: "#b09a68", amount: 1 },
+      tuft: { color: "#bca877", amount: 1 },
+      period: 22,
+      from: 0.40,
+      to: 0.72,
+    },
+    // Dry twigs, pale grit, and one thorn bush. No flowers: this is the row that
+    // reads as parched, and a bloom would undo it — the thistle in spring is the
+    // exception and it is seasonal for exactly that reason.
+    //
+    // THE BUSH IS NEW AND IT IS THE TALLEST THING THE SCRUB HAS. The region has no
+    // `shrubs` and may never have any — it is a NEAR row, and undergrowth is a
+    // gathered node, so adding one would re-landscape ground people have already
+    // built on. What it can have is the LOOK of one, which is decor: five rows,
+    // bare at the bottom and spreading at the top, in the crown ink so it reads as
+    // the same dry olive as the trees. It is what stops the ground being a floor
+    // with grit on it.
     decor: {
-      density: 0.10,
+      density: 0.13,
       accent: "#c2b795",
       marks: [
         ["oo", "oo"], // a pebble
         ["x..", ".xx", "..x"],
         [".oo", "oo."],
+        // A thorn bush: a splayed head on a bare stem, read from the top down the
+        // way the thistle is.
+        ["x.x.x", ".xxx.", "..x..", "..x.."],
+        [".x.x.", "xx.xx", "..x..", "..x.."],
       ],
     },
   },

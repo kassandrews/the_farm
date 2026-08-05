@@ -7744,6 +7744,37 @@ of a region rather than the region:
   Static has the Moment. A companion Moment for the other two would need a reason
   to be there beyond "the region exists".
 
+## The look pass (5 Aug 2026, in progress)
+
+Eighteen regions exist and the machinery is built, so the work turns to how they
+actually look — judged as a SET on `/biomes.html`, which is the only instrument
+that can answer a relative question ("is the scrub flat *compared to what*").
+
+**THE RULE THAT DECIDES WHAT MAY MOVE: near rows get PAINT ONLY.** Meadow, pines,
+birches, scrub and fen carry `near` weight, so they generate ground people have
+already built on — a density change out of those rows can put a tree inside a
+finished house. Paint cannot: tints, `tufts`, `stone`, `decor`, `bloom`, `sheet`,
+`crownRows` and the rest are render-path or scatter-free. Far rows may move
+densities as well, on the usual argument that nobody has built out there.
+
+**Read of the set, in order of how badly each wants work:**
+
+1. ~~**The scrub**~~ **done.** One flat olive from corner to corner — the one
+   region that read as unfinished rather than as parched. It now has bald patches
+   (`sheet`, the region's own twice-rejected idea, finally built the way the
+   granite taught: a long field, never a cell) and a thorn bush in its decor, which
+   is the tallest thing it is allowed to have, since a real shrub is a gathered
+   node and this is a near row.
+2. **The long grass.** Second-flattest: an olive field with tussocks, and the
+   bushes read as small dark blobs rather than as bushes.
+3. **The granite.** The sheets are the row's whole point and a swatch of it can
+   come up with none in frame; its stone list is two shapes on purpose, which
+   leaves the ground doing all the work alone.
+4. **The fen.** Not flat — busy. The mushroom count crowds the frame at swatch
+   scale, and its green sits very near the meadow's.
+5. **The marshes.** The water is one flat blue; the islands are plain.
+6. **The redwoods.** The crowns read as noisy dark blobs over rust at this size.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
