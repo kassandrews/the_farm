@@ -3280,8 +3280,13 @@ export function decoHash(x: number, y: number, seed: number): number {
  *
  *  Bilinear between hashed lattice corners, with a smoothstep on each axis so
  *  the lattice itself doesn't show as diamonds. Deterministic in (x, y, seed):
- *  the ground must look the same every time you walk back onto it. */
-function smoothNoise(x: number, y: number, seed: number, period: number): number {
+ *  the ground must look the same every time you walk back onto it.
+ *
+ *  Exported for the renderer's frayed region edges (render/palette.ts §edge),
+ *  which need a field rather than a hash for the reason everything else in this
+ *  file does: a per-cell roll is a checkerboard, and what a burn's edge wants is
+ *  lobes several tiles across. */
+export function smoothNoise(x: number, y: number, seed: number, period: number): number {
   const fx = x / period;
   const fy = y / period;
   const x0 = Math.floor(fx);

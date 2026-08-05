@@ -479,16 +479,25 @@ irregular, so there is no seam to find.
 meeting — a wood and a scrub, a fen and a meadow — have no line between them in
 life, so a visible one is an artefact of the generator and gets blended away over
 about ten tiles. That is the rule, and it stays the rule. But a region whose edge
-is a real edge may **declare it and keep it**: a salt pan is a lake bed, the crust
-ends where the water used to reach, and fading that invents a hundred tiles of
-neither-turf-nor-crust, which is a thing that exists nowhere. The test is whether
-the *place* has an edge, never whether the seam is convenient.
+is a real edge may **declare it and keep it**. The test is whether the *place* has
+an edge, never whether the seam is convenient.
 
-A declared edge is **colour only, and never moves a border**. What snaps is the
-ground; the flora still dithers across, so the trees thin out over the approach
-and the crust begins sharply — which is what the edge of a pan looks like. And
-anything that *flows* across it still fades, because water carries the place
-downstream where the ground cannot.
+There are two ways a place ends, and they are not the same picture:
+
+- **A shoreline.** The salt flats: a pan is a lake bed, the crust ends where the
+  water used to reach, and that is a line you can stand on. Fading it invents a
+  hundred tiles of neither-turf-nor-crust, which exists nowhere.
+- **A burn.** The cinders and the caldera: fire stops where it stops, in tongues,
+  leaving pockets that never caught. So the edge is hard *and wanders* — the same
+  all-or-nothing answer with a low-frequency field pushing the line a few tiles in
+  and out along its length. A blend across a burn says the fire faded out, which
+  fire does not do; a straight line says somebody mowed it.
+
+A declared edge is **colour only, and never moves a border**. What answers sharply
+is the ground; the flora still dithers across, so the trees thin out over the
+approach to a pan and live ones stand inside the margin of a burn. And anything
+that *flows* across it still fades, because water carries the place downstream
+where the ground cannot.
 
 A biome is **colour, growth density, and flora silhouette. Nothing else.** Not
 one number in the table touches a yield, a recipe, a growth time or an unlock. A

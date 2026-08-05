@@ -7668,12 +7668,38 @@ half.
   reach a salt flat anyway — far rows are impossible inside 200 tiles — so no
   exception had to be carved into it.
 
+### The fourth pass: the cinders end in tongues
+
+The fray held in reserve for the flats turned out to be the right treatment for
+the **burn** instead, which is a better observation than the one it came from: a
+pan's edge is a shoreline and wants to be straight-ish, and a fire's edge is
+neither straight nor faded. `BiomeDef.hardEdge` became `edge: "hard" | "fray"`,
+and the cinders and the caldera take the second.
+
+- **`fray` is the same all-or-nothing answer with a field added to the weight
+  before it is decided.** `FRAY_PERIOD` 5 tiles, `FRAY_AMOUNT` 0.35 — and since a
+  border's weight climbs about a tenth per tile, that walks the line three or four
+  tiles in and out along its length. The line stays hard everywhere; it stops
+  being straight.
+- **A field, not a hash**, for the reason everything in this project is: a
+  per-cell roll across a ten-tile transition is a dithered gradient, visibly a
+  machine easing between two colours. Lobes are what a fire front leaves.
+- **It retires the worst banding in the game.** Ash is 150 RGB units from grass,
+  so the ordinary fade landed fifteen units a tile and photographed as stripes —
+  the thing `BORDER_DITHER` was built to dissolve two passes ago. There is no
+  gradient at a cinder border to band now. (The dither stays: every other
+  high-contrast pair still fades.)
+- **The unburnt trees are free and are the best part.** Flora still dithers across
+  (that is generation, deliberately untouched), so live trees stand inside the
+  margin of the burn and dead snags stand outside it. Photographed at the border
+  on seed 3.
+- **`biome.test.ts` asserts the wander**, not just the step: parallel lines out of
+  the same burn must cross at different distances, which is what fails if somebody
+  sets the amount to zero or swaps the field for a constant — an edit every other
+  assertion would sail past.
+
 ### Loose ends
 
-- **If the salt edge reads as a staircase rather than a shoreline**, the option
-  held in reserve is a one-tile fray — a few crust cells poking into the turf and
-  back — which is what a real strandline does. It was not built, because a fray
-  is the fade in a speckled costume and the photograph did not need it.
 - **The marsh coastline is blocky**, and inherently so: any waterline quantised
   onto 16px cells staircases, and this region is made almost entirely of
   waterline. The wobble helps. If it still reads as blue boxes on a second look,

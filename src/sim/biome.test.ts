@@ -882,51 +882,61 @@ describe("the turf blends across a region border", () => {
     expect(worst).toBeLessThanOrEqual(12);
   });
 
-  it("DOES step at the salt flats, because a pan has a shoreline", () => {
-    // THE ONE EXEMPTION FROM THE TEST ABOVE, asserted rather than merely allowed
-    // — so that a later pass which "fixes" this edge fails here and has to come
-    // and read why (content/biomes.ts §hardEdge, DESIGN §Biomes).
+  it("DOES step where a place has a real edge, and frays where a fire made it", () => {
+    // THE EXEMPTIONS FROM THE TEST ABOVE, asserted rather than merely allowed —
+    // so that a later pass which "fixes" these edges fails here and has to come
+    // and read why (content/biomes.ts §edge, DESIGN §Biomes).
     //
-    // The near sweep cannot reach a salt flat anyway: it is a far row, impossible
-    // inside 200 tiles by construction. That is why this is its own sweep and why
-    // it measures the opposite quantity — not "is the gradient smooth" but "is
-    // there an edge at all". A pan is a lake bed; the crust ends where the water
-    // used to reach, and fading it over ten tiles invents a hundred tiles of
-    // ground that exists nowhere.
+    // The near sweep cannot reach either: both are far rows, impossible inside
+    // 200 tiles by construction. That is why this is its own sweep and why it
+    // measures the opposite quantity — not "is the gradient smooth" but "is there
+    // an edge at all".
     //
     // Measured on the RENDER path, which is where the sharpening lives: the flora
-    // dither underneath is deliberately untouched, so trees still thin out over
+    // dither underneath is deliberately untouched, so trees still interleave over
     // the approach.
-    let worst = 0;
-    let found = 0;
-    for (const seed of [3, 17, 93]) {
-      for (let r = 300; r <= 2400 && found < 3; r += 3) {
-        const x0 = Math.round(Math.cos(r) * r);
-        const y0 = Math.round(Math.sin(r) * r);
-        if (biomeAt(seed, SPOT, x0, y0) !== "salt") continue;
-        // Walk out of it along a bearing and find the biggest neighbour-to-
-        // neighbour jump in the ground colour.
-        for (const [dx, dy] of [
-          [1, 0],
-          [-1, 0],
-          [0, 1],
-          [0, -1],
-        ]) {
-          for (let i = 0; i < 40; i++) {
-            const x = x0 + dx * i;
-            const y = y0 + dy * i;
-            const a = sharpTurf(seed, x, y);
-            const b = sharpTurf(seed, x + dx, y + dy);
-            worst = Math.max(worst, ...a.map((v, i2) => Math.abs(v - b[i2])));
+    for (const id of ["salt", "cinder"] as const) {
+      let worst = 0;
+      let found = 0;
+      // Where the ground actually flips, per bearing. For a shoreline these
+      // should be tidy; for a burn they must not be — see the spread below.
+      const crossings: number[] = [];
+      for (const seed of [3, 17, 93]) {
+        for (let r = 250; r <= 2400 && found < 3; r += 3) {
+          const x0 = Math.round(Math.cos(r) * r);
+          const y0 = Math.round(Math.sin(r) * r);
+          if (biomeAt(seed, SPOT, x0, y0) !== id) continue;
+          // Walk out along parallel lines and note where the colour jumps.
+          for (let lane = -6; lane <= 6; lane += 2) {
+            let crossed = -1;
+            for (let i = 0; i < 60; i++) {
+              const a = sharpTurf(seed, x0 + i, y0 + lane);
+              const b = sharpTurf(seed, x0 + i + 1, y0 + lane);
+              const step = Math.max(...a.map((v, k) => Math.abs(v - b[k])));
+              if (step > worst) worst = step;
+              if (step > 40 && crossed < 0) crossed = i;
+            }
+            if (crossed >= 0) crossings.push(crossed);
           }
+          found++;
         }
-        found++;
       }
+      expect(found, `no ${id} found to sweep`).toBeGreaterThan(0);
+      // A real edge, not a gradient: the biggest legitimate step anywhere else in
+      // the game is 12 (see the sweep above), and turf to crust or turf to ash is
+      // over a hundred.
+      expect(worst, `${id} fades in like an ordinary region`).toBeGreaterThan(40);
+      if (id !== "cinder") continue;
+      // AND THE BURN'S EDGE WANDERS. A fire stops in tongues, so neighbouring
+      // lines out of the same burn must not all cross at the same distance —
+      // which is exactly what would happen if somebody replaced the field with a
+      // constant, or set the amount to zero, and it would still pass every other
+      // assertion here.
+      const lo = Math.min(...crossings);
+      const hi = Math.max(...crossings);
+      expect(crossings.length, "the burn never crossed anything").toBeGreaterThan(6);
+      expect(hi - lo, "the burn's edge is a straight line").toBeGreaterThan(2);
     }
-    expect(found, "no salt flat found to sweep").toBeGreaterThan(0);
-    // A real edge, not a gradient: the biggest legitimate step anywhere else in
-    // the game is 12 (see the sweep above), and turf to crust is over a hundred.
-    expect(worst, "the crust fades in like an ordinary region").toBeGreaterThan(40);
   });
 
   it("never steps out on the granite either, where the ground itself changes", () => {

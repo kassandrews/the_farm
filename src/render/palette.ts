@@ -106,32 +106,59 @@ export function mixHex(base: string, tint: Tint): string {
 /** "Leave it alone", for a part that has nothing to say about a colour. */
 const NO_TINT: Tint = { color: "#000000", amount: 0 };
 
-/** Resolve any region that refuses to fade at its edge (content/biomes.ts
- *  §hardEdge), BEFORE the shares are blended.
+/** Resolve any region that does not fade at its edge (content/biomes.ts §edge),
+ *  BEFORE the shares are blended.
  *
  *  ALL OR NOTHING, DECIDED BY WHICH SHARE IS HEAVIEST. The heaviest share is the
  *  region the tile is actually IN — it is the nearest site, which is the same
- *  answer `biomeAt` gives — so a hard-edged region either owns the tile outright
- *  or is not there at all. Asking the weight to cross a threshold instead would
- *  put holes at the triple points, where the nearest of nine sites can be nearest
- *  and still hold well under half.
+ *  answer `biomeAt` gives — so a region with an edge either owns the tile
+ *  outright or is not there at all. Asking the weight to cross a fixed threshold
+ *  instead would put holes at the triple points, where the nearest of nine sites
+ *  can be nearest and still hold well under half.
+ *
+ *  `fray` ADDS TO THE WEIGHT BEFORE THE COMPARISON, which is the whole of how a
+ *  burn's margin differs from a shoreline. `fray` is a low-frequency field
+ *  sampled by the caller (the renderer, which has the seed and the coordinate),
+ *  in roughly ±0.35 — and since the weight climbs about a tenth per tile across
+ *  the fade, that walks the edge three or four tiles in and out along its length.
+ *  The line stays hard everywhere; it just stops being straight, and pockets on
+ *  the wrong side of it are the bits that never caught.
  *
  *  RENDER PATH ONLY, and that is the whole reason this lives here rather than in
  *  `regionParts`. Those weights are also what a cell rolls its trees and rocks
  *  from (sim/world.ts §scatterRegion), and that is generation: sharpening them
  *  would move solidity, re-landscape ground, and need the thousand-seed test run
- *  again. What is wanted is narrower anyway — the ground snapping while the trees
- *  still thin out over the approach, which is what the edge of a pan looks like.
+ *  again. What is wanted is narrower anyway — the ground answering sharply while
+ *  the flora still interleaves over the approach, which is right for both places
+ *  that use this.
  *
- *  Untouched when nothing in the neighbourhood is hard-edged, which is every tile
- *  in the world but a few hundred per pan. */
-export function sharpenRegions<T extends { def: BiomeDef; w: number }>(parts: T[]): T[] {
+ *  Untouched when nothing in the neighbourhood has an edge, which is every tile
+ *  in the world but a few hundred per region that does. */
+export function sharpenRegions<T extends { def: BiomeDef; w: number }>(
+  parts: T[],
+  fray = 0,
+): T[] {
   if (parts.length === 1) return parts;
-  let heaviest = parts[0];
-  for (const p of parts) if (p.w > heaviest.w) heaviest = p;
-  if (heaviest.def.hardEdge) return [{ ...heaviest, w: 1 }];
-  const rest = parts.filter((p) => !p.def.hardEdge);
-  if (rest.length === parts.length || rest.length === 0) return parts;
+  const edged = parts.filter((p) => p.def.edge);
+  if (edged.length === 0) return parts;
+
+  // The heaviest of the edged regions, AFTER the fray is added — two of them can
+  // meet (a caldera sited in the cinders is the case that exists), and only one
+  // can own a tile.
+  let best: T | null = null;
+  let bestW = -Infinity;
+  for (const p of edged) {
+    const w = p.w + (p.def.edge === "fray" ? fray : 0);
+    if (w > bestW) {
+      bestW = w;
+      best = p;
+    }
+  }
+  const rest = parts.filter((p) => !p.def.edge);
+  let heaviestRest = 0;
+  for (const p of rest) heaviestRest = Math.max(heaviestRest, p.w);
+  if (best && bestW >= heaviestRest) return [{ ...best, w: 1 }];
+  if (rest.length === 0) return parts;
   // Renormalised, because everything downstream reads these as shares of one
   // tile — a decor pick walks them cumulatively, and shares that no longer sum to
   // 1 would hand the last part everything the missing region used to hold.

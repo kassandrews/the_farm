@@ -633,31 +633,47 @@ export interface BiomeDef {
    *  two kinds of small thing before it stops reading as ground. */
   bloom?: DecorKit;
 
-  /** NO FADE AT THIS REGION'S EDGE — the crust starts where the crust starts.
+  /** HOW THIS REGION ENDS. Optional, and omitted means the ordinary fade, which
+   *  is every region but two.
    *
-   *  THE BLEND IS THE RULE AND THIS IS THE ONE PLACE THE RULE IS WRONG. Region
+   *  THE BLEND IS THE RULE AND THESE ARE THE PLACES THE RULE IS WRONG. Region
    *  borders fade over about ten tiles (sim/world.ts §BIOME_BLEND) because a hard
    *  step between two flat tints is a seam you can stand on, and 8d spent a whole
    *  step removing it. That argument is about two kinds of COUNTRY meeting — a
    *  wood and a scrub, a fen and a meadow — where nothing in the world says the
    *  change should be sudden, so a visible line is an artefact of the generator
-   *  and of nothing else.
+   *  and of nothing else. The test for an exception is whether the PLACE has an
+   *  edge, never whether the seam is convenient.
    *
-   *  A salt pan is not two kinds of country meeting. It is a LAKE BED, and its
-   *  edge is a shoreline: the crust ends where the water used to reach, which is
-   *  a line you can stand on in life. Fading it is the artefact — a hundred tiles
-   *  of neither-quite-turf-nor-quite-crust, which is a thing that exists nowhere.
+   *  - `hard` — the salt flats. A pan is a LAKE BED and its edge is a shoreline:
+   *    the crust ends where the water used to reach, which is a line you can
+   *    stand on in life. Fading it is the artefact — a hundred tiles of
+   *    neither-quite-turf-nor-quite-crust, a thing that exists nowhere.
    *
-   *  WHAT IT DOES NOT DO, and why it is safe. It never touches `biomeAt`, so
-   *  every guarantee built on the border stands. It is a RENDER-PATH answer only:
-   *  the flora dither is untouched (sim/world.ts §scatterRegion, which is
-   *  generation and moves solidity), so the trees still thin out over the
-   *  approach and only the ground snaps — which is what the edge of a pan
-   *  actually looks like, vegetation giving up before the crust begins.
+   *  - `fray` — the cinders and the caldera. A burn also has an edge, and it is
+   *    nothing like a shoreline: fire stops where it stops, in tongues, leaving
+   *    pockets that never caught. So the border is a HARD line that WANDERS —
+   *    the same all-or-nothing answer, with a low-frequency field added to the
+   *    weight before it is decided, which pushes the edge a few tiles in and out
+   *    along its length. A blend across a burn says the fire faded out, which is
+   *    not a thing fire does; a straight line says somebody mowed it.
    *
-   *  And the WATER still fades (see `waterTint`): a stream carries the pan
-   *  downstream, so the milk has somewhere to go. The crust does not flow. */
-  hardEdge?: boolean;
+   *  The field is the whole of why `fray` is not simply noise. A per-cell roll
+   *  across the transition is a dithered gradient — visibly a computer easing
+   *  between two colours — where a field several tiles long comes out as lobes,
+   *  which is what a fire front leaves.
+   *
+   *  WHAT NEITHER DOES, and why they are safe. Neither touches `biomeAt`, so
+   *  every guarantee built on the border stands. Both are RENDER-PATH answers
+   *  only: the flora dither is untouched (sim/world.ts §scatterRegion, which is
+   *  generation and moves solidity), so the trees still interleave across the
+   *  approach and only the ground answers sharply — which is right for both
+   *  places. Vegetation gives up before a pan's crust begins; a burn's margin has
+   *  live trees standing in it and dead ones outside it.
+   *
+   *  And anything that FLOWS still fades (see `waterTint`): a stream carries the
+   *  pan downstream, so the milk has somewhere to go. Crust and ash do not flow. */
+  edge?: "hard" | "fray";
 
   /** THE COLOUR OF THE WATER THAT CROSSES THIS REGION. Optional, and the salt
    *  flats are the only row with one.
@@ -2124,6 +2140,17 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
   cinder: {
     id: "cinder",
     name: "the cinders",
+    // THE BURN ENDS IN TONGUES. Fire stops where it stops — it does not fade out
+    // over ten tiles, and it does not stop in a straight line either. See
+    // BiomeDef.edge: a hard answer with a low-frequency field pushing it a few
+    // tiles in and out along its length, so the margin comes out in lobes with
+    // the odd pocket that never caught.
+    //
+    // It also retires the ugliest thing at this region's border. Ash is 150 RGB
+    // units from grass, so the ordinary fade landed fifteen units a TILE and
+    // photographed as a flight of hard stripes — the banding the border dither
+    // was built to dissolve. There is no gradient here to band now.
+    edge: "fray",
     // Snags. A fifth of the meadow's trees and every one of them dead — see
     // `crownRows`, which is the shape doing that work rather than a second tile.
     trees: 0.2,
@@ -2343,10 +2370,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // stand a stone up in and nothing to have thrown it. The one `broken` in the
     // list is what stops three identical slabs a screen reading as a stamp.
     stone: { tint: { color: "#e6e2e0", amount: 0.46 }, shapes: ["slab", "slab", "broken"] },
-    // THE CRUST STOPS DEAD, and it is the only region in the game that does. A
-    // pan is a lake bed and its edge is a shoreline — see BiomeDef.hardEdge for
-    // why that is a fact about the place rather than a preference about seams.
-    hardEdge: true,
+    // THE CRUST STOPS DEAD. A pan is a lake bed and its edge is a shoreline —
+    // see BiomeDef.edge for why that is a fact about the place rather than a
+    // preference about seams.
+    edge: "hard",
     // MILKY WATER, WHICH IS THE ONE THING OUT HERE THAT MOVES. Streams and rivers
     // cross this region like they cross every other (3.6% of the flats' cells are
     // stream, measured), and ordinary river blue on a white pan reads as a strip
@@ -2592,6 +2619,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
   caldera: {
     id: "caldera",
     name: "the caldera",
+    // The cinders' edge, for the cinders' reason — this is the same burn, and a
+    // caldera sited in ordinary country has to end the way one sited in the ash
+    // does. Its own overlay fade is what this replaces.
+    edge: "fray",
     // Fewer, and nearer the middle there are none: the disc is mostly open ash.
     trees: 0.08,
     rocks: 1.2,

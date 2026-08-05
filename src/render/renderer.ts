@@ -49,6 +49,8 @@ import {
   regionSkin,
   scatterSkin,
   regionParts,
+  smoothNoise,
+  type RegionPart,
   foundAt,
   floorFinish,
   PLAZA,
@@ -127,6 +129,18 @@ const TILE = 16; // scene px per world tile (matches sprite CELL)
  *  inside its neighbours' band and the edge stops existing. Wider and the grain
  *  itself becomes visible as noise; narrower and the stripes come back. */
 const BORDER_DITHER = 0.09;
+
+/** The wavelength of the field that walks a frayed edge, in TILES, and how far
+ *  it walks it in units of blend weight (content/biomes.ts §edge).
+ *
+ *  FIVE TILES AND A THIRD OF A WEIGHT. The weight climbs about a tenth per tile
+ *  across a border's fade, so ±0.35 pushes the line three or four tiles either
+ *  way — enough that no run of it is straight, and not so far that the region
+ *  loses its shape. The wavelength is the size of a tongue of burn: at two the
+ *  edge reads as noise, and at fifteen it is one slow bulge and the line is
+ *  straight again between them. */
+const FRAY_PERIOD = 5;
+const FRAY_AMOUNT = 0.35;
 
 /** Is this tile part of the town square? The rectangle is inclusive and lives in
  *  sim/world.ts, where generation reads it — asked here rather than re-derived,
@@ -1264,11 +1278,37 @@ export class Renderer {
    *  looks free — but it would be a per-frame map keyed by a built string, and
    *  allocating a thousand of those costs more than walking nine sites twice.
    *  Same reasoning `biomeAt` gives for having no cache of its own. */
+  /** How far this tile pushes a frayed edge, in weight — see
+   *  `sharpenRegions` and content/biomes.ts §edge.
+   *
+   *  A FIELD AND NOT A HASH, which is the same call the granite's sheets, the
+   *  fen's ponds and the ground roll all made before it. A per-cell roll across a
+   *  ten-tile transition is a dithered gradient — visibly a machine easing
+   *  between two colours — where a field five tiles long comes out in lobes,
+   *  which is what a fire front actually leaves behind.
+   *
+   *  Zero unless something here actually frays, so the cost is a lookup on the
+   *  parts array for every tile in the world and a noise sample for the few
+   *  hundred per burn that need one. */
+  private frayAt(world: WorldState, tx: number, ty: number, parts: RegionPart[]): number {
+    if (!parts.some((p) => p.def.edge === "fray")) return 0;
+    return (smoothNoise(tx, ty, world.seed ^ 0x4d21, FRAY_PERIOD) - 0.5) * 2 * FRAY_AMOUNT;
+  }
+
+  /** A tile's region shares, with any edge that does not fade resolved. The one
+   *  place the render path asks the question, so the turf, the decor kits and the
+   *  air cannot disagree about which side of a burn a cell is on. */
+  private regionsAt(world: WorldState, tx: number, ty: number): RegionPart[] {
+    const raw = regionParts(world.seed, world.homestead.spot, tx, ty);
+    return sharpenRegions(raw, this.frayAt(world, tx, ty, raw));
+  }
+
   private turf(world: WorldState, tx: number, ty: number): BiomeDef {
     const raw = regionParts(world.seed, world.homestead.spot, tx, ty);
-    // The salt flats do not fade (content/biomes.ts §hardEdge). Resolved before
-    // the blend, so a tile is crust or it is turf and never a mix of the two.
-    const parts = sharpenRegions(raw);
+    // The flats stop dead and the burns end in tongues (content/biomes.ts §edge).
+    // Resolved before the blend, so a tile is crust or turf, ash or turf, and
+    // never a mix of the two.
+    const parts = sharpenRegions(raw, this.frayAt(world, tx, ty, raw));
     const def = blendRegions(parts);
     // EXCEPT THE WATER, WHICH STILL FADES, and it is blended off the RAW shares
     // for that reason. A stream carries the pan downstream — the milk has
@@ -1344,10 +1384,11 @@ export class Renderer {
     h: number,
     slot: (d: BiomeDef) => T | undefined,
   ): T | undefined {
-    // Sharpened first, like the turf: a region that refuses to fade must not have
-    // its ferns — or its cracked plates — dithered a few tiles out past the edge
-    // of itself, which would be the fade coming back in a speckled costume.
-    const parts = sharpenRegions(regionParts(world.seed, world.homestead.spot, tx, ty));
+    // Sharpened first, like the turf: a region that does not fade must not have
+    // its ferns — or its cracked plates, or its ash — dithered a few tiles out
+    // past the edge of itself, which would be the fade coming back in a speckled
+    // costume.
+    const parts = this.regionsAt(world, tx, ty);
     if (parts.length === 1) return slot(parts[0].def);
     let r = h;
     for (const p of parts) {
@@ -3178,7 +3219,7 @@ export class Renderer {
   /** Which region's air this cell carries, dithered across borders exactly as
    *  the ground decor is. */
   private moteKit(world: WorldState, tx: number, ty: number, h: number): MoteKit | undefined {
-    const parts = sharpenRegions(regionParts(world.seed, world.homestead.spot, tx, ty));
+    const parts = this.regionsAt(world, tx, ty);
     if (parts.length === 1) return parts[0].def.motes;
     let r = h;
     for (const p of parts) {
