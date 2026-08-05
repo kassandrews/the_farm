@@ -569,6 +569,57 @@ export interface BiomeDef {
     crown: Tint;
   };
 
+  /** THE PICTURE COMING APART — what the Static does that a palette cannot.
+   *
+   *  WHY THE DITHER WAS NOT ENOUGH. Two inks at two-pixel pitch say "this place
+   *  is short of a bit", which is a statement about COLOUR, and colour is what
+   *  every other row here says something about. What the eye actually reads as a
+   *  fault is none of that: it is the picture SEPARATING (a warm ghost a pixel
+   *  one way, a cold one the other), the picture TEARING (a row of it sliding
+   *  sideways), and a line of the picture arriving WRONG (a run of flat colour
+   *  where ground should be). Those are three different failures of one machine,
+   *  and a region claiming to be badly drawn needs all three or it is merely
+   *  tinted oddly.
+   *
+   *  EVERY PART OF IT STEPS OFF THE WORLD, never off the cell. A tear runs on a
+   *  world pixel row and a run length of its own, so it crosses tiles and ends
+   *  wherever it ends; the fringe is a property of a MARK, which is already
+   *  placed by a hash on the world coordinate. Nothing here can line up with the
+   *  grid, which is the same fence the cracks and the dither are behind.
+   *
+   *  IT STILL STOPS AT GROUND AND FLORA — see §dither, and DESIGN §"A place that
+   *  is drawn wrong". Not the player, not a villager, not a building, not one
+   *  pixel of the HUD. The moment a tear crosses somebody's sprite the region is
+   *  no longer a place with something wrong with it; it is a broken game. */
+  glitch?: {
+    /** The warm channel, drawn a pixel to one side of a mark. */
+    warm: string;
+    /** The cold one, a pixel to the other. Together they are the separation:
+     *  neither is meant to be seen as a colour, only as the mark not quite
+     *  agreeing with itself. */
+    cold: string;
+    /** Fraction of this region's decor marks whose rows are torn sideways. Not
+     *  all of them, and not a fixed offset: a shear that happened to everything
+     *  equally is a font, not a fault. */
+    tear: number;
+    /** Corrupt scanlines: runs of flat colour where a row of ground should be. */
+    bars: {
+      /** Chance per (world pixel row × run). Very low — a few on a screen. Turn
+       *  it up and the region stops being a wood with something wrong with it and
+       *  becomes a screen of noise, which is a different (and much worse) place:
+       *  you cannot see a wood through it, so there is nothing to be wrong. */
+      density: number;
+      /** How long a run is allowed to get, in pixels. Longer than a tile on
+       *  purpose — a tear that stopped at cell edges would be the band rule
+       *  wearing its most obvious disguise yet. */
+      run: number;
+      /** Seconds a tear holds before the picture is re-sampled. Short, because
+       *  this is a signal failing rather than a thing moving — the mote's own
+       *  argument (§MoteKit `noise`), and the reason neither of them fades. */
+      period: number;
+    };
+  };
+
   /** What else grows here. Optional, and the meadow deliberately has none. */
   decor?: DecorKit;
 
@@ -581,6 +632,29 @@ export interface BiomeDef {
    *  list would invite a third and a fourth, and the ground has room for about
    *  two kinds of small thing before it stops reading as ground. */
   bloom?: DecorKit;
+
+  /** THE COLOUR OF THE WATER THAT CROSSES THIS REGION. Optional, and the salt
+   *  flats are the only row with one.
+   *
+   *  THIS IS AN EXCEPTION TO A RULE THAT WAS FOUND ON SCREEN, so it gets its own
+   *  field rather than a loosened list. `render/palette.ts` §BIOME_GROUND exists
+   *  because tinting every tile pulled the SEA halfway to dry sand in a riverside
+   *  town, along with the plaza and the farmland: a region is turf and what grows
+   *  on it, and it has no opinion about water, about paving, or about anything a
+   *  player made. That rule stands. What this says is narrower and is a statement
+   *  about a specific place: a stream crossing a salt pan is carrying the pan,
+   *  and comes out milky.
+   *
+   *  It is still only COLOUR. It reaches the two water tiles and nothing else —
+   *  not the sand, not the shore, not a bridge somebody built over it — and it
+   *  changes no depth, no shelf, no wading speed and nothing about what a tile
+   *  does. The affordance survives it: both blues take the same pull, so "you may
+   *  wade here" stays the paler of the two (there is a test).
+   *
+   *  Blended like the ground is, through `regionParts`, so water leaving the
+   *  region fades back to ordinary water over the same tiles the turf does and
+   *  there is no line across the stream. */
+  waterTint?: Tint;
 
   /** WHAT FLOATS ON THE WATER — the same kit shape as `decor`, drawn on the
    *  SHALLOWS instead of on grass. The marshes', and nobody else's.
@@ -2243,6 +2317,20 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // stand a stone up in and nothing to have thrown it. The one `broken` in the
     // list is what stops three identical slabs a screen reading as a stamp.
     stone: { tint: { color: "#e6e2e0", amount: 0.46 }, shapes: ["slab", "slab", "broken"] },
+    // MILKY WATER, WHICH IS THE ONE THING OUT HERE THAT MOVES. Streams and rivers
+    // cross this region like they cross every other (3.6% of the flats' cells are
+    // stream, measured), and ordinary river blue on a white pan reads as a strip
+    // of somewhere else laid across it — the same complaint the glimmer's warm
+    // grey stone made about its teal floor, at fifty times the size.
+    //
+    // Pale, cold, and low-saturation: water that has been standing on salt and has
+    // taken it up. Measured, #dff2f7 at 0.45 lands the deep on (144,188,226) and
+    // the shallows on (169,216,233) — still twenty-five levels apart, and the
+    // shallows still the paler, so "you may wade here" survives the recolour.
+    // There is a test on exactly that, because the tempting number is higher and
+    // the thing a higher one costs is invisible until somebody drowns in a puddle
+    // they thought they could cross.
+    waterTint: { color: "#dff2f7", amount: 0.45 },
     // THE PLATES. See BiomeDef.cracks for why this may exist while the ground
     // bevel may not — the network is ruled across the world and a plate is six
     // tiles, so no line here ever ends on a cell edge.
@@ -2647,6 +2735,27 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       period: 0.34,
       shape: "noise",
       size: 1,
+    },
+    // THE PICTURE COMING APART (see BiomeDef.glitch). Magenta and cyan, which is
+    // not a taste so much as what a separated signal actually separates INTO —
+    // the two channels furthest from each other and from the region's own greens,
+    // so a fringed mark reads as one thing failing to line up with itself rather
+    // than as three small coloured plants.
+    //
+    // Dimmed well below both inks they sit beside: at full strength a fringe is a
+    // pixel of magenta on a green floor, which the eye reads as an OBJECT. What is
+    // wanted is the mark not quite agreeing with itself, and that lives at about a
+    // third.
+    glitch: {
+      warm: "#c8407a",
+      cold: "#3fd0d8",
+      // A third of the marks. Every mark torn is a font; none is a palette.
+      tear: 0.34,
+      // MEASURED AGAINST THE SCREEN RATHER THAN CHOSEN: at 0.006 per row-run a
+      // 25-tile view holds a handful of tears at a time, which is a wood with
+      // something wrong with it. At ten times that it is a broken television, and
+      // the trees stop being visible through it.
+      bars: { density: 0.007, run: 40, period: 0.4 },
     },
     // The floor's own wrongness, in marks: short vertical runs and a lone pixel,
     // in the crown ink rather than the tuft's. Nothing here is a plant, and that

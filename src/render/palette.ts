@@ -103,6 +103,9 @@ export function mixHex(base: string, tint: Tint): string {
   return `#${a.map((c, i) => toHex(c + (b[i] - c) * t)).join("")}`;
 }
 
+/** "Leave it alone", for a part that has nothing to say about a colour. */
+const NO_TINT: Tint = { color: "#000000", amount: 0 };
+
 /** Collapse a tile's region shares into the one region its turf looks like.
  *
  *  EXACT, not an approximation, and that is why it is a tint rather than a
@@ -139,7 +142,22 @@ export function blendRegions(parts: { def: BiomeDef; w: number }[]): BiomeDef {
     return { color: `#${acc.map((v) => toHex(v / amount)).join("")}`, amount };
   };
 
-  return { ...heaviest.def, ground: blend((d) => d.ground), tuft: blend((d) => d.tuft) };
+  // THE WATER TINT BLENDS TOO, WHERE ANY PART HAS ONE. It is the third thing in
+  // this file that is a colour rather than a shape, so it is the third thing that
+  // can be averaged — and it has to be, or a stream crossing out of the salt
+  // flats would change colour on the tile the heaviest region flips, which is a
+  // line drawn across running water.
+  //
+  // A part with no tint contributes amount 0 and is skipped by `blend`, so the
+  // milk fades out over exactly the tiles the crust does. Left off entirely when
+  // nobody has one, which keeps the common case identical.
+  const anyWater = parts.some((p) => p.def.waterTint);
+  return {
+    ...heaviest.def,
+    ground: blend((d) => d.ground),
+    tuft: blend((d) => d.tuft),
+    ...(anyWater ? { waterTint: blend((d) => d.waterTint ?? NO_TINT) } : {}),
+  };
 }
 
 /** The only tiles a region is allowed to recolour: the living ground it grew.

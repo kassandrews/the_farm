@@ -3,7 +3,7 @@ import { scenePalette, seasonSkin, biomeSkin, mixHex } from "./palette";
 import { MUSHROOM_ART, DEADWOOD_ART } from "./renderer";
 import { BIOMES, BROADLEAF } from "../content/biomes";
 import { SEASONS, seasonOn } from "../content/seasons";
-import { TILES, tileDef, GRASS, MUSHROOM, WATER, FARMLAND, FARMLAND_WET, FLOOR, STONE, BEDROCK, CAVE_FLOOR, ORE_VEIN, SHAFT, DARK_TREE } from "../content/tiles";
+import { TILES, tileDef, GRASS, MUSHROOM, SHALLOW, WATER, FARMLAND, FARMLAND_WET, FLOOR, STONE, BEDROCK, CAVE_FLOOR, ORE_VEIN, SHAFT, DARK_TREE } from "../content/tiles";
 
 const at = (month: number) => new Date(2026, month - 1, 15, 12).getTime();
 
@@ -210,6 +210,67 @@ describe("the regions that are drawn wrong", () => {
       expect(Math.abs(luma(one) - luma(two)), `${b.id}: one ink is brighter`).toBeLessThan(14);
     });
   }
+});
+
+describe("water a region has an opinion about", () => {
+  it("keeps the shallows the paler blue, however milky the region makes them", () => {
+    // The salt flats are the one region allowed to recolour water
+    // (content/biomes.ts §waterTint), and the thing that must survive it is the
+    // affordance: DESIGN §Water puts "you may wade here" in the COLOUR and
+    // nowhere else — no HUD ever says it — so a tint that closed the gap between
+    // the two blues would take a rule off the screen without anybody noticing
+    // until they were standing in the wrong one.
+    //
+    // Both tiles take the same pull, which is what preserves the ordering by
+    // construction; this asserts the gap has not merely survived but stayed
+    // legible. Measured at 25 levels of blue-ish distance against the untouched
+    // pair's 45.
+    const lum = (h: string): number => {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+      return 0.299 * r + 0.587 * g + 0.114 * b;
+    };
+    for (const b of Object.values(BIOMES)) {
+      if (!b.waterTint) continue;
+      const deep = mixHex(tileDef(WATER).color, b.waterTint);
+      const wade = mixHex(tileDef(SHALLOW).color, b.waterTint);
+      expect(lum(wade), `${b.id}: the shallows stopped being the paler blue`).toBeGreaterThan(
+        lum(deep),
+      );
+      expect(lum(wade) - lum(deep), `${b.id}: the two blues have closed up`).toBeGreaterThan(12);
+    }
+  });
+});
+
+describe("the picture coming apart", () => {
+  it("keeps the glitch channels off the region's own palette", () => {
+    // The fringe inks are meant to read as ONE MARK failing to line up with
+    // itself, which only works if neither channel could be mistaken for
+    // something growing there. Asserted as distance from the region's own ground
+    // and crown inks: a warm channel that landed near the crown colour would just
+    // be a second, blurrier plant.
+    const px = (h: string): number[] => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const far = (a: string, b: string): number => {
+      const [x, y] = [px(a), px(b)];
+      return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
+    };
+    for (const b of Object.values(BIOMES)) {
+      if (!b.glitch) continue;
+      for (const channel of [b.glitch.warm, b.glitch.cold]) {
+        for (const own of [b.ground.color, b.crown.color, b.tuft.color]) {
+          expect(far(channel, own), `${b.id}: a channel is the region's own colour`).toBeGreaterThan(
+            60,
+          );
+        }
+      }
+      // And they must be far from EACH OTHER, or the picture is separating into
+      // two copies of the same thing, which is a blur rather than a fault.
+      expect(far(b.glitch.warm, b.glitch.cold), `${b.id}: the channels agree`).toBeGreaterThan(100);
+      // Sparse, by the row's own argument: a screen of tears is a broken
+      // television, and you cannot see a wood through it.
+      expect(b.glitch.bars.density, `${b.id}: too many tears`).toBeLessThan(0.02);
+      expect(b.glitch.tear, `${b.id}: every mark torn is a font`).toBeLessThan(0.5);
+    }
+  });
 });
 
 describe("crown silhouettes", () => {

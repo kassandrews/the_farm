@@ -597,12 +597,38 @@ laid over water that was already crossable. Following them is exactly as valid a
 ignoring them and wading, and nothing anywhere knows which you did. A stepping
 stone that was the only way across would be a lock with a key made of scenery.
 
+### A region may colour the water that crosses it
+
+A region's ground tint reaches **turf and what grows on it, and nothing else** —
+not water, not paving, not anything a player made. That rule was found on screen
+(tinting everything pulled the sea halfway to dry sand) and it stands.
+
+The one exception is **stated per region and is only ever colour**: a stream
+crossing a salt pan is carrying the pan, and comes out milky. It reaches the two
+water tiles, changes no depth, no shelf, no wading speed and nothing about what a
+tile does, and it blends at the region's edge like the ground does, so there is
+no line drawn across running water.
+
+The affordance is what constrains it. **"You may wade here" lives in the colour
+and nowhere else** (§Water) — no HUD ever says it — so both blues take the same
+pull and the shallows stay the paler of the two. A tint that closed the gap
+between them would take a rule off the screen, and nobody would notice until they
+were standing in the wrong one.
+
 ### A place that is drawn wrong
 
-The world may hold a region whose **rendering is the content** — ground and trees
-in two inks alternating on a dither finer than anything else in the world, drawn
-as though the picture there were short of a bit. The Static is the one, and it is
-the furthest thing out.
+The world may hold a region whose **rendering is the content** — drawn as though
+the picture there were arriving damaged. The Static is the one, and it is the
+furthest thing out.
+
+**It takes three failures, not one.** Two inks alternating on a fine dither say
+"this place is short of a bit", which is a statement about colour, and colour is
+what every other region already says something about. What the eye reads as a
+fault is the picture *separating* (a warm ghost a pixel one way, a cold one the
+other, unevenly, so some trees are fine and the ones beside them are not), the
+picture *tearing* (a slice of it sliding sideways and holding for a third of a
+second), and a line of it *arriving wrong* (a run of flat colour where ground
+should be). One of the three alone is a filter. All three is a signal.
 
 This is a new kind of sentence for a biome and it needs its own fence, because a
 player who thinks they have found a **bug** cannot enjoy a place, and would be

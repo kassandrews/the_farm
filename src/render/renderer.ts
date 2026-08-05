@@ -1290,7 +1290,16 @@ export class Renderer {
     // it is texture on.
     const j = (decoHash(tx, ty, world.seed ^ 0x77af) - 0.5) * BORDER_DITHER;
     const nudge = (t: Tint): Tint => ({ color: t.color, amount: clamp01(t.amount + j) });
-    return { ...def, ground: nudge(def.ground), tuft: nudge(def.tuft) };
+    // The water tint takes the same nudge where a region has one, for the same
+    // reason and with more at stake: a stream leaving the salt flats crosses the
+    // fade lengthwise, so its bands would run ALONG the water rather than across
+    // the country, which is a ladder painted on a river.
+    return {
+      ...def,
+      ground: nudge(def.ground),
+      tuft: nudge(def.tuft),
+      ...(def.waterTint ? { waterTint: nudge(def.waterTint) } : {}),
+    };
   }
 
   /** Which region's decor kit this cell draws — its own, or a neighbour's.
@@ -1533,15 +1542,56 @@ export class Renderer {
    *
    *  `p` is the caller's own hash — each slot passes a different one, which is
    *  what keeps a bloom off the ferns' cells and the lilies off both. */
-  private drawKitMark(kit: DecorKit, px: number, py: number, p: number, stem: string): void {
+  private drawKitMark(
+    kit: DecorKit,
+    px: number,
+    py: number,
+    p: number,
+    stem: string,
+    /** The region's glitch, where it has one — see `BiomeDef.glitch`. A mark in
+     *  the Static separates into two channels and may be torn sideways; a mark
+     *  anywhere else takes this path with `glitch` undefined and is drawn exactly
+     *  as it always was. */
+    glitch?: BiomeDef["glitch"],
+  ): void {
     const ctx = this.ctx;
     const mark = kit.marks[Math.floor(p * kit.marks.length) % kit.marks.length];
     const mh = mark.length;
     const mw = Math.max(...mark.map((r) => r.length));
-    // INSET BY A PIXEL on every side — see above.
-    const ox = px + 1 + Math.floor(((p * 97) % 1) * (TILE - mw - 1));
-    const oy = py + 1 + Math.floor(((p * 883) % 1) * (TILE - mh - 1));
+    // INSET BY A PIXEL on every side — see above. Two pixels where a region
+    // fringes, because the ghosts sit one pixel outside the mark and the whole
+    // point of the inset is that nothing can touch the next cell's mark.
+    const pad = glitch ? 2 : 1;
+    const ox = px + pad + Math.floor(((p * 97) % 1) * (TILE - mw - pad * 2 + 1));
+    const oy = py + pad + Math.floor(((p * 883) % 1) * (TILE - mh - pad * 2 + 1));
+    // THE TEAR IS PER ROW AND IT IS NOT A CONSTANT SHEAR. A mark whose rows all
+    // slid the same way is italic; what reads as damage is rows disagreeing —
+    // one over, the next back, the next not at all.
+    const torn = glitch && ((p * 617) % 1) < glitch.tear;
+    const slide = (r: number): number =>
+      torn ? Math.round(((decoHash(Math.round(ox), Math.round(oy) + r, 0x2f11) - 0.5) * 4)) : 0;
+    const put = (dx: number, ink: string, alpha: number): void => {
+      ctx.globalAlpha = alpha;
+      for (let r = 0; r < mh; r++) {
+        const sx = ox + dx + slide(r);
+        for (let c = 0; c < mark[r].length; c++) {
+          if (mark[r][c] === ".") continue;
+          ctx.fillStyle = ink;
+          ctx.fillRect(sx + c, oy + r, 1, 1);
+        }
+      }
+      ctx.globalAlpha = 1;
+    };
+    // THE CHANNELS FIRST, THE MARK OVER THEM. Drawn under rather than over so the
+    // plant is still a plant — what you see is a green thing with colour leaking
+    // out either side of it, which is separation. Over the top it would be a
+    // magenta plant, which is a different species.
+    if (glitch) {
+      put(-1, glitch.cold, 0.55);
+      put(1, glitch.warm, 0.55);
+    }
     for (let r = 0; r < mh; r++) {
+      const sx = ox + slide(r);
       for (let c = 0; c < mark[r].length; c++) {
         const ch = mark[r][c];
         if (ch === ".") continue;
@@ -1554,7 +1604,78 @@ export class Renderer {
             : ch === "o"
               ? (kit.accent ?? stem)
               : stem;
-        ctx.fillRect(ox + c, oy + r, 1, 1);
+        ctx.fillRect(sx + c, oy + r, 1, 1);
+      }
+    }
+  }
+
+  /** CORRUPT SCANLINES — runs of flat colour where a row of ground should be.
+   *
+   *  The third of the Static's three failures (content/biomes.ts §glitch), and
+   *  the one that reads from across the screen: a line of the picture arriving
+   *  wrong, holding for a third of a second, and arriving differently next time.
+   *
+   *  ON THE WORLD PIXEL ROW AND A RUN OF ITS OWN. A tear is keyed on `(run cell,
+   *  world row, clock step)`, so it starts and ends wherever the run says and
+   *  crosses tile boundaries without knowing they are there — the band rule's
+   *  requirement, and also the whole effect: a tear that stopped at cell edges
+   *  would be a dotted line at the tile pitch, which is the failure this project
+   *  has now had five times.
+   *
+   *  The neighbouring run is checked too, for `pondDepth`'s reason one dimension
+   *  down: a tear starting in the run to the west can reach into this tile.
+   *
+   *  THE INKS ARE THE REGION'S OWN, plus its two channels. A tear in a colour
+   *  from outside the palette is a sprite lying on the grass; a tear in the
+   *  ground's own second ink is the ground being drawn wrong, which is the
+   *  sentence. */
+  private drawTears(
+    px: number,
+    py: number,
+    tx: number,
+    ty: number,
+    seed: number,
+    t: number,
+    inks: string[],
+    kit: NonNullable<BiomeDef["glitch"]>,
+  ): void {
+    const ctx = this.ctx;
+    const { density, run, period } = kit.bars;
+    const step = Math.floor(t / period);
+    const left = tx * TILE;
+    const top = ty * TILE;
+    // FROM ABOVE THE TILE, because a band is up to three rows tall and one
+    // starting in the cell above has to finish in this one. Same margin the crack
+    // network and `pondDepth` keep, one axis down — and the reason a band is not
+    // simply drawn per row: a tear that stopped at the top edge of a cell would
+    // be a mark at the tile pitch, which is the failure this whole file is built
+    // to avoid.
+    for (let r = -3; r < TILE; r++) {
+      const wy = top + r;
+      const cell = Math.floor(left / run);
+      for (const k of [cell - 1, cell]) {
+        const h = decoHash(k * 31 + step, wy, seed ^ 0x51c9);
+        if (h >= density) continue;
+        // Everything about the tear comes off the same hash, scaled to different
+        // decimals — the decor kit's trick, and the reason a tear's length never
+        // correlates with where it starts.
+        const g = h / density;
+        const x0 = k * run + Math.floor(((g * 97) % 1) * run);
+        const len = 5 + Math.floor(((g * 313) % 1) * run);
+        // ONE TO THREE ROWS TALL, AND THE HEIGHT IS THE DIFFERENCE between a
+        // tear and a scratch. At one pixel a band photographed as a hairline —
+        // legible, and reading as damage to the SCREEN rather than as the
+        // picture arriving wrong. A band with thickness is a slice of the image,
+        // which is what a corrupt scanline actually looks like.
+        const tall = 1 + Math.floor(((g * 149) % 1) * 3);
+        const y0 = Math.max(r, 0);
+        const y1 = Math.min(r + tall, TILE);
+        if (y1 <= y0) continue;
+        const from = Math.max(x0, left);
+        const to = Math.min(x0 + len, left + TILE);
+        if (to <= from) continue;
+        ctx.fillStyle = inks[Math.floor(((g * 613) % 1) * inks.length) % inks.length];
+        ctx.fillRect(px + (from - left), py + y0, to - from, y1 - y0);
       }
     }
   }
@@ -1808,6 +1929,25 @@ export class Renderer {
         // fill and under everything else, because a crack is IN the surface: the
         // tuft, the decor and anything standing here all sit on top of it.
         if (paint?.cracks) this.drawCracks(px, py, tx, ty, world.seed, paint.cracks);
+        // AND THE SCANLINES, where a region's picture comes apart. Over the fill
+        // and under everything that stands on it, like the cracks: a tear is the
+        // GROUND arriving wrong, not something lying on it — and a tear drawn over
+        // a tree would be a tear in the tree, which is the one thing this region
+        // may not do (content/biomes.ts §glitch).
+        if (paint?.glitch && wrong) {
+          this.drawTears(px, py, tx, ty, world.seed, t, [
+            // The ground's own second ink, which is most of them: the picture
+            // arriving in the other colour.
+            this.rolled(biomeSkin(seasoned, groundId, { ...turf, ground: wrong.ground }), tx, ty, world.seed, true),
+            // A brighter and a darker version of the fill itself — a row that came
+            // through with its level wrong rather than its hue.
+            mixHex(fill, { color: "#ffffff", amount: 0.22 }),
+            mixHex(fill, { color: "#000000", amount: 0.3 }),
+            // And, rarely, a channel. One in four tears, which is as much pure
+            // colour as a wood can take before it stops being a wood.
+            paint.glitch.cold,
+          ], paint.glitch);
+        }
         // Paving: generated ground that somebody nonetheless LAID, which is the
         // plaza and nothing else. Same `drawGrain` and the same `GRAIN.stone`
         // periods a flagstone floor uses, so a square and a floor are cut from
@@ -1877,6 +2017,20 @@ export class Renderer {
         // palette accident.
         if (def.name === "Water" || def.name === "Shallow water") {
           const shallow = def.name === "Shallow water";
+          // THE WATER THIS REGION MAKES OF IT. A stream crossing a salt pan is
+          // carrying the pan (content/biomes.ts §waterTint) — the one place a
+          // region is allowed an opinion about water, stated as its own field so
+          // that BIOME_GROUND's list, which exists because tinting everything
+          // pulled the sea halfway to sand, does not have to be loosened.
+          //
+          // Both blues take the SAME pull, so the shallows stay the paler of the
+          // two and "you may wade here" survives the recolour. Drawn over the fill
+          // rather than folded into it, because the fill has already been laid and
+          // this is a wash on top of the same water everywhere else has.
+          if (turf.waterTint && turf.waterTint.amount > 0) {
+            ctx.fillStyle = mixHex(def.color, turf.waterTint);
+            ctx.fillRect(px, py, TILE, TILE);
+          }
           // SPARSE, and this is the fix rather than a tuning change. Every cell
           // used to get a glint, all of them on the same row (`py + 6`) — which
           // is the per-cell edges rule (CLAUDE.md) wearing a fourth disguise. A
@@ -2083,7 +2237,7 @@ export class Renderer {
             // test, so every mark would come from the low end of the range —
             // one shape, in one corner, forever.
             const p = decoHash(tx, ty, world.seed ^ 0x77c3);
-            this.drawKitMark(kit, px, py, p, this.stemInk(world, tx, ty));
+            this.drawKitMark(kit, px, py, p, this.stemInk(world, tx, ty), paint?.glitch);
           }
 
           // THE SECOND KIT, on its own four hashes throughout. Sharing any of
@@ -2101,7 +2255,7 @@ export class Renderer {
           );
           if (bkit && bh < bkit.density && this.inSeason(bkit)) {
             const p = decoHash(tx, ty, world.seed ^ 0x3ac9);
-            this.drawKitMark(bkit, px, py, p, this.stemInk(world, tx, ty));
+            this.drawKitMark(bkit, px, py, p, this.stemInk(world, tx, ty), paint?.glitch);
           }
         } else if (def.name === "Sand") {
           // Grain, on the same terms as the grass tuft: a hash of the WORLD
@@ -4289,6 +4443,44 @@ export class Renderer {
     const wrong = biome?.dither;
     const ink = (c: string): string | CanvasPattern =>
       wrong ? (this.ditherFill(c, mixHex(c, wrong.crown)) ?? c) : c;
+    // THE CROWN SEPARATES BEFORE IT IS DRAWN, where the region says so. Two
+    // ghosts of the whole silhouette, one pixel either side, in the region's warm
+    // and cold channels — so the largest colour mass on screen is the thing most
+    // obviously failing to line up with itself (content/biomes.ts §glitch).
+    //
+    // UNDER THE CROWN AND NOT OVER IT, exactly as a decor mark's channels are:
+    // over the top it would be a magenta tree, and what is wanted is a tree with
+    // colour leaking out of its edges. Only the edge survives, because the crown
+    // is drawn solid over the middle of both ghosts — which is the whole of the
+    // effect for one extra pass and no per-pixel work.
+    //
+    // AND IT IS UNEVEN, TREE BY TREE. A fringe of exactly the same strength on
+    // every crown is a filter — something the whole picture is being put through
+    // on purpose, which reads as a style. A fault is intermittent: most trees are
+    // separated a little, some badly, and about one in six is perfectly fine,
+    // which is the one that makes the others look wrong. Off the tile's own hash,
+    // so a tree keeps its condition when you walk away from it.
+    const glitch = biome?.glitch;
+    const bad = decoHash(tx, ty, world.seed ^ 0x3ab1);
+    if (glitch && bad > 0.16) {
+      for (const [dx, hex] of [
+        [-1, glitch.cold],
+        [1, glitch.warm],
+      ] as const) {
+        ctx.globalAlpha = 0.25 + bad * 0.45;
+        ctx.fillStyle = hex;
+        for (let r = 0; r < rows.length; r++) {
+          const g = gaps?.[r] ?? 0;
+          if (g > 0) {
+            ctx.fillRect(cx - rows[r] + dx, top + r, rows[r] - g, 1);
+            ctx.fillRect(cx + g + 1 + dx, top + r, rows[r] - g, 1);
+          } else {
+            ctx.fillRect(cx - rows[r] + dx, top + r, rows[r] * 2 + 1, 1);
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+    }
     ctx.fillStyle = ink(crown);
     for (let r = 0; r < rows.length; r++) {
       const g = gaps?.[r] ?? 0;

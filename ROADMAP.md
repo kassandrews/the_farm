@@ -61,8 +61,9 @@ DESIGN.md, if it's a rule about the game rather than about build order).
   cracked white crust with the air going up), the marshes (rolled, mostly water
   and all of it wadeable, with lily pads and boards on it), and the Static
   (sited on a ring at 604, drawn in two inks on a dither, with a Moment of its
-  own). No schema change. Also fixed: high-contrast region borders had been
-  banding since the cinders shipped. See below.
+  own), plus milky water where a stream crosses the flats and a channel-split
+  glitch pass on the Static. No schema change. Also fixed: high-contrast region
+  borders had been banding since the cinders shipped. See below.
 - **Phase 16 — six new regions, complete.** The granite, the redwoods (with the
   giants), the long grass, and the cinders (with the caldera at the heart of
   one). Also the first terrain in the game that is a light source. Rock as a landscape
@@ -7604,6 +7605,38 @@ purpose.
   16ms in the meadow. The crack rasteriser is bounded by bbox rejection per tile
   and the dither patterns are cached per colour pair — which is why the ground
   roll had to be quantised where they are used.
+
+### The second pass, same day
+
+Two notes off a first look, both built:
+
+- **Streams DO cross the flats** — 3.6% of salt cells are stream, plus rivers,
+  lakes and sea — and ordinary river blue on a white pan reads as a strip of
+  somewhere else laid across it. `BiomeDef.waterTint` is the answer, and it is a
+  narrow, named exception rather than a loosening of `BIOME_GROUND`: colour only,
+  the two water tiles only, blended through `regionParts` so there is no line
+  across the stream. #dff2f7 at 0.45 → deep (144,188,226), shallows
+  (169,216,233). Both take the same pull, so the shallows stay the paler blue and
+  the wading affordance survives — asserted, because the tempting number is
+  higher and what a higher one costs is invisible until somebody walks into water
+  they thought they could cross. The border nudge covers the water tint too, or
+  its bands would run ALONG a stream rather than across the country.
+- **The Static's dither alone was "a great start" and not finished**, which was
+  right: a dither is a statement about colour, and every other region makes one.
+  `BiomeDef.glitch` adds the two failures that actually read as damage —
+  **separation** (magenta/cyan ghosts a pixel either side of every decor mark and
+  every tree crown, uneven per tree off its own hash, with about one in six
+  perfectly fine so the others look wrong) and **tearing** (corrupt scanlines:
+  runs of flat colour 1–3px tall on a world pixel row, holding 0.4s, in the
+  ground's own second ink or one of the channels). A third of decor marks are
+  also sheared per row, which is what makes a mark look corrupt rather than
+  italic. Every part of it steps off the WORLD, never the cell.
+- **A 1px tear is a scratch, not a slice.** The first cut drew bands one pixel
+  tall and they read as damage to the SCREEN rather than as the picture arriving
+  wrong. Height is the whole difference.
+- **The fence held:** all of it stops at ground and flora. The player, the
+  villagers, the buildings and the HUD are untouched, which is what keeps this a
+  place rather than a fault report.
 
 ### Loose ends
 
