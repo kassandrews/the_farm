@@ -7750,23 +7750,41 @@ Eighteen regions exist and the machinery is built, so the work turns to how they
 actually look — judged as a SET on `/biomes.html`, which is the only instrument
 that can answer a relative question ("is the scrub flat *compared to what*").
 
-**THE RULE THAT DECIDES WHAT MAY MOVE: near rows get PAINT ONLY.** Meadow, pines,
-birches, scrub and fen carry `near` weight, so they generate ground people have
-already built on — a density change out of those rows can put a tree inside a
-finished house. Paint cannot: tints, `tufts`, `stone`, `decor`, `bloom`, `sheet`,
-`crownRows` and the rest are render-path or scatter-free. Far rows may move
-densities as well, on the usual argument that nobody has built out there.
+**THE NEAR COLUMN IS OPEN FOR THIS PASS, BY DECISION.** The rule was that near
+rows get paint only — meadow, pines, birches, scrub and fen generate ground people
+have built on, so a density change there can put a bush inside a finished house.
+That constraint is about OTHER PEOPLE'S saves, and there are none: the game has
+one player with two save files, and the call is that a bush in a house is a
+smaller cost than five regions that cannot be improved. **Recorded as a decision
+rather than a discovery** — the arithmetic that made it a rule has not changed, so
+if this ever ships to anyone else the near column freezes again and anything moved
+under this heading has to be reviewed.
+
+Paint is still preferred where it does the job, because paint cannot break
+anything: tints, `tufts`, `stone`, `decor`, `bloom`, `sheet` and `crownRows` are
+render-path or scatter-free.
 
 **Read of the set, in order of how badly each wants work:**
 
 1. ~~**The scrub**~~ **done.** One flat olive from corner to corner — the one
    region that read as unfinished rather than as parched. It now has bald patches
    (`sheet`, the region's own twice-rejected idea, finally built the way the
-   granite taught: a long field, never a cell) and a thorn bush in its decor, which
-   is the tallest thing it is allowed to have, since a real shrub is a gathered
-   node and this is a near row.
-2. **The long grass.** Second-flattest: an olive field with tussocks, and the
-   bushes read as small dark blobs rather than as bushes.
+   granite taught: a long field, never a cell), a thorn bush in its decor, and —
+   once the near column opened — **actual scrub**: `shrubs: 1`, a tenth of cells,
+   which is the thing a region named for its bushes had never had. Its foliage tint
+   went from 0.35 to 0.6 at the same time, because a tint that was invisible on one
+   tree a screen is the whole picture on fifteen bushes. Rock compensated to 5.3:
+   undergrowth rolls before the scatter and took 3% of the stones with it.
+2. ~~**The long grass**~~ **done.** Swathes — the same `sheet` machinery at a
+   tenth of the strength, going to more grass rather than to less. A plain has no
+   features, so what it has instead is bands of seed-head and bands of leaf; at
+   fifteen units of green they were invisible outside a side-by-side and at forty
+   they read as two kinds of ground, so they sit at about twenty-five, on a
+   wavelength longer than a screen and a half.
+
+   *(Three regions now use `sheet` — bald ground, swathes, bare rock. A fourth
+   should have to argue: it is the only tool for large-scale ground variation, and
+   a tool that answers every question stops being an answer.)*
 3. **The granite.** The sheets are the row's whole point and a swatch of it can
    come up with none in frame; its stone list is two shapes on purpose, which
    leaves the ground doing all the work alone.

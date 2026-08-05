@@ -1280,9 +1280,36 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // rocky as it looked before by the measure that matters, which is how many
     // rocks are on screen. No other region moved by more than 7%, so no other
     // number in this file needed touching.
-    rocks: 5,
+    // AND 5.3 SINCE THE BUSHES ARRIVED, which is the same compensation one more
+    // time: undergrowth rolls before the scatter and takes cells the rocks would
+    // have had, so a tenth of the region turning into shrubs cost about 3% of the
+    // stones and dropped the region under the "still strewn with them" floor in
+    // sim/biome.test.ts. Measured, not guessed — the test is the instrument, and
+    // it is there precisely so that a change somewhere else cannot quietly stop
+    // the scrub being the rocky one.
+    rocks: 5.3,
     mushrooms: 0,
     water: 0,
+    // THE SCRUB HAS SCRUB IN IT, which it did not for its entire existence — a
+    // region named for its bushes, with no bushes. It was the near column that
+    // stopped it: undergrowth is a gathered node, so it moves solidity, and moving
+    // solidity in a near row can put a bush inside a house somebody already built.
+    // That constraint has been lifted deliberately (ROADMAP §the look pass), and
+    // this is the first thing it buys.
+    //
+    // A TENTH OF CELLS, which is between the glimmer's understory (0.55) and a
+    // heath's thicket (1.8). The test is DESIGN's own — a region is a mixture and
+    // not a demonstration, at several scales of plant at once — and the scrub had
+    // two of the three: grit underfoot and the odd wind-flattened tree, with
+    // nothing at knee height in between. Enough that the horizon has lumps on it
+    // and you walk around things; not so much that the region stops being open.
+    //
+    // IT DOES NOT MAKE HOME RICHER IN ANY WAY THAT MATTERS. A shrub is two wood
+    // against a tree's eight, so this is about a fifth of a wood-per-cell of the
+    // pinewood forty tiles from the same plaza — the arithmetic sim/biome.test.ts
+    // does when it asks whether the far country pays better than home, run on the
+    // near table instead.
+    shrubs: 1,
     // BLEACHED HAS TO OUT-DRY THE BIRCHES, which is a comparison this row could
     // not make until the birch ground was lifted: at 0.5 of #c2bd86 the scrub
     // measured (154,175,103) against the birches' (149,183,103) — the same wash,
@@ -1295,7 +1322,15 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // PARCHED, and the shape list says so more plainly than the tint does:
         // dry blades and grit, and not one sprout. Nothing here is sprouting.
     tufts: ["blades", "dot", "dot", "dot"],
-    crown: { color: "#8a9152", amount: 0.35 },
+    // HELD HARDER NOW THAT THE BUSHES ARE THE REGION'S COMMONEST PLANT, and the
+    // long grass's row is where this argument was worked out first. At 0.35 the
+    // foliage here was still the meadow's green — invisible while a tree in the
+    // scrub was an event, and the whole picture once there are fifteen bushes to
+    // a screen wearing the same tint. Dry-country scrub is grey-green and it is
+    // EVERGREEN: pulled to 0.6 the plants keep their own colour while the ground
+    // browns underneath them, which is what reads as autumn on dry country rather
+    // than as dry country that has been recoloured.
+    crown: { color: "#7c8a4e", amount: 0.6 },
     trunk: { color: "#7a6248", amount: 0.3 },
     // SUN-BLEACHED AND BROKEN UP, and the region with by far the most of it —
         // seventeen stones a screen against everywhere else's one or two, so this is
@@ -2037,6 +2072,33 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // tall grass with its own shadow in it rather than lawn or parched ground.
     ground: { color: "#a99a55", amount: 0.62 },
     tuft: { color: "#bcae66", amount: 0.55 },
+    // SWATHES, and they are the one thing a plain has instead of features. Open
+    // grassland is never one colour: it runs in bands of seed-head and bands of
+    // leaf, and which you are looking at changes with the ground under it. The
+    // region photographed as a single flat honey from corner to corner, which is
+    // the same complaint the scrub had and wants the same machinery (§sheet) at a
+    // tenth of the strength.
+    //
+    // NOT BALD GROUND. The scrub's sheet is soil showing through and is meant to
+    // be seen as an absence; this is more grass, paler and drier, and the whole
+    // craft of it is that it must NOT read as a patch. Fifteen units of green
+    // between the two (measured: (158,168,87) against (172,178,104)) is under
+    // half the step the scrub's makes — enough that the plain has shape and light
+    // in it, not enough that anything on it looks like an edge. Measured at a
+    // width of one screen: at fifteen units it was invisible except in a
+    // side-by-side, and at forty it was two kinds of ground rather than two lights
+    // on one.
+    //
+    // A LONG WAVELENGTH, longer than either of the others, because a swathe of
+    // grass is the biggest soft feature in the game: 38 tiles is over a screen and
+    // a half, so you are always inside one and never looking at the whole of it.
+    sheet: {
+      ground: { color: "#cdbd82", amount: 0.62 },
+      tuft: { color: "#d8ca7e", amount: 0.55 },
+      period: 38,
+      from: 0.38,
+      to: 0.72,
+    },
     // Upright, and mostly blades: the one region where the tuft doc's warning
     // about equal uprights reading as a gate does not apply, because at this
     // density they are not marks on a lawn — they are the lawn.
