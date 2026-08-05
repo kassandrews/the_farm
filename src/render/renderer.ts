@@ -82,6 +82,7 @@ import {
   seasonSkin,
   biomeSkin,
   blendRegions,
+  sharpenRegions,
   isBiomeGround,
   mixHex,
   type ScenePalette,
@@ -1264,8 +1265,19 @@ export class Renderer {
    *  allocating a thousand of those costs more than walking nine sites twice.
    *  Same reasoning `biomeAt` gives for having no cache of its own. */
   private turf(world: WorldState, tx: number, ty: number): BiomeDef {
-    const parts = regionParts(world.seed, world.homestead.spot, tx, ty);
+    const raw = regionParts(world.seed, world.homestead.spot, tx, ty);
+    // The salt flats do not fade (content/biomes.ts §hardEdge). Resolved before
+    // the blend, so a tile is crust or it is turf and never a mix of the two.
+    const parts = sharpenRegions(raw);
     const def = blendRegions(parts);
+    // EXCEPT THE WATER, WHICH STILL FADES, and it is blended off the RAW shares
+    // for that reason. A stream carries the pan downstream — the milk has
+    // somewhere to go — where the crust has none, so the one thing crossing a
+    // hard edge that should not snap at it is the thing that flows. Snapped, a
+    // stream changed colour mid-current on the tile the border crossed it, which
+    // reads as a bug in the water rather than as an edge of the land.
+    const wet = raw.some((p) => p.def.waterTint) ? blendRegions(raw).waterTint : undefined;
+    if (wet) def.waterTint = wet;
     // ONE REGION, NOTHING TO DISSOLVE — and this early-out is also the promise
     // that most of the world is bit-identical to what it was: the jitter below
     // can only ever touch a tile that is between two regions.
@@ -1332,7 +1344,10 @@ export class Renderer {
     h: number,
     slot: (d: BiomeDef) => T | undefined,
   ): T | undefined {
-    const parts = regionParts(world.seed, world.homestead.spot, tx, ty);
+    // Sharpened first, like the turf: a region that refuses to fade must not have
+    // its ferns — or its cracked plates — dithered a few tiles out past the edge
+    // of itself, which would be the fade coming back in a speckled costume.
+    const parts = sharpenRegions(regionParts(world.seed, world.homestead.spot, tx, ty));
     if (parts.length === 1) return slot(parts[0].def);
     let r = h;
     for (const p of parts) {
@@ -3163,7 +3178,7 @@ export class Renderer {
   /** Which region's air this cell carries, dithered across borders exactly as
    *  the ground decor is. */
   private moteKit(world: WorldState, tx: number, ty: number, h: number): MoteKit | undefined {
-    const parts = regionParts(world.seed, world.homestead.spot, tx, ty);
+    const parts = sharpenRegions(regionParts(world.seed, world.homestead.spot, tx, ty));
     if (parts.length === 1) return parts[0].def.motes;
     let r = h;
     for (const p of parts) {

@@ -7638,8 +7638,42 @@ Two notes off a first look, both built:
   villagers, the buildings and the HUD are untouched, which is what keeps this a
   place rather than a fault report.
 
+### The third pass: the flats do not fade
+
+**Asked for, and right:** a salt pan's edge is a shoreline, so `BiomeDef.hardEdge`
+lets a region refuse the blend. `render/palette.ts` §`sharpenRegions` resolves it
+before the shares are blended — all or nothing, decided by which share is
+heaviest, because the heaviest share is the nearest site and therefore the same
+answer `biomeAt` gives. A weight threshold instead would put holes at triple
+points, where the nearest of nine sites can be nearest and still hold well under
+half.
+
+- **RENDER PATH ONLY, and that is the whole reason it lives in the palette rather
+  than in `regionParts`.** Those weights are also what a cell rolls its trees and
+  rocks from (`scatterRegion`) — that is generation, it moves solidity, and it
+  would want the thousand-seed test re-run. It is also the better picture: the
+  ground snaps while the flora still thins over the approach, which is what a
+  pan edge actually looks like. The pan's own slabs scattering a few tiles into
+  the turf reads as a strandline for free.
+- **The water still fades**, blended off the RAW shares. A stream carries the pan
+  downstream; the crust does not flow. Snapped, a stream changed colour
+  mid-current on the tile the border crossed it, which reads as a bug in the
+  water rather than an edge of the land.
+- **The cracks, the decor and the air are sharpened too**, or the fade would come
+  back in a speckled costume — plates dithering a few tiles out past the edge of
+  the plate field.
+- **`sim/biome.test.ts` now asserts the edge EXISTS** ("DOES step at the salt
+  flats"), the inverse of the no-steps sweep beside it, so a later pass that
+  blends everything fails and has to come and read why. The near sweep cannot
+  reach a salt flat anyway — far rows are impossible inside 200 tiles — so no
+  exception had to be carved into it.
+
 ### Loose ends
 
+- **If the salt edge reads as a staircase rather than a shoreline**, the option
+  held in reserve is a one-tile fray — a few crust cells poking into the turf and
+  back — which is what a real strandline does. It was not built, because a fray
+  is the fade in a speckled costume and the photograph did not need it.
 - **The marsh coastline is blocky**, and inherently so: any waterline quantised
   onto 16px cells staircases, and this region is made almost entirely of
   waterline. The wobble helps. If it still reads as blue boxes on a second look,

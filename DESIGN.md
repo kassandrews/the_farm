@@ -475,6 +475,21 @@ the birches", which is how anybody navigates anywhere. Regions are sized to be
 walked across rather than admired from a distance, and their borders are
 irregular, so there is no seam to find.
 
+**Borders fade, except where the real thing has an edge.** Two kinds of country
+meeting — a wood and a scrub, a fen and a meadow — have no line between them in
+life, so a visible one is an artefact of the generator and gets blended away over
+about ten tiles. That is the rule, and it stays the rule. But a region whose edge
+is a real edge may **declare it and keep it**: a salt pan is a lake bed, the crust
+ends where the water used to reach, and fading that invents a hundred tiles of
+neither-turf-nor-crust, which is a thing that exists nowhere. The test is whether
+the *place* has an edge, never whether the seam is convenient.
+
+A declared edge is **colour only, and never moves a border**. What snaps is the
+ground; the flora still dithers across, so the trees thin out over the approach
+and the crust begins sharply — which is what the edge of a pan looks like. And
+anything that *flows* across it still fades, because water carries the place
+downstream where the ground cannot.
+
 A biome is **colour, growth density, and flora silhouette. Nothing else.** Not
 one number in the table touches a yield, a recipe, a growth time or an unlock. A
 cherry tree chops into `wood`. A biome that gated a material would be a daily cap

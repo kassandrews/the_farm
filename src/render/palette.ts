@@ -106,6 +106,39 @@ export function mixHex(base: string, tint: Tint): string {
 /** "Leave it alone", for a part that has nothing to say about a colour. */
 const NO_TINT: Tint = { color: "#000000", amount: 0 };
 
+/** Resolve any region that refuses to fade at its edge (content/biomes.ts
+ *  §hardEdge), BEFORE the shares are blended.
+ *
+ *  ALL OR NOTHING, DECIDED BY WHICH SHARE IS HEAVIEST. The heaviest share is the
+ *  region the tile is actually IN — it is the nearest site, which is the same
+ *  answer `biomeAt` gives — so a hard-edged region either owns the tile outright
+ *  or is not there at all. Asking the weight to cross a threshold instead would
+ *  put holes at the triple points, where the nearest of nine sites can be nearest
+ *  and still hold well under half.
+ *
+ *  RENDER PATH ONLY, and that is the whole reason this lives here rather than in
+ *  `regionParts`. Those weights are also what a cell rolls its trees and rocks
+ *  from (sim/world.ts §scatterRegion), and that is generation: sharpening them
+ *  would move solidity, re-landscape ground, and need the thousand-seed test run
+ *  again. What is wanted is narrower anyway — the ground snapping while the trees
+ *  still thin out over the approach, which is what the edge of a pan looks like.
+ *
+ *  Untouched when nothing in the neighbourhood is hard-edged, which is every tile
+ *  in the world but a few hundred per pan. */
+export function sharpenRegions<T extends { def: BiomeDef; w: number }>(parts: T[]): T[] {
+  if (parts.length === 1) return parts;
+  let heaviest = parts[0];
+  for (const p of parts) if (p.w > heaviest.w) heaviest = p;
+  if (heaviest.def.hardEdge) return [{ ...heaviest, w: 1 }];
+  const rest = parts.filter((p) => !p.def.hardEdge);
+  if (rest.length === parts.length || rest.length === 0) return parts;
+  // Renormalised, because everything downstream reads these as shares of one
+  // tile — a decor pick walks them cumulatively, and shares that no longer sum to
+  // 1 would hand the last part everything the missing region used to hold.
+  const total = rest.reduce((n, p) => n + p.w, 0);
+  return rest.map((p) => ({ ...p, w: p.w / total }));
+}
+
 /** Collapse a tile's region shares into the one region its turf looks like.
  *
  *  EXACT, not an approximation, and that is why it is a tint rather than a

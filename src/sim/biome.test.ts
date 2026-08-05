@@ -31,7 +31,7 @@ import {
 import { BIOMES, FIELD_WEIGHTS, type BiomeId } from "../content/biomes";
 import { FOUND } from "../content/found";
 import { GRASS, tileDef } from "../content/tiles";
-import { biomeSkin, blendRegions } from "../render/palette";
+import { biomeSkin, blendRegions, sharpenRegions } from "../render/palette";
 import { ROCK, WATER, SHALLOW, SAND, SHRUB, DIRT, STUMP, LOG, TREE, LAVA } from "../content/tiles";
 import { NODES, nodeForTile } from "../content/nodes";
 import { WATER_KINDS } from "../content/water";
@@ -837,7 +837,23 @@ describe("the turf blends across a region border", () => {
     return [1, 3, 5].map((i) => parseInt(skin.color.slice(i, i + 2), 16));
   };
 
+  /** The same, on the RENDER path — which is where a region that refuses to fade
+   *  is resolved (render/palette.ts §sharpenRegions). The helper above
+   *  deliberately does not sharpen, because what it is measuring is the blend
+   *  itself. */
+  const sharpTurf = (seed: number, x: number, y: number): number[] => {
+    const parts = sharpenRegions(regionParts(seed, SPOT, x, y));
+    const skin = biomeSkin(tileDef(GRASS), GRASS, blendRegions(parts));
+    return [1, 3, 5].map((i) => parseInt(skin.color.slice(i, i + 2), 16));
+  };
+
   it("never steps, anywhere", () => {
+    //
+    // ONE REGION IS EXEMPT AND IT IS EXEMPT BY NAME: the salt flats do not fade
+    // (content/biomes.ts §hardEdge). This sweep cannot reach one — it samples
+    // ±200 tiles and a salt flat is far-only — so nothing here has to make an
+    // exception; the test below asserts the edge is there on purpose.
+
     // THE TEST THAT CAUGHT THE CLEARING SEAM, which a screenshot had found and
     // nothing could have located: the forest wood was overlaid on the whole mix
     // and gated on "is the nearest site the home one", a hard Voronoi test, so it
@@ -864,6 +880,53 @@ describe("the turf blends across a region border", () => {
       }
     }
     expect(worst).toBeLessThanOrEqual(12);
+  });
+
+  it("DOES step at the salt flats, because a pan has a shoreline", () => {
+    // THE ONE EXEMPTION FROM THE TEST ABOVE, asserted rather than merely allowed
+    // — so that a later pass which "fixes" this edge fails here and has to come
+    // and read why (content/biomes.ts §hardEdge, DESIGN §Biomes).
+    //
+    // The near sweep cannot reach a salt flat anyway: it is a far row, impossible
+    // inside 200 tiles by construction. That is why this is its own sweep and why
+    // it measures the opposite quantity — not "is the gradient smooth" but "is
+    // there an edge at all". A pan is a lake bed; the crust ends where the water
+    // used to reach, and fading it over ten tiles invents a hundred tiles of
+    // ground that exists nowhere.
+    //
+    // Measured on the RENDER path, which is where the sharpening lives: the flora
+    // dither underneath is deliberately untouched, so trees still thin out over
+    // the approach.
+    let worst = 0;
+    let found = 0;
+    for (const seed of [3, 17, 93]) {
+      for (let r = 300; r <= 2400 && found < 3; r += 3) {
+        const x0 = Math.round(Math.cos(r) * r);
+        const y0 = Math.round(Math.sin(r) * r);
+        if (biomeAt(seed, SPOT, x0, y0) !== "salt") continue;
+        // Walk out of it along a bearing and find the biggest neighbour-to-
+        // neighbour jump in the ground colour.
+        for (const [dx, dy] of [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+        ]) {
+          for (let i = 0; i < 40; i++) {
+            const x = x0 + dx * i;
+            const y = y0 + dy * i;
+            const a = sharpTurf(seed, x, y);
+            const b = sharpTurf(seed, x + dx, y + dy);
+            worst = Math.max(worst, ...a.map((v, i2) => Math.abs(v - b[i2])));
+          }
+        }
+        found++;
+      }
+    }
+    expect(found, "no salt flat found to sweep").toBeGreaterThan(0);
+    // A real edge, not a gradient: the biggest legitimate step anywhere else in
+    // the game is 12 (see the sweep above), and turf to crust is over a hundred.
+    expect(worst, "the crust fades in like an ordinary region").toBeGreaterThan(40);
   });
 
   it("never steps out on the granite either, where the ground itself changes", () => {

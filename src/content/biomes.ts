@@ -633,6 +633,32 @@ export interface BiomeDef {
    *  two kinds of small thing before it stops reading as ground. */
   bloom?: DecorKit;
 
+  /** NO FADE AT THIS REGION'S EDGE — the crust starts where the crust starts.
+   *
+   *  THE BLEND IS THE RULE AND THIS IS THE ONE PLACE THE RULE IS WRONG. Region
+   *  borders fade over about ten tiles (sim/world.ts §BIOME_BLEND) because a hard
+   *  step between two flat tints is a seam you can stand on, and 8d spent a whole
+   *  step removing it. That argument is about two kinds of COUNTRY meeting — a
+   *  wood and a scrub, a fen and a meadow — where nothing in the world says the
+   *  change should be sudden, so a visible line is an artefact of the generator
+   *  and of nothing else.
+   *
+   *  A salt pan is not two kinds of country meeting. It is a LAKE BED, and its
+   *  edge is a shoreline: the crust ends where the water used to reach, which is
+   *  a line you can stand on in life. Fading it is the artefact — a hundred tiles
+   *  of neither-quite-turf-nor-quite-crust, which is a thing that exists nowhere.
+   *
+   *  WHAT IT DOES NOT DO, and why it is safe. It never touches `biomeAt`, so
+   *  every guarantee built on the border stands. It is a RENDER-PATH answer only:
+   *  the flora dither is untouched (sim/world.ts §scatterRegion, which is
+   *  generation and moves solidity), so the trees still thin out over the
+   *  approach and only the ground snaps — which is what the edge of a pan
+   *  actually looks like, vegetation giving up before the crust begins.
+   *
+   *  And the WATER still fades (see `waterTint`): a stream carries the pan
+   *  downstream, so the milk has somewhere to go. The crust does not flow. */
+  hardEdge?: boolean;
+
   /** THE COLOUR OF THE WATER THAT CROSSES THIS REGION. Optional, and the salt
    *  flats are the only row with one.
    *
@@ -2317,6 +2343,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // stand a stone up in and nothing to have thrown it. The one `broken` in the
     // list is what stops three identical slabs a screen reading as a stamp.
     stone: { tint: { color: "#e6e2e0", amount: 0.46 }, shapes: ["slab", "slab", "broken"] },
+    // THE CRUST STOPS DEAD, and it is the only region in the game that does. A
+    // pan is a lake bed and its edge is a shoreline — see BiomeDef.hardEdge for
+    // why that is a fact about the place rather than a preference about seams.
+    hardEdge: true,
     // MILKY WATER, WHICH IS THE ONE THING OUT HERE THAT MOVES. Streams and rivers
     // cross this region like they cross every other (3.6% of the flats' cells are
     // stream, measured), and ordinary river blue on a white pan reads as a strip
