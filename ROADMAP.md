@@ -7756,6 +7756,19 @@ you trip over them:
 
 ## House rules for whoever picks this up
 
+- **The service worker is production-only, and that is a bug fix rather than a
+  preference.** `public/` is served verbatim in dev, so `/sw.js` registered at
+  scope `/` and took over the whole localhost origin — including `/biomes.html`,
+  which is a developer tool with no reason to be cached. Its fetch handler is
+  network-first with a cache fallback, which is right for a player on a train and
+  wrong for a developer: one second of the dev server being down (restarted, port
+  changed, killed while taking screenshots) and it serves the last build it saw,
+  then keeps serving it, because the page in front of you came from the cache and
+  never asks again. It cost an hour of "the colour isn't updating" on a change
+  that was on disk, compiled, and visible in a screenshot. In dev it now
+  unregisters any worker already installed and drops the caches, which is the
+  half that actually heals a browser.
+
 - Read `DESIGN.md` first; it is the source of truth. If code and doc disagree,
   **fix the doc first**, then the code (CLAUDE.md).
 - Build the current phase before expanding sideways.
