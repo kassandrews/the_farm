@@ -190,14 +190,44 @@ export function shellFinish(world: WorldState, x: number, y: number): SkinId | n
   // test would have let a wooden sash paint a marble cell pine, which is exactly
   // the bug this function was written to fix, one structure later.
   if (cell.id === "wall") return cell.finish;
-  for (const [dx, dy] of [
+  // ALONG THE RUN, not just next door. Three windows in a row is one gallery
+  // (render/renderer.ts §drawWindow), and the middle one of those has no wall
+  // touching it at all — its west and east neighbours are the other two panes,
+  // and its north and south are the inside and the outside of the house. Asking
+  // only the four adjacent cells, it found nothing and fell through to its own
+  // sash finish, so the middle pane of every run painted its cell a different
+  // colour from the two beside it. A wall with a window in it does not change
+  // material halfway along.
+  //
+  // Each direction is walked outward until it leaves the run — through further
+  // openings, stopping at the first gap — and the rings are walked in step so
+  // the NEAREST wall still wins. At distance 1 that is exactly the old
+  // west-east-north-south answer, which is what keeps a doorway between two
+  // differently finished runs deciding the way it always did.
+  const dirs = [
     [-1, 0],
     [1, 0],
     [0, -1],
     [0, 1],
-  ]) {
-    const n = structureAt(world, x + dx, y + dy);
-    if (n && n.id === "wall") return n.finish;
+  ];
+  const live = dirs.map(() => true);
+  // Long enough for any run somebody builds as one wall, short enough that this
+  // stays a handful of lookups — it runs per visible cell, per frame.
+  for (let d = 1; d <= 16; d++) {
+    let searching = false;
+    for (let i = 0; i < dirs.length; i++) {
+      if (!live[i]) continue;
+      const n = structureAt(world, x + dirs[i][0] * d, y + dirs[i][1] * d);
+      // A gap ends that direction: the wall on the far side of the yard is not
+      // the run this window is set into.
+      if (!n) {
+        live[i] = false;
+        continue;
+      }
+      if (n.id === "wall") return n.finish;
+      searching = true;
+    }
+    if (!searching) break;
   }
   // A door standing on its own is its own wall, and wears what it was placed
   // in. Rare, legal, and the only case where a door's finish paints anything

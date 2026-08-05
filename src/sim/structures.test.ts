@@ -361,6 +361,28 @@ describe("what a door's shell is built from", () => {
     expect(shellFinish(w, 20, 20)).toBe("walnut");
   });
 
+  it("reaches past the other panes of a window run", () => {
+    // The middle of three windows has no wall touching it: west and east are
+    // the other two panes, north and south are the inside and the outside of
+    // the house. It used to fall through to its own sash finish, so the middle
+    // cell of every run came out a different colour from the two beside it.
+    const w = world();
+    for (let x = 19; x <= 23; x++) clear(w, x, 20);
+    placeStructure(w, 19, 20, "wall", "granite");
+    for (let x = 20; x <= 22; x++) placeStructure(w, x, 20, "window", "pine");
+    placeStructure(w, 23, 20, "wall", "granite");
+    for (let x = 20; x <= 22; x++) expect(shellFinish(w, x, 20)).toBe("granite");
+  });
+
+  it("does not reach across a gap to an unrelated wall", () => {
+    const w = world();
+    for (let x = 19; x <= 23; x++) clear(w, x, 20);
+    placeStructure(w, 20, 20, "window", "pine");
+    // Two cells away with nothing between: a different building, not this run.
+    placeStructure(w, 22, 20, "wall", "granite");
+    expect(shellFinish(w, 20, 20)).toBe("pine");
+  });
+
   it("is null where nothing is built", () => {
     expect(shellFinish(world(), 20, 20)).toBe(null);
   });
