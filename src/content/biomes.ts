@@ -152,6 +152,29 @@ export interface BiomeDef {
    *  four fellings against one. Keep it that way: this must never become a
    *  reason to walk somewhere, only a thing you find there. */
   shrubs?: number;
+  /** FRUIT ON THAT UNDERGROWTH: the ink for a berry pixel and the month it is
+   *  on. Optional, and meaningless without `shrubs` — this is paint applied to
+   *  the bush sprite, so a region with no bushes has nothing to paint.
+   *
+   *  IT IS PAINT AND IT CHANGES NO NUMBER, which is the whole reason it was
+   *  allowed to be fruit at all. A berried bush chops for the same two wood a
+   *  bare one does, in the same swing, all four seasons; nothing here is picked,
+   *  counted or waited for. That keeps it inside the rule the DecorKit season
+   *  field is under (§DecorKit.season, DESIGN §Materials — a season reaches
+   *  APPEARANCE and never a number) while sitting on a gathered node, which is
+   *  new: the bush was already there in January and is already yours to fell.
+   *
+   *  WHY IT IS NOT ITS OWN SCATTER. A blueberry patch drawn as ground decor
+   *  would have put berries on the grass BESIDE the bushes — two unrelated
+   *  layers claiming the same plant — and a gathered berry would have made a
+   *  region a reason to walk somewhere for a material, which §shrubs above
+   *  forbids in the field right over this one. Painting the node that is already
+   *  standing there is the only version that is one plant.
+   *
+   *  Expect to be asked why you cannot pick them. That is the trade: the alternative
+   *  is a foraging economy with a season on it, and this game has no daily caps
+   *  and no scarce materials to hang one from. */
+  berries?: { season: SeasonId; color: string };
   /** Chance a bare cell carries a patch of mushrooms. */
   mushrooms: number;
 
@@ -1339,6 +1362,25 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     name: "the pines",
     trees: 2.2,
     rocks: 0.5,
+    // LOWBUSH BLUEBERRY, and it is the same soil argument the lupine below is
+    // already making: Vaccinium angustifolium wants acid, sandy, half-shaded
+    // ground, which is a pine barren, which is this row. The two are companions
+    // in the real place — a barren is lupine and blueberry through the same
+    // scrub — so the region ends up with one plant community stated twice rather
+    // than two decorations that happen to share a row.
+    //
+    // THINNER THAN THE HEATH'S 1 AND THE GLIMMER'S 0.55, because this canopy is
+    // the densest in the game and blueberry fruits in the OPENINGS. At 0.4 the
+    // bushes read as what comes up where the pines let light through, which is
+    // both the true picture and the one that keeps the wood walkable — the
+    // trees here are already 2.2 and undergrowth is solid.
+    shrubs: 0.4,
+    // And in summer they carry fruit. See §BiomeDef.berries: paint on a node,
+    // no yield, no picking. The ink is the BLOOM on the skin rather than the
+    // fruit under it — a real blueberry reads as dusty pale blue at arm's length
+    // and as near-black only in the hand, and near-black on this crown would be
+    // a smudge rather than a berry. It is also the only blue accent in the file.
+    berries: { season: "summer", color: "#93b4d4" },
     mushrooms: 0.02,
     water: 0,
     // Deadfall. A pine wood is the one that manufactures this without being old

@@ -1181,12 +1181,24 @@ describe("shrubs", () => {
     // Every region without a `shrubs` number must produce none, over enough
     // ground that a rare roll would have shown up. The meadow matters most: it
     // is the town's own region and its terrain is a promise to live saves.
+    //
+    // ASKED OF `scatterRegion`, NOT `biomeAt`, and the difference is the whole
+    // reason this comment is here. Flora rolls off the SCATTER region — the
+    // dithered one — so at a border a cell paints as meadow and grows as
+    // whatever it grew as, which is how a pine stands a tile inside the grass
+    // and has since the treeline existed. The pines gaining undergrowth is the
+    // first time that dither could put a BUSH there, and it is the same fact,
+    // not a new one: the invariant is that no region without `shrubs` ever grows
+    // one, and asking the field that generation actually reads is how you state
+    // it. The town's own ground is protected outright a layer down — see
+    // `scatterRegion`'s HOME_REGION_REACH guard, which returns the hard region
+    // inside the town box and never dithers at all.
     const seed = 7;
     for (const spot of SPOTS) {
       let meadowShrubs = 0;
       for (let x = -40; x <= 40; x++) {
         for (let y = -40; y <= 40; y++) {
-          if (biomeAt(seed, spot, x, y) !== "meadow") continue;
+          if (scatterRegion(seed, spot, x, y) !== "meadow") continue;
           if (generatedTile(seed, spot, x, y) === SHRUB) meadowShrubs++;
         }
       }

@@ -212,6 +212,41 @@ describe("the regions that are drawn wrong", () => {
   }
 });
 
+// FRUIT ON THE UNDERGROWTH (content/biomes.ts §berries), which is paint applied
+// to a NODE and is therefore the one decoration in the file that can be written
+// for a plant the region does not have.
+describe("the regions with berries in them", () => {
+  const px = (h: string): number[] => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const luma = ([r, g, b]: number[]): number => 0.299 * r + 0.587 * g + 0.114 * b;
+
+  for (const b of Object.values(BIOMES)) {
+    if (!b.berries) continue;
+    it(`${b.id} has something to put them on`, () => {
+      // A berry is drawn on the shrub sprite and nowhere else, so a row with
+      // fruit and no bushes states a season's worth of nothing — invisible in
+      // the table, invisible in a swatch, and invisible on screen, which is the
+      // worst of the three.
+      expect(b.shrubs, `${b.id}: berries with no shrubs to grow on`).toBeTruthy();
+    });
+
+    it(`${b.id} draws its fruit against its own foliage`, () => {
+      // The lupine's lesson one region up, applied to a smaller mark: that spike
+      // wins on SHAPE because lavender on mid green is about 1.2:1, and a berry
+      // has no shape to win on — it is one pixel, so contrast is the whole of
+      // what makes it a berry rather than a stray light pixel in a bush.
+      //
+      // Measured against the crown ink the shrub is actually filled with, not
+      // against the grass: a berry sits on foliage.
+      const fruit = px(b.berries!.color);
+      const leaf = px(b.crown.color);
+      expect(
+        Math.abs(luma(fruit) - luma(leaf)),
+        `${b.id}: the fruit is the same value as the leaves`,
+      ).toBeGreaterThan(30);
+    });
+  }
+});
+
 describe("water a region has an opinion about", () => {
   it("keeps the shallows the paler blue, however milky the region makes them", () => {
     // The salt flats are the one region allowed to recolour water

@@ -39,6 +39,7 @@ import type { TileDef } from "../content/tiles";
 import { skinDef } from "../content/skins";
 import { hash2 } from "../sim/rng";
 import type { SkinDef, SkinId } from "../content/skins";
+import type { SeasonId } from "../content/seasons";
 import {
   decoHash,
   groundTone,
@@ -1771,7 +1772,7 @@ export class Renderer {
    *  `palette.season` is null underground, which is correct without a special
    *  case and for the mote's exact reason: a cave has no month, so a seasonal
    *  thing in one would be weather where §Seasons says there is none. */
-  private inSeason(kit: DecorKit): boolean {
+  private inSeason(kit: { season?: SeasonId }): boolean {
     return !kit.season || this.palette.season?.id === kit.season;
   }
 
@@ -4865,6 +4866,37 @@ export class Renderer {
     for (let r = 1; r <= litTo; r++) {
       const back = Math.floor((r / litTo) * rows[r] * 0.75);
       ctx.fillRect(cx - rows[r] + 1, top + r, Math.max(1, rows[r] - 1 - back), 1);
+    }
+    // FRUIT, for the one season that has any (§BiomeDef.berries). Paint on top
+    // of the dome and nothing else — no tile, no yield, no pick.
+    //
+    // ONE PIXEL EACH, INSET FROM THE ROW'S OWN EDGE. A berry that lands on the
+    // outline eats the outline, and at nine rows tall the silhouette is most of
+    // what says "bush"; the inset is the same pixel of clearance a decor mark
+    // keeps inside its cell. 2×2 was tried first and is a plum — a fifth of the
+    // plant across.
+    //
+    // AND THEY DO NOT TAKE THE SEASON'S TINT, exactly as `DecorKit.accent` does
+    // not: the foliage under them browns and turns with the palette, and the
+    // fruit stays the colour the fruit is. In this region that never shows —
+    // summer is the only month it is on — but the rule is the accent's rule and
+    // it should not be restated differently here.
+    //
+    // The low rows only, and never the top two: fruit hangs UNDER the leaves,
+    // and berries scattered evenly over a dome read as blossom or as snow.
+    const fruit = biome?.berries;
+    if (fruit && this.inSeason(fruit)) {
+      ctx.fillStyle = fruit.color;
+      for (let r = 3; r < rows.length; r++) {
+        // A separate salt per row, and a separate one from the width's: a bush
+        // whose berries all moved together when it got wider would be one lump
+        // of variation wearing two hats, which is the note on `peak` above.
+        const g = decoHash(tx, ty, world.seed ^ (0x5b17 + r * 977));
+        if (g > 0.62) continue; // most rows carry none — a bush has a few, not a rash
+        const span = rows[r] - 1;
+        const dx = span <= 0 ? 0 : Math.round((g / 0.62) * span * 2) - span;
+        ctx.fillRect(cx + dx, top + r, 1, 1);
+      }
     }
     void night; // the palette already carries the hour; the flag is the signature
 
