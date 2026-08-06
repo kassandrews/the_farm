@@ -13,6 +13,15 @@
 // is parched against the meadow. A page that shows nine at once is a different
 // instrument from nine screenshots.
 //
+// WHAT GROWS HERE, AS CHIPS. A swatch answers what a place LOOKS like, which is
+// the harder question and the reason this page exists — but it cannot answer
+// "what flowers are in this region", because a kit puts a mark on about one cell
+// in seven and finding all of one region's is a hunt. The strip under each card
+// is every mark in every slot, blown up, on that region's own ground, in the
+// month the sheet is set to. It replaces the hack it grew out of: three passes
+// of the meadow's clover were drawn by temporarily setting `density: 0.95` and
+// photographing the result.
+//
 // Not shipped: `npm run build` only bundles index.html. Reach it with
 // `npm run dev` at /biomes.html.
 //
@@ -35,9 +44,25 @@ import {
   calderaCentre,
   staticCentre,
 } from "../sim/world";
-import { tileDef } from "../content/tiles";
-import { Renderer } from "../render/renderer";
+import { tileDef, GRASS } from "../content/tiles";
+import { Renderer, paintMark } from "../render/renderer";
+import { scenePalette, mixHex, biomeSkin, seasonSkin } from "../render/palette";
+import { seasonAt } from "../sim/seasons";
+import type { DecorKit, BiomeDef } from "../content/biomes";
 import type { WorldState } from "../sim/types";
+
+/** Scene pixels per tile, matching the renderer's own. */
+const TILE = 16;
+
+/** How far a mark chip is blown up.
+ *
+ *  FOUR, AND THE CEILING IS THE GRID RATHER THAN LEGIBILITY. At six you can
+ *  count the pixels of a 2x2 leaflet comfortably — and the strip came out wider
+ *  than the swatch, so the cards stopped tiling three across and the sheet grew
+ *  by half again. That is the exact failure `SPAN` was tuned down from 22 to fix:
+ *  a contact sheet that does not fit on a screen has stopped comparing anything.
+ *  Four still resolves a single pixel, and the strip stays inside the card. */
+const CHIP_SCALE = 4;
 
 /** Tiles across a swatch.
  *
@@ -208,9 +233,104 @@ function findRegion(seed: number, id: BiomeId): { x: number; y: number } | null 
 const sheet = document.getElementById("sheet")!;
 const swatches: Swatch[] = [];
 
+/** WHAT GROWS HERE, drawn one mark to a chip beside the swatch.
+ *
+ *  A SWATCH CANNOT ANSWER "WHAT FLOWERS ARE IN THIS REGION". It answers what the
+ *  place LOOKS like, which is the harder question and the reason this page
+ *  exists — but a kit at its real density puts a mark on about one cell in seven,
+ *  so finding all of one region's is a hunt. Three passes of the meadow's clover
+ *  were drawn by temporarily setting `density: 0.95` and photographing the
+ *  result; this strip is that hack made part of the tool. Every mark, at a size
+ *  you can resolve a pixel at, on the region's own ground, in the current month.
+ *
+ *  ON THE REGION'S GROUND, NOT ON THE PANEL, because half of what a mark has to
+ *  do is be legible against the turf it stands on — the meadow's clover and the
+ *  fen's reeds are near-identical greens on very different floors, and a chip on
+ *  a dark UI panel would flatter both.
+ *
+ *  Through `paintMark`, the renderer's own, so this is the art the game draws and
+ *  not a second copy of it (see the note at the head of this file). */
+interface Chip {
+  canvas: HTMLCanvasElement;
+  def: BiomeDef;
+  kit: DecorKit;
+  mark: string[];
+}
+
+const chips: Chip[] = [];
+
+function marksStrip(def: BiomeDef): HTMLElement {
+  const wrap = document.createElement("div");
+  wrap.className = "marks";
+  const slots: [string, DecorKit | undefined][] = [
+    ["all year", def.decor],
+    [def.bloom?.season ?? "in season", def.bloom],
+    ["on water", def.float],
+  ];
+  for (const [label, kit] of slots) {
+    if (!kit) continue;
+    const group = document.createElement("div");
+    group.className = "slot";
+    group.append(
+      Object.assign(document.createElement("span"), { className: "note", textContent: label }),
+    );
+    for (const mark of kit.marks) {
+      const canvas = document.createElement("canvas");
+      canvas.className = "chip";
+      // Sized to the CELL the mark would stand in, not to the mark, so a chip
+      // shows a mark at its true size: a 6x4 clover and a 3x3 sprout are meant
+      // to look different, and a canvas per mark would draw them the same.
+      canvas.width = TILE;
+      canvas.height = TILE;
+      canvas.style.width = `${TILE * CHIP_SCALE}px`;
+      canvas.style.height = `${TILE * CHIP_SCALE}px`;
+      canvas.title = mark.join("\n");
+      group.append(canvas);
+      chips.push({ canvas, def, kit, mark });
+    }
+    wrap.append(group);
+  }
+  return wrap;
+}
+
+/** Repaint every chip for a moment in the year.
+ *
+ *  SEPARATE FROM BUILDING THEM, and that is the whole reason this is a function.
+ *  The `When` control only sets `state.clock`; the swatches pick it up because
+ *  they redraw every frame off `now`. Chips drawn once at build time would keep
+ *  the month they were born in and go on disagreeing with the swatch beside them
+ *  — two clocks for one fact, which this page's own CLOCKS note calls worse than
+ *  no preview. */
+function paintChips(now: number): void {
+  const palette = scenePalette(seasonAt(now), false);
+  for (const { canvas, def, kit, mark } of chips) {
+    // The stem ink is `Renderer.stemInk`'s: a small plant takes the CANOPY's
+    // colour and seasons with it, not the tuft's.
+    const stem = mixHex(palette.crown, def.crown);
+    // And the ground under it, in the renderer's own order: the MONTH first,
+    // then the region's tint on top of that answer. The other way round is
+    // silently wrong and looked plausible — `seasonSkin` replaces `color`
+    // outright from the season's table, so tinting first and seasoning second
+    // throws the region away and every chip on the page comes out meadow green,
+    // including the salt flats'.
+    const turf = biomeSkin(seasonSkin(tileDef(GRASS), GRASS, palette), GRASS, def).color;
+    const g = canvas.getContext("2d")!;
+    g.fillStyle = turf;
+    g.fillRect(0, 0, TILE, TILE);
+    const w = Math.max(...mark.map((r) => r.length));
+    paintMark(g, kit, mark, Math.floor((TILE - w) / 2), Math.floor((TILE - mark.length) / 2), stem);
+  }
+}
+
+/** The moment the sheet is currently set to. */
+function clockNow(): number {
+  return new Date((CLOCKS.find((c) => c.id === state.clock) ?? CLOCKS[1]).at).getTime();
+}
+
 function build(): void {
   sheet.innerHTML = "";
   swatches.length = 0;
+  chips.length = 0;
 
   // ONE world, shared. The generator is a total function of (seed, x, y) and the
   // chunk cache lives on the world, so nine swatches of the same seed should
@@ -232,6 +352,10 @@ function build(): void {
       note,
     );
     card.append(canvas, cap);
+    // What grows here, under the caption. Painted by `paintChips` at the end of
+    // the build and again whenever the month changes.
+    const kits = marksStrip(BIOMES[id]);
+    if (kits.childElementCount) card.append(kits);
     sheet.append(card);
 
     const at = findRegion(state.seed, id);
@@ -264,6 +388,7 @@ function build(): void {
     }
     swatches.push(s);
   }
+  paintChips(clockNow());
 }
 
 /** Size a swatch to SPAN tiles at the current zoom step.
@@ -285,8 +410,7 @@ function sizeSwatch(s: Swatch): void {
 }
 
 function frame(): void {
-  const clock = CLOCKS.find((c) => c.id === state.clock) ?? CLOCKS[1];
-  const now = new Date(clock.at).getTime();
+  const now = clockNow();
   for (const s of swatches) {
     if (!s.renderer || !s.world) continue;
     s.renderer.snapCamera(s.world); // no follow here; the swatch is a still
@@ -308,7 +432,10 @@ function control(label: string, el: HTMLElement): void {
 const clockSel = document.createElement("select");
 for (const c of CLOCKS) clockSel.append(new Option(c.label, c.id));
 clockSel.value = state.clock;
-clockSel.onchange = () => (state.clock = clockSel.value);
+clockSel.onchange = () => {
+  state.clock = clockSel.value;
+  paintChips(clockNow());
+};
 control("When", clockSel);
 
 const zoomSel = document.createElement("select");

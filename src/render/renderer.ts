@@ -532,6 +532,40 @@ export const DEADWOOD_ART: Record<"stump" | "log", string[]> = {
 };
 
 export type MushroomState = "open" | "button";
+/** A kit mark's pixels, at an exact position, in the kit's three inks.
+ *
+ *  SPLIT OUT SO THE PREVIEW CAN USE IT. `/biomes.html` draws each region's marks
+ *  as chips beside its swatch, and the tool's whole premise is that it shows the
+ *  REAL art through the REAL renderer — a second loop over `marks` in the preview
+ *  would be a second drawing of a fern, which is the thing that page exists to
+ *  avoid. What is shared is the part that can drift: three inks with two
+ *  fallbacks. Placement stays in `drawKitMark`, because a chip wants the mark
+ *  centred and still where a cell wants it scattered.
+ *
+ *  `slide` is the Static's per-row tear; everything else passes nothing. */
+export function paintMark(
+  ctx: CanvasRenderingContext2D,
+  kit: DecorKit,
+  mark: string[],
+  x: number,
+  y: number,
+  stem: string,
+  slide: (r: number) => number = () => 0,
+): void {
+  for (let r = 0; r < mark.length; r++) {
+    const sx = x + slide(r);
+    for (let c = 0; c < mark[r].length; c++) {
+      const ch = mark[r][c];
+      if (ch === ".") continue;
+      // Three inks: `*` the eye, `o` the petals, anything else the stem. The eye
+      // falls back to the petal colour, so a kit that never uses `*` is unchanged.
+      ctx.fillStyle =
+        ch === "*" ? (kit.core ?? kit.accent ?? stem) : ch === "o" ? (kit.accent ?? stem) : stem;
+      ctx.fillRect(sx + c, y + r, 1, 1);
+    }
+  }
+}
+
 export const MUSHROOM_ART: Record<MushroomShape, Record<MushroomState, string[]>> = {
   // THE ORIGINAL ART, pixel for pixel — this is what every region drew before the
   // table existed, and the meadow's mushroom must not move (the same promise the
@@ -1657,23 +1691,7 @@ export class Renderer {
       put(-1, glitch.cold, 0.55);
       put(1, glitch.warm, 0.55);
     }
-    for (let r = 0; r < mh; r++) {
-      const sx = ox + slide(r);
-      for (let c = 0; c < mark[r].length; c++) {
-        const ch = mark[r][c];
-        if (ch === ".") continue;
-        // Three inks: `*` the eye, `o` the petals, anything else the stem. The
-        // eye falls back to the petal colour, so a kit that never uses `*` is
-        // unchanged.
-        ctx.fillStyle =
-          ch === "*"
-            ? (kit.core ?? kit.accent ?? stem)
-            : ch === "o"
-              ? (kit.accent ?? stem)
-              : stem;
-        ctx.fillRect(sx + c, oy + r, 1, 1);
-      }
-    }
+    paintMark(ctx, kit, mark, ox, oy, stem, slide);
   }
 
   /** CORRUPT SCANLINES — runs of flat colour where a row of ground should be.

@@ -95,6 +95,34 @@
       .note {
         opacity: 0.45;
       }
+      /* What grows here — one chip per mark, blown up so a 2x2 leaflet can be
+         counted. Pixelated for the same reason the swatch is (CLAUDE.md). */
+      /* WIDTH 0 PLUS MIN-WIDTH 100%: the strip takes the card's width without
+         contributing to it. The card is sized by its canvas, and a flex item
+         whose content is wider than the swatch would push the card out and break
+         the three-across grid the swatch size was chosen for. */
+      .marks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 10px;
+        align-items: center;
+        width: 0;
+        min-width: 100%;
+      }
+      .marks .slot {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+      }
+      .marks .note {
+        font-size: 12px;
+      }
+      canvas.chip {
+        image-rendering: pixelated;
+        border-radius: 4px;
+        display: block;
+      }
       .absent canvas.swatch {
         width: 120px;
         height: 120px;
