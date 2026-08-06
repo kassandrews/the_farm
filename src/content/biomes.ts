@@ -1603,27 +1603,42 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // disagreed about width would read as two kinds of tree, which is exactly
     // what a second form is not for.
     //
-    // IT STANDS AS TALL, WHICH IS THE POINT. 20 + 21 against 12 + 33 - 6, so the
-    // canopy is level across a stand and the difference is entirely WHERE the
+    // IT STANDS AS TALL, WHICH IS THE POINT. 16 + 27 - 4 against 12 + 33 - 6, so
+    // the canopy is level across a stand and the difference is entirely WHERE the
     // foliage sits on the stem. A shorter second form would have read as a
     // sapling — a different age of tree rather than a different history — and the
     // wood would look patchy instead of mixed.
     //
-    // It closes onto the trunk in the same three rows the skirted one does (6, 4,
-    // 2): with no overlap the last row lands directly on the five-pixel stem, so
-    // the crown meets the bark instead of stopping flat above it.
+    // AND IT CAME DOWN A THIRD AFTER THE FIRST LOOK. Drawn with no overlap on a
+    // twenty-pixel stem it had twelve pixels of bare pole against the skirted
+    // one's six — a ratio of more than three, and on screen that is not one
+    // species with a history, it is a pole standing next to a bush. The pair has
+    // to be TELLABLE APART and still obviously the same plant, which is a
+    // narrower target than either half of it sounds. Twelve visible pixels of
+    // stem against six: double, not triple, and the trees now read as a wood
+    // rather than as two kinds of scenery.
+    //
+    // The whole difference is `trunkHeight - overlap`, which is the number the
+    // skirt's own note says to aim at — the crown grew by six rows at the same
+    // time so the tree kept its height while its foliage came down.
+    //
+    // It closes onto the trunk in the same three rows the skirted one does
+    // (6, 4, 2), so both forms meet the bark instead of stopping flat above it.
     crownAlt: [
       {
         rows: [
           1, 1, 2, //
           2, 3, 3,
-          2, 4, 4,
+          2, 3, 4,
+          3, 4, 4,
           3, 5, 5,
+          4, 5, 5,
           4, 6, 6,
           5, 6, 6,
           6, 4, 2,
         ],
-        trunkHeight: 20,
+        overlap: 4,
+        trunkHeight: 16,
       },
     ],
     // WOOD ANEMONES, and they are the reason this field exists in a shaded

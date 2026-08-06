@@ -8157,11 +8157,20 @@ stay distinguishable from each other, for a gain nobody would see.
 its lower whorls to the shade of the tree above it, which is why a plantation is
 a hall of bare poles and why a real wood is neither all skirt nor all pole. Form
 one keeps its branches (overlap 6, six pixels of visible stem); form two lost the
-bottom third of its crown (no overlap, a twenty-pixel pole). **Both stand the
-same height** — 20 + 21 against 12 + 33 − 6 — so the canopy is level and the
-difference is entirely where the foliage sits. A shorter second form read as a
-sapling: a different age rather than a different history, and the wood looked
+bottom of its crown (overlap 4 on a taller stem, twelve visible). **Both stand
+the same height** — 16 + 27 − 4 against 12 + 33 − 6 — so the canopy is level and
+the difference is entirely where the foliage sits. A shorter second form read as
+a sapling: a different age rather than a different history, and the wood looked
 patchy instead of mixed.
+
+**Twelve, and it shipped at twenty for one look.** Drawn with no overlap on a
+twenty-pixel stem, form two had more than three times the bare pole form one
+does, and on screen that is not one species with a history — it is a pole
+standing next to a bush. **The target is narrower than either half of it
+sounds**: the pair has to be tellable apart *and* obviously the same plant.
+Double the visible stem, not triple. This is the number to reach for when the
+other regions get their pairs — `trunkHeight - overlap`, the same figure the
+skirt's own note says to aim at, with the crown grown to keep the height.
 
 **Shape kept as a record, not a bare array.** `crownGaps`, `crownOverlap` and
 `trunkHeight` describe the same tree `crownRows` does, so forms sharing one
