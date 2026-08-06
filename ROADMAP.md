@@ -8098,6 +8098,44 @@ region and never dithers, so the live-save promise is where it always was.
 the scrub had when its bushes arrived. No schema change — terrain is still a
 total function of (seed, x, y).
 
+### The pines get a skirt, and stop ending in a slab (6 Aug 2026)
+
+Same session, same region, one row of the table: `crownRows` rewritten,
+`crownOverlap: 6`, `trunkHeight: 12`.
+
+**The bottom third of the commonest tree in the game was a rectangle.** The old
+silhouette climbed in shelves to 7 half-widths at row 20 of 28 and then drew 7
+eight more times, so it read as a nice conifer with a parallel-sided slab under
+it and a ruled line across the base. **This is `BROADLEAF`'s pill in a conifer's
+clothes** and it has the same cause: the shape ran out of ideas before it ran out
+of rows, and the width cap (7 — a pine may not be wider than a meadow tree, which
+`palette.test.ts` asserts) turned into a flat spot rather than into a taper.
+
+Now ten shelves of three run the whole way down, each stepping back a pixel and
+coming out further than the last, reaching 7 only near the bottom. **Nothing is
+wider than it was.** The widening is spread over the whole tree instead of being
+spent in the first two thirds.
+
+**A crown of symmetric rows always ends on a horizontal edge, so the question is
+how wide.** Ending at the widest row draws a fifteen-pixel line under the tree
+and no amount of shelving above it stops that reading as a slab. A fir's lowest
+whorl doesn't end flat either — the branch tips angle down and the outline comes
+back toward the ground. Three closing rows (7, 5, 3) end the tree on a
+seven-pixel edge.
+
+**The skirt shipped as a no-op first, which is the useful part.** `crownOverlap:
+5` with `trunkHeight: 15` — the trunk raised by exactly what the skirt took —
+photographed as *no change at all*. What you see is `trunkHeight - overlap`, and
+that arithmetic pinned it at the ten it always was. **The visible stem is the
+number to aim at**, not the overlap: six pixels of it under a thirty-three-row
+crown, where it was ten under twenty-eight. The tree still stands the same height
+(the renderer takes it from `trunkHeight + rows - overlap`), so occlusion and the
+treeline are unchanged.
+
+Ecology, for the record: bare-poled pines are plantation trees that have been
+brushed out, or old ones that have lost their bottom whorls. Plenty of pines and
+every spruce carry branches most of the way down.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

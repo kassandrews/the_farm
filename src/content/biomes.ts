@@ -1458,9 +1458,61 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         // it dry. Rounded shapes only — nothing sharp survives that long in shade.
     stone: { tint: { color: "#4c5a4a", amount: 0.26 }, shapes: ["boulder", "boulder", "broken"] },
     // A conifer: narrow, tall, and TIERED rather than smoothly tapered. The
-    // step-backs every third row are the whole trick — a clean triangle reads as
-    // an arrowhead, and the little shelves are what say "branches" at 1px.
-    crownRows: [1, 2, 3, 3, 3, 3, 3, 4, 4, 5, 4, 4, 5, 5, 6, 6, 5, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7],
+    // step-backs are the whole trick — a clean triangle reads as an arrowhead,
+    // and the little shelves are what say "branches" at 1px.
+    //
+    // IT ENDED IN A RECTANGLE, AND FOR EIGHT ROWS. The old table climbed in
+    // shelves to 7 at row 20 and then drew 7 eight more times, so the bottom
+    // THIRD of the commonest tree in the game was a parallel-sided slab with a
+    // ruled line under it. That is the broadleaf's pill (§BROADLEAF) in a
+    // conifer's clothes, and it has the same cause: the shape ran out of ideas
+    // before it ran out of rows, and the cap on width (7, so it never overhangs
+    // its neighbours) turned into a flat spot rather than into a taper.
+    //
+    // So the tiers now run the WHOLE way down: ten shelves of three, each
+    // stepping back a pixel and coming out further than the last, reaching 7
+    // only near the bottom. Nothing is wider than it was; the widening is spread
+    // over the whole tree instead of being spent in the first two thirds of it.
+    //
+    // AND THEN IT CLOSES, which is the row that stops the base being a ruled
+    // line. A crown of symmetric rows ALWAYS ends on a horizontal edge, so the
+    // only question is how wide that edge is: ending at the widest row draws a
+    // fifteen-pixel line across the bottom of the tree, and no amount of shelving
+    // above it stops that reading as a slab. A fir's lowest whorl does not end
+    // flat either — the branch tips angle DOWN, so the outline comes back in
+    // toward the ground. Three rows of it (7, 5, 3) and the tree ends on a
+    // seven-pixel edge instead of a fifteen.
+    crownRows: [
+      1, 1, 2, //
+      2, 3, 3,
+      2, 3, 4,
+      3, 4, 4,
+      3, 5, 5,
+      4, 5, 5,
+      4, 6, 6,
+      5, 6, 6,
+      5, 7, 7,
+      6, 7, 7,
+      7, 5, 3,
+    ],
+    // THE SKIRT, and the reason the trunk grew to meet it. Plenty of pines —
+    // and every spruce — carry their lowest branches down near the ground; the
+    // bare-poled ones are plantation trees that have been brushed out, or old
+    // enough to have lost the bottom whorls. Drawing only that version made the
+    // densest wood in the game a stand of poles with hats on.
+    //
+    // Six rows beside the trunk rather than on top of it, which is the field the
+    // scrub has had since it was a heath (§crownOverlap).
+    //
+    // THE FIRST GO RAISED THE TRUNK BY EXACTLY WHAT THE SKIRT TOOK — overlap 5,
+    // `trunkHeight` 15 — and photographed as no change at all, because what you
+    // see is `trunkHeight - overlap` and that arithmetic held it at the ten it
+    // always was. The tree kept its height honestly and kept its bare pole too,
+    // which was the whole of what the change was for. The visible stem is the
+    // number to aim at: six pixels of it under a thirty-three-row crown, where it
+    // was ten under twenty-eight.
+    crownOverlap: 6,
+    trunkHeight: 12,
     // WOOD ANEMONES, and they are the reason this field exists in a shaded
     // region at all: the flowers that bloom under conifers do it in the weeks
     // before the canopy closes, which is exactly a spring event and nothing else.
