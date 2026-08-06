@@ -8136,10 +8136,70 @@ Ecology, for the record: bare-poled pines are plantation trees that have been
 brushed out, or old ones that have lost their bottom whorls. Plenty of pines and
 every spruce carry branches most of the way down.
 
+### A region may draw two trees (6 Aug 2026)
+
+`BiomeDef.crownAlt`, and the pines are the first pair. **The tree was the last
+repeated mark in the game drawn from a single table** — `ROCK_SHAPES` has three,
+a `DecorKit` must have more than one mark, `bark.marks` more than one grid,
+`tufts` is a list, and each of those is a list because one repeated glyph reads
+as printed. The tree is the largest repeated sprite on screen, so it was paying
+most for being the exception.
+
+**Two, and the same species twice — this is the settled call, don't relitigate
+it upward.** The silhouette is how a region says which region it is; two
+unrelated outlines in one stand and the place stops reading as anywhere. What
+varies is what varies in a real even-aged stand: how much skirt a tree kept, how
+much bare pole it has, where the crown sits on the stem. Three-plus was
+considered and dropped — 18 regions × 3 is 54 hand-drawn tables that all have to
+stay distinguishable from each other, for a gain nobody would see.
+
+**The pines' pair is skirted vs self-pruned.** A conifer in a closed stand loses
+its lower whorls to the shade of the tree above it, which is why a plantation is
+a hall of bare poles and why a real wood is neither all skirt nor all pole. Form
+one keeps its branches (overlap 6, six pixels of visible stem); form two lost the
+bottom third of its crown (no overlap, a twenty-pixel pole). **Both stand the
+same height** — 20 + 21 against 12 + 33 − 6 — so the canopy is level and the
+difference is entirely where the foliage sits. A shorter second form read as a
+sapling: a different age rather than a different history, and the wood looked
+patchy instead of mixed.
+
+**Shape kept as a record, not a bare array.** `crownGaps`, `crownOverlap` and
+`trunkHeight` describe the same tree `crownRows` does, so forms sharing one
+region-wide overlap would be forced to agree about the very thing that
+distinguishes them. `treeForms(def)` is the only reader that knows the row's own
+four fields are form zero — same accessor shape as `bloomsOf`, and it is what
+keeps every region that didn't ask bit-identical.
+
+**Two knock-ons, both settled:** `drawShrub` takes the WIDEST form (a bush is a
+bush; the thing that varies between forms is stem, which a shrub hasn't got), and
+per-tree height already derives from the rows, so occlusion and the treeline stay
+honest for free.
+
+**The meadow is excluded, and the test says so out loud.** Its tree is the town's
+tree and the view from the plaza is the thing biomes promised not to change, so a
+second meadow form is its own decision, made while looking at the plaza — not
+swept in with whatever region was being worked on. `palette.test.ts` now asserts
+`meadow.crownAlt` is undefined.
+
+Tests run over every form now, not the primary: widths, gap legality, the 8
+half-width overhang cap, the conifer/broadleaf rule. Two new ones — a region's
+forms must differ from each other (a list that draws the same tree twice is the
+one failure counting can't catch), and their girth must be within a pixel, which
+is what "same species" means at this size.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
 you trip over them:
+
+- **Seventeen regions still draw one tree.** `crownAlt` exists and the pines use
+  it; nothing else does, which is deliberate — the mechanism was proved on one
+  region rather than swept across all of them. The candidates are the
+  tree-heavy rows, where a stand is most of the picture: the birches, the
+  glimmer, the dusk, the redwoods, the blossom. Pair each one while it is being
+  looked at, and give each pair a REASON (the pines' is self-pruning), because
+  "a slightly different tree" is how a region ends up with two species in it.
+  The meadow is excluded on purpose — see the section above.
 
 - **Three pieces still borrow their north view from their front, and two read
   as blocks turned sideways.** `scripts/shot-rotations.mjs` photographs every

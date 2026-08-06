@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { scenePalette, seasonSkin, biomeSkin, mixHex } from "./palette";
 import { MUSHROOM_ART, DEADWOOD_ART, shrubPeak, shrubRows } from "./renderer";
-import { BIOMES, BROADLEAF } from "../content/biomes";
+import { BIOMES, BROADLEAF, treeForms } from "../content/biomes";
 import { SEASONS, seasonOn } from "../content/seasons";
 import { TILES, tileDef, GRASS, MUSHROOM, SHALLOW, WATER, FARMLAND, FARMLAND_WET, FLOOR, STONE, BEDROCK, CAVE_FLOOR, ORE_VEIN, SHAFT, DARK_TREE } from "../content/tiles";
 
@@ -344,12 +344,54 @@ describe("crown silhouettes", () => {
     // The meadow's tree is the town's tree. If this changes, the view from the
     // plaza changes, which is the one thing biomes promised not to do.
     expect(BIOMES.meadow.crownRows).toBe(BROADLEAF);
+    // The town's tree is also the ONLY form its region draws. A second silhouette
+    // in the meadow is a change to the view from the plaza and has to be decided
+    // as one, looking at the plaza — not swept in with whatever other region was
+    // being worked on that afternoon.
+    expect(BIOMES.meadow.crownAlt, "the meadow grew a second tree").toBeUndefined();
+    // Every FORM, not just the row's own: a second silhouette nobody checked is
+    // how the first zero-width row or off-grid crown would get in
+    // (content/biomes.ts §TreeShape).
     for (const b of Object.values(BIOMES)) {
-      expect(b.crownRows.length, b.id).toBeGreaterThan(4);
-      for (const w of b.crownRows) {
-        expect(Number.isInteger(w), b.id).toBe(true); // integer rects only
-        expect(w, b.id).toBeGreaterThan(0); // a zero-width row is a gap in the trunk
+      for (const form of treeForms(b)) {
+        expect(form.rows.length, b.id).toBeGreaterThan(4);
+        for (const w of form.rows) {
+          expect(Number.isInteger(w), b.id).toBe(true); // integer rects only
+          expect(w, b.id).toBeGreaterThan(0); // a zero-width row is a gap in the trunk
+        }
       }
+    }
+  });
+
+  it("keeps a region's two trees the same species", () => {
+    // WHAT A SECOND FORM IS FOR (content/biomes.ts §crownAlt): a stand of one
+    // species with a history in it, not a mixed wood. The silhouette is how a
+    // region says which region it is, so two outlines that disagree about how BIG
+    // the tree is stop reading as one plant — and the region stops reading as
+    // anywhere.
+    //
+    // Girth is the trait to pin, because it is the one the eye reads first at
+    // this size: a pine that lost its lowest whorls lost its widest ones, so a
+    // pixel narrower is a history and three pixels narrower is a different tree.
+    // Height is deliberately NOT pinned — where the foliage sits on the stem is
+    // the whole of what varies.
+    for (const b of Object.values(BIOMES)) {
+      const forms = treeForms(b);
+      if (forms.length < 2) continue;
+      const own = Math.max(...forms[0].rows);
+      for (const f of forms.slice(1)) {
+        expect(
+          Math.abs(Math.max(...f.rows) - own),
+          `${b.id}: its two trees differ in girth`,
+        ).toBeLessThanOrEqual(1);
+      }
+      // And they have to actually DIFFER, or a region is paying for a list in
+      // order to draw the same tree twice — the one failure a "more than one"
+      // rule cannot catch by counting.
+      const seen = new Set(
+        forms.map((f) => `${f.rows.join(",")}|${f.overlap ?? 0}|${f.trunkHeight ?? 10}`),
+      );
+      expect(seen.size, `${b.id}: two identical forms`).toBe(forms.length);
     }
   });
 
@@ -377,8 +419,12 @@ describe("crown silhouettes", () => {
   });
 
   it("keeps conifers narrow and broadleaves broad", () => {
-    const widest = (id: keyof typeof BIOMES) => Math.max(...BIOMES[id].crownRows);
-    const tall = (id: keyof typeof BIOMES) => BIOMES[id].crownRows.length;
+    // Over every FORM, so a region cannot smuggle in a fat conifer or a squat
+    // broadleaf as a second silhouette.
+    const widest = (id: keyof typeof BIOMES) =>
+      Math.max(...treeForms(BIOMES[id]).map((f) => Math.max(...f.rows)));
+    const tall = (id: keyof typeof BIOMES) =>
+      Math.max(...treeForms(BIOMES[id]).map((f) => f.rows.length));
     // A pine is taller than a meadow tree and no wider — that combination IS the
     // conifer read, and either half alone doesn't do it.
     expect(tall("pinewood")).toBeGreaterThan(tall("meadow"));
@@ -396,21 +442,23 @@ describe("crown silhouettes", () => {
     // foliage top and bottom it is a square of grass punched into the canopy, and
     // it reads as exactly that — the failure this asserts against.
     for (const b of Object.values(BIOMES)) {
-      if (!b.crownGaps) continue;
-      expect(b.crownGaps.length, b.id).toBe(b.crownRows.length);
-      const overlap = b.crownOverlap ?? 0;
-      // The dip has to reach the trunk to read as a dip around it.
-      expect(overlap, b.id).toBeGreaterThan(0);
-      const firstTrunkRow = b.crownRows.length - overlap;
-      // How far the cleft runs down from the top: row 0 gapped, and every row
-      // after it that is also gapped. The first solid row closes it.
-      let cleft = 0;
-      while (cleft < b.crownGaps.length && b.crownGaps[cleft] > 0) cleft++;
-      b.crownGaps.forEach((g, r) => {
-        expect(Number.isInteger(g), b.id).toBe(true);
-        expect(g, b.id).toBeLessThan(b.crownRows[r]);
-        if (g > 0) expect(r < cleft || r >= firstTrunkRow, `${b.id} row ${r}`).toBe(true);
-      });
+      for (const form of treeForms(b)) {
+        if (!form.gaps) continue;
+        expect(form.gaps.length, b.id).toBe(form.rows.length);
+        const overlap = form.overlap ?? 0;
+        // The dip has to reach the trunk to read as a dip around it.
+        expect(overlap, b.id).toBeGreaterThan(0);
+        const firstTrunkRow = form.rows.length - overlap;
+        // How far the cleft runs down from the top: row 0 gapped, and every row
+        // after it that is also gapped. The first solid row closes it.
+        let cleft = 0;
+        while (cleft < form.gaps.length && form.gaps[cleft] > 0) cleft++;
+        form.gaps.forEach((g, r) => {
+          expect(Number.isInteger(g), b.id).toBe(true);
+          expect(g, b.id).toBeLessThan(form.rows[r]);
+          if (g > 0) expect(r < cleft || r >= firstTrunkRow, `${b.id} row ${r}`).toBe(true);
+        });
+      }
     }
   });
 
@@ -543,7 +591,9 @@ describe("crown silhouettes", () => {
     // 8 half-widths is 16px, exactly one tile. Past that a tree starts drawing
     // over the tile beside it, and a stand becomes a smear.
     for (const b of Object.values(BIOMES)) {
-      expect(Math.max(...b.crownRows), b.id).toBeLessThanOrEqual(8);
+      for (const form of treeForms(b)) {
+        expect(Math.max(...form.rows), b.id).toBeLessThanOrEqual(8);
+      }
     }
   });
 });

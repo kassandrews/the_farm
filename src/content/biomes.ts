@@ -367,6 +367,38 @@ export interface BiomeDef {
    *  height from the same sum, so occlusion stays honest. */
   crownOverlap?: number;
 
+  /** A SECOND FORM OF THE SAME TREE, and further ones if a region ever wants
+   *  them. Optional; absent means every tree in the region is the one silhouette
+   *  the four fields above describe, which is what all of them did until now and
+   *  what most of them still do.
+   *
+   *  THE TREE WAS THE LAST REPEATED MARK IN THE GAME DRAWN FROM ONE TABLE, which
+   *  is the argument for this and it is not a new argument: ROCK_SHAPES has
+   *  three, a `DecorKit` must have more than one mark, `bark.marks` must have
+   *  more than one grid, `tufts` is a list. Each of those is a list because a
+   *  single repeated glyph reads as PRINTED — and the tree is the largest
+   *  repeated sprite on screen, so it was the one paying most for it.
+   *
+   *  TWO, AND THE SAME SPECIES TWICE. Not two species: the silhouette is how a
+   *  region says which region it is (colour alone left the pines reading as a
+   *  dark meadow), so a stand with two unrelated outlines in it stops being
+   *  anywhere. What varies is what varies in a real even-aged stand — how much
+   *  skirt a tree kept, how much bare pole it has, how high its crown sits. That
+   *  also keeps each pair cheap to author, because the second form is the first
+   *  one with a reason applied to it rather than a blank page.
+   *
+   *  IT IS A RECORD AND NOT A BARE ARRAY because `crownGaps`, `crownOverlap` and
+   *  `trunkHeight` all describe the same tree as `crownRows` does. A skirted pine
+   *  and a brushed-out one differ mostly in `overlap` and stem, so forms sharing
+   *  one region-wide overlap would be forced to be the same tree in the one
+   *  respect that distinguishes them.
+   *
+   *  `trunkHeight` left out means the REGION's, not the renderer's default — a
+   *  form that only redraws the crown keeps the species' stem. Read them through
+   *  `treeForms`, which is the only thing that knows the row's own fields are
+   *  form zero. */
+  crownAlt?: TreeShape[];
+
   /** Lights caught in the crown — the glimmer's, and nobody else's so far.
    *
    *  NOT FRUIT, AND THE DISTINCTION IS LOAD-BEARING. A biome changes appearance
@@ -1079,6 +1111,50 @@ export interface DecorKit {
  *  row at all, drawing the same tree. */
 export const BROADLEAF = [2, 4, 5, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 6, 5, 3];
 
+/** One tree the way a region draws it — the four fields that describe a
+ *  silhouette, travelling together. See §BiomeDef.crownAlt for why they have to.
+ *
+ *  Every rule the row's own fields obey applies here unchanged: half-widths,
+ *  integer, at least one, never past 8 (a crown that wide draws over the tile
+ *  beside it), and gaps only where they open to the outside. `palette.test.ts`
+ *  asserts all of it over every form of every region rather than over the
+ *  primary — a second silhouette nobody checked is how the first hole in a crown
+ *  would get in. */
+export interface TreeShape {
+  /** Half-widths, top row first — `BiomeDef.crownRows` for this form. */
+  rows: number[];
+  /** Per row, the empty half-width over the trunk. See §BiomeDef.crownGaps. */
+  gaps?: number[];
+  /** Bottom rows standing beside the trunk. See §BiomeDef.crownOverlap. */
+  overlap?: number;
+  /** Bare stem, in pixels. Omitted, the REGION's own — a form that only redraws
+   *  the crown keeps the species' stem. */
+  trunkHeight?: number;
+}
+
+/** Every form of a region's tree, the row's own fields first.
+ *
+ *  The one place that knows `crownRows` and friends ARE form zero, which is what
+ *  keeps the addition from touching a single region that did not ask for it —
+ *  and, more to the point, what keeps the meadow's tree bit-identical. That row
+ *  is the town's own tree and the view from the plaza is the thing biomes
+ *  promised not to change (see `palette.test.ts`, which asserts the meadow still
+ *  points at BROADLEAF itself and grows no second form).
+ *
+ *  Same shape of accessor as `bloomsOf`, and for the same reason: the renderer,
+ *  the tests and the contact sheet should all be handed a list and never have to
+ *  care which way a row spelled itself. */
+export function treeForms(def: BiomeDef): TreeShape[] {
+  const own: TreeShape = {
+    rows: def.crownRows,
+    gaps: def.crownGaps,
+    overlap: def.crownOverlap,
+    trunkHeight: def.trunkHeight,
+  };
+  if (!def.crownAlt) return [own];
+  return [own, ...def.crownAlt.map((f) => ({ trunkHeight: def.trunkHeight, ...f }))];
+}
+
 /** A region's blooms, however the row wrote them.
  *
  *  `bloom` takes a single kit or a list, because most regions have one flower and
@@ -1513,6 +1589,43 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // was ten under twenty-eight.
     crownOverlap: 6,
     trunkHeight: 12,
+    // THE SECOND PINE, and it is the first one older (§BiomeDef.crownAlt: two
+    // forms, one species). A conifer in a closed stand loses its lower whorls to
+    // the shade the tree above it casts — self-pruning, which is why a plantation
+    // is a hall of bare poles and why the wood you walk into is neither all skirt
+    // nor all pole. So this is the same tree with the bottom third of its crown
+    // gone: no overlap at all, a stem long enough to see up, and the live crown
+    // held at the top of it.
+    //
+    // NARROWER BY ONE, NOT BY THREE. A tree that has lost its lowest branches has
+    // lost its widest ones, so 6 rather than 7 — and no further, because girth is
+    // the species trait the pair has to keep in common. Two silhouettes that
+    // disagreed about width would read as two kinds of tree, which is exactly
+    // what a second form is not for.
+    //
+    // IT STANDS AS TALL, WHICH IS THE POINT. 20 + 21 against 12 + 33 - 6, so the
+    // canopy is level across a stand and the difference is entirely WHERE the
+    // foliage sits on the stem. A shorter second form would have read as a
+    // sapling — a different age of tree rather than a different history — and the
+    // wood would look patchy instead of mixed.
+    //
+    // It closes onto the trunk in the same three rows the skirted one does (6, 4,
+    // 2): with no overlap the last row lands directly on the five-pixel stem, so
+    // the crown meets the bark instead of stopping flat above it.
+    crownAlt: [
+      {
+        rows: [
+          1, 1, 2, //
+          2, 3, 3,
+          2, 4, 4,
+          3, 5, 5,
+          4, 6, 6,
+          5, 6, 6,
+          6, 4, 2,
+        ],
+        trunkHeight: 20,
+      },
+    ],
     // WOOD ANEMONES, and they are the reason this field exists in a shaded
     // region at all: the flowers that bloom under conifers do it in the weeks
     // before the canopy closes, which is exactly a spring event and nothing else.

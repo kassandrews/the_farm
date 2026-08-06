@@ -104,6 +104,7 @@ import {
   TUFTS_DEFAULT,
   STONES_DEFAULT,
   bloomsOf,
+  treeForms,
   type StoneShape,
   type MushroomShape,
   type BiomeDef,
@@ -4488,16 +4489,31 @@ export class Renderer {
     // a fen willow is six pixels taller than a scrub bush, and asking about the
     // wrong height either fades a tree that isn't in the way or leaves you behind
     // one that is.
-    const rows = biome ? biome.crownRows : BROADLEAF;
+    //
+    // WHICH FORM OF IT, off the tile's own hash, where a region draws more than
+    // one (content/biomes.ts §crownAlt). Its own salt: `h` already chose the
+    // sideways jitter, and a tree whose species tracked which way it leaned would
+    // be one roll wearing two hats — the decor kit's oldest bug, which this file
+    // has now made three times and avoided here by writing the salt down.
+    //
+    // A region with no second form gets a one-item list and the same tree it
+    // always drew, hash or no hash.
+    const forms = biome ? treeForms(biome) : null;
+    const form = forms
+      ? forms[Math.floor(decoHash(tx, ty, world.seed ^ 0x1d4f) * forms.length) % forms.length]
+      : null;
+    const rows = form ? form.rows : BROADLEAF;
     // Empty half-width at the middle of each row (the blossom's dip over the
     // trunk), and how many rows come down beside the trunk to make that dip
     // legible. Both default to "solid crown, perched on top".
-    const gaps = biome?.crownGaps;
-    const overlap = biome?.crownOverlap ?? 0;
-    // How much bare stem there is under all that. Per-region (content/biomes.ts)
-    // because tallness is a species trait and the crown could only ever express
-    // bushiness: the birches stand three pixels higher than anything else here.
-    const trunkH = biome?.trunkHeight ?? TRUNK_H;
+    const gaps = form?.gaps;
+    const overlap = form?.overlap ?? 0;
+    // How much bare stem there is under all that. Per-FORM now, and per-region
+    // before that (content/biomes.ts), because tallness is a species trait and
+    // the crown could only ever express bushiness: the birches stand three pixels
+    // higher than anything else here, and a pine that kept its lower branches
+    // stands on a third of the stem one that lost them does.
+    const trunkH = form?.trunkHeight ?? TRUNK_H;
     const height = trunkH + rows.length - overlap;
 
     const prev = ctx.globalAlpha;
@@ -4804,7 +4820,15 @@ export class Renderer {
     const cx = Math.round(this.sceneX(tx)) + Math.floor(h * 3) - 1;
     const base = Math.round(this.sceneY(ty) + TILE / 2);
     const biome = scatterSkin(world.seed, world.homestead.spot, tx, ty);
-    const src = biome ? biome.crownRows : BROADLEAF;
+    // THE WIDEST FORM, where a region draws more than one tree (§crownAlt). A
+    // bush is a bush: it takes one number from its region — how wide the foliage
+    // around here gets — and picking the fattest of the forms keeps that number
+    // steady while the trees above it vary. Rolling a form per bush would tie the
+    // undergrowth to a distinction that is entirely about how much STEM a tree
+    // has, which is the one thing a shrub does not have at all.
+    const src = biome
+      ? treeForms(biome).reduce((a, b) => (Math.max(...b.rows) > Math.max(...a.rows) ? b : a)).rows
+      : BROADLEAF;
 
     // The widest stretch of the crown, scaled to a bush. The ends of a crown are
     // its taper — a shrub is all middle.
