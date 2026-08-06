@@ -8066,9 +8066,17 @@ the only blue accent in `biomes.ts`, so nothing else had to move.
 The first cut scattered one berry per row off its own hash. It spreads perfectly
 well *on average* and it **clustered**: two rows that agree within a pixel draw
 one two-pixel object, and a bush wore a nut instead of fruit. The table is now
-three authored arrangements of three, rows 3–7 of nine (fruit hangs *under* the
+three authored arrangements of five, rows 2–8 of nine (fruit hangs *under* the
 leaves; berries over the whole dome read as blossom or as first snow), and the
-hash picks only which one a bush wears. **More than one arrangement, unlike the
+hash picks only which one a bush wears.
+
+**Five, and it shipped at three for an afternoon.** Three berries on a nine-row
+dome read as the ones somebody else left behind — a bush in fruit should look
+worth stopping at. Five is close to the ceiling: a dome three half-widths across
+has room for five spaced marks and not many more, and going up cost one row of
+headroom at the top (2, where three could start at 3). The check that made the
+change safe rather than a re-eyeballing is the spacing test below — it failed one
+draft of the third arrangement outright, on the narrow bush only. **More than one arrangement, unlike the
 orbs' single table** — `chance` leaves most trees unlit, where every bush in a
 barren fruits, so a lone composition would read as printed.
 

@@ -1396,29 +1396,43 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     berries: {
       season: "summer",
       color: "#93b4d4",
-      // THREE TO A BUSH, IN THE LOWER TWO THIRDS. Rows 3 to 7 of nine, because
-      // fruit hangs UNDER the leaves — berries spread evenly over the whole dome
-      // read as blossom, or as the first snow on it.
+      // FIVE TO A BUSH, and it was three: a bush in fruit should look like it is
+      // worth stopping at, and three berries on a nine-row dome read as the ones
+      // that were left after somebody else came through.
       //
-      // Never two within a pixel of each other, in any of the three, at any
-      // width this bush comes in (`drawShrub` rolls the peak ±1). That is the
-      // whole point of authoring them: the separation is what keeps three
-      // berries three, and it is not a thing a roll can promise.
+      // Rows 2 to 8 of nine — one row higher than the three-berry version could
+      // reach, because five need the room, and still nothing in the top cap.
+      // Fruit hangs UNDER the leaves; berries over the whole dome read as
+      // blossom, or as the first snow on it.
+      //
+      // NEVER TWO WITHIN A PIXEL OF EACH OTHER, in any of the three, at any width
+      // this bush comes in (`drawShrub` rolls the peak ±1). That is the whole
+      // point of authoring them and it is what got harder going from three to
+      // five: a nine-row dome three half-widths across has room for five spaced
+      // berries and not much more, and the NARROW roll is the one to check —
+      // the clamp that keeps a berry inside its row is what pushes two together.
+      // `render/palette.test.ts` walks all three against all three widths.
       spots: [
         [
+          [1, 2],
           [-3, 3],
-          [1, 4],
-          [0, 7],
+          [3, 5],
+          [-2, 6],
+          [0, 8],
         ],
         [
-          [2, 3],
-          [-2, 5],
+          [2, 2],
+          [-2, 3],
+          [0, 5],
+          [-3, 6],
           [2, 7],
         ],
         [
-          [-1, 4],
-          [3, 5],
-          [-2, 7],
+          [-1, 2],
+          [-3, 4],
+          [2, 4],
+          [-1, 6],
+          [3, 7],
         ],
       ],
     },
