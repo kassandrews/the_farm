@@ -4683,43 +4683,51 @@ export class Renderer {
       // one material in two lights, and a dash that stayed charcoal while the
       // stem went blue would read as a hole in the tree after dark.
       ctx.fillStyle = night ? mixHex(barkArt.color, { color: "#2a3140", amount: 0.45 }) : barkArt.color;
-      // Centred on the stem, one column in from each edge of it: three columns
-      // on an ordinary five-pixel trunk, and `trunkGirth` more either side on a
-      // fat one. The inset is deliberate — a dash that ran to the lit edge and
-      // over the shaded one would flatten the round the two-tone stem is for.
-      // Bounded
-      // by the ROW's own length rather than by a literal 3, so a grid written
-      // narrow on a wide tree draws what it has instead of reading off its end —
-      // the same forgiveness the row count already had.
+      // AGAINST THE LIT EDGE, and clear of the shaded one. The inset used to run
+      // on BOTH sides, and only one of the two was doing any work: a dash that
+      // crossed the shaded column would flatten the round the two-tone stem is
+      // for, but one that reaches the lit edge does no such thing — a lenticel is
+      // a scar that WRAPS the stem, so a mark stopping a pixel short of the edge
+      // is a mark floating on a trunk rather than a mark cut into one. Anchoring
+      // them left also puts the whole grid on the lit side, where bark detail
+      // belongs; the shaded column stays bare and keeps saying "far side".
       //
-      // A NARROW STEM CANNOT AFFORD THE INSET, and paying it anyway is what put a
-      // HOLE in the saplings. Three pixels of trunk, one of them the shaded side,
-      // leaves two lit columns; inset one and the dash is a single pixel in the
-      // middle of the stem with bark either side of it — which is not a mark ON a
-      // trunk, it is a gap THROUGH one. The eye reads an enclosed dark pixel as a
-      // hole before it reads it as anything else, which is the same finding the
-      // crown's `crownGaps` note records at ten times the size.
+      // Bounded by the ROW's own length rather than by a literal 3, so a grid
+      // written narrow on a wide tree draws what it has instead of reading off
+      // its end — the same forgiveness the row count already had.
       //
-      // So below five pixels the dash gives up the lit-side inset and runs to the
-      // edge: two columns of the sapling's three, with the shaded one left alone.
-      // It is also the truer mark — a lenticel is a scar that wraps the stem, and
-      // on a whip it goes most of the way round.
+      // A NARROW STEM READS THE GRID AS A COUNT, NOT AS COLUMNS, and that is what
+      // stops it punching HOLES. Three pixels of trunk, one of them the shaded
+      // side, leaves two lit columns — and the grids put marks in all three of
+      // their own, so `.x.` would land a single dark pixel with bark either side
+      // of it. That is not a mark ON a trunk, it is a gap THROUGH one, and the
+      // eye reads an enclosed dark pixel as a hole before it reads it as
+      // anything else (the crown's `crownGaps` note, at a tenth of the size).
       //
-      // AND ON A NARROW STEM THE GRID IS READ AS A COUNT, NOT AS COLUMNS. Simply
-      // dropping the inset is not enough: the grids put marks in all three of
-      // their columns, so `.x.` would still land one enclosed pixel in the middle
-      // of the three. What survives the squeeze is HOW MUCH bark a row wears, not
-      // where — so a row with one `x` draws one pixel and a row with two draws
-      // two, both anchored to the lit edge. Every mark keeps its place in the
-      // vertical rhythm the grids were drawn for, and none of them is a hole.
+      // So what survives the squeeze is HOW MUCH bark a row wears, not where: a
+      // row with one `x` draws one pixel and a row with two draws two, both from
+      // the edge. Every mark keeps its place in the vertical rhythm the grids
+      // were drawn for.
+      //
+      // AND A YOUNG STEM WEARS TWO OF THEM AT MOST. Read whole, a grid puts three
+      // or four dashes on twelve pixels of sapling where it puts the same number
+      // on twenty of adult — so the smaller tree came out the more heavily marked
+      // one, which is backwards twice over: a birch's bark roughens with age, and
+      // the marks are the loudest thing on a stem this thin. Two is enough to say
+      // which tree it is going to be. They are the TOP two because that is where
+      // the grids gather them, and the region's own note says why — a birch's
+      // lower bark is the smoothest part of it.
       const lit = stem.w - shade;
       const narrow = lit <= 3;
+      const x0 = cx + stem.dx;
+      let worn = 0;
       for (let r = 0; r < grid.length && r < trunkH; r++) {
         const row = grid[r];
-        const x0 = cx + stem.dx + (narrow ? 0 : 1);
         if (narrow) {
           let n = 0;
           for (const ch of row) if (ch === "x") n++;
+          if (!n) continue;
+          if (++worn > 2) break;
           for (let c = 0; c < Math.min(n, lit); c++) {
             ctx.fillRect(x0 + c, base - trunkH + r, 1, 1);
           }

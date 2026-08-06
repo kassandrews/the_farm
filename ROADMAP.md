@@ -8643,13 +8643,25 @@ now clamps at 1, or a narrowed stem loses its round entirely).
 edge of the stem, which is right on five pixels and impossible on three: one lit
 column left over means a single dark pixel with bark either side, and the eye
 reads an enclosed dark pixel as a HOLE before it reads it as a mark — the same
-finding `crownGaps` records at ten times the size. Below five pixels the dash
-gives up the inset and runs to the lit edge, and the grid is read as a COUNT
-rather than as columns: a row with one `x` draws one pixel, a row with two draws
-two, both anchored at the edge. Every mark keeps its place in the vertical rhythm
-the grids were drawn for and none of them is a hole. It is the truer mark anyway
-— a lenticel is a scar that wraps the stem, and on a whip it goes most of the way
-round. 12 rows on a
+finding `crownGaps` records at ten times the size. Below five pixels the grid is read as a
+COUNT rather than as columns: a row with one `x` draws one pixel, a row with two
+draws two. Every mark keeps its place in the vertical rhythm the grids were drawn
+for and none of them is a hole.
+
+**Then the inset came off every trunk, not just the narrow ones.** Only one of
+its two sides was doing any work — a dash crossing the SHADED column would
+flatten the round the two-tone stem is for, but one reaching the LIT edge does no
+such thing. A lenticel is a scar that wraps the stem, so a mark stopping a pixel
+short of the edge floats on a trunk instead of being cut into one. The grid now
+starts at the stem's lit edge everywhere and the shaded column stays bare, still
+saying "far side".
+
+**And a young stem wears two marks at most.** Read whole, a grid puts three or
+four dashes on twelve pixels of sapling where it puts the same number on twenty
+of adult — so the smaller tree came out the more heavily marked one, backwards
+twice over: birch bark roughens with age, and the marks are the loudest thing on
+a stem this thin. The top two, because that is where the grids gather them and
+because the region's own note says a birch's lower bark is its smoothest part. 12 rows on a
 12-pixel stem stands 22 against the adult's 44 — exactly half, which is both what
 the rule allows and where the eye reads "not grown yet" rather than "far away".
 
