@@ -4428,9 +4428,9 @@ export class Renderer {
    *  one. Jittered by the tile hash so a stand of trees isn't wallpaper.
    *
    *  (It was two and a half while the broadleaf was a twenty-four-row capsule.
-   *  The crown came down to fourteen rows when it was reshaped into something
+   *  The crown came down to seventeen rows when it was reshaped into something
    *  that stands in a field — see BROADLEAF — and the overhang survives that with
-   *  room to spare, because a tile is sixteen pixels and the tree is thirty.) */
+   *  room to spare, because a tile is sixteen pixels and the tree is thirty-three.) */
   private drawTree(
     world: WorldState,
     tx: number,

@@ -1008,9 +1008,17 @@ export interface DecorKit {
  *  widest well BELOW the middle, and tapering to a rounded top rather than
  *  running straight up to one.
  *
- *  Fourteen rows by fifteen across, widest from about two fifths of the way down
- *  to four fifths. The proportion is the whole change and the numbers are only
- *  how it is spelled.
+ *  Seventeen rows by fifteen across, widest from about a third of the way down to
+ *  three quarters, with a long taper at each end. The PROFILE is the change and
+ *  the numbers are only how it is spelled: the old shape's fault was fourteen
+ *  rows at full width — parallel sides — and not its height.
+ *
+ *  IT WENT TO FOURTEEN ROWS FIRST AND CAME OUT AS A CAKE POP. Shortening the
+ *  crown while leaving the trunk at sixteen made the canopy 47% of the tree, and
+ *  a ball on a stick is what that reads as; the reference oaks are nearer three
+ *  quarters crown. Seventeen puts it back over half without going back to a pill,
+ *  because a dome that tapers at both ends is a different object from a column
+ *  with a cap on it however tall either one is.
  *
  *  THE WIDTH COULD NOT MOVE, WHICH IS WHY THE HEIGHT DID. Two rules in
  *  `render/palette.test.ts` fence it in from both sides and both are worth
@@ -1033,7 +1041,7 @@ export interface DecorKit {
  *  second is the one this game wants, and it is also the one that needs no
  *  per-region field — which is what keeps the grove, whose trees have no biome
  *  row at all, drawing the same tree. */
-export const BROADLEAF = [2, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7, 6, 4];
+export const BROADLEAF = [2, 4, 5, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 6, 5, 3];
 
 /** A region's blooms, however the row wrote them.
  *

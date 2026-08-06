@@ -7949,8 +7949,16 @@ true as written rather than by making a region poor.
   **And the tree stopped being a pill.** The broadleaf was twenty-four rows by
   fifteen across with a dead-straight fourteen-row column down the middle — taller
   than wide, parallel-sided. Nothing standing in a field looks like that. It is
-  fourteen by fifteen now, widest from two fifths down to four fifths, tapering to
-  a rounded top: an oak in the open, which is what the region is full of.
+  seventeen by fifteen now, widest from a third down to three quarters, with a
+  long taper at each end: an oak in the open, which is what the region is full of.
+
+  **It went to fourteen rows first and came out as a CAKE POP** — shortening the
+  crown while leaving the trunk at sixteen put the canopy at 47% of the tree, and
+  a ball on a stick is what that reads as. The reference oaks are nearer three
+  quarters crown. The lesson: the old shape's fault was its PARALLEL SIDES, not
+  its height, and cutting height to fix a profile problem overshot. A dome that
+  tapers at both ends is a different object from a column with a cap on it however
+  tall either one is.
 
   **The width could not move, which is why the height did.** Two rules in
   `render/palette.test.ts` fence the crown in from both sides and both are worth
@@ -8005,11 +8013,15 @@ candidates, checked rather than guessed.
    grid — which is what `groundTone`'s own doc claims cannot happen ("its edges
    can never line up with a cell"). Measured by mapping the shade of every tile on
    screen: large contiguous plateaus, tile-aligned boundaries, neighbouring shades
-   1-3 units apart out of 255. **Real, at the threshold of visibility, not fixed.**
-   The fix would be to dither each cell between its two nearest shades — the
-   machinery already exists (`ditherFill`, built for the Static) — and it would
-   put a pattern on every ground tile in the game, which is a real cost for a
-   1-unit contour. Worth doing only if somebody has actually noticed it.
+   1-3 units apart out of 255. **Real, at the threshold of visibility, and SETTLED
+   AS LEFT ALONE.** The fix would be to dither each cell between its two nearest
+   shades — the machinery exists (`ditherFill`, built for the Static) — and it
+   would put a pattern on every ground tile in the game. Asked and answered: the
+   banding has never been noticed in play, and a dither on every tile "sounds
+   distracting", which is the right instinct — it trades a contour nobody sees for
+   a texture everybody does. **Do not relitigate without new evidence**, and the
+   evidence that counts is somebody SEEING the bands, not somebody rediscovering
+   the arithmetic.
 
 **Still open:** winter, which has no kit and no honest flower — seed heads and
   dead stems are the candidate, and they would be the first `bloom` that is not
