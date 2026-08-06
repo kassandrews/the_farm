@@ -8351,6 +8351,105 @@ for one region's one month.
 It is one commit back if a reason turns up. Same call as the mushroom's `over`
 state: unused art rots faster than anything it depicts.
 
+## The autumn pass (6 Aug 2026)
+
+October read muted and drab, and the diagnosis turned out to be measurable rather
+than a matter of taste. **The cause was not saturation** — autumn's crowns are
+*more* saturated than summer's (0.57 against 0.42). It was VALUE: with the ground
+warmed to straw, the two largest masses on screen sat at the same brightness in
+the same hue family, and in the birch wood the crown-to-ground luma separation
+fell from **34 in July to 20 in October**, hues 29° apart. Two masses that close
+cannot separate, so the trees stopped reading as objects standing on a ground and
+the frame went to one khaki field. Nothing was drab on its own; everything was
+drab beside everything else.
+
+**The control was already in the game.** The pines keep a separation of 67 in
+October and read fine — and they are the region whose trees refuse to turn.
+Winter reads fine too, bare crowns going dark against a pale ground. It was
+autumn, and only where the canopy turns.
+
+The cause is recorded in `seasons.ts` at the moment it happened: the ground was
+pushed warmer *because "the trees were doing all the work alone"*. They were —
+that is the season's own stated design. Warming the ground until it joined in
+removed the contrast the trees needed to read against.
+
+### The three new fields
+
+- **`seasonPull`** — how much of the month a region's crown and floor actually
+  take. **Four regions were measurably wrong**, all named for conifers: granite's
+  Jeffrey pine swung 39 RGB July→October, redwoods and giants 30, the pines 26,
+  against a deciduous birch wood's 67. A third to half a real turn on trees that
+  do not turn at all. Now 9. Deliberately not zero — a sprite that takes none of
+  the season has been cut out of the year and pasted back on top of it.
+- **`autumnCrown`** — which way a region turns, in the one month anything does.
+  Every crown in the game used to land on the same burnt orange, so a birch and a
+  maple could not differ, and that sameness was most of the drabness. Birch gold,
+  heath rust, fen yellow-brown.
+- **`DecorKit.stem`** — a stem ink for the plants that are still green when the
+  wood is not. A black-eyed susan flowering in September is a living plant; it was
+  drawing on a rust stalk, which is a dried arrangement.
+- **`shrubAutumn`** — the undergrowth's own turn, so the blueberries go
+  crimson-purple under pines that stay flatly green.
+
+Plus autumn's ground back to about the draft that was rejected, and its crown
+pushed warmer now that it is not competing with the floor for the same hue.
+
+### What the build taught us that the plan did not
+
+- **The composition order was wrong, and the blossom rows proved it.** Autumn's
+  hue was applied *before* the region's year-round tint; the blossom's pink is
+  strong enough to repaint anything under it, so October's crimson came back out
+  pink, **two luma from the ground it stood on**. `crown` says what a region's
+  foliage IS — in autumn it is something else, so the month gets the last word.
+  Order is now season → region tint → autumn hue.
+- **A new test caught a pre-existing bug with nothing to do with autumn.**
+  Asserting that evergreens still darken at night failed at 12 RGB for the pines
+  where a birch wood drops 30. A tint sits on whichever arm the HOUR picked, so
+  resisting the season through `crown.amount` had quietly bought resisting the
+  dark. They were not evergreen, they were lit wrong. Fixed by halving the amount
+  and doubling the colour down, which leaves the summer crown identical. **This is
+  the whole argument for `seasonPull` being its own dial** rather than a bigger
+  `amount`.
+- **Vibrancy is saturation, not lightness.** The birch gold was drafted bright
+  (4 luma from its floor, read as a wash), corrected to a dark bronze (separated,
+  went dull), and settled by pinning the VALUE where separation needs it and
+  spending everything else on chroma: same brightness as the bronze, **0.97
+  saturated against 0.79**.
+- **`autumnCrown` cannot be 1.** It lands last on the lit arm and the shaded arm
+  alike, so at full amount both become one colour and the crown loses its own
+  shading — a flat cutout of a tree. 0.7 keeps a third of the light on it.
+- **The blossom rows are exempt from the separation rule, and measuring them is
+  what earned it.** They sit at a separation of TWO *in July*, where nobody has
+  ever complained: pink over pale green separates on HUE, not value. The birch was
+  wrong because it had neither. Value is the thing to assert on for anything
+  turning warm, because warm-on-warm is exactly where hue stops helping.
+- **`/biomes.html` had a stale copy of the stem-ink rule** and was drawing every
+  chip from a composition the game had stopped using. `foliage` is exported from
+  `palette.ts` for this reason: the tests and the contact sheet ask the same
+  question the screen does. A test that recomputes a colour itself is how you get
+  a green tree in a suite and a brown one on screen — which is exactly what the
+  old "keeps the pines evergreen" test did while the pines swung 26.
+
+### Settled here, don't relitigate
+
+- **The blossom rows bloom all year.** A cherry really does turn scarlet, and
+  giving that row an autumn broke two settled things at once: the header's own
+  example of tints composing ("Blossom Rows stay stubbornly pink") and the petals,
+  which fall all year BECAUSE the trees are in blossom all year. Crimson trees
+  shedding pink petals is a region half-committed to a season. The permanent bloom
+  is this region's one deliberate untruth and it is the point of it — a sited
+  landmark, in flower whenever you arrive. The notebook line now notices the
+  warmth without explaining it. If it is ever made seasonal, the petals, the daisy
+  carpet and that line go with it, as their own decision.
+
+### Loose end this opened
+
+**Most regions barely darken at night** — glass 9, salt 7, cinder 7, blossom 9,
+prairie 13, glimmer 12, against a meadow's 46. Same cause as the pines' 12: high
+`crown.amount` outvoting the hour. Fixing twelve regions' colours inside an autumn
+pass would have made it unreviewable, so it is written down instead. It is a
+night pass, and `seasonPull`'s argument is the template for it.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

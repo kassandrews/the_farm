@@ -244,6 +244,47 @@ export interface BiomeDef {
   /** Trunks. Mostly left alone — except birch, which is nothing without it. */
   trunk: Tint;
 
+  /** HOW MUCH OF THE MONTH THIS REGION ACTUALLY TAKES — 1 (all of it) unless
+   *  stated, which is what every region did before this existed.
+   *
+   *  A PINE DOES NOT CHANGE COLOUR IN THE YEAR. The light does, and that is a far
+   *  smaller thing than a crown turning over. Before this field the only way to
+   *  say so was to raise `crown.amount` until the season could not get past it —
+   *  and that resists the DARK as well, because the tint sits on whichever arm
+   *  the hour picked, so a wood that refused October also refused midnight. This
+   *  dial is on the season axis alone (§ScenePalette.baseCrown).
+   *
+   *  Four regions were measurably wrong without it, all of them named for
+   *  conifers: the granite's Jeffrey pine swung 39 RGB from July to October, the
+   *  redwoods and the giants 30, the pines 26 — against a deciduous birch wood's
+   *  67. A third to a half of a real turn, on trees that do not turn at all.
+   *
+   *  NOT ZERO, THOUGH. A low pull is the light changing and no pull is a sprite
+   *  that has been cut out of the season and pasted back on top of it — the wood
+   *  goes on looking like July while the ground and sky around it are November.
+   *  0.15 is about "you can tell the light is different"; it is deliberately not
+   *  0, and that is the whole of what this field is for.
+   *
+   *  `ground` is the same dial for the floor, and the pines needed it for the
+   *  same reason the crowns did: a needle mat browning like a lawn is a lawn. */
+  seasonPull?: { crown?: number; ground?: number };
+
+  /** WHICH WAY THIS REGION TURNS, in the one month anything does. Optional, and
+   *  absent means it turns whichever way the season does — which until now was
+   *  the only option and is most of why October read as one flat colour: every
+   *  crown in the game landed on the same burnt orange, pulled only by whatever
+   *  tint it wears in every other month too. A birch and a maple could not
+   *  differ.
+   *
+   *  Applied LAST — after the region's year-round `crown` — and only in autumn.
+   *  It was written the other way round first, as a direction into the season's
+   *  answer with the region's own tint over the top, and the blossom rows
+   *  disproved that in one measurement: pink strong enough to repaint anything
+   *  under it turned October's crimson back into April's pink, two luma from the
+   *  ground it stood on. `crown` says what a region's foliage IS; in autumn it is
+   *  something else, and the month has to be able to say so. */
+  autumnCrown?: Tint;
+
   /** How tall the bare trunk stands, in pixels. Optional; the renderer's TRUNK_H
    *  (10) otherwise, which is what every region but the birches uses.
    *
@@ -366,6 +407,28 @@ export interface BiomeDef {
    *  shortens the tree by the same amount it drops, and the renderer takes the
    *  height from the same sum, so occlusion stays honest. */
   crownOverlap?: number;
+
+  /** WHAT THE UNDERGROWTH DOES IN OCTOBER, where a bush disagrees with the tree
+   *  over it. Optional; absent, a bush is drawn exactly as the region's canopy is
+   *  in every month, which is what every region does and all but one still do.
+   *
+   *  THIS SHIPPED ONCE AS `shrubCrown` — a year-round foliage tint for the
+   *  undergrowth — and was pulled the same afternoon. It was the right mechanism
+   *  aimed at the wrong thing: it took a LOW amount so the season could do the
+   *  work, and the season's autumn was a pumpkin orange, so a blueberry barren
+   *  came out russet and read closer to a boulder than to a turned bush. What was
+   *  missing was not a shrub tint, it was any way for a region to say WHICH WAY
+   *  it turns — which `autumnCrown` now is, for trees.
+   *
+   *  So this is that field's undergrowth half, and it states the colour outright
+   *  rather than deferring to the month: a lowbush blueberry goes a vivid
+   *  crimson-purple, which is not a direction the season's own orange passes
+   *  through on the way to anywhere.
+   *
+   *  ONE MONTH ONLY. A bush that wore its own colour all year would be a second
+   *  species standing under the trees; the shape is still inherited from the
+   *  crown rows, and for eleven months so is the colour. */
+  shrubAutumn?: Tint;
 
   /** A SECOND FORM OF THE SAME TREE, and further ones if a region ever wants
    *  them. Optional; absent means every tree in the region is the one silhouette
@@ -1046,6 +1109,23 @@ export interface DecorKit {
    *  a kit is all stem. Unlike `x` it does NOT travel with the season: a marsh
    *  reed browns with the turf, and a white flower is white in October. */
   accent?: string;
+  /** The stem ink for `x`, where the region's own is wrong for this plant.
+   *  Optional; absent, a stem takes the region's canopy colour and seasons with
+   *  it, which is right for almost everything and is what every kit did before
+   *  this existed.
+   *
+   *  IT EXISTS FOR THE PLANTS THAT ARE STILL GREEN WHEN THE WOOD IS NOT. A
+   *  black-eyed susan flowers in September and its stalk is green while it does —
+   *  it is a living plant in autumn, not a dead one — but the meadow's canopy is
+   *  burnt rust by then, so the stems came out rust with it and the flower read
+   *  as a dried arrangement. A season reaches appearance, and appearance is
+   *  exactly where a plant gets to disagree with the tree above it.
+   *
+   *  FIXED, LIKE `accent` AND FOR THE SAME REASON: this is a statement about what
+   *  the plant IS, and a stem that browned in October would be the fault being
+   *  described rather than fixed. Use it sparingly — a region whose every kit
+   *  overrode its stem would be a region that had opted out of the year. */
+  stem?: string;
   /** The marks themselves, one string per row, top row first. `.` is empty, `x`
    *  takes the region's tuft colour, `o` takes `accent`.
    *
@@ -1398,6 +1478,15 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         density: 0.14,
         accent: "#e8b52f",
         core: "#33261a",
+        // ITS STALK STAYS GREEN, because a black-eyed susan flowering in
+        // September is a LIVING plant in autumn — the one thing on that lawn
+        // that has not finished. A stem takes the region's canopy colour by
+        // default and seasons with it (§DecorKit.stem), which is right for
+        // almost everything and put these on rust-coloured stalks: a rust stem
+        // under a gold flower is a dried arrangement, not a plant that is still
+        // going. Dulled a little from summer's green, because it is September
+        // and not June, and stated outright so October cannot reach it.
+        stem: "#6b8a45",
         marks: [
           [".ooo.", "oo*oo", ".ooo.", "..x..", "..x..", "..x.."],
           // A LEAF, ONE PIXEL, ON ONE SIDE OR THE OTHER. Not variety for its own
@@ -1464,6 +1553,13 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // both the true picture and the one that keeps the wood walkable — the
     // trees here are already 2.2 and undergrowth is solid.
     shrubs: 0.4,
+    // AND IN OCTOBER THE BUSHES TURN AND THE TREES DO NOT, which is the picture
+    // people photograph this habitat for: a barren goes vivid crimson-purple
+    // under a canopy that stays flatly green. It is also the sharpest statement
+    // in the file of what `seasonPull` and `shrubAutumn` are each for — the pines
+    // take a sixth of the month and the blueberries take all of it, three feet
+    // apart, because one is a conifer and the other is not.
+    shrubAutumn: { color: "#9c3350", amount: 0.72 },
     // And in summer they carry fruit. See §BiomeDef.berries: paint on a node,
     // no yield, no picking. The ink is the BLOOM on the skin rather than the
     // fruit under it — a real blueberry reads as dusty pale blue at arm's length
@@ -1528,9 +1624,29 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // The hardest tint in the file, and the reason `amount` exists: at a gentler
     // pull the pines turned orange in October, which conifers do not do. High
     // enough that the season is a whisper here and a shout everywhere else.
-    crown: { color: "#23402c", amount: 0.75 },
+    // AND THE AMOUNT CAME DOWN WITH IT, which is the other half of the same bug.
+    // A tint sits on whichever arm the hour picked, so at 0.75 this crown was
+    // three-quarters a fixed colour at midnight as well as in October: measured,
+    // the pines darkened by 12 RGB between noon and midnight where a birch wood
+    // darkens by 30. They were not evergreen, they were LIT WRONG — resisting the
+    // season through the tint had quietly bought resisting the dark.
+    //
+    // Halved, with the colour doubled down to compensate, so the summer crown is
+    // the same pixel it always was and the night arm can now get through it. The
+    // season is `seasonPull`'s job; this field is back to being about hue.
+    crown: { color: "#152421", amount: 0.5 },
     trunk: { color: "#4a3324", amount: 0.3 },
-    // Damp and mossed over, the way stone goes under a canopy that never lets
+    // A PINE IS GREEN IN OCTOBER (§BiomeDef.seasonPull). This row's crown tint
+    // already said "resists autumn hard on purpose because conifers do" and was
+    // measurably not managing it — 26 RGB from July to October, against a deciduous
+    // birch wood's 67 — because a tint cannot resist a season without also
+    // resisting the dark. A sixth of the month is the light changing, which is the
+    // whole of what a conifer does in a year.
+    //
+    // The floor takes half. A needle mat is not a lawn and does not brown like
+    // one, but it is not stone either: there is grass between the trunks and some
+    // of it goes over.
+    seasonPull: { crown: 0.16, ground: 0.5 },    // Damp and mossed over, the way stone goes under a canopy that never lets
         // it dry. Rounded shapes only — nothing sharp survives that long in shade.
     stone: { tint: { color: "#4c5a4a", amount: 0.26 }, shapes: ["boulder", "boulder", "broken"] },
     // A conifer: narrow, tall, and TIERED rather than smoothly tapered. The
@@ -1883,7 +1999,26 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // concrete bollard with a crown on it, obvious at swatch size and invisible
     // in the numbers. Bark is nearly white or it is not bark.
     trunk: { color: "#f4f1e6", amount: 0.94 },
-    // Three pixels taller than everything else in the world, which is the whole
+    // GOLD, AND ONLY GOLD (§BiomeDef.autumnCrown). A birch does not go red or
+    // russet — it goes a clear yellow and holds it for a fortnight, which is the
+    // one autumn colour everybody can name a tree by. Against the season's own
+    // burnt orange it is the difference between "a wood in autumn" and "a birch
+    // wood in autumn", and it is the region that most needs the distinction: its
+    // whole idea is being bright and thin where the pines are dark and close.
+    //
+    // SATURATION IS THE VIBRANCY, NOT LIGHTNESS, and the first gold here proved it
+    // by being neither. Drafted at #d9a838 — a bright lemon — it measured four
+    // luma from the floor it stood on and read as a wash; corrected to a darker
+    // bronze it separated and went dull. The answer was to hold the VALUE where
+    // the separation needs it and spend everything else on chroma: this is the
+    // same brightness as the bronze and 0.97 saturated against its 0.79. A real
+    // birch in October is not a pale tree, it is an intensely yellow one.
+    //
+    // AND THE AMOUNT IS 0.7 RATHER THAN 1 FOR A REASON THAT IS NOT TASTE. This
+    // tint lands last, on the lit arm and the shaded arm alike, so at 1 both
+    // arms become exactly this colour and the crown loses its own shading — a
+    // flat gold cutout of a tree. 0.7 keeps a third of the light on it.
+    autumnCrown: { color: "#c98a06", amount: 0.7 },    // Three pixels taller than everything else in the world, which is the whole
     // difference between a tree that is tall and a tree that is big. The crown
     // below got NARROWER at the same time; growing one without the other just
     // makes a lollipop on a longer stick.
@@ -2067,7 +2202,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // than as dry country that has been recoloured.
     crown: { color: "#7c8a4e", amount: 0.6 },
     trunk: { color: "#7a6248", amount: 0.3 },
-    // SUN-BLEACHED AND BROKEN UP, and the region with by far the most of it —
+    // A heath goes RUST and then purple-brown, which is bracken and blueberry
+    // and heather all doing it at once (§BiomeDef.autumnCrown). Deeper and redder
+    // than the season's own orange, and nothing like the birches' gold.
+    autumnCrown: { color: "#9c4a2e", amount: 0.65 },    // SUN-BLEACHED AND BROKEN UP, and the region with by far the most of it —
         // seventeen stones a screen against everywhere else's one or two, so this is
         // the one row where the shape list does real work. All three of the dry
         // silhouettes and none of the round one: this ground cracked, it did not
@@ -2187,7 +2325,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     tufts: ["sprout", "sprout", "cluster"],
     crown: { color: "#2f4a34", amount: 0.45 },
     trunk: { color: "#3d3226", amount: 0.35 },
-    // Sunk, wet and dark. Slabs and low boulders — anything that stood up here
+    // Willow and alder go YELLOW-BROWN and hang on late, which is a wet wood's
+    // autumn: no scarlet in it anywhere, and it should stay murkier than the
+    // birches (§BiomeDef.autumnCrown).
+    autumnCrown: { color: "#8f6a2a", amount: 0.6 },    // Sunk, wet and dark. Slabs and low boulders — anything that stood up here
         // went under a long time ago.
     stone: { tint: { color: "#41504a", amount: 0.32 }, shapes: ["slab", "slab", "boulder"] },
     // INKCAP GREY, AND THE REASON IS ECOLOGY RATHER THAN PALETTE — the first row
@@ -2695,11 +2836,17 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // pinewood's reason: a conifer does not turn in October, and out here there
     // is nothing else on screen to carry the season if this one does not refuse
     // it.
-    crown: { color: "#3c5646", amount: 0.62 },
+    // Halved so the hour can reach it, colour doubled down to keep the summer
+    // crown identical — see the pinewood, same bug, same fix.
+    crown: { color: "#3b4e47", amount: 0.5 },
     // Weathered pale. A tree that has been rained on and dried out at this
     // altitude has bark closer to bone than to brown.
     trunk: { color: "#8a7862", amount: 0.42 },
-    // A long bare bole. The single tree on the rock is a tall thin thing with
+    // ONE JEFFREY PINE STANDING ON A DOME, which is what the canopy note above
+    // calls it — and a Jeffrey pine is a pine. This row had the largest wrong
+    // swing in the game at 39 RGB (§BiomeDef.seasonPull), which is most of a real
+    // turn on a tree that has never turned in its life.
+    seasonPull: { crown: 0.16 },    // A long bare bole. The single tree on the rock is a tall thin thing with
     // its foliage held well above head height, which the ordinary 16 could not
     // say — and here the trunk is doing what the birch's does, which is carrying
     // the species on its own.
@@ -3725,7 +3872,18 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     tufts: ["cluster", "blades"],
     crown: { color: "#e8a8c4", amount: 0.8 }, // pink, and unmistakably so
     trunk: { color: "#5a3a30", amount: 0.25 },
-    // Old orchard stone, warmed by the same light everything else here is.
+    // NO `autumnCrown`, AND IT WAS DRAFTED WITH ONE. A cherry really does turn
+    // scarlet in October, and giving this row a crimson autumn broke two settled
+    // things at once: the header's own example of how tints compose ("Blossom
+    // Rows stay stubbornly pink") and the falling petals below, which fall all
+    // year BECAUSE these trees are in blossom all year. Crimson trees shedding
+    // pink petals is the worst of both — a region half-committed to a season.
+    //
+    // The permanent bloom is this region's one deliberate untruth and it is the
+    // point of it: a sited landmark you walk to, in flower whenever you arrive.
+    // If it is ever made seasonal, the petals, the daisy carpet and this comment
+    // go with it, and it should be that decision rather than a side effect of an
+    // autumn pass.    // Old orchard stone, warmed by the same light everything else here is.
     stone: { tint: { color: "#c8b2ac", amount: 0.18 }, shapes: ["boulder", "slab"] },
     // Wider than anything else here, and BEAN-shaped rather than round: full
     // width held for most of the crown, then two lobes hanging down either side
@@ -3839,14 +3997,17 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Near-black, and held nearly as hard as the pinewood's. A coast redwood is
     // an evergreen conifer: it does not turn, and the canopy that makes this
     // region dark has to stay dark in October or the whole reading goes with it.
-    crown: { color: "#1c3328", amount: 0.72 },
+    // Halved so the hour can reach it, colour doubled down to keep the summer
+    // crown identical — see the pinewood, same bug, same fix.
+    crown: { color: "#0b141d", amount: 0.5 },
     // THE ONE BRIGHT THING IN THE REGION, and the second trunk in the game to
     // carry a species on its own (the birches were the first). Cinnamon, pulled
     // past halfway so it arrives — the note on the birch's white is the lesson
     // being reapplied: a stem tinted gently keeps most of the base brown and
     // reads as an ordinary tree standing in a strange wood.
     trunk: { color: "#a5522c", amount: 0.6 },
-    // The tallest ordinary trunk in the world — half again the birch's, which
+    // Evergreen, and the largest evergreen there is (§BiomeDef.seasonPull).
+    seasonPull: { crown: 0.16 },    // The tallest ordinary trunk in the world — half again the birch's, which
     // held the record at 20. The foliage sits above it in a narrow column, so
     // what you are mostly looking at, standing in here, is bare red stem going
     // up out of frame.
@@ -3958,9 +4119,13 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     ground: { color: "#6a4526", amount: 0.88 },
     tuft: { color: "#855e38", amount: 0.75 },
     tufts: ["sprout", "cluster", "dot", "dot"],
-    crown: { color: "#1c3328", amount: 0.72 },
+    // Halved so the hour can reach it, colour doubled down to keep the summer
+    // crown identical — see the pinewood, same bug, same fix.
+    crown: { color: "#0b141d", amount: 0.5 },
     trunk: { color: "#a5522c", amount: 0.6 },
-    mushroomCap: { cap: "#ddd3b8", lit: "#f2ecd8", gills: "#9c9070" },
+    // A sequoia does not turn either — see the redwoods, same argument, same
+    // family (§BiomeDef.seasonPull).
+    seasonPull: { crown: 0.16 },    mushroomCap: { cap: "#ddd3b8", lit: "#f2ecd8", gills: "#9c9070" },
     // Forty pixels of bare stem — two and a half tiles before the foliage starts,
     // where the tallest thing in the rest of the world is a thirty-pixel redwood
     // trunk. The sprite comes to about sixty-six, which is four tiles: the largest

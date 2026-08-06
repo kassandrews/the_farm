@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { scenePalette, seasonSkin, biomeSkin, mixHex } from "./palette";
+import { scenePalette, seasonSkin, biomeSkin, mixHex, foliage } from "./palette";
 import { MUSHROOM_ART, DEADWOOD_ART, shrubPeak, shrubRows } from "./renderer";
 import { BIOMES, BROADLEAF, treeForms } from "../content/biomes";
 import { SEASONS, seasonOn } from "../content/seasons";
@@ -143,17 +143,91 @@ describe("biome tinting", () => {
   });
 
   it("keeps the pines evergreen through autumn and lets the birches turn", () => {
-    // The argument `amount` exists to have. Distance from summer's crown says how
-    // much October moved each canopy.
+    // THROUGH `foliage`, WHICH IS WHAT DRAWS. This test used to recompute the
+    // composition itself — `mixHex(season.crown, def.crown)` — and it passed for
+    // months while the pines swung 26 RGB from July to October, because the thing
+    // it measured was not the thing on screen. Asking the real function is the
+    // whole point of the real function being exported.
     const autumn = scenePalette(seasonOn(at(10)), false);
     const summer = scenePalette(seasonOn(at(7)), false);
-    const shift = (id: "pinewood" | "birch" | "meadow") =>
-      dist(
-        mixHex(summer.crown, BIOMES[id].crown),
-        mixHex(autumn.crown, BIOMES[id].crown),
-      );
+    const shift = (id: keyof typeof BIOMES) =>
+      dist(foliage(BIOMES[id], summer, false), foliage(BIOMES[id], autumn, false));
     expect(shift("pinewood")).toBeLessThan(shift("birch"));
     expect(shift("birch")).toBeLessThan(shift("meadow"));
+  });
+
+  it("does not turn a tree that has never turned in its life", () => {
+    // The four regions named for conifers (content/biomes.ts §seasonPull). Each
+    // measured a third to a half of a deciduous wood's swing before the dial
+    // existed: granite 39, redwoods and giants 30, pines 26, against a birch
+    // wood's 67. A pine is green in October; only the light moves.
+    const autumn = scenePalette(seasonOn(at(10)), false);
+    const summer = scenePalette(seasonOn(at(7)), false);
+    const shift = (id: keyof typeof BIOMES) =>
+      dist(foliage(BIOMES[id], summer, false), foliage(BIOMES[id], autumn, false));
+    for (const id of ["pinewood", "redwoods", "giants", "granite"] as const) {
+      expect(shift(id), `${id} turns in autumn`).toBeLessThan(12);
+      // AND IT IS NOT FROZEN, which is the other half and the easier mistake: a
+      // sprite that takes none of the season has been cut out of the year and
+      // pasted back on top of it, still lit for July while the ground around it
+      // is November.
+      expect(shift(id), `${id} ignores the season entirely`).toBeGreaterThan(1);
+    }
+  });
+
+  it("still goes dark at night, however hard it refuses the month", () => {
+    // THE BUG THE PULL EXISTS TO AVOID, and the reason it is not just a bigger
+    // `crown.amount`: a tint sits on whichever arm the hour picked, so resisting
+    // the season through it resists the dark as well. A wood that stayed bright
+    // green at midnight would be a worse fault than a pine that turned orange.
+    for (const s of SEASONS) {
+      const day = scenePalette(s, false);
+      const night = scenePalette(s, true);
+      for (const id of ["pinewood", "redwoods", "granite"] as const) {
+        const d = foliage(BIOMES[id], day, false);
+        const n = foliage(BIOMES[id], night, false);
+        expect(dist(d, n), `${id} in ${s.id} does not darken`).toBeGreaterThan(20);
+      }
+    }
+  });
+
+  it("keeps autumn's crowns off autumn's ground", () => {
+    // THE MEASUREMENT THAT STARTED THE AUTUMN PASS. October read drab and the
+    // cause was not saturation — autumn's crowns are MORE saturated than
+    // summer's. It was value: with the ground warmed to straw, the two largest
+    // masses on screen sat at the same brightness in the same hue family, and in
+    // the birch wood the crown-to-ground luma separation fell from 34 in July to
+    // 20 in October. Two masses that close cannot separate, so the trees stopped
+    // reading as objects standing on a ground.
+    //
+    // Asserted for the regions whose canopies actually turn — a conifer wood was
+    // never in danger, which is exactly how the cause was found.
+    const autumn = scenePalette(seasonOn(at(10)), false);
+    const luma = (h: string): number => {
+      const [r, g, b] = rgb(h);
+      return 0.299 * r + 0.587 * g + 0.114 * b;
+    };
+    // THE BLOSSOM ROWS ARE EXEMPT, and measuring them is what earned the
+    // exemption: they sit at a separation of TWO — in July, where nobody has ever
+    // complained about them. Pink crowns over pale green ground separate on HUE
+    // and not on value at all, which is the second way two masses can be told
+    // apart and the reason this assertion is not a law of nature. The birch was
+    // wrong in October because it had NEITHER: 29° of hue and the same
+    // brightness. Value is the one to assert on for anything that turns warm,
+    // because warm-on-warm is exactly where hue stops helping.
+    for (const id of ["meadow", "birch", "fen", "scrub"] as const) {
+      const crown = foliage(BIOMES[id], autumn, false);
+      const ground = biomeSkin(
+        seasonSkin(tileDef(GRASS), GRASS, autumn),
+        GRASS,
+        BIOMES[id],
+      ).color;
+      expect(
+        Math.abs(luma(crown) - luma(ground)),
+        `${id}: October's canopy is the same brightness as its floor`,
+      ).toBeGreaterThan(28);
+
+    }
   });
 
   it("makes blossom crowns unmistakably pink and birch trunks pale", () => {

@@ -46,7 +46,7 @@ import {
 } from "../sim/world";
 import { tileDef, GRASS } from "../content/tiles";
 import { Renderer, paintMark } from "../render/renderer";
-import { scenePalette, mixHex, biomeSkin, seasonSkin } from "../render/palette";
+import { scenePalette, biomeSkin, seasonSkin, foliage } from "../render/palette";
 import { seasonAt } from "../sim/seasons";
 import type { DecorKit, BiomeDef } from "../content/biomes";
 import type { WorldState } from "../sim/types";
@@ -307,16 +307,30 @@ function marksStrip(def: BiomeDef): HTMLElement {
 function paintChips(now: number): void {
   const palette = scenePalette(seasonAt(now), false);
   for (const { canvas, def, kit, mark } of chips) {
-    // The stem ink is `Renderer.stemInk`'s: a small plant takes the CANOPY's
-    // colour and seasons with it, not the tuft's.
-    const stem = mixHex(palette.crown, def.crown);
+    // The stem ink through `foliage`, which is what the renderer draws with — a
+    // small plant takes the CANOPY's colour and seasons with it, not the tuft's,
+    // and "the canopy's colour" now means the region's share of the month and
+    // its own autumn direction as well as its year-round tint. This line was
+    // `mixHex(palette.crown, def.crown)`, a second copy of a rule that had since
+    // grown two more clauses, so every chip on this page drew stems from a
+    // composition the game had stopped using — the same two-clocks fault the
+    // note above this function is about.
+    //
+    // A kit may also state its stem outright (§DecorKit.stem), and the chips
+    // have to honour it or the page shows a black-eyed susan on a rust stalk
+    // that the game draws green.
+    const stem = kit.stem ?? foliage(def, palette, false);
     // And the ground under it, in the renderer's own order: the MONTH first,
     // then the region's tint on top of that answer. The other way round is
     // silently wrong and looked plausible — `seasonSkin` replaces `color`
     // outright from the season's table, so tinting first and seasoning second
     // throws the region away and every chip on the page comes out meadow green,
     // including the salt flats'.
-    const turf = biomeSkin(seasonSkin(tileDef(GRASS), GRASS, palette), GRASS, def).color;
+    const turf = biomeSkin(
+      seasonSkin(tileDef(GRASS), GRASS, palette, def.seasonPull?.ground ?? 1),
+      GRASS,
+      def,
+    ).color;
     const g = canvas.getContext("2d")!;
     g.fillStyle = turf;
     g.fillRect(0, 0, TILE, TILE);

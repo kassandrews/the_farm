@@ -32,6 +32,23 @@ export interface ScenePalette {
    *  it keeps its own palette in every month (see `drawTree`). */
   crown: string;
   crownLit: string;
+  /** THE SAME THREE AS SUMMER WOULD HAVE DRAWN THEM, at this hour.
+   *
+   *  A region may take only a FRACTION of the season (§BiomeDef.seasonPull), and
+   *  a fraction needs two ends. This is the other end: the colour the surface
+   *  would be if the month never reached it. Summer, because summer's numbers ARE
+   *  the shipped numbers and the baseline the other three are departures from —
+   *  the same constant the underground uses, for the same reason.
+   *
+   *  IT IS THE SUMMER OF THIS HOUR, NOT OF NOON. Night arms included, so a pine
+   *  that refuses October still goes dark at dusk: the pull is a dial on the
+   *  SEASON axis only, and the day/night axis is nobody's to opt out of. Reusing
+   *  a high `crown.amount` to resist the season — which is what the pinewood did
+   *  before this existed — resists both, and a wood that stayed bright green at
+   *  midnight is a worse bug than a pine that turns orange. */
+  baseCrown: string;
+  baseCrownLit: string;
+  baseTuft: string;
 }
 
 // The values the game shipped with, which are also summer's and also the
@@ -55,7 +72,59 @@ export function scenePalette(season: SeasonDef | null, night: boolean): ScenePal
     tuft: night ? s.tuft.night : s.tuft.day,
     crown: night ? crown.night : crown.day,
     crownLit: night ? crown.nightLit : crown.dayLit,
+    baseCrown: night ? SEASONLESS.crown.night : SEASONLESS.crown.day,
+    baseCrownLit: night ? SEASONLESS.crown.nightLit : SEASONLESS.crown.dayLit,
+    baseTuft: night ? SEASONLESS.tuft.night : SEASONLESS.tuft.day,
   };
+}
+
+/** How far into the month a surface actually goes: `base` at 0, the season's own
+ *  answer at 1, and anything between for the things that only half-notice.
+ *
+ *  A SEPARATE DIAL FROM THE REGION'S TINT, and the reason is what happens at
+ *  night. See §ScenePalette.baseCrown — resisting the season by raising a tint's
+ *  `amount` also resists the dark, because the tint sits on whichever arm the
+ *  hour picked. This composes on the season axis alone. */
+export function seasonPulled(base: string, seasonal: string, pull: number): string {
+  if (pull >= 1) return seasonal;
+  if (pull <= 0) return base;
+  return mixHex(base, { color: seasonal, amount: pull });
+}
+
+/** A region's FOLIAGE colour for a frame — the one place the month, the region's
+ *  own turn, and its year-round tint are composed, in that order.
+ *
+ *  Three claims, and each is separate:
+ *
+ *    1. HOW MUCH of the season this region takes (§BiomeDef.seasonPull) —
+ *       everything for a birch, a sixth for a pine. Pulled from summer's own arm
+ *       at this hour, so refusing October never means refusing midnight.
+ *    2. The tint the region wears in every month, unchanged.
+ *    3. WHICH WAY it turns, in autumn only (§BiomeDef.autumnCrown), and it goes
+ *       LAST on purpose. It was written second — a direction into the season's
+ *       answer, with the year-round tint over the top — and the blossom rows
+ *       proved that wrong in one measurement: their pink is a strong enough tint
+ *       to repaint anything under it, so October's crimson came out pink again,
+ *       two luma from the ground it stood on. A region's `crown` says what its
+ *       foliage is; in autumn the foliage IS something else, so the month has to
+ *       be able to say so over the top.
+ *
+ *  IT LIVES HERE RATHER THAN IN THE RENDERER so the tests can ask the same
+ *  question the screen does. The pines spent a session "resisting autumn" with a
+ *  number that measurably did not, while a test asserting they resisted it passed
+ *  — because the test recomputed the composition itself instead of calling what
+ *  draws. A second opinion about a colour is how you get a green tree in a test
+ *  and a brown one on screen. */
+export function foliage(biome: BiomeDef | null | undefined, p: ScenePalette, lit: boolean): string {
+  const now = lit ? p.crownLit : p.crown;
+  if (!biome) return now;
+  const ink = mixHex(
+    seasonPulled(lit ? p.baseCrownLit : p.baseCrown, now, biome.seasonPull?.crown ?? 1),
+    biome.crown,
+  );
+  return biome.autumnCrown && p.season?.id === "autumn"
+    ? mixHex(ink, biome.autumnCrown)
+    : ink;
 }
 
 // --- Biome tinting ------------------------------------------------------------
@@ -256,11 +325,40 @@ export function blendRegions(parts: { def: BiomeDef; w: number }[]): BiomeDef {
   // milk fades out over exactly the tiles the crust does. Left off entirely when
   // nobody has one, which keeps the common case identical.
   const anyWater = parts.some((p) => p.def.waterTint);
+  // THE SEASON DIALS BLEND TOO, on the water tint's argument exactly. A pine
+  // floor takes half of October and the meadow beside it takes all of it; if the
+  // number flipped on the tile the heaviest region flips, autumn would arrive
+  // along a line drawn across the ground — which is the seam this whole function
+  // exists to prevent, and the one `waterTint` was added to the list for.
+  //
+  // Numbers average by weight; `autumnCrown` is a Tint and averages exactly as
+  // the others do, a part without one contributing amount 0. Both left off
+  // entirely when nobody has any, so the common case stays the object it was.
+  const anyAutumn = parts.some((p) => p.def.autumnCrown);
+  const anyPull = parts.some((p) => p.def.seasonPull);
+  const dial = (pick: (d: BiomeDef) => number | undefined): number => {
+    let sum = 0;
+    let w = 0;
+    for (const p of parts) {
+      sum += (pick(p.def) ?? 1) * p.w;
+      w += p.w;
+    }
+    return w > 0 ? sum / w : 1;
+  };
   return {
     ...heaviest.def,
     ground: blend((d) => d.ground),
     tuft: blend((d) => d.tuft),
     ...(anyWater ? { waterTint: blend((d) => d.waterTint ?? NO_TINT) } : {}),
+    ...(anyAutumn ? { autumnCrown: blend((d) => d.autumnCrown ?? NO_TINT) } : {}),
+    ...(anyPull
+      ? {
+          seasonPull: {
+            crown: dial((d) => d.seasonPull?.crown),
+            ground: dial((d) => d.seasonPull?.ground),
+          },
+        }
+      : {}),
   };
 }
 
@@ -310,7 +408,20 @@ export function biomeSkin(def: TileDef, id: TileId, biome: BiomeDef): TileDef {
  *  the caps and the speckle, so a repaint that built a fresh object and forgot
  *  the name would switch three effects off silently and look like a palette
  *  problem for an afternoon. */
-export function seasonSkin(def: TileDef, id: TileId, p: ScenePalette): TileDef {
+export function seasonSkin(def: TileDef, id: TileId, p: ScenePalette, pull = 1): TileDef {
   const skin = p.season?.ground[id];
-  return skin ? { ...def, ...skin } : def;
+  if (!skin) return def;
+  // The common case, and the identity one: full pull returns exactly what this
+  // function has always returned, object for object.
+  if (pull >= 1) return { ...def, ...skin };
+  if (pull <= 0) return def;
+  // PART OF THE WAY, from the tile's OWN colour rather than from a stored summer
+  // row — summer states no ground at all (it is the baseline), so the unseasoned
+  // tile IS the other end of this mix. Top and shade travel with it or the bevel
+  // stops matching the material it edges, which is `biomeSkin`'s rule one
+  // function down and the same failure.
+  const out: TileDef = { ...def, color: mixHex(def.color, { color: skin.color, amount: pull }) };
+  if (def.top && skin.top) out.top = mixHex(def.top, { color: skin.top, amount: pull });
+  if (def.shade && skin.shade) out.shade = mixHex(def.shade, { color: skin.shade, amount: pull });
+  return out;
 }

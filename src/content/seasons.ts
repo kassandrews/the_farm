@@ -131,16 +131,41 @@ export const SEASONS: SeasonDef[] = [
     // talking. The crown swing here is the largest in the file and is the whole
     // reason trees were brought into scope.
     ground: {
-      // Pushed warmer than first drafted: at #a3b455 the ground still read as
-      // green beside summer's and the trees were doing all the work alone.
-      // Verified on screen, which is the only way this kind of thing is
-      // settled — the numbers looked different in the file and didn't on the
-      // canvas.
-      [GRASS]: { color: "#b0a24d", top: "#b9ab55", shade: "#a69847" },
-      [MUSHROOM]: { color: "#b0a24d", top: "#b9ab55", shade: "#a69847" },
+      // > Pushed warmer than first drafted: at #a3b455 the ground still read as
+      // > green beside summer's and the trees were doing all the work alone.
+      //
+      // AND THAT IS WHY OCTOBER WENT DRAB — the fix is kept above because it was
+      // right about the symptom and wrong about the cure. The trees WERE doing
+      // all the work: this season's own note two lines up says they are meant to
+      // ("the one season where the trees do the talking"). Warming the ground
+      // until it joined in put the two largest masses on screen into one hue
+      // family at one brightness, and measurably: in the birch wood the
+      // crown-to-ground luma separation fell from 34 in July to 20 in October,
+      // with the hues 29° apart. Two masses that close cannot separate, so the
+      // trees stopped reading as objects standing on a ground and the frame went
+      // to one khaki field. Nothing was drab on its own; everything was drab
+      // beside everything else.
+      //
+      // The control is already in the game: the PINES keep a separation of 67 in
+      // October and read fine, and they are the region whose trees refuse to
+      // turn. Winter reads fine too — bare crowns go dark against a pale ground.
+      // It is autumn, and only where the canopy turns.
+      //
+      // So the ground goes back to about the draft that was rejected, and the
+      // vibrancy is spent where autumn actually is: on the crowns, which now
+      // carry a per-region direction (§BiomeDef.autumnCrown) instead of every
+      // tree in the world landing on one orange. Grass does not turn in October
+      // anyway — it stops growing. The straw belongs to late winter.
+      [GRASS]: { color: "#a3b455", top: "#acbd5d", shade: "#99aa4d" },
+      [MUSHROOM]: { color: "#a3b455", top: "#acbd5d", shade: "#99aa4d" },
     },
-    tuft: { day: "#a08f42", night: "#7d7039" },
-    crown: { day: "#a35d2c", dayLit: "#c9873c", night: "#6b3c22", nightLit: "#8a5a2c" },
+    tuft: { day: "#93a247", night: "#74803a" },
+    // WARMER AND DEEPER THAN THE ORANGE IT WAS, now that it is not competing
+    // with the floor for the same hue: #a35d2c against a straw ground was the
+    // most saturated thing on screen and still read as mud, because saturation
+    // is not what separates two masses — value is. With the ground back in
+    // green, the crown can go where a turning leaf actually goes.
+    crown: { day: "#a8532c", dayLit: "#cf7f39", night: "#6b3722", nightLit: "#8a5228" },
     sky: { day: "#9aa851", night: "#2c3044" },
     crop: "pumpkin",
     ripenedNote: "The pumpkins came up in their own month, looking pleased with the timing.",

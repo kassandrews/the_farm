@@ -89,6 +89,8 @@ import {
   sharpenRegions,
   isBiomeGround,
   mixHex,
+  seasonPulled,
+  foliage,
   type ScenePalette,
 } from "./palette";
 import { zoomLadder } from "./zoom";
@@ -1697,7 +1699,13 @@ export class Renderer {
    *  colour only on cells that happened to draw a tuft and whatever the last call
    *  left behind on the rest. */
   private stemInk(world: WorldState, tx: number, ty: number): string {
-    return mixHex(this.palette.crown, this.turf(world, tx, ty).crown);
+    return this.foliage(this.turf(world, tx, ty), false);
+  }
+
+  /** This frame's foliage colour for a region — see `palette.ts` §foliage, where
+   *  the order is stated and where the tests can reach it. */
+  private foliage(biome: BiomeDef | null | undefined, lit: boolean): string {
+    return foliage(biome, this.palette, lit);
   }
 
   /** One mark from a kit, placed inside a cell.
@@ -2003,7 +2011,17 @@ export class Renderer {
         const turf = this.turf(world, tx, ty);
         // The season's answer, kept, because the region's SECOND ink is applied to
         // it rather than to the first ink — see the dither below.
-        const seasoned = seasonSkin(tileDef(groundId), groundId, this.palette);
+        // THE FLOOR TAKES ITS REGION'S SHARE OF THE MONTH TOO (§seasonPull.ground),
+        // and it is the blended region that decides — a needle mat and the lawn
+        // beside it take different amounts of October, and a hard switch on the
+        // tile the heaviest region flips would draw autumn as a line across the
+        // ground. `blendRegions` averages the dial for exactly that reason.
+        const seasoned = seasonSkin(
+          tileDef(groundId),
+          groundId,
+          this.palette,
+          turf.seasonPull?.ground ?? 1,
+        );
         const def = finishFor(world, groundId, tx, ty) ?? biomeSkin(seasoned, groundId, turf);
         const px = Math.round(this.sceneX(tx) - TILE / 2);
         const py = Math.round(this.sceneY(ty) - TILE / 2);
@@ -2231,7 +2249,7 @@ export class Renderer {
               // The stem ink is the region's canopy colour, like every other kit
               // — which on water is exactly right for a pad: a lily leaf is the
               // same green as the leaves on the bank.
-              this.drawKitMark(fkit, px, py, decoHash(tx, ty, world.seed ^ 0x8b53), this.stemInk(world, tx, ty));
+              this.drawKitMark(fkit, px, py, decoHash(tx, ty, world.seed ^ 0x8b53), fkit.stem ?? this.stemInk(world, tx, ty));
             }
           }
         } else if (def.name === "Lava") {
@@ -2302,7 +2320,14 @@ export class Renderer {
             // and a checker inside one is a colour nobody can resolve. Half the
             // marks in the wrong green is the same sentence the ground is making
             // at a scale the eye can actually see it at.
-            const speck = mixHex(this.palette.tuft, turf.tuft);
+            // THE SPECKLE TAKES THE FLOOR'S SHARE OF THE MONTH, not the whole of
+            // it: the tuft "wants to travel with the ground or the texture
+            // detaches from the surface it is meant to be texture ON"
+            // (§BiomeDef.tuft), and that is as true of the season as of the hue.
+            const speck = mixHex(
+              seasonPulled(this.palette.baseTuft, this.palette.tuft, turf.seasonPull?.ground ?? 1),
+              turf.tuft,
+            );
             ctx.fillStyle =
               paint?.dither && ((h * 977) % 1) > 0.5
                 ? mixHex(speck, paint.dither.tuft)
@@ -2401,7 +2426,7 @@ export class Renderer {
             // test, so every mark would come from the low end of the range —
             // one shape, in one corner, forever.
             const p = decoHash(tx, ty, world.seed ^ 0x77c3);
-            this.drawKitMark(kit, px, py, p, this.stemInk(world, tx, ty), paint?.glitch);
+            this.drawKitMark(kit, px, py, p, kit.stem ?? this.stemInk(world, tx, ty), paint?.glitch);
           }
 
           // THE SECOND KIT, on its own four hashes throughout. Sharing any of
@@ -2429,7 +2454,7 @@ export class Renderer {
           const bwild = bdef?.mown ? townMown(world.seed, tx, ty) : 1;
           if (bkit && bh < bkit.density * bwild && this.inSeason(bkit)) {
             const p = decoHash(tx, ty, world.seed ^ 0x3ac9);
-            this.drawKitMark(bkit, px, py, p, this.stemInk(world, tx, ty), paint?.glitch);
+            this.drawKitMark(bkit, px, py, p, bkit.stem ?? this.stemInk(world, tx, ty), paint?.glitch);
           }
         } else if (def.name === "Sand") {
           // Grain, on the same terms as the grass tuft: a hash of the WORLD
@@ -4649,12 +4674,12 @@ export class Renderer {
       ? night
         ? "#1e2c1f"
         : "#2c3a2a"
-      : mixHex(this.palette.crown, biome!.crown);
+      : this.foliage(biome, false);
     const crownLit = dark
       ? night
         ? "#26361f"
         : "#3a4a34"
-      : mixHex(this.palette.crownLit, biome!.crown);
+      : this.foliage(biome, true);
     const top = base - height;
     // AND THE CROWNS COME OUT WRONG TOO, where the region says so. The largest
     // colour mass on screen is the one that has to carry the Static's whole
@@ -4928,8 +4953,19 @@ export class Renderer {
 
     this.footShadow(cx, base, (rows[rows.length - 1] + 1) * 2);
 
-    const crown = mixHex(this.palette.crown, biome!.crown);
-    const crownLit = mixHex(this.palette.crownLit, biome!.crown);
+    // THE ONE PLACE A BUSH IS ALLOWED TO DISAGREE WITH THE TREE OVER IT
+    // (§BiomeDef.shrubAutumn). Everything else about a shrub is inherited on
+    // purpose — the silhouette from the crown rows, the colour from the canopy —
+    // and the exception is October, when a deciduous understory under an
+    // evergreen canopy is doing the opposite of what the canopy is doing.
+    //
+    // Last, over the region's fully composed foliage, for `autumnCrown`'s reason
+    // one field up: this is a statement about what the plant IS in this month,
+    // and anything applied after it would be the tree's opinion again.
+    const turn =
+      this.palette.season?.id === "autumn" ? (biome?.shrubAutumn ?? null) : null;
+    const crown = turn ? mixHex(this.foliage(biome, false), turn) : this.foliage(biome, false);
+    const crownLit = turn ? mixHex(this.foliage(biome, true), turn) : this.foliage(biome, true);
     const top = base - height;
     // Odd widths, centred on cx — the same fix the crowns needed, and made here
     // at the same time so a bush is never the one thing sitting half a pixel off.

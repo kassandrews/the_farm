@@ -121,7 +121,7 @@ export const OBSERVATIONS: ObservationDef[] = [
   {
     id: "the-blossom",
     source: "noticed",
-    line: "A wood in flower, out of all season and by itself. Nothing around it is in flower. It has not been remarked upon by anybody.",
+    line: "A wood in flower, out of all season and by itself. Warmer under the trees than out of them, by enough to notice. Nothing around it is in flower, and it has not been remarked upon by anybody.",
   },
   {
     id: "the-granite",
