@@ -522,13 +522,27 @@ describe("crown silhouettes", () => {
     // pixel narrower is a history and three pixels narrower is a different tree.
     // Height is deliberately NOT pinned — where the foliage sits on the stem is
     // the whole of what varies.
+    //
+    // AND THE ONE EXCEPTION IS A TREE THAT IS NOT GROWN YET. The birches carry a
+    // sapling (content/biomes.ts §birch.crownAlt), which disagrees about size on
+    // purpose and is still obviously the same plant — because it is not a smaller
+    // ADULT, it is a younger one. So the rule is a pair of ends with the middle
+    // shut: match within a pixel, or be at most HALF as wide and half as tall.
+    // The middle is where "a slightly different tree" lives, and that was always
+    // the actual fault this asserts against — a form 6 wide against an 8 is a
+    // second species; a form 3 wide and half the height is a child.
+    const height = (f: { rows: number[]; overlap?: number; trunkHeight?: number }) =>
+      (f.trunkHeight ?? 16) + f.rows.length - (f.overlap ?? 0);
     for (const b of Object.values(BIOMES)) {
       const forms = treeForms(b);
       if (forms.length < 2) continue;
       const own = Math.max(...forms[0].rows);
       for (const f of forms.slice(1)) {
+        const girth = Math.max(...f.rows);
+        const young = girth * 2 <= own && height(f) * 2 <= height(forms[0]);
+        if (young) continue;
         expect(
-          Math.abs(Math.max(...f.rows) - own),
+          Math.abs(girth - own),
           `${b.id}: its two trees differ in girth`,
         ).toBeLessThanOrEqual(1);
       }

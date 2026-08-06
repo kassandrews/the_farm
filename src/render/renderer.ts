@@ -4654,8 +4654,13 @@ export class Renderer {
     // trunk rather than the far side of a round thing. It is a third of the extra
     // width plus the original pixel, which keeps the light/dark split near the
     // quarter it has always sat at.
-    const girth = biome?.trunkGirth ?? 0;
-    const shade = 1 + Math.round(girth / 1.5);
+    // PER-FORM FIRST, then the region's (content/biomes.ts §TreeShape.girth). A
+    // sapling is skinny as well as short, and on the region's stem it came out a
+    // fencepost wearing a shrub.
+    const girth = form?.girth ?? biome?.trunkGirth ?? 0;
+    // At least one, or a narrowed stem loses its shaded side entirely and stops
+    // being round — the fault this whole two-tone split exists to avoid.
+    const shade = Math.max(1, 1 + Math.round(girth / 1.5));
     ctx.fillStyle = biome ? mixHex(bark, biome.trunk) : bark;
     const stem = trunkSpan(girth);
     ctx.fillRect(cx + stem.dx, base - trunkH, stem.w, trunkH);

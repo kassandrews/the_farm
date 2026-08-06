@@ -8619,20 +8619,37 @@ only the last two were parted, so the foliage crossed solid over the stem and
 then opened a keyhole below it. The parting now runs the full overlap and widens
 downward — `1,1,2,2` — because a branch angle opens away from the stem.
 
-**Saplings are a decor mark, not a second tree form.** `crownAlt` pins two forms
-to within a pixel of girth, and a sapling disagrees about nothing but size; the
-same rule threw a young form out of the meadow the same afternoon. So the
-seedling belongs to the floor. Its trick is that the STEM is the kit's `accent`
-and the leaves are the `x` ink — backwards from every other kit here, and
-correct: `accent` is fixed paint and `x` seasons with the canopy, and a birch is
-white from its first year. The leaves turn in October and the little pale stem
-does not, which is what the big trees do.
+**Saplings are a tree form, and they were decor first.** Built as a mark, they
+were not wrong so much as too small: the band rule caps a glyph at 5×5, and at
+that size the regeneration this wood is famous for reads as lint on the grass.
+So they became a `crownAlt`, and **the same-species rule had to widen to let
+them in**: a second form may now either match the adult's girth within a pixel
+(another grown tree) or be **unmistakably young** — at most half as wide *and*
+half as tall. What stays forbidden is the middle, which is where "a slightly
+different tree" lives and which was always the actual fault. This is a birch
+argument, not a general licence: the species colonises gaps, so its stands are
+ragged, where the pinewood's own note argues the opposite and should keep it.
+
+**Skinny needed a new field.** The stem is five pixels everywhere, and
+`drawTree`'s note says why — "a 3px stem under a 40px tree reads as a sapling
+that grew a hat". That is a bug report about a grown tree and a *spec* for a
+young one: on the region's five, the sapling photographed as a fencepost wearing
+a shrub, because a stem as wide as its own crown is a post whatever height it is.
+`TreeShape.girth` overrides `BiomeDef.trunkGirth` per form; `-1` gives a
+three-pixel whip, and the bark grid and the shaded side follow it down (the shade
+now clamps at 1, or a narrowed stem loses its round entirely). 12 rows on a
+12-pixel stem stands 22 against the adult's 44 — exactly half, which is both what
+the rule allows and where the eye reads "not grown yet" rather than "far away".
 
 **Two missing seasons, filled.** Summer gets the **harebell** — the first true
 blue accent in the file, and a plant that wants exactly the thin half-shaded turf
-this row's palette describes. It drew as a flat bar first: two blue pixels in a
-row is a flag on a stick. A bell is one pixel where it joins and two where it
-opens, and that single step down is what makes it hang. Winter gets **snow**,
+this row's palette describes. Two corrections, both worth keeping: it drew as a
+flat bar first (two blue pixels in a row is a flag on a stick — a bell is one
+pixel where it joins and two where it opens, and that step down is what makes it
+hang), and the first blue was too CLOSE IN VALUE to the grass. `#89a6dd`
+measures 164 against this floor's 178; at three pixels, hue carries nothing and
+luma carries everything. `#5f7fc9` sits 52 below the grass, reads across the
+wood, and is the truer flower besides. Winter gets **snow**,
 making it the seventh region with any — there was never an argument for leaving
 it out, and the pines it exists to be compared against have had it all along.
 `0.82 → #e4ece5`, fitted to the same luma 233 as every other row; `stubble: 0.25`,

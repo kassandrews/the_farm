@@ -1293,6 +1293,22 @@ export interface TreeShape {
   /** Bare stem, in pixels. Omitted, the REGION's own — a form that only redraws
    *  the crown keeps the species' stem. */
   trunkHeight?: number;
+  /** How THICK that stem is — `BiomeDef.trunkGirth` for this form. Omitted, the
+   *  region's own, which is what every grown pair wants: two histories of one
+   *  tree have the same bole.
+   *
+   *  IT EXISTS FOR THE SAPLING AND IT IS THE HALF THAT MAKES IT ONE. The stem is
+   *  five pixels everywhere, and `drawTree`'s own note says why — "a 3px stem
+   *  under a 40px tree reads as a sapling that grew a hat". That sentence is a
+   *  bug report about a grown tree and a SPEC for a young one: drawn on the
+   *  region's five, the birches' sapling came out a fencepost with a shrub on
+   *  top, because a stem as wide as its own crown is a post whatever height it
+   *  is. Skinny is not a smaller version of thick; it is a different ratio, and
+   *  this is the only field that can say so.
+   *
+   *  Negative narrows (`trunkSpan` keeps every width odd, so -1 is a three-pixel
+   *  whip), and the bark grid and the shaded side follow it down. */
+  girth?: number;
 }
 
 /** Every form of a region's tree, the row's own fields first.
@@ -2285,50 +2301,67 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // for the same reason — an underside is a thing with a direction.
     crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2],
     crownOverlap: 4,
+    // THE SAPLING, and it is the first form in the game that is not the same AGE
+    // as the tree beside it. Every pair before this one was two histories of one
+    // grown tree — the pines' skirted and self-pruned, the meadow's two amounts
+    // of bare pole — and both of those pin girth and height precisely so that a
+    // stand never reads as young trees among old ones. This does the opposite on
+    // purpose, and the rule in `palette.test.ts` had to be widened to let it: a
+    // second form may now either match the adult's girth within a pixel (another
+    // grown tree) or be UNMISTAKABLY YOUNG — at most half as wide and at most
+    // half as tall. What is still forbidden is the middle, which is where "a
+    // slightly different tree" lives, and that was always the real fault.
+    //
+    // IT IS THIS REGION AND NOT ANOTHER. A birch wood is even-aged in a
+    // plantation and ragged everywhere else, because the species colonises gaps
+    // and the gaps happen whenever they happen; the pinewood next door made the
+    // opposite argument in its own note (a closed conifer canopy levels itself)
+    // and should keep it. Do not read this as permission for saplings generally.
+    //
+    // SKINNY IS THE HALF THAT MATTERS. Three half-widths against the adult's
+    // eight — six pixels — because a young birch is a whip: it puts its height on
+    // years before it puts on any width, and a small tree drawn in PROPORTION to
+    // a big one is a bonsai rather than a sapling. Twelve rows on a twelve pixel
+    // stem stands 22 against the adult's 44 — exactly half, which is both what
+    // the widened rule allows and where the eye reads "not grown yet" rather than
+    // "far away".
+    //
+    // It parts over its stem in the last two rows like the grown tree does — the
+    // one detail that says which species it is going to be, since at six pixels
+    // wide there is nothing else left to say it with.
+    crownAlt: [
+      {
+        rows: [1, 2, 2, 3, 3, 3, 3, 3, 3, 3, 2, 2],
+        gaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+        overlap: 2,
+        trunkHeight: 12,
+        // Three pixels of stem against the region's five (§TreeShape.girth). Six
+        // pixels of crown over five of trunk is a post with a shrub on it; over
+        // three it is a whip with leaves, which is the thing itself.
+        girth: -1,
+      },
+    ],
     // Thin pale grass and small white flowers — the airy opposite of the pines,
     // and the reason the two rows sit next to each other.
     // ITS FLOWERS MOVED TO SPRING, and what is left all year is grass. The white
     // heads used to stand here in December, which is the one month a birch wood
     // is unmistakably bare — a region cannot be "the airy one" in every season by
     // wearing the same flowers through all four of them.
-    // AND SEEDLINGS, WHICH ARE THE ONE THING THIS WOOD IS ABOUT THAT NOTHING ON
-    // SCREEN SAID. Birch is a pioneer: it seeds into every gap it can reach light
-    // through, which is why a birch wood is a birch wood and not a stage on the
-    // way to something else. Under this canopy — the thinnest in the game, and
-    // the reason the ground here is pale — that regeneration is the floor's
-    // actual character.
-    //
-    // A MARK AND NOT A SECOND TREE FORM, and the rule is what decides it, not
-    // taste. `crownAlt` pins two forms to within a pixel of girth (§treeForms and
-    // `palette.test.ts`), because two outlines that disagree about how BIG a tree
-    // is stop reading as one plant — and a sapling disagrees about nothing else.
-    // The same argument threw a young form out of the meadow the same afternoon.
-    // So a seedling belongs to the floor, where small things live, and the wood
-    // keeps one silhouette.
-    //
-    // THE STEM IS THE ACCENT AND THE LEAVES ARE THE STEM INK, which is backwards
-    // from every other kit in this file and is the whole trick: `o` is fixed
-    // paint and `x` seasons with the canopy (§DecorKit.accent), and on this plant
-    // it is the STEM that must not move — a birch is white from its first year,
-    // and a seedling whose bark turned gold in October would be a leaf on a
-    // stick. So the leaves turn with the wood above them and the little pale stem
-    // does not, which is exactly what the big trees do.
-    //
-    // Two of them, on the kit's own rule — a single glyph over a whole wood reads
-    // as printed however random the scatter under it is — and both held inside
-    // 3×4 so no seedling can touch its neighbour (the band rule).
+    // THE SAPLINGS ARE A TREE FORM, AND THEY WERE DECOR FIRST — which is worth
+    // recording, because the decor version was not wrong so much as too SMALL to
+    // be the thing it was about. Birch is a pioneer: it seeds into every gap it
+    // can reach light through, which is why a birch wood is a birch wood and not
+    // a stage on the way to something else, and under the thinnest canopy in the
+    // game that regeneration is the floor's actual character. Drawn as a MARK it
+    // gets five pixels by five — the band rule caps a glyph there — and at that
+    // size the wood's whole story reads as lint on the grass. See §crownAlt above
+    // for where it went and what the rule had to give up to let it.
     decor: {
       density: 0.13,
-      accent: "#e9e5da",
       marks: [
         ["..x", ".x.", "x.."],
         [".x.", ".x.", "x.."],
         ["x..", ".x.", ".x."],
-        // First-year: one pair of leaves and a stem you can see under them.
-        ["x.x", ".o.", ".o."],
-        // A year older — a second pair, offset, because a seedling puts them up
-        // alternately and two matched pairs read as a cross.
-        [".xx", "xo.", ".o.", ".o."],
       ],
     },
     // WOOD ANEMONE — Anemone nemorosa, which carpets birch and other broadleaf
@@ -2370,6 +2403,14 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         // nothing else owns is worth as much as a shape nothing else owns, which
         // is the argument the lupine's own note makes about silhouette.
         //
+        // AND IT HAS TO BE DARKER THAN THE GRASS, NOT MERELY A DIFFERENT HUE.
+        // The first blue was #89a6dd, which measures 164 against this floor's 178
+        // — fourteen points, and at three pixels a mark that close in VALUE is
+        // invisible whatever colour it is. Hue does not carry a shape this small;
+        // luma does. #5f7fc9 sits 52 below the grass and reads from across the
+        // wood, and it is also the truer flower: a harebell is a mid violet-blue,
+        // not a pale sky one.
+        //
         // NOT A CARPET. The anemone above is 0.15 because carpeting is what it
         // does; a harebell stands alone in the grass on a wire, so this is a
         // third of that and reads as something you come across.
@@ -2380,7 +2421,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         // reason.
         season: "summer",
         density: 0.05,
-        accent: "#89a6dd",
+        accent: "#5f7fc9",
         // NECK ABOVE MOUTH, which is the whole of the drawing. Two pixels of blue
         // in a row is a BAR — a little flag on a stick, which is what the first
         // cut photographed as. A bell is one pixel where it joins and two where
