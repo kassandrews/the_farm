@@ -81,6 +81,21 @@ describe("decor kits", () => {
         expect(kit.marks.length).toBeGreaterThan(1);
       });
 
+      it("and they are not the same mark twice", () => {
+        // THE RULE ABOVE COUNTED, WHICH IS NOT WHAT IT MEANT. The pines' lupine
+        // kit carried its spike twice, character for character, and passed —
+        // two identical marks is one mark, and one mark scattered randomly is
+        // the printed repeat the list exists to break.
+        //
+        // It survived because it is invisible everywhere you would look for it:
+        // in a diff two identical lines read as a pair, in a swatch a region
+        // with one flower looks like a region with one flower, and `/biomes.html`
+        // draws both chips happily. It was found by somebody looking at the
+        // contact sheet and asking why there were two lupines.
+        const seen = kit.marks.map((m) => m.join("/"));
+        expect(new Set(seen).size, `${id}: the same mark twice`).toBe(seen.length);
+      });
+
       it("uses only inks it has", () => {
         const usesAccent = kit.marks.some((m) => m.some((r) => r.includes("o")));
         const usesCore = kit.marks.some((m) => m.some((r) => r.includes("*")));

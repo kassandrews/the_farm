@@ -8266,6 +8266,54 @@ stumps ever start reading as gatherable, this is the paragraph to come back to.
 
 What is left is one object: a cut face, straight sides, a flat base.
 
+### Two lupines were one lupine (6 Aug 2026)
+
+The pinewood's bloom kit carried its spike **twice, character for character**. It
+passed "has more than one mark" by counting and satisfied nothing that rule is
+for — two identical marks is one mark, and one glyph scattered perfectly randomly
+is exactly the printed repeat the list exists to break.
+
+**It is invisible everywhere you would look for it.** In a diff two identical
+lines read as a pair; in a swatch a region with one flower looks like a region
+with one flower; `/biomes.html` draws both chips happily. It was found by
+somebody reading the contact sheet and asking why there were two lupines.
+`decor.test.ts` now asserts no kit repeats a mark — one duplicate in the whole
+file, and this was it.
+
+The second mark is now the same plant **younger**: a shorter spike, one open bell
+under its two newest buds. Same argument the meadow's clover kit records — one
+plant at two ages reads as a patch of it, where two unrelated glyphs read as a
+seed catalogue.
+
+### Lily of the valley, and the lupine moves to summer (6 Aug 2026)
+
+The pines now flower in two months, which is the most this region can have:
+`bloom` is a list, and the rule on it is **one kit per season** — at any moment
+the ground carries what is always here and what is here now, which is two kinds
+of small thing and not three. So a new flower had to take a month, not share one.
+
+**The lupine gave up spring, and that is a correction rather than a shuffle.**
+The argument written in that slot — *the flowers that bloom under conifers do it
+in the weeks before the canopy closes* — is an argument about deep shade, and it
+was being made on behalf of a plant that wants the opposite: *Lupinus perennis*
+is a pine-barren plant of open sandy half-shade, and in a barren it is a June
+flower. Spring went to the plant the argument was actually about. *Convallaria
+majalis* flowers in May in the shade of exactly this wood and is finished about
+when the canopy finishes closing over it.
+
+**A stalk with bells down ONE side, and the one-sidedness is the species.** Every
+other flower in the file is symmetrical about its stem — a head, a V of buds, a
+spike of paired dots — so flowers hanging off the left is a silhouette nothing
+here can be confused with. A pixel of stem between every bell: bells on
+consecutive rows merge into a bar down the side of the stalk, which is a leaf.
+Both hands among the marks, or a colony all facing one way reads as printed.
+
+**Still open: autumn and winter.** The pines have lilies in May, lupines and
+blueberries and fireflies in summer, and nothing after. The obvious candidate is
+sitting in this section already — lily of the valley carries bright red-orange
+berries in autumn, on the same stalk, which would be the region's third plant
+stated twice in two seasons (the blueberry/lupine soil argument, again).
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

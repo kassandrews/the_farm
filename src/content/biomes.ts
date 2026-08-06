@@ -1641,26 +1641,66 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         trunkHeight: 16,
       },
     ],
-    // WOOD ANEMONES, and they are the reason this field exists in a shaded
-    // region at all: the flowers that bloom under conifers do it in the weeks
-    // before the canopy closes, which is exactly a spring event and nothing else.
-    // LUPINE, which really is a pine-barren plant: Lupinus perennis wants acid,
-    // sandy, half-shaded ground, and that is this row's soil described exactly.
+    // TWO MONTHS OF FLOWER, one kit each, which is the only way this region can
+    // have two: `bloom` is a list and the rule on it is one per SEASON
+    // (content/decor.test.ts §"never puts two blooms in one region in the same
+    // month" — at any moment the ground carries what is always here and what is
+    // here now, which is two kinds of small thing and not three).
     //
-    // A SPIKE, NOT A FLOWER. Everything else that blooms in this file is a head
-    // on a stalk, so the lupine earns its place by silhouette rather than by
-    // colour — five rows of alternating pairs climbing a stem, which reads as a
-    // raceme at a glance and reads as nothing else. That matters more here than
-    // hue does: lavender on mid green is only about 1.2:1, so if this had to win
-    // on contrast it would lose. It wins on shape.
-    //
-    // The pale tip is the eye ink doing a second job — a raceme opens from the
-    // bottom, so the top of a real one is always the lighter, newer buds.
-    bloom: {
-      season: "spring",
-      density: 0.06,
-      accent: "#a08ad0",
-      core: "#cfc2ec",
+    // THE LUPINE USED TO HOLD SPRING AND HAS MOVED TO SUMMER, which is a
+    // correction rather than a shuffle. The argument written here for a spring
+    // bloom — "the flowers that bloom under conifers do it in the weeks before
+    // the canopy closes" — is an argument about DEEP SHADE, and it was being made
+    // on behalf of a plant that wants the opposite: Lupinus perennis is a
+    // pine-barren plant of open sandy half-shade, and in a barren it is a June
+    // flower. The spring slot went to the plant the argument was actually about.
+    bloom: [
+      {
+        // LILY OF THE VALLEY, which is that argument's own plant: Convallaria
+        // majalis flowers in May, in the shade of exactly this kind of wood, and
+        // it is finished about when the canopy finishes closing over it.
+        //
+        // A STALK AND BELLS DOWN ONE SIDE, and the one-sidedness is the species.
+        // Every other flower in this file is symmetrical about its stem — a head,
+        // a V of buds, a spike of paired dots — so a mark whose flowers all hang
+        // off the LEFT is a silhouette nothing else here can be confused with,
+        // which is the lupine's own argument (win on shape, not on hue) applied
+        // to a plant that also happens to win on hue.
+        //
+        // A PIXEL OF STEM BETWEEN EVERY BELL. Bells on consecutive rows merge
+        // into a bar down the side of the stalk, which is a leaf; the gaps are
+        // what make them separate flowers, and they are the same trick the
+        // lupine's V is recorded as needing three notes further down.
+        //
+        // Both hands, because a colony of them all facing one way reads as a
+        // printed repeat however random the placement is — 8c's finding, which
+        // `marks` is a list for.
+        season: "spring",
+        density: 0.07,
+        accent: "#f1efe3",
+        marks: [
+          ["xo", "x.", "xo", "x.", "x."],
+          ["ox", ".x", "ox", ".x", ".x"],
+          ["xo", "x.", "xo", "x.", "xo", "x."],
+        ],
+      },
+      {
+        // LUPINE, which really is a pine-barren plant: Lupinus perennis wants
+        // acid, sandy, half-shaded ground, and that is this row's soil described
+        // exactly — the same soil the blueberries are on, one field up.
+        //
+        // A SPIKE, NOT A FLOWER. Everything else that blooms in this file is a
+        // head on a stalk, so the lupine earns its place by silhouette rather
+        // than by colour — which matters more here than hue does: lavender on mid
+        // green is only about 1.2:1, so if this had to win on contrast it would
+        // lose. It wins on shape.
+        //
+        // The pale tip is the eye ink doing a second job — a raceme opens from
+        // the bottom, so the top of a real one is always the lighter, newer buds.
+        season: "summer",
+        density: 0.06,
+        accent: "#a08ad0",
+        core: "#cfc2ec",
       // Stacked whorls, not alternating pairs. Offsetting left/right down the
       // stem looked like a raceme in the table and rendered as a ZIGZAG — a
       // staircase reads as one wandering line, where a spike has to read as
@@ -1688,11 +1728,25 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       // Pale at the OUTER tips, and that is the true bit as well as the prettier
       // one: a raceme's newest buds are its furthest out, so the light pixels are
       // where the light pixels belong.
-      marks: [
-        ["*...*", ".o.o.", "..o..", "..x..", "..x.."],
-        ["*...*", ".o.o.", "..o..", "..x..", "..x.."],
-      ],
-    },
+        //
+        // AND THE SECOND MARK USED TO BE THE FIRST ONE AGAIN, character for
+        // character. It satisfied "more than one mark" by counting and satisfied
+        // nothing the rule is for: a kit with two identical marks is a kit with
+        // one, and one glyph scattered perfectly randomly still reads as printed.
+        // There is a test for it now, because this is invisible in a diff and
+        // invisible in a swatch — you only catch it by noticing the wood has one
+        // flower in it.
+        //
+        // The variant is the same plant YOUNGER: a shorter spike with a single
+        // open bell under its two newest buds. Same argument the meadow's clover
+        // kit records — one plant at two ages reads as a patch of it, where two
+        // unrelated glyphs read as a seed catalogue.
+        marks: [
+          ["*...*", ".o.o.", "..o..", "..x..", "..x.."],
+          [".*.*.", "..o..", "..x..", "..x.."],
+        ],
+      },
+    ],
     // Fewer than the meadow's: this canopy closes over you, and a wood you
     // cannot see far in should not be the one with the most light in it.
     motes: {
