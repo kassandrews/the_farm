@@ -8222,6 +8222,31 @@ fen's 0.16, under the long grass's 0.32.
 The fern stays in `x`, and that is the kit saying something: it is the living
 thing on this floor, where everything around it fell out of the canopy and died.
 
+### The stump was a rock (6 Aug 2026)
+
+`DEADWOOD_ART.stump` ended `..ddddd..` — two pixels narrower each side than the
+body above it. A rounded bottom, in weathered grey, at rock size, standing in a
+wood **next to actual rocks**. It read as one.
+
+**The rule that caused it is still right; it was being applied one edge too far.**
+The deadwood docblock said "nothing in either shape is square", because a flat end
+on a piece of wood reads as SAWN, and sawn wood is wood somebody cut — which is
+wood you would expect to be able to pick up, and these are the only standing
+things in the game you cannot gather. True of every *cut* end. The stump's base
+is not one: it is where the trunk goes into the ground, and the tree standing
+beside it draws exactly that as a flat-bottomed rect. **The ground is not a saw.**
+The docblock now says "no cut end is square", which is what it always meant.
+
+Top still rounded (it is a torn cut face seen at this game's angle), sides now run
+straight down onto a flat base.
+
+**A root collar was tried first and photographed as a brim** — base row a pixel
+wider each side, on the theory that a flare says "grown into the ground". The
+darkest row in the sprite, overhanging the sides, under a lighter top, is a hat.
+At nine pixels across there is no room for a flare to read as anything subtler,
+so the sides just run straight, which is what was being copied from the trunk in
+the first place.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

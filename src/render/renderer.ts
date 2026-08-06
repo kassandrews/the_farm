@@ -494,11 +494,21 @@ const ROCK_SHAPES: Record<
  *  keys off overhang (`artPx - TILE`), so anything at or under a tile can never
  *  fade the player standing behind it. These are things you step around.
  *
- *  NOTHING IN EITHER SHAPE IS SQUARE, and that is deliberate rather than
- *  decorative — see drawDeadwood. A flat end or a straight edge reads as SAWN,
- *  and sawn wood is wood somebody cut, which is wood you would expect to be able
- *  to pick up. Both ends of the log are rounded and its heartwood is off-centre.
- */
+ *  NO CUT END IS SQUARE, and that is deliberate rather than decorative — see
+ *  drawDeadwood. A flat end on a piece of wood reads as SAWN, and sawn wood is
+ *  wood somebody cut, which is wood you would expect to be able to pick up. Both
+ *  ends of the log are rounded and its heartwood is off-centre.
+ *
+ *  THAT RULE USED TO SAY "NOTHING IS SQUARE" AND IT COST THE STUMP ITS BASE. The
+ *  sprite ended `..ddddd..` — two pixels narrower each side than the body above
+ *  it — so the one edge in the drawing that is NOT a cut end was rounded off with
+ *  all the ones that are, and a stump with a rounded bottom is a rock. It sat in
+ *  a wood beside actual rocks, in weathered grey, at the same size.
+ *
+ *  A stump's base is not an end at all: it is where the trunk goes into the
+ *  ground, and the tree standing next to it draws exactly that as a flat-bottomed
+ *  rect (see drawTree's stem). So the base is flat and the sides run straight
+ *  down to it. The rule is about the SAW, and the ground is not a saw. */
 export const DEADWOOD_ART: Record<"stump" | "log", string[]> = {
   // Six rows: three of cut face, three of side. A stump seen from this angle is
   // mostly its top — the game looks down at about that much of a tree's trunk.
@@ -511,7 +521,23 @@ export const DEADWOOD_ART: Record<"stump" | "log", string[]> = {
   // The left side runs one pixel wider than the right, which is the only
   // asymmetry in the sprite and is there to stop it reading as turned on a lathe.
   // A stump flares where its roots leave it; a cylinder is a bollard.
-  stump: ["..ttttt..", ".ttrrrtt.", ".ttrrrtt.", "tbbbbbbb.", ".mbbbbbm.", "..ddddd.."],
+  //
+  // THE TOP STAYS ROUNDED AND THE BOTTOM DOES NOT, which is the whole of the
+  // difference between the two ends. The top is a cut face seen at this game's
+  // angle — an ellipse, and rounded because a torn one is not sawn. The bottom is
+  // the ground line, so it is flat and the sides drop straight onto it, exactly
+  // as the standing trunk beside it does.
+  //
+  // A ROOT COLLAR WAS TRIED FIRST — the base row a pixel wider each side than the
+  // body, on the theory that a flare says "grown into the ground" where a rounded
+  // foot says "pebble". It photographed as a BRIM. The darkest row in the sprite,
+  // overhanging the sides, under a lighter top, is a hat; at nine pixels across
+  // there is no room for a flare to be read as anything subtler.
+  //
+  // So the sides simply run straight down, which is what was being copied from
+  // the trunk in the first place — a stem is a plain rect with a flat bottom, and
+  // the stump beside it should end the same way.
+  stump: ["..ttttt..", ".ttrrrtt.", ".ttrrrtt.", "tbbbbbbb.", "tmbbbbbm.", "dddddddd."],
   // Twenty wide on a sixteen-pixel tile.
   //
   // THE FIRST DRAFT WAS A PLANK, and it is worth recording why: square ends, a
