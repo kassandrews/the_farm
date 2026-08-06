@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { scenePalette, seasonSkin, biomeSkin, mixHex } from "./palette";
-import { MUSHROOM_ART, DEADWOOD_ART } from "./renderer";
+import { MUSHROOM_ART, DEADWOOD_ART, shrubPeak, shrubRows } from "./renderer";
 import { BIOMES, BROADLEAF } from "../content/biomes";
 import { SEASONS, seasonOn } from "../content/seasons";
 import { TILES, tileDef, GRASS, MUSHROOM, SHALLOW, WATER, FARMLAND, FARMLAND_WET, FLOOR, STONE, BEDROCK, CAVE_FLOOR, ORE_VEIN, SHAFT, DARK_TREE } from "../content/tiles";
@@ -243,6 +243,37 @@ describe("the regions with berries in them", () => {
         Math.abs(luma(fruit) - luma(leaf)),
         `${b.id}: the fruit is the same value as the leaves`,
       ).toBeGreaterThan(30);
+    });
+
+    it(`${b.id} keeps its berries apart on every bush it has`, () => {
+      // THE BUG THE `spots` TABLE REPLACED A SCATTER TO FIX, and it is invisible
+      // in the table: two berries a pixel apart draw one two-pixel object, so a
+      // bush with three of them wears a nut instead. Authoring the arrangement
+      // is only worth anything if the arrangement is checked.
+      //
+      // Against every width the sprite actually makes — `drawShrub` rolls the
+      // peak a pixel either way — because the clamp that keeps a berry inside a
+      // narrow row is exactly what can shove two of them together, and the
+      // narrowest bush is the one the table was NOT drawn against.
+      const base = shrubPeak(b.crownRows);
+      for (let peak = Math.max(3, base - 1); peak <= base + 1; peak++) {
+        const rows = shrubRows(peak);
+        for (const [i, spots] of b.berries!.spots.entries()) {
+          const at = spots.map(([dx, row]) => {
+            const r = Math.max(0, Math.min(rows.length - 1, row));
+            return [Math.max(-(rows[r] - 1), Math.min(rows[r] - 1, dx)), r];
+          });
+          for (let a = 0; a < at.length; a++) {
+            for (let c = a + 1; c < at.length; c++) {
+              const apart = Math.max(Math.abs(at[a][0] - at[c][0]), Math.abs(at[a][1] - at[c][1]));
+              expect(
+                apart,
+                `${b.id} arrangement ${i} at peak ${peak}: two berries touching`,
+              ).toBeGreaterThan(1);
+            }
+          }
+        }
+      }
     });
   }
 });

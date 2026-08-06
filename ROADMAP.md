@@ -8033,6 +8033,63 @@ Two tests changed sides rather than being deleted, which is the useful part:
 the town on two hundred seeds for a mushroom that should not be there and a band
 at 120 tiles for ones that should. The rule is now checked where it is felt.
 
+### Blueberries in the pines (6 Aug 2026)
+
+`shrubs: 0.4` on the pinewood — the first **near** region with undergrowth,
+which until now was the glimmer's and the heath's — plus a new `BiomeDef.berries`
+field that paints fruit on the bush sprite for one season.
+
+**The plant was chosen by reading the row's own comment back.** The pines' spring
+bloom is lupine, justified there as "acid, sandy, half-shaded ground", which is a
+pine barren; lowbush blueberry is the other half of that community, growing
+through the same scrub. So the region gains a **summer signature it did not have**
+— it had fireflies, which every region with motes has — without a second fact
+being invented to hang it on.
+
+**The design call: paint on a gathered node, and you cannot pick it.** A berried
+bush chops for the same two wood a bare one does, in the same swing, in all four
+seasons. That keeps the season reaching appearance and never a number
+(DESIGN §Materials) while sitting on top of a node that yields — which is new
+here, and is the version that survived two worse ones. Drawn as ground decor it
+would have put berries on the grass *beside* the bushes: two layers claiming one
+plant. Made gatherable it would have turned a region into a reason to walk
+somewhere for a material, which the `shrubs` doc forbids one field above.
+**Expect to be asked why ACT does nothing** — the glimmer's orbs took the same
+question and answered it by not looking pickable, which a berry cannot do.
+
+**The ink is the bloom on the skin, not the fruit under it.** Near-black is what a
+blueberry looks like in the hand and a smudge on a `#23402c` crown; dusty pale
+blue is what a patch looks like at arm's length and is the legible pixel. It is
+the only blue accent in `biomes.ts`, so nothing else had to move.
+
+**`spots` is drawn, not rolled — the glimmer orbs' finding, in a smaller mark.**
+The first cut scattered one berry per row off its own hash. It spreads perfectly
+well *on average* and it **clustered**: two rows that agree within a pixel draw
+one two-pixel object, and a bush wore a nut instead of fruit. The table is now
+three authored arrangements of three, rows 3–7 of nine (fruit hangs *under* the
+leaves; berries over the whole dome read as blossom or as first snow), and the
+hash picks only which one a bush wears. **More than one arrangement, unlike the
+orbs' single table** — `chance` leaves most trees unlit, where every bush in a
+barren fruits, so a lone composition would read as printed.
+
+`shrubPeak`/`shrubRows` came out of `drawShrub` to file scope so
+`palette.test.ts` can walk every arrangement against every width the sprite makes
+(the peak rolls ±1) and prove no two berries ever touch. **The clamp that keeps a
+berry inside a narrow row is exactly what can shove two together**, and the
+narrowest bush is the one the table was not drawn against.
+
+**One test changed sides.** `biome.test.ts`'s "the meadow grows no shrubs" asked
+`biomeAt`; flora rolls off `scatterRegion`, the *dithered* region, so at a border
+a cell paints as meadow and grows as pines. That is how a pine has stood a tile
+inside the grass since the treeline existed — this is only the first time the
+dither could put a **bush** there. The town's own ground is protected a layer
+down by `scatterRegion`'s `HOME_REGION_REACH` guard, which returns the hard
+region and never dithers, so the live-save promise is where it always was.
+
+**Live saves grow bushes in pinewood they have not visited yet**, the same churn
+the scrub had when its bushes arrived. No schema change — terrain is still a
+total function of (seed, x, y).
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

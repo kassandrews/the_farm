@@ -568,6 +568,29 @@ export function paintMark(
   }
 }
 
+/** How wide a region's undergrowth gets, from the crown it grew under: the one
+ *  number a bush inherits from its region (see `drawShrub`, where the argument
+ *  for inheriting the width and not the profile is written out).
+ *
+ *  EXPORTED, with `shrubRows`, so the berry tables can be CHECKED rather than
+ *  eyeballed — `render/palette.test.ts` walks every arrangement against every
+ *  width this produces. A second copy of the geometry in the test would have
+ *  been a second opinion about the shape of a bush, and the one on screen would
+ *  be the wrong one. */
+export function shrubPeak(crownRows: number[]): number {
+  let peak = 0;
+  for (const w of crownRows) peak = Math.max(peak, w);
+  return Math.max(3, Math.round(peak * 0.6));
+}
+
+/** The bush's half-widths, top row first, for a given peak. Bottom-heavy and
+ *  rounded at the top — see `drawShrub` for why each end is shaped as it is. */
+export function shrubRows(peak: number): number[] {
+  return [peak - 3, peak - 1, peak, peak, peak, peak, peak, peak - 1, peak - 2].map((w) =>
+    Math.max(1, w),
+  );
+}
+
 export const MUSHROOM_ART: Record<MushroomShape, Record<MushroomState, string[]>> = {
   // THE ORIGINAL ART, pixel for pixel — this is what every region drew before the
   // table existed, and the meadow's mushroom must not move (the same promise the
@@ -4802,9 +4825,7 @@ export class Renderer {
     // and undershot, reading as a tuft rather than a bush you walk around. Nine
     // rows at 0.6 of the widest crown row is about two thirds of the tree above
     // it, and solid enough to be the obstacle it actually is.
-    let peak = 0;
-    for (const w of src) peak = Math.max(peak, w);
-    peak = Math.max(3, Math.round(peak * 0.6));
+    let peak = shrubPeak(src);
     // AND ONE PIXEL EITHER WAY, off the tile's own hash. Every bush in a region
     // was exactly the same width, which was invisible while undergrowth was a
     // scatter under trees and became the whole picture on the heath, where 18% of
@@ -4832,9 +4853,7 @@ export class Renderer {
     // an eleven-pixel body, which is a spike, and a bush is not a conifer. Two
     // shallow steps (5px, then 9px, then full) turn the same saved width into a
     // dome — the shape closes without ever coming to a point.
-    const rows = [peak - 3, peak - 1, peak, peak, peak, peak, peak, peak - 1, peak - 2].map((w) =>
-      Math.max(1, w),
-    );
+    const rows = shrubRows(peak);
 
     const height = rows.length + 1;
     const prev = ctx.globalAlpha;
@@ -4882,20 +4901,29 @@ export class Renderer {
     // summer is the only month it is on — but the rule is the accent's rule and
     // it should not be restated differently here.
     //
-    // The low rows only, and never the top two: fruit hangs UNDER the leaves,
-    // and berries scattered evenly over a dome read as blossom or as snow.
+    // PLACED, NOT SCATTERED, which is `orbs.spots` above for the second time in
+    // this sprite's neighbourhood and was found the same way: a berry per row
+    // off its own hash spreads perfectly well ON AVERAGE and still clusters,
+    // because two rows that agree within a pixel draw one two-pixel object. The
+    // hash picks which ARRANGEMENT this bush wears; the arrangement itself is
+    // drawn, and the gaps in it are the drawing.
     const fruit = biome?.berries;
     if (fruit && this.inSeason(fruit)) {
       ctx.fillStyle = fruit.color;
-      for (let r = 3; r < rows.length; r++) {
-        // A separate salt per row, and a separate one from the width's: a bush
-        // whose berries all moved together when it got wider would be one lump
-        // of variation wearing two hats, which is the note on `peak` above.
-        const g = decoHash(tx, ty, world.seed ^ (0x5b17 + r * 977));
-        if (g > 0.62) continue; // most rows carry none — a bush has a few, not a rash
-        const span = rows[r] - 1;
-        const dx = span <= 0 ? 0 : Math.round((g / 0.62) * span * 2) - span;
-        ctx.fillRect(cx + dx, top + r, 1, 1);
+      // Its own salt, and not the one that chose the width or the one that
+      // nudged the bush sideways: a plant whose fruit rearranged itself when it
+      // got a pixel wider would be one roll pretending to be two, which is the
+      // note on `peak` above.
+      const pick = decoHash(tx, ty, world.seed ^ 0x5b17);
+      const spots = fruit.spots[Math.floor(pick * fruit.spots.length) % fruit.spots.length];
+      for (const [dx, row] of spots) {
+        const r = Math.max(0, Math.min(rows.length - 1, row));
+        const half = rows[r];
+        // Clamped to the row it landed on, the orbs' rule and for the orbs'
+        // reason: a table written against a four-wide bush is reused verbatim on
+        // the three-wide ones the peak roll also makes, and an unclamped berry
+        // would hang in the grass beside a narrow one.
+        ctx.fillRect(cx + Math.max(-(half - 1), Math.min(half - 1, dx)), top + r, 1, 1);
       }
     }
     void night; // the palette already carries the hour; the flag is the signature

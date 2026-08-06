@@ -173,8 +173,21 @@ export interface BiomeDef {
    *
    *  Expect to be asked why you cannot pick them. That is the trade: the alternative
    *  is a foraging economy with a season on it, and this game has no daily caps
-   *  and no scarce materials to hang one from. */
-  berries?: { season: SeasonId; color: string };
+   *  and no scarce materials to hang one from.
+   *
+   *  `spots` is `[dx, row]` from the bush's own top-centre, and it is DRAWN
+   *  rather than rolled — see §orbs.spots, which learned this the expensive way
+   *  and is the same fact about a smaller mark. The first cut here scattered a
+   *  berry per row off a hash and made CLUSTERS: two rows that happen to agree
+   *  put their fruit a pixel apart, and two pixels touching at this size is one
+   *  bigger object. A nut in a bush, not berries on one.
+   *
+   *  So the arrangement is a composition and the hash only picks WHICH of them a
+   *  bush wears. More than one, on the decor kit's rule (§DecorKit.marks): a
+   *  single arrangement repeated over the fifty bushes on a screen would read as
+   *  printed however well it was drawn, and orbs got away with one only because
+   *  `chance` leaves most trees unlit. Every bush in a barren fruits. */
+  berries?: { season: SeasonId; color: string; spots: [number, number][][] };
   /** Chance a bare cell carries a patch of mushrooms. */
   mushrooms: number;
 
@@ -1380,7 +1393,35 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // fruit under it — a real blueberry reads as dusty pale blue at arm's length
     // and as near-black only in the hand, and near-black on this crown would be
     // a smudge rather than a berry. It is also the only blue accent in the file.
-    berries: { season: "summer", color: "#93b4d4" },
+    berries: {
+      season: "summer",
+      color: "#93b4d4",
+      // THREE TO A BUSH, IN THE LOWER TWO THIRDS. Rows 3 to 7 of nine, because
+      // fruit hangs UNDER the leaves — berries spread evenly over the whole dome
+      // read as blossom, or as the first snow on it.
+      //
+      // Never two within a pixel of each other, in any of the three, at any
+      // width this bush comes in (`drawShrub` rolls the peak ±1). That is the
+      // whole point of authoring them: the separation is what keeps three
+      // berries three, and it is not a thing a roll can promise.
+      spots: [
+        [
+          [-3, 3],
+          [1, 4],
+          [0, 7],
+        ],
+        [
+          [2, 3],
+          [-2, 5],
+          [2, 7],
+        ],
+        [
+          [-1, 4],
+          [3, 5],
+          [-2, 7],
+        ],
+      ],
+    },
     mushrooms: 0.02,
     water: 0,
     // Deadfall. A pine wood is the one that manufactures this without being old
