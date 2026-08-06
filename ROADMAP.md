@@ -8539,6 +8539,31 @@ like the turf and water tints, so a snowy region meeting a bare one ramps out ov
 the same tiles its ground does. There is no snowline drawn across country —
 checked on a border shot before it was asked about.
 
+### Snow on the sprites (the same day)
+
+One geometric rule, `snowLedge`: **snow lies where nothing is above it.** Every
+round thing in this game is drawn as half-widths either side of a column, so a row
+wider than the row above hangs out by the difference, and that overhang is a
+surface facing the sky. Row 0 is all ledge — nothing is above the top of anything.
+
+**The rule pays for itself on a conifer.** A pine's crown steps out every third
+row, which its own `crownRows` doc calls "the little shelves that say branches at
+1px" — and every one of those steps is a ledge, so snow lands on the branch tiers
+without a single number being authored for it. A broadleaf, whose crown is a
+smooth dome, correctly gets a rim along the top and nothing else: bare winter
+branches hold very little, and the shape says so by itself. Rocks get a cap and any
+shoulder that steps out.
+
+It is **per object, not per cell**, which is the same footing the lit rows have
+always been on — so the band rule (CLAUDE.md) does not reach it.
+
+Two details worth keeping: the ink is mixed FROM what it sits on, so a cap keeps a
+little of the crown or the stone under it and every sprite is not wearing the same
+white; and it takes the night wash at the bark dashes' strength, because snow left
+free at midnight is the brightest thing in frame, which reads as a lamp rather
+than a snowfall. Rows that hang beside a trunk (`crownOverlap`) are skipped —
+what is beside a stem is not facing the sky, and snow drawn there reads as a scarf.
+
 **What stays clear is a feature, not a gap.** Paths, plaza stone, laid floors,
 farmland and water are all season-exempt by design, so a snowy town has its
 paths, its square and its vegetable beds clear — a town that clears its paths.
