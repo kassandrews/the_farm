@@ -4691,11 +4691,42 @@ export class Renderer {
       // by the ROW's own length rather than by a literal 3, so a grid written
       // narrow on a wide tree draws what it has instead of reading off its end —
       // the same forgiveness the row count already had.
-      const cols = 3 + girth * 2;
+      //
+      // A NARROW STEM CANNOT AFFORD THE INSET, and paying it anyway is what put a
+      // HOLE in the saplings. Three pixels of trunk, one of them the shaded side,
+      // leaves two lit columns; inset one and the dash is a single pixel in the
+      // middle of the stem with bark either side of it — which is not a mark ON a
+      // trunk, it is a gap THROUGH one. The eye reads an enclosed dark pixel as a
+      // hole before it reads it as anything else, which is the same finding the
+      // crown's `crownGaps` note records at ten times the size.
+      //
+      // So below five pixels the dash gives up the lit-side inset and runs to the
+      // edge: two columns of the sapling's three, with the shaded one left alone.
+      // It is also the truer mark — a lenticel is a scar that wraps the stem, and
+      // on a whip it goes most of the way round.
+      //
+      // AND ON A NARROW STEM THE GRID IS READ AS A COUNT, NOT AS COLUMNS. Simply
+      // dropping the inset is not enough: the grids put marks in all three of
+      // their columns, so `.x.` would still land one enclosed pixel in the middle
+      // of the three. What survives the squeeze is HOW MUCH bark a row wears, not
+      // where — so a row with one `x` draws one pixel and a row with two draws
+      // two, both anchored to the lit edge. Every mark keeps its place in the
+      // vertical rhythm the grids were drawn for, and none of them is a hole.
+      const lit = stem.w - shade;
+      const narrow = lit <= 3;
       for (let r = 0; r < grid.length && r < trunkH; r++) {
         const row = grid[r];
-        for (let c = 0; c < cols && c < row.length; c++) {
-          if (row[c] === "x") ctx.fillRect(cx - 1 - girth + c, base - trunkH + r, 1, 1);
+        const x0 = cx + stem.dx + (narrow ? 0 : 1);
+        if (narrow) {
+          let n = 0;
+          for (const ch of row) if (ch === "x") n++;
+          for (let c = 0; c < Math.min(n, lit); c++) {
+            ctx.fillRect(x0 + c, base - trunkH + r, 1, 1);
+          }
+          continue;
+        }
+        for (let c = 0; c < 3 + girth * 2 && c < row.length; c++) {
+          if (row[c] === "x") ctx.fillRect(x0 + c, base - trunkH + r, 1, 1);
         }
       }
     }

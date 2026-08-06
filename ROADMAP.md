@@ -8637,7 +8637,19 @@ young one: on the region's five, the sapling photographed as a fencepost wearing
 a shrub, because a stem as wide as its own crown is a post whatever height it is.
 `TreeShape.girth` overrides `BiomeDef.trunkGirth` per form; `-1` gives a
 three-pixel whip, and the bark grid and the shaded side follow it down (the shade
-now clamps at 1, or a narrowed stem loses its round entirely). 12 rows on a
+now clamps at 1, or a narrowed stem loses its round entirely).
+
+**And the dashes punched holes in it.** The bark grid insets one column from each
+edge of the stem, which is right on five pixels and impossible on three: one lit
+column left over means a single dark pixel with bark either side, and the eye
+reads an enclosed dark pixel as a HOLE before it reads it as a mark — the same
+finding `crownGaps` records at ten times the size. Below five pixels the dash
+gives up the inset and runs to the lit edge, and the grid is read as a COUNT
+rather than as columns: a row with one `x` draws one pixel, a row with two draws
+two, both anchored at the edge. Every mark keeps its place in the vertical rhythm
+the grids were drawn for and none of them is a hole. It is the truer mark anyway
+— a lenticel is a scar that wraps the stem, and on a whip it goes most of the way
+round. 12 rows on a
 12-pixel stem stands 22 against the adult's 44 — exactly half, which is both what
 the rule allows and where the eye reads "not grown yet" rather than "far away".
 
