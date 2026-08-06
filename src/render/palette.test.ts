@@ -119,6 +119,7 @@ describe("biome tinting", () => {
     expect(snowy.map((b) => b.id)).toEqual([
       "meadow",
       "pinewood",
+      "birch",
       "granite",
       "prairie",
       "redwoods",

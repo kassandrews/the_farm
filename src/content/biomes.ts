@@ -2138,6 +2138,26 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // the crowns stay a clear step below it.
     ground: { color: "#b4cd82", amount: 0.55 },
     tuft: { color: "#c3d894", amount: 0.5 },
+    // SNOW, AND IT IS THE SEVENTH REGION TO GET IT (§snow). The first six were
+    // chosen to prove the field cheaply and this row was simply not among them —
+    // there is no argument on record for leaving it out, and there is a good one
+    // for putting it in: the pines are the region this one exists to be compared
+    // against, they lie under snow, and a bare white wood standing on summer
+    // grass in January was the comparison failing in the one month it should be
+    // easiest to make. A birch wood in snow is also the picture everybody already
+    // has of a birch wood.
+    //
+    // 0.82 → #e4ece5, fitted to the same luma 233 every other row is fitted to.
+    // Check the hex, not the amount: this ground is tinted at 0.55, so the number
+    // means something different here than it does in the meadow, which tints by
+    // nothing (§snow, and the two things the numbers had to teach).
+    snow: { color: "#f2f7fa", amount: 0.82 }, // → #e4ece5
+    // AND MORE STANDS THROUGH IT THAN IN THE TOWN. This is thin pale woodland
+    // grass, not a mown common: 0.25 against the meadow's 0.15 and well under the
+    // prairie's 0.38, which is knee-high and earns it. The wood anemone is a
+    // spring kit and gone by then, so what is left in the white is grass and the
+    // saplings.
+    stubble: 0.25,
     // Thin and airy, so the light reaches the floor and things grow in it.
         // Sprouts and clusters, no bare dots.
     tufts: ["sprout", "cluster", "cluster"],
@@ -2197,12 +2217,24 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // what stops a crown looking like a blob that has been trimmed to fit its
     // trunk. Only the widths mirror; see `crownGaps` for the end that parts.
     //
-    // The 2 on the front is the cap, and it is the one row that breaks the
-    // reflection on purpose. Mirrored exactly, the crown ended on a flat 7px lid
-    // — a shape that has been cut off rather than one that has finished, because
-    // the bottom's matching row does not have to close (the trunk continues out
-    // of it and the eye reads the tree as carrying on downward). The top has
-    // nothing below it to lean on, so it needs the extra step.
+    // The rows on the front are the cap, and they are what breaks the reflection
+    // on purpose. Mirrored exactly, the crown ended on a flat lid — a shape that
+    // has been cut off rather than one that has finished, because the bottom's
+    // matching row does not have to close (the trunk continues out of it and the
+    // eye reads the tree as carrying on downward). The top has nothing below it
+    // to lean on, so it needs the extra steps.
+    //
+    // AND IT WAS STILL SQUARE OFF THE TOP FOR A LONG TIME, because one step was
+    // not enough of them: it opened 3,3 — two rows at six pixels — and a width
+    // held for two rows at the very top is a LID, not a shoulder. The eye reads
+    // the first hold it finds as the widest part of a shape, and finding it in
+    // row zero says the tree was trimmed flat.
+    //
+    // 2,3,4,5 climbs instead, one step a row, and the crown domes. It went to
+    // 1,2,3,4 first and overshot in the direction the row's own last line warns
+    // about: a two-pixel tip over sixteen pixels of shoulder is a TEARDROP, and
+    // a teardrop is a leaf, not a tree with leaves on it. One step blunter is
+    // the whole correction — round, and not pointed.
     //
     // Length is height and 16 rows on a 13px trunk is taller than it is wide,
     // which is the whole brief. At fourteen rows it came out round — a ball on a
@@ -2223,7 +2255,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // AND IT IS AN EGG, NOT A CONE. The first version widened all the way down —
     // which is the PINE's silhouette four rows up in this file, and a narrow
     // white-trunked spruce is what it came out as.
-    crownRows: [3, 3, 4, 5, 5, 5, 5, 5, 6, 7, 7, 7, 8, 8, 8, 8, 8, 8, 7, 7, 7, 6, 5, 5, 5, 5, 5, 4],
+    crownRows: [2, 3, 4, 5, 5, 5, 5, 5, 6, 7, 7, 7, 8, 8, 8, 8, 8, 8, 7, 7, 7, 6, 5, 5, 5, 5, 5, 4],
     // ONE ROW, AT THE BOTTOM ONLY. The notch is open downward and shows BARK —
     // the underside where the branches leave the stem, and the cheapest detail on
     // this tree by a distance, because bark inside leaves is most of what says
@@ -2240,7 +2272,18 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // top of it, and the eye read a long white channel driven up into the canopy.
     // A notch says "the branches leave from here" only while it stays shallow
     // enough to be an underside; any deeper and it is a gap.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+    //
+    // AND THE OPPOSITE FAULT IS OVERGROWN, which is where it sat until now. Four
+    // rows stand beside the trunk (§crownOverlap) and only the last TWO were
+    // parted, so the foliage crossed solid over the top of the stem for two rows
+    // and then opened a two-pixel slot underneath it. That is not an underside —
+    // it is a crown that has swallowed its own trunk with a keyhole cut in it.
+    //
+    // So the parting runs the full depth of the overlap and WIDENS on the way
+    // down: 1,1,2,2. A branch angle opens away from the stem, which is the shape
+    // this spells, and it is the same asymmetry the meadow's second form needed
+    // for the same reason — an underside is a thing with a direction.
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2],
     crownOverlap: 4,
     // Thin pale grass and small white flowers — the airy opposite of the pines,
     // and the reason the two rows sit next to each other.
@@ -2248,12 +2291,44 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // heads used to stand here in December, which is the one month a birch wood
     // is unmistakably bare — a region cannot be "the airy one" in every season by
     // wearing the same flowers through all four of them.
+    // AND SEEDLINGS, WHICH ARE THE ONE THING THIS WOOD IS ABOUT THAT NOTHING ON
+    // SCREEN SAID. Birch is a pioneer: it seeds into every gap it can reach light
+    // through, which is why a birch wood is a birch wood and not a stage on the
+    // way to something else. Under this canopy — the thinnest in the game, and
+    // the reason the ground here is pale — that regeneration is the floor's
+    // actual character.
+    //
+    // A MARK AND NOT A SECOND TREE FORM, and the rule is what decides it, not
+    // taste. `crownAlt` pins two forms to within a pixel of girth (§treeForms and
+    // `palette.test.ts`), because two outlines that disagree about how BIG a tree
+    // is stop reading as one plant — and a sapling disagrees about nothing else.
+    // The same argument threw a young form out of the meadow the same afternoon.
+    // So a seedling belongs to the floor, where small things live, and the wood
+    // keeps one silhouette.
+    //
+    // THE STEM IS THE ACCENT AND THE LEAVES ARE THE STEM INK, which is backwards
+    // from every other kit in this file and is the whole trick: `o` is fixed
+    // paint and `x` seasons with the canopy (§DecorKit.accent), and on this plant
+    // it is the STEM that must not move — a birch is white from its first year,
+    // and a seedling whose bark turned gold in October would be a leaf on a
+    // stick. So the leaves turn with the wood above them and the little pale stem
+    // does not, which is exactly what the big trees do.
+    //
+    // Two of them, on the kit's own rule — a single glyph over a whole wood reads
+    // as printed however random the scatter under it is — and both held inside
+    // 3×4 so no seedling can touch its neighbour (the band rule).
     decor: {
       density: 0.13,
+      accent: "#e9e5da",
       marks: [
         ["..x", ".x.", "x.."],
         [".x.", ".x.", "x.."],
         ["x..", ".x.", ".x."],
+        // First-year: one pair of leaves and a stem you can see under them.
+        ["x.x", ".o.", ".o."],
+        // A year older — a second pair, offset, because a seedling puts them up
+        // alternately and two matched pairs read as a cross.
+        [".xx", "xo.", ".o.", ".o."],
       ],
     },
     // WOOD ANEMONE — Anemone nemorosa, which carpets birch and other broadleaf
@@ -2263,16 +2338,60 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // place this species does not grow.
     //
     // Denser than the rest, because a carpet is what it does.
-    bloom: {
-      season: "spring",
-      density: 0.15,
-      accent: "#f4f2ea",
-      core: "#e8c25a",
-      marks: [
-        [".o.", "o*o", ".o.", ".x."],
-        [".o.", "o*o", ".o.", ".x.", ".x."],
-      ],
-    },
+    bloom: [
+      {
+        season: "spring",
+        density: 0.15,
+        accent: "#f4f2ea",
+        core: "#e8c25a",
+        marks: [
+          [".o.", "o*o", ".o.", ".x."],
+          [".o.", "o*o", ".o.", ".x.", ".x."],
+        ],
+      },
+      {
+        // HAREBELL — Campanula rotundifolia, and it takes the summer because
+        // this region had no summer. Spring is a carpet of anemone and October
+        // is the best gold in the game (§autumnCrown); between them the birches
+        // spent three months being a slightly different green, which is the
+        // complaint `DecorKit.season` was invented to answer, arriving a second
+        // time in the one region that had already used the field once.
+        //
+        // It is the plant for the ground, not just for the month: harebell wants
+        // thin, well-drained, half-shaded turf, which is what this row's whole
+        // palette is a description of — the pale floor here exists because the
+        // canopy is thin enough to let light down, and this is what grows in
+        // that light. It flowers from June and hangs on through the summer.
+        //
+        // THE FIRST TRUE BLUE IN THE FILE, and that is the reason to spend a
+        // bloom on it rather than on another white umbel. Twenty-one kits and
+        // every accent among them is white, cream, gold, pink or violet; the
+        // lupine next door is the nearest thing and it is a purple. A colour
+        // nothing else owns is worth as much as a shape nothing else owns, which
+        // is the argument the lupine's own note makes about silhouette.
+        //
+        // NOT A CARPET. The anemone above is 0.15 because carpeting is what it
+        // does; a harebell stands alone in the grass on a wire, so this is a
+        // third of that and reads as something you come across.
+        //
+        // BOTH HANDS. A bell hangs off one side of its stem, and a colony of
+        // them all nodding the same way reads as printed — 8c's finding, the one
+        // the lily of the valley records needing in the pines for exactly this
+        // reason.
+        season: "summer",
+        density: 0.05,
+        accent: "#89a6dd",
+        // NECK ABOVE MOUTH, which is the whole of the drawing. Two pixels of blue
+        // in a row is a BAR — a little flag on a stick, which is what the first
+        // cut photographed as. A bell is one pixel where it joins and two where
+        // it opens, and that single step down is what makes it hang.
+        marks: [
+          [".o.", "oo.", ".x.", ".x."],
+          [".o.", ".oo", ".x.", ".x."],
+          [".o.", "oo.", ".x.", ".x.", ".x."],
+        ],
+      },
+    ],
   },
 
   /** Dry and open. Where the stone is, so it earns a walk without a single

@@ -8602,6 +8602,49 @@ grove and the dusk grew with it, which is what sharing it is for. Eleven-of-
 nineteen rows at full width is still well under the capsule's fourteen-of-
 seventeen, so the profile argument survives.
 
+## The birches: the crown, the notch, the seedlings, and the missing seasons (6 Aug 2026)
+
+Four things, all in one row, all decided by photographing the same wood.
+
+**The crown was square off the top**, and one row was to blame: it opened `3,3`
+— two rows held at six pixels. A width held for two rows at the very TOP is a
+lid, because the eye reads the first hold it finds as the widest part of the
+shape. `2,3,4,5` climbs a step a row and the crown domes. The first try was
+`1,2,3,4` and overshot into a teardrop, which is a leaf rather than a tree with
+leaves on it — the row's own note already warned "an egg, not a cone", and the
+correction is exactly one step blunter.
+
+**The notch was overgrown, not too deep.** Four rows stand beside the trunk and
+only the last two were parted, so the foliage crossed solid over the stem and
+then opened a keyhole below it. The parting now runs the full overlap and widens
+downward — `1,1,2,2` — because a branch angle opens away from the stem.
+
+**Saplings are a decor mark, not a second tree form.** `crownAlt` pins two forms
+to within a pixel of girth, and a sapling disagrees about nothing but size; the
+same rule threw a young form out of the meadow the same afternoon. So the
+seedling belongs to the floor. Its trick is that the STEM is the kit's `accent`
+and the leaves are the `x` ink — backwards from every other kit here, and
+correct: `accent` is fixed paint and `x` seasons with the canopy, and a birch is
+white from its first year. The leaves turn in October and the little pale stem
+does not, which is what the big trees do.
+
+**Two missing seasons, filled.** Summer gets the **harebell** — the first true
+blue accent in the file, and a plant that wants exactly the thin half-shaded turf
+this row's palette describes. It drew as a flat bar first: two blue pixels in a
+row is a flag on a stick. A bell is one pixel where it joins and two where it
+opens, and that single step down is what makes it hang. Winter gets **snow**,
+making it the seventh region with any — there was never an argument for leaving
+it out, and the pines it exists to be compared against have had it all along.
+`0.82 → #e4ece5`, fitted to the same luma 233 as every other row; `stubble: 0.25`,
+between the mown common and the prairie.
+
+**Loose end this opened:** a birch in winter should be the barest tree in the
+game and photographs as olive. The region's year-round `crown` tint (`#cfe08a`
+at 0.35) fights the season's bare-branch brown, so the wood reads as summer trees
+standing on a snowfield. `seasonPull` tunes autumn, not winter; a winter-side
+equivalent would be a new field, and it should be decided while looking at all
+six other snowy regions rather than for this one alone.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
