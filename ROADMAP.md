@@ -8463,6 +8463,57 @@ prairie 13, glimmer 12, against a meadow's 46. Same cause as the pines' 12: high
 pass would have made it unreviewable, so it is written down instead. It is a
 night pass, and `seasonPull`'s argument is the template for it.
 
+## Winter: snow on the ground (6 Aug 2026)
+
+Six regions lie under snow in winter — **meadow, pinewood, granite, prairie,
+redwoods, giants**. Ground only; caps on rocks and canopies are deliberately a
+separate step, so the cheap half could be looked at first.
+
+**It is allowed because it is a COLOUR and not a layer.** `seasons.ts` refuses a
+snow layer outright and both of its stated reasons are about a layer: snow on
+every cell is the per-cell edges band (CLAUDE.md, three times), and snow that
+melted would be the game's first weather with state. A per-region ground tint has
+neither — nothing per cell, nothing stored, nothing melts. Winter is still a
+colour temperature; this says the temperature is different where snow is lying.
+
+**The meadow is why `snow` is its own field.** The town's region states
+`ground.amount: 0`, and `palette.test.ts` asserts `biomeSkin` hands back the same
+OBJECT for it — the promise that the town's lawn is the colour it has always
+been. Spelled as a ground tint, snow would have cost that guarantee in all four
+seasons to gain snow in one. As a separate field composing AFTER the region's own
+tint, it also means **the granite is grey rock with snow on it** rather than a
+white field, which is the version worth having.
+
+### Two things the numbers had to teach
+
+- **`amount` is not depth, and reading it that way put slush on the ground.**
+  It is distance from the floor's own winter colour, and that floor has already
+  been through the region's tint — so the same number means different amounts of
+  snow depending on how hard a region paints its ground. Written as depth
+  (meadow 0.8, pines 0.5, redwoods 0.6), only the meadow came out white: the
+  pines resolved to `#b3c6aa`, a pale GREEN that reads as frost on grass, and the
+  redwoods to `#b1aaa0`, a warm taupe that reads as dust. The meadow was right
+  only because it tints its ground by nothing at all.
+- **And then the whole set was too dark** — about luma 205, which photographs as
+  dirty slush. The caution that talked the first draft down ("a pure white ground
+  will fight the HUD") was right about `#ffffff` and wrong about everything
+  between there and grey. Every row is now **fitted to land at luma 233**, bright
+  and faintly blue, four points short of white so things standing on it keep
+  their own lit sides. Rows record their resulting hex: **check the colour, not
+  the amount.** The test asserts the result, not the input, for the same reason.
+
+**Snow reaches sand; the region's own tint does not.** Two lists, and they have to
+stay separate — `BIOME_GROUND` is narrow because "a region is turf and what grows
+on it; it has no opinion about water, about paving, or about anything a player
+made". A fen has no opinion about a beach. **Weather does.** The first bright town
+photographed under snow had its river margin still in high summer while the lawn
+either side was white. Sand only: not `DIRT`, which is "Dug earth" and sits with
+farmland on the far side of the same rule the finishes are on.
+
+**What stays clear is a feature, not a gap.** Paths, plaza stone, laid floors,
+farmland and water are all season-exempt by design, so a snowy town has its
+paths, its square and its vegetable beds clear — a town that clears its paths.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

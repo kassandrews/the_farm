@@ -2022,7 +2022,13 @@ export class Renderer {
           this.palette,
           turf.seasonPull?.ground ?? 1,
         );
-        const def = finishFor(world, groundId, tx, ty) ?? biomeSkin(seasoned, groundId, turf);
+        // WINTER IS PASSED, NOT LOOKED UP, so the one place that knows the month
+        // is the palette (§BiomeDef.snow). A finish still wins outright: a floor
+        // somebody laid is a thing they did, and snow lying on the boards they
+        // swept is a decision this game has not made.
+        const winter = this.palette.season?.id === "winter";
+        const def =
+          finishFor(world, groundId, tx, ty) ?? biomeSkin(seasoned, groundId, turf, winter);
         const px = Math.round(this.sceneX(tx) - TILE / 2);
         const py = Math.round(this.sceneY(ty) - TILE / 2);
         // Open ground rolls. `groundTone` is smooth noise on the WORLD
@@ -2087,7 +2093,7 @@ export class Renderer {
           ? (this.ditherFill(
               fill,
               this.rolled(
-                biomeSkin(seasoned, groundId, { ...turf, ground: wrong.ground }),
+                biomeSkin(seasoned, groundId, { ...turf, ground: wrong.ground }, winter),
                 tx,
                 ty,
                 world.seed,
@@ -2109,7 +2115,7 @@ export class Renderer {
           this.drawTears(px, py, tx, ty, world.seed, t, [
             // The ground's own second ink, which is most of them: the picture
             // arriving in the other colour.
-            this.rolled(biomeSkin(seasoned, groundId, { ...turf, ground: wrong.ground }), tx, ty, world.seed, true),
+            this.rolled(biomeSkin(seasoned, groundId, { ...turf, ground: wrong.ground }, winter), tx, ty, world.seed, true),
             // A brighter and a darker version of the fill itself — a row that came
             // through with its level wrong rather than its hue.
             mixHex(fill, { color: "#ffffff", amount: 0.22 }),

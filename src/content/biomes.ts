@@ -269,6 +269,50 @@ export interface BiomeDef {
    *  same reason the crowns did: a needle mat browning like a lawn is a lawn. */
   seasonPull?: { crown?: number; ground?: number };
 
+  /** SNOW LYING ON THIS GROUND, in winter and only in winter. Optional, and
+   *  absent means the region keeps the ordinary pale winter turf every region had
+   *  before this existed.
+   *
+   *  IT IS A COLOUR AND NOT A LAYER, WHICH IS THE WHOLE OF WHY IT IS ALLOWED.
+   *  `content/seasons.ts` refuses a snow layer outright, and both of its stated
+   *  reasons are about a layer: snow sitting on every cell is the per-cell edges
+   *  band (CLAUDE.md, which has caught this project three times), and snow that
+   *  melted would be the first weather in the game with state. A per-region tint
+   *  on the ground has neither — nothing is drawn per cell, nothing is stored,
+   *  nothing melts. Winter is still a colour temperature; this says the
+   *  temperature is different where there is snow on the floor.
+   *
+   *  A SEPARATE FIELD FROM `ground`, and the meadow is why. The town's own region
+   *  states no ground direction at all — `amount: 0`, asserted by
+   *  `palette.test.ts` as the identity that keeps every live save's lawn the
+   *  colour it has always been — so snow could not be spelled as a ground tint
+   *  there without giving up the guarantee. It composes AFTER the region's
+   *  ordinary tint instead, which also means a region can be both itself and
+   *  under snow: the granite is still grey rock, with snow on it.
+   *
+   *  OPT-IN, and the four rows that have it are the ones that would: an alpine
+   *  dome, a boreal pine wood, a sequoia grove and the town.
+   *
+   *  AMOUNT IS NOT DEPTH, WHICH IS THE TRAP IN THIS FIELD. It is distance from
+   *  the floor's OWN winter colour, and that floor has already been through the
+   *  region's tint — so the same number means different amounts of snow depending
+   *  on how hard the region paints its ground. Drafted at "how deep it lies", the
+   *  pines came out `#b3c6aa` at 0.5 (a pale GREEN — frost on grass, not snow)
+   *  and the redwoods `#b1aaa0` at 0.6 (a warm taupe, which reads as dust), while
+   *  the meadow at 0.8 was correctly white — because the meadow tints its ground
+   *  by nothing at all and those two tint theirs hard.
+   *
+   *  So the numbers are set by what they RESOLVE to, not by what they mean, and
+   *  each row records its colour. Check the hex, not the amount.
+   *
+   *  AND THE FIRST SET RESOLVED TOO DARK — around luma 205, which photographs as
+   *  slush. Snow in daylight is very near white; the caution that talked this
+   *  down ("a pure white ground will fight the HUD") was right about #ffffff and
+   *  wrong about everything between there and grey. Every row is now fitted to
+   *  land at luma 233 — bright, faintly blue, and still four points off white so
+   *  the lit sides of things have somewhere to go. */
+  snow?: Tint;
+
   /** WHICH WAY THIS REGION TURNS, in the one month anything does. Optional, and
    *  absent means it turns whichever way the season does — which until now was
    *  the only option and is most of why October read as one flat colour: every
@@ -1283,6 +1327,17 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     water: 0,
     ground: { color: "#000000", amount: 0 },
     tuft: { color: "#000000", amount: 0 },
+    // SNOW ON THE TOWN, and the field it needs exists because of this row: the
+    // meadow states no ground direction at all, so its snow could not be spelled
+    // as a ground tint without giving up the identity that keeps every live
+    // save's lawn the colour it has always been (§BiomeDef.snow).
+    //
+    // THE DEEPEST OF THE FOUR, because this is the open ground — nothing over it
+    // to hold the snow off, and it is also where you live. Winter was the
+    // quietest season in the game by design; this is the month the hub gets to
+    // look like somewhere, and the paths, the plaza and the vegetable beds stay
+    // clear underneath it because a season may not touch what somebody built.
+    snow: { color: "#f2f7fa", amount: 0.85 }, // → #e4ebe8
     // Ordinary lawn, and the town's own. Nothing to say about itself.
     tufts: ["cluster", "cluster", "blades"],
     crown: { color: "#000000", amount: 0 },
@@ -1617,6 +1672,11 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     deadwood: 1.2,
     ground: { color: "#7d8f5e", amount: 0.35 }, // needle-dulled turf
     tuft: { color: "#6d7f52", amount: 0.4 },
+    // LESS SNOW THAN THE OPEN GROUND, for the same reason this row takes half the
+    // season on its floor: a closed conifer canopy holds it off. What lies under
+    // pines is patchy, thin, and mostly where the light gets through
+    // (§BiomeDef.snow).
+    snow: { color: "#f2f7fa", amount: 0.87 }, // → #e4ece7
     // A needle floor. Blades and litter, and NO sprouts: nothing much
         // germinates under a closed conifer canopy, which is the same fact the
         // sparse decor density below is already about.
@@ -2828,6 +2888,11 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // this is high open country with the light full on it.
     ground: { color: "#a8a79a", amount: 0.9 },
     tuft: { color: "#b8b7a8", amount: 0.85 },
+    // AN ALPINE DOME IN JANUARY, which is the least surprising snow in the file:
+    // this is bare rock at altitude with a courtesy of turf on it. Deep, and
+    // laid OVER the region's grey rather than instead of it — granite under snow
+    // is still granite (§BiomeDef.snow).
+    snow: { color: "#f2f7fa", amount: 0.84 }, // → #e6eaea
     // WHAT GROWS IN A CRACK. Mostly nothing — two dots to every mark that is a
     // plant — and the plant is a cluster rather than a blade, because a tuft in
     // a rock joint grows as a cushion and not as a stand of grass.
@@ -2967,6 +3032,9 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // tall grass with its own shadow in it rather than lawn or parched ground.
     ground: { color: "#a99a55", amount: 0.62 },
     tuft: { color: "#bcae66", amount: 0.55 },
+    // Snow on the long grass, which is what a prairie winter is: everything flat
+    // and white with last year's stems standing up through it (§BiomeDef.snow).
+    snow: { color: "#f2f7fa", amount: 0.86 }, // → #e7ebe5
     // SWATHES, and they are the one thing a plain has instead of features. Open
     // grassland is never one colour: it runs in bands of seed-head and bands of
     // leaf, and which you are looking at changes with the ground under it. The
@@ -3990,6 +4058,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // needle litter, which is what is actually underfoot in here.
     ground: { color: "#6a4526", amount: 0.88 },
     tuft: { color: "#855e38", amount: 0.75 },
+    // Snow in a sequoia grove, which is the picture everybody has of one: red
+    // columns going up out of white. Under a canopy, so less of it than the open
+    // meadow holds (§BiomeDef.snow).
+    snow: { color: "#f2f7fa", amount: 0.92 }, // → #e8eaea
     // What comes up through litter: sorrel and small stuff, with plenty of bare
     // duff between. No blades — there is no grass on this floor, and the two
     // uprights would be the one mark claiming otherwise.
@@ -4118,6 +4190,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // of these ever changes, both change.
     ground: { color: "#6a4526", amount: 0.88 },
     tuft: { color: "#855e38", amount: 0.75 },
+    // The sequoias get the snow their smaller cousins do — the redwoods carry it
+    // and these are the same trees grown past sense, so a grove of them bare of
+    // it would be the odd one out (§BiomeDef.snow).
+    snow: { color: "#f2f7fa", amount: 0.92 }, // → #e8eaea
     tufts: ["sprout", "cluster", "dot", "dot"],
     // Halved so the hour can reach it, colour doubled down to keep the summer
     // crown identical — see the pinewood, same bug, same fix.

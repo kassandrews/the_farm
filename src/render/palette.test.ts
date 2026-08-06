@@ -110,6 +110,75 @@ describe("biome tinting", () => {
     expect(mixHex("#8bbf5a", { color: "#ff0000", amount: 0 })).toBe("#8bbf5a");
   });
 
+  it("lays snow only in winter, only where a region asked, and over its own colour", () => {
+    // THE RULE THIS IS ALLOWED UNDER (content/biomes.ts §snow): a colour, never a
+    // layer. `seasons.ts` refuses a snow LAYER because snow on every cell is the
+    // per-cell edges band and snow that melted would be the game's first weather
+    // with state. A per-region ground tint is neither.
+    const snowy = Object.values(BIOMES).filter((b) => b.snow);
+    expect(snowy.map((b) => b.id)).toEqual([
+      "meadow",
+      "pinewood",
+      "granite",
+      "prairie",
+      "redwoods",
+      "giants",
+    ]);
+
+    // AND IT HAS TO BE BRIGHT ENOUGH TO BE SNOW. The first set of amounts was
+    // written as "how deep it lies" and resolved around luma 205, which
+    // photographs as slush — the caution that talked them down was right about
+    // #ffffff and wrong about everything between there and grey. Asserted on the
+    // RESULT rather than on the amounts, because the amount that gets a floor to
+    // white depends entirely on how hard its region tints the ground: 0.85 on the
+    // meadow, which tints by nothing, and 0.92 in the redwoods, which tint hard.
+    const winterPalette = scenePalette(seasonOn(at(1)), false);
+    const bright = (h: string): number => {
+      const [r, g, b] = rgb(h);
+      return 0.299 * r + 0.587 * g + 0.114 * b;
+    };
+    for (const b of snowy) {
+      const lying = biomeSkin(
+        seasonSkin(tileDef(GRASS), GRASS, winterPalette, b.seasonPull?.ground ?? 1),
+        GRASS,
+        b,
+        true,
+      ).color;
+      expect(bright(lying), `${b.id}'s snow is dingy`).toBeGreaterThan(225);
+      // Not white either: a floor at 255 is the brightest thing the game can
+      // draw, and everything standing on it loses its own lit side.
+      expect(bright(lying), `${b.id}'s snow is blown out`).toBeLessThan(245);
+    }
+
+    for (const b of Object.values(BIOMES)) {
+      const summer = biomeSkin(tileDef(GRASS), GRASS, b, false);
+      const winter = biomeSkin(tileDef(GRASS), GRASS, b, true);
+      if (b.snow) {
+        // It lands, and it lands PALER — a snow that darkened the ground would be
+        // the field doing something other than what it is named for.
+        expect(winter.color, `${b.id} has snow that does nothing`).not.toBe(summer.color);
+        expect(rgb(winter.color)[2], `${b.id}'s snow is not paler`).toBeGreaterThan(
+          rgb(summer.color)[2],
+        );
+      } else {
+        // AND EVERY OTHER REGION IS BYTE-IDENTICAL IN JANUARY to what it was
+        // before this field existed. Fourteen rows did not ask for snow and must
+        // not have acquired any.
+        expect(winter, `${b.id} grew snow it never asked for`).toEqual(summer);
+      }
+    }
+  });
+
+  it("keeps the town's lawn identical in every month but the snowy one", () => {
+    // The meadow states `ground.amount: 0` and the identity test above asserts
+    // `biomeSkin` hands back the same OBJECT for it — the promise that the town's
+    // grass is the colour it has always been. Snow is the one exception, and it
+    // had to be a separate field to be one: spelled as a ground tint it would
+    // have cost the guarantee in all four seasons to gain snow in one.
+    expect(biomeSkin(tileDef(GRASS), GRASS, BIOMES.meadow, false)).toBe(tileDef(GRASS));
+    expect(biomeSkin(tileDef(GRASS), GRASS, BIOMES.meadow, true)).not.toBe(tileDef(GRASS));
+  });
+
   it("becomes the tint at amount 1, and meets it halfway at 0.5", () => {
     expect(mixHex("#000000", { color: "#ffffff", amount: 1 })).toBe("#ffffff");
     expect(mixHex("#000000", { color: "#ffffff", amount: 0.5 })).toBe("#808080");

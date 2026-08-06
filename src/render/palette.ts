@@ -13,7 +13,7 @@
 // flag it was given, so a test can stand in October at midnight without either.
 
 import type { TileDef, TileId } from "../content/tiles";
-import { GRASS, MUSHROOM } from "../content/tiles";
+import { GRASS, MUSHROOM, SAND } from "../content/tiles";
 import type { SeasonDef } from "../content/seasons";
 import type { BiomeDef, BiomeId, Tint } from "../content/biomes";
 
@@ -334,6 +334,7 @@ export function blendRegions(parts: { def: BiomeDef; w: number }[]): BiomeDef {
   // Numbers average by weight; `autumnCrown` is a Tint and averages exactly as
   // the others do, a part without one contributing amount 0. Both left off
   // entirely when nobody has any, so the common case stays the object it was.
+  const anySnow = parts.some((p) => p.def.snow);
   const anyAutumn = parts.some((p) => p.def.autumnCrown);
   const anyPull = parts.some((p) => p.def.seasonPull);
   const dial = (pick: (d: BiomeDef) => number | undefined): number => {
@@ -351,6 +352,11 @@ export function blendRegions(parts: { def: BiomeDef; w: number }[]): BiomeDef {
     tuft: blend((d) => d.tuft),
     ...(anyWater ? { waterTint: blend((d) => d.waterTint ?? NO_TINT) } : {}),
     ...(anyAutumn ? { autumnCrown: blend((d) => d.autumnCrown ?? NO_TINT) } : {}),
+    // Snow blends over a border like everything else here, so a snowy wood meeting
+    // an unsnowed one fades out over the same tiles its turf does rather than
+    // ending on the line the heaviest region flips. A snowline drawn straight
+    // across country is the seam this function exists to prevent.
+    ...(anySnow ? { snow: blend((d) => d.snow ?? NO_TINT) } : {}),
     ...(anyPull
       ? {
           seasonPull: {
@@ -386,14 +392,50 @@ export function isBiomeGround(id: TileId): boolean {
 /** A tile's appearance in a biome: the season's answer, pulled toward the
  *  region's ground colour. `top` and `shade` travel with it or the bevel at a
  *  material boundary stops matching the material it edges. */
-export function biomeSkin(def: TileDef, id: TileId, biome: BiomeDef): TileDef {
-  if (biome.ground.amount <= 0) return def;
-  if (!BIOME_GROUND.includes(id)) return def;
+export function biomeSkin(
+  def: TileDef,
+  id: TileId,
+  biome: BiomeDef,
+  /** Is it winter? Only then does `BiomeDef.snow` land. Defaults false, so every
+   *  existing caller — and the identity guarantee below — is unchanged. */
+  winter = false,
+): TileDef {
+  const snow = winter ? biome.snow : undefined;
+  // SNOW REACHES ONE TILE THE REGION'S OWN TINT DOES NOT, and the two lists have
+  // to stay separate for the reason BIOME_GROUND was narrowed in the first place:
+  // "a region is turf and what grows on it; it has no opinion about water, about
+  // paving, or about anything a player made". A fen has no opinion about a beach.
+  // WEATHER DOES. Snow lies on sand, and a bright snowfield running into a warm
+  // sandbank was the one thing that looked wrong in the first town photographed
+  // under it — the river margin stayed high summer while the lawn either side of
+  // it was white.
+  //
+  // Sand only. Not `DIRT`, which is "Dug earth" — soil somebody turned over is a
+  // thing they did, and it sits with farmland on the far side of the same rule
+  // the finishes are on.
+  const onSand = !!snow && id === SAND;
+  if (!BIOME_GROUND.includes(id) && !onSand) return def;
+  // THE IDENTITY RETURN, and it now has to ask about snow as well. The meadow
+  // states `ground.amount: 0` — the promise that the town's lawn is the colour it
+  // has always been, asserted as `toBe(def)`, the same object and not a copy — and
+  // it is also one of the four rows that lie under snow. Returning early on the
+  // ground tint alone would have quietly dropped the snow on exactly the region
+  // that most needed it.
+  if (biome.ground.amount <= 0 && !snow) return def;
   // Spread, never construct — `name` is what the renderer branches on for the
   // ripple, the mushroom caps and the grass speckle (see seasonSkin).
-  const out: TileDef = { ...def, color: mixHex(def.color, biome.ground) };
-  if (def.top) out.top = mixHex(def.top, biome.ground);
-  if (def.shade) out.shade = mixHex(def.shade, biome.ground);
+  const pull = (hex: string): string => {
+    // The region's tint on its own turf only; on sand there is nothing here but
+    // the weather.
+    const tinted = !onSand && biome.ground.amount > 0 ? mixHex(hex, biome.ground) : hex;
+    // AFTER the region's own colour, never instead of it: the granite in January
+    // is grey rock with snow on it, and a snow that replaced the region would
+    // make every snowy row the same white field.
+    return snow ? mixHex(tinted, snow) : tinted;
+  };
+  const out: TileDef = { ...def, color: pull(def.color) };
+  if (def.top) out.top = pull(def.top);
+  if (def.shade) out.shade = pull(def.shade);
   return out;
 }
 
