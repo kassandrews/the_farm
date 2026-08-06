@@ -9,6 +9,9 @@
 // Not shipped: `npm run build` only bundles index.html. Reach it with
 // `npm run dev` at /tents.html.
 
+// Evict a stale service worker before anything else — a tool page has its own
+// entry point, so main.ts's cleanup never runs here. See no-sw.ts.
+import "./no-sw";
 import { FORMS, type AdultForm } from "../content/canon/forms";
 import { TENTS } from "../content/tents";
 import { drawTent } from "../render/tent";

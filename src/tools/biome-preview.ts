@@ -22,6 +22,9 @@
 // and they matter more here because a swatch is small: an edge in one would be
 // half a different biome and you would tune the wrong row.
 
+// Evict a stale service worker before anything else — a tool page has its own
+// entry point, so main.ts's cleanup never runs here. See no-sw.ts.
+import "./no-sw";
 import { BIOMES, type BiomeId } from "../content/biomes";
 import { newWorld } from "../sim/game";
 import {

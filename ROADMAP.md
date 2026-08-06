@@ -8158,6 +8158,19 @@ you trip over them:
   unregisters any worker already installed and drops the caches, which is the
   half that actually heals a browser.
 
+  **And EVERY entry point evicts it, not just the one that installs it** — the
+  fix above lived in `src/main.ts`, which the tool pages never load. So the page
+  the shadowing hurt most, the region contact sheet, was the only page that could
+  not heal itself: with a stale worker installed you open `/biomes.html`, it
+  serves what it cached, and nothing there asks the network again. The cure was
+  to go and load the GAME first, which nobody would ever guess. `src/tools/no-sw.ts`
+  is imported by all three previews; verified in a real browser by installing a
+  worker at scope `/` and watching one reload of `/biomes.html` drop it.
+
+  **If a tool page looks stale, the other suspect is that there is no dev server.**
+  Killing vite is how these screenshots get taken, and a page that was already
+  open goes on looking fine until you reload it.
+
 - Read `DESIGN.md` first; it is the source of truth. If code and doc disagree,
   **fix the doc first**, then the code (CLAUDE.md).
 - Build the current phase before expanding sideways.
