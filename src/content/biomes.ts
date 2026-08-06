@@ -647,8 +647,28 @@ export interface BiomeDef {
     };
   };
 
-  /** What else grows here. Optional, and the meadow deliberately has none. */
+  /** What else grows here. Optional, and every region in the file has one. */
   decor?: DecorKit;
+
+  /** THE TOWN MOWS THIS ONE. Optional, and the meadow is the only row that asks.
+   *
+   *  Ground furniture — `decor`, `bloom`, and this region's mushrooms — fades in
+   *  as you walk out of town instead of standing between the houses, over a ramp
+   *  about a screen wide (sim/world.ts §townMown). Nothing else about the region
+   *  changes: the trees, the rocks and the turf are the same inside the common as
+   *  outside it, because a mown lawn is still the same field.
+   *
+   *  WHY IT IS A FLAG HERE RATHER THAN A RADIUS IN THE RENDERER. The rule is about
+   *  the town and the answer is a distance, but WHICH REGIONS SUBMIT TO IT is a
+   *  fact about the region — and it is not "whatever is near the plaza". A
+   *  forest-edge town's pines begin at 24 tiles and keep every fern: the town mows
+   *  its own grass and does not go into the wood to tidy up. Written as a radius
+   *  alone that distinction has nowhere to live.
+   *
+   *  It replaces the older and more expensive version of the same idea, which was
+   *  to give the meadow nothing anywhere. See sim/world.ts §townMown for what that
+   *  cost, and DESIGN.md §Biomes. */
+  mown?: boolean;
 
   /** A SECOND kit, for something that comes and goes. Same shape as `decor` and
    *  drawn the same way, on its own hashes so a bloom never lands where the
@@ -971,11 +991,24 @@ export const BROADLEAF = [
 ];
 
 export const BIOMES: Record<BiomeId, BiomeDef> = {
-  /** The ordinary, and the town's own. Every number here is identity — a 1× or a
-   *  zero or an amount of 0 — which is not laziness but a PROMISE: the region
-   *  containing the origin is always this one (see sim/world.ts), so a town that
-   *  existed before biomes did generates exactly the terrain it always did.
-   *  Change a number in this row and you re-landscape everybody's home. */
+  /** The ordinary, and the town's own. Every number that decides where something
+   *  SOLID stands is an identity — a 1× or a zero or an amount of 0 — which is not
+   *  laziness but a PROMISE: the region containing the origin is always this one
+   *  (see sim/world.ts), so a town that existed before biomes did generates
+   *  exactly the terrain it always did. Change one of those and you re-landscape
+   *  everybody's home.
+   *
+   *  IT USED TO BE EVERY NUMBER, AND THAT WAS THE WRONG PLACE TO PAY. The row's
+   *  emptiness was read as the town's calm and was in fact the whole world's: this
+   *  is the commonest region in the field at both ends of it (§FIELD_WEIGHTS —
+   *  `near: 2`, `far: 0.88`), so a meadow four hundred tiles from any town was
+   *  still the only ground in the game with nothing whatever on it, and the one
+   *  region named for flowers had never had a flower in it.
+   *
+   *  So the calm moved to where it belongs. The town mows its own common (`mown`),
+   *  and past it the meadow is a meadow: clover and plantain all year, buttercups
+   *  in spring, and the occasional field mushroom. Every one of those is paint
+   *  except the mushroom, and the mushroom is mown out of the town. */
   // NO `stone` ROW, deliberately: the meadow keeps the default grey and the
   // original three silhouettes, so the ground you already know looks exactly as
   // it did. Every other region is a departure FROM this one, and a departure
@@ -985,7 +1018,12 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     name: "the meadow",
     trees: 1,
     rocks: 1,
-    mushrooms: 0,
+    // FIELD MUSHROOMS, and the only number in this row that is not an identity.
+    // Thin — a fifth of the birches' and a sixth of the fen's — because this is a
+    // place you come across one, not a place you forage; and mown out of the town
+    // entirely (`mown`), so the promise above still holds where it was actually
+    // about anything, which is the ground people have built on.
+    mushrooms: 0.02,
     water: 0,
     ground: { color: "#000000", amount: 0 },
     tuft: { color: "#000000", amount: 0 },
@@ -994,11 +1032,93 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     crown: { color: "#000000", amount: 0 },
     trunk: { color: "#000000", amount: 0 },
     crownRows: BROADLEAF,
-    // THE ONE THING THE TOWN'S OWN REGION GETS, and it is worth the exception it
-    // makes. The meadow has no decor on purpose — leaving town is when the ground
-    // starts having things in it — but a summer night over your own plot is the
-    // beat this whole pass was for, and it costs the promise above nothing:
-    // motes are render-only, so nothing here can re-landscape anybody's home.
+    // THE TOWN MOWS ITS COMMON. See §BiomeDef.mown and sim/world.ts §townMown:
+    // everything below this line fades in over a screen's walk out of town, so the
+    // grass between the houses is the same grass it has always been and the
+    // country is not paying for it.
+    mown: true,
+    // A FIELD MUSHROOM — Agaricus campestris, which is what actually comes up in
+    // grassland, and the reason the row needs a cap at all: the default red with a
+    // white speck is a fly agaric, which partners birch, pine and spruce, and this
+    // region's tree is the ordinary broadleaf (see render/palette.test.ts, which
+    // makes every region with mushrooms say which way it went). Cream rather than
+    // white so it does not read as a mote or a stone, and pink gills, which are
+    // the field mushroom's one identifying feature and the only warm colour on it.
+    mushroomCap: { cap: "#efe7d5", lit: "#fffaf0", gills: "#c08a92" },
+    // WHAT IS IN A FIELD ALL YEAR, and it is leaves rather than flowers. Clover,
+    // a rosette and a plantain: low, green, drawn in the foliage ink like every
+    // other kit, and none of them a blade — the birches next door already own thin
+    // diagonal grass, and a second region of it would be the same region twice.
+    //
+    // 0.14, between the birches' 0.13 and the fen's 0.16 and nowhere near the long
+    // grass's 0.32. That row is an exception it argues for by having nothing else
+    // in it; a meadow has trees and rocks and is meant to be walked across, so its
+    // ground furniture is a thing you notice rather than the surface itself.
+    decor: {
+      density: 0.14,
+      // LEAVES HAVE MASS, and the first cut of this kit did not. Every mark was a
+      // single-pixel stroke — a trefoil, a cross, a two-leaved stalk — drawn in the
+      // same foliage ink at the same weight as the grass tuft, and on screen the
+      // meadow simply had more tufts in it. A stroke is what a BLADE is; a leaf is
+      // a small solid shape, and the difference is the entire reason to have a
+      // second layer on the ground at all.
+      marks: [
+        // Clover: two round leaves either side of a short stalk. Blocked rather
+        // than outlined — at four pixels an outline is a hole.
+        ["xx.xx", "xx.xx", "..x..", "..x.."],
+        // A rosette seen from above — the plant that is all leaves and no stem,
+        // which is most of what a lawn is actually made of.
+        [".xx.", "xxxx", ".xx."],
+        // Ribwort plantain: a bare stalk standing out of two ground leaves. The
+        // tallest here, and the only one with any height to it.
+        ["..x..", "..x..", "..x..", "xx.xx"],
+        // One small leaf, leaning. The height-and-width variation the marks doc
+        // asks for: four marks that differ only in which pixel leans read as one
+        // glyph printed everywhere.
+        [".xx", ".xx", "x.."],
+      ],
+    },
+    // BUTTERCUPS, IN SPRING — and this is the region finally getting the season
+    // that every one of its neighbours already had. The pines, the birches, the
+    // scrub and the fen all flower in spring; the meadow, which is the one place
+    // in the world anybody would go looking for a flower, did not.
+    //
+    // GOLD, AND NOTHING ELSE IN THE FILE IS. The birches own white-with-a-gold-eye
+    // (anemone), the long grass owns purple-with-a-gold-eye (aster) and the scrub
+    // owns a magenta head on a stem, so a silhouette AND a colour were both free
+    // here — and a field of buttercups is the picture the word "meadow" makes.
+    //
+    // A CUP, WHICH IS WHY THE CORE IS PALER RATHER THAN DARKER. Every other flower
+    // in the file has a contrasting middle because it is a disc seen flat; this
+    // one is a bowl, and what you actually see in the bottom of it is the shine.
+    // That is the plant's own party trick, and at three pixels it is the drawing.
+    //
+    // Denser than the year-round kit, because a meadow in flower is a carpet —
+    // the same argument the anemones make, at the same strength.
+    bloom: {
+      season: "spring",
+      density: 0.22,
+      accent: "#f2c53c",
+      core: "#fdf0a8",
+      // A FILLED HEAD. The first cut drew the cup as an outline — `o.o` over
+      // `o*o` — and at three pixels an outlined bowl is not a bowl, it is two
+      // yellow specks with a gap between them: the whole swatch came out wearing
+      // small yellow insects. A buttercup this size is a solid dot of gold with a
+      // brighter pixel in it, and the brighter pixel is the shine.
+      marks: [
+        ["ooo", "o*o", ".x.", ".x."],
+        [".o.", "o*o", ".x."],
+        // One still closed, which is what half a meadow is doing in April.
+        [".o.", ".o.", ".x."],
+      ],
+    },
+    // AND THE ONE THING THE TOWN'S OWN REGION ALWAYS GOT, from back when it got
+    // nothing else. A summer night over your own plot is the beat that whole pass
+    // was for, and it cost the promise above nothing: motes are render-only, so
+    // nothing here can re-landscape anybody's home.
+    //
+    // NOT MOWN, unlike everything above it. A firefly is not ground furniture and
+    // nobody tidies the air; the fireflies over the plaza are the point of them.
     //
     // Empty for nine months. That is what keeps "most regions have no air" true
     // in the way that matters, which is most of the time rather than most of the

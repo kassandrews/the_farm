@@ -747,10 +747,22 @@ an organ this game deliberately left on the table.
   this doc; that pond is not the place it gets answered.
 
 Biomes are a **total function of (seed, x, y)** and are stored nowhere. The
-town's own region is always the ordinary meadow, whose every number is an
-identity, so ground people have already built on generates exactly what it always
-did. That is a region and not a radius on purpose: a circle of ordinary grass
-stamped round the plaza would draw a hard rim across open country.
+town's own region is always the ordinary meadow, whose every number that decides
+where something SOLID stands is an identity, so ground people have already built
+on generates exactly what it always did. That is a region and not a radius on
+purpose: a circle of ordinary grass stamped round the plaza would draw a hard rim
+across open country.
+
+**The town mows its own common, and the meadow does not pay for it.** The region's
+emptiness was once total — no ground plants, no flowers, nothing to find — on the
+grounds that leaving town should be when the ground starts having things in it.
+That rule is right and it was written in the wrong place: the meadow is the
+commonest region in the world at every distance, so the town's calm was being
+charged to every field in the world, and the one region named for flowers had
+never had one. It is now a property of the TOWN — ground furniture fades in over
+about a screen's walk out (`sim/world.ts` §townMown) — which is what the rule
+always meant. Out in the country a meadow has clover, buttercups in spring, and
+the occasional field mushroom, like anywhere else.
 
 ### The world gets stranger the farther out you go
 

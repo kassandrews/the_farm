@@ -16,6 +16,7 @@ import {
   PLAZA,
   HOME_REGION_REACH,
   regionStrangeness,
+  townMown,
   regionParts,
   rollRegion,
   scatterRegion,
@@ -32,7 +33,7 @@ import { BIOMES, FIELD_WEIGHTS, type BiomeId } from "../content/biomes";
 import { FOUND } from "../content/found";
 import { GRASS, tileDef } from "../content/tiles";
 import { biomeSkin, blendRegions, sharpenRegions } from "../render/palette";
-import { ROCK, WATER, SHALLOW, SAND, SHRUB, DIRT, STUMP, LOG, TREE, LAVA } from "../content/tiles";
+import { ROCK, WATER, SHALLOW, SAND, SHRUB, DIRT, STUMP, LOG, TREE, LAVA, MUSHROOM } from "../content/tiles";
 import { NODES, nodeForTile } from "../content/nodes";
 import { WATER_KINDS } from "../content/water";
 import type { HomesteadSpot } from "./types";
@@ -135,17 +136,84 @@ describe("the town's own ground is untouched", () => {
     }
   });
 
-  /** The meadow row is all identities, and this is what that is FOR. If someone
-   *  ever tunes a number in it, the terrain under every existing town moves and
-   *  this test is the thing that says so. */
-  it("keeps the meadow row at identity, because saves depend on it", () => {
+  /** The meadow row's SOLIDITY is all identities, and this is what that is FOR.
+   *  If someone ever tunes one of these, the terrain under every existing town
+   *  moves and this test is the thing that says so.
+   *
+   *  MUSHROOMS CAME OFF THIS LIST, DELIBERATELY, and it is the only one that has.
+   *  A meadow with nothing at all in it was the town's calm charged to the whole
+   *  world (sim/world.ts §townMown), and a field mushroom is what grassland grows.
+   *  It is safe where the others are not for a reason worth keeping: a mushroom
+   *  owns its cell but blocks nobody, so the failure it could cause is a mushroom
+   *  in a room, not a tree through a wall — and `townMown` keeps it out of the
+   *  town anyway, which the test below actually checks on the ground. */
+  it("keeps the meadow's solid numbers at identity, because saves depend on it", () => {
     const m = BIOMES.meadow;
     expect(m.trees).toBe(1);
     expect(m.rocks).toBe(1);
-    expect(m.mushrooms).toBe(0);
+    expect(m.shrubs).toBeUndefined();
+    expect(m.deadwood).toBeUndefined();
     expect(m.water).toBe(0);
+    expect(m.sheet).toBeUndefined();
 
+    // And its COLOUR, which is the game's own green and the thing every other
+    // region is a departure from.
     for (const tint of [m.ground, m.tuft, m.crown, m.trunk]) expect(tint.amount).toBe(0);
+  });
+
+  /** The town mows its common, checked on the ground rather than in the row.
+   *
+   *  This is the test that replaced "the meadow has no decor". That one asserted
+   *  a field was empty, which is a fact about a table; this asserts that no
+   *  mushroom comes up between the houses on any seed, which is the fact anybody
+   *  actually cares about — and it keeps holding however the meadow is tuned. */
+  it("grows nothing in the town's grass, and does out in the country", () => {
+    for (const spot of SPOTS) {
+      for (let seed = 1; seed <= 200; seed++) {
+        for (const { x, y } of townCells(spot)) {
+          expect(generatedTile(seed, spot, x, y), `seed ${seed} ${spot} (${x},${y})`).not.toBe(
+            MUSHROOM,
+          );
+        }
+      }
+    }
+    // And the ramp actually arrives somewhere: out past the fade the meadow grows
+    // what its row says it grows. Counted over a band rather than asserted at a
+    // point — 2% of cells means any single tile is almost certainly bare.
+    let found = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      for (let y = 120; y < 150; y++) {
+        for (let x = 120; x < 150; x++) {
+          if (
+            biomeAt(seed, "riverside", x, y) === "meadow" &&
+            generatedTile(seed, "riverside", x, y) === MUSHROOM
+          ) {
+            found++;
+          }
+        }
+      }
+    }
+    expect(found).toBeGreaterThan(0);
+  });
+
+  /** The ramp itself: nothing at the plaza, everything in the country, and no
+   *  step anywhere in between. A radius you can stand on is the failure mode
+   *  `clearingRadius` exists to avoid, and this is the same shape one level down. */
+  it("mows the common smoothly, with no edge to stand on", () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      expect(townMown(seed, 0, 0)).toBe(0);
+      expect(townMown(seed, 0, 19)).toBe(0);
+      expect(townMown(seed, 0, 200)).toBe(1);
+      // Along a spoke, wildness only ever increases, and never by a jump.
+      let prev = 0;
+      for (let r = 0; r <= 60; r++) {
+        const v = townMown(seed, 0, r);
+        expect(v).toBeGreaterThanOrEqual(prev);
+        expect(v - prev).toBeLessThan(0.2);
+        prev = v;
+      }
+      expect(prev).toBe(1);
+    }
   });
 
   /** And the belt to that braces: the tiles themselves, not just the biome id.
@@ -1249,12 +1317,14 @@ describe("blooms", () => {
     }
   });
 
-  it("leave the town's own ground bare", () => {
-    // The meadow has no decor on purpose — leaving town is when the ground starts
-    // having things in it (see its row). A bloom would be that rule with an
-    // asterisk on it for three months a year.
-    expect(BIOMES.meadow.decor).toBeUndefined();
-    expect(BIOMES.meadow.bloom).toBeUndefined();
+  it("leave the town's own ground bare, and the country's alone", () => {
+    // This used to read "the meadow has no bloom", on the grounds that leaving
+    // town is when the ground starts having things in it. The rule survives; what
+    // changed is who pays for it. A region with no flowers is bare in every meadow
+    // in the world, and `meadow` is the commonest of them; a region marked `mown`
+    // is bare where the town is, which is the only place the rule was ever about.
+    expect(BIOMES.meadow.bloom?.season).toBe("spring");
+    expect(BIOMES.meadow.mown).toBe(true);
   });
 
   it("gives spring the signature it lacked", () => {

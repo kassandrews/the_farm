@@ -7804,6 +7804,63 @@ render-path or scatter-free.
 5. **The marshes.** The water is one flat blue; the islands are plain.
 6. **The redwoods.** The crowns read as noisy dark blobs over rust at this size.
 
+### ~~The meadow~~ **done**, and it was not on the list above
+
+It should have been. The read of the set skipped it because the meadow's
+emptiness was a settled decision rather than an oversight — 8k gave the town's
+own region no decor on purpose, so that leaving town is when the ground starts
+having things in it, and 8j kept the bloom out on the same argument. What that
+missed is **where the bill was being sent**. `meadow` is `near: 2` and `far: 0.88`,
+the commonest single region in the world at both ends of the field, so the town's
+calm was being paid for four hundred tiles from any town — and the one region in
+the game named for flowers had never had a flower in it. Photographed at 120 tiles
+out and again at the plateau, it was the plainest screen in the game both times:
+one flat green, one tree silhouette, three rocks, nothing else. It was also the
+only row in `biomes.ts` with no `decor` at all.
+
+**The rule moved to the town, where it always belonged.** `BiomeDef.mown` and
+`sim/world.ts` §townMown: ground furniture fades in over a twelve-tile ramp past a
+wobbly radius at 20–25 tiles, so the grass between the houses is exactly the grass
+it has always been and the country is not paying for it. The old sentence is now
+true as written rather than by making a region poor.
+
+**The settled calls (don't relitigate):**
+
+- **`mown` is a flag on the region, not a radius in the renderer.** The rule is
+  about the town and the answer is a distance, but WHICH regions submit to it is a
+  fact about the region — and it is not "whatever is near the plaza". A
+  forest-edge town's pines start at 24 tiles and keep every fern; the town mows
+  its own grass and does not go into the wood to tidy up.
+- **A ramp, not a radius.** Twelve tiles is most of a screen, so the flowers
+  thicken as you walk out and there is no step. Scaling the DENSITY, not the
+  mark's alpha: half-drawn flowers in a ring round the town read as a rendering
+  fault, where fewer flowers read as a lawn.
+- **Buttercups, gold, in spring.** The four other familiar regions all flower in
+  spring and the meadow did not. The birches own white-with-a-gold-eye, the long
+  grass owns purple-with-a-gold-eye and the scrub owns a magenta head, so both a
+  colour and a silhouette were free — and a field of buttercups is the picture the
+  word makes. Drawn as a FILLED head with a paler core: the first cut outlined the
+  cup and at three pixels an outlined bowl is two yellow specks with a gap, which
+  came out as small insects all over the swatch.
+- **Leaves have mass; blades are strokes.** The first year-round kit was four
+  single-pixel strokes in the tuft's own ink, and on screen the meadow simply had
+  more tufts in it. Clover, a rosette and a plantain, blocked rather than
+  outlined, are what made it a second layer instead of a denser first one.
+- **Mushrooms 0 → 0.02, and it is the only number this touched in the generator.**
+  Field mushrooms, so the row needs a `mushroomCap` (the default red is a fly
+  agaric and this region's tree is the ordinary broadleaf). It is the one region
+  in the world where there was nothing at all to find.
+- **The green did not move.** `ground` and `tuft` stay at amount 0. That colour is
+  the game's signature and every other region is a departure from it; the
+  complaint was emptiness, not hue.
+- **Fireflies are not mown.** Nobody tidies the air, and the fireflies over the
+  plaza are the point of them.
+
+Two tests changed sides rather than being deleted, which is the useful part:
+"the meadow has no decor" asserted a field was empty, and its replacement sweeps
+the town on two hundred seeds for a mushroom that should not be there and a band
+at 120 tiles for ones that should. The rule is now checked where it is felt.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

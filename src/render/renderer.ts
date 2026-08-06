@@ -53,6 +53,7 @@ import {
   type RegionPart,
   foundAt,
   floorFinish,
+  townMown,
   PLAZA,
 } from "../sim/world";
 import { dayNumber } from "../sim/found";
@@ -2296,8 +2297,19 @@ export class Renderer {
           // walk over the weights fed a number that small hands the first part
           // the cell every time. The dither would have been dead code that
           // measured as working.
-          const kit = this.decorKit(world, tx, ty, decoHash(tx, ty, world.seed ^ 0x51ab), (d) => d.decor);
-          if (kit && dh < kit.density && this.inSeason(kit)) {
+          // THE WHOLE REGION ROW, not the slot, because the density this cell is
+          // judged against depends on the region as well — see `mown`, which is
+          // the meadow saying the town keeps its own common cut. Reading `.decor`
+          // off the row afterwards is exactly what passing `(d) => d.decor` did,
+          // so nothing about which region wins this cell has changed.
+          const kdef = this.decorKit(world, tx, ty, decoHash(tx, ty, world.seed ^ 0x51ab), (d) => d);
+          const kit = kdef?.decor;
+          // A SCALE ON THE DENSITY, NOT AN ALPHA ON THE MARK. Fading the marks out
+          // would put a ring of half-drawn flowers around the town, which reads as
+          // a rendering fault; thinning them means every flower is drawn the same
+          // way wherever it stands and there are simply fewer near the houses.
+          const wild = kdef?.mown ? townMown(world.seed, tx, ty) : 1;
+          if (kit && dh < kit.density * wild && this.inSeason(kit)) {
             // A SECOND, INDEPENDENT HASH picks the mark and places it. Reusing
             // `dh` would tie both to the same number that just passed a `<`
             // test, so every mark would come from the low end of the range —
@@ -2312,14 +2324,19 @@ export class Renderer {
           // spring would arrive as a recolouring of the ferns rather than as
           // something new coming up between them.
           const bh = decoHash(tx, ty, world.seed ^ 0x6c41);
-          const bkit = this.decorKit(
+          const bdef = this.decorKit(
             world,
             tx,
             ty,
             decoHash(tx, ty, world.seed ^ 0x9d17),
-            (d) => d.bloom,
+            (d) => d,
           );
-          if (bkit && bh < bkit.density && this.inSeason(bkit)) {
+          const bkit = bdef?.bloom;
+          // Mown on its own region's answer rather than on the year-round kit's:
+          // this cell may have rolled a different neighbour for its bloom, and a
+          // bloom scaled by somebody else's rule is two facts about one place.
+          const bwild = bdef?.mown ? townMown(world.seed, tx, ty) : 1;
+          if (bkit && bh < bkit.density * bwild && this.inSeason(bkit)) {
             const p = decoHash(tx, ty, world.seed ^ 0x3ac9);
             this.drawKitMark(bkit, px, py, p, this.stemInk(world, tx, ty), paint?.glitch);
           }

@@ -27,13 +27,23 @@ const kits = Object.values(BIOMES).flatMap((b) =>
 );
 
 describe("decor kits", () => {
-  it("exist on some regions and not on the meadow", () => {
+  it("exist on every region, and the one the town stands in says who mows it", () => {
     expect(kits.length).toBeGreaterThan(0);
-    // The town's own region stays plain, so walking out of it is when the ground
-    // starts having things in it. Not a promise the way the meadow's identity
-    // tints are — decor is render-only and cannot re-landscape anybody's home —
-    // but it is the grain the far country already has (DESIGN §Biomes).
-    expect(BIOMES.meadow.decor).toBeUndefined();
+    // THIS USED TO ASSERT THE OPPOSITE — that the meadow had no kit at all, so
+    // that walking out of town was when the ground started having things in it.
+    // The rule was right and the place it was written was wrong: `meadow` is the
+    // commonest region in the world, so the town's calm was being paid for four
+    // hundred tiles from any town, and the one region named for flowers had none.
+    //
+    // The same sentence now lives on `mown`, which is a claim about the TOWN, and
+    // sim/world.ts §townMown enforces it where it can actually be checked — on the
+    // ground, at a distance, rather than by a region having an empty field.
+    expect(BIOMES.meadow.decor).toBeDefined();
+    expect(BIOMES.meadow.mown).toBe(true);
+    // And nowhere else asks: a forest town's pines begin at 24 tiles and keep
+    // every fern. The town mows its own grass; it does not tidy the wood.
+    const mown = Object.values(BIOMES).filter((b) => b.mown);
+    expect(mown.map((b) => b.id)).toEqual(["meadow"]);
   });
 
   for (const [id, kit] of kits) {

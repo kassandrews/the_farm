@@ -469,7 +469,18 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
 
     // Ground clutter, on its own hashes so turning it up somewhere doesn't
     // reshuffle where that region's trees stand.
-    if (grew.mushrooms > 0 && hash2(x, y, seed ^ 0x3f07) / 4294967296 < grew.mushrooms * thin) {
+    //
+    // AND THE TOWN MOWS ITS OWN COMMON (`townMown`). The only region that asks is
+    // the meadow, and it asks because the town stands in it: a field mushroom is
+    // a thing you find in a field, and the grass between the houses is not one.
+    // This is the single number the meadow's pass moved in the generator — the
+    // flowers are paint — so it is also the only way any of it can reach a tile
+    // somebody built on.
+    const wild = grew.mown ? townMown(seed, x, y) : 1;
+    if (
+      grew.mushrooms > 0 &&
+      hash2(x, y, seed ^ 0x3f07) / 4294967296 < grew.mushrooms * thin * wild
+    ) {
       return MUSHROOM;
     }
   }
@@ -1952,6 +1963,72 @@ const FOREST_CLEARING = 24;
 
 /** How far the treeline wanders in and out around the town. */
 const FOREST_WANDER = 7;
+
+/** WHERE THE TOWN STOPS MOWING, at its narrowest, and how far past that its
+ *  common takes to go wild.
+ *
+ *  THE MEADOW WAS EMPTY BECAUSE THE TOWN IS IN IT. Every other region in the game
+ *  carries ground furniture — ferns, reeds, tussocks, flowers — and the one named
+ *  for flowers carried none, because its numbers were frozen as the town's own
+ *  (content/biomes.ts §meadow). The cost of that landed a long way from the town:
+ *  `meadow` is the commonest region in the world at both ends of the field, so
+ *  the ground you meet most often anywhere was the only ground with nothing on it.
+ *
+ *  So the plainness becomes the TOWN's rather than the region's, which is what it
+ *  always actually was. The line the meadow row has always carried — "leaving town
+ *  is when the ground starts having things in it" — is now true as written, and it
+ *  costs one region's worth of flowers instead of every meadow in the world.
+ *
+ *  20 IS THE BUILT TOWN, not a taste. `HOME_REGION_REACH` is 21 and there is a
+ *  thousand-seed test that the town's region is meadow that far out, so a common
+ *  mown to 20 covers everything the town can reach — plaza, houses, doorsteps and
+ *  the plots either side of them — and stops inside the guarantee.
+ *
+ *  IT IS PAINT PLUS ONE NUMBER, so nothing here can put a bush in a house: it
+ *  scales the decor and the bloom, which are render-path, and the meadow's
+ *  mushrooms, which are the one thing this pass added to the generator at all. */
+const MOWN_KEEP = 20;
+
+/** How far the mown edge wanders outward around the town. */
+const MOWN_WANDER = 5;
+
+/** And how far past the edge the common takes to go fully wild.
+ *
+ *  A RAMP, NOT A RADIUS, and the whole difference is that a radius is a line you
+ *  can stand on. Twelve tiles is most of a screen: the flowers thicken as you walk
+ *  out and there is no step anywhere in it — which is the same argument
+ *  `clearingRadius` makes about circles, one level down. */
+const MOWN_FADE = 12;
+
+/** How wild the ground is here: 0 on the town's own common, 1 out in the country.
+ *
+ *  Scales anything a region marks `mown` (content/biomes.ts §BiomeDef.mown), and
+ *  returns a flat 1 everywhere else in the world — including, deliberately, for
+ *  every region that is not the meadow. A forest town's pines start at 24 tiles
+ *  and keep their ferns: the town mows its OWN grass, and does not go into the
+ *  wood to tidy up.
+ *
+ *  Measured from the ORIGIN, like the forest clearing, so the common belongs to
+ *  the town rather than to the player's plot — you live at its edge, as everybody
+ *  else does. */
+export function townMown(seed: number, x: number, y: number): number {
+  // Cheap rejection before any trigonometry: the ramp cannot reach past the
+  // widest the wobble can push it, and this runs per tile over the whole world.
+  const far = MOWN_KEEP + MOWN_WANDER + MOWN_FADE;
+  if (Math.abs(x) > far || Math.abs(y) > far) return 1;
+  const d = Math.hypot(x, y) - mownRadius(seed, Math.atan2(y, x));
+  if (d <= 0) return 0;
+  return d >= MOWN_FADE ? 1 : d / MOWN_FADE;
+}
+
+/** The mown edge on one bearing — `clearingRadius`'s two-sine wobble, on its own
+ *  salt so the edge of the town's grass is not a second copy of its treeline. */
+function mownRadius(seed: number, angle: number): number {
+  const a = (hash2(6, 0, seed ^ 0x3c0e) / 4294967296) * Math.PI * 2;
+  const b = (hash2(7, 0, seed ^ 0x3c0e) / 4294967296) * Math.PI * 2;
+  const wobble = 0.6 * Math.sin(angle * 3 + a) + 0.4 * Math.sin(angle * 5 + b);
+  return MOWN_KEEP + MOWN_WANDER * (0.5 + 0.5 * wobble);
+}
 
 /** The clearing's radius on one bearing.
  *
