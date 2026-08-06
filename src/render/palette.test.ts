@@ -540,12 +540,22 @@ describe("crown silhouettes", () => {
         for (const ch of row) expect("trbdm.", `${name}: "${ch}"`).toContain(ch);
       }
       expect(g.length, `${name} is taller than a tile`).toBeLessThanOrEqual(16);
-      // Moss is the pixel doing the most work on these: wood with moss on it is
-      // wood nobody tries to pick up, which is the whole affordance argument.
-      expect(g.join(""), `${name} has no moss`).toContain("m");
     }
     expect(DEADWOOD_ART.log[0].length).toBeGreaterThan(16);
     expect(DEADWOOD_ART.stump[0].length).toBeLessThan(16);
+    // MOSS IS THE LOG'S JOB NOW, and this used to be asserted of both. Wood with
+    // moss on it is wood nobody tries to pick up, which is the whole affordance
+    // argument for a pair of objects that are the only standing things in the
+    // game you cannot gather — so SOMETHING here has to carry it, and the rule
+    // stays, aimed at the sprite with room for it.
+    //
+    // The stump gave its two green pixels back to the wood. They sat on the
+    // shoulders, which on a nine-pixel-wide object is the silhouette's own edge —
+    // the place the eye reads the shape — and it lost more from being
+    // unresolvable than it gained from being unmistakably rotten. The log is four
+    // times the sprite and wears its moss in the middle of the top face, where it
+    // costs no outline at all.
+    expect(DEADWOOD_ART.log.join(""), "the log has no moss").toContain("m");
   });
 
   it("only grows deadwood where something could have fallen", () => {

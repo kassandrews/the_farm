@@ -8247,6 +8247,25 @@ At nine pixels across there is no room for a flare to read as anything subtler,
 so the sides just run straight, which is what was being copied from the trunk in
 the first place.
 
+**And then two more details came off, both of which this file had arguments
+for.** The stump is nine pixels wide; every argument for putting something on it
+was made about a stump seen closer than the game ever shows one.
+
+- **The left flare** — three pixels standing proud of the body, there so the shape
+  did not read as turned on a lathe. At this size it reads as a chip out of the
+  side, or as something standing behind. A bollard is the better risk.
+- **The moss**, two green pixels on the shoulders. They sat on the silhouette's
+  own edge, which is where the eye reads a shape at all.
+
+**The moss one is a real trade, not a free cut.** Moss was doing the affordance
+work for the only two standing things in the game you cannot gather: wood with
+moss on it is wood nobody tries to pick up. The test that asserted it now aims at
+the LOG alone — four times the sprite, wearing its moss in the middle of the top
+face where it costs no outline — and says in the file why the stump is exempt. If
+stumps ever start reading as gatherable, this is the paragraph to come back to.
+
+What is left is one object: a cut face, straight sides, a flat base.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

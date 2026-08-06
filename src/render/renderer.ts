@@ -518,9 +518,25 @@ export const DEADWOOD_ART: Record<"stump" | "log", string[]> = {
   // dark middle of a cut. Three by two is the smallest mark that reads as
   // heartwood — a real ring pattern does not survive this size at all.
   //
-  // The left side runs one pixel wider than the right, which is the only
-  // asymmetry in the sprite and is there to stop it reading as turned on a lathe.
-  // A stump flares where its roots leave it; a cylinder is a bollard.
+  // IT IS SEVEN PIXELS OF WOOD AND NOTHING ELSE, and getting there meant deleting
+  // two things this file had arguments for. Both arguments were about a stump
+  // seen closer than this game ever shows one.
+  //
+  //   • The left flare — a column of three pixels standing proud of the body,
+  //     there so the shape did not read as turned on a lathe. At nine pixels
+  //     across it does not read as a flare; it reads as a chip out of the side,
+  //     or as something standing behind. A bollard is a risk worth taking over a
+  //     shape you cannot resolve.
+  //   • The moss, two green pixels on the shoulders. See the `m` ink below for
+  //     the job it was doing (wood nobody tries to pick up) — the LOG still does
+  //     that job, and does it better, being four times the sprite. Here the two
+  //     specks sat on the silhouette's own edge, which is where the eye reads the
+  //     shape, and the stump lost more from being unreadable than it gained from
+  //     being unmistakably rotten.
+  //
+  // What is left is one object: a cut face, straight sides, a flat base. The
+  // rule this sprite is under is that detail must survive its own size, and
+  // subtracting is usually how that is met — see CLAUDE.md §Restraint.
   //
   // THE TOP STAYS ROUNDED AND THE BOTTOM DOES NOT, which is the whole of the
   // difference between the two ends. The top is a cut face seen at this game's
@@ -537,7 +553,7 @@ export const DEADWOOD_ART: Record<"stump" | "log", string[]> = {
   // So the sides simply run straight down, which is what was being copied from
   // the trunk in the first place — a stem is a plain rect with a flat bottom, and
   // the stump beside it should end the same way.
-  stump: ["..ttttt..", ".ttrrrtt.", ".ttrrrtt.", "tbbbbbbb.", "tmbbbbbm.", "dddddddd."],
+  stump: ["..ttttt..", ".ttrrrtt.", ".ttrrrtt.", ".bbbbbbb.", ".bbbbbbb.", ".ddddddd."],
   // Twenty wide on a sixteen-pixel tile.
   //
   // THE FIRST DRAFT WAS A PLANK, and it is worth recording why: square ends, a
