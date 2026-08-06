@@ -622,30 +622,6 @@ export function paintMark(
  *  width this produces. A second copy of the geometry in the test would have
  *  been a second opinion about the shape of a bush, and the one on screen would
  *  be the wrong one. */
-/** WHERE SNOW LIES ON A SPRITE: the pixels of row `r` with nothing above them.
- *
- *  Returned as half-width ranges either side of centre, because every sprite in
- *  this file is drawn that way — a row is `rows[r]` wide each side of the column
- *  `cx`, so a row wider than the one above it hangs out by the difference, and
- *  that overhang is a surface facing the sky.
- *
- *  ONE RULE FOR EVERY ROUND THING, and it is geometry rather than art: a dome
- *  gets a rim along its top, a tiered conifer gets the top of every branch shelf,
- *  a rock gets its cap. Nothing is authored per sprite and nothing is drawn per
- *  CELL, so the band rule (CLAUDE.md) does not reach it — this is the same
- *  per-object footing the lit rows have always been on.
- *
- *  Row 0 is all ledge: there is nothing above the top of anything. */
-export function snowLedge(rows: number[], r: number): [number, number][] {
-  if (r === 0) return [[-rows[0], rows[0]]];
-  const over = rows[r - 1];
-  if (rows[r] <= over) return [];
-  return [
-    [-rows[r], -over - 1],
-    [over + 1, rows[r]],
-  ];
-}
-
 export function shrubPeak(crownRows: number[]): number {
   let peak = 0;
   for (const w of crownRows) peak = Math.max(peak, w);
@@ -1730,21 +1706,6 @@ export class Renderer {
    *  the order is stated and where the tests can reach it. */
   private foliage(biome: BiomeDef | null | undefined, lit: boolean): string {
     return foliage(biome, this.palette, lit);
-  }
-
-  /** The ink for snow lying ON something, or null when none is (§BiomeDef.snow).
-   *
-   *  MIXED FROM WHAT IT SITS ON rather than stated flat, so a cap keeps a little
-   *  of the crown or the stone under it and every sprite is not wearing the same
-   *  white. And pulled toward the night wash after dark by the same amount the
-   *  bark dashes are: snow at midnight is the brightest thing in the frame if you
-   *  let it be, which is a lamp rather than a snowfall. */
-  private snowInk(biome: BiomeDef | null | undefined, under: string): string | null {
-    if (this.palette.season?.id !== "winter") return null;
-    const snow = biome?.snow;
-    if (!snow) return null;
-    const lying = mixHex(under, { color: snow.color, amount: 0.85 });
-    return this.palette.night ? mixHex(lying, { color: "#2a3140", amount: 0.45 }) : lying;
   }
 
   /** One mark from a kit, placed inside a cell.
@@ -4875,31 +4836,6 @@ export class Renderer {
       if (w > 0) ctx.fillRect(cx - rows[r] + 1, top + r, w, 1);
     }
 
-    // SNOW ON THE CANOPY (§snowLedge), over the lit side because it lies on the
-    // foliage rather than being part of it.
-    //
-    // THE RULE PAYS FOR ITSELF ON A CONIFER. A pine's crown steps out every third
-    // row — that is what its `crownRows` doc calls "the little shelves that say
-    // branches at 1px" — and every one of those steps is a surface with nothing
-    // above it, so the snow lands on the branch tiers without a single number
-    // being written for it. A broadleaf, whose crown is a smooth dome, correctly
-    // gets a rim along the top and nothing else: bare winter branches hold very
-    // little, and the shape says so by itself.
-    const capping = dark ? null : this.snowInk(biome, crown);
-    if (capping) {
-      ctx.fillStyle = ink(capping);
-      for (let r = 0; r < rows.length; r++) {
-        // Skip the rows that hang beside the trunk: what is beside a stem is not
-        // a surface facing the sky, and snow drawn there reads as a scarf.
-        if (r >= rows.length - overlap) continue;
-        for (const [from, to] of snowLedge(rows, r)) {
-          const gap = gaps?.[r] ?? 0;
-          if (gap > 0 && from < 0 && to > -gap) continue;
-          ctx.fillRect(cx + from, top + r, to - from + 1, 1);
-        }
-      }
-    }
-
     // Lights caught in the crown. NOT FRUIT — see BiomeDef.orbs for why that
     // distinction is the whole design of this: drawn through the same additive
     // pass as the sparks and the fireflies, with a white core, so an orb reads as
@@ -5129,17 +5065,6 @@ export class Renderer {
         ctx.fillRect(cx + Math.max(-(half - 1), Math.min(half - 1, dx)), top + r, 1, 1);
       }
     }
-    // SNOW ON THE BRANCHES (§snowLedge). Last, over the lit side, because it is
-    // lying on top of the foliage rather than being part of it.
-    const shrubSnow = this.snowInk(biome, crown);
-    if (shrubSnow) {
-      ctx.fillStyle = shrubSnow;
-      for (let r = 0; r < rows.length; r++) {
-        for (const [from, to] of snowLedge(rows, r)) {
-          ctx.fillRect(cx + from, top + r, to - from + 1, 1);
-        }
-      }
-    }
     void night; // the palette already carries the hour; the flag is the signature
 
     ctx.globalAlpha = prev;
@@ -5241,8 +5166,7 @@ export class Renderer {
     // stone is an object and takes a side. Half a shard fading into half a
     // boulder is not a rock anybody could name. The side is the one it came out
     // of (`scatterSkin`), like the tree and the mushroom.
-    const region = scatterSkin(world.seed, world.homestead.spot, tx, ty);
-    const stone = region?.stone;
+    const stone = scatterSkin(world.seed, world.homestead.spot, tx, ty)?.stone;
     const kinds = stone?.shapes ?? STONES_DEFAULT;
     const shape = ROCK_SHAPES[kinds[Math.floor(((h * 43) % 1) * kinds.length) % kinds.length]];
     const rows = shape.rows;
@@ -5303,18 +5227,6 @@ export class Renderer {
     for (let r = 1; r <= litTo; r++) {
       const back = Math.floor((r / litTo) * rows[r] * 0.5);
       ctx.fillRect(cx - rows[r] + 1, top + r, Math.max(1, rows[r] - 2 - back), 1);
-    }
-    // Snow on the stone, on the same ledge rule as the crowns (§snowLedge) — a
-    // rock is the roundest thing in the game and gets a cap along its top and on
-    // any shoulder that steps out under it.
-    const capped = this.snowInk(region, body);
-    if (capped) {
-      ctx.fillStyle = capped;
-      for (let r = 0; r < rows.length; r++) {
-        for (const [from, to] of snowLedge([...rows], r)) {
-          ctx.fillRect(cx + from, top + r, to - from + 1, 1);
-        }
-      }
     }
     ctx.fillStyle = foot;
     ctx.fillRect(cx - low, base - 2, low * 2, 1); // it sits ON the ground
