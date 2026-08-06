@@ -1201,31 +1201,29 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
           // It is also what keeps it clear of the birches' anemone — that is a
           // solid white cross with a gold eye, and this is a dotted ball.
           [".o.o.", "o.o.o", ".o.o.", "..x..", "..x.."],
-          // WHITE CLOVER, over the leaves that have been there all year.
+          // WHITE CLOVER, over the leaves that have been there all year. A plain
+          // 3x3 head with ONE pink pixel where it meets the stem.
           //
-          // WHERE THE PINK SITS IS THE WHOLE THING, AND THE WIDTH IS NOT. This was
-          // narrowed to three wide on the theory that a four-wide pale head is a
-          // MUSHROOM — and the region does grow one, cream with pink under it,
-          // which is very nearly the same object. Three drawn side by side say
-          // otherwise:
+          // THE SQUARE IS THE POINT, WHICH IS THE OPPOSITE OF EVERY OTHER FLOWER
+          // HERE. The buttercup had its corners taken off because a solid block of
+          // gold reads as a tile; the kingcup silhouette exists to round a head
+          // without drawing one. A clover is the exception, and it is the plant's
+          // own fault: it is not petals arranged around a centre, it is a dense
+          // GLOBE of florets, and a globe at this size is a block. Round it and it
+          // becomes one of the daisies.
           //
-          //   - four wide, pink at the bottom EDGE of the head: a mushroom. The
-          //     pink is a row of gills with nothing but stalk under it.
-          //   - four wide, pink INSIDE the head with a cream row below it: a
-          //     flower. The same pixels, one row up, and the head reads as a thing
-          //     with structure in it rather than a cap with gills under it.
-          //   - three wide: a lollipop. Narrowing did fix the mushroom, by making
-          //     the head too small to be anything, and the pink ended up on the
-          //     STEM where it reads as a joint.
-          //
-          // So it is four wide again, with the pink band a row up. A clover head is
-          // a globe of florets and the older ones at the bottom go pink; that is
-          // the one detail that says clover rather than daisy, and it only works
-          // while it is part of the globe.
-          //
-          // The stem sits half a pixel right of centre, which an even-width head
-          // cannot avoid and which reads as a lean rather than as an error.
-          [".oo.", "oooo", "o**o", ".oo.", "..x.", "..x."],
+          // ONE PIXEL OF PINK, AND WHERE IT GOES WAS DRAWN SEVEN WAYS. The older
+          // florets at the base go pink, so it belongs at the bottom — but this is
+          // exactly where a MUSHROOM keeps its gills, and this region grows one.
+          // What saves it is that a gill row is WIDE: three pink pixels across the
+          // foot of a head is a cap, and one pixel centred on the stem is the join.
+          // The rest of the attempts, since somebody will try them again:
+          //   - a pink pair down the middle: a slot. It reads as a button.
+          //   - pink at both ends of the middle row: two eyes. A face.
+          //   - the top two corners plus the middle bottom: still a face, now with
+          //     a chin.
+          //   - no pink at all: a white square on a post. A sign.
+          ["ooo", "ooo", "o*o", ".x.", ".x."],
         ],
       },
       {
