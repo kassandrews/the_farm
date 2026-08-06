@@ -7888,15 +7888,41 @@ true as written rather than by making a region poor.
   dandelion: it is a yellow flower and then it is a clock, which is one plant
   needing two months of its own.
 
-  The meadow's year is now **spring** — buttercups and dandelions, the same gold
-  on purpose, separated by size and by a ragged rim rather than by hue — and
-  **summer**: the clocks, drawn as HOLES because a seed head is a sphere of gaps
-  (solid pale is a mushroom cap, a ring is a flower, and a checker is the only
-  thing that reads as fluff at five pixels), plus white clover over the leaves
-  that have been there all year. The clover head is narrow and tall because at
-  four wide it WAS the field mushroom — cream with pink under it, in the region
-  that grows one. And a third buttercup was cut: a closed bud reads as a plain
-  yellow bar, which the new marks strip is what showed.
+  The meadow now has a flower in **every growing month**. Spring: buttercups and
+  dandelions. Summer: dandelion clocks and white clover. Autumn: black-eyed
+  susans — the month the region had nothing to say, which is the same complaint
+  the long grass's asters were written to fix one region away and was just as
+  true here.
+
+  **The kingcup's silhouette three times, deliberately.** Five wide with the
+  corners off is this file's answer to "petals all the way round a centre"; the
+  fen's marsh marigold established it, the dandelion borrows it in a deeper gold,
+  and the rudbeckia borrows it again with a near-black middle. A rudbeckia is
+  that shape in life, and the middle is the whole name of the plant.
+
+  **Two flowers in one kit means two inks, and that is the entire budget.** A kit
+  carries one `accent` and one `core`, so two plants of different colours use one
+  each and neither can then have a second tone of its own. The buttercup gave up
+  the pale shine in the bottom of its cup so the dandelion could be a DIFFERENT
+  gold rather than a bigger blob of the same one — two unrelated yellows in one
+  field read as a paint problem, not as two plants.
+
+  **Corners come off anything three wide.** The buttercup drawn as a solid 3x2
+  block was a yellow square with a stalk under it, which is the fen's own warning
+  about this size — "the shape reads as a TILE before it reads as a flower". Two
+  pixels bought the whole difference.
+
+  Also found on screen: the clock is drawn as HOLES (solid pale is a mushroom cap,
+  a ring is a flower, a checker is the only thing that reads as fluff at five
+  pixels); the clover head is narrow and tall because at four wide it WAS the
+  field mushroom, in the one region that grows one; and two marks were cut, a
+  closed buttercup bud and a half-blown clock, both of which read as plain bars.
+  The marks strip on `/biomes.html` is what showed all three.
+
+  **Still open:** winter, which has no kit and no honest flower — seed heads and
+  dead stems are the candidate, and they would be the first `bloom` that is not
+  a bloom. And an aster, which the long grass already owns (purple with a gold
+  eye); a second one here would be the same plant twice.
 
 Two tests changed sides rather than being deleted, which is the useful part:
 "the meadow has no decor" asserted a field was empty, and its replacement sweeps

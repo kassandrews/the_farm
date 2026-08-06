@@ -1329,7 +1329,9 @@ describe("blooms", () => {
     // changed is who pays for it. A region with no flowers is bare in every meadow
     // in the world, and `meadow` is the commonest of them; a region marked `mown`
     // is bare where the town is, which is the only place the rule was ever about.
-    expect(bloomsOf(BIOMES.meadow).map((k) => k.season)).toEqual(["spring", "summer"]);
+    // Every growing month, which is what "beautiful year round" costs: buttercups
+    // and dandelions, then clocks and clover, then black-eyed susans.
+    expect(bloomsOf(BIOMES.meadow).map((k) => k.season)).toEqual(["spring", "summer", "autumn"]);
     expect(BIOMES.meadow.mown).toBe(true);
   });
 

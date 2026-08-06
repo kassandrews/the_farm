@@ -1121,77 +1121,75 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         ["xx.xx", ".xxx.", "..x.."],
       ],
     },
-    // THREE FLOWERS OVER TWO MONTHS, which is what a meadow actually does and
-    // the reason `bloom` takes a list now (see BiomeDef.bloom): a dandelion is a
-    // yellow flower and then it is a clock, and that is one plant needing two
-    // seasons of its own. Never two at once — spring's and summer's are disjoint,
-    // so the ground still carries what is always here and what is here now.
+    // A FLOWER IN EVERY GROWING MONTH, which is what `bloom` became a list for
+    // (see BiomeDef.bloom): buttercups and dandelions in spring, clocks and
+    // clover in summer, black-eyed susans in autumn. Never two at once — the
+    // seasons are disjoint, so the ground still carries what is always here and
+    // what is here now, which is the whole of the argument that made a list safe.
     //
     // GOLD IS THE MEADOW'S, AND NOTHING ELSE IN THE FILE HAS IT. The birches own
     // white-with-a-gold-eye (anemone), the long grass owns purple-with-a-gold-eye
     // (aster) and the scrub owns a magenta head on a stem, so both a colour and a
-    // silhouette were free here — and a field of buttercups is the picture the
-    // word "meadow" makes.
+    // silhouette were free — and a field of buttercups is the picture the word
+    // "meadow" makes. The fen's kingcup is the one other gold here, and it is a
+    // fen: nobody meets the two on the same walk.
     bloom: [
       {
-        // SPRING: the buttercups, and the region finally getting the season every
-        // one of its neighbours already had. The pines, the birches, the scrub
-        // and the fen all flower in spring; the meadow, the one place in the
-        // world anybody would go looking for a flower, did not.
+        // SPRING: buttercups and dandelions. The region finally getting the season
+        // every one of its neighbours already had — the pines, the birches, the
+        // scrub and the fen all flower in spring, and the meadow, the one place in
+        // the world anybody would go looking for a flower, did not.
+        //
+        // TWO INKS FOR TWO FLOWERS, AND THAT IS THE WHOLE BUDGET. A kit carries one
+        // `accent` and one `core`, so two plants of different colours use one each
+        // and neither can then have a second tone of its own. The buttercup gave up
+        // the pale shine it used to carry in the bottom of its cup, which is a real
+        // loss and the price of the dandelion being a DIFFERENT gold rather than a
+        // bigger blob of the same one. At three pixels the cup reads without it.
         season: "spring",
         density: 0.22,
         accent: "#f2c53c",
-        core: "#fdf0a8",
+        core: "#cf9a24",
         marks: [
-          // A CUP, WHICH IS WHY THE CORE IS PALER RATHER THAN DARKER. Every other
-          // flower in the file has a contrasting middle because it is a disc seen
-          // flat; this one is a bowl, and what you actually see in the bottom of
-          // it is the shine. That is the plant's own party trick, and at three
-          // pixels it is the drawing.
-          //
-          // A FILLED HEAD. The first cut outlined the cup — `o.o` over `o*o` —
-          // and at three pixels an outlined bowl is not a bowl, it is two yellow
-          // specks with a gap between them: the whole swatch came out wearing
-          // small yellow insects.
-          ["ooo", "o*o", ".x.", ".x."],
-          [".o.", "o*o", ".x."],
-          // THE DANDELION, and it is the same gold on purpose — these two share a
-          // month and a meadow, and two unrelated yellows would read as a paint
-          // problem rather than as two plants. What separates them is SIZE and
-          // RIM: a buttercup is three pixels of smooth cup, a dandelion is five
-          // of ragged disc. The gaps in the top row are the whole difference, and
-          // they are what a hundred narrow ray florets look like from above.
-          //
-          // A THIRD BUTTERCUP WAS CUT TO MAKE ROOM, and the strip on /biomes.html
-          // is what found it: a closed bud drawn `.o.`/`.o.`/`.x.` sits next to
-          // the other two as a plain yellow bar. It read as a bud only if you
-          // already knew it was one.
-          ["o.o.o", "ooooo", ".ooo.", "..x.."],
+          // THE BUTTERCUP, AND THE CORNERS HAVE TO COME OFF. Drawn as a solid
+          // 3x2 block it is a yellow SQUARE with a stalk under it — which is the
+          // fen's own warning about this exact size, one region away: "the shape
+          // reads as a TILE before it reads as a flower". Losing the four corners
+          // costs two pixels and buys the whole difference. A small open flower
+          // seen from above is a cross, and at five pixels a cross is all there
+          // is room for.
+          [".o.", "ooo", ".o.", ".x.", ".x."],
+          // And a smaller, shorter one — the same plant, not yet up.
+          [".o.", "ooo", ".x."],
+          // THE DANDELION, in the fen's kingcup silhouette — a five-wide head with
+          // its corners off, which is the file's established way of drawing "petals
+          // all the way round" without drawing a square. Solid, and a step darker
+          // than the buttercup: these two share a month and a meadow, so what has
+          // to separate them is size and tone rather than hue. Two unrelated
+          // yellows in one field would read as a paint problem, not as two plants.
+          [".***.", "*****", ".***.", "..x..", "..x.."],
         ],
       },
       {
         // SUMMER: the clock and the clover. Both are what the SPRING plants turn
         // into — the dandelion goes over, and the leaves that were underfoot all
-        // through March put up heads — so the two kits read as one meadow getting
-        // on with its year rather than as two unrelated decorations.
+        // through March put up heads — so the two read as one meadow getting on
+        // with its year rather than as two unrelated decorations.
         season: "summer",
         density: 0.18,
         accent: "#efeadb",
-        // THE PINK IS THE CLOVER'S, and it is the kit's only `*`. One kit carries
-        // one core, so the first cut — white, for the clock's middle — came out
-        // as a bright bar across the clover head instead. The clock does not use
-        // `*` at all (it is holes, not a centre), which leaves the ink free for
-        // the one plant that needs it.
+        // THE PINK IS THE CLOVER'S, and it is the kit's only `*`. The first cut
+        // was white, for the clock's middle, and came out as a bright bar across
+        // the clover head instead. The clock has no centre at all — it is holes —
+        // which leaves the ink to the one plant that needs it.
         core: "#e0b3ba",
         marks: [
-          // THE CLOCK, DRAWN AS HOLES. A seed head is a sphere of gaps: solid
-          // pale would be a mushroom cap and a ring would be a flower, so this is
-          // a checker, which is the only way fluff reads at five pixels. It is
-          // also what keeps it clear of the birches' anemone — that is a solid
-          // white cross with a gold eye, and this is a dotted ball.
+          // THE CLOCK, DRAWN AS HOLES. A seed head is a sphere of gaps: solid pale
+          // would be a mushroom cap and a ring would be a flower, so this is a
+          // checker, which is the only thing that reads as fluff at five pixels.
+          // It is also what keeps it clear of the birches' anemone — that is a
+          // solid white cross with a gold eye, and this is a dotted ball.
           [".o.o.", "o.o.o", ".o.o.", "..x..", "..x.."],
-          // One already half blown, which is the state you actually find them in.
-          [".o.o.", "o...o", ".o.o.", "..x..", "..x.."],
           // WHITE CLOVER, over the leaves that have been there all year.
           //
           // NARROW AND TALL, WHICH IS THE WHOLE FIGHT. Drawn four wide as a round
@@ -1201,9 +1199,40 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
           // held up on a stalk. Three wide over a two-pixel stem is the version
           // where the silhouettes stop competing.
           //
-          // The pink is at the BASE, where the older florets are, and it is the
-          // one detail that says clover rather than daisy.
+          // The pink is at the BASE, where the older florets are, and it is the one
+          // detail that says clover rather than daisy.
           [".o.", "ooo", "ooo", ".*.", ".x.", ".x."],
+        ],
+      },
+      {
+        // AUTUMN: black-eyed susans, and this is the month the meadow had nothing
+        // to say. Its autumn was the crowns going over and a bare floor underneath
+        // — which is exactly the complaint the long grass's asters were written to
+        // fix one region away, and it was just as true here.
+        //
+        // THE KINGCUP'S SHAPE A THIRD TIME, deliberately. Five wide with the
+        // corners off is this file's answer to "petals all the way round a centre",
+        // and a rudbeckia is that shape in life: a ring of ray florets around a
+        // disc you cannot miss. What is different is the middle — nearly black,
+        // where the fen's is a deeper gold — and the middle is the whole name of
+        // the plant.
+        //
+        // A TALLER STEM THAN ANYTHING ELSE HERE. Rudbeckia stands well clear of
+        // the grass, which is how you see it in a September field at all, and
+        // three rows of stem is what says so at this size.
+        season: "autumn",
+        density: 0.14,
+        accent: "#e8b52f",
+        core: "#33261a",
+        marks: [
+          [".ooo.", "oo*oo", ".ooo.", "..x..", "..x..", "..x.."],
+          // A LEAF, ONE PIXEL, ON ONE SIDE OR THE OTHER. Not variety for its own
+          // sake: three marks that differ only in stem length are one glyph, and
+          // a leaf halfway up is the cheapest thing that makes a stand of these
+          // look grown rather than printed. It sits on alternate sides so no two
+          // neighbours lean the same way.
+          [".ooo.", "oo*oo", ".ooo.", "..x..", ".xx..", "..x.."],
+          [".ooo.", "oo*oo", ".ooo.", "..x..", "..xx.", "..x.."],
         ],
       },
     ],
