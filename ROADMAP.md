@@ -7900,12 +7900,16 @@ true as written rather than by making a region poor.
   and the rudbeckia borrows it again with a near-black middle. A rudbeckia is
   that shape in life, and the middle is the whole name of the plant.
 
-  **Two flowers in one kit means two inks, and that is the entire budget.** A kit
-  carries one `accent` and one `core`, so two plants of different colours use one
-  each and neither can then have a second tone of its own. The buttercup gave up
-  the pale shine in the bottom of its cup so the dandelion could be a DIFFERENT
-  gold rather than a bigger blob of the same one — two unrelated yellows in one
-  field read as a paint problem, not as two plants.
+  **Two inks, two flowers, and each uses BOTH.** The obvious reading of a kit's
+  two-colour budget is one ink per flower, which is what this was: a bright gold
+  buttercup and a deep gold dandelion, both solid, both reading as a decal rather
+  than a thing with a middle. They swap ROLES instead — the buttercup is bright
+  with a deep eye, the dandelion deep with a bright one. Same two inks, four uses,
+  and the two flowers end up further apart than when they were flat: an inversion
+  is a much louder difference than a shade, and it survives at one pixel where a
+  third gold would not have been distinguishable from either of the first two. It
+  is also the honest way round — a buttercup's stamens are deeper than its petals,
+  and a dandelion catches the light in the middle where the florets stand up.
 
   **Corners come off anything three wide.** The buttercup drawn as a solid 3x2
   block was a yellow square with a stalk under it, which is the fen's own warning

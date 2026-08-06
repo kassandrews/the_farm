@@ -1140,12 +1140,23 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         // scrub and the fen all flower in spring, and the meadow, the one place in
         // the world anybody would go looking for a flower, did not.
         //
-        // TWO INKS FOR TWO FLOWERS, AND THAT IS THE WHOLE BUDGET. A kit carries one
-        // `accent` and one `core`, so two plants of different colours use one each
-        // and neither can then have a second tone of its own. The buttercup gave up
-        // the pale shine it used to carry in the bottom of its cup, which is a real
-        // loss and the price of the dandelion being a DIFFERENT gold rather than a
-        // bigger blob of the same one. At three pixels the cup reads without it.
+        // TWO INKS, TWO FLOWERS, AND EACH USES BOTH — which is how a kit with a
+        // budget of two colours gets two plants that are neither flat nor alike.
+        // The obvious reading of the budget is one ink per flower, and that is
+        // what this was: a bright gold buttercup and a deep gold dandelion, both
+        // solid, both reading as a decal rather than a thing with a middle.
+        //
+        // They swap ROLES instead. The buttercup is bright with a deep eye; the
+        // dandelion is deep with a bright one. Same two inks, four uses, and the
+        // two flowers are now further apart than when they were flat — an
+        // inversion is a much louder difference than a shade, and it survives at
+        // one pixel where a third gold would not have been distinguishable from
+        // either of the first two.
+        //
+        // It is also the honest way round. A buttercup's stamens are a deeper,
+        // greener yellow than its petals; a dandelion's crown of florets catches
+        // the light in the middle where they stand up. Neither is a highlight
+        // invented to break up a colour.
         season: "spring",
         density: 0.22,
         accent: "#f2c53c",
@@ -1158,16 +1169,16 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
           // costs two pixels and buys the whole difference. A small open flower
           // seen from above is a cross, and at five pixels a cross is all there
           // is room for.
-          [".o.", "ooo", ".o.", ".x.", ".x."],
+          [".o.", "o*o", ".o.", ".x.", ".x."],
           // And a smaller, shorter one — the same plant, not yet up.
-          [".o.", "ooo", ".x."],
+          [".o.", "o*o", ".x."],
           // THE DANDELION, in the fen's kingcup silhouette — a five-wide head with
           // its corners off, which is the file's established way of drawing "petals
           // all the way round" without drawing a square. Solid, and a step darker
           // than the buttercup: these two share a month and a meadow, so what has
           // to separate them is size and tone rather than hue. Two unrelated
           // yellows in one field would read as a paint problem, not as two plants.
-          [".***.", "*****", ".***.", "..x..", "..x.."],
+          [".***.", "**o**", ".***.", "..x..", "..x.."],
         ],
       },
       {
