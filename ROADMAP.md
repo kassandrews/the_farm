@@ -7844,8 +7844,30 @@ true as written rather than by making a region poor.
   came out as small insects all over the swatch.
 - **Leaves have mass; blades are strokes.** The first year-round kit was four
   single-pixel strokes in the tuft's own ink, and on screen the meadow simply had
-  more tufts in it. Clover, a rosette and a plantain, blocked rather than
-  outlined, are what made it a second layer instead of a denser first one.
+  more tufts in it. Blocked rather than outlined is what made it a second layer
+  instead of a denser first one.
+- **Two marks, not four, and the clover is corner-to-corner 2x2 leaflets.** Four
+  unrelated glyphs on one lawn — a cross, an upside-down T, a Y and a trefoil —
+  read as a seed catalogue; one plant at two ages reads as a patch of it. Six
+  clover arrangements were drawn and photographed **one at a time, with the kit's
+  density temporarily at 0.95**, which is the technique this whole pass should
+  have started with: at 0.14 you hunt for your own mark in a screenshot instead of
+  looking at it. The findings, so nobody redraws them:
+  - a **stem** is what makes a trefoil read as a **Y** — and a clover seen from
+    above has its stalk underneath it anyway, where you cannot see it;
+  - a 3-wide top leaflet meeting the other two **edge to edge** merges into one
+    mass with a notch: a heart, not three leaves;
+  - a **one-pixel waist** between them reads as a stalk, so it comes out as one
+    leaf held over two;
+  - **3x3 leaflets do not buy shape, they buy mass** — clefted they read as a
+    small frog, rounded as a bush. Scale is a real limit here and going bigger is
+    the wrong direction.
+  - **The leaflets cannot be lit.** A pale pixel per leaflet does turn a square
+    into a rounded leaf — but the second ink is `accent`, which is fixed against
+    the season by contract (a white flower is white in October), so autumn came
+    out as a rust leaf with a bright green speck on it. It reads as damage. The
+    highlight would need `x`'s seasonal ink, and giving `o` that breaks every
+    flower in the file.
 - **Mushrooms 0 → 0.02, and it is the only number this touched in the generator.**
   Field mushrooms, so the row needs a `mushroomCap` (the default red is a fly
   agaric and this region's tree is the ordinary broadleaf). It is the one region

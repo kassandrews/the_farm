@@ -1062,26 +1062,38 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       // meadow simply had more tufts in it. A stroke is what a BLADE is; a leaf is
       // a small solid shape, and the difference is the entire reason to have a
       // second layer on the ground at all.
+      // TWO MARKS, NOT FOUR. It had a cross, an upside-down T, a Y and a trefoil,
+      // and four unrelated glyphs on one lawn read as a seed catalogue — which is
+      // the same complaint the tuft doc makes about four shapes at equal odds.
+      // One plant at two ages reads as a patch of it.
       marks: [
-        // Clover, and it is a TREFOIL rather than a pair. Two lobes with a notch
-        // between them and a third below carrying the stem — the shamrock
-        // silhouette, which is the only arrangement of three leaves the eye reads
-        // as three at this size. Two lobes over a stalk is a plant; three lobes
-        // meeting at a point is clover, and the notch is what does the counting.
-        // Blocked rather than outlined: at two pixels a lobe's outline is a hole.
-        ["xx.xx", "xx.xx", "..x..", ".xxx.", ".xxx.", "..x.."],
-        // A rosette seen from above — the plant that is all leaves and no stem,
-        // which is most of what a lawn is actually made of.
-        [".xx.", "xxxx", ".xx."],
-        // Ribwort plantain: a bare stalk standing out of two ground leaves. The
-        // tallest here, and the only one with any height to it.
-        ["..x..", "..x..", "..x..", "xx.xx"],
-        // A YOUNGER CLOVER, half the height of the first. It was a single leaning
-        // leaf and drew as a two-pixel block with a crumb beside it — debris,
-        // not a plant. The same trefoil at a smaller size is what a patch of
-        // clover actually looks like, and it gives the kit the height variation
-        // the marks doc asks for: four marks that differ only in which pixel
-        // leans read as one glyph printed everywhere.
+        // Clover: three 2x2 leaflets, one over the gap between the other two,
+        // meeting at their corners. NO STEM — this is a plant seen from ABOVE and
+        // a clover's stalk is under the middle of it where you cannot see it. The
+        // stem is what made the first version read as a Y.
+        //
+        // THE CORNERS ARE THE WHOLE THING, and the arrangement is forced rather
+        // than chosen. Six were drawn and photographed one at a time (density
+        // temporarily at 0.95, which is the only way to look at a mark rather
+        // than hunt for it):
+        //   - a 3-wide top leaflet meeting the other two EDGE to edge merges into
+        //     one mass with a notch — a heart, not three leaves;
+        //   - a one-pixel waist between them reads as a stalk, so it comes out as
+        //     one leaf held over two;
+        //   - 3x3 leaflets do not buy shape, they buy MASS: with clefts in their
+        //     tips they read as a small frog, and rounded they read as a bush.
+        // Corner-to-corner at 2x2 is the only version where the eye counts three.
+        //
+        // AND THE LEAFLETS CANNOT BE LIT, which is worth knowing before somebody
+        // tries it. A pale pixel in each corner does make a square read as a
+        // rounded leaf — but the second ink is `accent`, and `accent` is fixed
+        // against the season on purpose (a white flower is white in October). In
+        // autumn every clover came out a rust leaf with a bright green speck on
+        // it, which reads as damage. The highlight would need `x`'s seasonal ink,
+        // and giving `o` that would break every flower in the file.
+        ["..xx..", "..xx..", "xx..xx", "xx..xx"],
+        // A sprout: two leaves off a stem, half the height of the clover, so a
+        // patch has small plants in it as well as grown ones.
         ["xx.xx", ".xxx.", "..x.."],
       ],
     },
