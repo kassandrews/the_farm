@@ -7918,10 +7918,29 @@ true as written rather than by making a region poor.
 
   Also found on screen: the clock is drawn as HOLES (solid pale is a mushroom cap,
   a ring is a flower, a checker is the only thing that reads as fluff at five
-  pixels); the clover head is narrow and tall because at four wide it WAS the
-  field mushroom, in the one region that grows one; and two marks were cut, a
+  pixels); the clover head's PINK is what separates it from the field mushroom,
+  not its width — see below; and two marks were cut, a
   closed buttercup bud and a half-blown clock, both of which read as plain bars.
   The marks strip on `/biomes.html` is what showed all three.
+
+  **A clover flower is a mushroom if the pink is in the wrong row.** The head was
+  narrowed from four wide to three on the theory that a wide pale head reads as
+  the field mushroom this region grows. Three drawn alone and compared say the
+  width was never the variable:
+
+  - four wide, pink at the bottom EDGE of the head — a mushroom. The pink is a row
+    of gills with nothing but stalk under it.
+  - four wide, pink INSIDE the head with a cream row below it — a flower. The same
+    pixels one row up, and the head reads as a thing with structure rather than as
+    a cap with gills under it.
+  - three wide — a lollipop. Narrowing "fixed" the mushroom by making the head too
+    small to be anything, and pushed the pink onto the stem, where it reads as a
+    joint.
+
+  Four wide, pink a row up. **The lesson generalises**: when two marks collide,
+  check which FEATURE is doing the colliding before resizing either of them. A
+  silhouette test that changes two variables at once proves nothing, and this one
+  cost a good mark for two commits.
 
   **Still open:** winter, which has no kit and no honest flower — seed heads and
   dead stems are the candidate, and they would be the first `bloom` that is not

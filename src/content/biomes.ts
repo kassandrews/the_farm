@@ -1203,16 +1203,29 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
           [".o.o.", "o.o.o", ".o.o.", "..x..", "..x.."],
           // WHITE CLOVER, over the leaves that have been there all year.
           //
-          // NARROW AND TALL, WHICH IS THE WHOLE FIGHT. Drawn four wide as a round
-          // pale blob it was a MUSHROOM — and this region grows one, cream with
-          // pink under it, which is very nearly the same object. A field mushroom
-          // is wide, low and sits on the ground; a clover head is a small globe
-          // held up on a stalk. Three wide over a two-pixel stem is the version
-          // where the silhouettes stop competing.
+          // WHERE THE PINK SITS IS THE WHOLE THING, AND THE WIDTH IS NOT. This was
+          // narrowed to three wide on the theory that a four-wide pale head is a
+          // MUSHROOM — and the region does grow one, cream with pink under it,
+          // which is very nearly the same object. Three drawn side by side say
+          // otherwise:
           //
-          // The pink is at the BASE, where the older florets are, and it is the one
-          // detail that says clover rather than daisy.
-          [".o.", "ooo", "ooo", ".*.", ".x.", ".x."],
+          //   - four wide, pink at the bottom EDGE of the head: a mushroom. The
+          //     pink is a row of gills with nothing but stalk under it.
+          //   - four wide, pink INSIDE the head with a cream row below it: a
+          //     flower. The same pixels, one row up, and the head reads as a thing
+          //     with structure in it rather than a cap with gills under it.
+          //   - three wide: a lollipop. Narrowing did fix the mushroom, by making
+          //     the head too small to be anything, and the pink ended up on the
+          //     STEM where it reads as a joint.
+          //
+          // So it is four wide again, with the pink band a row up. A clover head is
+          // a globe of florets and the older ones at the bottom go pink; that is
+          // the one detail that says clover rather than daisy, and it only works
+          // while it is part of the globe.
+          //
+          // The stem sits half a pixel right of centre, which an even-width head
+          // cannot avoid and which reads as a lean rather than as an error.
+          [".oo.", "oooo", "o**o", ".oo.", "..x.", "..x."],
         ],
       },
       {
