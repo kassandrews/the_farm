@@ -1707,18 +1707,59 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       evening: true,
       season: "summer",
     },
-    // Needle litter and the odd fern, which is what a conifer floor actually
-    // is. Sparse: the pines are already the densest trees in the game and the
-    // ground here is mostly in shade.
+    // Needle litter and the odd fern, which is what a conifer floor actually is.
+    //
+    // THE NEEDLES WERE GREEN, AND THAT WAS THE WHOLE BUG. They were drawn in
+    // `x` — the region's TUFT ink, the same green as the grass speckle — so a
+    // "fallen needle" was rendered in the exact colour of a living blade, and at
+    // three pixels on the diagonal it was longer than the tufts around it. It
+    // could only ever read as a piece of grass leaning over. Fallen needles are
+    // not green; that is the entire difference between a needle and a leaf on a
+    // tree, and the ink is where it had to be said.
+    //
+    // So they are `o` now, and `accent` is pine straw: an orange-tan that reads
+    // as dead against the turf and does not travel with the season (§DecorKit
+    // accent), which is correct here in a way it is not anywhere else in the
+    // file — needle litter is the one ground cover that looks the same in
+    // February as in July, because it is already dead when it lands.
+    //
+    // AND THEY GOT SHORTER AND COMMONER, which is the other half. A needle is a
+    // few centimetres against a tile's metre, so it is one or two pixels, not
+    // three-on-the-diagonal — and a conifer floor is not a place with the odd
+    // needle on it, it is a MAT. Three angles of a two-pixel stroke at twice the
+    // density reads as litter, where two long marks at 0.09 read as sticks
+    // somebody dropped. The mark got smaller so the density could go up without
+    // the ground turning busy, which is the trade the tuft doc records for the
+    // meadow's clover.
+    //
+    // AND THEY COME IN TWOS AS WELL AS ONES, which is what a first pass at two
+    // pixels got wrong in the other direction. A lone 2px stroke is a speck; at
+    // 0.15 the floor read as scattered confetti rather than as litter, and the
+    // fix is NOT simply more of them — thirty evenly spread dots and sixty
+    // evenly spread dots are the same picture at different volumes. Needles fall
+    // in drifts, so half the marks here are a PAIR of strokes and a marked cell
+    // reads as a little patch of fallen needles rather than as one.
+    //
+    // 0.2, over the fen's 0.16 and still nowhere near the long grass's 0.32,
+    // which is a row that earns it by having nothing else in it. This is the
+    // shadiest floor in the game and the litter is meant to be the texture of it
+    // rather than a thing you look at.
     decor: {
-      density: 0.09,
+      density: 0.2,
+      accent: "#8a7452",
       marks: [
-        ["x..", ".x.", "..x"], // a fallen needle
-        ["..x", ".x.", "x.."], // and one the other way
+        ["o.", ".o"], // a needle, lying one way
+        [".o", "o."], // and the other
+        ["o.o.", ".o.o"], // two of them fallen together
+        [".o.o", "o.o."], // and two the other way
         // A SPROUT, NOT A PLUS. `.x.`/`xxx`/`.x.` was the obvious 3×3 fern and
         // it draws a cross — which at this size reads as a sparkle sitting on
         // the lawn, not as a plant growing out of it. Two leaves off a stem is
         // the smallest mark that reads as foliage.
+        //
+        // The one mark in this kit still drawn in `x`, and it should be: a fern
+        // is the living thing on this floor and takes the region's green, where
+        // everything around it is what fell out of the canopy and died.
         ["x.x", ".x.", ".x."],
       ],
     },

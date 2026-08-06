@@ -8196,6 +8196,32 @@ forms must differ from each other (a list that draws the same tree twice is the
 one failure counting can't catch), and their girth must be within a pixel, which
 is what "same species" means at this size.
 
+### The needles were green (6 Aug 2026)
+
+The pinewood's ground kit drew "a fallen needle" in `x` — the region's **tuft**
+ink, the same green as the grass speckle — three pixels long on the diagonal, at
+0.09. So the mark was a living blade's colour, longer than the tufts around it,
+and scattered thinly enough to read as sticks somebody dropped. **A fallen needle
+is not green; that is the whole difference between a needle and a leaf still on
+the tree**, and the ink was where it had to be said.
+
+Now `o` at `accent: #8a7452` — pine straw, which correctly does *not* travel with
+the season (`DecorKit.accent`): needle litter is the one ground cover that looks
+the same in February as in July, because it is already dead when it lands.
+Checked in October, where the turf browns toward it and the marks go quieter
+without going invisible, which is what litter should do.
+
+**Two pixels, then two pixels twice.** Shortening the stroke was right — a needle
+is centimetres against a tile's metre — but a lone 2px mark at 0.15 read as
+scattered confetti, and **the fix was not simply more of them**: thirty evenly
+spread dots and sixty evenly spread dots are the same picture at different
+volumes. Needles fall in drifts, so half the marks are now a PAIR of strokes and
+a marked cell reads as a patch of litter rather than as one needle. 0.2, over the
+fen's 0.16, under the long grass's 0.32.
+
+The fern stays in `x`, and that is the kit saying something: it is the living
+thing on this floor, where everything around it fell out of the canopy and died.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
