@@ -4402,9 +4402,14 @@ export class Renderer {
     ctx.fillRect(x0 - (openW ? 0 : 1), y1 + 2, x1 - x0 + (openW ? 0 : 1) + (openE ? 0 : 1), 1);
   }
 
-  /** A tree: trunk, layered crown, contact shadow. Two and a half tiles tall,
+  /** A tree: trunk, layered crown, contact shadow. Getting on for two tiles tall,
    *  so it overhangs the ground behind it and you can walk out of sight behind
-   *  one. Jittered by the tile hash so a stand of trees isn't wallpaper. */
+   *  one. Jittered by the tile hash so a stand of trees isn't wallpaper.
+   *
+   *  (It was two and a half while the broadleaf was a twenty-four-row capsule.
+   *  The crown came down to fourteen rows when it was reshaped into something
+   *  that stands in a field — see BROADLEAF — and the overhang survives that with
+   *  room to spare, because a tile is sixteen pixels and the tree is thirty.) */
   private drawTree(
     world: WorldState,
     tx: number,
@@ -4645,7 +4650,25 @@ export class Renderer {
       // Light lands on the LEFT lobe when a row is split — the lit side is the
       // upper left of the mass, not the upper left of each piece of it.
       const g = gaps?.[r] ?? 0;
-      const w = g > 0 ? rows[r] - g - 1 : Math.max(2, rows[r] - 1);
+      // AND IT PULLS BACK AS IT DESCENDS, which is the difference between light
+      // and a paint job. Every lit row used to run from the crown's left edge to
+      // the trunk's own column, so the boundary was a straight vertical seam down
+      // the middle of the tree and the crown read as two flat halves. On a narrow
+      // capsule that is a two-pixel detail; the moment the broadleaf became a
+      // wide dome it was a ten-pixel slab with a ruled edge, and the tree stopped
+      // being round.
+      //
+      // The lit run now gives up a share of its width as `r` grows, so its inner
+      // edge walks outward down the crown and the terminator follows the surface
+      // instead of cutting across it. Three quarters, reached at the last lit
+      // row: at 1.0 the bottom lit rows vanish and the highlight ends in a point,
+      // which reads as a crease rather than as a curve.
+      //
+      // SPLIT ROWS ARE EXEMPT. A crown with `crownGaps` has two lobes and the
+      // left one is already narrow; pulling it back as well leaves the blossom's
+      // canopy with no lit side at all below its shoulders.
+      const back = g > 0 ? 0 : Math.floor((r / litRows) * rows[r] * 0.75);
+      const w = g > 0 ? rows[r] - g - 1 : Math.max(2, rows[r] - 1 - back);
       if (w > 0) ctx.fillRect(cx - rows[r] + 1, top + r, w, 1);
     }
 

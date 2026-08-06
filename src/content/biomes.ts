@@ -993,15 +993,47 @@ export interface DecorKit {
   marks: string[][];
 }
 
-/** The ordinary broadleaf, and the shape the game has always drawn.
+/** The ordinary broadleaf: a standing oak, wider than it is tall.
  *
- *  Exported because the GROVE uses it too: her trees are the dark wood in this
+ *  Exported because the GROVE uses it too — her trees are the dark wood in this
  *  same silhouette, so a stand of them reads as trees that are wrong rather than
- *  as a different plant. It is also the meadow's, which is what keeps the town
- *  looking exactly as it did. */
-export const BROADLEAF = [
-  2, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 6, 5, 4, 3, 2,
-];
+ *  as a different plant — and the DUSK, whose whole idea is a wood where the
+ *  shapes are the ones you know and only the light is off. All three move
+ *  together, which is why the shape lives here rather than in a row.
+ *
+ *  IT WAS A CAPSULE, AND FOR A LONG TIME. Twenty-four rows tall by fifteen across
+ *  with a dead-straight fourteen-row column down the middle of it — taller than
+ *  wide, parallel-sided, a pill. Nothing in a field looks like that. A broadleaf
+ *  standing in the open is the opposite on every axis: WIDER than it is tall,
+ *  widest well BELOW the middle, and tapering to a rounded top rather than
+ *  running straight up to one.
+ *
+ *  Fourteen rows by fifteen across, widest from about two fifths of the way down
+ *  to four fifths. The proportion is the whole change and the numbers are only
+ *  how it is spelled.
+ *
+ *  THE WIDTH COULD NOT MOVE, WHICH IS WHY THE HEIGHT DID. Two rules in
+ *  `render/palette.test.ts` fence it in from both sides and both are worth
+ *  keeping: no crown may exceed 8 half-widths, because past one tile a stand of
+ *  trees smears into itself; and the blossom rows must stay the widest, because
+ *  overfull is the whole of what that region is. The blossom is 8, so this is 7
+ *  and was already 7. A broad tree drawn WIDER was never available — what was
+ *  available, and what nobody had tried, was drawing it SHORTER.
+ *
+ *  NO WOBBLE IN THE SHOULDERS. It widens, HOLDS, and comes back in; it never
+ *  alternates. That is the birches' hard-won rule (see their `crownRows`) and it
+ *  matters more here because this crown is the widest in the file: 10,9,10 would
+ *  be a legible notch in a silhouette this size, and a notch is damage.
+ *
+ *  WHAT DID NOT CHANGE IS THE TRUNK. No `crownOverlap`, no `trunkHeight` — the
+ *  crown sits on top of the ordinary sixteen-pixel stem, which is what keeps a
+ *  visible trunk under it. Drawn with the crown skirting down over the trunk it
+ *  reads as the third reference photo, a maple whose canopy nearly touches the
+ *  ground; on top, it reads as the first two, an oak you can see the legs of. The
+ *  second is the one this game wants, and it is also the one that needs no
+ *  per-region field — which is what keeps the grove, whose trees have no biome
+ *  row at all, drawing the same tree. */
+export const BROADLEAF = [2, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7, 6, 4];
 
 /** A region's blooms, however the row wrote them.
  *

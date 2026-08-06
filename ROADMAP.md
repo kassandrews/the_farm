@@ -7946,6 +7946,35 @@ true as written rather than by making a region poor.
   and a silhouette test that changes two variables at once proves nothing. It cost
   a good mark for two commits.
 
+  **And the tree stopped being a pill.** The broadleaf was twenty-four rows by
+  fifteen across with a dead-straight fourteen-row column down the middle — taller
+  than wide, parallel-sided. Nothing standing in a field looks like that. It is
+  fourteen by fifteen now, widest from two fifths down to four fifths, tapering to
+  a rounded top: an oak in the open, which is what the region is full of.
+
+  **The width could not move, which is why the height did.** Two rules in
+  `render/palette.test.ts` fence the crown in from both sides and both are worth
+  keeping — no crown may exceed 8 half-widths, because past one tile a stand
+  smears into itself; and the blossom rows must stay the widest, because overfull
+  is the whole of what that region is. The blossom is 8, so the broadleaf is 7 and
+  always was. Drawing it wider was never available. Drawing it SHORTER was, and
+  nobody had tried.
+
+  It reaches the grove and the dusk too, deliberately: the grove's trees are this
+  silhouette in the dark wood, and the dusk's whole idea is a wood where the
+  shapes are the ones you know. No `crownOverlap` and no `trunkHeight`, so all
+  three keep drawing the same tree — the crown skirting down over the trunk reads
+  as a maple whose canopy touches the ground, and on top of it as an oak you can
+  see the legs of, and the grove has no biome row to put a field in anyway.
+
+  **The lit side had to follow.** Every lit row ran from the crown's left edge to
+  the trunk's own column, so the terminator was a straight vertical seam down the
+  middle and the crown read as two flat halves. On a fifteen-pixel capsule that is
+  a detail; the moment the shape became a dome it was the whole tree. The lit run
+  now gives up three quarters of its width as it descends, so the boundary walks
+  outward and follows the surface. **It reaches every tree in the game** — checked
+  across the whole set on `/biomes.html`, and it improves all of them.
+
   **Still open:** winter, which has no kit and no honest flower — seed heads and
   dead stems are the candidate, and they would be the first `bloom` that is not
   a bloom. And an aster, which the long grass already owns (purple with a gold
