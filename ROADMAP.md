@@ -8539,6 +8539,30 @@ like the turf and water tints, so a snowy region meeting a bare one ramps out ov
 the same tiles its ground does. There is no snowline drawn across country —
 checked on a border shot before it was asked about.
 
+### Snow on the sprites — built, photographed, reverted (the same day)
+
+`snowLedge`: one geometric rule, **snow lies where nothing is above it.** Every
+round thing here is drawn as half-widths either side of a column, so a row wider
+than the row above hangs out by the difference and that overhang faces the sky.
+Per object, not per cell, so the band rule never came into it. On paper it is the
+right rule and it needed no per-species art: a conifer's tiers ARE ledges, a dome
+gets a rim, a rock gets a cap.
+
+**On screen it drew a saw.** A pine has about eleven tiers each stepping out a
+pixel on both sides, so "snow on every ledge" is twenty-odd single white pixels in
+a serrated line down both edges of the silhouette — spikes, not snow, and the most
+visually distracting thing in the frame. Meanwhile the shapes it was right about
+are the ones where it does not show: a broadleaf's 1px rim and a rock's cap are
+both near invisible in play. **All of the cost landed on the sprite it looked
+worst on, and none of the benefit landed anywhere.**
+
+Reverted whole. Kept here because the idea will recur and the geometry is still
+right — what a snowy fir wants in pixel art is a few CHUNKS, two or three pixels
+on a handful of tiers picked per tree, not one pixel on every tier. **The
+distribution was the fault, not the rule**, which is the orbs' finding and the
+berries' finding for the third time in this file: a thing that is correct at every
+point can still be wrong everywhere at once.
+
 **What stays clear is a feature, not a gap.** Paths, plaza stone, laid floors,
 farmland and water are all season-exempt by design, so a snowy town has its
 paths, its square and its vegetable beds clear — a town that clears its paths.
