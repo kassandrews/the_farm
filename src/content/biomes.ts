@@ -313,6 +313,30 @@ export interface BiomeDef {
    *  the lit sides of things have somewhere to go. */
   snow?: Tint;
 
+  /** HOW MUCH OF THIS GRASS STANDS THROUGH THE SNOW, as the fraction of cells
+   *  keeping their tuft in winter. Optional; 0.2 where a region has `snow` and
+   *  meaningless without it. Ignored in every other month, when the ordinary 0.38
+   *  applies everywhere.
+   *
+   *  A LAWN IS BURIED AND LONG GRASS IS NOT, which is the whole of this field. A
+   *  tuft on 38% of cells is texture on grass and DIRT on a snowfield — the mark
+   *  takes the canopy's ink, which winter makes bare-branch brown, so the town
+   *  came out speckled brown at better than one cell in three and read as slush
+   *  however bright the snow under it was. Thinning to a fifth fixed the town and
+   *  emptied the PRAIRIE, whose stems standing up out of the white were the best
+   *  thing in the season: that region's grass is knee-high and stays visible in a
+   *  way a mown common does not.
+   *
+   *  IT THINS THE GROUND KIT TOO, against the same 0.38, because that is the same
+   *  fact about the same plants. Cutting the kit outright was the first go and it
+   *  cost the prairie its winter: that region's `decor` IS its long grass, so
+   *  "bury what is low" deleted the stems standing out of the white. One number,
+   *  both layers.
+   *
+   *  So it is a number per region and not a constant, and the two ends of it are
+   *  a mown common and a grassland. */
+  stubble?: number;
+
   /** WHICH WAY THIS REGION TURNS, in the one month anything does. Optional, and
    *  absent means it turns whichever way the season does — which until now was
    *  the only option and is most of why October read as one flat colour: every
@@ -1338,6 +1362,11 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // look like somewhere, and the paths, the plaza and the vegetable beds stay
     // clear underneath it because a season may not touch what somebody built.
     snow: { color: "#f2f7fa", amount: 0.85 }, // → #e4ebe8
+    // AND ALMOST NOTHING STANDS THROUGH IT (§BiomeDef.stubble). This is a mown
+    // common with clover and plantain on it — the lowest ground cover in the game
+    // — and a snowfall takes all of it. What is left is the odd blade, which is
+    // what a lawn under snow actually shows.
+    stubble: 0.15,
     // Ordinary lawn, and the town's own. Nothing to say about itself.
     tufts: ["cluster", "cluster", "blades"],
     crown: { color: "#000000", amount: 0 },
@@ -3035,6 +3064,11 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Snow on the long grass, which is what a prairie winter is: everything flat
     // and white with last year's stems standing up through it (§BiomeDef.snow).
     snow: { color: "#f2f7fa", amount: 0.86 }, // → #e7ebe5
+    // AND ALL OF IT STANDS UP THROUGH THE SNOW (§BiomeDef.stubble). This is the
+    // region whose whole idea is grass to the knee; a winter that buried it would
+    // be burying the one thing anybody came here to see. The stems out of the
+    // white are the best picture the season makes.
+    stubble: 0.38,
     // SWATHES, and they are the one thing a plain has instead of features. Open
     // grassland is never one colour: it runs in bands of seed-head and bands of
     // leaf, and which you are looking at changes with the ground under it. The

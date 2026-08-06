@@ -8510,6 +8510,35 @@ photographed under snow had its river margin still in high summer while the lawn
 either side was white. Sand only: not `DIRT`, which is "Dug earth" and sits with
 farmland on the far side of the same rule the finishes are on.
 
+### The snow was dingy, and it was not the snow
+
+Reported as "still kind of giving dirty" with the ground already fitted to 233.
+Two candidates, and the measurement killed the interesting one first: the
+**contour banding** (§the straight-edge sweep, settled as left alone) is *not*
+worse on snow — sampling the open field gave 25 shades across a luma range of
+**4.0**, the same 1–3 units the original survey measured. The evidence that would
+reopen that entry still has not turned up.
+
+**It was the marks on top.** A tuft sits on 38% of grass cells, and the ground
+kit sits on top of that; both draw in inks that winter makes bare-branch brown.
+So a white field came out speckled brown at better than one cell in three — dirt,
+not snow, however bright the floor under it was.
+
+`BiomeDef.stubble` — the fraction of a region's ground cover that stands through
+snow — thins **both layers** off one number, and the two ends of it are a mown
+common (0.15) and a grassland (0.38, all of it).
+
+**Cutting the low marks outright was the first go and it cost the prairie its
+winter.** That region's `decor` IS its long grass: a 0.32 kit of knee-high marks.
+"Bury what is low" deleted the stems standing out of the white, which was the best
+picture the season makes — while the meadow, which genuinely is clover on a mown
+lawn, needed exactly that. One field, scaled against the ordinary 0.38, says both.
+
+**And the borders already fade.** Snow is blended by weight in `blendRegions`
+like the turf and water tints, so a snowy region meeting a bare one ramps out over
+the same tiles its ground does. There is no snowline drawn across country —
+checked on a border shot before it was asked about.
+
 **What stays clear is a feature, not a gap.** Paths, plaza stone, laid floors,
 farmland and water are all season-exempt by design, so a snowy town has its
 paths, its square and its vegetable beds clear — a town that clears its paths.

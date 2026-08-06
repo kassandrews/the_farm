@@ -2312,9 +2312,21 @@ export class Renderer {
         } else if (def.name === "Grass") {
           // Stable tuft speckle so grass reads as texture, not flat paint.
           const h = decoHash(tx, ty, world.seed);
+          // AND MOST OF IT IS UNDER THE SNOW (§BiomeDef.snow). A tuft on 38% of
+          // cells is texture on grass and DIRT on a snowfield: the mark takes the
+          // canopy's colour, which in winter is bare-branch brown, so a white
+          // field came out speckled with brown at better than one cell in three
+          // and read as slush however bright the snow under it was.
+          //
+          // Thinned rather than cut, because what stands through snow is stubble
+          // and it is a real thing to see. One cell in five, so the field is snow
+          // with grass in it instead of grass with snow behind it.
+          // Per region, because a mown common and grass to the knee do not stand
+          // through a snowfall the same way (§BiomeDef.stubble).
+          const buried = winter && !!turf.snow;
           // 0.72 before: a tuft on 28% of cells, which at three shapes leaves
           // each shape on under one cell in ten and the field still mostly bare.
-          if (h > 0.62) {
+          if (h > (buried ? 1 - (turf.stubble ?? 0.2) : 0.62)) {
             // Placed by a hash on WORLD coordinates and sparse, so it is texture
             // and not a per-cell edge — the band rule (CLAUDE.md) does not reach
             // it, and a seasonal recolour doesn't change that.
@@ -2426,7 +2438,26 @@ export class Renderer {
           // a rendering fault; thinning them means every flower is drawn the same
           // way wherever it stands and there are simply fewer near the houses.
           const wild = kdef?.mown ? townMown(world.seed, tx, ty) : 1;
-          if (kit && dh < kit.density * wild && this.inSeason(kit)) {
+          // AND THE GROUND KIT IS THINNED BY THE SAME NUMBER THE TUFTS ARE
+          // (§BiomeDef.stubble), because it is the same fact about the same
+          // plants: clover, plantain, needle litter and ferns are what a snowfall
+          // covers, and they are also the marks that read worst on it — drawn in
+          // the stem ink, which winter makes bare-branch brown, a clover on snow
+          // is a piece of dirt.
+          //
+          // NOT CUT OUTRIGHT, WHICH WAS THE FIRST GO AND COST THE PRAIRIE ITS
+          // WINTER. That region's `decor` IS its long grass — a 0.32 kit of
+          // knee-high marks — so burying every kit under snow deleted the stems
+          // standing out of the white, which was the best picture the season
+          // makes. One number, scaled against the ordinary 0.38, so a mown common
+          // loses nearly all of its and a grassland keeps all of its.
+          //
+          // The bloom slot below needs no such rule: nothing flowers in January.
+          const buriedKit =
+            kdef?.snow && this.palette.season?.id === "winter"
+              ? (kdef.stubble ?? 0.2) / 0.38
+              : 1;
+          if (kit && dh < kit.density * wild * buriedKit && this.inSeason(kit)) {
             // A SECOND, INDEPENDENT HASH picks the mark and places it. Reusing
             // `dh` would tie both to the same number that just passed a `<`
             // test, so every mark would come from the low end of the range —
