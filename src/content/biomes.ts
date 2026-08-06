@@ -1678,11 +1678,41 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         season: "spring",
         density: 0.07,
         accent: "#f1efe3",
+        //
+        // AND A STARFLOWER, sharing the kit rather than taking a month of its
+        // own — which is how the meadow carries two flowers at once and the only
+        // way anything here can (one kit per season, and a kit has one accent).
+        // Lysimachia borealis is white, wants acid conifer woods, and flowers in
+        // the same weeks, so it costs nothing to put in the same ink.
+        //
+        // A HEAD AGAINST A STALK. It earns its place by being the lily's
+        // opposite: symmetric about its stem where the lily hangs everything off
+        // one side, so the two never read as the same plant drawn twice — which
+        // is the failure the lupine spent a session being.
+        //
+        // GAPS BETWEEN THE PETALS, the lupine's lesson a third time: a solid ring
+        // of `o` around a core is the meadow's buttercup, and this is a flower of
+        // narrow separate petals. Spaced pixels are the only way to say "several"
+        // at five across.
+        //
+        // ONE MARK, AND IT SHIPPED AS TWO FOR AN AFTERNOON. The other was
+        // `.o.o.` / `o.*.o` / `.o.o.` — which is the MEADOW'S DANDELION CLOCK
+        // (§meadow, summer) with the centre pixel changed from `o` to `*`. Six
+        // petals in a ring at five across is a seed head, and there is exactly
+        // one of those in this file already; drawn a region away in a different
+        // white it was the same glyph twice, which is the thing this whole file
+        // spends its comments avoiding. The four-petal one is the star, and a
+        // star is what the plant is called.
+        //
+        // The kit still has four marks in it, so the anti-repeat rule is paid by
+        // the lilies. A species does not each need two.
         marks: [
           ["xo", "x.", "xo", "x.", "x."],
           ["ox", ".x", "ox", ".x", ".x"],
           ["xo", "x.", "xo", "x.", "xo", "x."],
+          [".o.o.", "..*..", ".o.o.", "..x.."],
         ],
+        core: "#fbfaf2",
       },
       {
         // LUPINE, which really is a pine-barren plant: Lupinus perennis wants

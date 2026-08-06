@@ -8308,11 +8308,48 @@ here can be confused with. A pixel of stem between every bell: bells on
 consecutive rows merge into a bar down the side of the stalk, which is a leaf.
 Both hands among the marks, or a colony all facing one way reads as printed.
 
-**Still open: autumn and winter.** The pines have lilies in May, lupines and
-blueberries and fireflies in summer, and nothing after. The obvious candidate is
-sitting in this section already — lily of the valley carries bright red-orange
-berries in autumn, on the same stalk, which would be the region's third plant
-stated twice in two seasons (the blueberry/lupine soil argument, again).
+**And a starflower shares the kit**, which is how the meadow carries two flowers
+at once and the only way anything here can: one kit per season, and a kit has one
+accent, so a second spring flower had to be white. *Lysimachia borealis* is, wants
+acid conifer woods, and flowers in the same weeks. It earns its place by being the
+lily's opposite — a symmetric head against a one-sided stalk — so the two never
+read as one plant drawn twice.
+
+> **It shipped with a second mark that was the meadow's dandelion clock with one
+> pixel changed** (`.o.o.` / `o.*.o` / `.o.o.`, `*` for the centre `o`). Six petals
+> in a ring at five across IS a seed head, and there is one of those in the file
+> already; a region away in a different white it was still the same glyph. Caught
+> on the contact sheet, same as the twin lupines. **The per-kit duplicate test
+> cannot see this** — the marks differ, and they are in different regions. Looking
+> at the sheet is what catches it.
+
+### Autumn in the pines: two swings, both missed (6 Aug 2026)
+
+Neither shipped. Recorded so the next person spends the time on a third idea
+rather than these two.
+
+**Red berries — rejected before drawing.** Lily of the valley carries red-orange
+fruit in autumn on the same stalk, which is a lovely callback and a bad idea
+*here*: the pinewood keeps the red mushroom cap (it is on `palette.test.ts`'s
+`REDS` whitelist as a fly agaric host), so the floor already has small red things
+on it and **those are gatherable**. Decor berries beside them would be small red
+things that are not — the glimmer orbs' problem ("a round pale thing in a tree
+reads as fruit, and fruit reads as pickable"), except at the same size and hue.
+The blueberries dodge this by being blue and by sitting on a node you can chop.
+
+**Bushes that turn — built, photographed, pulled.** `shrubCrown?: Tint` gave the
+undergrowth its own foliage tint instead of inheriting the trees'; at a low amount
+the frame's own autumn pulls the bush while the conifer above it resists, no
+seasonal branch anywhere. Mechanically it is the right shape, and the argument
+holds independently (a blueberry has no business being conifer-coloured in July).
+**It came out ORANGE.** Autumn's crown in `seasons.ts` is `#a35d2c`, a pumpkin;
+"blueberry barrens go scarlet" is not reachable by composing with it, and the
+russet oval that resulted read closer to a boulder than to a turned bush. Reaching
+crimson needs a season-*specific* shrub tint, which is a second field and a branch
+for one region's one month.
+
+It is one commit back if a reason turns up. Same call as the mushroom's `over`
+state: unused art rots faster than anything it depicts.
 
 ## Known gaps and loose ends
 
