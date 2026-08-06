@@ -4402,6 +4402,27 @@ export class Renderer {
     ctx.fillRect(x0 - (openW ? 0 : 1), y1 + 2, x1 - x0 + (openW ? 0 : 1) + (openE ? 0 : 1), 1);
   }
 
+  /** The contact shadow under something ROUND — a tree, a bush, a stone.
+   *
+   *  TWO ROWS, THE LOWER ONE NARROWER, so it reads as a puddle rather than a bar.
+   *  Every shadow in the game was a hard rectangle at one alpha, which is right
+   *  for the things that ARE rectangles — a wall, a chest, a plinth — and wrong
+   *  for everything with a curved foot. It is the same failure the crowns had:
+   *  a straight axis-aligned edge standing in for a curve. Two pixels of taper is
+   *  the whole of the fix and it costs one extra fillRect.
+   *
+   *  Square-footed things keep their rectangle on purpose; see the call sites. */
+  private footShadow(cx: number, base: number, w: number): void {
+    const ctx = this.ctx;
+    ctx.fillStyle = "rgba(0,0,0,0.16)";
+    ctx.fillRect(cx - (w >> 1), base - 2, w, 1);
+    // Narrower nearer the viewer, and never below three pixels — a taper that
+    // eats a small shadow entirely leaves the object floating, which is the thing
+    // a contact shadow exists to prevent.
+    const near = Math.max(3, w - 4);
+    ctx.fillRect(cx - (near >> 1), base - 1, near, 1);
+  }
+
   /** A tree: trunk, layered crown, contact shadow. Getting on for two tiles tall,
    *  so it overhangs the ground behind it and you can walk out of sight behind
    *  one. Jittered by the tile hash so a stand of trees isn't wallpaper.
@@ -4462,9 +4483,8 @@ export class Renderer {
     // Contact shadow — without it a tall sprite floats instead of standing. Sized
     // off the crown it belongs to: a fixed 9px puddle under a crown twice that
     // wide was a standing loose end, and it got worse the moment the trees grew.
-    ctx.fillStyle = "rgba(0,0,0,0.16)";
     const shadowW = Math.max(9, Math.max(...rows) * 2 - 3);
-    ctx.fillRect(cx - (shadowW >> 1), base - 2, shadowW, 2);
+    this.footShadow(cx, base, shadowW);
 
     // The grove's trunks are the dark wood itself, which is the only place in
     // the game where the finish and the material are the same object. It reads
@@ -4820,8 +4840,7 @@ export class Renderer {
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
     else ctx.globalAlpha = prev * this.hideFactor(world, tx, ty, height);
 
-    ctx.fillStyle = "rgba(0,0,0,0.16)";
-    ctx.fillRect(cx - rows[rows.length - 1] - 1, base - 2, (rows[rows.length - 1] + 1) * 2, 2);
+    this.footShadow(cx, base, (rows[rows.length - 1] + 1) * 2);
 
     const crown = mixHex(this.palette.crown, biome!.crown);
     const crownLit = mixHex(this.palette.crownLit, biome!.crown);
@@ -4837,9 +4856,15 @@ export class Renderer {
     // them left it a dark lump on a bright floor — which in this region reads as
     // a HOLE in the ground rather than a plant on it. Half the height, so the
     // dome is legible as a dome.
+    // AND IT PULLS BACK AS IT DESCENDS, exactly as a tree's does — see drawTree,
+    // where the reasoning is written out. It matters MORE here: a crown lights
+    // about a third of its rows and a bush lights four of seven, so the flat
+    // left half was a bigger share of this object than it ever was of a tree.
     ctx.fillStyle = crownLit;
-    for (let r = 1; r <= Math.min(4, rows.length - 3); r++) {
-      ctx.fillRect(cx - rows[r] + 1, top + r, Math.max(1, rows[r] - 1), 1);
+    const litTo = Math.min(4, rows.length - 3);
+    for (let r = 1; r <= litTo; r++) {
+      const back = Math.floor((r / litTo) * rows[r] * 0.75);
+      ctx.fillRect(cx - rows[r] + 1, top + r, Math.max(1, rows[r] - 1 - back), 1);
     }
     void night; // the palette already carries the hour; the flag is the signature
 
@@ -4961,8 +4986,7 @@ export class Renderer {
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
     else ctx.globalAlpha = prev * this.hideFactor(world, tx, ty, height);
 
-    ctx.fillStyle = "rgba(0,0,0,0.16)";
-    ctx.fillRect(cx - low - 1, base - 2, (low + 1) * 2, 2);
+    this.footShadow(cx, base, (low + 1) * 2);
 
     // The greys stay stated here — day and night, lit, body and shaded — and the
     // region pulls all four the same direction. That is the whole reason `stone`

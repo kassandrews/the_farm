@@ -7975,7 +7975,43 @@ true as written rather than by making a region poor.
   outward and follows the surface. **It reaches every tree in the game** — checked
   across the whole set on `/biomes.html`, and it improves all of them.
 
-  **Still open:** winter, which has no kit and no honest flower — seed heads and
+### The straight-edge sweep — what else was drawing a curve with a ruler
+
+The soft lit side landed well enough to be worth asking what else had the same
+signature: **a round thing whose shading is an axis-aligned rectangle.** Four
+candidates, checked rather than guessed.
+
+1. **The shrub — same bug, same fix, and worse.** `drawShrub`'s lit rows ran from
+   the crown's left edge to the trunk's own column, exactly as the tree's did. A
+   crown lights about a third of its rows; a bush lights four of seven, so the
+   flat left half was a bigger share of the object than it ever was of a tree.
+   Fixed with the same pull-back.
+2. **Contact shadows — every one of them is a hard rectangle**, all eight, at one
+   alpha. `footShadow` now tapers the near row by two pixels either side for the
+   three ROUND things (tree, bush, stone) and leaves the rest alone on purpose: a
+   wall, a chest and a plinth have square feet and should cast square shadows.
+   **Honest verdict: minor.** It is strictly more correct and nearly invisible at
+   game scale; it is in because it is cheap, not because it changed the picture.
+3. **Rocks are drawn even-width** — `rows[r] * 2`, so a stone is centred on the
+   SEAM at cx-0.5 where a tree and a bush are centred on the column. That is the
+   same arithmetic that made every tree lean half a pixel left. **Not fixed, and
+   deliberately**: the rock's body, foot, contact shadow and lit rows are all even
+   and all agree, so the whole stone is coherently half a pixel left of its tile
+   rather than disagreeing with itself the way the trunk and crown did. Left
+   alone, recorded here so the next person does not have to re-derive it.
+4. **The ground is contour-banded, and it is structural.** `rolled` samples a
+   smooth field once per TILE and rounds to 8 bits, so the largest colour mass on
+   screen is a mosaic of flat 16x16 plateaus whose edges land exactly on the cell
+   grid — which is what `groundTone`'s own doc claims cannot happen ("its edges
+   can never line up with a cell"). Measured by mapping the shade of every tile on
+   screen: large contiguous plateaus, tile-aligned boundaries, neighbouring shades
+   1-3 units apart out of 255. **Real, at the threshold of visibility, not fixed.**
+   The fix would be to dither each cell between its two nearest shades — the
+   machinery already exists (`ditherFill`, built for the Static) — and it would
+   put a pattern on every ground tile in the game, which is a real cost for a
+   1-unit contour. Worth doing only if somebody has actually noticed it.
+
+**Still open:** winter, which has no kit and no honest flower — seed heads and
   dead stems are the candidate, and they would be the first `bloom` that is not
   a bloom. And an aster, which the long grass already owns (purple with a gold
   eye); a second one here would be the same plant twice.
