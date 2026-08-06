@@ -8007,6 +8007,19 @@ candidates, checked rather than guessed.
    and all agree, so the whole stone is coherently half a pixel left of its tile
    rather than disagreeing with itself the way the trunk and crown did. Left
    alone, recorded here so the next person does not have to re-derive it.
+
+   > **AND THE SWEEP MISSED THE ROCK'S ACTUAL HIGHLIGHT** (6 Aug 2026). It asked
+   > "what else is a round thing whose shading is an axis-aligned rectangle",
+   > examined this stone's geometry — even widths, contact shadow — and never
+   > looked at its lit rows, which were the exact fault being swept for. Every one
+   > began at `cx - rows[r] + 1` and ran `rows[r] - 2` wide, so its right edge
+   > landed on `cx - 2` on **every row whatever that row's width**: a straight
+   > vertical seam down the middle of a round object. The LEFT edge follows the
+   > silhouette, which is why it survived three passes — half of it was always
+   > right. Now pulls back as it descends, the same as the tree and the bush, at a
+   > pixel a row on shapes this size. **Found by somebody looking at a screenshot,
+   > two months after the sweep that was looking for it.**
+
 4. **The ground is contour-banded, and it is structural.** `rolled` samples a
    smooth field once per TILE and rounds to 8 bits, so the largest colour mass on
    screen is a mosaic of flat 16x16 plateaus whose edges land exactly on the cell

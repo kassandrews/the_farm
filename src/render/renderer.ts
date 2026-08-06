@@ -5167,9 +5167,29 @@ export class Renderer {
     // Light from the upper left as everywhere else, and bounded by the shape's own
     // length — the crag is six rows and the flat stone four, so a literal 4 here
     // would read off the end of the shorter array.
+    //
+    // AND IT PULLS BACK AS IT DESCENDS, which the tree and the bush were given in
+    // the straight-edge sweep and the rock was not. That sweep asked "what else
+    // is a round thing whose shading is an axis-aligned rectangle", checked the
+    // rock's GEOMETRY — the even-width rows, the contact shadow — and never
+    // checked its highlight, which was the very fault being swept for.
+    //
+    // Every lit row began at `cx - rows[r] + 1` and ran `rows[r] - 2` wide, so
+    // its right edge landed on `cx - 2` on EVERY row whatever the row's width: a
+    // straight vertical seam down the middle of a round object, which is a lit
+    // panel stuck to a stone rather than light falling across one. The left edge
+    // follows the silhouette, so only the right edge was ever wrong — and that is
+    // exactly what made it hard to see and easy to keep.
+    //
+    // Half the row's half-width at the bottom of the lit run, scaled linearly,
+    // which on shapes this small is a one-pixel step per row. One pixel is all a
+    // curve needs at five pixels of radius; the tree's own note says the same
+    // thing at three times the size.
     ctx.fillStyle = lit;
-    for (let r = 1; r <= Math.min(3, rows.length - 2); r++) {
-      ctx.fillRect(cx - rows[r] + 1, top + r, Math.max(2, rows[r] - 2), 1);
+    const litTo = Math.min(3, rows.length - 2);
+    for (let r = 1; r <= litTo; r++) {
+      const back = Math.floor((r / litTo) * rows[r] * 0.5);
+      ctx.fillRect(cx - rows[r] + 1, top + r, Math.max(1, rows[r] - 2 - back), 1);
     }
     ctx.fillStyle = foot;
     ctx.fillRect(cx - low, base - 2, low * 2, 1); // it sits ON the ground
