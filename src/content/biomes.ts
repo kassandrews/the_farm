@@ -1063,19 +1063,26 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       // a small solid shape, and the difference is the entire reason to have a
       // second layer on the ground at all.
       marks: [
-        // Clover: two round leaves either side of a short stalk. Blocked rather
-        // than outlined — at four pixels an outline is a hole.
-        ["xx.xx", "xx.xx", "..x..", "..x.."],
+        // Clover, and it is a TREFOIL rather than a pair. Two lobes with a notch
+        // between them and a third below carrying the stem — the shamrock
+        // silhouette, which is the only arrangement of three leaves the eye reads
+        // as three at this size. Two lobes over a stalk is a plant; three lobes
+        // meeting at a point is clover, and the notch is what does the counting.
+        // Blocked rather than outlined: at two pixels a lobe's outline is a hole.
+        ["xx.xx", "xx.xx", "..x..", ".xxx.", ".xxx.", "..x.."],
         // A rosette seen from above — the plant that is all leaves and no stem,
         // which is most of what a lawn is actually made of.
         [".xx.", "xxxx", ".xx."],
         // Ribwort plantain: a bare stalk standing out of two ground leaves. The
         // tallest here, and the only one with any height to it.
         ["..x..", "..x..", "..x..", "xx.xx"],
-        // One small leaf, leaning. The height-and-width variation the marks doc
-        // asks for: four marks that differ only in which pixel leans read as one
-        // glyph printed everywhere.
-        [".xx", ".xx", "x.."],
+        // A YOUNGER CLOVER, half the height of the first. It was a single leaning
+        // leaf and drew as a two-pixel block with a crumb beside it — debris,
+        // not a plant. The same trefoil at a smaller size is what a patch of
+        // clover actually looks like, and it gives the kit the height variation
+        // the marks doc asks for: four marks that differ only in which pixel
+        // leans read as one glyph printed everywhere.
+        ["xx.xx", ".xxx.", "..x.."],
       ],
     },
     // BUTTERCUPS, IN SPRING — and this is the region finally getting the season
