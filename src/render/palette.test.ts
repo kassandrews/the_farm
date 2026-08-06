@@ -487,11 +487,14 @@ describe("crown silhouettes", () => {
     // The meadow's tree is the town's tree. If this changes, the view from the
     // plaza changes, which is the one thing biomes promised not to do.
     expect(BIOMES.meadow.crownRows).toBe(BROADLEAF);
-    // The town's tree is also the ONLY form its region draws. A second silhouette
-    // in the meadow is a change to the view from the plaza and has to be decided
-    // as one, looking at the plaza — not swept in with whatever other region was
-    // being worked on that afternoon.
-    expect(BIOMES.meadow.crownAlt, "the meadow grew a second tree").toBeUndefined();
+    // The meadow now draws a SECOND form as well, and the line that used to
+    // forbid it is why this one is worth reading. It said a second silhouette in
+    // the meadow is a change to the view from the plaza and had to be decided as
+    // one, looking at the plaza — which is what happened (content/biomes.ts
+    // §meadow.crownAlt). What it was defending is form ZERO, and that is asserted
+    // above and unchanged: whatever else grows here, the tree the game always
+    // drew is still drawn, still BROADLEAF, still on the same stem.
+    expect(BIOMES.meadow.crownAlt?.length, "the meadow drew a third tree").toBe(1);
     // Every FORM, not just the row's own: a second silhouette nobody checked is
     // how the first zero-width row or off-grid crown would get in
     // (content/biomes.ts §TreeShape).

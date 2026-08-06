@@ -1256,8 +1256,23 @@ export interface DecorKit {
  *  ground; on top, it reads as the first two, an oak you can see the legs of. The
  *  second is the one this game wants, and it is also the one that needs no
  *  per-region field — which is what keeps the grove, whose trees have no biome
- *  row at all, drawing the same tree. */
-export const BROADLEAF = [2, 4, 5, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 6, 5, 3];
+ *  row at all, drawing the same tree.
+ *
+ *  AND IT GREW TWO ROWS AT THE SHOULDER when it stopped being the only tree in
+ *  the meadow. Nothing about the taper moved: both rows went in at FULL WIDTH, in
+ *  the middle, where the sides are already parallel — so the profile is the one
+ *  argued for above and there is simply more of the widest part of it. The reason
+ *  is the second form standing next to it (§meadow.crownAlt), whose crown is
+ *  eight rows longer: at seventeen the two read as a tree and a bush rather than
+ *  as one species, and the fix could not be to shrink the new one, because a
+ *  skirted oak IS mostly crown. Two rows, not four: eleven-of-nineteen at full
+ *  width is still well under the capsule's fourteen-of-seventeen.
+ *
+ *  It is the SHARED shape, so the grove and the dusk grew with it — which is what
+ *  sharing it is for. All three are the same plant in different light, and a
+ *  meadow oak that had quietly become a different size from the dusk's would be
+ *  the whole reason this constant exists, undone. */
+export const BROADLEAF = [2, 4, 5, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 6, 5, 3];
 
 /** One tree the way a region draws it — the four fields that describe a
  *  silhouette, travelling together. See §BiomeDef.crownAlt for why they have to.
@@ -1372,6 +1387,52 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     crown: { color: "#000000", amount: 0 },
     trunk: { color: "#000000", amount: 0 },
     crownRows: BROADLEAF,
+    // THE SECOND BROADLEAF, and it is the one that kept its lower limbs. The row
+    // above is the town's tree and stays bit-identical (§treeForms: `crownRows`
+    // and friends ARE form zero); this stands beside it as the same oak with a
+    // different amount of bare pole — ten visible pixels of stem against sixteen,
+    // under a crown that comes down to meet them.
+    //
+    // A SECOND FORM HERE HAD TO BE DECIDED LOOKING AT THE PLAZA, which is what
+    // `render/palette.test.ts` used to hold the line on: half the trees you can
+    // see from your own door change, and that is not something to sweep in with
+    // whatever other region was being worked on. It was decided by looking, over
+    // four photographs of this exact spot, and the note below is what they said.
+    //
+    // GIRTH IS PINNED AND HEIGHT IS PINNED, which is one more than the pines
+    // pin. Both forms are 7 half-widths and both stand 35 tall (16 + 19 - 0
+    // against 16 + 25 - 6), so the whole of the difference is WHERE the foliage
+    // sits on the stem — the pinewood's rule, and it survives the move to open
+    // ground because a field of trees at visibly different heights reads as
+    // saplings among adults rather than as one kind of tree.
+    //
+    // IT WAS A LOZENGE TWICE BEFORE IT WAS A TREE, and both failures are the same
+    // arithmetic. The crown may not exceed 7 (the blossom has to stay the widest,
+    // and past 8 a stand smears into itself), so a bigger crown can only be
+    // bought in ROWS — and 14 pixels across by 25 down is a capsule stood on end,
+    // which is the exact fault BROADLEAF's own note records being cut out of the
+    // first tree. What fixes it is not size but PROFILE:
+    //
+    //   • Blunt on top. The first cut opened 1,2,3 and came to a point; a
+    //     standing broadleaf is a dome. It opens on 2 now, as BROADLEAF does.
+    //   • Not symmetrical. The second cut tapered over five rows at each end and
+    //     came out as an almond — a shape with no up. Eight rows of dome above
+    //     the shoulders against five of close below them: the widest point sits
+    //     low, which is where it sits on every field oak anyone photographs.
+    //
+    // The close is 6,6,5,3,2 rather than a taper to nothing, because these are the
+    // rows that stand BESIDE the trunk: they have to reach it to read as foliage
+    // hanging around a stem instead of a crown hovering over one.
+    crownAlt: [
+      {
+        rows: [
+          2, 3, 4, 5, 5, 6, 6, 6, //
+          7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+          6, 6, 5, 3, 2,
+        ],
+        overlap: 6,
+      },
+    ],
     // THE TOWN MOWS ITS COMMON. See §BiomeDef.mown and sim/world.ts §townMown:
     // everything below this line fades in over a screen's walk out of town, so the
     // grass between the houses is the same grass it has always been and the

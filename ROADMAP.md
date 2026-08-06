@@ -8197,11 +8197,13 @@ bush; the thing that varies between forms is stem, which a shrub hasn't got), an
 per-tree height already derives from the rows, so occlusion and the treeline stay
 honest for free.
 
-**The meadow is excluded, and the test says so out loud.** Its tree is the town's
+**The meadow was excluded, and the test said so out loud.** Its tree is the town's
 tree and the view from the plaza is the thing biomes promised not to change, so a
 second meadow form is its own decision, made while looking at the plaza — not
-swept in with whatever region was being worked on. `palette.test.ts` now asserts
-`meadow.crownAlt` is undefined.
+swept in with whatever region was being worked on. `palette.test.ts` asserted
+`meadow.crownAlt` is undefined until that decision was actually taken; see §The
+meadow's second tree (6 Aug 2026), which took it. Form zero — the tree the game
+always drew — is what the line was defending, and it is still asserted.
 
 Tests run over every form now, not the primary: widths, gap legality, the 8
 half-width overhang cap, the conifer/broadleaf rule. Two new ones — a region's
@@ -8567,6 +8569,39 @@ point can still be wrong everywhere at once.
 farmland and water are all season-exempt by design, so a snowy town has its
 paths, its square and its vegetable beds clear — a town that clears its paths.
 
+## The meadow's second tree (6 Aug 2026)
+
+The one region `crownAlt` had been kept out of, decided the way its own test
+demanded: by looking at the plaza, over four photographs of the same spot.
+
+**Both forms are the same oak; the difference is bare pole.** Form zero is
+BROADLEAF on the ordinary sixteen-pixel stem, unchanged and still asserted. The
+new one is the tree that kept its lower limbs — a twenty-five-row crown coming
+down over the stem, leaving ten visible pixels of it against sixteen.
+
+**Girth AND height are both pinned**, which is one more than the pines pin. Seven
+half-widths each, thirty-five tall each. In a closed wood the pines could argue
+the canopy levels itself; in open ground the argument is different and stronger —
+trees of visibly different heights read as saplings among adults, which is an age
+gap rather than a history, and the sapling version was drawn and rejected on
+sight.
+
+**It was a lozenge twice before it was a tree**, and both times for the same
+reason: the crown may not exceed 7 half-widths, so a larger crown can only be
+bought in ROWS, and 14 across by 25 down is the capsule BROADLEAF's own note
+records being cut out of the first tree. The fix was never size. It was profile —
+blunt on top (it opens on 2, as BROADLEAF does, not on a 1,2,3 point) and NOT
+symmetrical (eight rows of dome above the shoulders against five of close below,
+so the widest point sits low, where it sits on every field oak).
+
+**And the original grew two rows** at full width, in the middle, to keep the pair
+looking related: seventeen rows against twenty-five read as a tree and a bush.
+Shrinking the new one was not available — a skirted oak IS mostly crown — so the
+old one stopped being quite so much stem. BROADLEAF is the SHARED shape, so the
+grove and the dusk grew with it, which is what sharing it is for. Eleven-of-
+nineteen rows at full width is still well under the capsule's fourteen-of-
+seventeen, so the profile argument survives.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
@@ -8579,7 +8614,8 @@ you trip over them:
   glimmer, the dusk, the redwoods, the blossom. Pair each one while it is being
   looked at, and give each pair a REASON (the pines' is self-pruning), because
   "a slightly different tree" is how a region ends up with two species in it.
-  The meadow is excluded on purpose — see the section above.
+  The meadow has since been paired too (§The meadow's second tree), so the count
+  is sixteen; it was the one row that needed its own sitting.
 
 - **Three pieces still borrow their north view from their front, and two read
   as blocks turned sideways.** `scripts/shot-rotations.mjs` photographs every
