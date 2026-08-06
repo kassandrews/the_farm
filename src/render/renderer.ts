@@ -102,6 +102,7 @@ import {
   BROADLEAF,
   TUFTS_DEFAULT,
   STONES_DEFAULT,
+  bloomsOf,
   type StoneShape,
   type MushroomShape,
   type BiomeDef,
@@ -2349,7 +2350,12 @@ export class Renderer {
             decoHash(tx, ty, world.seed ^ 0x9d17),
             (d) => d,
           );
-          const bkit = bdef?.bloom;
+          // WHICH bloom, where a region has more than one. They are one per
+          // season by rule (content/biomes.ts §bloom), so at most one can answer
+          // — `inSeason` is the same test the draw below makes, asked one step
+          // earlier so a region with a summer kit and a spring kit does not
+          // silently always draw whichever was written first.
+          const bkit = bdef ? bloomsOf(bdef).find((k) => this.inSeason(k)) : undefined;
           // Mown on its own region's answer rather than on the year-round kit's:
           // this cell may have rolled a different neighbour for its bloom, and a
           // bloom scaled by somebody else's rule is two facts about one place.

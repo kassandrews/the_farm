@@ -7877,6 +7877,26 @@ true as written rather than by making a region poor.
   complaint was emptiness, not hue.
 - **Fireflies are not mown.** Nobody tidies the air, and the fireflies over the
   plaza are the point of them.
+- **`bloom` takes a list, one kit per season** — and the rule it replaced survives
+  intact. The slot's doc said "two slots rather than a list, because a list would
+  invite a third and a fourth, and the ground has room for about two kinds of
+  small thing before it stops reading as ground", and that argument is about how
+  much is underfoot AT ONCE. Blooms in different months never coexist, so on any
+  given day it is still what is always here plus what is here now. The letter
+  changed, the reason did not, and `content/decor.test.ts` now enforces the reason
+  directly by rejecting two blooms that share a season. What asked for it was a
+  dandelion: it is a yellow flower and then it is a clock, which is one plant
+  needing two months of its own.
+
+  The meadow's year is now **spring** — buttercups and dandelions, the same gold
+  on purpose, separated by size and by a ragged rim rather than by hue — and
+  **summer**: the clocks, drawn as HOLES because a seed head is a sphere of gaps
+  (solid pale is a mushroom cap, a ring is a flower, and a checker is the only
+  thing that reads as fluff at five pixels), plus white clover over the leaves
+  that have been there all year. The clover head is narrow and tall because at
+  four wide it WAS the field mushroom — cream with pink under it, in the region
+  that grows one. And a third buttercup was cut: a closed bud reads as a plain
+  yellow bar, which the new marks strip is what showed.
 
 Two tests changed sides rather than being deleted, which is the useful part:
 "the meadow has no decor" asserted a field was empty, and its replacement sweeps

@@ -29,7 +29,7 @@ import {
   CALDERA_RADIUS,
   LAKE_RADIUS,
 } from "./world";
-import { BIOMES, FIELD_WEIGHTS, type BiomeId } from "../content/biomes";
+import { BIOMES, FIELD_WEIGHTS, bloomsOf, type BiomeId } from "../content/biomes";
 import { FOUND } from "../content/found";
 import { GRASS, tileDef } from "../content/tiles";
 import { biomeSkin, blendRegions, sharpenRegions } from "../render/palette";
@@ -1319,8 +1319,7 @@ describe("blooms", () => {
     // one floor is the clutter this slot exists to avoid. The slot means "what is
     // here NOW" — if it is here always, it belongs in `decor`.
     for (const def of Object.values(BIOMES)) {
-      if (!def.bloom) continue;
-      expect(def.bloom.season).toBeDefined();
+      for (const kit of bloomsOf(def)) expect(kit.season, def.id).toBeDefined();
     }
   });
 
@@ -1330,7 +1329,7 @@ describe("blooms", () => {
     // changed is who pays for it. A region with no flowers is bare in every meadow
     // in the world, and `meadow` is the commonest of them; a region marked `mown`
     // is bare where the town is, which is the only place the rule was ever about.
-    expect(BIOMES.meadow.bloom?.season).toBe("spring");
+    expect(bloomsOf(BIOMES.meadow).map((k) => k.season)).toEqual(["spring", "summer"]);
     expect(BIOMES.meadow.mown).toBe(true);
   });
 
@@ -1339,7 +1338,9 @@ describe("blooms", () => {
     // bare crowns. This asserts the gap stays closed: if every spring bloom were
     // ever deleted, spring would go back to being a slightly different green and
     // nothing on the ground would know what month it was.
-    const springs = Object.values(BIOMES).filter((d) => d.bloom?.season === "spring");
+    const springs = Object.values(BIOMES).filter((d) =>
+      bloomsOf(d).some((k) => k.season === "spring"),
+    );
     expect(springs.length).toBeGreaterThanOrEqual(3);
   });
 

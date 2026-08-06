@@ -34,7 +34,7 @@
 // Evict a stale service worker before anything else — a tool page has its own
 // entry point, so main.ts's cleanup never runs here. See no-sw.ts.
 import "./no-sw";
-import { BIOMES, type BiomeId } from "../content/biomes";
+import { BIOMES, bloomsOf, type BiomeId } from "../content/biomes";
 import { newWorld } from "../sim/game";
 import {
   biomeAt,
@@ -262,9 +262,12 @@ const chips: Chip[] = [];
 function marksStrip(def: BiomeDef): HTMLElement {
   const wrap = document.createElement("div");
   wrap.className = "marks";
+  // One row per slot, and one per BLOOM — a region may have a flower in spring
+  // and a clock in summer (content/biomes.ts §bloom), and rolling those into one
+  // row labelled "in season" would hide the whole point of them.
   const slots: [string, DecorKit | undefined][] = [
     ["all year", def.decor],
-    [def.bloom?.season ?? "in season", def.bloom],
+    ...bloomsOf(def).map((k) => [k.season ?? "in season", k] as [string, DecorKit]),
     ["on water", def.float],
   ];
   for (const [label, kit] of slots) {

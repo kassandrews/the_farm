@@ -3,7 +3,7 @@
 // stops a mark being the wrong shape except this file.
 
 import { describe, it, expect } from "vitest";
-import { BIOMES } from "./biomes";
+import { BIOMES, bloomsOf } from "./biomes";
 import { MOTE_MAX } from "../render/renderer";
 
 const TILE = 16; // matches renderer.ts's scene px per tile
@@ -14,17 +14,15 @@ const TILE = 16; // matches renderer.ts's scene px per tile
 // rules. The bloom and the float kits were unguarded until the marshes added the
 // third one and the omission became obvious: a lily pad is a mark in a cell like
 // any other, and nothing but this file stops it being the wrong shape.
-const kits = Object.values(BIOMES).flatMap((b) =>
-  (
-    [
-      ["decor", b.decor],
-      ["bloom", b.bloom],
-      ["float", b.float],
-    ] as const
-  )
+const kits = Object.values(BIOMES).flatMap((b) => [
+  ...([["decor", b.decor], ["float", b.float]] as const)
     .filter(([, k]) => k)
     .map(([slot, k]) => [`${b.id}.${slot}`, k!] as const),
-);
+  // A region may carry one bloom per season (content/biomes.ts §bloom), so these
+  // are labelled by the month rather than by the slot — "meadow.bloom" twice in
+  // a failure message tells you nothing about which flower is wrong.
+  ...bloomsOf(b).map((k) => [`${b.id}.bloom.${k.season}`, k] as const),
+]);
 
 describe("decor kits", () => {
   it("exist on every region, and the one the town stands in says who mows it", () => {
@@ -44,6 +42,19 @@ describe("decor kits", () => {
     // every fern. The town mows its own grass; it does not tidy the wood.
     const mown = Object.values(BIOMES).filter((b) => b.mown);
     expect(mown.map((b) => b.id)).toEqual(["meadow"]);
+  });
+
+  it("never puts two blooms in one region in the same month", () => {
+    // THIS IS THE RULE THE SLOT'S DOC NOW RESTS ON. `bloom` became a list so a
+    // dandelion could be a flower in spring and a clock in summer, and the
+    // argument that made a list safe is that blooms never coexist: at any moment
+    // the ground carries what is always here and what is here now, which is two
+    // kinds of small thing and not three. Nothing in the type enforces that —
+    // this does.
+    for (const b of Object.values(BIOMES)) {
+      const seasons = bloomsOf(b).map((k) => k.season);
+      expect(new Set(seasons).size, `${b.id} has two blooms in one season`).toBe(seasons.length);
+    }
   });
 
   for (const [id, kit] of kits) {
