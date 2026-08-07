@@ -2677,18 +2677,42 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // them, which is what reads as autumn on dry country rather than as dry
     // country that has been recoloured.
     //
-    // THIS USED TO SAY THE PLANTS WERE EVERGREEN AND THAT WAS NEVER TRUE HERE.
-    // The field below paints every crown rust and purple-brown in October
-    // (§autumnCrown), so the row was claiming both at once; what this tint
-    // actually buys is that the foliage holds its own colour against the OTHER
-    // three seasons, which is a different sentence and the one that was meant. A
-    // hawthorn is deciduous, and the region's autumn depends on it being so.
+    // AND THE PLANTS REALLY ARE EVERGREEN, which this note said, then stopped
+    // saying, and now says again — the round trip is the useful part.
+    //
+    // It was struck when the tree was named a HAWTHORN, on a contradiction that
+    // was real: the row claimed evergreen foliage while `autumnCrown` painted
+    // every crown rust and purple-brown in October, and a hawthorn is deciduous.
+    // What that argument could not know is that the region was about to become
+    // Mediterranean (§seasonGround). Chaparral is DEFINED by evergreen
+    // sclerophylls — chamise, manzanita, toyon, live oak — and its signature
+    // picture is grass going gold in May while the brush stays grey-green right
+    // through the dry season. So the contradiction was resolved the wrong way:
+    // the borrowed rust went, not the evergreen.
+    //
+    // The tint is therefore doing exactly what the old note claimed. Pulled to
+    // 0.6, the plants keep their own colour while the ground browns underneath
+    // them, which is what reads as autumn on dry country rather than as dry
+    // country that has been recoloured.
     crown: { color: "#7c8a4e", amount: 0.6 },
     trunk: { color: "#7a6248", amount: 0.3 },
-    // A heath goes RUST and then purple-brown, which is bracken and blueberry
-    // and heather all doing it at once (§BiomeDef.autumnCrown). Deeper and redder
-    // than the season's own orange, and nothing like the birches' gold.
-    autumnCrown: { color: "#9c4a2e", amount: 0.65 },    // SUN-BLEACHED AND BROKEN UP, and the region with by far the most of it —
+    // NO `autumnCrown`, AND IT HAD ONE. It went rust and then purple-brown —
+    // bracken and blueberry and heather all turning at once — which is a good
+    // description of a HEATH understory and not of this place. Chaparral has no
+    // bracken in it, and its trees do not turn.
+    //
+    // AND THIS IS HOW EVERGREEN IS SPELLED HERE, in the same number four conifer
+    // rows already use: a sixth of the month reaches the crown and the rest of it
+    // does not. The pinewood's note is the one to read — a tint cannot resist a
+    // season without also resisting the DARK, so refusing October with a heavy
+    // `crown.amount` would refuse midnight too, and this dial is on the season
+    // axis alone. `ground` is left at 1, which is the whole picture: the month
+    // lands on the floor with its full weight and stops at the leaves.
+    //
+    // The region loses its autumn event and gains a better one, because "the
+    // whole country goes gold except the trees" is a thing nowhere else here
+    // does — and it is the spring flush (§seasonGround) that pays for the loss.
+    seasonPull: { crown: 0.16 },    // SUN-BLEACHED AND BROKEN UP, and the region with by far the most of it —
         // seventeen stones a screen against everywhere else's one or two, so this is
         // the one row where the shape list does real work. All three of the dry
         // silhouettes and none of the round one: this ground cracked, it did not
@@ -2713,14 +2737,21 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // picture than the trees are. The crown is currently the size dial for two
     // things at once (ROADMAP §the scrub's year).
     //
-    // A HAWTHORN, and this row went its whole life without anybody saying so. The
-    // scrub's plant was only ever described by HABIT — "squat and wind-flattened,
-    // barely taller than the rocks" — and everything else in the row had already
-    // voted for the species without the note catching up: the decor kit draws a
-    // THORN BUSH, the spring bloom is a thistle, and half the comments here call
-    // the region a heath. A thorn tree on dry stony ground is what all of that
-    // adds up to, and naming it is what makes the rest of these numbers decidable
-    // instead of merely tuned.
+    // A COAST LIVE OAK, and it was a hawthorn for about six hours.
+    //
+    // The row went its whole life without naming a species — its plant was only
+    // ever described by HABIT, "squat and wind-flattened, barely taller than the
+    // rocks" — and the first naming read the evidence then in the row: a thorn
+    // bush in the decor kit, a thistle in spring, and half the comments calling
+    // the region a heath. A thorn tree on dry stony ground is what that adds up
+    // to, and hawthorn was the right answer to that question.
+    //
+    // THEN THE REGION TURNED CALIFORNIAN (§seasonGround) and the question
+    // changed. Quercus agrifolia is the tree of exactly this landscape — broad,
+    // low, dense, evergreen, standing alone on hills that are gold eleven months
+    // of the year — and the silhouette already drawn for the hawthorn is that
+    // tree, pixel for pixel. Nothing about the shape moved; what moved is that
+    // this one does not turn (§seasonPull).
     //
     // IT WAS DRAWN AS A LOLLIPOP FOR THAT WHOLE TIME, which is the cost of a
     // comment describing a tree nobody had built. Eleven rows of crown perched on
@@ -2732,7 +2763,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // with four crown rows standing beside it leaves SIX visible, under a crown
     // twelve rows deep: eighteen tall against the meadow oak's thirty-five, and
     // fourteen wide, so it is wider than it is tall, which is the whole of "low
-    // and spreading". A hawthorn out on a heath is mostly crown on a short bole,
+    // and spreading". A live oak out on a hillside is mostly crown on a short bole,
     // and where the wind gets at it, it is a bush that decided to be a tree.
     //
     // NOT AS LOW AS THE NOTE CLAIMED, and the measurement is why. A rock here is
@@ -2750,7 +2781,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     crownRows: [3, 5, 6, 7, 8, 8, 8, 8, 8, 7, 7, 6, 5, 4],
     // AND THEN LOWER STILL, AND ONE LOWER AGAIN: THREE visible pixels of stem,
     // down from the sixteen this row started with. Eight of trunk with five crown
-    // rows beside it. A hawthorn on open ground is a tree you could walk under
+    // rows beside it. A live oak on open ground is a tree you could walk under
     // only by ducking, and every pixel of bare pole is the eye being told
     // otherwise — the ONE number this silhouette turns on, since the crown itself
     // was already right.

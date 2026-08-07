@@ -8712,7 +8712,7 @@ standing on a snowfield. `seasonPull` tunes autumn, not winter; a winter-side
 equivalent would be a new field, and it should be decided while looking at all
 six other snowy regions rather than for this one alone.
 
-## The scrub's tree is a hawthorn (6 Aug 2026)
+## The scrub's tree: a hawthorn, then a coast live oak (6-7 Aug 2026)
 
 Asked "what kind of trees are these meant to be?" and the file had no answer:
 the row described its plant only by HABIT — *"squat and wind-flattened, barely
@@ -8736,13 +8736,44 @@ shorter than the region's own bushes, which stand about ten. What the sentence
 was reaching for is that this is the only tree in the game you look OVER rather
 than up at, and eighteen does that.
 
-**Two contradictions cleaned up on the way.** The crown note claimed these plants
-are EVERGREEN while `autumnCrown` painted every one of them rust and purple-brown
-in October — the row was asserting both. A hawthorn is deciduous and the
-region's autumn depends on it, so what the tint actually buys is that the foliage
-holds its colour against the other three seasons. (And the pinewood's note about
-`crownOverlap` being *"the field the scrub has had since it was a heath"* is
-true again, having quietly stopped being so at some point.)
+**Two contradictions cleaned up on the way, and one of them was resolved the
+wrong way round.** The crown note claimed these plants are EVERGREEN while
+`autumnCrown` painted every one of them rust and purple-brown in October — the
+row was asserting both. Naming a hawthorn settled it as deciduous. (The
+pinewood's note about `crownOverlap` being *"the field the scrub has had since it
+was a heath"* is also true again, having quietly stopped being so at some point.)
+
+### And then it became a coast live oak (7 Aug 2026)
+
+The hawthorn lasted about six hours, and what unseated it was the region turning
+Mediterranean underneath it. **Chaparral is defined by evergreen sclerophylls** —
+chamise, manzanita, toyon, live oak — and its signature picture is grass going
+gold in May while the brush stays grey-green right through the dry season. The
+region was browning all at once, which is the one thing that landscape does not
+do. So the contradiction above was resolved backwards: the borrowed rust should
+have gone, not the evergreen.
+
+*Quercus agrifolia* is the tree of exactly this landscape — broad, low, dense,
+standing alone on hills that are gold eleven months of the year — and **the
+silhouette drawn for the hawthorn is that tree, pixel for pixel.** Nothing about
+the shape moved. What moved:
+
+- `autumnCrown` is gone. Rust-then-purple-brown is bracken and blueberry and
+  heather turning at once, which describes a HEATH understory and not this place.
+- `seasonPull: { crown: 0.16 }` — the same number four conifer rows already use,
+  because it means the same thing: a sixth of the month reaches the crown and the
+  rest does not. `ground` stays at 1, which is the whole picture — the month
+  lands on the floor with its full weight and stops at the leaves.
+- The region loses its autumn event and gains a better one: **"the whole country
+  goes gold except the trees"** is something no other row does, and the spring
+  flush is what pays for the loss.
+- The prickly pear stops being the only plant here that does not season. That was
+  a nice fact and a small one.
+
+**Worth remembering as a method note:** the hawthorn was not a mistake, it was a
+correct reading of the evidence available that afternoon — a thorn bush in the
+decor kit, a thistle, and six comments calling the place a heath. Naming it is
+what made the region legible enough to then be recognised as somewhere else.
 
 ## The scrub's year runs backwards (6 Aug 2026)
 
