@@ -2879,25 +2879,31 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         accent: "#e07b18",
         core: "#a8500c",
         marks: [
-          // FULL FACE AND THREE-QUARTER, and neither of them a bar. Drawn `ooo`
-          // over a single `*` — a rim with a dot centred under it — a poppy is a
-          // TACK, the same shape the birches' leaf litter came out as for exactly
-          // the same reason: a row of one colour over one pixel is a T before it
-          // is anything botanical, and being right about the plant does not
-          // survive it. What fixes it is the SECOND row being full width too, so
-          // the head is a block of petals with the throat inside it rather than a
-          // crossbar on a stalk.
+          // FACE ON, AND NOT A BAR. Drawn `ooo` over a single `*` — a rim with a
+          // dot centred under it — a poppy is a TACK, the same shape the birches'
+          // leaf litter came out as for exactly the same reason: a row of one
+          // colour over one pixel is a T before it is anything botanical, and
+          // being right about the plant does not survive it. What fixes it is the
+          // SECOND row being full width too, so the head is a block of petals
+          // with the throat inside it rather than a crossbar on a stalk.
           //
-          // The first cut of that fix opened the top corner (`.oo`) to lean the
-          // flower, and a missing corner on a six-pixel head is not a lean, it is
-          // a bite. Filled, it is a poppy seen face on. The tilt survives in the
-          // second mark, where the notch is at the outer edge and reads as a
-          // flower turned rather than a flower damaged — and a colony needs the
-          // variation, because one glyph over a whole region reads as printed
-          // (8c's finding, which the lily and the harebell both record needing).
+          // AND THERE IS NO TILTED ONE, WHICH TOOK TWO GOES TO ACCEPT. A leaning
+          // flower was drawn twice — once with the corner open at the inner edge
+          // and once at the outer — on the reasoning that a colony all facing one
+          // way reads as printed, which is 8c's finding and is right about the
+          // lily and the harebell. It is not right here, and the difference is
+          // what the missing pixel MEANS on each plant. A bell hangs off one side
+          // of its stem, so a notch in it is the direction it nods; a poppy is a
+          // radial cup, so a notch in it is a piece MISSING. Six pixels is too
+          // few for the eye to grant a shape a three-quarter view — it reads the
+          // absence as damage, and a field of bitten flowers is worse than a
+          // field of identical ones.
+          //
+          // The variety this kit needs comes from the small mark below instead:
+          // different SIZE, which needs no missing pixel to say it.
           ["ooo", "o*o", ".x.", ".x."],
-          ["oo.", "o*o", ".x.", ".x."],
-          // AND A SMALL ONE BETWEEN THEM. Two petals and a stalk, no eye — at
+          // AND A SMALL ONE AMONG THEM, which is now carrying the variety on its
+          // own. Two petals and a stalk, no eye — at
           // this size an eye on a two-pixel flower is just a hole, and what makes
           // a superbloom read is the mixture of one big flower and a hundred tiny
           // ones. It was written as goldfields while the kit was gold; sharing

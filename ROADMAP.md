@@ -8853,8 +8853,19 @@ went up — and it was the only one that had to be lied about to work.
 
 **And the tack, third time.** A poppy drawn `ooo` over a centred `*` is a T
 before it is a flower — the same shape the birch leaf litter came out as, for the
-same reason. Leaning it puts the rim and the throat on different columns and the
-eye gets a bowl. Both hands, so a colony does not read as printed.
+same reason. What fixes it is the second row being full width too, so the head is
+a block of petals with the throat inside it.
+
+**The tilted poppy was drawn twice and cut.** A leaning flower — corner open at
+the inner edge, then at the outer — was there because a colony all facing one way
+reads as printed, which is 8c's finding and is right about the lily and the
+harebell. It is not right here, and the difference is what a missing pixel MEANS
+on each plant: a bell hangs off one side of its stem, so a notch is the direction
+it nods; **a poppy is a radial cup, so a notch is a piece missing.** Six pixels is
+too few for the eye to grant a shape a three-quarter view — it reads the absence
+as damage, and a field of bitten flowers is worse than a field of identical ones.
+The kit's variety comes from the small mark instead: different SIZE, which needs
+no missing pixel to say it.
 
 **Deliberate and checked:** the tuft speckle keeps its dry straw colour through
 the wet month. On green ground that reads as last year's dead stalks standing in
