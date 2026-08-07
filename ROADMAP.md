@@ -8712,6 +8712,38 @@ standing on a snowfield. `seasonPull` tunes autumn, not winter; a winter-side
 equivalent would be a new field, and it should be decided while looking at all
 six other snowy regions rather than for this one alone.
 
+## The scrub's tree is a hawthorn (6 Aug 2026)
+
+Asked "what kind of trees are these meant to be?" and the file had no answer:
+the row described its plant only by HABIT — *"squat and wind-flattened, barely
+taller than the rocks"* — and had never named one. Everything else in it had
+already voted, though. The decor kit draws a **thorn bush**, the spring bloom is
+a **thistle**, and half a dozen comments call the region a heath. A thorn tree on
+dry stony ground is what all of that adds up to, so the row now says so.
+
+**It had been drawn as a lollipop the whole time**, which is what a comment
+describing a tree nobody built will do. Eleven crown rows on the default
+sixteen-pixel stem is two thirds bare pole — the exact opposite of squat, and
+more than twice the height of the rocks the note claimed it barely cleared. The
+words were right and the fields were simply absent. Now: `trunkHeight: 10`,
+`crownOverlap: 4`, twelve crown rows — six visible pixels of bole, eighteen tall
+against the meadow oak's thirty-five, and fourteen wide, so it is wider than it
+is tall.
+
+**"Barely taller than the rocks" was hyperbole and the measurement says so.** A
+rock here is five to eight pixels; a tree that literally cleared one would be
+shorter than the region's own bushes, which stand about ten. What the sentence
+was reaching for is that this is the only tree in the game you look OVER rather
+than up at, and eighteen does that.
+
+**Two contradictions cleaned up on the way.** The crown note claimed these plants
+are EVERGREEN while `autumnCrown` painted every one of them rust and purple-brown
+in October — the row was asserting both. A hawthorn is deciduous and the
+region's autumn depends on it, so what the tint actually buys is that the foliage
+holds its colour against the other three seasons. (And the pinewood's note about
+`crownOverlap` being *"the field the scrub has had since it was a heath"* is
+true again, having quietly stopped being so at some point.)
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

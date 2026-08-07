@@ -2555,10 +2555,17 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // long grass's row is where this argument was worked out first. At 0.35 the
     // foliage here was still the meadow's green — invisible while a tree in the
     // scrub was an event, and the whole picture once there are fifteen bushes to
-    // a screen wearing the same tint. Dry-country scrub is grey-green and it is
-    // EVERGREEN: pulled to 0.6 the plants keep their own colour while the ground
-    // browns underneath them, which is what reads as autumn on dry country rather
-    // than as dry country that has been recoloured.
+    // a screen wearing the same tint. Dry-country scrub is grey-green: pulled to
+    // 0.6 the plants keep their own colour while the ground browns underneath
+    // them, which is what reads as autumn on dry country rather than as dry
+    // country that has been recoloured.
+    //
+    // THIS USED TO SAY THE PLANTS WERE EVERGREEN AND THAT WAS NEVER TRUE HERE.
+    // The field below paints every crown rust and purple-brown in October
+    // (§autumnCrown), so the row was claiming both at once; what this tint
+    // actually buys is that the foliage holds its own colour against the OTHER
+    // three seasons, which is a different sentence and the one that was meant. A
+    // hawthorn is deciduous, and the region's autumn depends on it being so.
     crown: { color: "#7c8a4e", amount: 0.6 },
     trunk: { color: "#7a6248", amount: 0.3 },
     // A heath goes RUST and then purple-brown, which is bracken and blueberry
@@ -2570,9 +2577,43 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         // silhouettes and none of the round one: this ground cracked, it did not
         // wear.
     stone: { tint: { color: "#c9b98c", amount: 0.3 }, shapes: ["crag", "broken", "broken", "slab"] },
-    // Squat and wind-flattened: wide, low, and wider at the shoulders than at the
-    // crown. Barely taller than the rocks it stands among, which is the point.
-    crownRows: [2, 4, 5, 6, 6, 7, 6, 6, 5, 4, 3],
+    // A HAWTHORN, and this row went its whole life without anybody saying so. The
+    // scrub's plant was only ever described by HABIT — "squat and wind-flattened,
+    // barely taller than the rocks" — and everything else in the row had already
+    // voted for the species without the note catching up: the decor kit draws a
+    // THORN BUSH, the spring bloom is a thistle, and half the comments here call
+    // the region a heath. A thorn tree on dry stony ground is what all of that
+    // adds up to, and naming it is what makes the rest of these numbers decidable
+    // instead of merely tuned.
+    //
+    // IT WAS DRAWN AS A LOLLIPOP FOR THAT WHOLE TIME, which is the cost of a
+    // comment describing a tree nobody had built. Eleven rows of crown perched on
+    // the default sixteen-pixel stem is two thirds bare pole — the exact opposite
+    // of squat, and more than twice the height of the rocks the note says it
+    // barely clears. The words were right and the fields were absent.
+    //
+    // SO THE STEM COMES DOWN AND THE CROWN COMES WITH IT. Ten pixels of trunk
+    // with four crown rows standing beside it leaves SIX visible, under a crown
+    // twelve rows deep: eighteen tall against the meadow oak's thirty-five, and
+    // fourteen wide, so it is wider than it is tall, which is the whole of "low
+    // and spreading". A hawthorn out on a heath is mostly crown on a short bole,
+    // and where the wind gets at it, it is a bush that decided to be a tree.
+    //
+    // NOT AS LOW AS THE NOTE CLAIMED, and the measurement is why. A rock here is
+    // five to eight pixels; a tree that "barely cleared" one would be shorter than
+    // the region's own BUSHES, which stand about ten (§shrubs, `drawShrub`). What
+    // the sentence was reaching for is that this is the only tree in the game you
+    // look over rather than up at, and eighteen does that: clear of the
+    // undergrowth, under the horizon, never the tallest thing in the frame.
+    //
+    // WIDEST BELOW THE MIDDLE and blunt on top, which are the meadow's and the
+    // birches' findings arriving on a third tree — a crown that comes to a point
+    // is a leaf and one that holds its width at the top is a lid. It closes 6,6,4,2
+    // onto the stem, because those four rows are the ones standing beside it and
+    // they have to reach it to read as foliage around a trunk.
+    crownRows: [3, 5, 6, 7, 7, 7, 7, 7, 6, 6, 4, 2],
+    crownOverlap: 4,
+    trunkHeight: 10,
     // THE PARCHED ROW FLOWERS, and it is the best beat this field buys. The scrub
     // is written everywhere else as dry — no sprouts in its tuft list, grit in
     // its decor, bleached in every tint — so three months of small hard yellow
