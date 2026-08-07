@@ -8691,6 +8691,20 @@ furniture *is* grass, the speckle already is the grass, so the kit was a second
 louder copy of the region's own texture. A region with no all-year kit is not an
 empty one.
 
+**Autumn got leaf fall, not a flower** (6 Aug 2026, same sitting). Almost nothing
+flowers under a birch in October, and a late bloom would have been a second
+subject in the one month this row already has a headline — `autumnCrown` is a
+gold nothing else in the file wears. Leaves put the SAME colour on the floor that
+is on the branches, which reinforces the month instead of competing with it. Two
+findings, both already on record elsewhere and both re-learned here: it has to be
+**duller and darker than the crown** (this floor measures 178 even in October, so
+the crown's own `#c98a06` would sit 36 under it and smudge — `#a8762c` is 53
+down, the separation the harebell needed), and a leaf drawn as a blade with a
+stalk (`ooo` over `.o.`) is a **tack**, because at three pixels the eye takes the
+symmetry before it takes the botany. Three pixels in an L is a flake with a
+direction, which is all a fallen leaf is from above — the pines' 2px needle
+strokes, one step fatter. Ones and twos, because leaves fall in drifts.
+
 **Loose end this opened:** a birch in winter should be the barest tree in the
 game and photographs as olive. The region's year-round `crown` tint (`#cfe08a`
 at 0.35) fights the season's bare-branch brown, so the wood reads as summer trees

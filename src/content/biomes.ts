@@ -2432,6 +2432,55 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
           [".o.", "oo.", ".x.", ".x.", ".x."],
         ],
       },
+      {
+        // LEAF FALL, AND IT IS NOT A FLOWER — which is what this slot is for
+        // despite its name. `bloom` is "what is on the ground this season", and
+        // autumn's answer in a birch wood is not a plant that flowers in October,
+        // because almost nothing does under one. It is the tree's own leaves,
+        // lying where they landed.
+        //
+        // IT REINFORCES THE MONTH INSTEAD OF COMPETING WITH IT, which is why a
+        // late flower was the wrong answer. This region's autumn is already the
+        // best thing it does — `autumnCrown` is a gold nothing else in the file
+        // wears — and a violet scabious under it would have been a second subject
+        // in the one month this row already has one. Leaves put the SAME colour
+        // on the floor that is on the branches, and a wood where the ground and
+        // the canopy agree is the whole picture of October.
+        //
+        // DULLER AND DARKER THAN THE CROWN, for both reasons at once. A leaf on
+        // the ground has dried, so it is an ochre rather than the lit gold still
+        // hanging up there; and this floor measures 178 in October — barely
+        // moving from summer, because a birch's pale ground is pale all year — so
+        // the crown's own #c98a06 would sit 36 under it and read as a smudge.
+        // #a8762c is 53 down, which is the separation the harebell needed and had
+        // to learn the same way.
+        //
+        // ONES AND TWOS, which is the pines' litter finding (§pinewood.decor):
+        // thirty scattered dots and sixty scattered dots are the same picture at
+        // two volumes, because leaves fall in DRIFTS. A marked cell wearing two
+        // of them reads as a little patch of leaf fall rather than as one leaf
+        // placed there, and it is the only way a scatter stops looking regular.
+        //
+        // A WEDGE, NOT A LEAF WITH A STALK. Drawn `ooo` over `.o.` — a blade and
+        // the stem it fell off — it comes out a TACK: three pixels in a row with
+        // one under the middle is a symmetrical T, and the eye takes the symmetry
+        // before it takes the botany. Nothing this small survives having parts.
+        //
+        // Three pixels in an L is a flake with a direction, which is all a leaf
+        // on the ground is from above: an angular scrap lying whichever way it
+        // landed. It is also the pines' own answer one step round — their needles
+        // are 2px diagonal strokes for the same reason, and a broadleaf's scrap
+        // is simply a fatter one.
+        season: "autumn",
+        density: 0.12,
+        accent: "#a8762c",
+        marks: [
+          ["oo", ".o"],
+          ["oo", "o."],
+          ["oo..", ".o..", "...o", "..oo"],
+          ["..oo", "..o.", "o...", "oo.."],
+        ],
+      },
     ],
   },
 
