@@ -183,29 +183,58 @@ describe("biome tinting", () => {
     }
   });
 
-  it("greens the dry country in its wet months and leaves the dry ones alone", () => {
-    // The scrub is the only row whose year runs backwards, and this asserts the
-    // SHAPE of that year rather than its colours: green in the two months it
-    // named, and byte-identical to its year-round self in the two it did not.
-    // A region that quietly greened in July would have lost the whole point,
-    // which is that this place is parched EIGHT months of the year.
+  it("moves a named month's ground, darkens it, and leaves the others alone", () => {
+    // TWO ROWS NOW, AND THE RULE HAD TO BE WIDENED TO LET THE SECOND IN — which
+    // is worth reading before widening it again. This asserted that a
+    // `seasonGround` month must be GREENER, and that was the scrub's claim
+    // wearing the field's clothes: the scrub's year runs backwards because the
+    // RAINS come in winter, so its named months are a green flush by definition.
+    //
+    // The fen's named month is a wet season too and is not green at all. October
+    // is when a fen's water table comes back up; the ground goes sodden and the
+    // place gets DARKER while the wood above it turns. Same field, same kind of
+    // fact — what a month does to a floor — and the green was never the general
+    // part of it.
+    //
+    // What IS general is the direction, and it is the winter test's rule one
+    // season over: a wet season may not brighten its ground, because a floor that
+    // lifts when the water arrives is snow by another name. Assert that, plus the
+    // months a row did NOT name being byte-identical to its year-round self — the
+    // clause that actually protects the point, which is that the scrub is parched
+    // eight months of the year and the fen has three ordinary ones.
     const wet = Object.values(BIOMES).filter((b) => b.seasonGround);
-    expect(wet.map((b) => b.id)).toEqual(["scrub"]);
-    for (const b of wet) {
+    expect(wet.map((b) => b.id)).toEqual(["scrub", "fen"]);
+    const luma = (h: string): number => {
+      const [r, g, bl] = rgb(h);
+      return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+    };
+    for (const b of Object.values(BIOMES)) {
       const plain = biomeSkin(tileDef(GRASS), GRASS, b);
       for (const s of SEASONS) {
         const now = biomeSkin(tileDef(GRASS), GRASS, b, s.id);
-        if (b.seasonGround?.[s.id]) {
-          // Greener means the green channel gains on the red — the measure that
-          // survives the season also moving the whole picture.
-          const lift = (h: string) => rgb(h)[1] - rgb(h)[0];
-          expect(lift(now.color), `${b.id} is not greener in ${s.id}`).toBeGreaterThan(
-            lift(plain.color),
-          );
-        } else {
+        if (!b.seasonGround?.[s.id]) {
+          // Winter is the snow's, and snow is a different field with its own test.
+          if (s.id === "winter" && b.snow) continue;
           expect(now, `${b.id} moved in ${s.id}, which it never asked for`).toEqual(plain);
+          continue;
         }
+        expect(now.color, `${b.id}'s ${s.id} does nothing`).not.toBe(plain.color);
+        expect(luma(now.color), `${b.id}'s ${s.id} reads as snow`).toBeLessThan(
+          luma(plain.color),
+        );
       }
+    }
+    // AND THE SCRUB'S OWN CLAIM SURVIVES AS THE SCRUB'S. Greener means the green
+    // channel gains on the red — the measure that survives the season also moving
+    // the whole picture. The fen is exempt because it never claimed it.
+    const lift = (h: string): number => rgb(h)[1] - rgb(h)[0];
+    const dry = biomeSkin(tileDef(GRASS), GRASS, BIOMES.scrub);
+    for (const s of SEASONS) {
+      if (!BIOMES.scrub.seasonGround?.[s.id]) continue;
+      const now = biomeSkin(tileDef(GRASS), GRASS, BIOMES.scrub, s.id);
+      expect(lift(now.color), `the scrub is not greener in ${s.id}`).toBeGreaterThan(
+        lift(dry.color),
+      );
     }
   });
 

@@ -9110,6 +9110,51 @@ reflowed 537 lines — every hand-grouped `crownRows` array with its `//` row
 markers, flattened to one number per line. Reverted. The formatting in that file
 is load-bearing; edit it by hand.
 
+### October comes back to the fen (7 Aug 2026)
+
+`seasonGround: { autumn: { color: "#131e19", amount: 0.55 } }` — one line, and the
+second row in the file to have one.
+
+**The fen had no autumn.** Measured off screenshots, its floor ran (107,141,75)
+in July and (115,132,70) in October: no change worth the name, and the change
+there was ran the wrong way — very slightly LIGHTER. The cause is arithmetic
+rather than a missing feature: the region's own `ground` tint at amount 0.5 halves
+whatever the season does, so while the meadow swung to (152,168,79) the fen sat
+still. Everything saying "autumn" there was borrowed from the trees.
+
+**A fen does not brighten in October, it floods.** The water table comes back up,
+the ground goes sodden, and the place gets darker while the wood above it turns.
+That is the scrub's inverted year in a different key.
+
+**AND IT CANNOT BE DONE GENTLY — this is the finding.** The two marks that carry
+this floor sit at luma 0.153 (the tuft speckle) and 0.132 (the reeds, which take
+the crown's ink and so go rust in October). The floor sat at 0.206 and read them
+as dark-on-light at 1.26:1 and 1.41:1 — already thin. **A floor on its way down
+passes straight through both of them.** A third of the way, at (73,94,58), the
+tuft measures 1.38 and the reeds 1.24 — worse than doing nothing. There is no
+small version of the move; you either stay above the marks or go clearly under
+them.
+
+Under them, the picture inverts and improves: at (61,74,44) the reeds measure
+1.64:1 and the mushroom caps 4.20:1, and the tuft comes back as a pale sprout on
+dark ground. Which is the true picture anyway — **in a flooded fen the stalks are
+the light part.**
+
+**The test had to be widened, and that is worth reading before widening it
+again.** `palette.test.ts` asserted that a `seasonGround` month must be GREENER,
+which was the scrub's claim wearing the field's clothes: the scrub's year runs
+backwards because its RAINS come in winter, so its named months are a green flush
+by definition. The fen's named month is also a wet season and is not green at all.
+The general rule is the direction, not the hue — a wet month must move the ground
+and must move it DOWN, because a floor that lifts when the water arrives is snow
+by another name (which is the winter test's rule, one season over). The scrub's
+"greener" survives, asserted for the scrub.
+
+**No collision with the pinewood**, which was the thing to check: its October
+floor photographs bright green (the pines pull the crowns, not the ground), so
+the two dark-wood regions still read as different places. Colour only — no
+terrain, no schema, nothing a save carries.
+
 ### The prickly pear (6 Aug 2026) — built
 
 It went where it was always going to: the `shrubs` node, not `decor` (paint,

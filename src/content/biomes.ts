@@ -343,7 +343,14 @@ export interface BiomeDef {
   snow?: Tint;
 
   /** THE GROUND THIS REGION WEARS IN A NAMED MONTH, over its year-round tint and
-   *  under any snow. Optional, and the scrub is the only row with one.
+   *  under any snow. Optional; the scrub and the fen.
+   *
+   *  ONE RULE, AND IT IS NOT "GREENER" — see `palette.test.ts`, where that
+   *  assertion had to be widened when the second row arrived. A named month must
+   *  MOVE the ground and must move it DOWN: a floor that brightens when the water
+   *  arrives is snow by another name, which is the winter rule one season over.
+   *  Everything else is the region's own business. The scrub's months are a green
+   *  flush and the fen's is a dark sodden one, and both are the same kind of fact.
    *
    *  A REGION WHOSE YEAR RUNS BACKWARDS. Every other row here is greenest in
    *  summer because the SEASON is, and the region's own tint only says how far it
@@ -3016,6 +3023,33 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // ground was: at #6f8a5e it was still plainly meadow-green beside the meadow
     // and the ponds were doing all the work alone. Settled on screen.
     ground: { color: "#5c7247", amount: 0.5 },
+    // OCTOBER IS WHEN THE WATER COMES BACK, and until now this region did not
+    // have one. Measured off screenshots, the fen's floor went (107,141,75) in
+    // July to (115,132,70) in October — no change worth the name, and what change
+    // there was ran the WRONG WAY. Its `ground` tint at 0.5 halves whatever the
+    // season does, so while the meadow swung to (152,168,79) the fen sat still and
+    // came out very slightly LIGHTER than it had been in summer. Everything saying
+    // autumn here was borrowed from the trees.
+    //
+    // A fen does not brighten in autumn. The water table rises, the ground goes
+    // sodden, and the place gets darker while the wood above it turns. That is the
+    // scrub's inverted year in a different key, and it is what `seasonGround` is
+    // for (§BiomeDef.seasonGround) — the scrub was the only row with one.
+    //
+    // AND IT CANNOT BE DONE GENTLY, which is the whole finding and was not
+    // obvious. The two marks that carry this floor sit at luma 0.153 (the tuft
+    // speckle) and 0.132 (the reeds, which take the crown's ink and so go rust in
+    // October); the floor sits at 0.206 and reads them as dark marks on light
+    // ground at 1.26:1 and 1.41:1 — already thin. A floor on its way DOWN passes
+    // straight through both of them: at (73,94,58), a third of the way, the tuft
+    // is 1.38 and the reeds are 1.24, which is worse than doing nothing. There is
+    // no small version of this move.
+    //
+    // So it goes all the way past them and the picture inverts: pale dead sedge
+    // and rust reed standing on dark wet ground, 1.78:1 and 1.60:1, both better
+    // than the summer floor manages. Which is also the true picture of the thing —
+    // in a flooded fen the stalks are the light part.
+    seasonGround: { autumn: { color: "#131e19", amount: 0.55 } },
     tuft: { color: "#4e6440", amount: 0.5 },
     // Everything is growing. Sprouts and clusters, and no bare dots at all —
         // there is no patch of this region that is merely dirt with a speck on it.
