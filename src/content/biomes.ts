@@ -3065,10 +3065,33 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // in it would draw a shadow under the cap instead of the thing itself.
     mushroomCap: { cap: "#b3aab0", lit: "#d5cdd0", gills: "#4a4450" },
     mushroomShape: "bell",
-    // Weeping: broad at the top and narrowing all the way down, so the mass hangs
-    // rather than sits. The tallest crown in the table — a fen tree leans over
-    // the water it grew out of.
-    crownRows: [5, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 6, 6, 6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3],
+    // WEEPING, AND THE FIRST GO DREW THE OPPOSITE OF IT. It read "broad at the
+    // top and narrowing all the way down, so the mass hangs rather than sits" —
+    // which is a sentence about weight and a spec for a LIGHTBULB, and that is
+    // what shipped: full width by row 2 and held for twelve rows, then fourteen
+    // rows of taper closing on a seven-pixel neck plugged into a five-pixel
+    // trunk. Both halves are faults this file had already written down. The lid
+    // is the birch's ("the eye reads the first hold it finds as the widest part
+    // of a shape, and finding it in row zero says the tree was trimmed flat");
+    // the cone is `crownGaps`' own ("every tree here tapered to a tip on the way
+    // down, which is a shrub's outline"). A crown that ends in a point does not
+    // hang from anything — it balances on the stem, and it photographed as a
+    // thumb.
+    //
+    // Mass HANGS by being carried DOWN, not by being piled up. So the top domes
+    // in five steps, the full width runs unbroken to the bottom of the crown, and
+    // the last six rows come down beside the trunk and part around it — foliage
+    // falling PAST the point where the branches leave the stem, which is the one
+    // thing a willow's outline does that nothing else here does. The parting
+    // widens on the way down (§crownGaps, and the birch's note on why an
+    // underside has a direction), so what stands either side of the bark is two
+    // curtains rather than a keyhole.
+    //
+    // It is no longer the tallest crown in the table and the old note was wrong
+    // that it ever was — the birches are 28 rows to this one's 26.
+    crownRows: [2, 4, 5, 6, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 6, 6],
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 3, 3, 4],
+    crownOverlap: 6,
     // Marsh flowers, and violet rather than the obvious yellow: the fen's whole
     // palette is murk, and a warm bloom in it would read as the scrub's spring
     // MARSH MARIGOLD — kingcup, the one flower everybody who has stood at the edge

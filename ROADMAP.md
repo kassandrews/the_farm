@@ -8923,6 +8923,46 @@ Two consequences, one accepted and one open:
   `shrubPeak` to stop deriving from the crown, which is a renderer change rather
   than a tint.
 
+### The fen's tree was a lightbulb (7 Aug 2026)
+
+One row of the table: `crownRows` rewritten, `crownGaps` and `crownOverlap: 6`
+added. Photographed, not reasoned about — the complaint was "these trees look
+goofy" and the screenshot said why in a second.
+
+**The old shape was two known faults stacked.** `[5,7,8,8,…,8,7,6,6,6,6,5,5,5,
+4,4,4,3,3,3]` reached full width by row 2 and held it for twelve rows, then spent
+its remaining fourteen rows tapering to a seven-pixel neck plugged into a
+five-pixel trunk. The lid is the birch's finding — *the eye reads the first hold
+it finds as the widest part of a shape, and finding it in row zero says the tree
+was trimmed flat.* The cone is `crownGaps`' own — *every tree here tapered to a
+tip on the way down, which is a shrub's outline.* Both were already written down
+in the file the row lives in.
+
+**And the comment that produced it was a sentence about weight, not a shape.**
+"Broad at the top and narrowing all the way down, so the mass hangs rather than
+sits" describes a willow correctly and specifies a **lightbulb**. Mass hangs by
+being carried DOWN, not by being piled up: a crown that ends in a point does not
+hang from anything, it balances on the stem. This is the general trap in the
+whole `crownRows` column — a prose intent that is true about the plant can still
+be false about the outline, and only the render tells you which.
+
+**The fix uses the birch's mechanism rather than inventing one.** The top domes
+in five steps, the full width runs unbroken to the bottom of the crown, and the
+last six rows come down beside the trunk and part around it (`1,2,2,3,3,4`,
+widening downward, `crownOverlap: 6`). Foliage falling PAST the point where the
+branches leave the stem is the one thing a willow's outline does that nothing
+else in the table does — so the region keeps a silhouette of its own instead of
+being solved into a taller, darker broadleaf, which was the safe option on the
+table and was declined.
+
+**A claim in the old comment was already false**: it called itself "the tallest
+crown in the table" at 26 rows, where the birches are 28. It is now shorter still
+(16 + 26 − 6 = 36px against the old 42) and says so.
+
+**`shrubPeak` did not move** — the widest row is 8 either way, so the fen's
+undergrowth is untouched. That is the coupling the scrub's oak left open one
+section up, and it is worth checking on every crown edit until it is cut.
+
 ### The prickly pear (6 Aug 2026) — built
 
 It went where it was always going to: the `shrubs` node, not `decor` (paint,
