@@ -8963,6 +8963,44 @@ crown in the table" at 26 rows, where the birches are 28. It is now shorter stil
 undergrowth is untouched. That is the coupling the scrub's oak left open one
 section up, and it is worth checking on every crown edit until it is cut.
 
+### The inkcap was too big (7 Aug 2026)
+
+`MUSHROOM_ART.bell`, fourth rebuild: 7x9 down to **5x6**, and its companion 3x4
+down to 3x3.
+
+**The first three rebuilds all asked the same question and this one doesn't.**
+Column, dagger, table — each was an argument about what the sprite READ as, and
+each was settled by changing which elements it had. Nothing was left to fix by
+that route: pale straight cap, dark rim proud of it, pale stem, and it did read
+as a shaggy inkcap. It was just **too much of one**. Nine pixels tall against a
+villager's sixteen is a mushroom as tall as somebody's torso, seven wide is most
+of a tile with the companion beside it, and the fen carries the heaviest density
+in the game (0.12, eight patches to a screen). A floor of them read as a boulder
+field.
+
+**Weight is a fourth question and nothing about a single sprite asks it.** The
+grid is drawn in isolation, judged in isolation, and every element of it can be
+right while the object is the wrong size for the world — which only a screenshot
+with something of known height in it can say. It is the same instrument the fen's
+crown needed the same afternoon.
+
+**Reduced by proportion, not by thinning.** Five wide and six rows is the dome's
+own footprint one row taller. The cap keeps a body — three wide over a rim one
+pixel proud, where the old seven-wide cap wore a rim two proud — because the
+dagger's lesson was that a cap thinned to an edge stops being a cap, and that
+lesson survives the shrink. The rim still carries the species at either size.
+`palette.test.ts`'s rule (the bell is taller than the dome, not merely narrower)
+now holds by exactly one pixel, which is the whole margin the fen has.
+
+**The companion lost a row for a reason of its own.** Four rows beside a six-row
+adult is two thirds of its height, and a companion that size is not a younger one
+— it is a second mushroom, the exact read the button grid exists to prevent. Half
+is what it always was; three against six restores it.
+
+**The meadow's dome did not move** and is not up for review here — same promise
+as the meadow's crown. It was 5x5 all along, which is why the bell was the
+outlier and not the pair of them.
+
 ### The prickly pear (6 Aug 2026) — built
 
 It went where it was always going to: the `shrubs` node, not `decor` (paint,

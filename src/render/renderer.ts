@@ -758,17 +758,28 @@ export const MUSHROOM_ART: Record<MushroomShape, Record<MushroomState, string[]>
     // detached from it for the eye to reassign. It also gets the species across
     // better than the drips did: what you recognise in an inkcap is the dark
     // underside eating up into a pale cap, not the drops it sheds.
-    open: [
-      "..ccc..",
-      ".lcccc.",
-      ".lcccc.",
-      ".lcccc.",
-      ".lcccc.",
-      "ggggggg",
-      "..ggg..",
-      "...s...",
-      "...s...",
-    ],
+    // AND THEN IT WAS SIMPLY TOO BIG, which is the fourth correction and the one
+    // none of the three above could have caught — every one of them was an
+    // argument about what the sprite READ as, and this is an argument about what
+    // it WEIGHS. At seven wide and nine rows it stood 9px against a villager's
+    // 16: a mushroom as tall as somebody's torso, at the heaviest density in the
+    // game (0.12, eight patches to a screen), nearly a whole tile wide with its
+    // companion beside it. Nothing about the drawing was wrong. There was just
+    // too much of it, and a floor of them read as a boulder field.
+    //
+    // Five wide and six rows — the dome's own footprint, one row taller. The
+    // proportion note above still holds and is what fixed the reduction too: the
+    // cap keeps a BODY (three wide over a rim one pixel proud, where the old
+    // seven-wide cap wore a rim two proud) rather than being thinned to an edge,
+    // and it is the rim that carries the species at either size. The dome is
+    // 5x5 and this is 5x6, so `palette.test.ts`'s rule — the bell is what it is
+    // by being TALLER than the dome, not just narrower — still has something to
+    // hold on to, with a pixel to spare and no more.
+    //
+    // The curling row went with the height. `ggggg` straight into the stem is
+    // the same mass narrowing that the 7,3 taper drew, at the size where one row
+    // is all the taper there is room for.
+    open: [".ccc.", ".lcc.", ".lcc.", "ggggg", "..s..", "..s.."],
     // A YOUNG ONE OF THE SAME SPECIES, not a generic nub. This was `.l.`/`.c.`/
     // `.s.` — an egg on a stick, which was fine beside the old squat bell and
     // became a speck the moment the adult grew to nine rows and got its dark rim.
@@ -779,7 +790,13 @@ export const MUSHROOM_ART: Record<MushroomShape, Record<MushroomState, string[]>
     // So it gets the rim too. Three pixels of dark under a two-row cap is the
     // whole species at a third of the size, and it is the rim rather than the
     // silhouette that does it — that is what the adult's four rebuilds taught.
-    button: [".c.", "lcc", "ggg", ".s."],
+    //
+    // IT LOST ITS DOMED ROW WHEN THE ADULT SHRANK. Four rows beside a six-row
+    // adult is two thirds of its height, and a companion that size is not a
+    // younger one — it is a second mushroom, which is the read this grid exists
+    // to prevent. Three rows against six is the same half it always was. The rim
+    // is what survives the cut, exactly as the note above says it should.
+    button: ["lcc", "ggg", ".s."],
   },
 };
 /** Taller than a rock, shorter than a tree. It should read as built rather than
