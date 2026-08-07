@@ -846,7 +846,12 @@ export interface BiomeDef {
     };
   };
 
-  /** What else grows here. Optional, and every region in the file has one. */
+  /** What else grows here. Optional, and every region has one but the birches,
+   *  which gave theirs up once its floor had four other things on it — see
+   *  §birch, where the argument for dropping a kit is written down. A region with
+   *  no all-year kit is not an empty one: the tuft speckle is still there at 38%,
+   *  and in a region whose ground furniture IS grass that speckle is already the
+   *  grass. */
   decor?: DecorKit;
 
   /** THE TOWN MOWS THIS ONE. Optional, and the meadow is the only row that asks.
@@ -2341,29 +2346,24 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         girth: -1,
       },
     ],
-    // Thin pale grass and small white flowers — the airy opposite of the pines,
-    // and the reason the two rows sit next to each other.
-    // ITS FLOWERS MOVED TO SPRING, and what is left all year is grass. The white
-    // heads used to stand here in December, which is the one month a birch wood
-    // is unmistakably bare — a region cannot be "the airy one" in every season by
-    // wearing the same flowers through all four of them.
-    // THE SAPLINGS ARE A TREE FORM, AND THEY WERE DECOR FIRST — which is worth
-    // recording, because the decor version was not wrong so much as too SMALL to
-    // be the thing it was about. Birch is a pioneer: it seeds into every gap it
-    // can reach light through, which is why a birch wood is a birch wood and not
-    // a stage on the way to something else, and under the thinnest canopy in the
-    // game that regeneration is the floor's actual character. Drawn as a MARK it
-    // gets five pixels by five — the band rule caps a glyph there — and at that
-    // size the wood's whole story reads as lint on the grass. See §crownAlt above
-    // for where it went and what the rule had to give up to let it.
-    decor: {
-      density: 0.13,
-      marks: [
-        ["..x", ".x.", "x.."],
-        [".x.", ".x.", "x.."],
-        ["x..", ".x.", ".x."],
-      ],
-    },
+    // NO ALL-YEAR KIT AT ALL, and this is the first row in the file without one.
+    // It carried thin diagonal grass — three strokes, 0.13 — from the day the
+    // slot existed, and it went the moment there was anything else to look at:
+    // this floor now has a spring carpet, a summer flower, mushrooms, deadwood
+    // and saplings standing on it, and the grass was the layer competing with all
+    // of them while saying nothing they do not already say.
+    //
+    // ONE MARK TOO MANY IS THE KIT'S OWN RULE, ARRIVING FROM THE OTHER SIDE.
+    // `DecorKit.density` warns that this layer sits ON TOP of the tuft speckle's
+    // 38% and has to stay sparse or the ground stops being ground. The tufts are
+    // still here and they are already thin pale grass — so what the kit added was
+    // a second, louder copy of the region's existing texture, and reading the two
+    // together is what made the floor busy. The speckle IS the grass here.
+    //
+    // (Its flowers had already left, and for the same kind of reason: the white
+    // heads used to stand here in December, and a region cannot be "the airy one"
+    // in every season by wearing the same thing through all four of them. What is
+    // left is a floor that changes four times a year and is bare between.)
     // WOOD ANEMONE — Anemone nemorosa, which carpets birch and other broadleaf
     // woods for a few weeks each spring and is gone by the time the canopy
     // closes. The four-petal flower with an eye was built for the pines and lands

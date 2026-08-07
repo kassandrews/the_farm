@@ -8679,6 +8679,18 @@ it out, and the pines it exists to be compared against have had it all along.
 `0.82 → #e4ece5`, fitted to the same luma 233 as every other row; `stubble: 0.25`,
 between the mown common and the prairie.
 
+**And then the all-year kit came out entirely**, which makes the birches the
+first row in the file without one. It had carried thin diagonal grass since the
+slot existed, and it went the moment there was anything else on the floor: a
+spring carpet, a summer flower, mushrooms, deadwood and saplings now stand on it,
+and the grass was the layer competing with all of them while saying nothing they
+do not already say. The kit's own rule arriving from the other side —
+`DecorKit.density` warns that this layer sits ON TOP of the tuft speckle's 38%
+and must stay sparse or the ground stops being ground. In a region whose ground
+furniture *is* grass, the speckle already is the grass, so the kit was a second
+louder copy of the region's own texture. A region with no all-year kit is not an
+empty one.
+
 **Loose end this opened:** a birch in winter should be the barest tree in the
 game and photographs as olive. The region's year-round `crown` tint (`#cfe08a`
 at 0.35) fights the season's bare-branch brown, so the wood reads as summer trees
