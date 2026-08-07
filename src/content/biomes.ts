@@ -3253,16 +3253,46 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       // work as texture. Here the water is pools in a wood, and cattails are the
       // edge of a pool. An edge at 0.32 would be a crop.
       density: 0.11,
-      // Dark brown, and it has to be dark: the shallows are #7cc3de, the palest
-      // surface in the region by a distance, so the head reads by sitting well
-      // UNDER the water rather than by being bright on it. That is the poppy's
-      // finding — down was always available and nobody looked — arriving on the
-      // one ground in the fen that is lighter than the mark.
-      accent: "#6b4527",
+      // Brown, and it reads by sitting UNDER the water rather than by being bright
+      // on it — the shallows are #7cc3de, the palest surface in the region by a
+      // distance, so this is the one ground in the fen the poppy's rule applies to
+      // in the ordinary direction.
+      //
+      // IT WENT UP A STEP once the head was two pixels wide, and the reason is
+      // that the two changes are the same change. At one pixel the head was a
+      // hairline and needed #6b4527's 4.28:1 to be a mark at all; at two it is a
+      // BODY, and a body that dark on water this pale is a hole punched in the
+      // pond. #9c6b3c still measures 2.34:1, which is more separation than any
+      // flower in this region gets from its own floor, and it is the colour a
+      // cattail actually is — a warm mid brown, not a burnt one.
+      accent: "#9c6b3c",
       marks: [
-        ["o..", "o..", "o..", "x.x", "x.x", "x.x", ".x."],
-        ["o..", "o..", "x.x", "x.x", ".x."],
-        ["o.o", "o.o", "x.x", "x.x", ".x."],
+        // TWO PIXELS WIDE, WHICH IS WHAT MAKES IT A SAUSAGE. A one-pixel head is a
+        // dark tip on a wire — the eye reads it as the stalk ending rather than as
+        // a thing ON the stalk — and what anybody pictures when they hear
+        // "cattail" is the fat brown spike. It overhangs its own stem by a pixel,
+        // and that overhang IS the recognition: the head is wider than what holds
+        // it up, which is true of no other mark in the file and of every cattail.
+        //
+        // The grid went to four wide to pay for it, so the blade still stands a
+        // clear column away from the head instead of touching it. The V's base
+        // widens to two with the grid — at four across the two strokes cannot
+        // converge on one pixel without a diagonal, and a diagonal at this size is
+        // a jaggy rather than a curve.
+        //
+        // Both hands, on the tall one: the head is on the left blade and on the
+        // right, which is the lily of the valley's rule (a colony all facing one
+        // way reads as printed however random the placement is).
+        // AND EVERY HEAD IS THE SAME SAUSAGE — three rows, on all three marks.
+        // The short one carried a two-row head at first and photographed as a
+        // brown SQUARE: two by two has no long axis, so it reads as a block on a
+        // stick rather than as a spike. What varies between the marks is the
+        // stalk, which is the lily's finding on the same afternoon — on a plant
+        // whose whole silhouette is one shape held up high, the height is the
+        // variable and the shape is not.
+        ["oo..", "oo..", "oo..", "x..x", "x..x", "x..x", ".xx."],
+        ["oo..", "oo..", "oo..", "x..x", ".xx."],
+        ["..oo", "..oo", "..oo", "x..x", "x..x", "x..x", ".xx."],
       ],
     },
   },

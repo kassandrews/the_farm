@@ -9032,6 +9032,21 @@ standing in water you could wade. The mark is a flowering stalk plus a blade,
 and the blade is the reeds' own V half, so the wet vegetation and the dry read as
 the same plant community.
 
+- **The head went to two pixels wide and a step lighter, and those are the same
+  change.** At one pixel it was a hairline and needed #6b4527's 4.28:1 against the
+  shallows to be a mark at all; at two it is a BODY, and a body that dark on water
+  that pale is a hole punched in the pond. #9c6b3c still measures 2.34:1 — more
+  separation than any flower here gets from its own floor — and it is the colour a
+  cattail actually is. **The overhang is the recognition**: the head is wider than
+  the stem holding it up, which is true of no other mark in the file and of every
+  cattail. The grid went to four wide to pay for it, so the blade keeps a clear
+  column.
+- **Every head is the same three-row sausage; only the stalk varies.** The short
+  mark carried a two-row head and photographed as a brown SQUARE — two by two has
+  no long axis, so it reads as a block on a stick. Same finding as the lily's
+  stalks, an hour apart: when a plant's whole silhouette is one shape held up
+  high, the height is the variable and the shape is not.
+
 **The lily left on ecology and came back on a photograph.** Asked for as a wood
 lily; *Lilium philadelphicum* is a plant of dry sandy woods over most of its
 range, which is the fly agaric's objection exactly, so the first draft moved
