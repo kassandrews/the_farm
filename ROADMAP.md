@@ -9041,11 +9041,27 @@ the same plant community.
   the stem holding it up, which is true of no other mark in the file and of every
   cattail. The grid went to four wide to pay for it, so the blade keeps a clear
   column.
-- **Every head is the same three-row sausage; only the stalk varies.** The short
-  mark carried a two-row head and photographed as a brown SQUARE — two by two has
-  no long axis, so it reads as a block on a stick. Same finding as the lily's
-  stalks, an hour apart: when a plant's whole silhouette is one shape held up
-  high, the height is the variable and the shape is not.
+- **Every head is the same sausage — three rows, then four.** The short mark
+  carried a two-row head and photographed as a brown SQUARE: two by two has no
+  long axis, so it reads as a block on a stick. Four is where it stops being
+  arguable.
+- **The green tip costs one pixel and buys two things.** A cattail's spike is two
+  flowers stacked — the brown female mass, and a narrower male spike above it that
+  is green while it lasts — so the anatomy is free. It also fixes what the drawing
+  needed anyway: without it the stalk STOPS at the brown, which reads as a stick
+  dipped in something. With it the stem passes through and comes out, so the head
+  is a swelling ON a stalk.
+- **They grow in stands, so there are no single ones left.** Every mark is a
+  clump: a flowering stalk with two or three green blades at staggered heights.
+  The blades keep a clear column between them — adjacent strokes merge into a
+  green bar, and equal-height ones are a comb, which is the banding rule at the
+  size of a plant.
+- **The small mark is gone rather than grown.** A bed of three heads and a bed of
+  one are not two ages of the same thing; they are a stand and a straggler, and
+  the straggler is what the lone stalk had already failed at. So the second slot
+  buys a DIFFERENT CLUMP — one flowering stalk or two, blades at other heights —
+  which is the first time in this file that the variety is neither shape nor size
+  but arrangement, and it is right here because a bed is a thing made of parts.
 
 **The lily left on ecology and came back on a photograph.** Asked for as a wood
 lily; *Lilium philadelphicum* is a plant of dry sandy woods over most of its

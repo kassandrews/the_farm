@@ -3283,16 +3283,34 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         // Both hands, on the tall one: the head is on the left blade and on the
         // right, which is the lily of the valley's rule (a colony all facing one
         // way reads as printed however random the placement is).
-        // AND EVERY HEAD IS THE SAME SAUSAGE — three rows, on all three marks.
-        // The short one carried a two-row head at first and photographed as a
-        // brown SQUARE: two by two has no long axis, so it reads as a block on a
-        // stick rather than as a spike. What varies between the marks is the
-        // stalk, which is the lily's finding on the same afternoon — on a plant
-        // whose whole silhouette is one shape held up high, the height is the
-        // variable and the shape is not.
-        ["oo..", "oo..", "oo..", "x..x", "x..x", "x..x", ".xx."],
-        ["oo..", "oo..", "oo..", "x..x", ".xx."],
-        ["..oo", "..oo", "..oo", "x..x", "x..x", "x..x", ".xx."],
+        // AND EVERY HEAD IS THE SAME SAUSAGE — four rows now, on every mark. It
+        // was three, and before that a two-row head that photographed as a brown
+        // SQUARE: two by two has no long axis, so it reads as a block on a stick
+        // rather than as a spike. Four is where it stops being arguable.
+        //
+        // THE GREEN TIP IS THE PLANT'S OWN ANATOMY AND IT COSTS ONE PIXEL. A
+        // cattail's spike is two flowers stacked — the brown female mass, and a
+        // narrower male spike above it that is green while it lasts. One pixel of
+        // stem standing proud of the head says that, and it also fixes something
+        // the drawing needed anyway: without it the stalk STOPS at the brown,
+        // which reads as a stick dipped in something. With it, the stem passes
+        // through the head and comes out, so the head is a swelling ON a stalk.
+        //
+        // AND THEY GROW IN STANDS, WHICH IS WHY THERE ARE NO SINGLE ONES LEFT.
+        // Every mark is now a CLUMP — a flowering stalk with two or three green
+        // blades around it at different heights — because that is what a cattail
+        // bed looks like and because a lone stalk was reading as a match. The
+        // blades keep a clear column between them: adjacent strokes merge into a
+        // green bar, and equal-height ones are a comb, which is the banding rule
+        // (CLAUDE.md) at the size of a plant. Staggered heights, always.
+        //
+        // The short mark is gone rather than grown. A small clump is a small bed,
+        // and a bed of three heads and a bed of one are not two ages of the same
+        // thing — they are a stand and a straggler, and the straggler is what the
+        // lone stalk already failed at.
+        ["..x....", "..oo...", "..oo...", "..oo...", "..oo.x.", "x.oo.x.", "x.x..x.", "x.x..x.", "x.x..x."],
+        ["..x....", "..oo...", "..oo...", "..oo.x.", "..oo.x.", "x.oo.x.", "x.x..x.", "x.x..x.", "x.x..x.", "x.x..x."],
+        ["..x......", "..oo..x..", "..oo..oo.", "..oo..oo.", "..oo..oo.", "x.oo..oo.", "x.x...x..", "x.x...x..", "x.x...x.."],
       ],
     },
   },
