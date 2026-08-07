@@ -9155,6 +9155,50 @@ floor photographs bright green (the pines pull the crowns, not the ground), so
 the two dark-wood regions still read as different places. Colour only — no
 terrain, no schema, nothing a save carries.
 
+**Then the willows, which said yellow-brown and drew brown.** `autumnCrown` was
+`#8f6a2a` and the ink measured (131,95,44): a mid brown with no yellow left in it
+and no green at all, which is an oak's October or a beech's. A willow goes a soft
+golden yellow-green and holds it for weeks, and **the green staying in the gold is
+the whole look of the tree.** The row had room it wasn't using — (131,95,44) is
+luma 0.132 against the birches' 0.293, so "murkier than the birches" was being met
+more than twice over. `#9eb84f` lands it at (140,142,66), luma 0.253: still under
+the birches by 1.13:1, with a stop more gold and the green kept in.
+
+The reeds and the cattail blades came with it, because **the stem ink IS the
+foliage** (`renderer.ts` §stemInk) — and that is the right answer rather than a
+side effect: a reed bed in October is straw-gold, not rust. It improves the floor
+they stand on too, from 1.64:1 to over 2.7:1.
+
+**And a third flower, which the new floor is what made possible.** Devil's-bit
+scabious — *Succisa pratensis*, August into October on wet meadow and fen, the
+last thing in bloom anywhere in the file. It is **the violet this region already
+tried once and could not have**: the fen's first bloom was violet and was cut on a
+measurement, "the old violet managed 1.06 and separated by hue alone". True of the
+floor that existed. Against the sodden October floor the same colour measures
+2.62:1. The thing that failed is the thing that works, one month over, because the
+ground moved under it.
+
+- **Third season, third silhouette.** The kingcup is a CUP (a filled five-wide
+  rim), the wood lily is a STAR (same width, opened at both ends), this is a BALL
+  — a button held high on a bare stalk. No centre: a pincushion is florets all the
+  way through, so the eye the other two share would be wrong here. Drawn as a 3×2
+  it was a bar on a post; drawn as a diamond it was a CROSS, which is the
+  kingcup's own warning arriving on a flower that has no centre at all. Domed at
+  both ends is what makes it a ball.
+- **Grass-of-Parnassus lost the slot on legibility, not botany.** It is the better
+  fen indicator and flowers the same weeks — and it is a small pale thing on a
+  dark floor, in the region that already has eight small pale things to a screen.
+  The scabious clears the inkcaps at 1.60:1.
+
+**And a test was right in spirit and wrong in its measurement.** "Keeps autumn's
+crowns off autumn's ground" called `biomeSkin` with **no season**, so it compared
+October's canopy against the region's *year-round* floor. Harmless while
+`seasonGround` was the scrub's alone and named no autumn; wrong the moment a row
+said what its October floor is. It failed the willow gold against a floor the fen
+no longer has in that month — the one failure mode a measurement like this has,
+**being right about the wrong two colours.** Now passes `"autumn"`, and the real
+separation is 66 against a threshold of 28.
+
 ### The prickly pear (6 Aug 2026) — built
 
 It went where it was always going to: the `shrubs` node, not `decor` (paint,

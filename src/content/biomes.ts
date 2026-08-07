@@ -3056,10 +3056,29 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     tufts: ["sprout", "sprout", "cluster"],
     crown: { color: "#2f4a34", amount: 0.45 },
     trunk: { color: "#3d3226", amount: 0.35 },
-    // Willow and alder go YELLOW-BROWN and hang on late, which is a wet wood's
-    // autumn: no scarlet in it anywhere, and it should stay murkier than the
-    // birches (§BiomeDef.autumnCrown).
-    autumnCrown: { color: "#8f6a2a", amount: 0.6 },    // Sunk, wet and dark. Slabs and low boulders — anything that stood up here
+    // Willow and alder hang on late, which is a wet wood's autumn: no scarlet in
+    // it anywhere, and it should stay murkier than the birches
+    // (§BiomeDef.autumnCrown).
+    //
+    // IT SAID YELLOW-BROWN AND DREW BROWN. Measured on screen the crown ink came
+    // out (131,95,44) — a mid brown with no yellow left in it and no green at all,
+    // which is an OAK's October, or a beech's. A willow does not do that. It goes
+    // a soft golden yellow-green and holds it for weeks, and the green staying in
+    // the gold is the whole look of a willow in autumn: the leaves turn without
+    // ever quite turning.
+    //
+    // (131,95,44) is luma 0.132 against the birches' 0.293, so "murkier than the
+    // birches" was being met more than twice over — the row had room it was not
+    // using. #9eb84f lands the ink at (140,142,66), luma 0.253: still under the
+    // birches by 1.13:1, so the rule holds, and now with a full stop more of gold
+    // and the green kept in it.
+    //
+    // THE REEDS AND THE CATTAIL BLADES COME WITH IT, because the stem ink IS the
+    // foliage (renderer §stemInk), and that is the right answer rather than a side
+    // effect: a reed bed in October is straw-gold, not rust. It also improves the
+    // floor it stands on — against the sodden autumn ground the marks go from
+    // 1.64:1 to over 2.7:1.
+    autumnCrown: { color: "#9eb84f", amount: 0.6 },    // Sunk, wet and dark. Slabs and low boulders — anything that stood up here
         // went under a long time ago.
     stone: { tint: { color: "#41504a", amount: 0.32 }, shapes: ["slab", "slab", "boulder"] },
     // INKCAP GREY, AND THE REASON IS ECOLOGY RATHER THAN PALETTE — the first row
@@ -3235,6 +3254,54 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
           // long stem and one pixel MORE, which is what varies in a stand of them.
           [".o.o.", "oo*oo", ".oxo.", "..x..", "..x.."],
           [".o.o.", "oo*oo", ".oxo.", "..x..", "..x..", "..x.."],
+        ],
+      },
+      {
+        // DEVIL'S-BIT SCABIOUS, and it is the violet this region already tried
+        // once and could not have. Succisa pratensis flowers from August into
+        // October on wet meadow and fen — it is the LAST thing in bloom here, and
+        // there is nothing else in the file still flowering when it is.
+        //
+        // THE FLOOR IS WHY IT CAN COME BACK. The fen's first bloom was violet and
+        // was cut for a measurement: "yellow on this murk measures about 1.75:1
+        // ... where the old violet managed 1.06 and separated by hue alone". That
+        // was true of the floor that existed. October's floor is now the sodden
+        // one (§seasonGround), and against (61,74,44) this violet measures
+        // 2.62:1 — the thing that failed is the thing that works, in a different
+        // month, because the ground moved under it. The kingcup keeps spring; it
+        // won that argument on its own ground and nothing here disturbs it.
+        //
+        // AND IT IS THE THIRD SILHOUETTE, WHICH IS THE OTHER HALF OF THE CASE. A
+        // region gets one shape per season and they have to be tellable apart: the
+        // kingcup is a CUP (a filled five-wide rim), the wood lily is a STAR (the
+        // same width, opened at both ends), and this is a BALL — a small round
+        // button held high on a bare wiry stalk, which is exactly how a scabious
+        // reads across a field. No centre: a pincushion is florets all the way
+        // through, so the eye that the other two both have would be wrong here.
+        //
+        // It also stays clear of the inkcaps at 1.60:1, which was the reason a
+        // white flower lost this slot. Grass-of-Parnassus is the better botany —
+        // a fen indicator, flowering the same weeks — and it is a small pale thing
+        // on a dark floor in the region that already has eight small pale things
+        // to a screen. Two of them is one too many.
+        season: "autumn",
+        // Between the kingcup's 0.09 and the lily's 0.05. It grows in loose
+        // colonies rather than one at a time or in carpets, and October is the
+        // month this floor has least on it.
+        density: 0.07,
+        accent: "#8f7bc4",
+        marks: [
+          // The head is domed at BOTH ends, which is what makes it a ball rather
+          // than a block. Drawn as a plain 3x2 it was a bar on a post, and drawn
+          // as a diamond it was a CROSS — the kingcup's own warning, that at three
+          // wide petals around a centre is a plus sign, arriving on a flower that
+          // has no centre at all.
+          //
+          // Two lengths, and the lily's rule about why: a flower carried at the
+          // top of a long bare stalk cannot be varied by shrinking, because a
+          // short one is not a smaller plant. So it is the stalk and one pixel.
+          [".o.", "ooo", "ooo", ".o.", ".x.", ".x.", ".x."],
+          [".o.", "ooo", "ooo", ".o.", ".x.", ".x.", ".x.", ".x."],
         ],
       },
     ],

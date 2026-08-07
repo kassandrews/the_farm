@@ -353,12 +353,21 @@ describe("biome tinting", () => {
     // wrong in October because it had NEITHER: 29° of hue and the same
     // brightness. Value is the one to assert on for anything that turns warm,
     // because warm-on-warm is exactly where hue stops helping.
+    // AND IT HAS TO ASK FOR OCTOBER'S GROUND, which it did not until the fen
+    // grew one. `biomeSkin` was called with no season here, so what it measured
+    // against was the region's year-round floor — fine while `seasonGround` was
+    // the scrub's alone and named no autumn, and quietly wrong the moment a row
+    // said what its October floor is. It read the fen's canopy against a floor
+    // the fen does not have in the month being asserted about, which is the one
+    // failure mode a measurement like this has: being right about the wrong two
+    // colours.
     for (const id of ["meadow", "birch", "fen", "scrub"] as const) {
       const crown = foliage(BIOMES[id], autumn, false);
       const ground = biomeSkin(
         seasonSkin(tileDef(GRASS), GRASS, autumn),
         GRASS,
         BIOMES[id],
+        "autumn",
       ).color;
       expect(
         Math.abs(luma(crown) - luma(ground)),
