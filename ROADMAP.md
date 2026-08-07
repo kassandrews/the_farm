@@ -9032,26 +9032,47 @@ standing in water you could wade. The mark is a flowering stalk plus a blade,
 and the blade is the reeds' own V half, so the wet vegetation and the dry read as
 the same plant community.
 
-**The lily is a Turk's cap, not a wood lily, and the drawing wanted that anyway.**
-Asked for as a wood lily; *Lilium philadelphicum* is a plant of dry sandy woods,
-and this file has already decided once (the fly agaric) that a region's ecology
-beats the first name to hand. But the real argument is the silhouette: **a wood
-lily faces UP, and at five pixels facing up is a cup — which is the kingcup, in
-this same region.** A fourth use of that shape in the region that owns it would
-be the fen's two flowers reading as one flower in two colours. A Turk's cap nods
-and recurves, so it is the kingcup's exact opposite: closed at the bottom where
-the cup is closed at the top. Same genus, same orange, and it grows in fens.
+**The lily left on ecology and came back on a photograph.** Asked for as a wood
+lily; *Lilium philadelphicum* is a plant of dry sandy woods over most of its
+range, which is the fly agaric's objection exactly, so the first draft moved
+sideways to a Turk's cap — a wet-meadow lily that also NODS, which was the real
+attraction, because a hanging head is a silhouette the fen does not already own.
+Then a reference photo of the wood lily settled it the other way, and the northern
+prairie form (*var. andinum*) settles the ecology too: it grows in damp prairie
+and turns up on fen margins.
 
-- **Orange had to go high.** True lily orange (#e2622a) measures 1.05 against
-  this floor — the scrub's finding that "orange against green buys nothing that
-  blue against green did not", on ground darker than the scrub's. #ff9a3c, with
-  the deep note in the THROAT, which is where a nodding flower's dark actually is.
+- **Face on is not the kingcup, though it very nearly is.** The objection to an
+  upright lily was that at five pixels facing up is a CUP, and the cup is the
+  kingcup, in this same region. What answers it is what the photograph is about:
+  **a wood lily is a STAR** — six pointed tepals with sky between them — where a
+  kingcup is a closed rim. Same 5×3 head, opposite treatment of its ends: the
+  kingcup fills the top and bottom rows so the rim closes, this one opens the
+  MIDDLE of both so the points stand apart.
+- **Four symmetric absences are a star; one is damage.** That is what keeps this
+  clear of the poppy's finding a week later in the same file.
+- **The colour reads downward and the throat reads up.** Measured against the
+  floor (108,142,75): true lily orange #e2622a is 1.07:1 and vanishes — the
+  scrub's "orange against green buys nothing that blue against green did not".
+  #c93c14 is 1.35:1 **by going down**, which is the direction nobody looks. The
+  gold throat is then 3.00:1 against its own petals, so the flower carries its
+  contrast internally instead of needing the grass's help. Half a step off the
+  kingcup's #f0c845 on purpose: the gold that IS the flower in April is the eye of
+  the flower in July.
 - **The first head was a tuning fork.** `o.o` over a solid `ooo` is not two tips,
   it is a NOTCH cut in the top of a bar — the poppy's "a notch in a radial cup is
   a piece missing" and the birch's "the same dip in the TOP of a crown is damage",
-  third time. It photographed as a goalpost on a stick. The fix is the row under
-  the tips carrying the throat, so the head is petals AROUND a centre, with one
-  petal below closing it to a point.
+  third time. It photographed as a goalpost on a stick. The star has no such
+  problem because nothing in it is a bar: every row is petals with gaps in it, so
+  a gap is what the shape is MADE of rather than something taken out of it.
+- **The lower pair straddles the stem rather than hovering over it.** Drawn
+  `.o.o.` those two tepals leave one pixel of grass enclosed by gold above,
+  petals either side and stem below — the crown's hole rule at a twentieth of the
+  size. `.oxo.` runs the stem through it.
+- **And both marks stand tall.** The pair was the long stem and a short one, which
+  is the poppy's rule about spending the second slot on size — but size is not
+  free on this plant: a lily carries its flower at the top of a long bare stalk,
+  and a short one is not a smaller lily, it is a different plant. The variation is
+  the long stem and one pixel more.
 
 **And prettier is not run on `content/biomes.ts`.** An idle `npx prettier --write`
 reflowed 537 lines — every hand-grouped `crownRows` array with its `//` row

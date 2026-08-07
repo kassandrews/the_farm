@@ -3125,40 +3125,52 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         ],
       },
       {
-        // THE LILY, AND IT NODS. Asked for as a wood lily, and the species moved
-        // one step sideways for the reason the fly agaric did: Lilium
-        // philadelphicum is a plant of DRY sandy woods over most of its range, and
-        // this file has already decided once that a region's ecology beats the
-        // first name that comes to mind. What flowers over standing water in July
-        // is the Turk's cap — L. superbum, L. michiganense — a wet-meadow and fen
-        // lily, same genus, same orange, and it is the one the drawing wanted
-        // anyway. (If the upright cup was the point rather than the plant, that is
-        // one mark's worth of work to put back.)
+        // THE WOOD LILY, FACE ON — Lilium philadelphicum, and it is the plant that
+        // was asked for after all. It went out and came back in one sitting, and
+        // both moves are worth keeping because the argument changed underneath it.
         //
-        // AND THE NOD IS WHY IT EARNS A SLOT AT ALL. A wood lily faces UP, which
-        // at five pixels is a cup — and the cup is the KINGCUP, twenty lines above,
-        // in this same region. This file has already spent the kingcup silhouette
-        // three times deliberately; a fourth in the region that owns it would be
-        // the fen's two flowers reading as one flower in two colours. A Turk's cap
-        // hangs its head and sweeps its petals back UP past it, so the silhouette
-        // is a throat with two tips over it — the kingcup's exact opposite, closed
-        // at the bottom where the cup is closed at the top.
+        // IT LEFT ON ECOLOGY AND RETURNED ON A PHOTOGRAPH. The species is a plant
+        // of dry sandy woods over most of its range, which is the fly agaric's
+        // objection exactly, so the first draft moved sideways to a Turk's cap —
+        // wet-meadow lily, same genus, and it NODS, which was the real attraction:
+        // a hanging head is a silhouette the fen does not already own. The
+        // northern prairie form (var. andinum) settles the ecology in the wood
+        // lily's favour anyway; it grows in damp prairie and turns up on fen
+        // margins, so the region is not being lied to.
         //
-        // ORANGE, AND HIGH, which is the poppy's whole session one region over
-        // arriving as a rule. True lily orange (#e2622a) measures 1.05 against
-        // this floor — the scrub found that "orange against green buys nothing
-        // that blue against green did not", and the fen's summer ground is darker
-        // than the scrub's was. So the petals go up rather than true, and the
-        // THROAT carries the deep note: a nodding lily shows you its inside, so
-        // the dark belongs where the dark actually is on the plant.
+        // AND FACE ON IS NOT THE KINGCUP, though it very nearly is. The objection
+        // to an upright lily was that at five pixels facing up is a CUP, and the
+        // cup is the kingcup twenty lines above in this same region. What answers
+        // it is the thing the photograph is actually about: a wood lily is a STAR
+        // — six separate pointed tepals with sky between them — where a kingcup is
+        // a closed rim. Same 5x3 head, opposite treatment of its corners and its
+        // ends: the kingcup fills the top and bottom rows so the rim closes; this
+        // one opens the MIDDLE of both so the points stand apart. In a region
+        // whose two flowers can never be seen in the same month, that is a
+        // difference with room to spare.
+        //
+        // The absences are symmetric on all four sides, which is what keeps this
+        // clear of the poppy's finding (a notch in a radial cup is a piece
+        // missing, not a lean). One gap is damage; four arranged around a centre
+        // are the gaps BETWEEN petals, which is what a star is made of.
+        //
+        // THE COLOUR READS DOWNWARD AND THE THROAT READS UP, which is the poppy's
+        // session one region over arriving as a rule. Measured against this floor
+        // (108,142,75): true lily orange #e2622a is 1.07:1 and would vanish —
+        // the scrub's "orange against green buys nothing that blue against green
+        // did not". #c93c14 is 1.35:1 by going DOWN, which is the direction nobody
+        // looks. Then the gold throat is 3.00:1 against its own petals, so the
+        // flower carries its contrast internally and does not need the grass's
+        // help. It is a half-step off the kingcup's #f0c845 on purpose: the gold
+        // that IS the flower in April is the eye of the flower in July.
         season: "summer",
         // The sparsest bloom in the file. A lily is not a carpeting plant — it
         // stands one at a time in the wet, and the kingcup's 0.09 is already the
         // picture April makes here. This is the thing you notice, not the thing
         // you walk through.
         density: 0.05,
-        accent: "#ff9a3c",
-        core: "#8c3a14",
+        accent: "#c93c14",
+        core: "#f2c04a",
         marks: [
           // THE FIRST HEAD WAS A TUNING FORK, and it is the poppy's finding in a
           // new hat. Drawn `o.o` over a solid `ooo`, the tips are not tips — they
@@ -3168,14 +3180,27 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
           // about its own canopy: a dip in the underside of a crown is a parting,
           // and the same dip in the TOP of one is damage.)
           //
-          // What fixes it is the row UNDER the tips carrying the throat, so the
-          // head is petals AROUND a dark centre rather than a bar with a bite out
-          // of it — and then one petal below that, closing the flower to a point.
-          // The throat is enclosed on three sides and open at the top between the
-          // tips, which is the kingcup's rule inverted along with everything else
-          // about this plant: a cup seen from below rather than from above.
-          ["o.o", "o*o", ".o.", ".x.", ".x.", ".x."],
-          ["o.o", "o*o", ".o.", ".x.", ".x."],
+          // The star has no such problem because nothing here is a bar: every row
+          // is petals with gaps in it, so a gap is what the shape is made of
+          // rather than something taken out of it.
+          //
+          // THE BOTTOM PAIR STRADDLES THE STEM RATHER THAN HOVERING OVER IT. Drawn
+          // `.o.o.` the two lower tepals leave one pixel of grass between them,
+          // enclosed by gold above, petals either side and stem below — which is
+          // the crown's own hole rule at a twentieth of the size, and the eye reads
+          // an enclosed dot of background as a puncture. `.oxo.` puts the stem
+          // through that pixel: the flower is then something the stem arrives IN,
+          // and the lower petals sit either side of it the way they do on the
+          // plant.
+          //
+          // AND BOTH OF THEM STAND TALL. The pair was the long stem and a short
+          // one, which is the poppy's rule about spending the second slot on size
+          // — but size on a lily is not free the way it is on a poppy: a lily
+          // carries its flower at the top of a long bare stalk, and a short one is
+          // not a smaller lily, it is a different plant. So the variation is the
+          // long stem and one pixel MORE, which is what varies in a stand of them.
+          [".o.o.", "oo*oo", ".oxo.", "..x..", "..x.."],
+          [".o.o.", "oo*oo", ".oxo.", "..x..", "..x..", "..x.."],
         ],
       },
     ],
