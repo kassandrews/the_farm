@@ -8767,8 +8767,18 @@ the shape moved. What moved:
 - The region loses its autumn event and gains a better one: **"the whole country
   goes gold except the trees"** is something no other row does, and the spring
   flush is what pays for the loss.
+- **The bushes came with it**, and that is automatic rather than a second
+  decision: `drawShrub` takes its colour from the same `foliage()` path the
+  crowns do, so `seasonPull.crown` reaches both. Measured, the foliage now sits
+  at 115-117 in all four months where autumn used to be 103 and rust. Correct for
+  the place — chaparral's understory is evergreen too (chamise, manzanita,
+  toyon), which is why this row does NOT want `shrubAutumn`, the field for a
+  deciduous understory under an evergreen canopy.
 - The prickly pear stops being the only plant here that does not season. That was
-  a nice fact and a small one.
+  a nice fact and a small one. It also means the pear no longer gets an easy
+  month: it had 27 luma of separation in autumn when the shrubs went rust, and
+  now has a steady 28 against a foliage that never moves. Its colour has to work
+  in one condition rather than four.
 
 **Worth remembering as a method note:** the hawthorn was not a mistake, it was a
 correct reading of the evidence available that afternoon — a thorn bush in the
