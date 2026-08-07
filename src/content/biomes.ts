@@ -130,6 +130,11 @@ export type BiomeId =
   | "caldera"
   | "static";
 
+/** What a bush in a region actually is. `bush` is the generic dome every region
+ *  drew before this existed — see `drawShrub`, where its proportions are argued
+ *  out — and anything else is a named plant with its own art. */
+export type ShrubShape = "bush" | "pear";
+
 export interface BiomeDef {
   id: BiomeId;
   /** What a villager would call it. Used in dialogue, never in the HUD — a
@@ -152,6 +157,30 @@ export interface BiomeDef {
    *  four fellings against one. Keep it that way: this must never become a
    *  reason to walk somewhere, only a thing you find there. */
   shrubs?: number;
+  /** WHICH PLANTS THAT UNDERGROWTH IS, as a weighted list — an entry written
+   *  twice is drawn twice as often, exactly as `stone.shapes` and `tufts` are
+   *  read. Optional; absent, every bush is a bush.
+   *
+   *  IT EXISTS SO A REGION CAN HAVE A PLANT AND NOT JUST A DENSITY. Until now
+   *  `drawShrub` derived one generic dome from the region's crown, which is the
+   *  right default and says nothing: a bush in the pines and a bush in the scrub
+   *  differ by a few pixels of width and a tint. The scrub wanted a PRICKLY PEAR,
+   *  and a prickly pear is not a narrower dome, it is a different object.
+   *
+   *  WHY THE SHRUB NODE AND NOT SOMEWHERE ELSE, because both alternatives were
+   *  considered and both are wrong. As `decor` it would be paint — capped at 5×5
+   *  by the band rule, and walkable, which is the one thing a cactus must not be.
+   *  As a tree form it would be fellable for eight wood and would have to survive
+   *  the same-species girth rule (§TreeShape). The shrub node is already solid,
+   *  already two wood, and already the scrub's commonest plant; this changes what
+   *  it looks like and nothing else.
+   *
+   *  KEEP THE UNUSUAL ONE IN THE MINORITY. A list is weighted precisely so that
+   *  the strange plant can be rare — if every bush in the scrub were a cactus the
+   *  region would stop being chaparral and start being desert, which is a place
+   *  this game already has one of. */
+  shrubShapes?: ShrubShape[];
+
   /** FRUIT ON THAT UNDERGROWTH: the ink for a berry pixel and the month it is
    *  on. Optional, and meaningless without `shrubs` — this is paint applied to
    *  the bush sprite, so a region with no bushes has nothing to paint.
@@ -2570,6 +2599,13 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // does when it asks whether the far country pays better than home, run on the
     // near table instead.
     shrubs: 1,
+    // ONE BUSH IN EIGHT IS A PRICKLY PEAR (§shrubShapes). Weighted by repetition,
+    // and the weight is the whole decision: shrubs cover about a tenth of this
+    // region's cells, so one in eight of them is a cactus roughly every eightieth
+    // cell — often enough that you meet several crossing the region, rare enough
+    // that the chaparral does not turn into a desert. A place is a mixture; a
+    // place made entirely of its most distinctive plant is a demonstration.
+    shrubShapes: ["bush", "bush", "bush", "bush", "bush", "bush", "bush", "pear"],
     // BLEACHED HAS TO OUT-DRY THE BIRCHES, which is a comparison this row could
     // not make until the birch ground was lifted: at 0.5 of #c2bd86 the scrub
     // measured (154,175,103) against the birches' (149,183,103) — the same wash,

@@ -511,6 +511,46 @@ const ROCK_SHAPES: Record<
  *  ground, and the tree standing next to it draws exactly that as a flat-bottomed
  *  rect (see drawTree's stem). So the base is flat and the sides run straight
  *  down to it. The rule is about the SAW, and the ground is not a saw. */
+/** A PRICKLY PEAR — the first shrub in the game that is a named plant rather than
+ *  the generic dome (content/biomes.ts §shrubShapes).
+ *
+ *  TWO PADS, WIDER THAN THEY ARE TALL, JOINED AT A WAIST. That is the whole
+ *  silhouette and it is what nothing else here can be confused with: an Opuntia
+ *  is flat ovals growing edge-on out of each other, and the WAIST is the drawing
+ *  — merged, they are a lumpy bush; separated by a clear gap they float.
+ *
+ *  THE FIRST CUT MADE THEM TALLER THAN WIDE and it came out as a SAGUARO: three
+ *  pixels across by seven down is a column, and a column with side branches is
+ *  the other cactus, the one from the cartoons. A pad is an oval you could hold
+ *  flat in two hands — seven across by five down here — and the proportion is the
+ *  entire species. Three pads at that size do not fit in a shrub's footprint, so
+ *  there are two, which is also what a young plant has.
+ *
+ *  ELEVEN BY TEN, against the region's bush at eleven by nine. Barely taller,
+ *  because a cactus you had to look up at would be a tree and this is undergrowth
+ *  — it reads as different by SHAPE, which is the point of giving it art at all.
+ *
+ *  ASYMMETRIC ON PURPOSE, and it is the one plant here allowed to be. A bush is a
+ *  dome because that is what a mass of twigs is from any side; a pad cactus grows
+ *  where the last pad let it. Nothing about this shape should look composed.
+ *
+ *  NO SPINES. At five rows a pad, a spine is one pixel on the outline, and the
+ *  outline is the entire silhouette — the same subtraction the stump's flare and
+ *  moss lost (CLAUDE.md §Restraint). A prickly pear is recognisable by its pads
+ *  and by nothing else at this size. */
+export const PRICKLY_PEAR: string[] = [
+  ".....lxx...",
+  "....lxxxx..",
+  "....lxxxxx.",
+  ".....lxxx..",
+  "......xx...",
+  "..lxxxx....",
+  ".lxxxxxx...",
+  ".xxxxxxx...",
+  "..xxxxx....",
+  "...xxx.....",
+];
+
 export const DEADWOOD_ART: Record<"stump" | "log", string[]> = {
   // Six rows: three of cut face, three of side. A stump seen from this angle is
   // mostly its top — the game looks down at about that much of a tree's trunk.
@@ -4997,6 +5037,50 @@ export class Renderer {
     // and undershot, reading as a tuft rather than a bush you walk around. Nine
     // rows at 0.6 of the widest crown row is about two thirds of the tree above
     // it, and solid enough to be the obstacle it actually is.
+    // WHICH PLANT THIS BUSH IS, where the region draws more than one
+    // (content/biomes.ts §shrubShapes). Weighted by repetition, like the rock
+    // shapes and the tuft shapes, and read off its OWN salt — `h` chose the
+    // sideways jitter and 0x2f19 chooses the width below, and a cactus that only
+    // ever appeared on bushes that had leaned left would be one roll wearing
+    // three hats. This file has made that mistake often enough to name it.
+    const kinds = biome?.shrubShapes;
+    const kind = kinds
+      ? kinds[Math.floor(decoHash(tx, ty, world.seed ^ 0x71c3) * kinds.length) % kinds.length]
+      : "bush";
+    if (kind === "pear") {
+      const grid = PRICKLY_PEAR;
+      const w = grid[0].length;
+      const left = cx - Math.floor(w / 2);
+      const gtop = base - grid.length;
+      const prevA = ctx.globalAlpha;
+      if (this.buildView) ctx.globalAlpha = prevA * BUILD_VIEW_FADE;
+      else ctx.globalAlpha = prevA * this.hideFactor(world, tx, ty, grid.length + 1);
+      // Sized to what actually TOUCHES the ground, which is one pad and not the
+      // whole plant: a shadow the width of the sprite would put this cactus on a
+      // saucer. The bush's own shadow takes its last row for the same reason.
+      this.footShadow(cx, base, 5);
+      // ITS OWN INK, AND IT DOES NOT SEASON — the only plant in the region that
+      // does not. Everything else here browns with the ground and goes rust in
+      // October (§autumnCrown); a cactus is a succulent and holds the same
+      // glaucous blue-green all twelve months, which is exactly the kind of fact
+      // this game lets a plant have. It is also what keeps it from reading as
+      // another bush: the shrubs beside it are #648449, a yellow-green, and this
+      // sits bluer and a step brighter.
+      const pad = night ? "#3f5347" : "#6f9070";
+      const lit = night ? "#4e6555" : "#86a686";
+      for (let r = 0; r < grid.length; r++) {
+        const row = grid[r];
+        for (let c = 0; c < w; c++) {
+          const ch = row[c];
+          if (ch === ".") continue;
+          ctx.fillStyle = ch === "l" ? lit : pad;
+          ctx.fillRect(left + c, gtop + r, 1, 1);
+        }
+      }
+      ctx.globalAlpha = prevA;
+      return;
+    }
+
     let peak = shrubPeak(src);
     // AND ONE PIXEL EITHER WAY, off the tile's own hash. Every bush in a region
     // was exactly the same width, which was invisible while undergrowth was a

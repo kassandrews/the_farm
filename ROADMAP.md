@@ -8854,15 +8854,39 @@ Two consequences, one accepted and one open:
   `shrubPeak` to stop deriving from the crown, which is a renderer change rather
   than a tint.
 
-**Next here:** a prickly pear, decided but not built. It does NOT belong in
-`decor` (paint, capped at 5x5, no collision — a cactus you walk through is the
-one thing a cactus must not be) or as a tree form (fellable for eight wood, and
-the girth rule). It belongs on the `shrubs` node the scrub already has at 1.0:
-solid, already the region's commonest plant, already two wood. What is missing is
-per-region shrub ART — `drawShrub` derives one generic dome from the region's
-crown — and the precedent for adding it is sitting right there in `stone.shapes`
-and `tufts`. It must be the MINORITY entry in that list; if every bush is a
-cactus the chaparral becomes a desert.
+### The prickly pear (6 Aug 2026) — built
+
+It went where it was always going to: the `shrubs` node, not `decor` (paint,
+capped at 5x5, walkable — and a cactus you walk through is the one thing a cactus
+must not be) and not a tree form (fellable for eight wood, and the girth rule).
+The shrub node is already solid, already two wood, already the scrub's commonest
+plant; this changes what it looks like and nothing else.
+
+**New field: `BiomeDef.shrubShapes`**, a weighted list read exactly as
+`stone.shapes` and `tufts` are — an entry written twice is drawn twice as often.
+Absent, every bush is the generic dome, so no region that did not ask has moved.
+The scrub is `bush` x7 + `pear`: shrubs cover about a tenth of its cells, so a
+cactus lands roughly every eightieth — several per crossing, and the chaparral
+does not become a desert. A test holds the odd plant to the minority for any
+future row.
+
+**The first draft was a saguaro.** Pads drawn three across by seven down are a
+COLUMN, and a column with side branches is the other cactus — the one from the
+cartoons. An Opuntia pad is a flat oval you could hold in two hands: seven across
+by five down. The proportion is the entire species, so `palette.test.ts` asserts
+it (widest row wider than the plant is tall) rather than leaving it to the eye,
+along with the WAIST — two pads merged into one blob are a lumpy bush, and the
+narrow join is what says they are separate flat things growing out of each other.
+
+**It does not season, and it is the only plant in the region that does not.**
+Everything else here browns with the ground and goes rust in October; a succulent
+holds the same glaucous blue-green all twelve months. That also keeps it from
+reading as another bush — the shrubs beside it are `#648449`, a yellow-green, and
+the pads sit bluer and a step brighter at `#6f9070`.
+
+**Expect to be asked why you can chop it for wood.** It is the shrub node, so it
+yields the same two wood a bush does. The alternative was a new node class for
+one plant.
 
 ## Known gaps and loose ends
 

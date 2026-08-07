@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { scenePalette, seasonSkin, biomeSkin, mixHex, foliage } from "./palette";
-import { MUSHROOM_ART, DEADWOOD_ART, shrubPeak, shrubRows } from "./renderer";
+import { MUSHROOM_ART, DEADWOOD_ART, PRICKLY_PEAR, shrubPeak, shrubRows } from "./renderer";
 import { BIOMES, BROADLEAF, treeForms } from "../content/biomes";
 import { SEASONS, seasonOn } from "../content/seasons";
 import { TILES, tileDef, GRASS, MUSHROOM, SHALLOW, WATER, FARMLAND, FARMLAND_WET, FLOOR, STONE, BEDROCK, CAVE_FLOOR, ORE_VEIN, SHAFT, DARK_TREE } from "../content/tiles";
@@ -756,6 +756,54 @@ describe("crown silhouettes", () => {
     // times the sprite and wears its moss in the middle of the top face, where it
     // costs no outline at all.
     expect(DEADWOOD_ART.log.join(""), "the log has no moss").toContain("m");
+  });
+
+  it("keeps the prickly pear a pad cactus and not a saguaro", () => {
+    // The grid's own rules first: rectangular, and only inks the draw path knows.
+    const w = PRICKLY_PEAR[0].length;
+    for (const row of PRICKLY_PEAR) {
+      expect(row.length, `"${row}"`).toBe(w);
+      for (const ch of row) expect("lx.", `"${ch}"`).toContain(ch);
+    }
+    // It stands in a shrub's footprint, so it obeys the shrub's ceiling: a plant
+    // taller than its tile would be a tree, and this is undergrowth.
+    expect(PRICKLY_PEAR.length, "the cactus outgrew its tile").toBeLessThanOrEqual(16);
+    expect(w, "the cactus outgrew its tile").toBeLessThanOrEqual(16);
+
+    // AND THE THING THE SPECIES ACTUALLY IS. Opuntia pads are flat ovals, wider
+    // than they are tall; drawn taller than wide the sprite came out a SAGUARO,
+    // which is the other cactus and the one from the cartoons. The proportion is
+    // the whole read, so it is asserted rather than left to the eye: the widest
+    // row is wider than the plant is tall.
+    const widest = Math.max(...PRICKLY_PEAR.map((r) => r.replace(/\./g, "").length));
+    expect(widest, "the pads are narrower than the plant is tall").toBeGreaterThan(
+      PRICKLY_PEAR.length / 2,
+    );
+
+    // AND IT HAS A WAIST. Two pads merged into one blob are a lumpy bush; the
+    // narrow join is what says "these are separate flat things growing out of
+    // each other". So some row between the two widest ones has to be narrow.
+    const solid = PRICKLY_PEAR.map((r) => r.replace(/\./g, "").length);
+    const fattest = solid.indexOf(Math.max(...solid));
+    const rest = solid.slice(fattest + 1);
+    expect(Math.min(...rest), "the pads merged into one blob").toBeLessThan(
+      Math.max(...solid) / 2,
+    );
+  });
+
+  it("keeps the odd plant in the minority, wherever a region draws one", () => {
+    // `shrubShapes` is a weighted list and the weight is the point: a region made
+    // entirely of its most distinctive plant is a demonstration rather than a
+    // place (content/biomes.ts §shrubShapes). The generic dome has to stay the
+    // commonest thing in any region that has both.
+    for (const b of Object.values(BIOMES)) {
+      const kinds = b.shrubShapes;
+      if (!kinds) continue;
+      expect(b.shrubs, `${b.id} names shrub shapes and grows no shrubs`).toBeGreaterThan(0);
+      const odd = kinds.filter((k) => k !== "bush").length;
+      expect(odd, `${b.id}: no odd shrub, so the list buys nothing`).toBeGreaterThan(0);
+      expect(odd * 2, `${b.id} is more cactus than country`).toBeLessThan(kinds.length);
+    }
   });
 
   it("only grows deadwood where something could have fallen", () => {
