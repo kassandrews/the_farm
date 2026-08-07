@@ -417,6 +417,7 @@ export function blendRegions(parts: { def: BiomeDef; w: number }[]): BiomeDef {
   // milk fades out over exactly the tiles the crust does. Left off entirely when
   // nobody has one, which keeps the common case identical.
   const anyWater = parts.some((p) => p.def.waterTint);
+  const anySand = parts.some((p) => p.def.sandTint);
   // THE SEASON DIALS BLEND TOO, on the water tint's argument exactly. A pine
   // floor takes half of October and the meadow beside it takes all of it; if the
   // number flipped on the tile the heaviest region flips, autumn would arrive
@@ -448,6 +449,11 @@ export function blendRegions(parts: { def: BiomeDef; w: number }[]): BiomeDef {
     ground: blend((d) => d.ground),
     tuft: blend((d) => d.tuft),
     ...(anyWater ? { waterTint: blend((d) => d.waterTint ?? NO_TINT) } : {}),
+    // The shore's light, on the water tint's terms exactly (§BiomeDef.sandTint) —
+    // a beach that changed colour along the line the heaviest region flips is the
+    // seam this function exists to prevent, drawn across the one surface where a
+    // straight line is most obviously nobody's doing.
+    ...(anySand ? { sandTint: blend((d) => d.sandTint ?? NO_TINT) } : {}),
     ...(anyAutumn ? { autumnCrown: blend((d) => d.autumnCrown ?? NO_TINT) } : {}),
     // Snow blends over a border like everything else here, so a snowy wood meeting
     // an unsnowed one fades out over the same tiles its turf does rather than
@@ -546,7 +552,17 @@ export function biomeSkin(
   // Sand only. Not `DIRT`, which is "Dug earth" — soil somebody turned over is a
   // thing they did, and it sits with farmland on the far side of the same rule
   // the finishes are on.
-  const onSand = !!snow && id === SAND;
+  //
+  // AND A SECOND THING REACHES IT NOW, on a claim that is neither weather nor
+  // turf: LIGHT (§BiomeDef.sandTint). "A fen has no opinion about a beach" is
+  // right and stays right — a fen is a PLACE, and a beach is not part of it. The
+  // twilight country is not a place, it is the same country under a different
+  // light, which its own row says out loud ("nothing is shaped oddly — the trees
+  // are the meadow's own broadleaf and the light is simply not the light you
+  // left"). Light falls on sand.
+  const sandy = id === SAND;
+  const lit = sandy ? biome.sandTint : undefined;
+  const onSand = sandy && (!!snow || !!lit);
   if (!BIOME_GROUND.includes(id) && !onSand) return def;
   // THE IDENTITY RETURN, and it now has to ask about snow as well. The meadow
   // states `ground.amount: 0` — the promise that the town's lawn is the colour it
@@ -554,18 +570,24 @@ export function biomeSkin(
   // it is also one of the four rows that lie under snow. Returning early on the
   // ground tint alone would have quietly dropped the snow on exactly the region
   // that most needed it.
-  if (biome.ground.amount <= 0 && !snow && !rain) return def;
+  if (biome.ground.amount <= 0 && !snow && !rain && !lit) return def;
   // Spread, never construct — `name` is what the renderer branches on for the
   // ripple, the mushroom caps and the grass speckle (see seasonSkin).
   const pull = (hex: string): string => {
-    // The region's tint on its own turf only; on sand there is nothing here but
-    // the weather.
-    const tinted = !onSand && biome.ground.amount > 0 ? mixHex(hex, biome.ground) : hex;
+    // The region's tint on its own turf only; on sand there is the light this
+    // region is under, where it declares one, and otherwise nothing but weather.
+    const tinted = sandy
+      ? lit
+        ? mixHex(hex, lit)
+        : hex
+      : biome.ground.amount > 0
+        ? mixHex(hex, biome.ground)
+        : hex;
     // THE MONTH'S OWN GROUND, over the region's year-round one and under the
     // snow. Turf only — a green flush is something that GREW, and it has no more
     // opinion about a beach than the region's own tint does, where snow (which
     // lies on things) legitimately has one.
-    const wet = !onSand && rain ? mixHex(tinted, rain) : tinted;
+    const wet = !sandy && rain ? mixHex(tinted, rain) : tinted;
     // AFTER the region's own colour, never instead of it: the granite in January
     // is grey rock with snow on it, and a snow that replaced the region would
     // make every snowy row the same white field.

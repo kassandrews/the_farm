@@ -1095,6 +1095,29 @@ export interface BiomeDef {
    *  them as a bridge and following them is a perfectly good way to cross the
    *  marsh, and so is ignoring them and wading, and the game will never tell you
    *  which you did. */
+  /** THE LIGHT THIS REGION'S SAND IS UNDER. Optional, and the twilight country's
+   *  alone. Sand only — the shore, never the turf, never a thing anybody made.
+   *
+   *  IT IS THE `waterTint` ARGUMENT ONE TILE ALONG, and it has to clear the same
+   *  bar. "A region is turf and what grows on it; it has no opinion about water,
+   *  about paving, or about anything a player made" — and a fen has no opinion
+   *  about a beach either, which is exactly right, because a fen is a PLACE and a
+   *  beach is not part of it. The dusk is not a place. It is the same country
+   *  under a different light, which its own row says out loud, and light falls on
+   *  sand as surely as it falls on grass. A beach lit by an ordinary sun in a wood
+   *  that is not is the fault this fixes, and it is the fault `snow` on sand fixed
+   *  first: a bright snowfield running into a warm sandbank.
+   *
+   *  SO THE TEST FOR A NEW ROW IS WHETHER ITS PREMISE IS THE LIGHT. A region that
+   *  wants this because its beach would look nicer tinted is misreading the field;
+   *  everything else here says a region may recolour what it grew, and a beach is
+   *  not something a region grew.
+   *
+   *  Blended over a border like the water tint, for the same reason: a shoreline
+   *  that changed colour along the line the heaviest region flips would be a seam
+   *  drawn across a beach. */
+  sandTint?: Tint;
+
   float?: DecorKit;
 
   /** What drifts in the air here. Optional, and MOST REGIONS HAVE NONE — see
@@ -3531,6 +3554,24 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // At 0.35 it keeps 0.109 and the river still reads as violet-dimmed rather
     // than as ordinary water.
     waterTint: { color: "#3f3a66", amount: 0.35 },
+    // AND THE SHORE, WHICH TINTING THE RIVER IS WHAT EXPOSED. Sand is #ddca97 and
+    // nothing reached it: it measured 4.18:1 against this floor, the brightest and
+    // warmest thing left in the country and lit by a sun that is not this one.
+    //
+    // IT IS COOLED, NOT DARKENED, and that is the whole of the tuning. The obvious
+    // move is to bring the sand down — and it cannot come down far, because it is
+    // coming down TOWARD THE WATER. Untinted the shore sits 2.02:1 against the
+    // tinted shallows; darken it a third and that falls to 1.30, half and it is
+    // 1.08, which is a beach you cannot find the edge of. Same shape as the fen's
+    // floor a few hours earlier: a value on its way down passes through whatever
+    // was already below it.
+    //
+    // So the fix is HUE. Warmth is what was actually shouting — R−B of 70 on a
+    // floor whose R−B is −15 — and pulling toward a pale violet takes that to 15
+    // while the sand only comes from 4.18 to 3.12 against the turf and keeps
+    // 1.51 against the water. It stops being a sunlit beach and becomes a pale
+    // shore under a violet sky, which is what it is.
+    sandTint: { color: "#a892c4", amount: 0.55 },
     // THE YELLOW-ORANGE FLY AGARIC — Amanita muscaria var. guessowii, which is a
     // real and common variety and is the whole of the argument for this row.
     //

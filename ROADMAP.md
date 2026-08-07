@@ -9299,11 +9299,45 @@ one." Declaring a cap has always exempted a row. The dusk stopped being blank.
   draws — a cap is a pigment on the floor, an ember is drawn additively with a
   white core and flashes.
 
-**Still open:** the trunks are (85,64,60), the one warm mass left. And a new one
-the tinted water exposed — **the SAND is now the brightest thing in the region.**
-`waterTint` is water-only by design ("not the sand, not the shore") and
-`BIOME_GROUND` excludes sand from a region's own tint, so a beach in the twilight
-country is lit by an ordinary sun and nothing in the current rules reaches it.
+**And then the shore, which tinting the river is what exposed.** `BiomeDef.
+sandTint`, the third and last of the dusk's exceptions.
+
+**Sand was #ddca97 and nothing reached it** — 4.18:1 against this floor, the
+brightest and warmest thing left in the country, lit by a sun that is not this
+one. `waterTint` is water-only by design and `BIOME_GROUND` is `[GRASS, MUSHROOM]`,
+so no existing rule could touch a beach.
+
+**The rule it had to clear was already written and still stands.** "A region is
+turf and what grows on it; it has no opinion about water, about paving, or about
+anything a player made" — and "a fen has no opinion about a beach", which is
+exactly right, because **a fen is a PLACE and a beach is not part of it. The dusk
+is not a place.** It is the same country under a different light, which its own
+row says out loud, and light falls on sand as surely as on grass. Snow got here
+first on the same argument one step over: weather lies on things, and a bright
+snowfield running into a warm sandbank was the fault that earned it. So the test
+for any future row is whether its premise is the LIGHT — a region that wants this
+because its beach would look nicer tinted has misread the field.
+
+**IT IS COOLED, NOT DARKENED, and that is the whole of the tuning.** The obvious
+move is to bring the sand down, and it cannot come down far — **because it is
+coming down toward the water.** Untinted the shore sits 2.02:1 against the tinted
+shallows; darken it a third and that is 1.30, half and it is 1.08, which is a beach
+you cannot find the edge of. Same shape as the fen's floor a few hours earlier: **a
+value on its way down passes through whatever was already below it**, and that is
+now three times in one day.
+
+So the fix is HUE. Warmth was what was actually shouting — R−B of 70 on a floor
+whose R−B is −15 — and a pull toward pale violet takes that to 15 while the sand
+only comes from 4.18 to 3.12 against the turf and keeps 1.51 against the water.
+
+- **The test asserts both boundaries at once**, because a shore has two neighbours
+  and is only a shore while it is legible against each. Anything checking one can
+  be satisfied by a beach that has merged with the other.
+- **And that nothing else moved**: a region declaring a sand tint must move its
+  sand and nothing but, and every row that declares none is byte-identical to what
+  it drew before the field existed.
+
+**Still open:** the trunks are (85,64,60), the one warm mass left in the region.
 
 ### The prickly pear (6 Aug 2026) — built
 

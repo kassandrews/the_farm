@@ -3,7 +3,7 @@ import { scenePalette, seasonSkin, biomeSkin, mixHex, foliage, tuftInk } from ".
 import { MUSHROOM_ART, DEADWOOD_ART, PRICKLY_PEAR, shrubPeak, shrubRows } from "./renderer";
 import { BIOMES, BROADLEAF, treeForms } from "../content/biomes";
 import { SEASONS, seasonOn } from "../content/seasons";
-import { TILES, tileDef, GRASS, MUSHROOM, SHALLOW, WATER, FARMLAND, FARMLAND_WET, FLOOR, STONE, BEDROCK, CAVE_FLOOR, ORE_VEIN, SHAFT, DARK_TREE } from "../content/tiles";
+import { TILES, tileDef, GRASS, MUSHROOM, SHALLOW, WATER, SAND, FARMLAND, FARMLAND_WET, FLOOR, STONE, BEDROCK, CAVE_FLOOR, ORE_VEIN, SHAFT, DARK_TREE } from "../content/tiles";
 
 const at = (month: number) => new Date(2026, month - 1, 15, 12).getTime();
 
@@ -577,6 +577,63 @@ describe("water a region has an opinion about", () => {
         lum(deep),
       );
       expect(lum(wade) - lum(deep), `${b.id}: the two blues have closed up`).toBeGreaterThan(12);
+    }
+  });
+
+  it("keeps a tinted shore findable between the turf and the water", () => {
+    // §BiomeDef.sandTint, and this asserts the trap the tuning fell into rather
+    // than the colour it landed on. Sand is the palest natural tile in the game,
+    // so the instinct on a beach that shouts is to bring it DOWN — and it cannot
+    // come down far, because it is coming down toward the water. In the twilight
+    // country the untinted shore sits at a luma gap of 40 from the tinted
+    // shallows; a third of the way down that is 16 and half way it is 3, which is
+    // a beach whose edge you cannot find.
+    //
+    // So the assertion is a floor under BOTH boundaries at once. A shore has two
+    // neighbours and is only a shore while it is legible against each — against
+    // the turf it comes from and the water it runs into. Anything that only checks
+    // one of them can be satisfied by a beach that has merged with the other.
+    const lum = (h: string): number => {
+      const [r, g, b] = rgb(h);
+      return 0.299 * r + 0.587 * g + 0.114 * b;
+    };
+    for (const b of Object.values(BIOMES)) {
+      if (!b.sandTint) continue;
+      const shore = biomeSkin(tileDef(SAND), SAND, b).color;
+      const turf = biomeSkin(tileDef(GRASS), GRASS, b).color;
+      const wade = b.waterTint
+        ? mixHex(tileDef(SHALLOW).color, b.waterTint)
+        : tileDef(SHALLOW).color;
+      expect(shore, `${b.id}: its sand tint does nothing`).not.toBe(tileDef(SAND).color);
+      expect(
+        Math.abs(lum(shore) - lum(turf)),
+        `${b.id}: the shore has merged with the turf`,
+      ).toBeGreaterThan(25);
+      expect(
+        Math.abs(lum(shore) - lum(wade)),
+        `${b.id}: the shore has merged with the water`,
+      ).toBeGreaterThan(15);
+    }
+  });
+
+  it("lets a region light its shore only where it says so, and reaches nothing else", () => {
+    // The narrow list is the point (§BiomeDef.sandTint): this is a claim about
+    // LIGHT falling on a shore, not a licence to repaint the world. A region that
+    // declares one must move its sand and nothing but its sand, and a region that
+    // declares none must be byte-identical to what it drew before the field
+    // existed — which is every row but the dusk.
+    for (const b of Object.values(BIOMES)) {
+      for (const id of [GRASS, WATER, SHALLOW, FLOOR, FARMLAND, STONE] as const) {
+        const before = biomeSkin(tileDef(id), id, b).color;
+        const plain = { ...b, sandTint: undefined };
+        expect(before, `${b.id}: its sand tint reached ${id}`).toBe(
+          biomeSkin(tileDef(id), id, plain).color,
+        );
+      }
+      if (b.sandTint) continue;
+      expect(biomeSkin(tileDef(SAND), SAND, b), `${b.id} grew a shore it never asked for`).toBe(
+        tileDef(SAND),
+      );
     }
   });
 });
