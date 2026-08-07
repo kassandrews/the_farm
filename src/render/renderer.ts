@@ -5102,21 +5102,23 @@ export class Renderer {
       // glaucous blue-green all twelve months, which is exactly the kind of fact
       // this game lets a plant have.
       //
-      // AND IT IS SEPARATED BY HUE, BECAUSE LUMA HAS NOWHERE TO GO. Everything
-      // else drawn on a floor in this file was pulled apart by VALUE — the
-      // harebell 52 below its grass, the poppy 45 above — and that measurement is
-      // unavailable here: in spring the scrub's shrubs sit at 121 and its greened
-      // ground at 153, so a plant standing between them has 32 luma of room and
-      // any value at all lands within about 15 of something. The first pad green
-      // (#6f9070) was NINE from the shrubs, which is the poppy's failure again.
+      // IT TOOK THREE COLOURS AND THE THIRD ONE WAS THE GROUND'S FAULT. Drawn as
+      // an ordinary green (#6f9070) it landed NINE luma from the region's shrubs,
+      // which is the poppy's failure repeated; drawn as a grey-teal it read
+      // clearly and slightly wrong, a eucalyptus among thorn bushes. Both were
+      // symptoms: the scrub's spring ground was itself far too dark, leaving 32
+      // luma between the floor and the shrubs under it, and NOTHING can stand in
+      // a gap that size. With the ground corrected (§scrub.seasonGround) there
+      // are 47, and an honest green fits: #79a173 sits 24 under the floor and 23
+      // over the shrubs.
       //
-      // So this one is separated the other way: cool and desaturated against warm
-      // and saturated. The shrubs are #648449 — a yellow-green at 0.45 saturation
-      // — and the pads are a grey-teal at 0.20. It reads as the one plant here
-      // with a wax bloom on it, which is what glaucous means and what an Opuntia
-      // has. The SHAPE carries the rest, which is why it was given art at all.
-      const pad = night ? "#465a55" : "#7f9f92";
-      const lit = night ? "#546a63" : "#97b3a7";
+      // IT IS STILL COOLER AND FLATTER THAN THE SHRUBS, and that is the part to
+      // keep. They are #648449, a yellow-green at 0.45 saturation; this is 0.29
+      // and bluer. A prickly pear has a wax bloom on it — glaucous is the word —
+      // and that reads as a plant that is green in a DIFFERENT WAY, which is what
+      // it should be. The shape carries the rest, which is why it was given art.
+      const pad = night ? "#46584a" : "#79a173";
+      const lit = night ? "#556953" : "#92b48b";
       for (let r = 0; r < grid.length; r++) {
         const row = grid[r];
         for (let c = 0; c < w; c++) {

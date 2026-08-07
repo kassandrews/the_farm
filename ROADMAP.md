@@ -8799,12 +8799,16 @@ the brown. Spring is now poppies and goldfields sharing one kit at 0.16, the
 densest thing in the file after the anemone's carpet, because a superbloom is
 what it is.
 
-**The luma trap, third time.** True poppy orange `#e08a2b` lands within ONE luma
-point of the wet-season ground — worse than the harebell's fourteen, and hue does
-not help at all. `#ffc247` sits 45 above and reads as gold across the region,
-which is also how a poppy field reads from a distance: not orange, gold. The
-*throat* carries the true orange (`core: #d4700f`), where one dark pixel can
-afford it.
+**The luma trap, third time — and it was the ground, not the flower.** True poppy
+orange landed within ONE luma point of the wet-season floor as first drawn, so it
+was pushed up to a gold 45 above. Right move for the floor that existed, wrong
+colour for the flower: a poppy field reads gold from a distance and orange from
+anywhere you would actually stand. With the ground corrected to 168 the poppy is
+a poppy again — `#e07b18` at 0.89 saturation, reading by sitting **26 BELOW** the
+ground rather than 30 above it. **Down was always available and nobody looked**,
+because the first instinct on a mark that will not read is to brighten it. Worth
+remembering: the harebell went down, the leaf litter went down, and only this one
+went up — and it was the only one that had to be lied about to work.
 
 **And the tack, third time.** A poppy drawn `ooo` over a centred `*` is a T
 before it is a flower — the same shape the birch leaf litter came out as, for the
@@ -8908,10 +8912,18 @@ that measurement is unavailable here. Measured across the year:
 
 Spring is the squeeze: 32 luma of room between the shrubs and the greened ground,
 so ANY value lands within about 15 of something, and +9 is the poppy's failure
-again. So the pads went cool and desaturated instead — `#7f9f92`, a grey-teal at
-0.20 saturation against the shrubs' yellow-green at 0.45. It reads as the one
-plant here with a wax bloom on it, which is what glaucous means and what an
-Opuntia has. The shape carries the rest, which is why it was given art at all.
+again. So the pads went cool and desaturated — `#7f9f92`, a grey-teal at 0.20 against
+the shrubs' 0.45.
+
+**Then the ground was fixed and the pads went green again** (`#79a173`, 0.29):
+with 47 luma of room an honest green fits, 24 under the floor and 23 over the
+shrubs — the exact middle, which is the best any green can do here. **It reads
+softer than the grey-teal did**, and that is not a mistake in the numbers: a
+colour at the mathematical optimum still has hue doing nothing for it, where the
+teal was escaping through hue entirely. The green is the truer plant and the teal
+is the more legible one; the pads are green because a cactus that read as
+eucalyptus was the complaint. If legibility ever wins, `#7f9f92` is the value to
+go back to.
 
 **Two poses: leaning right and leaning left** — redrawn rather than mirrored,
 because the light comes from the upper left everywhere, so a flipped sprite

@@ -2823,23 +2823,30 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         // to be a superbloom, and a scatter of six flowers would be the region
         // hedging on its own best month.
         //
-        // BRIGHTER THAN THE POPPY ACTUALLY IS, on the harebell's measurement.
-        // True poppy orange is #e08a2b, which lands within one luma point of this
-        // ground — the same trap the birches' first blue fell into, and worse,
-        // because orange and green are further apart in hue than blue and green
-        // and it does not help at all. #ffc247 sits 45 above and reads as gold
-        // from across the region, which is also how a poppy field reads from a
-        // distance: not orange, gold.
+        // IT WAS GOLD FOR A WHILE AND IT IS ORANGE AGAIN, which is a correction
+        // to the GROUND arriving here second-hand. True poppy orange landed
+        // within one luma point of the spring floor as first drawn — the
+        // harebell's trap, and worse, because orange against green buys nothing
+        // that blue against green did not — so it was pushed up to #ffc247, a
+        // gold 45 above. That was the right move for the floor that existed and
+        // the wrong colour for the flower: a poppy field reads gold from a
+        // distance and orange from anywhere you would actually stand.
         //
-        // AND THE THROAT IS THE TRUE ORANGE. `core` gets #d4700f — 67 below the
-        // petals and 23 below the ground — so the flower carries the real colour
-        // in the one pixel that can afford to be dark. Three inks, and the
-        // deepest of them is the eye: the same trick the anemone plays with a
-        // gold centre on white, run the other way round.
+        // The floor was the thing that was wrong (§seasonGround: 153 and far too
+        // saturated, the darkest temperate ground in the file). At 168 the poppy
+        // can be a poppy: #e07b18 is the real thing at 0.89 saturation, and it
+        // reads by sitting 26 BELOW the ground rather than 30 above it. Down was
+        // always available and nobody looked, because the first instinct on a
+        // mark that will not read is to brighten it.
+        //
+        // AND THE THROAT GOES DEEPER STILL. `core` at #a8500c is 44 under the
+        // petals — a poppy's centre really is the darker part of it, and at three
+        // pixels across the eye needs the two inks that far apart to read one as
+        // being inside the other.
         season: "spring",
         density: 0.16,
-        accent: "#ffc247",
-        core: "#d4700f",
+        accent: "#e07b18",
+        core: "#a8500c",
         marks: [
           // FULL FACE AND THREE-QUARTER, and neither of them a bar. Drawn `ooo`
           // over a single `*` — a rim with a dot centred under it — a poppy is a
@@ -2859,10 +2866,12 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
           // (8c's finding, which the lily and the harebell both record needing).
           ["ooo", "o*o", ".x.", ".x."],
           ["oo.", "o*o", ".x.", ".x."],
-          // GOLDFIELDS: the small thing that carpets between them. Two petals and
-          // a stalk, no eye — at this size an eye on a two-pixel flower is just a
-          // hole, and what makes a superbloom read is the mixture of one big
-          // flower and a hundred tiny ones.
+          // AND A SMALL ONE BETWEEN THEM. Two petals and a stalk, no eye — at
+          // this size an eye on a two-pixel flower is just a hole, and what makes
+          // a superbloom read is the mixture of one big flower and a hundred tiny
+          // ones. It was written as goldfields while the kit was gold; sharing
+          // one accent, it is now simply a poppy further off, which is the more
+          // honest reading of three pixels anyway.
           ["o.o", ".x.", ".x."],
         ],
       },
