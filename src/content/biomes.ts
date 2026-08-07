@@ -313,6 +313,37 @@ export interface BiomeDef {
    *  the lit sides of things have somewhere to go. */
   snow?: Tint;
 
+  /** THE GROUND THIS REGION WEARS IN A NAMED MONTH, over its year-round tint and
+   *  under any snow. Optional, and the scrub is the only row with one.
+   *
+   *  A REGION WHOSE YEAR RUNS BACKWARDS. Every other row here is greenest in
+   *  summer because the SEASON is, and the region's own tint only says how far it
+   *  departs from that. Dry Mediterranean country does the opposite and it is the
+   *  most legible thing about it: the rains come in winter, the hills flush green
+   *  through the wet months and the wildflowers with them, and then it is brown
+   *  from late spring until the rains come back. A row with one tint for all four
+   *  months could say "parched" but could never say "parched EIGHT MONTHS OF THE
+   *  YEAR", which is a different and better sentence.
+   *
+   *  WHY IT IS NOT `snow` GENERALISED. Snow got here first and keeps its own
+   *  field for two reasons that still hold: it is fitted to a specific luma (233,
+   *  measured on the result — §snow), and it reaches SAND, which is a claim about
+   *  weather lying on things. This is turf only, because a green flush is
+   *  something that GREW, and a beach does not grow. Composing them in that order
+   *  — region, then month, then snow — means a row could in principle green in
+   *  February and still lie under snow in the same month; nothing does, and the
+   *  order is what makes that legible rather than a conflict.
+   *
+   *  Keyed by month rather than a single tint plus a list of months, because two
+   *  wet months are rarely the same colour: the first flush and the full green
+   *  are different pictures, and a region that could only say one of them would
+   *  have to pick.
+   *
+   *  Blended across borders per key (`blendRegions`), on the snow's own argument
+   *  — rains that arrived along a straight line would be the seam that function
+   *  exists to prevent. */
+  seasonGround?: Partial<Record<SeasonId, Tint>>;
+
   /** HOW MUCH OF THIS GRASS STANDS THROUGH THE SNOW, as the fraction of cells
    *  keeping their tuft in winter. Optional; 0.2 where a region has `snow` and
    *  meaningless without it. Ignored in every other month, when the ordinary 0.38
@@ -2548,6 +2579,34 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // rather than merely lighter than one.
     ground: { color: "#cbc47e", amount: 0.66 },
     tuft: { color: "#bcb26c", amount: 0.6 },
+    // THE YEAR RUNS BACKWARDS HERE, and it is the only row in the file that does
+    // (§BiomeDef.seasonGround). Mediterranean dry country is not parched in the
+    // way a desert is parched: the rains come in WINTER, the hills flush green
+    // through the wet months, the wildflowers go over with them, and then it is
+    // brown from late spring until the rains come back. Eight months of gold and
+    // four of green, with the green in the months every other region in the game
+    // is at its dullest.
+    //
+    // The row could say "parched" before this and could not say "parched EIGHT
+    // MONTHS OF THE YEAR", which is a different sentence and the true one. It is
+    // also the region's only event: the scrub was the same picture four times,
+    // and the spring thistle was the whole of its calendar.
+    //
+    // TWO GREENS, NOT ONE, because the wet season is two pictures. Winter is the
+    // FLUSH — new growth coming up through last year's dead stalks, so it is the
+    // deeper and cooler of the two, and it lands at #78a14f, which is a clear
+    // green next to a January that everywhere else spends grey or white. Spring
+    // is the full green already turning: lighter, yellower, a step back toward
+    // the gold it is about to become at #8aaf53, and it is what the wildflowers
+    // stand in.
+    //
+    // Summer and autumn name nothing, which is how a region says "this is what I
+    // am the rest of the time" — the year-round tint above is the eight-month
+    // answer and always was.
+    seasonGround: {
+      winter: { color: "#6d9c46", amount: 0.85 }, // → #78a14f, the first flush
+      spring: { color: "#7fa94b", amount: 0.8 }, // → #8aaf53, full green, going over
+    },
     // PARCHED, and the shape list says so more plainly than the tint does:
         // dry blades and grit, and not one sprout. Nothing here is sprouting.
     tufts: ["blades", "dot", "dot", "dot"],
@@ -2631,30 +2690,90 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Three rows of the five that stand beside the trunk, so the crown still
     // closes solidly above the parting.
     crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
-    // THE PARCHED ROW FLOWERS, and it is the best beat this field buys. The scrub
-    // is written everywhere else as dry — no sprouts in its tuft list, grit in
-    // its decor, bleached in every tint — so three months of small hard yellow
-    // is the exception that makes the other nine months mean something. Dry
-    // country blooms harder and briefer than green country, which is the whole
-    // THISTLE, and it frees the yellow for the fen. A dry, stony, overgrazed
-    // opening is where thistles win, so this is the scrub's plant on the same
-    // grounds the marigold is the fen's.
+    // TWO MONTHS OF FLOWER AND THE SPRING ONE IS NEW, which is what the wet
+    // season was for. The row used to spend spring on a thistle and the argument
+    // for it — "dry country blooms harder and briefer than green country" — was
+    // right about the region and wrong about the month: the flowers on dry
+    // Mediterranean ground come up in the green, on the water that fell in
+    // January, and they are over by the time the hills go gold. A thistle is what
+    // flowers AFTER that, standing in the brown.
     //
-    // Read from the TOP DOWN, which is how a thistle is built and why it works at
-    // this size: a splayed tuft, a tighter head under it, then a long bare stem.
-    // Nothing else in the file is tall and empty in its lower half, so a thistle
-    // is recognisable here even where its colour is not — which matters, since
-    // the scrub is the one ground that fights every bloom it is given.
-    bloom: {
-      season: "spring",
-      density: 0.1,
-      accent: "#c479ae",
-      core: "#e4a6d2",
-      marks: [
-        ["o.o", ".*.", ".o.", ".x.", ".x."],
-        ["o.o", "o*o", ".o.", ".x.", ".x."],
-      ],
-    },
+    // So the thistle moved to summer, where it belongs, and spring got the thing
+    // this whole region has been describing without ever drawing it.
+    bloom: [
+      {
+        // THE POPPY, and the goldfields with it — one kit, because they are the
+        // same colour and they come up in the same weeks. This is the picture the
+        // seasonGround above exists to make possible: gold over green, for one
+        // month out of twelve, on the region that is brown for eight.
+        //
+        // DENSER THAN ANYTHING ELSE IN THE FILE except the anemone's carpet, and
+        // for the same reason — carpeting is what it does. Nothing else here gets
+        // to be a superbloom, and a scatter of six flowers would be the region
+        // hedging on its own best month.
+        //
+        // BRIGHTER THAN THE POPPY ACTUALLY IS, on the harebell's measurement.
+        // True poppy orange is #e08a2b, which lands within one luma point of this
+        // ground — the same trap the birches' first blue fell into, and worse,
+        // because orange and green are further apart in hue than blue and green
+        // and it does not help at all. #ffc247 sits 45 above and reads as gold
+        // from across the region, which is also how a poppy field reads from a
+        // distance: not orange, gold.
+        //
+        // AND THE THROAT IS THE TRUE ORANGE. `core` gets #d4700f — 67 below the
+        // petals and 23 below the ground — so the flower carries the real colour
+        // in the one pixel that can afford to be dark. Three inks, and the
+        // deepest of them is the eye: the same trick the anemone plays with a
+        // gold centre on white, run the other way round.
+        season: "spring",
+        density: 0.16,
+        accent: "#ffc247",
+        core: "#d4700f",
+        marks: [
+          // A CUP LEANING EACH WAY, and neither of them flat — which is the
+          // correction. Drawn straight, `ooo` over a single `*`, a poppy is a
+          // three-pixel bar with a dot under it: a TACK, the same shape the
+          // birches' leaf litter came out as for exactly the same reason. A row
+          // of one colour with one pixel centred beneath it is a T before it is
+          // anything botanical, and no amount of being right about the plant
+          // survives that.
+          //
+          // Leaning, the rim and the throat sit on different columns and the eye
+          // gets a bowl instead. Both hands, because a colony all facing one way
+          // reads as printed (8c's finding, which the lily and the harebell both
+          // record needing).
+          [".oo", "o*o", ".x.", ".x."],
+          ["oo.", "o*o", ".x.", ".x."],
+          // GOLDFIELDS: the small thing that carpets between them. Two petals and
+          // a stalk, no eye — at this size an eye on a two-pixel flower is just a
+          // hole, and what makes a superbloom read is the mixture of one big
+          // flower and a hundred tiny ones.
+          ["o.o", ".x.", ".x."],
+        ],
+      },
+      {
+        // THE THISTLE, MOVED. A dry, stony, overgrazed opening is where thistles
+        // win, which is the scrub's plant on the same grounds the marigold is the
+        // fen's — and it flowers in the DRY, which is the correction. It now
+        // stands in the gold ground it was always drawn against, and the region's
+        // year reads: green and flowers, gold and thistles, gold, gold.
+        //
+        // Read from the TOP DOWN, which is how a thistle is built and why it
+        // works at this size: a splayed tuft, a tighter head under it, then a
+        // long bare stem. Nothing else in the file is tall and empty in its lower
+        // half, so a thistle is recognisable here even where its colour is not —
+        // which matters, since the scrub is the one ground that fights every
+        // bloom it is given.
+        season: "summer",
+        density: 0.1,
+        accent: "#c479ae",
+        core: "#e4a6d2",
+        marks: [
+          ["o.o", ".*.", ".o.", ".x.", ".x."],
+          ["o.o", "o*o", ".o.", ".x.", ".x."],
+        ],
+      },
+    ],
     // BALD GROUND, IN PATCHES — the scrub's oldest dead idea, finally built the
     // way this file learned to build it for the granite (§sheet).
     //

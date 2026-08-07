@@ -2026,9 +2026,9 @@ export class Renderer {
         // is the palette (§BiomeDef.snow). A finish still wins outright: a floor
         // somebody laid is a thing they did, and snow lying on the boards they
         // swept is a decision this game has not made.
-        const winter = this.palette.season?.id === "winter";
+        const season = this.palette.season?.id;
         const def =
-          finishFor(world, groundId, tx, ty) ?? biomeSkin(seasoned, groundId, turf, winter);
+          finishFor(world, groundId, tx, ty) ?? biomeSkin(seasoned, groundId, turf, season);
         const px = Math.round(this.sceneX(tx) - TILE / 2);
         const py = Math.round(this.sceneY(ty) - TILE / 2);
         // Open ground rolls. `groundTone` is smooth noise on the WORLD
@@ -2093,7 +2093,7 @@ export class Renderer {
           ? (this.ditherFill(
               fill,
               this.rolled(
-                biomeSkin(seasoned, groundId, { ...turf, ground: wrong.ground }, winter),
+                biomeSkin(seasoned, groundId, { ...turf, ground: wrong.ground }, season),
                 tx,
                 ty,
                 world.seed,
@@ -2115,7 +2115,7 @@ export class Renderer {
           this.drawTears(px, py, tx, ty, world.seed, t, [
             // The ground's own second ink, which is most of them: the picture
             // arriving in the other colour.
-            this.rolled(biomeSkin(seasoned, groundId, { ...turf, ground: wrong.ground }, winter), tx, ty, world.seed, true),
+            this.rolled(biomeSkin(seasoned, groundId, { ...turf, ground: wrong.ground }, season), tx, ty, world.seed, true),
             // A brighter and a darker version of the fill itself — a row that came
             // through with its level wrong rather than its hue.
             mixHex(fill, { color: "#ffffff", amount: 0.22 }),
@@ -2323,7 +2323,7 @@ export class Renderer {
           // with grass in it instead of grass with snow behind it.
           // Per region, because a mown common and grass to the knee do not stand
           // through a snowfall the same way (§BiomeDef.stubble).
-          const buried = winter && !!turf.snow;
+          const buried = season === "winter" && !!turf.snow;
           // 0.72 before: a tuft on 28% of cells, which at three shapes leaves
           // each shape on under one cell in ten and the field still mostly bare.
           if (h > (buried ? 1 - (turf.stubble ?? 0.2) : 0.62)) {

@@ -14,7 +14,7 @@
 
 import type { TileDef, TileId } from "../content/tiles";
 import { GRASS, MUSHROOM, SAND } from "../content/tiles";
-import type { SeasonDef } from "../content/seasons";
+import type { SeasonDef, SeasonId } from "../content/seasons";
 import type { BiomeDef, BiomeId, Tint } from "../content/biomes";
 
 /** Everything that varies by hour and by month, for one frame. */
@@ -335,6 +335,10 @@ export function blendRegions(parts: { def: BiomeDef; w: number }[]): BiomeDef {
   // the others do, a part without one contributing amount 0. Both left off
   // entirely when nobody has any, so the common case stays the object it was.
   const anySnow = parts.some((p) => p.def.snow);
+  // Every month any part paints, deduplicated — a part that stays brown all year
+  // contributes amount 0 to each of them and fades out of the blend on its own.
+  const rainy = [...new Set(parts.flatMap((p) => Object.keys(p.def.seasonGround ?? {})))] as SeasonId[];
+  const anyRain = rainy.length > 0;
   const anyAutumn = parts.some((p) => p.def.autumnCrown);
   const anyPull = parts.some((p) => p.def.seasonPull);
   const dial = (pick: (d: BiomeDef) => number | undefined): number => {
@@ -357,6 +361,21 @@ export function blendRegions(parts: { def: BiomeDef; w: number }[]): BiomeDef {
     // ending on the line the heaviest region flips. A snowline drawn straight
     // across country is the seam this function exists to prevent.
     ...(anySnow ? { snow: blend((d) => d.snow ?? NO_TINT) } : {}),
+    // AND THE WET-SEASON GROUNDS, one blend per month anybody named. Same
+    // argument as the snow's, which is the same argument as the water tint's: a
+    // region that greens in February meeting one that does not has to fade over
+    // the tiles its turf already fades over, or the rains arrive along a line.
+    //
+    // Keyed rather than a single tint, so a border between two regions that both
+    // green — or that green in different months — blends each month separately
+    // instead of averaging February into April.
+    ...(anyRain
+      ? {
+          seasonGround: Object.fromEntries(
+            rainy.map((k) => [k, blend((d) => d.seasonGround?.[k] ?? NO_TINT)]),
+          ) as Partial<Record<SeasonId, Tint>>,
+        }
+      : {}),
     ...(anyPull
       ? {
           seasonPull: {
@@ -396,11 +415,18 @@ export function biomeSkin(
   def: TileDef,
   id: TileId,
   biome: BiomeDef,
-  /** Is it winter? Only then does `BiomeDef.snow` land. Defaults false, so every
-   *  existing caller — and the identity guarantee below — is unchanged. */
-  winter = false,
+  /** WHICH MONTH, or undefined for callers that only want the region's own
+   *  year-round tint. It was a `winter` boolean while snow was the only thing a
+   *  season could do to the ground; `seasonGround` made that too narrow — the
+   *  scrub greens in TWO named months and browns in the other two, and a flag
+   *  cannot name a month. */
+  season?: SeasonId,
 ): TileDef {
-  const snow = winter ? biome.snow : undefined;
+  const snow = season === "winter" ? biome.snow : undefined;
+  // THE WET SEASON, where a region has one (§BiomeDef.seasonGround). Snow is the
+  // special case of this that arrived first and keeps its own field, because it
+  // is fitted to a luma the general one has no opinion about.
+  const rain = season ? biome.seasonGround?.[season] : undefined;
   // SNOW REACHES ONE TILE THE REGION'S OWN TINT DOES NOT, and the two lists have
   // to stay separate for the reason BIOME_GROUND was narrowed in the first place:
   // "a region is turf and what grows on it; it has no opinion about water, about
@@ -421,17 +447,22 @@ export function biomeSkin(
   // it is also one of the four rows that lie under snow. Returning early on the
   // ground tint alone would have quietly dropped the snow on exactly the region
   // that most needed it.
-  if (biome.ground.amount <= 0 && !snow) return def;
+  if (biome.ground.amount <= 0 && !snow && !rain) return def;
   // Spread, never construct — `name` is what the renderer branches on for the
   // ripple, the mushroom caps and the grass speckle (see seasonSkin).
   const pull = (hex: string): string => {
     // The region's tint on its own turf only; on sand there is nothing here but
     // the weather.
     const tinted = !onSand && biome.ground.amount > 0 ? mixHex(hex, biome.ground) : hex;
+    // THE MONTH'S OWN GROUND, over the region's year-round one and under the
+    // snow. Turf only — a green flush is something that GREW, and it has no more
+    // opinion about a beach than the region's own tint does, where snow (which
+    // lies on things) legitimately has one.
+    const wet = !onSand && rain ? mixHex(tinted, rain) : tinted;
     // AFTER the region's own colour, never instead of it: the granite in January
     // is grey rock with snow on it, and a snow that replaced the region would
     // make every snowy row the same white field.
-    return snow ? mixHex(tinted, snow) : tinted;
+    return snow ? mixHex(wet, snow) : wet;
   };
   const out: TileDef = { ...def, color: pull(def.color) };
   if (def.top) out.top = pull(def.top);

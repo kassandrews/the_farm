@@ -143,7 +143,7 @@ describe("biome tinting", () => {
         seasonSkin(tileDef(GRASS), GRASS, winterPalette, b.seasonPull?.ground ?? 1),
         GRASS,
         b,
-        true,
+        "winter",
       ).color;
       expect(bright(lying), `${b.id}'s snow is dingy`).toBeGreaterThan(225);
       // Not white either: a floor at 255 is the brightest thing the game can
@@ -152,8 +152,8 @@ describe("biome tinting", () => {
     }
 
     for (const b of Object.values(BIOMES)) {
-      const summer = biomeSkin(tileDef(GRASS), GRASS, b, false);
-      const winter = biomeSkin(tileDef(GRASS), GRASS, b, true);
+      const summer = biomeSkin(tileDef(GRASS), GRASS, b);
+      const winter = biomeSkin(tileDef(GRASS), GRASS, b, "winter");
       if (b.snow) {
         // It lands, and it lands PALER — a snow that darkened the ground would be
         // the field doing something other than what it is named for.
@@ -161,11 +161,47 @@ describe("biome tinting", () => {
         expect(rgb(winter.color)[2], `${b.id}'s snow is not paler`).toBeGreaterThan(
           rgb(summer.color)[2],
         );
+      } else if (b.seasonGround?.winter) {
+        // THE ONE REGION WHOSE JANUARY IS GREEN (content/biomes.ts
+        // §seasonGround). It is the same shape of claim as the snow's and the
+        // opposite direction: dry Mediterranean country greens when the rains
+        // come, so this must land, and it must land DARKER — a wet-season flush
+        // that brightened its ground would be snow by another name.
+        expect(winter.color, `${b.id}'s rains do nothing`).not.toBe(summer.color);
+        expect(rgb(winter.color)[2], `${b.id}'s rains read as snow`).toBeLessThan(
+          rgb(summer.color)[2],
+        );
       } else {
         // AND EVERY OTHER REGION IS BYTE-IDENTICAL IN JANUARY to what it was
-        // before this field existed. Fourteen rows did not ask for snow and must
-        // not have acquired any.
-        expect(winter, `${b.id} grew snow it never asked for`).toEqual(summer);
+        // before either field existed. Most rows asked for neither and must not
+        // have acquired one.
+        expect(winter, `${b.id} grew weather it never asked for`).toEqual(summer);
+      }
+    }
+  });
+
+  it("greens the dry country in its wet months and leaves the dry ones alone", () => {
+    // The scrub is the only row whose year runs backwards, and this asserts the
+    // SHAPE of that year rather than its colours: green in the two months it
+    // named, and byte-identical to its year-round self in the two it did not.
+    // A region that quietly greened in July would have lost the whole point,
+    // which is that this place is parched EIGHT months of the year.
+    const wet = Object.values(BIOMES).filter((b) => b.seasonGround);
+    expect(wet.map((b) => b.id)).toEqual(["scrub"]);
+    for (const b of wet) {
+      const plain = biomeSkin(tileDef(GRASS), GRASS, b);
+      for (const s of SEASONS) {
+        const now = biomeSkin(tileDef(GRASS), GRASS, b, s.id);
+        if (b.seasonGround?.[s.id]) {
+          // Greener means the green channel gains on the red — the measure that
+          // survives the season also moving the whole picture.
+          const lift = (h: string) => rgb(h)[1] - rgb(h)[0];
+          expect(lift(now.color), `${b.id} is not greener in ${s.id}`).toBeGreaterThan(
+            lift(plain.color),
+          );
+        } else {
+          expect(now, `${b.id} moved in ${s.id}, which it never asked for`).toEqual(plain);
+        }
       }
     }
   });
@@ -176,8 +212,8 @@ describe("biome tinting", () => {
     // grass is the colour it has always been. Snow is the one exception, and it
     // had to be a separate field to be one: spelled as a ground tint it would
     // have cost the guarantee in all four seasons to gain snow in one.
-    expect(biomeSkin(tileDef(GRASS), GRASS, BIOMES.meadow, false)).toBe(tileDef(GRASS));
-    expect(biomeSkin(tileDef(GRASS), GRASS, BIOMES.meadow, true)).not.toBe(tileDef(GRASS));
+    expect(biomeSkin(tileDef(GRASS), GRASS, BIOMES.meadow)).toBe(tileDef(GRASS));
+    expect(biomeSkin(tileDef(GRASS), GRASS, BIOMES.meadow, "winter")).not.toBe(tileDef(GRASS));
   });
 
   it("becomes the tint at amount 1, and meets it halfway at 0.5", () => {

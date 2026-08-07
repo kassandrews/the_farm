@@ -330,7 +330,7 @@ function paintChips(now: number): void {
       seasonSkin(tileDef(GRASS), GRASS, palette, def.seasonPull?.ground ?? 1),
       GRASS,
       def,
-      palette.season?.id === "winter",
+      palette.season?.id,
     ).color;
     const g = canvas.getContext("2d")!;
     g.fillStyle = turf;

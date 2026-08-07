@@ -8744,6 +8744,67 @@ holds its colour against the other three seasons. (And the pinewood's note about
 `crownOverlap` being *"the field the scrub has had since it was a heath"* is
 true again, having quietly stopped being so at some point.)
 
+## The scrub's year runs backwards (6 Aug 2026)
+
+The scrub was the same picture four times — parched in every month, with one
+spring thistle for a calendar. Dry Mediterranean country is not parched that way:
+**the rains come in winter**, the hills flush green through the wet months, the
+wildflowers go over with them, and it is brown from late spring until the rains
+return. A row with one tint for all four months could say "parched" but never
+"parched EIGHT MONTHS OF THE YEAR", which is a different and truer sentence.
+
+**New field: `BiomeDef.seasonGround`**, a `Partial<Record<SeasonId, Tint>>`
+composing after the region's own ground tint and under any snow. Why not just
+generalise `snow`: snow is fitted to a specific luma (233, measured on the
+result) and it reaches SAND, which is a claim about weather lying on things. A
+green flush is something that GREW, so it is turf only — a beach does not grow.
+Keyed by month rather than one tint plus a list, because the first flush and the
+full green are different pictures.
+
+- `biomeSkin`'s fourth parameter went from a `winter` boolean to a `SeasonId`. A
+  flag cannot name a month, and this region names two.
+- It **blends across borders per key**, on the snow's own argument: rains that
+  arrived along a straight line would be the seam `blendRegions` exists to
+  prevent. Photographed at the scrub/snow-country border and the fade is clean.
+- Winter `#78a14f` (the flush, deeper and cooler), spring `#8aaf53` (full green
+  already turning toward the gold it is about to become). Summer and autumn name
+  nothing, which is how a row says "this is what I am the rest of the time".
+
+**The thistle moved to summer and spring got poppies.** The old argument for a
+spring thistle — "dry country blooms harder and briefer than green country" — was
+right about the region and wrong about the month: these flowers come up in the
+green, on January's water. A thistle is what flowers *after* that, standing in
+the brown. Spring is now poppies and goldfields sharing one kit at 0.16, the
+densest thing in the file after the anemone's carpet, because a superbloom is
+what it is.
+
+**The luma trap, third time.** True poppy orange `#e08a2b` lands within ONE luma
+point of the wet-season ground — worse than the harebell's fourteen, and hue does
+not help at all. `#ffc247` sits 45 above and reads as gold across the region,
+which is also how a poppy field reads from a distance: not orange, gold. The
+*throat* carries the true orange (`core: #d4700f`), where one dark pixel can
+afford it.
+
+**And the tack, third time.** A poppy drawn `ooo` over a centred `*` is a T
+before it is a flower — the same shape the birch leaf litter came out as, for the
+same reason. Leaning it puts the rim and the throat on different columns and the
+eye gets a bowl. Both hands, so a colony does not read as printed.
+
+**Deliberate and checked:** the tuft speckle keeps its dry straw colour through
+the wet months. On green ground that reads as last year's dead stalks standing in
+the new growth, which is exactly what a California hillside looks like in
+February.
+
+**Next here:** a prickly pear, decided but not built. It does NOT belong in
+`decor` (paint, capped at 5x5, no collision — a cactus you walk through is the
+one thing a cactus must not be) or as a tree form (fellable for eight wood, and
+the girth rule). It belongs on the `shrubs` node the scrub already has at 1.0:
+solid, already the region's commonest plant, already two wood. What is missing is
+per-region shrub ART — `drawShrub` derives one generic dome from the region's
+crown — and the precedent for adding it is sitting right there in `stone.shapes`
+and `tufts`. It must be the MINORITY entry in that list; if every bush is a
+cactus the chaparral becomes a desert.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
