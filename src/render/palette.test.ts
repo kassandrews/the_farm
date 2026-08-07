@@ -162,11 +162,14 @@ describe("biome tinting", () => {
           rgb(summer.color)[2],
         );
       } else if (b.seasonGround?.winter) {
-        // THE ONE REGION WHOSE JANUARY IS GREEN (content/biomes.ts
-        // §seasonGround). It is the same shape of claim as the snow's and the
-        // opposite direction: dry Mediterranean country greens when the rains
-        // come, so this must land, and it must land DARKER — a wet-season flush
-        // that brightened its ground would be snow by another name.
+        // NOBODY TAKES THIS BRANCH TODAY AND IT IS HERE ON PURPOSE. The scrub was
+        // drawn with a winter flush and it came out confusing rather than wrong —
+        // green in the one month six other regions go white reads as a bug from
+        // inside January, whatever the botany says (content/biomes.ts
+        // §scrub.seasonGround). If a row ever does claim a green winter, the
+        // claim it has to survive is this one: it must land, and it must land
+        // DARKER, because a wet-season flush that brightened its ground is snow
+        // by another name.
         expect(winter.color, `${b.id}'s rains do nothing`).not.toBe(summer.color);
         expect(rgb(winter.color)[2], `${b.id}'s rains read as snow`).toBeLessThan(
           rgb(summer.color)[2],

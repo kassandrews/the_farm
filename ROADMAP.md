@@ -8766,9 +8766,17 @@ full green are different pictures.
 - It **blends across borders per key**, on the snow's own argument: rains that
   arrived along a straight line would be the seam `blendRegions` exists to
   prevent. Photographed at the scrub/snow-country border and the fade is clean.
-- Winter `#78a14f` (the flush, deeper and cooler), spring `#8aaf53` (full green
-  already turning toward the gold it is about to become). Summer and autumn name
-  nothing, which is how a row says "this is what I am the rest of the time".
+- **Spring only, and that is a correction made by looking.** It was built with a
+  winter flush as well and the botany was right while the picture was confusing:
+  winter means one thing everywhere else in this game — the world goes quiet and
+  six regions go white — so a seventh going GREEN in January reads as a bug, not
+  as a different climate, because the player has no way to tell those apart from
+  inside the month. Spring carries the idea better anyway: the ground greens
+  exactly when the flowers arrive, so the two land as ONE event. `#8aaf53`, and
+  the other three months name nothing.
+- The now-dead `seasonGround.winter` branch is kept in `palette.test.ts` on
+  purpose, with the reasoning: if a row ever does claim a green winter, that is
+  the assertion it has to survive.
 
 **The thistle moved to summer and spring got poppies.** The old argument for a
 spring thistle — "dry country blooms harder and briefer than green country" — was
@@ -8791,9 +8799,24 @@ same reason. Leaning it puts the rim and the throat on different columns and the
 eye gets a bowl. Both hands, so a colony does not read as printed.
 
 **Deliberate and checked:** the tuft speckle keeps its dry straw colour through
-the wet months. On green ground that reads as last year's dead stalks standing in
-the new growth, which is exactly what a California hillside looks like in
-February.
+the wet month. On green ground that reads as last year's dead stalks standing in
+the new growth, which is exactly what a California hillside looks like in spring.
+
+**The notch had to straddle the trunk, and that is arithmetic, not taste.** At
+half-width 1 the gap is two pixels against a FIVE-pixel stem, so the crown still
+lay across the trunk and what showed through was a slot cut in the foliage on top
+of it. At 3 the gap is six pixels — half a pixel of daylight each side, which the
+eye cannot resolve, so the trunk came out a five-by-five brown block punched
+through the crown. At 4 it is eight pixels: a pixel and a half of ground either
+side of the bark, and the crown genuinely forks into two lobes with the tree
+standing between them. The number is decided by the trunk's width (five plus
+two), not by preference. The tail had to be reshaped twice to carry it — a gap
+must be narrower than its row, so the crown now ends `7,6,6` and stops tapering
+over the fork, because a crown that DIVIDES cannot also close.
+
+The bole is down to **two visible pixels**, less than anything else in the game
+shows, and it only works because of that fork: the stem is legible INSIDE the
+crown, so it no longer has to be legible under it.
 
 **Next here:** a prickly pear, decided but not built. It does NOT belong in
 `decor` (paint, capped at 5x5, no collision — a cactus you walk through is the

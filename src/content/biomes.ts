@@ -2592,20 +2592,24 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // also the region's only event: the scrub was the same picture four times,
     // and the spring thistle was the whole of its calendar.
     //
-    // TWO GREENS, NOT ONE, because the wet season is two pictures. Winter is the
-    // FLUSH — new growth coming up through last year's dead stalks, so it is the
-    // deeper and cooler of the two, and it lands at #78a14f, which is a clear
-    // green next to a January that everywhere else spends grey or white. Spring
-    // is the full green already turning: lighter, yellower, a step back toward
-    // the gold it is about to become at #8aaf53, and it is what the wildflowers
-    // stand in.
+    // ONE MONTH, NOT TWO, AND THAT IS A CORRECTION MADE BY LOOKING. It was drawn
+    // with a winter flush as well — deeper and cooler, the new growth coming up
+    // through last year's stalks — and the botany was right and the picture was
+    // confusing. Winter in this game means one thing everywhere else: the world
+    // goes quiet and six regions go white. A seventh going GREEN in the same
+    // month does not read as a different climate, it reads as a bug, because the
+    // player has no way to tell those apart from inside January.
     //
-    // Summer and autumn name nothing, which is how a region says "this is what I
-    // am the rest of the time" — the year-round tint above is the eight-month
-    // answer and always was.
+    // Spring can carry the whole idea on its own, and carries it better: the
+    // ground greens exactly when the flowers arrive, so the two land as ONE
+    // event rather than as a slow change nobody was watching for. Nine months of
+    // gold and one of green is a sharper sentence than eight and two anyway.
+    //
+    // Winter, summer and autumn name nothing, which is how a row says "this is
+    // what I am the rest of the time" — the year-round tint above is the
+    // eleven-month answer and always was.
     seasonGround: {
-      winter: { color: "#6d9c46", amount: 0.85 }, // → #78a14f, the first flush
-      spring: { color: "#7fa94b", amount: 0.8 }, // → #8aaf53, full green, going over
+      spring: { color: "#7fa94b", amount: 0.8 }, // → #8aaf53, the green year
     },
     // PARCHED, and the shape list says so more plainly than the tint does:
         // dry blades and grit, and not one sprout. Nothing here is sprouting.
@@ -2670,26 +2674,47 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // is a leaf and one that holds its width at the top is a lid. It closes 6,6,4,2
     // onto the stem, because those four rows are the ones standing beside it and
     // they have to reach it to read as foliage around a trunk.
-    crownRows: [3, 5, 6, 7, 7, 7, 7, 7, 6, 6, 4, 2],
-    // AND THEN LOWER STILL: four visible pixels of stem, not six. Nine of trunk
+    crownRows: [3, 5, 6, 7, 7, 7, 7, 7, 7, 7, 6, 6],
+    // AND THEN LOWER, AND LOWER AGAIN: TWO visible pixels of stem. Seven of trunk
     // with five crown rows beside it. A hawthorn on open ground is a tree you
     // could walk under only by ducking, and every pixel of bare pole is the eye
     // being told otherwise — the ONE number this silhouette turns on, since the
     // crown itself was already right.
-    crownOverlap: 5,
-    trunkHeight: 9,
-    // A NOTCH, which is what makes four pixels of stem read as four rather than
-    // as none. Foliage closing flat onto a short bole hides the join, and a tree
-    // whose crown meets the ground is a bush; the parting lets bark show THROUGH
-    // the underside, so the eye finds the stem twice — once below the crown and
-    // once inside it — and reads a trunk that goes all the way up.
     //
-    // It is the birches' field doing the birches' job (§birch.crownGaps): open
-    // downward against the trunk, so it is an underside and not a hole, and
-    // widening as it descends because a branch angle opens away from the stem.
-    // Three rows of the five that stand beside the trunk, so the crown still
-    // closes solidly above the parting.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
+    // Two pixels is less bole than anything else in the game shows and it only
+    // works because of the notch below: the stem is legible INSIDE the crown, so
+    // it no longer has to be legible under it.
+    crownOverlap: 5,
+    trunkHeight: 7,
+    // A NOTCH WIDER THAN THE TRUNK, which is the whole difference between a
+    // parting and a scratch. At half-width 1 the gap is two pixels and the stem
+    // is FIVE, so the crown still lay across the trunk and the two pixels showing
+    // through were a slot cut in the foliage ON TOP of it — bark visible, and
+    // visible in the one place that says nothing about how the tree is built.
+    //
+    // AND THREE WAS NOT ENOUGH EITHER, which is the same measurement one step
+    // further. Six pixels of gap against a five-pixel stem leaves half a pixel of
+    // daylight on each side — arithmetically a parting and visually a trunk
+    // wedged into a hole, because the eye cannot see a gap it cannot resolve. The
+    // trunk came out a five-by-five brown BLOCK punched through the foliage.
+    //
+    // At 4 the gap is eight pixels, so there is a pixel and a half of ground
+    // either side of the bark and the crown genuinely forks: two lobes of leaf
+    // with the tree standing up between them. That is what the underside of a low
+    // broad crown looks like from here, and it is the number the trunk's own
+    // width decides — not a matter of taste, a matter of five plus two.
+    //
+    // THE TAIL HAD TO CHANGE SHAPE TO CARRY IT, TWICE. A gap must be narrower
+    // than its row, so the original close (6,4,2) could not hold even a 3, and
+    // 6,5,4 could not hold a 4. The crown now ends 7,6,6: it stops tapering
+    // altogether over the fork, because a crown that DIVIDES does not also close
+    // — the two lobes each need enough width left to read as foliage rather than
+    // as a pair of stubs.
+    //
+    // Four rows of the five standing beside the trunk. Deeper and it becomes the
+    // birches' recorded failure — "a long white channel driven up into the
+    // canopy" — which arrives sooner here, on a tree less than half their height.
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
     // TWO MONTHS OF FLOWER AND THE SPRING ONE IS NEW, which is what the wet
     // season was for. The row used to spend spring on a thistle and the argument
     // for it — "dry country blooms harder and briefer than green country" — was
@@ -2730,19 +2755,23 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         accent: "#ffc247",
         core: "#d4700f",
         marks: [
-          // A CUP LEANING EACH WAY, and neither of them flat — which is the
-          // correction. Drawn straight, `ooo` over a single `*`, a poppy is a
-          // three-pixel bar with a dot under it: a TACK, the same shape the
-          // birches' leaf litter came out as for exactly the same reason. A row
-          // of one colour with one pixel centred beneath it is a T before it is
-          // anything botanical, and no amount of being right about the plant
-          // survives that.
+          // FULL FACE AND THREE-QUARTER, and neither of them a bar. Drawn `ooo`
+          // over a single `*` — a rim with a dot centred under it — a poppy is a
+          // TACK, the same shape the birches' leaf litter came out as for exactly
+          // the same reason: a row of one colour over one pixel is a T before it
+          // is anything botanical, and being right about the plant does not
+          // survive it. What fixes it is the SECOND row being full width too, so
+          // the head is a block of petals with the throat inside it rather than a
+          // crossbar on a stalk.
           //
-          // Leaning, the rim and the throat sit on different columns and the eye
-          // gets a bowl instead. Both hands, because a colony all facing one way
-          // reads as printed (8c's finding, which the lily and the harebell both
-          // record needing).
-          [".oo", "o*o", ".x.", ".x."],
+          // The first cut of that fix opened the top corner (`.oo`) to lean the
+          // flower, and a missing corner on a six-pixel head is not a lean, it is
+          // a bite. Filled, it is a poppy seen face on. The tilt survives in the
+          // second mark, where the notch is at the outer edge and reads as a
+          // flower turned rather than a flower damaged — and a colony needs the
+          // variation, because one glyph over a whole region reads as printed
+          // (8c's finding, which the lily and the harebell both record needing).
+          ["ooo", "o*o", ".x.", ".x."],
           ["oo.", "o*o", ".x.", ".x."],
           // GOLDFIELDS: the small thing that carpets between them. Two petals and
           // a stalk, no eye — at this size an eye on a two-pixel flower is just a
