@@ -2612,8 +2612,25 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // onto the stem, because those four rows are the ones standing beside it and
     // they have to reach it to read as foliage around a trunk.
     crownRows: [3, 5, 6, 7, 7, 7, 7, 7, 6, 6, 4, 2],
-    crownOverlap: 4,
-    trunkHeight: 10,
+    // AND THEN LOWER STILL: four visible pixels of stem, not six. Nine of trunk
+    // with five crown rows beside it. A hawthorn on open ground is a tree you
+    // could walk under only by ducking, and every pixel of bare pole is the eye
+    // being told otherwise — the ONE number this silhouette turns on, since the
+    // crown itself was already right.
+    crownOverlap: 5,
+    trunkHeight: 9,
+    // A NOTCH, which is what makes four pixels of stem read as four rather than
+    // as none. Foliage closing flat onto a short bole hides the join, and a tree
+    // whose crown meets the ground is a bush; the parting lets bark show THROUGH
+    // the underside, so the eye finds the stem twice — once below the crown and
+    // once inside it — and reads a trunk that goes all the way up.
+    //
+    // It is the birches' field doing the birches' job (§birch.crownGaps): open
+    // downward against the trunk, so it is an underside and not a hole, and
+    // widening as it descends because a branch angle opens away from the stem.
+    // Three rows of the five that stand beside the trunk, so the crown still
+    // closes solidly above the parting.
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
     // THE PARCHED ROW FLOWERS, and it is the best beat this field buys. The scrub
     // is written everywhere else as dry — no sprouts in its tuft list, grit in
     // its decor, bleached in every tint — so three months of small hard yellow
