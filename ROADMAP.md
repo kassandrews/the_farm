@@ -8880,9 +8880,34 @@ narrow join is what says they are separate flat things growing out of each other
 
 **It does not season, and it is the only plant in the region that does not.**
 Everything else here browns with the ground and goes rust in October; a succulent
-holds the same glaucous blue-green all twelve months. That also keeps it from
-reading as another bush — the shrubs beside it are `#648449`, a yellow-green, and
-the pads sit bluer and a step brighter at `#6f9070`.
+holds the same glaucous blue-green all twelve months.
+
+**And it is separated by HUE, because luma had nowhere to go** — the first
+region where that is true. Everything else drawn on a floor in this file was
+pulled apart by VALUE (the harebell 52 below its grass, the poppy 45 above), and
+that measurement is unavailable here. Measured across the year:
+
+| | ground | shrub/tree | first pad green `#6f9070` vs shrub |
+|---|---|---|---|
+| spring | 153 | 121 | **+9** |
+| summer | 181 | 116 | +14 |
+| autumn | 181 | 103 | +27 |
+
+Spring is the squeeze: 32 luma of room between the shrubs and the greened ground,
+so ANY value lands within about 15 of something, and +9 is the poppy's failure
+again. So the pads went cool and desaturated instead — `#7f9f92`, a grey-teal at
+0.20 saturation against the shrubs' yellow-green at 0.45. It reads as the one
+plant here with a wax bloom on it, which is what glaucous means and what an
+Opuntia has. The shape carries the rest, which is why it was given art at all.
+
+**Three poses, and the third is about the rocks.** Leaning right, leaning left
+(redrawn rather than mirrored — the light comes from the upper left everywhere,
+so a flipped sprite reads as a plant with the sun behind it, and there is a test),
+and a single young pad. The young one varies MASS where the other two vary
+direction, which is what actually stops a scatter reading as printed. It is drawn
+UPRIGHT: as the wide oval the grown pads are, one on its own is a rounded lump on
+grass, which is what a boulder is — in the region carrying seventeen stones to a
+screen, by far the most in the file.
 
 **Expect to be asked why you can chop it for wood.** It is the shrub node, so it
 yields the same two wood a bush does. The alternative was a new node class for

@@ -759,36 +759,60 @@ describe("crown silhouettes", () => {
   });
 
   it("keeps the prickly pear a pad cactus and not a saguaro", () => {
-    // The grid's own rules first: rectangular, and only inks the draw path knows.
-    const w = PRICKLY_PEAR[0].length;
-    for (const row of PRICKLY_PEAR) {
-      expect(row.length, `"${row}"`).toBe(w);
-      for (const ch of row) expect("lx.", `"${ch}"`).toContain(ch);
+    // MORE THAN ONE, on the decor kit's rule — a single glyph scattered over a
+    // whole region reads as printed however random the placement under it is.
+    expect(PRICKLY_PEAR.length, "one cactus is a printed cactus").toBeGreaterThan(1);
+    // And they have to differ in MASS and not only in direction: a set that was
+    // all the same size would vary the outline and not the picture.
+    const mass = PRICKLY_PEAR.map((g) => g.join("").replace(/[^lx]/g, "").length);
+    expect(Math.max(...mass) / Math.min(...mass), "every cactus is the same size").toBeGreaterThan(
+      1.5,
+    );
+
+    for (const art of PRICKLY_PEAR) {
+      // The grid's own rules: rectangular, and only inks the draw path knows.
+      const w = art[0].length;
+      for (const row of art) {
+        expect(row.length, `"${row}"`).toBe(w);
+        for (const ch of row) expect("lx.", `"${ch}"`).toContain(ch);
+      }
+      // It stands in a shrub's footprint, so it obeys the shrub's ceiling: a
+      // plant taller than its tile would be a tree, and this is undergrowth.
+      expect(art.length, "the cactus outgrew its tile").toBeLessThanOrEqual(16);
+      expect(w, "the cactus outgrew its tile").toBeLessThanOrEqual(16);
+
+      // AND THE THING THE SPECIES ACTUALLY IS. Opuntia pads are flat ovals,
+      // wider than they are tall; drawn taller than wide the sprite came out a
+      // SAGUARO, which is the other cactus and the one from the cartoons. The
+      // proportion is the whole read, so it is asserted rather than left to the
+      // eye: the widest row is wider than the plant is tall.
+      const widest = Math.max(...art.map((r) => r.replace(/\./g, "").length));
+      expect(widest, "the pads are narrower than the plant is tall").toBeGreaterThan(
+        art.length / 2,
+      );
+
+      // AND THE LIGHT COMES FROM THE UPPER LEFT, in every pose. A mirrored sprite
+      // arrives lit down its right-hand side and reads as a plant with the sun
+      // behind it standing beside plants with the sun in front — so the
+      // silhouette may flip and the lit column may not. Every `l` sits at the
+      // left end of its own run.
+      for (const row of art) {
+        expect(row, `lit on the wrong side: "${row}"`).not.toMatch(/x+l/);
+      }
+
+      // A WAIST, where there is more than one pad. Two pads merged into one blob
+      // are a lumpy bush; the narrow join is what says they are separate flat
+      // things growing out of each other. The single young pad has no join and
+      // is exempt — it is one oval and has nothing to be joined to.
+      const solid = art.map((r) => r.replace(/\./g, "").length);
+      const fattest = solid.indexOf(Math.max(...solid));
+      const below = solid.slice(fattest + 1);
+      if (art.length > 6) {
+        expect(Math.min(...below), "the pads merged into one blob").toBeLessThan(
+          Math.max(...solid) / 2,
+        );
+      }
     }
-    // It stands in a shrub's footprint, so it obeys the shrub's ceiling: a plant
-    // taller than its tile would be a tree, and this is undergrowth.
-    expect(PRICKLY_PEAR.length, "the cactus outgrew its tile").toBeLessThanOrEqual(16);
-    expect(w, "the cactus outgrew its tile").toBeLessThanOrEqual(16);
-
-    // AND THE THING THE SPECIES ACTUALLY IS. Opuntia pads are flat ovals, wider
-    // than they are tall; drawn taller than wide the sprite came out a SAGUARO,
-    // which is the other cactus and the one from the cartoons. The proportion is
-    // the whole read, so it is asserted rather than left to the eye: the widest
-    // row is wider than the plant is tall.
-    const widest = Math.max(...PRICKLY_PEAR.map((r) => r.replace(/\./g, "").length));
-    expect(widest, "the pads are narrower than the plant is tall").toBeGreaterThan(
-      PRICKLY_PEAR.length / 2,
-    );
-
-    // AND IT HAS A WAIST. Two pads merged into one blob are a lumpy bush; the
-    // narrow join is what says "these are separate flat things growing out of
-    // each other". So some row between the two widest ones has to be narrow.
-    const solid = PRICKLY_PEAR.map((r) => r.replace(/\./g, "").length);
-    const fattest = solid.indexOf(Math.max(...solid));
-    const rest = solid.slice(fattest + 1);
-    expect(Math.min(...rest), "the pads merged into one blob").toBeLessThan(
-      Math.max(...solid) / 2,
-    );
   });
 
   it("keeps the odd plant in the minority, wherever a region draws one", () => {

@@ -538,17 +538,56 @@ const ROCK_SHAPES: Record<
  *  outline is the entire silhouette — the same subtraction the stump's flare and
  *  moss lost (CLAUDE.md §Restraint). A prickly pear is recognisable by its pads
  *  and by nothing else at this size. */
-export const PRICKLY_PEAR: string[] = [
-  ".....lxx...",
-  "....lxxxx..",
-  "....lxxxxx.",
-  ".....lxxx..",
-  "......xx...",
-  "..lxxxx....",
-  ".lxxxxxx...",
-  ".xxxxxxx...",
-  "..xxxxx....",
-  "...xxx.....",
+export const PRICKLY_PEAR: string[][] = [
+  // Leaning right: a pad off the base pad's upper right.
+  [
+    ".....lxx...",
+    "....lxxxx..",
+    "....lxxxxx.",
+    ".....lxxx..",
+    "......xx...",
+    "..lxxxx....",
+    ".lxxxxxx...",
+    ".xxxxxxx...",
+    "..xxxxx....",
+    "...xxx.....",
+  ],
+  // And leaning left. NOT A MIRROR OF THE FIRST, though the outline is: the light
+  // comes from the upper left everywhere in this game, so a flipped sprite would
+  // arrive lit down its right-hand side and read as a plant with the sun behind
+  // it standing next to plants with the sun in front. The silhouette mirrors; the
+  // lit column is redrawn on the left of each pad, where it belongs.
+  [
+    "...lxx.....",
+    "..lxxxxx...",
+    ".lxxxxx....",
+    "..lxxx.....",
+    "...xx......",
+    "....lxxxx..",
+    "...lxxxxxx.",
+    "...xxxxxxx.",
+    "....xxxxx..",
+    ".....xxx...",
+  ],
+  // AND A YOUNG ONE: a single pad, no join at all. It is the cheapest variety in
+  // the set and the most useful, because it varies SIZE where the other two vary
+  // direction — a scatter of plants that are all the same mass reads as printed
+  // however many outlines it has (the decor kit's oldest finding, §DecorKit.marks).
+  // A first-year Opuntia really is one pad stuck in the ground.
+  //
+  // UPRIGHT, NOT LYING, AND THAT IS ABOUT THE ROCKS. Drawn as the wide oval the
+  // grown pads are, one on its own is a rounded lump on grass — which is what a
+  // BOULDER is, in the region that carries seventeen stones to a screen (§rocks,
+  // by far the most in the file). Standing it on its edge costs nothing and is
+  // also what a young pad does: it is the parent's shape before anything grew off
+  // it, not a pad that fell over.
+  [
+    "....xxx....",
+    "...lxxxx...",
+    "...lxxxx...",
+    "...lxxxx...",
+    "....xxx....",
+  ],
 ];
 
 export const DEADWOOD_ART: Record<"stump" | "log", string[]> = {
@@ -5048,7 +5087,14 @@ export class Renderer {
       ? kinds[Math.floor(decoHash(tx, ty, world.seed ^ 0x71c3) * kinds.length) % kinds.length]
       : "bush";
     if (kind === "pear") {
-      const grid = PRICKLY_PEAR;
+      // WHICH PLANT THIS ONE IS. Its own salt again — the shape roll above already
+      // decided it was a cactus at all, and a pear whose pose tracked that would
+      // be the same roll asked twice.
+      const grid =
+        PRICKLY_PEAR[
+          Math.floor(decoHash(tx, ty, world.seed ^ 0x1e6b) * PRICKLY_PEAR.length) %
+            PRICKLY_PEAR.length
+        ];
       const w = grid[0].length;
       const left = cx - Math.floor(w / 2);
       const gtop = base - grid.length;
@@ -5063,11 +5109,23 @@ export class Renderer {
       // does not. Everything else here browns with the ground and goes rust in
       // October (§autumnCrown); a cactus is a succulent and holds the same
       // glaucous blue-green all twelve months, which is exactly the kind of fact
-      // this game lets a plant have. It is also what keeps it from reading as
-      // another bush: the shrubs beside it are #648449, a yellow-green, and this
-      // sits bluer and a step brighter.
-      const pad = night ? "#3f5347" : "#6f9070";
-      const lit = night ? "#4e6555" : "#86a686";
+      // this game lets a plant have.
+      //
+      // AND IT IS SEPARATED BY HUE, BECAUSE LUMA HAS NOWHERE TO GO. Everything
+      // else drawn on a floor in this file was pulled apart by VALUE — the
+      // harebell 52 below its grass, the poppy 45 above — and that measurement is
+      // unavailable here: in spring the scrub's shrubs sit at 121 and its greened
+      // ground at 153, so a plant standing between them has 32 luma of room and
+      // any value at all lands within about 15 of something. The first pad green
+      // (#6f9070) was NINE from the shrubs, which is the poppy's failure again.
+      //
+      // So this one is separated the other way: cool and desaturated against warm
+      // and saturated. The shrubs are #648449 — a yellow-green at 0.45 saturation
+      // — and the pads are a grey-teal at 0.20. It reads as the one plant here
+      // with a wax bloom on it, which is what glaucous means and what an Opuntia
+      // has. The SHAPE carries the rest, which is why it was given art at all.
+      const pad = night ? "#465a55" : "#7f9f92";
+      const lit = night ? "#546a63" : "#97b3a7";
       for (let r = 0; r < grid.length; r++) {
         const row = grid[r];
         for (let c = 0; c < w; c++) {
