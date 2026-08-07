@@ -3103,34 +3103,141 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // could never fix — yellow on this murk measures about 1.75:1, the best
     // contrast of any bloom here, where the old violet managed 1.06 and separated
     // by hue alone.
-    bloom: {
-      season: "spring",
-      density: 0.09,
-      accent: "#f0c845",
-      core: "#d99a2b",
-      // THE EYE IS ENCLOSED, and that needed five pixels of width to do without
-      // drawing a square. At three wide, "petals all the way round a centre" is a
-      // 3×3 block — the shape reads as a TILE before it reads as a flower, which
-      // is the one thing a cup must not do. At five, the corners can come off and
-      // the ring closes: yellow above, below and both sides of the amber, with a
-      // rounded edge outside that.
-      //
-      // The biggest bloom in the file, and a kingcup is the biggest flower any of
-      // these regions actually grows, so the size is the plant rather than a
-      // compromise.
-      marks: [
-        [".ooo.", "oo*oo", ".ooo.", "..x..", "..x.."],
-        [".ooo.", "oo*oo", ".ooo.", "..x.."],
-      ],
-    },
+    bloom: [
+      {
+        season: "spring",
+        density: 0.09,
+        accent: "#f0c845",
+        core: "#d99a2b",
+        // THE EYE IS ENCLOSED, and that needed five pixels of width to do without
+        // drawing a square. At three wide, "petals all the way round a centre" is
+        // a 3×3 block — the shape reads as a TILE before it reads as a flower,
+        // which is the one thing a cup must not do. At five, the corners can come
+        // off and the ring closes: yellow above, below and both sides of the
+        // amber, with a rounded edge outside that.
+        //
+        // The biggest bloom in the file, and a kingcup is the biggest flower any
+        // of these regions actually grows, so the size is the plant rather than a
+        // compromise.
+        marks: [
+          [".ooo.", "oo*oo", ".ooo.", "..x..", "..x.."],
+          [".ooo.", "oo*oo", ".ooo.", "..x.."],
+        ],
+      },
+      {
+        // THE LILY, AND IT NODS. Asked for as a wood lily, and the species moved
+        // one step sideways for the reason the fly agaric did: Lilium
+        // philadelphicum is a plant of DRY sandy woods over most of its range, and
+        // this file has already decided once that a region's ecology beats the
+        // first name that comes to mind. What flowers over standing water in July
+        // is the Turk's cap — L. superbum, L. michiganense — a wet-meadow and fen
+        // lily, same genus, same orange, and it is the one the drawing wanted
+        // anyway. (If the upright cup was the point rather than the plant, that is
+        // one mark's worth of work to put back.)
+        //
+        // AND THE NOD IS WHY IT EARNS A SLOT AT ALL. A wood lily faces UP, which
+        // at five pixels is a cup — and the cup is the KINGCUP, twenty lines above,
+        // in this same region. This file has already spent the kingcup silhouette
+        // three times deliberately; a fourth in the region that owns it would be
+        // the fen's two flowers reading as one flower in two colours. A Turk's cap
+        // hangs its head and sweeps its petals back UP past it, so the silhouette
+        // is a throat with two tips over it — the kingcup's exact opposite, closed
+        // at the bottom where the cup is closed at the top.
+        //
+        // ORANGE, AND HIGH, which is the poppy's whole session one region over
+        // arriving as a rule. True lily orange (#e2622a) measures 1.05 against
+        // this floor — the scrub found that "orange against green buys nothing
+        // that blue against green did not", and the fen's summer ground is darker
+        // than the scrub's was. So the petals go up rather than true, and the
+        // THROAT carries the deep note: a nodding lily shows you its inside, so
+        // the dark belongs where the dark actually is on the plant.
+        season: "summer",
+        // The sparsest bloom in the file. A lily is not a carpeting plant — it
+        // stands one at a time in the wet, and the kingcup's 0.09 is already the
+        // picture April makes here. This is the thing you notice, not the thing
+        // you walk through.
+        density: 0.05,
+        accent: "#ff9a3c",
+        core: "#8c3a14",
+        marks: [
+          // THE FIRST HEAD WAS A TUNING FORK, and it is the poppy's finding in a
+          // new hat. Drawn `o.o` over a solid `ooo`, the tips are not tips — they
+          // are a NOTCH cut into the top of a bar, and a notch in a solid block
+          // reads as a piece missing before it reads as two things standing up.
+          // On screen it was a goalpost on a stick. (The birch says the same thing
+          // about its own canopy: a dip in the underside of a crown is a parting,
+          // and the same dip in the TOP of one is damage.)
+          //
+          // What fixes it is the row UNDER the tips carrying the throat, so the
+          // head is petals AROUND a dark centre rather than a bar with a bite out
+          // of it — and then one petal below that, closing the flower to a point.
+          // The throat is enclosed on three sides and open at the top between the
+          // tips, which is the kingcup's rule inverted along with everything else
+          // about this plant: a cup seen from below rather than from above.
+          ["o.o", "o*o", ".o.", ".x.", ".x.", ".x."],
+          ["o.o", "o*o", ".o.", ".x.", ".x."],
+        ],
+      },
+    ],
     // Reeds, standing in clumps. The tallest marks in the file at four rows,
     // which is what says "this ground is wet" without a single new tile.
+    //
+    // ONE SHAPE AT TWO HEIGHTS, and the two it replaced are gone. The kit ran a V
+    // (two blades meeting at the root), an inverted V (one blade splitting on the
+    // way down) and a single kinked stalk — three silhouettes to say one thing.
+    // Only the V reads as a clump growing out of a point; the other two read as
+    // marks, because a blade that FORKS downward is a shape no grass makes and a
+    // lone kinked stroke is a scratch. Underfoot at 0.16 that is a lot of ground
+    // carrying two glyphs that do not mean anything.
+    //
+    // The list still needs more than one entry (`decor.test.ts`, 8c's finding —
+    // one glyph scattered perfectly randomly still reads as printed), and the
+    // poppy settled how to spend the second slot: the variety comes from SIZE,
+    // which needs no shape nobody can name. A tall clump and a short one.
     decor: {
       density: 0.16,
       marks: [
         ["x.x", "x.x", "x.x", ".x."],
-        [".x.", "x.x", "x.x", "x.x"],
-        ["..x", ".x.", ".x.", ".x."],
+        ["x.x", "x.x", ".x."],
+      ],
+    },
+    // CATTAILS, AND THEY STAND IN THE WATER RATHER THAN BESIDE IT — which is why
+    // this is a `float` kit and not a third slot on the grass. Typha grows with
+    // its feet submerged at the margin of standing water; a cattail on dry land is
+    // a reed drawn wrong, and the fen already has reeds for the dry part.
+    //
+    // The mechanism was already here, and the marshes are no longer its only user
+    // (§float). Nothing new had to be built to put a plant at the waterline: the
+    // waterline is where this kit draws.
+    //
+    // AND THIS REGION'S WATER IS NEARLY ALL MARGIN, which is what makes the kit
+    // honest here. `float`'s own note refuses a lily pad on deep water because it
+    // would be a mark on a place you cannot reach — the fen measures 13818 shallow
+    // tiles to 1774 deep, so a cattail here is almost always standing in water you
+    // can wade, at the edge of a pool small enough to see across. The same fact
+    // that makes the fen crossable makes this true.
+    //
+    // A FLOWERING STALK AND A BLADE, which is the clump rather than the plant: a
+    // single brown spike on a wire is a match, and what anybody actually pictures
+    // is the head with leaves around it. The blade is the reeds' own V half, so
+    // the wet marks and the dry ones are visibly the same vegetation — the ground
+    // kit says what grows here and this says the same thing standing in water.
+    float: {
+      // A THIRD OF THE MARSHES', and their note says why the two are so far
+      // apart: over there open water IS the view, so what floats on it has to
+      // work as texture. Here the water is pools in a wood, and cattails are the
+      // edge of a pool. An edge at 0.32 would be a crop.
+      density: 0.11,
+      // Dark brown, and it has to be dark: the shallows are #7cc3de, the palest
+      // surface in the region by a distance, so the head reads by sitting well
+      // UNDER the water rather than by being bright on it. That is the poppy's
+      // finding — down was always available and nobody looked — arriving on the
+      // one ground in the fen that is lighter than the mark.
+      accent: "#6b4527",
+      marks: [
+        ["o..", "o..", "o..", "x.x", "x.x", "x.x", ".x."],
+        ["o..", "o..", "x.x", "x.x", ".x."],
+        ["o.o", "o.o", "x.x", "x.x", ".x."],
       ],
     },
   },

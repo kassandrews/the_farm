@@ -9001,6 +9001,63 @@ is what it always was; three against six restores it.
 as the meadow's crown. It was 5x5 all along, which is why the bell was the
 outlier and not the pair of them.
 
+### The fen's floor: reeds cut, cattails, a lily (7 Aug 2026)
+
+Four changes to one region, same afternoon as its crown and its mushroom.
+
+**The inkcap took its corners off, ON TRIAL.** `..c..` over three body rows, so
+5x6 became 5x7. At three wide there is no such thing as a rounded corner —
+taking both leaves ONE pixel — so the cap got a fourth row back to give the step
+something to happen over. **The failure to watch for is the bottle**: a narrow
+body with a stopper on top, which would be the fifth object this sprite has
+accidentally been. The 5x6 row is one line up in `renderer.ts` if it wants
+reverting. Its companion took its own nub back for the same reason it lost a row
+this morning — the pair should be one species at two ages, so they share the
+newest idea rather than one being a block and the other domed.
+
+**Two of the three reed marks were noise.** The kit ran a V, an inverted V and a
+lone kinked stalk. Only the V reads as a clump growing out of a point: a blade
+that FORKS downward is a shape no grass makes, and a single kinked stroke is a
+scratch. At density 0.16 that is a lot of ground carrying two glyphs nobody can
+name. Now one shape at two heights — the poppy's rule from the same morning, that
+the second slot buys SIZE and not a shape.
+
+**The cattails needed no mechanism, only the right one.** The ask was "cattails by
+the water"; the answer is that Typha stands IN water, so it is a `float` kit —
+the marshes' slot, which until now had exactly one user. Nothing had to learn
+about shorelines: the waterline is where `float` already draws. **And this
+region's water is nearly all margin**, which is what makes it honest — the fen
+measures 13818 shallow tiles to 1774 deep, so a cattail here is almost always
+standing in water you could wade. The mark is a flowering stalk plus a blade,
+and the blade is the reeds' own V half, so the wet vegetation and the dry read as
+the same plant community.
+
+**The lily is a Turk's cap, not a wood lily, and the drawing wanted that anyway.**
+Asked for as a wood lily; *Lilium philadelphicum* is a plant of dry sandy woods,
+and this file has already decided once (the fly agaric) that a region's ecology
+beats the first name to hand. But the real argument is the silhouette: **a wood
+lily faces UP, and at five pixels facing up is a cup — which is the kingcup, in
+this same region.** A fourth use of that shape in the region that owns it would
+be the fen's two flowers reading as one flower in two colours. A Turk's cap nods
+and recurves, so it is the kingcup's exact opposite: closed at the bottom where
+the cup is closed at the top. Same genus, same orange, and it grows in fens.
+
+- **Orange had to go high.** True lily orange (#e2622a) measures 1.05 against
+  this floor — the scrub's finding that "orange against green buys nothing that
+  blue against green did not", on ground darker than the scrub's. #ff9a3c, with
+  the deep note in the THROAT, which is where a nodding flower's dark actually is.
+- **The first head was a tuning fork.** `o.o` over a solid `ooo` is not two tips,
+  it is a NOTCH cut in the top of a bar — the poppy's "a notch in a radial cup is
+  a piece missing" and the birch's "the same dip in the TOP of a crown is damage",
+  third time. It photographed as a goalpost on a stick. The fix is the row under
+  the tips carrying the throat, so the head is petals AROUND a centre, with one
+  petal below closing it to a point.
+
+**And prettier is not run on `content/biomes.ts`.** An idle `npx prettier --write`
+reflowed 537 lines — every hand-grouped `crownRows` array with its `//` row
+markers, flattened to one number per line. Reverted. The formatting in that file
+is load-bearing; edit it by hand.
+
 ### The prickly pear (6 Aug 2026) — built
 
 It went where it was always going to: the `shrubs` node, not `decor` (paint,

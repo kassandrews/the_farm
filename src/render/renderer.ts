@@ -779,7 +779,21 @@ export const MUSHROOM_ART: Record<MushroomShape, Record<MushroomState, string[]>
     // The curling row went with the height. `ggggg` straight into the stem is
     // the same mass narrowing that the 7,3 taper drew, at the size where one row
     // is all the taper there is room for.
-    open: [".ccc.", ".lcc.", ".lcc.", "ggggg", "..s..", "..s.."],
+    //
+    // AND THE CAP TOOK ITS CORNERS OFF, which is on trial rather than settled —
+    // it is here to be lived with for a while. At three wide there is no such
+    // thing as a rounded corner: taking both leaves ONE pixel, which is a third
+    // of the cap's width gone in a single step. The sketch of it read as a nub
+    // sitting on a block, so the cap got its fourth row back to give the step
+    // something to happen over, and the sprite is 5x7 rather than the 5x6 that
+    // shipped this morning. Still a third of the old nine rows in mass.
+    //
+    // What is being watched for is the bottle: a narrow body with a small stopper
+    // on top is the shape this move fails into, and it is the fourth object this
+    // sprite has accidentally been if it does. If it reads as a bottle on the
+    // floor of the fen rather than as a cap, the row above is the version to go
+    // back to and this comment is the receipt.
+    open: ["..c..", ".lcc.", ".lcc.", ".lcc.", "ggggg", "..s..", "..s.."],
     // A YOUNG ONE OF THE SAME SPECIES, not a generic nub. This was `.l.`/`.c.`/
     // `.s.` — an egg on a stick, which was fine beside the old squat bell and
     // became a speck the moment the adult grew to nine rows and got its dark rim.
@@ -796,7 +810,13 @@ export const MUSHROOM_ART: Record<MushroomShape, Record<MushroomState, string[]>
     // younger one — it is a second mushroom, which is the read this grid exists
     // to prevent. Three rows against six is the same half it always was. The rim
     // is what survives the cut, exactly as the note above says it should.
-    button: ["lcc", "ggg", ".s."],
+    //
+    // AND IT TOOK THE ROW BACK WHEN THE ADULT GREW ONE. The nub is the same move
+    // at both sizes now — `.c.` over a three-wide cap IS the adult's `..c..` over
+    // a five — so the pair reads as one species at two ages by sharing its
+    // silhouette's newest idea rather than by both being blocks. Four rows
+    // against seven is still barely over half.
+    button: [".c.", "lcc", "ggg", ".s."],
   },
 };
 /** Taller than a rock, shorter than a tree. It should read as built rather than
