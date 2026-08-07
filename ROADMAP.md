@@ -8766,6 +8766,19 @@ full green are different pictures.
 - It **blends across borders per key**, on the snow's own argument: rains that
   arrived along a straight line would be the seam `blendRegions` exists to
   prevent. Photographed at the scrub/snow-country border and the fade is clean.
+- **And the green itself was far too dark and saturated**, which took a second
+  look to find and was worth the trip: `#8aaf53` measured **luma 153 at 0.53
+  saturation — the darkest and most saturated temperate floor in the file**,
+  under the pinewood's 155 and nowhere near the birches' 181. Dry open country
+  that has greened cannot out-shade a closed conifer wood. Hills after the rains
+  are pale, bright and a little grey — new annual grass thin over dust, and
+  nothing about them is a lawn. `#9abb69` is 168 at 0.44.
+  **It also opened the room every other plant needed:** at 153 there were 32 luma
+  between this floor and the region's own shrubs at 121, which is not enough for
+  anything to stand between them. At 168 there are 47. The prickly pear could not
+  be given a colour that was not within nine of something, and the poppies had to
+  be pushed well past their true orange — both were symptoms of a ground that was
+  wrong, diagnosed only when a third plant hit the same wall.
 - **Spring only, and that is a correction made by looking.** It was built with a
   winter flush as well and the botany was right while the picture was confusing:
   winter means one thing everywhere else in this game — the world goes quiet and
@@ -8900,14 +8913,18 @@ again. So the pads went cool and desaturated instead — `#7f9f92`, a grey-teal 
 plant here with a wax bloom on it, which is what glaucous means and what an
 Opuntia has. The shape carries the rest, which is why it was given art at all.
 
-**Three poses, and the third is about the rocks.** Leaning right, leaning left
-(redrawn rather than mirrored — the light comes from the upper left everywhere,
-so a flipped sprite reads as a plant with the sun behind it, and there is a test),
-and a single young pad. The young one varies MASS where the other two vary
-direction, which is what actually stops a scatter reading as printed. It is drawn
-UPRIGHT: as the wide oval the grown pads are, one on its own is a rounded lump on
-grass, which is what a boulder is — in the region carrying seventeen stones to a
-screen, by far the most in the file.
+**Two poses: leaning right and leaning left** — redrawn rather than mirrored,
+because the light comes from the upper left everywhere, so a flipped sprite
+arrives lit down its right side and reads as a plant with the sun behind it
+standing beside plants with the sun in front. There is a test.
+
+**A third pose was built and cut:** a single young pad, added to vary MASS where
+these two vary only direction, which is the right argument. What killed it is
+that a lone rounded lump on grass is a BOULDER, in the region carrying seventeen
+stones to a screen. Standing it upright helped and did not fix it — at this size
+the thing that says "cactus" is the JOIN between two pads, and a plant with one
+pad has nothing to say it with. If a third pose ever arrives, varying mass is
+still the right way to buy it.
 
 **Expect to be asked why you can chop it for wood.** It is the shrub node, so it
 yields the same two wood a bush does. The alternative was a new node class for

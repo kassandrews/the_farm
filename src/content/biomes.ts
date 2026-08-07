@@ -2644,8 +2644,26 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Winter, summer and autumn name nothing, which is how a row says "this is
     // what I am the rest of the time" — the year-round tint above is the
     // eleven-month answer and always was.
+    // AND IT WAS FAR TOO DARK AND FAR TOO SATURATED, which is the correction the
+    // cactus found. Measured against every other region's April ground, the first
+    // green came out #8aaf53 — luma 153 at 0.53 saturation, the DARKEST and most
+    // saturated temperate floor in the file, under the pinewood's 155 and nowhere
+    // near the birches' 181. That is backwards on its face: dry open country that
+    // has greened cannot out-shade a closed conifer wood. Hills after the rains
+    // are PALE and bright and a little grey — new annual grass, thin over dust —
+    // and nothing about them is a lawn.
+    //
+    // #9abb69 is 168 at 0.44: under the meadow's, well under the birches', and
+    // the least saturated green of the temperate rows. It reads as country that
+    // greened rather than country that was replaced.
+    //
+    // IT ALSO OPENED THE ROOM EVERY OTHER PLANT NEEDED. At 153 there were 32 luma
+    // between this floor and the region's own shrubs at 121, which is not enough
+    // for anything to stand between them — the prickly pear could not be given a
+    // colour that was not within nine of something, and the poppies had to be
+    // pushed to a gold well past their true orange. At 168 there are 47.
     seasonGround: {
-      spring: { color: "#7fa94b", amount: 0.8 }, // → #8aaf53, the green year
+      spring: { color: "#93b866", amount: 0.8 }, // → #9abb69, the green year
     },
     // PARCHED, and the shape list says so more plainly than the tint does:
         // dry blades and grit, and not one sprout. Nothing here is sprouting.

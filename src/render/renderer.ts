@@ -569,25 +569,16 @@ export const PRICKLY_PEAR: string[][] = [
     "....xxxxx..",
     ".....xxx...",
   ],
-  // AND A YOUNG ONE: a single pad, no join at all. It is the cheapest variety in
-  // the set and the most useful, because it varies SIZE where the other two vary
-  // direction — a scatter of plants that are all the same mass reads as printed
-  // however many outlines it has (the decor kit's oldest finding, §DecorKit.marks).
-  // A first-year Opuntia really is one pad stuck in the ground.
+  // THERE WAS A THIRD — a single young pad, one oval with no join — and it came
+  // out and should stay out. It was added to vary MASS where these two vary only
+  // direction, which is a real argument; what killed it is that a lone rounded
+  // lump on grass is a BOULDER, in the region that carries seventeen stones to a
+  // screen by far the most in the file. Standing it upright helped and did not
+  // fix it: at this size the thing that says "cactus" is the JOIN between two
+  // pads, and a plant with one pad has nothing to say it with.
   //
-  // UPRIGHT, NOT LYING, AND THAT IS ABOUT THE ROCKS. Drawn as the wide oval the
-  // grown pads are, one on its own is a rounded lump on grass — which is what a
-  // BOULDER is, in the region that carries seventeen stones to a screen (§rocks,
-  // by far the most in the file). Standing it on its edge costs nothing and is
-  // also what a young pad does: it is the parent's shape before anything grew off
-  // it, not a pad that fell over.
-  [
-    "....xxx....",
-    "...lxxxx...",
-    "...lxxxx...",
-    "...lxxxx...",
-    "....xxx....",
-  ],
+  // So the variety here is direction only, and the size variety a scatter wants
+  // has to come from somewhere that is not a silhouette this small.
 ];
 
 export const DEADWOOD_ART: Record<"stump" | "log", string[]> = {

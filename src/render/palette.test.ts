@@ -762,11 +762,16 @@ describe("crown silhouettes", () => {
     // MORE THAN ONE, on the decor kit's rule — a single glyph scattered over a
     // whole region reads as printed however random the placement under it is.
     expect(PRICKLY_PEAR.length, "one cactus is a printed cactus").toBeGreaterThan(1);
-    // And they have to differ in MASS and not only in direction: a set that was
-    // all the same size would vary the outline and not the picture.
-    const mass = PRICKLY_PEAR.map((g) => g.join("").replace(/[^lx]/g, "").length);
-    expect(Math.max(...mass) / Math.min(...mass), "every cactus is the same size").toBeGreaterThan(
-      1.5,
+    // And they have to be different DRAWINGS, or the list buys nothing. This used
+    // to demand different MASS as well, on the scatter's own rule — a set all the
+    // same size varies the outline and not the picture — and that assertion came
+    // out with the pose it was written for. A single young pad is a rounded lump
+    // on grass, which in this region is a boulder; at this size what says
+    // "cactus" is the JOIN between two pads, and one pad has nothing to say it
+    // with. If a third pose ever arrives, varying mass is still the right way to
+    // buy it.
+    expect(new Set(PRICKLY_PEAR.map((g) => g.join("|"))).size, "two identical cacti").toBe(
+      PRICKLY_PEAR.length,
     );
 
     for (const art of PRICKLY_PEAR) {
@@ -807,11 +812,9 @@ describe("crown silhouettes", () => {
       const solid = art.map((r) => r.replace(/\./g, "").length);
       const fattest = solid.indexOf(Math.max(...solid));
       const below = solid.slice(fattest + 1);
-      if (art.length > 6) {
-        expect(Math.min(...below), "the pads merged into one blob").toBeLessThan(
-          Math.max(...solid) / 2,
-        );
-      }
+      expect(Math.min(...below), "the pads merged into one blob").toBeLessThan(
+        Math.max(...solid) / 2,
+      );
     }
   });
 
