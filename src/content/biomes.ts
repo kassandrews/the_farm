@@ -2699,6 +2699,20 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Written down because the temptation on seeing g=1 is to keep going, and the
     // right answer is one step, not two. The number is decided by `trunkSpan`.
     //
+    // AND THE TOP ROW OF THE PARTING KEEPS ITS 1, WHICH IS THE WHOLE OF WHY THIS
+    // LOOKS GROWN. Flush all the way down, the notch is a clean rectangle cut out
+    // of the crown, and a rectangle is a thing somebody made. One pixel of
+    // foliage lapping over the bark at each top corner — which is exactly what
+    // g=1 draws, since it clears three pixels of a five-pixel stem and leaves the
+    // outer column of bark covered on both sides — turns the corner from a right
+    // angle into a leaf resting on a branch.
+    //
+    // It is the same fact the fork failed on, used the right way round: at g=1
+    // the foliage laps the trunk, and lapping it for ONE ROW is the tree growing
+    // around its own stem where lapping it for all three was the crown lying
+    // across it. The difference between a mistake and a detail is how much of it
+    // there is.
+    //
     // THE TAIL GIVES UP ITS POINT TO CARRY IT. A gap must be narrower than its
     // row, so the old close (6,4,2) could not hold a 2 at the bottom; it ends
     // 6,5,4 now. A crown parting around a stem cannot also taper to nothing —
@@ -2707,7 +2721,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Three rows of the five standing beside the trunk. Deeper and it becomes the
     // birches' recorded failure — "a long white channel driven up into the
     // canopy" — which arrives sooner here, on a tree less than half their height.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2],
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2],
     // TWO MONTHS OF FLOWER AND THE SPRING ONE IS NEW, which is what the wet
     // season was for. The row used to spend spring on a thistle and the argument
     // for it — "dry country blooms harder and briefer than green country" — was

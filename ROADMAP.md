@@ -8816,6 +8816,17 @@ rather than a tree standing in a parting — pushed to 4 with a reshaped tail it
 broke the tree outright, which is worth recording because the temptation on
 seeing g=1 fail is to keep going, and the right answer was one step, not two.
 
+**And the top row of the parting keeps its 1, which is what stops it looking
+cut.** Flush all the way down, the notch is a clean rectangle taken out of the
+crown, and a rectangle is a thing somebody MADE. `g=1` on that one row clears
+three pixels of a five-pixel stem, leaving the outer column of bark covered on
+each side — one pixel of foliage lapping the trunk at each top corner, which
+turns a right angle into a leaf resting on a branch. It is the same fact the fork
+failed on, used the right way round: lapping the trunk for ONE row is a tree
+growing around its own stem, where lapping it for all three was a crown lying
+across one. The difference between a mistake and a detail is how much of it there
+is.
+
 The tail gives up its point to carry it (`6,5,4`, not `6,4,2`): a gap must be
 narrower than its row, and a crown parting around a stem cannot also taper to
 nothing — the last row has to be wide enough to have two sides. The bole stays at
