@@ -2640,6 +2640,25 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         // silhouettes and none of the round one: this ground cracked, it did not
         // wear.
     stone: { tint: { color: "#c9b98c", amount: 0.3 }, shapes: ["crag", "broken", "broken", "slab"] },
+    // A CROWN DILATED ONE PIXEL ALL ROUND, which is the last thing that happened
+    // to it: every row a half-width wider, a row added at each end, and the notch
+    // moved down to keep its place. Seventeen across by fourteen, where it was
+    // fifteen by twelve.
+    //
+    // IT IS THE FIRST NEAR-REGION TREE TO OVERHANG ITS TILE. Eight half-widths is
+    // seventeen pixels on a sixteen-pixel tile, which BROADLEAF's note flags as
+    // the point where "a stand of trees smears into itself" — allowed for a
+    // broadleaf and not for a conifer. It survives here because `trees` is 0.25:
+    // the scrub is the sparsest wooded row in the file, so its trees overhang
+    // grass rather than each other.
+    //
+    // KNOWN KNOCK-ON, NOT YET DECIDED: `drawShrub` takes its width from the
+    // WIDEST crown row, so this widened the region's bushes too — `shrubPeak` 4
+    // to 5, undergrowth from nine pixels across to eleven. Shrubs are this
+    // region's commonest plant at density 1, so that is a larger change to the
+    // picture than the trees are. The crown is currently the size dial for two
+    // things at once (ROADMAP §the scrub's year).
+    //
     // A HAWTHORN, and this row went its whole life without anybody saying so. The
     // scrub's plant was only ever described by HABIT — "squat and wind-flattened,
     // barely taller than the rocks" — and everything else in the row had already
@@ -2674,14 +2693,20 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // is a leaf and one that holds its width at the top is a lid. It closes 6,6,4,2
     // onto the stem, because those four rows are the ones standing beside it and
     // they have to reach it to read as foliage around a trunk.
-    crownRows: [3, 5, 6, 7, 7, 7, 7, 7, 6, 6, 5, 4],
-    // AND THEN LOWER STILL: four visible pixels of stem, not six. Nine of trunk
-    // with five crown rows beside it. A hawthorn on open ground is a tree you
-    // could walk under only by ducking, and every pixel of bare pole is the eye
-    // being told otherwise — the ONE number this silhouette turns on, since the
-    // crown itself was already right.
+    crownRows: [3, 5, 6, 7, 8, 8, 8, 8, 8, 7, 7, 6, 5, 4],
+    // AND THEN LOWER STILL, AND ONE LOWER AGAIN: THREE visible pixels of stem,
+    // down from the sixteen this row started with. Eight of trunk with five crown
+    // rows beside it. A hawthorn on open ground is a tree you could walk under
+    // only by ducking, and every pixel of bare pole is the eye being told
+    // otherwise — the ONE number this silhouette turns on, since the crown itself
+    // was already right.
+    //
+    // Three works where the two-pixel version did not, and the difference is the
+    // notch: the stem is legible INSIDE the crown now (§crownGaps), so what shows
+    // beneath it only has to say "this tree has legs" rather than carry the whole
+    // trunk on its own.
     crownOverlap: 5,
-    trunkHeight: 9,
+    trunkHeight: 8,
     // A NOTCH FLUSH WITH THE TRUNK, and the width is arithmetic rather than
     // taste. `drawTree` clears `cx - g .. cx + g` — 2g+1 pixels, centred on the
     // tree's own column — and the trunk is five pixels wide at girth 0. So g=2 is
@@ -2721,7 +2746,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Three rows of the five standing beside the trunk. Deeper and it becomes the
     // birches' recorded failure — "a long white channel driven up into the
     // canopy" — which arrives sooner here, on a tree less than half their height.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2],
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2],
     // TWO MONTHS OF FLOWER AND THE SPRING ONE IS NEW, which is what the wet
     // season was for. The row used to spend spring on a thistle and the argument
     // for it — "dry country blooms harder and briefer than green country" — was

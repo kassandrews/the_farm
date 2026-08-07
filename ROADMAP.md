@@ -8832,6 +8832,28 @@ narrower than its row, and a crown parting around a stem cannot also taper to
 nothing — the last row has to be wide enough to have two sides. The bole stays at
 four visible pixels; the two-pixel version went out with the fork.
 
+**The crown then went one pixel wider all round** (17x14, from 15x12) and the
+bole came down to **three visible pixels**, from the sixteen this row started
+with. Three works where two did not, and the difference is the notch: the stem is
+legible INSIDE the crown now, so what shows beneath it only has to say "this tree
+has legs" rather than carry the whole trunk on its own.
+
+Two consequences, one accepted and one open:
+
+- **It is the first near-region tree to overhang its tile** — eight half-widths
+  is seventeen pixels on a sixteen-pixel tile, the point BROADLEAF's note flags
+  as "a stand of trees smears into itself". It survives because `trees` is 0.25:
+  the scrub is the sparsest wooded row in the file, so its trees overhang grass
+  rather than each other.
+- **OPEN: the bushes grew with it, uninvited.** `drawShrub` takes its width from
+  the widest crown row, so `shrubPeak` went 4 to 5 and the region's undergrowth
+  widened from nine pixels across to eleven. Shrubs are this region's commonest
+  plant at density 1, so that is a bigger change to the picture than the trees
+  are — the crown is currently the size dial for two things at once. Deliberately
+  left as it fell, to be looked at on its own; the fix, if it wants one, is for
+  `shrubPeak` to stop deriving from the crown, which is a renderer change rather
+  than a tint.
+
 **Next here:** a prickly pear, decided but not built. It does NOT belong in
 `decor` (paint, capped at 5x5, no collision — a cactus you walk through is the
 one thing a cactus must not be) or as a tree form (fellable for eight wood, and
