@@ -8802,21 +8802,24 @@ eye gets a bowl. Both hands, so a colony does not read as printed.
 the wet month. On green ground that reads as last year's dead stalks standing in
 the new growth, which is exactly what a California hillside looks like in spring.
 
-**The notch had to straddle the trunk, and that is arithmetic, not taste.** At
-half-width 1 the gap is two pixels against a FIVE-pixel stem, so the crown still
-lay across the trunk and what showed through was a slot cut in the foliage on top
-of it. At 3 the gap is six pixels — half a pixel of daylight each side, which the
-eye cannot resolve, so the trunk came out a five-by-five brown block punched
-through the crown. At 4 it is eight pixels: a pixel and a half of ground either
-side of the bark, and the crown genuinely forks into two lobes with the tree
-standing between them. The number is decided by the trunk's width (five plus
-two), not by preference. The tail had to be reshaped twice to carry it — a gap
-must be narrower than its row, so the crown now ends `7,6,6` and stops tapering
-over the fork, because a crown that DIVIDES cannot also close.
+**The notch is FLUSH with the trunk, and the width is arithmetic rather than
+taste.** `drawTree` clears `cx - g .. cx + g` — 2g+1 pixels — and the trunk is
+five wide at girth 0, so **g=2 is the only value that lines foliage up with
+bark**. The crown parts exactly where the stem begins and the stem continues up
+through the parting with nothing overlapping it and no grass beside it.
 
-The bole is down to **two visible pixels**, less than anything else in the game
-shows, and it only works because of that fork: the stem is legible INSIDE the
-crown, so it no longer has to be legible under it.
+Both neighbours were built and photographed and both are wrong, in opposite
+directions. At **g=1** the gap is three pixels against a five-pixel stem, so the
+crown still lies ACROSS the trunk and what shows through is a slot cut in the
+foliage on top of it. At **g=3+** the spare pixels read as a hole around the tree
+rather than a tree standing in a parting — pushed to 4 with a reshaped tail it
+broke the tree outright, which is worth recording because the temptation on
+seeing g=1 fail is to keep going, and the right answer was one step, not two.
+
+The tail gives up its point to carry it (`6,5,4`, not `6,4,2`): a gap must be
+narrower than its row, and a crown parting around a stem cannot also taper to
+nothing — the last row has to be wide enough to have two sides. The bole stays at
+four visible pixels; the two-pixel version went out with the fork.
 
 **Next here:** a prickly pear, decided but not built. It does NOT belong in
 `decor` (paint, capped at 5x5, no collision — a cactus you walk through is the

@@ -2674,47 +2674,40 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // is a leaf and one that holds its width at the top is a lid. It closes 6,6,4,2
     // onto the stem, because those four rows are the ones standing beside it and
     // they have to reach it to read as foliage around a trunk.
-    crownRows: [3, 5, 6, 7, 7, 7, 7, 7, 7, 7, 6, 6],
-    // AND THEN LOWER, AND LOWER AGAIN: TWO visible pixels of stem. Seven of trunk
+    crownRows: [3, 5, 6, 7, 7, 7, 7, 7, 6, 6, 5, 4],
+    // AND THEN LOWER STILL: four visible pixels of stem, not six. Nine of trunk
     // with five crown rows beside it. A hawthorn on open ground is a tree you
     // could walk under only by ducking, and every pixel of bare pole is the eye
     // being told otherwise — the ONE number this silhouette turns on, since the
     // crown itself was already right.
-    //
-    // Two pixels is less bole than anything else in the game shows and it only
-    // works because of the notch below: the stem is legible INSIDE the crown, so
-    // it no longer has to be legible under it.
     crownOverlap: 5,
-    trunkHeight: 7,
-    // A NOTCH WIDER THAN THE TRUNK, which is the whole difference between a
-    // parting and a scratch. At half-width 1 the gap is two pixels and the stem
-    // is FIVE, so the crown still lay across the trunk and the two pixels showing
-    // through were a slot cut in the foliage ON TOP of it — bark visible, and
-    // visible in the one place that says nothing about how the tree is built.
+    trunkHeight: 9,
+    // A NOTCH FLUSH WITH THE TRUNK, and the width is arithmetic rather than
+    // taste. `drawTree` clears `cx - g .. cx + g` — 2g+1 pixels, centred on the
+    // tree's own column — and the trunk is five pixels wide at girth 0. So g=2 is
+    // the only value that lines the foliage up with the bark: the crown parts
+    // exactly where the stem begins, and the stem continues up through the
+    // parting with nothing overlapping it and no grass showing beside it.
     //
-    // AND THREE WAS NOT ENOUGH EITHER, which is the same measurement one step
-    // further. Six pixels of gap against a five-pixel stem leaves half a pixel of
-    // daylight on each side — arithmetically a parting and visually a trunk
-    // wedged into a hole, because the eye cannot see a gap it cannot resolve. The
-    // trunk came out a five-by-five brown BLOCK punched through the foliage.
+    // BOTH NEIGHBOURING VALUES WERE TRIED AND BOTH ARE WRONG, in opposite
+    // directions. At g=1 the gap is three pixels against a five-pixel stem, so
+    // the crown still lies ACROSS the trunk and what shows through is a slot cut
+    // in the foliage on top of it. At g=3 it is seven, and the two spare pixels
+    // read as a hole around the tree rather than a tree standing in a parting —
+    // the crown stops touching the thing it is supposed to be growing out of.
     //
-    // At 4 the gap is eight pixels, so there is a pixel and a half of ground
-    // either side of the bark and the crown genuinely forks: two lobes of leaf
-    // with the tree standing up between them. That is what the underside of a low
-    // broad crown looks like from here, and it is the number the trunk's own
-    // width decides — not a matter of taste, a matter of five plus two.
+    // Written down because the temptation on seeing g=1 is to keep going, and the
+    // right answer is one step, not two. The number is decided by `trunkSpan`.
     //
-    // THE TAIL HAD TO CHANGE SHAPE TO CARRY IT, TWICE. A gap must be narrower
-    // than its row, so the original close (6,4,2) could not hold even a 3, and
-    // 6,5,4 could not hold a 4. The crown now ends 7,6,6: it stops tapering
-    // altogether over the fork, because a crown that DIVIDES does not also close
-    // — the two lobes each need enough width left to read as foliage rather than
-    // as a pair of stubs.
+    // THE TAIL GIVES UP ITS POINT TO CARRY IT. A gap must be narrower than its
+    // row, so the old close (6,4,2) could not hold a 2 at the bottom; it ends
+    // 6,5,4 now. A crown parting around a stem cannot also taper to nothing —
+    // the last row has to be wide enough to have two sides.
     //
-    // Four rows of the five standing beside the trunk. Deeper and it becomes the
+    // Three rows of the five standing beside the trunk. Deeper and it becomes the
     // birches' recorded failure — "a long white channel driven up into the
     // canopy" — which arrives sooner here, on a tree less than half their height.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2],
     // TWO MONTHS OF FLOWER AND THE SPRING ONE IS NEW, which is what the wet
     // season was for. The row used to spend spring on a thistle and the argument
     // for it — "dry country blooms harder and briefer than green country" — was
