@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { scenePalette, seasonSkin, biomeSkin, mixHex, foliage } from "./palette";
+import { scenePalette, seasonSkin, biomeSkin, mixHex, foliage, tuftInk } from "./palette";
 import { MUSHROOM_ART, DEADWOOD_ART, PRICKLY_PEAR, shrubPeak, shrubRows } from "./renderer";
 import { BIOMES, BROADLEAF, treeForms } from "../content/biomes";
 import { SEASONS, seasonOn } from "../content/seasons";
@@ -326,6 +326,59 @@ describe("biome tinting", () => {
         const n = foliage(BIOMES[id], night, false);
         expect(dist(d, n), `${id} in ${s.id} does not darken`).toBeGreaterThan(20);
       }
+    }
+  });
+
+  it("lets a region hold the hour, but never lets one brighten after dark", () => {
+    // THE RULE ABOVE, STATED AS WHAT IT ACTUALLY FORBIDS. `baseCrown`'s note said
+    // "the day/night axis is nobody's to opt out of", and the fault it named was
+    // exact: a wood that stayed BRIGHT GREEN at midnight. That is a rule about
+    // BRIGHTNESS, and it was being enforced as a rule about CHANGE — which is a
+    // different and larger claim, and the one the twilight country had to break.
+    //
+    // What was really being guarded is that nobody reaches this by accident. The
+    // old way to refuse the night was to raise `crown.amount` until the season
+    // could not get past it, which resists the dark silently and as a side effect.
+    // `nightPull` is the opposite: a region has to say so, in a field named for
+    // what it does, and then it may hold its hue — and only its hue. The global
+    // wash is not this file's business and still falls on everything.
+    const luma = (h: string): number => {
+      const [r, g, b] = rgb(h);
+      return 0.299 * r + 0.587 * g + 0.114 * b;
+    };
+    for (const s of SEASONS) {
+      const day = scenePalette(s, false);
+      const night = scenePalette(s, true);
+      for (const b of Object.values(BIOMES)) {
+        const d = foliage(b, day, false);
+        const n = foliage(b, night, false);
+        // Never brighter after dark. The one direction that is always wrong.
+        expect(luma(n), `${b.id} brightens at night`).toBeLessThanOrEqual(luma(d) + 0.5);
+        // And a region that has NOT declared an hour dial must still take the
+        // night, or it has refused the clock through some other field without
+        // saying so — which is the accident this whole pair of tests is about.
+        //
+        // THE FLOOR IS 4 AND THE BURNT COUNTRY IS WHY. The obvious threshold is
+        // "about as much as everybody moves", and that is wrong for the rows at
+        // either end of the value scale: the cinders, the salt and the caldera all
+        // swing about 10 in a good month and 6.6 in the worst one, not because
+        // they are resisting anything but because a near-black snag has nowhere to
+        // travel between two arms that are both dark. Distance from the arms is
+        // not a measure of obedience for a colour that starts at the bottom.
+        //
+        // 4 is chosen to separate the only two populations that exist: the dusk
+        // at 0.0 — which has said so — and 6.6 for the lowest region that has not.
+        // It is a smoke alarm for a field going quietly to zero, not a style rule.
+        if (b.nightPull?.crown === undefined) {
+          expect(dist(d, n), `${b.id} refuses the night without saying so`).toBeGreaterThan(4);
+        }
+      }
+      // AND THE ONE THAT DID DECLARE IT ACTUALLY HOLDS. Asserted as an identity
+      // rather than "close enough": the point of the dial is that the hour stops
+      // reaching the colour at all, and a near-miss would mean it still leaks.
+      expect(foliage(BIOMES.dusk, day, false)).toBe(foliage(BIOMES.dusk, night, false));
+      expect(foliage(BIOMES.dusk, day, true)).toBe(foliage(BIOMES.dusk, night, true));
+      expect(tuftInk(BIOMES.dusk, day)).toBe(tuftInk(BIOMES.dusk, night));
     }
   });
 

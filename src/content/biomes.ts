@@ -298,6 +298,37 @@ export interface BiomeDef {
    *  same reason the crowns did: a needle mat browning like a lawn is a lawn. */
   seasonPull?: { crown?: number; ground?: number };
 
+  /** THE SAME DIAL ON THE OTHER AXIS: how much of the HOUR this region takes. 1
+   *  (the default, and every region but one) is the ordinary thing — the crowns
+   *  and the tuft speckle swap to their night arms after dark. 0 means the region
+   *  is the same colour at noon and at midnight.
+   *
+   *  IT IS NOT A LICENCE TO STAY BRIGHT, which is the fault its neighbour field
+   *  spent a paragraph on. The global night wash is a flat fill over the whole
+   *  viewport and nothing here touches it, so a region holding this at 0 still
+   *  gets darker after dark exactly as everywhere else does. What it holds is its
+   *  HUE. That distinction is the whole design: the alternative — carving a region
+   *  out of the wash — needs darkness quantised to the tile grid, which is the
+   *  banding rule (CLAUDE.md) in its fifth costume and a hard seam at the region
+   *  border into the bargain.
+   *
+   *  WHY IT IS A DIAL AND NOT A FLAG, which is `seasonPull`'s answer too: it is
+   *  averaged across a border like every other region field (`blendRegions`), and
+   *  a boolean cannot be averaged. A region that stops noticing the night along a
+   *  line is the seam that function exists to prevent.
+   *
+   *  ONE REGION HAS ONE. The twilight country's whole premise is a light that is
+   *  not the light you left, and a place whose identity is a fixed wrong light is
+   *  the one row where "the same at every hour" is the design rather than a bug.
+   *  Everywhere else, take the night: a wood that ignored the clock would be a
+   *  sprite cut out of the day and pasted back on top of it, which is the same
+   *  sentence `seasonPull`'s "NOT ZERO, THOUGH" makes about the month.
+   *
+   *  `ground` reaches the tuft speckle and nothing else, because nothing else on
+   *  the floor has an hour arm to refuse: the season's ground colours are stated
+   *  once per month (`seasonSkin`) and the dark that falls on them is the wash. */
+  nightPull?: { crown?: number; ground?: number };
+
   /** SNOW LYING ON THIS GROUND, in winter and only in winter. Optional, and
    *  absent means the region keeps the ordinary pale winter turf every region had
    *  before this existed.
@@ -3438,20 +3469,46 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     rocks: 0.6,
     mushrooms: 0.05,
     water: 0,
-    // Violet, and pulled hard, because a gentle version of this is just "evening"
-    // and the game already has an evening. It has to be wrong at NOON.
-    // MEASURED, not eyeballed. Grass is (139,191,90) and a tint is a lerp toward
-    // the target, so a mid-violet at 0.55 lands on (112,134,107) — which is still
-    // green, because green was 191 and had the furthest to fall. The first pass
-    // shipped exactly that and photographed as "slightly murky meadow". The target
-    // has to be darker than it looks and the amount high, or the ground stays the
-    // colour it started.
-    ground: { color: "#4a4570", amount: 0.85 },
-    tuft: { color: "#7a76a8", amount: 0.8 }, // 0.6 left green flecks on violet ground
+    // THIS REGION DOES NOT KEEP THE CLOCK, and it is the only one that does not.
+    // Its whole premise is a light that is not the light you left, so a place that
+    // looked one way at noon and another at midnight would be a place with an
+    // ordinary evening in it — which is the one thing the twilight country cannot
+    // have. `nightPull: 0` holds the crowns and the speckle at one arm all day
+    // (§BiomeDef.nightPull).
+    //
+    // IT STILL GETS DARK. The global night wash is untouched by any of this and
+    // falls here as it falls everywhere, so midnight is still midnight; what does
+    // not change is the HUE. That is the whole of the claim, and it is deliberately
+    // smaller than "the dusk is exempt from night" — see the field's own note for
+    // why the larger version needs darkness quantised to the tile grid.
+    nightPull: { crown: 0, ground: 0 },
+    // AND THAT MADE THE COLOUR MANDATORY RATHER THAN OPTIONAL. While the region
+    // swung with the hour it read correctly for part of the day by accident: the
+    // night palette supplied a violet the region never did, so a screenshot at 11pm
+    // looked right and one at 1pm looked like an overcast wood. Hold the hour still
+    // and there is no hour left that flatters it — whatever the region states is
+    // what the place is, always.
+    //
+    // AND IT WAS NOT STATING VIOLET. Measured on screen: ground (75,78,98), crowns
+    // (49,64,64). Violet needs R above G and neither had it — R−G of −3 and −15, a
+    // blue-grey slate and a dark teal. The note that used to sit here found half of
+    // this ("a mid-violet at 0.55 lands on (112,134,107) — still green, because
+    // green was 191 and had the furthest to fall") and answered it by raising the
+    // AMOUNT, which is the wrong dial. THE TARGETS THEMSELVES WERE BARELY VIOLET:
+    // #4a4570 has R−G of +5 and #2a2740 of +3, and they were being asked to drag
+    // greens with R−G of −48 and −57 across the line. At 0.85 the ground lands at
+    // −48(0.15) + 5(0.85) = −2.9, which is the −3 that photographed. No amount
+    // short of 1 gets there from a target that is itself neutral.
+    //
+    // So the targets moved instead: R−G of +26 and +42. The ground lands at
+    // (104,89,121) and the crowns at (69,64,85), both violet by the only test that
+    // matters, which is that R is now the larger number.
+    ground: { color: "#644a80", amount: 0.85 },
+    tuft: { color: "#9b86c8", amount: 0.85 }, // 0.6 left green flecks on violet ground
     // Dim. Little grows under that light, and what does is small — mostly
         // specks, with the occasional plant that managed.
     tufts: ["dot", "dot", "cluster"],
-    crown: { color: "#2a2740", amount: 0.7 },
+    crown: { color: "#462c5c", amount: 0.75 },
     trunk: { color: "#3a3348", amount: 0.45 },
     // Violet, like everything under this light, and it STANDS. The first region
         // to get shards: out here the ground has started doing things it does not do

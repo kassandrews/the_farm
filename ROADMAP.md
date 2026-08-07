@@ -9199,6 +9199,74 @@ no longer has in that month — the one failure mode a measurement like this has
 **being right about the wrong two colours.** Now passes `"autumn"`, and the real
 separation is 66 against a threshold of 28.
 
+### The dusk keeps no clock (7 Aug 2026)
+
+`BiomeDef.nightPull`, the mirror of `seasonPull` on the day/night axis, plus the
+dusk's own colours restated. ~40 lines across three files.
+
+**The region was slate-grey at noon, and it read right only by accident.** Sampled
+off screenshots: ground (75,78,98), crowns (49,64,64) — R−G of **−3** and **−15**.
+Violet needs R above G and nothing in the region had it. At 11pm it looked
+wonderful, because **the night palette was supplying a violet the region never
+did**; at 1pm it was an overcast wood.
+
+**The cause is arithmetic and the row's own note found half of it.** It records
+that "a mid-violet at 0.55 lands on (112,134,107) — still green, because green was
+191 and had the furthest to fall" — and answered by raising the AMOUNT, which is
+the wrong dial. **The targets themselves were barely violet**: `#4a4570` has R−G
+of +5 and `#2a2740` of +3, dragging greens with R−G of −48 and −57. At 0.85 the
+ground lands at −48(0.15) + 5(0.85) = −2.9, which is the −3 that photographed.
+**No amount short of 1 crosses over from a target that is itself neutral.** New
+targets at R−G of +26 and +42 land (99,86,114) and violet at last.
+
+**And "the dusk should stay the same colour all the time" is two mechanisms, not
+one.** Night is a palette swap (crowns and tuft take a night arm) AND a flat
+`fillRect` over the whole viewport. Only the first is a region's business. Carving
+a region out of the wash needs darkness quantised to the tile grid — the banding
+rule in its fifth costume, per `LAMP_INNER`'s own note — plus a hard seam at the
+border. So the claim shipped is the smaller one: **a region may hold its HUE
+across the clock and still gets darker after dark.**
+
+- **The cheap version was a trap and the maths says why.** Turning the tints to
+  `amount: 1` does collapse the clock — and collapses the modelling with it,
+  because the lit/unlit delta and the day/night delta are both multiplied by
+  `(1 − amount)`. The crown's lit pair is (65,122,65)/(87,151,90); at 0.7, 30% of
+  that survives as the highlight, at 1.0 nothing does. Every crown becomes a flat
+  silhouette. **Two axes that have to move independently need two dials.**
+- **A dial, not a flag, for `seasonPull`'s reason**: it is averaged across borders
+  by `blendRegions`, and a boolean cannot be averaged. A region that stopped
+  noticing the night along a line would put a seam across the ground after dark
+  and nowhere else — the worst kind, one that is only there half the day.
+- **`ScenePalette.day` is the mirror of `baseCrown`.** That field is the far end of
+  the season dial ("what a surface would be if the month never reached it"); this
+  is the far end of the hour dial. Both arms come out of one `arms(night)` helper
+  so the noon end cannot drift from the noon the game draws.
+- **The tuft composition moved to `palette.ts` as `tuftInk`.** It was inline in the
+  renderer, which was fine as one `seasonPulled` and became a second opinion about
+  a colour the moment the hour got a dial — the exact fault `foliage`'s docblock
+  describes.
+
+**The old rule was right and was being enforced as a bigger claim than it made.**
+"The day/night axis is nobody's to opt out of" names its fault precisely — *a wood
+that stayed BRIGHT GREEN at midnight*. That is a rule about brightness, enforced as
+a rule about change. What it was really guarding is that nobody gets there by
+accident: the old way to refuse the night was to raise `crown.amount` until the
+season couldn't get past it, which resists the dark silently. A field named for
+what it does is the opposite of that accident. The test now asserts nothing
+brightens after dark, that any region **without** a declared dial still takes the
+night, and that the one **with** one holds its colour exactly — `toBe`, not close.
+
+- **The threshold is 4, and the burnt country is why.** The cinders, the salt and
+  the caldera swing about 10 in a good month and 6.6 in the worst, not from
+  resisting anything but because a near-black snag has nowhere to travel between
+  two dark arms. Distance from the arms is not a measure of obedience for a colour
+  that starts at the bottom. 4 separates the only two populations there are: the
+  dusk at 0.0, which said so, and 6.6 for the lowest that did not.
+
+**Still open, and declined for now:** the trunks are (85,64,60), the one warm mass
+left in the region, and the river runs through it as untinted cyan — both now the
+most ordinary-looking things in a picture built on one hue.
+
 ### The prickly pear (6 Aug 2026) — built
 
 It went where it was always going to: the `shrubs` node, not `decor` (paint,

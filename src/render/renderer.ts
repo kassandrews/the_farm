@@ -89,7 +89,7 @@ import {
   sharpenRegions,
   isBiomeGround,
   mixHex,
-  seasonPulled,
+  tuftInk,
   foliage,
   type ScenePalette,
 } from "./palette";
@@ -2449,10 +2449,14 @@ export class Renderer {
             // it: the tuft "wants to travel with the ground or the texture
             // detaches from the surface it is meant to be texture ON"
             // (§BiomeDef.tuft), and that is as true of the season as of the hue.
-            const speck = mixHex(
-              seasonPulled(this.palette.baseTuft, this.palette.tuft, turf.seasonPull?.ground ?? 1),
-              turf.tuft,
-            );
+            // AND THE HOUR TOO, WHICH IS WHY THIS MOVED OUT OF HERE. It was the
+            // `seasonPulled` and the region's tint written inline; the moment the
+            // clock got a dial of its own (§BiomeDef.nightPull) that was a second
+            // opinion about a colour living a file away from `foliage`, which is
+            // the exact fault foliage's docblock exists to describe. Composed in
+            // palette.ts now, where the tests can ask the same question the screen
+            // does.
+            const speck = tuftInk(turf, this.palette);
             ctx.fillStyle =
               paint?.dither && ((h * 977) % 1) > 0.5
                 ? mixHex(speck, paint.dither.tuft)

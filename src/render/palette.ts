@@ -49,6 +49,44 @@ export interface ScenePalette {
   baseCrown: string;
   baseCrownLit: string;
   baseTuft: string;
+  /** THE SAME FIVE AS NOON WOULD HAVE DRAWN THEM, in this month.
+   *
+   *  The mirror of `baseCrown` and it arrived for the mirror reason. That field is
+   *  the far end of the SEASON dial — what a surface would be if the month never
+   *  reached it — and `seasonPull` slides between the two. This is the far end of
+   *  the HOUR dial (§BiomeDef.nightPull): what a surface would be if the night
+   *  never reached it.
+   *
+   *  THE RULE ABOVE STANDS AND IS NOW STATED PROPERLY. `baseCrown`'s note says
+   *  "the day/night axis is nobody's to opt out of", and the fault it names is
+   *  exact: a wood that stayed BRIGHT GREEN at midnight. What it was actually
+   *  guarding is that nothing may brighten after dark, and the way regions used to
+   *  break it was by reaching for a bigger `crown.amount` — a tint sits on
+   *  whichever arm the hour picked, so resisting the season through it resists the
+   *  dark as well, silently. A dial that says so out loud is the opposite of that
+   *  accident, and it can be tested (`palette.test.ts`).
+   *
+   *  The one region that wants it is the twilight country, whose entire premise is
+   *  a light that is not the light you left. It does not ask to stay bright — it
+   *  asks to stay WRONG, at noon as much as at midnight. The global night wash is
+   *  untouched by any of this and still falls on everything, so a region that
+   *  holds this dial at 0 keeps its HUE across the clock and still gets darker
+   *  after dark, which is the only version of "timeless" that does not need
+   *  darkness quantised to the tile grid (see `LAMP_INNER` for why that is not
+   *  on the table). */
+  day: DayArms;
+}
+
+/** The hour-free end of the day/night dial — see §ScenePalette.day. Held as one
+ *  object rather than five more fields on the palette so that "these are the noon
+ *  values of the same five things" is legible at the call site. */
+export interface DayArms {
+  crown: string;
+  crownLit: string;
+  tuft: string;
+  baseCrown: string;
+  baseCrownLit: string;
+  baseTuft: string;
 }
 
 // The values the game shipped with, which are also summer's and also the
@@ -65,16 +103,28 @@ const SEASONLESS = {
 export function scenePalette(season: SeasonDef | null, night: boolean): ScenePalette {
   const s = season ?? SEASONLESS;
   const crown = season ? season.crown : SEASONLESS.crown;
+  // ONE FUNCTION FOR BOTH ARMS, so the noon end of the hour dial cannot drift
+  // from the noon the game actually draws. Written out twice it would be two
+  // opinions about the same five colours, which is the fault `foliage`'s own
+  // docblock is about — a second copy of a composition is how you get one colour
+  // in a test and a different one on screen.
+  const arms = (n: boolean): DayArms => ({
+    crown: n ? crown.night : crown.day,
+    crownLit: n ? crown.nightLit : crown.dayLit,
+    tuft: n ? s.tuft.night : s.tuft.day,
+    baseCrown: n ? SEASONLESS.crown.night : SEASONLESS.crown.day,
+    baseCrownLit: n ? SEASONLESS.crown.nightLit : SEASONLESS.crown.dayLit,
+    baseTuft: n ? SEASONLESS.tuft.night : SEASONLESS.tuft.day,
+  });
+  const now = arms(night);
   return {
     season,
     night,
     sky: night ? s.sky.night : s.sky.day,
-    tuft: night ? s.tuft.night : s.tuft.day,
-    crown: night ? crown.night : crown.day,
-    crownLit: night ? crown.nightLit : crown.dayLit,
-    baseCrown: night ? SEASONLESS.crown.night : SEASONLESS.crown.day,
-    baseCrownLit: night ? SEASONLESS.crown.nightLit : SEASONLESS.crown.dayLit,
-    baseTuft: night ? SEASONLESS.tuft.night : SEASONLESS.tuft.day,
+    ...now,
+    // By day the two ends are the same object, which keeps every daytime frame
+    // byte-identical to what it drew before this field existed.
+    day: night ? arms(false) : now,
   };
 }
 
@@ -89,6 +139,20 @@ export function seasonPulled(base: string, seasonal: string, pull: number): stri
   if (pull >= 1) return seasonal;
   if (pull <= 0) return base;
   return mixHex(base, { color: seasonal, amount: pull });
+}
+
+/** The same lerp on the other axis: `day` at 0, this hour's own answer at 1.
+ *
+ *  It is arithmetically identical to `seasonPulled` and is a separate function
+ *  anyway, because the two dials are separate CLAIMS and a shared name would
+ *  invite a caller to pass one dial's number where the other's belongs. The
+ *  early-outs matter as much as the mix: at 1 — every region but one — this hands
+ *  back the very string it was given, so nothing that did not ask for an hour dial
+ *  can be moved by one existing. */
+export function hourPulled(day: string, now: string, pull: number): string {
+  if (pull >= 1) return now;
+  if (pull <= 0) return day;
+  return mixHex(day, { color: now, amount: pull });
 }
 
 /** A region's FOLIAGE colour for a frame — the one place the month, the region's
@@ -118,13 +182,41 @@ export function seasonPulled(base: string, seasonal: string, pull: number): stri
 export function foliage(biome: BiomeDef | null | undefined, p: ScenePalette, lit: boolean): string {
   const now = lit ? p.crownLit : p.crown;
   if (!biome) return now;
-  const ink = mixHex(
-    seasonPulled(lit ? p.baseCrownLit : p.baseCrown, now, biome.seasonPull?.crown ?? 1),
-    biome.crown,
+  // THE HOUR DIAL FIRST, AND IT MOVES BOTH ENDS. `seasonPulled` mixes between a
+  // seasonless base and this month's answer, and both of those are stated at the
+  // current hour — so a region that only half-notices the night has to have the
+  // night taken out of BOTH before the season is asked about, or the dial would
+  // hold the month still and let the hour back in through the base.
+  const hour = biome.nightPull?.crown ?? 1;
+  const seasonal = hourPulled(lit ? p.day.crownLit : p.day.crown, now, hour);
+  const base = hourPulled(
+    lit ? p.day.baseCrownLit : p.day.baseCrown,
+    lit ? p.baseCrownLit : p.baseCrown,
+    hour,
   );
+  const ink = mixHex(seasonPulled(base, seasonal, biome.seasonPull?.crown ?? 1), biome.crown);
   return biome.autumnCrown && p.season?.id === "autumn"
     ? mixHex(ink, biome.autumnCrown)
     : ink;
+}
+
+/** A region's TUFT SPECKLE for a frame, composed exactly as `foliage` is and
+ *  living beside it for the same reason: the renderer had this arithmetic inline,
+ *  which was fine while it was one `seasonPulled` and became a second opinion
+ *  about a colour the moment the hour got a dial of its own.
+ *
+ *  The region's own tint goes on last, as everywhere. There is no `autumnCrown`
+ *  equivalent here — a tuft is grass, and grass does not turn. */
+export function tuftInk(biome: BiomeDef, p: ScenePalette): string {
+  const hour = biome.nightPull?.ground ?? 1;
+  return mixHex(
+    seasonPulled(
+      hourPulled(p.day.baseTuft, p.baseTuft, hour),
+      hourPulled(p.day.tuft, p.tuft, hour),
+      biome.seasonPull?.ground ?? 1,
+    ),
+    biome.tuft,
+  );
 }
 
 // --- Biome tinting ------------------------------------------------------------
@@ -341,6 +433,7 @@ export function blendRegions(parts: { def: BiomeDef; w: number }[]): BiomeDef {
   const anyRain = rainy.length > 0;
   const anyAutumn = parts.some((p) => p.def.autumnCrown);
   const anyPull = parts.some((p) => p.def.seasonPull);
+  const anyHour = parts.some((p) => p.def.nightPull);
   const dial = (pick: (d: BiomeDef) => number | undefined): number => {
     let sum = 0;
     let w = 0;
@@ -381,6 +474,20 @@ export function blendRegions(parts: { def: BiomeDef; w: number }[]): BiomeDef {
           seasonPull: {
             crown: dial((d) => d.seasonPull?.crown),
             ground: dial((d) => d.seasonPull?.ground),
+          },
+        }
+      : {}),
+    // AND THE HOUR DIAL, on the season dial's terms exactly (§BiomeDef.nightPull).
+    // The twilight country meeting an ordinary wood has to stop noticing the night
+    // over the same tiles its turf fades over — a region that held still on one
+    // side of a line and swung on the other would put a seam across the ground
+    // after dark and nowhere else, which is the worst kind: one that is only there
+    // half the day.
+    ...(anyHour
+      ? {
+          nightPull: {
+            crown: dial((d) => d.nightPull?.crown),
+            ground: dial((d) => d.nightPull?.ground),
           },
         }
       : {}),
