@@ -765,16 +765,27 @@ describe("crown silhouettes", () => {
     // mushrooms has to say which way it went. Regions with no mushrooms at all
     // are exempt — there is nothing to be wrong about.
     //
-    // THE DUSK IS ON THE LIST AND ITS TREES ARE BROADLEAF, which is the exception
-    // that says what the list is for. Fly agaric does partner beech and oak, so
-    // it is not a false entry — but the real reason is that the dusk's whole idea
-    // is a wood where the shapes are the ones you know and only the light is
-    // wrong. A recoloured cap there would be the region joining in.
+    // THE DUSK CAME OFF THE LIST, and how it left is the useful part. It was on
+    // it for a stated reason — its trees are broadleaf, fly agaric partners beech
+    // and oak, and more to the point "the dusk's whole idea is a wood where the
+    // shapes are the ones you know and only the light is wrong, so a recoloured
+    // cap there would be the region joining in."
+    //
+    // That objection is about a region INVENTING a mushroom, and it does not
+    // reach a VARIETY. The dusk now draws Amanita muscaria var. guessowii, which
+    // is a real yellow-orange form of the same species: same dome, same white
+    // flecks, same genus and species, different colour morph. The shapes are
+    // still the ones you know, which is the test the objection actually sets.
+    //
+    // The list is unchanged in what it asks. It is not "which regions may have a
+    // red cap" — it is "a region that leaves this field blank is claiming to be a
+    // fly agaric host, and has to be one". Declaring a cap has always exempted a
+    // row from it (the `continue` above), and the dusk simply stopped being blank.
     //
     // The GLASS WOOD went the other way on the same evidence: its crown is the
     // birch's, so ecology allowed the red, and the palette overruled it. Both are
     // judgement calls; the point of the whitelist is that they have to be made.
-    const REDS = new Set(["birch", "pinewood", "dusk"]);
+    const REDS = new Set(["birch", "pinewood"]);
     for (const b of Object.values(BIOMES)) {
       if (b.mushrooms <= 0) continue;
       if (b.mushroomCap) continue;

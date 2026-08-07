@@ -9263,9 +9263,47 @@ night, and that the one **with** one holds its colour exactly — `toBe`, not cl
   that starts at the bottom. 4 separates the only two populations there are: the
   dusk at 0.0, which said so, and 6.6 for the lowest that did not.
 
-**Still open, and declined for now:** the trunks are (85,64,60), the one warm mass
-left in the region, and the river runs through it as untinted cyan — both now the
-most ordinary-looking things in a picture built on one hue.
+**Then the river and the mushrooms, the same afternoon.**
+
+**The water now carries the twilight** — `waterTint: { color: "#3f3a66", amount:
+0.35 }`. It was (118,185,211), the brightest and most saturated mass in the frame
+and the only one that looked like noon somewhere else, which is exactly the case
+`waterTint` was added for. **0.35 is low on purpose, and the reason is a finding
+worth keeping: a dark water tint and a pale one do not cost the same thing.** The
+affordance here is the colour — "you may wade here" is never said by the HUD, it
+is said by the shallows being the paler blue — and darkening compresses the gap
+between the two blues where brightening barely touches it. In relative luminance
+the untinted pair sits 0.227 apart; the salt's PALE tint at 0.45 still leaves
+0.160; this dark one at the same 0.45 would leave 0.081. **Half the affordance for
+the same number.** At 0.35 it keeps 0.109.
+
+**And the caps are a yellow-orange fly agaric** — *Amanita muscaria* var.
+*guessowii*, a real colour morph of the same species. The objection this had to
+clear was already written down: the dusk was on the red whitelist because "a
+recoloured cap there would be the region joining in", the region's premise being
+that the shapes are the ones you know. **That objection is about inventing a
+mushroom and does not reach a VARIETY** — same dome, same white flecks, same
+species, different morph. The list never asked "who may be red"; it asks "a region
+that leaves this field blank is claiming to be a fly agaric host, and had better be
+one." Declaring a cap has always exempted a row. The dusk stopped being blank.
+
+- **The red was the lowest-contrast option on the table, which is the opposite of
+  what it looks like.** Against this floor: red 1.90:1, orange 2.53:1, yellow
+  4.23:1. It does not shout by being bright — it shouts because red sits about 80°
+  from violet, close enough to muddle and too far to agree. Yellow fixes the hue
+  and overshoots into being the loudest thing in the country. Orange reads as warm
+  light in a cool world.
+- **Noted and accepted**: the fireflies' note calls their ember "the only warm
+  thing here". That was already untrue, since the caps have been warm since the
+  region shipped, and the distinction that survives is the one that note itself
+  draws — a cap is a pigment on the floor, an ember is drawn additively with a
+  white core and flashes.
+
+**Still open:** the trunks are (85,64,60), the one warm mass left. And a new one
+the tinted water exposed — **the SAND is now the brightest thing in the region.**
+`waterTint` is water-only by design ("not the sand, not the shore") and
+`BIOME_GROUND` excludes sand from a region's own tint, so a beach in the twilight
+country is lit by an ordinary sun and nothing in the current rules reaches it.
 
 ### The prickly pear (6 Aug 2026) — built
 

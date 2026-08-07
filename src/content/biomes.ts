@@ -3514,6 +3514,51 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         // to get shards: out here the ground has started doing things it does not do
         // at home, and that is the whole premise of the far country.
     stone: { tint: { color: "#463d5e", amount: 0.34 }, shapes: ["crag", "shard", "boulder"] },
+    // THE RIVER WAS THE ONE THING STILL UNDER AN ORDINARY SKY. Everything here
+    // takes the light — turf, speckle, crowns, stone — and the water sat at
+    // (118,185,211), the brightest and most saturated mass in the frame and the
+    // only one that looked like noon somewhere else. That is exactly the case
+    // §waterTint was added for: a stream crossing a salt pan is carrying the pan,
+    // and a river running through the twilight country is carrying the twilight.
+    //
+    // 0.35, AND IT IS LOW ON PURPOSE — a dark tint and a pale one do not cost the
+    // same thing. The affordance here is the colour ("you may wade here" is never
+    // said by the HUD, it is said by the shallows being the paler blue), and
+    // darkening compresses the gap between the two blues where brightening barely
+    // touches it. Measured in relative luminance: untinted the pair sits 0.227
+    // apart; the salt's PALE tint at 0.45 still leaves 0.160, and this dark one at
+    // the same 0.45 would leave 0.081 — half the affordance for the same number.
+    // At 0.35 it keeps 0.109 and the river still reads as violet-dimmed rather
+    // than as ordinary water.
+    waterTint: { color: "#3f3a66", amount: 0.35 },
+    // THE YELLOW-ORANGE FLY AGARIC — Amanita muscaria var. guessowii, which is a
+    // real and common variety and is the whole of the argument for this row.
+    //
+    // THE OBJECTION IT ANSWERS IS A GOOD ONE and was written down before this:
+    // `palette.test.ts` kept this region on the red list on the grounds that "the
+    // dusk's whole idea is a wood where the shapes are the ones you know and only
+    // the light is wrong — a recoloured cap there would be the region joining in."
+    // That is right about a region inventing a mushroom, and it does not reach a
+    // VARIETY. The shape is untouched (still `cap`, the dome), the white flecks
+    // are untouched, the species is untouched. What changes is which of two
+    // colours the same fungus came up in, and the eye reads a yellow-orange fly
+    // agaric as a fly agaric — which is the test the objection actually sets.
+    //
+    // AND THE RED WAS THE ONE THING FIGHTING THE LIGHT. Measured against this
+    // floor the default cap is 1.90:1 — the LOWEST-contrast option on the table,
+    // which is worth writing down because it is the opposite of what it looks
+    // like. The red does not shout by being bright; it shouts because red sits
+    // about 80° from violet, close enough to muddle and too far to agree. Yellow
+    // at 4.23:1 fixes the hue and overshoots into being the loudest thing in the
+    // country. Orange at 2.53:1 is the one that reads as WARM LIGHT in a cool
+    // world rather than as a clash or as a shout.
+    //
+    // Noted and accepted: the fireflies' docblock calls their ember "the only warm
+    // thing here". That was already untrue — the caps have been warm since the
+    // region shipped — and the distinction that survives is the one that note
+    // itself draws, between a pigment and a light. A cap is a thing on the floor;
+    // an ember is drawn additively with a white core and flashes.
+    mushroomCap: { cap: "#e0902c", lit: "#f0ad45", gills: "#ad6a1c" },
     // The meadow's silhouette exactly. Colour carries this one alone, deliberately:
     // it is the shape you know, which is what makes the colour unsettling instead
     // of merely decorative.
