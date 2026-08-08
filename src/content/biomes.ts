@@ -3678,12 +3678,33 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // it is the shape you know, which is what makes the colour unsettling instead
     // of merely decorative.
     crownRows: BROADLEAF,
-    // NIGHT FLOWERS, OPEN AT NOON. The region's premise carried down to the
-    // ground: nothing is shaped oddly — an ordinary head on an ordinary stem,
-    // the plainest flower drawing in the file — and the strange part is a fact
-    // rather than a silhouette. These are the flowers that open at dusk, and
-    // here it is always dusk, so they are always open. Nobody has to be told
-    // that; it is simply true, which is the register this region works in.
+    // WHITE CAMPION, OPEN AT NOON — Silene latifolia, and naming it is what
+    // finally made this row make sense. The region's premise carried down to the
+    // ground: nothing is shaped oddly — an ordinary head on an ordinary stem, the
+    // plainest flower drawing in the file — and the strange part is a fact rather
+    // than a silhouette. This is the plant the fact is ABOUT: a white campion
+    // opens at dusk and closes in the morning, which is a real thing a real
+    // hedgerow does, and here it is always dusk, so it is always open. Nobody has
+    // to be told that; it is simply true, which is the register this region works
+    // in.
+    //
+    // AND IT MOVED OUT OF `decor` INTO `bloom`, WHICH IS THE CORRECTION. It was
+    // year-round, and that is a different and much larger claim than the one the
+    // region makes: **the trick explains why the flowers are OPEN, not why they
+    // are in bloom in January.** The hour here is fixed (§nightPull) and the YEAR
+    // is not — the dusk takes the whole season like everybody else, and its crowns
+    // visibly turn (#454055 in July against #5f3650 in October). A wood that
+    // refused the calendar as well would stop being the mildest strangeness in the
+    // far country and start being the strangest.
+    //
+    // Summer, because that is when a campion is worth walking past — warm nights
+    // are what a night-scented flower is FOR. Its real season runs May to
+    // September and this file's grain is four seasons, so it rounds to the one in
+    // the middle. Spring is available if it ever wants a second kit.
+    //
+    // The floor in the other nine months is the tuft speckle and nothing else,
+    // which is what this region has always said about itself: "Dim. Little grows
+    // under that light." The birches already carry no year-round kit either.
     //
     // Moon-pale, and the only pale thing on the floor: the stems take the
     // near-black crown ink, so what actually lands on the violet is a scatter
@@ -3708,7 +3729,8 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Three heights and no other difference, which is the rule the lilies and the
     // cattails both landed on the same day: when a plant is one shape held up on a
     // stalk, the stalk is the variable.
-    decor: {
+    bloom: {
+      season: "summer",
       density: 0.08,
       accent: "#cfc8ea",
       marks: [

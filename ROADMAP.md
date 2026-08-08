@@ -9461,6 +9461,36 @@ quietly become the absent one.** Plain is a virtue; one pixel is not plain.
   cattails both landed on the same day**: when a plant is one shape held up on a
   stalk, the stalk is the variable.
 
+**The flowers are white campion, and naming them is what fixed them.** *Silene
+latifolia* opens at dusk and closes in the morning — a real thing a real hedgerow
+does — so it is the plant the region's joke is actually ABOUT. Here it is always
+dusk, so it is always open, and nobody has to be told.
+
+**And it moved out of `decor` into `bloom`, which is the correction.** It was
+year-round, and that is a much larger claim than the region makes: **the trick
+explains why the flowers are OPEN, not why they are in bloom in January.** The
+hour here is fixed; the YEAR is not. Measured, the dusk takes the whole season
+like everybody else and its crowns turn hard — `#454055` in July against
+`#5f3650` in October, a plum-red wood. The ground barely moves (three RGB across
+twelve months) because the region's own tint is doing 85% of the work, and that is
+right: a violet floor staying violet is the point of the place. **So the year was
+always there and the flowers were hiding it**, being the one thing on screen that
+looked identical in every month. October now reads as October.
+
+A wood that refused the calendar as well as the clock would stop being the mildest
+strangeness in the far country and start being the strangest.
+
+**A test had to be widened, and it counted the slot where it meant the floor.** It
+asserted `bloom === undefined` for all three far regions, because "those regions
+carry their strangeness in the air and the canopy, and a bloom is one more small
+bright thing on floors that have enough." Right — and **the dusk satisfied it while
+carrying pale flowers every day of the year in the other slot.** Rewritten as a
+bloom the region now carries them three months and none for nine, **strictly less
+of the thing the rule exists to prevent, and the old assertion would have refused
+exactly that improvement.** It now counts how many kits put marks on the floor at
+one moment: one is the ceiling out here, spendable on something year-round (the
+glimmer, the glass) or on a season (the dusk) — never both.
+
 **Still open:** the trunks are (85,64,60), the one warm mass left in the region.
 
 ### The prickly pear (6 Aug 2026) — built

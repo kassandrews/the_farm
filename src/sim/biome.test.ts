@@ -30,6 +30,7 @@ import {
   LAKE_RADIUS,
 } from "./world";
 import { BIOMES, FIELD_WEIGHTS, bloomsOf, type BiomeId } from "../content/biomes";
+import { SEASONS } from "../content/seasons";
 import { FOUND } from "../content/found";
 import { GRASS, tileDef } from "../content/tiles";
 import { biomeSkin, blendRegions, sharpenRegions } from "../render/palette";
@@ -1362,8 +1363,28 @@ describe("blooms", () => {
     // The far country is left out deliberately, and this is the reason written
     // down: those regions carry their strangeness in the air and the canopy, and
     // a bloom is one more small bright thing on floors that have enough.
+    //
+    // IT COUNTED THE SLOT AND MEANT THE FLOOR, which is a distinction that cost
+    // nothing until a region moved a kit from one slot to the other. It asserted
+    // `bloom === undefined` — and the dusk satisfied that while carrying pale
+    // flowers on its floor every day of the year, in `decor`. Rewritten as a
+    // BLOOM it now carries them for three months and none for nine, which is
+    // strictly less of the thing this rule exists to prevent, and the old
+    // assertion would have refused exactly that improvement.
+    //
+    // So it counts what it means: how many kits are putting marks on the floor at
+    // any one moment. One is the ceiling out here. A region may spend it on
+    // something year-round (the glimmer's, the glass's) or on a season (the
+    // dusk's campion, open at noon because it is always dusk) — never on both,
+    // and never on two blooms sharing a month, which `decor.test.ts` forbids
+    // everywhere anyway.
     for (const id of ["dusk", "glimmer", "glass"] as const) {
-      expect(BIOMES[id].bloom).toBeUndefined();
+      const b = BIOMES[id];
+      for (const s of SEASONS) {
+        const kits =
+          (b.decor ? 1 : 0) + bloomsOf(b).filter((k) => k.season === s.id).length;
+        expect(kits, `${id}'s floor is busy in ${s.id}`).toBeLessThanOrEqual(1);
+      }
     }
   });
 });
