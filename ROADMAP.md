@@ -9753,6 +9753,36 @@ It now gives up half its width over the whole spar and no more. The blunt top is
 covered, and `palette.test.ts` requires the crown row it stops on to be solid
 foliage, which is the closure rule stated where it actually bites.
 
+### The rule the spar was looking for all along (8 Aug 2026)
+
+Four arrangements of the bole, and the fourth is the one to keep:
+
+1. **Behind the foliage**, seen through `crownGaps`. A gap is symmetric about the
+   trunk, so every width that showed enough bark split the canopy into two fringes
+   stuck to a red post.
+2. **Flat over the foliage.** A column of bark with a rounded top standing in a
+   green field reads as a doorway cut into the tree — nothing passes in front of
+   it.
+3. **Over the foliage, with the branch plates drawn back over the bark.** Right,
+   and an approximation of (4). It banded the trunk where the tiers were — and
+   then the boughs arrived and painted over the bole wholesale, because a puff is
+   four or five pixels of foliage either side of a limb and seven of them cover a
+   trunk between them. The sequoia came back as a stack of leaves with a stump
+   under it.
+4. **Bark shows exactly where there is no foliage in front of it.** The spar is
+   drawn after every green thing on the tree and skips any row whose crown row is
+   solid. On a tiered conifer the breaks band it, exactly as (3) did. On a sequoia,
+   whose crown is nearly all breaks, the bole simply runs the whole height with the
+   limbs hung off it. Which is what a trunk does.
+
+**The boughs went under the spar, and further out.** They were over it on the
+argument that a limb springs from the trunk and so is in front of it where they
+meet — true of one limb and useless with seven. And the bough ceiling went from 11
+to 13: the bole is drawn in front of them and eats four pixels off the inner end of
+every puff, so a bough has to clear the trunk before it is a bough at all. Only
+this tree's proportions could have taught that — nine pixels of bark is most of a
+small crown.
+
 ### `/trees.html` — the instrument
 
 `src/tools/tree-preview.ts` plus `scripts/shot-trees.mjs`, the sibling of

@@ -5721,14 +5721,20 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // thins both ways from there. Even spacing would be the ladder the tiers were
     // warned about (§crownRows), and on a bole this bare there is nothing else on
     // screen to break it up.
+    // They stand OFF the bole rather than on it, and that is the bole's doing:
+    // the trunk is drawn in front of them (render/renderer.ts §crownSpar), nine
+    // pixels of it, so a puff hung close in loses its whole inner half and comes
+    // back a tuft. Out at seven and eight the limb clears the bark and the
+    // foliage is all on the outside where it belongs — which is also what the
+    // drawing this row was rebuilt from does.
     crownBoughs: [
-      { row: 8, dx: -6, size: 4 },
-      { row: 11, dx: 6, size: 4 },
-      { row: 15, dx: -6, size: 5 },
-      { row: 19, dx: 6, size: 5 },
-      { row: 23, dx: -6, size: 4 },
-      { row: 26, dx: 6, size: 4 },
-      { row: 29, dx: -5, size: 3 },
+      { row: 8, dx: -7, size: 4 },
+      { row: 11, dx: 7, size: 4 },
+      { row: 15, dx: -8, size: 5 },
+      { row: 19, dx: 8, size: 5 },
+      { row: 23, dx: -7, size: 4 },
+      { row: 26, dx: 7, size: 4 },
+      { row: 29, dx: -6, size: 3 },
     ],
     // The redwoods' sorrel, thinner. More light reaches this floor — the crowns
     // are enormous but there are half as many of them — and a carpet as thick as

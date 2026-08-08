@@ -887,9 +887,15 @@ describe("crown silhouettes", () => {
           // AND THE TREE STAYS ON ITS OWN GROUND. `crownRows` caps a crown at 8
           // half-widths because past that it draws over the trunks either side of
           // it. A bough reaches further by design, so it gets its own ceiling
-          // rather than an exemption: 11 is a tile and a third either way, which
+          // rather than an exemption: 13 is a tile and a half either way, which
           // the giants can afford at 1.1x density and nothing else may ask for.
-          expect(boughReach(bough), `${b.id}: a bough over the next tree`).toBeLessThanOrEqual(11);
+          //
+          // It was 11 and the limbs came out stubby, because the BOLE is in front
+          // of them (render/renderer.ts §crownSpar) and eats four pixels off the
+          // inner end of every puff. A bough has to clear the trunk before it is
+          // a bough at all, which is a thing only this tree's proportions could
+          // have taught: nine pixels of bark is most of a small crown.
+          expect(boughReach(bough), `${b.id}: a bough over the next tree`).toBeLessThanOrEqual(13);
         }
       }
     }
