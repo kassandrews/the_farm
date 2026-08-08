@@ -3567,9 +3567,33 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // (104,89,121) and the crowns at (69,64,85), both violet by the only test that
     // matters, which is that R is now the larger number.
     ground: { color: "#644a80", amount: 0.85 },
-    tuft: { color: "#9b86c8", amount: 0.85 }, // 0.6 left green flecks on violet ground
+    // DARKER THAN THE GROUND, WHICH IS THE ONE THING IT MUST BE HERE, and the
+    // fix to a fault that was reported as "weird grass artifacts". At #9b86c8 the
+    // speckle resolved to (150,139,181) — 2.26:1 ABOVE a floor of (95,83,110), so
+    // every tuft was a LIT pixel on a large flat field. A single bright pixel on
+    // flat ground is not a plant; it is a stuck pixel, and the eye reads a screen
+    // fault before it reads a species. (0.6 left green flecks on violet ground,
+    // which is the older note and still true — the amount was never the problem.)
+    //
+    // AND IT WAS COSTING THE REGION ITS FLOWERS. The night flowers are moon-pale
+    // #cfc8ea, and they were competing with 8775 pixels of tuft against their own
+    // 963 — nine to one, in the same costume. Nothing pale could read as a flower
+    // while nine times as much pale was grass.
+    //
+    // So the speckle goes UNDER the floor instead of over it: (72,62,86), 1.40:1
+    // and darker, which is texture in the ground rather than marks on it. The
+    // flowers then have the only lit ink in the region to themselves, at 6.24:1
+    // against the new speckle — which is also the fiction, and was all along. This
+    // is a wood where the light is wrong; the pale things in it are the ones that
+    // open at dusk, and the grass is not one of them.
+    tuft: { color: "#433257", amount: 0.9 },
     // Dim. Little grows under that light, and what does is small — mostly
         // specks, with the occasional plant that managed.
+    //
+    // The single-pixel `dot` survives the report above because what made it read
+    // as a fault was the LIGHT, not the size: a dark speck on a floor is a pebble
+    // or a shadow, which is a thing, where a lit one is a dead pixel. Shape was
+    // never the complaint.
     tufts: ["dot", "dot", "cluster"],
     crown: { color: "#462c5c", amount: 0.75 },
     trunk: { color: "#3a3348", amount: 0.45 },
@@ -3665,13 +3689,32 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // near-black crown ink, so what actually lands on the violet is a scatter
     // of small lit heads hanging in the dark. Deliberately NOT the firefly's
     // ember — the one warm thing here stays the one warm thing.
+    // A HEAD IS THREE PIXELS WIDE OR IT IS NOT A HEAD, which is what "the
+    // plainest flower in the file" turned out to have been costing. The marks
+    // were a single `o` on a stem — and one lit pixel is a SPECK, indistinguishable
+    // from the tuft speckle standing beside it (which was itself lit, and nine
+    // times as numerous; see §tuft). Plain is a virtue and one pixel is not plain,
+    // it is absent. The third mark was worse: a bare stem with no flower on it at
+    // all, which on this floor is a two-pixel scratch.
+    //
+    // A 3x2 BLOCK, and it is still the plainest drawing here. Three wide is the
+    // floor for a head anywhere in this file — the kingcup needed five to enclose
+    // an eye, the poppy needed its second row full width to stop being a T — and
+    // two rows is what keeps this from BEING that T: a single row of colour over a
+    // stem is a signpost, which is the shape a one-row head came out as when it
+    // was sketched. Nothing about it is odd, which is the requirement; it is
+    // simply large enough to see.
+    //
+    // Three heights and no other difference, which is the rule the lilies and the
+    // cattails both landed on the same day: when a plant is one shape held up on a
+    // stalk, the stalk is the variable.
     decor: {
       density: 0.08,
       accent: "#cfc8ea",
       marks: [
-        [".o.", ".x.", ".x."],
-        ["o..", ".x.", ".x."],
-        [".x.", ".x."],
+        ["ooo", "ooo", ".x."],
+        ["ooo", "ooo", ".x.", ".x."],
+        ["ooo", "ooo", ".x.", ".x.", ".x."],
       ],
     },
     // Fireflies, and they are LIGHT rather than animals — nothing catches one,

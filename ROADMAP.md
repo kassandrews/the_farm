@@ -9425,6 +9425,42 @@ the place.
   not this and survives every hour**: it is not cast by anything, it is the dark
   where a thing meets the ground, and without it every sprite floats after sunset.
 
+**The "weird grass artifacts" were the tuft speckle, and it was lit.** Reported by
+eye, confirmed by measurement: at `#9b86c8` the speckle resolved to (150,139,181),
+**2.26:1 ABOVE** a floor of (95,83,110). A single bright pixel on a large flat
+field is not a plant — **it is a stuck pixel**, and the eye reads a screen fault
+before it reads a species. The amount was never the problem; the direction was.
+
+**And it was eating the region's flowers.** The night flowers are moon-pale
+`#cfc8ea`, and they were competing with **8775 pixels of tuft against their own
+963 — nine to one, in the same costume.** Nothing pale could read as a flower
+while nine times as much pale was grass. So the speckle went UNDER the floor
+instead of over it, to (72,62,86) at 1.40:1: texture in the ground rather than
+marks on it. The flowers now have the only lit ink in the region to themselves, at
+6.24:1 against the new speckle — **which was always the fiction.** This is a wood
+where the light is wrong; the pale things in it are the ones that open at dusk,
+and the grass is not one of them.
+
+The single-pixel `dot` survives, because what made it read as a fault was the
+LIGHT and not the size: a dark speck on a floor is a pebble or a shadow, which is
+a thing, where a lit one is a dead pixel.
+
+**Then the flowers themselves, which is the other half of "should it have
+flowers?" — it had them and they were one pixel each.** The marks were a single
+`o` on a stem, and the third had no flower at all, just a bare stem, which on this
+floor is a two-pixel scratch. **"The plainest flower drawing in the file" had
+quietly become the absent one.** Plain is a virtue; one pixel is not plain.
+
+- **Three wide is the floor for a head anywhere in this file** — the kingcup needed
+  five to enclose an eye, the poppy needed its second row full width to stop being
+  a T. **Two rows is what keeps this from being that T**: a single row of colour
+  over a stem is a signpost, which is exactly what the one-row sketch came out as.
+- A 3×2 block is still the plainest drawing here. Nothing about it is odd, which is
+  the requirement; it is simply large enough to see.
+- Three heights and no other difference — **the same rule the lilies and the
+  cattails both landed on the same day**: when a plant is one shape held up on a
+  stalk, the stalk is the variable.
+
 **Still open:** the trunks are (85,64,60), the one warm mass left in the region.
 
 ### The prickly pear (6 Aug 2026) — built
