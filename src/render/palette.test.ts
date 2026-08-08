@@ -7,6 +7,8 @@ import {
   shrubPeak,
   shrubRows,
   sparRowAt,
+  BOUGH_SHAPES,
+  boughReach,
 } from "./renderer";
 import { BIOMES, BROADLEAF, treeForms } from "../content/biomes";
 import { SEASONS, seasonOn } from "../content/seasons";
@@ -706,10 +708,10 @@ describe("crown silhouettes", () => {
           // one the row is empty sky with foliage above and below, which is not a
           // crown made of plates — it is a tree cut in half and left floating.
           // Same argument as the gap rule below, and the same test shape.
+          // Below zero is the trunk itself, down where the crown overlaps it —
+          // full-width bark, and the best answer there is.
           const i = sparRowAt(form.rows.length, form.overlap ?? 0, r);
-          expect(i >= 0 && i < spar, `${b.id} row ${r}: a break with no bole behind it`).toBe(
-            true,
-          );
+          expect(i, `${b.id} row ${r}: a break with no bole behind it`).toBeLessThan(spar);
           // And never at the very top: the first row is the tree's outline
           // against the sky, and a crown that opens on a break has no top.
           expect(r, `${b.id}: a crown that opens on a break`).toBeGreaterThan(0);
@@ -831,23 +833,57 @@ describe("crown silhouettes", () => {
     }
   });
 
-  it("never lets a spar outgrow the crown it stands in", () => {
+  it("never lets a spar reach the top of the crown", () => {
     // The bole is drawn OVER the foliage (render/renderer.ts §crownSpar), so
     // nothing stops it running out of the top of the tree except this. A spar
-    // longer than the crown above the trunk is a bare pole with a wreath around
-    // its middle — the exact silhouette the field exists to get rid of.
+    // that reaches the crown's first rows is a bare pole with a wreath around its
+    // middle — the exact silhouette the field exists to get rid of.
     //
-    // Two thirds, not the whole: past that there is no canopy left over the bark
-    // and the tree stops closing at the top, which is where a conifer's leader
-    // actually is thinnest and most covered.
+    // THE RULE IS "THE TREE CLOSES AT THE TOP", and it used to be spelled as two
+    // thirds of the crown's length, which is a different claim that happened to
+    // imply this one. It stopped implying it the moment a crown could be mostly
+    // BREAKS (content/biomes.ts §crownRows): the giants carry a solid head over
+    // twenty-odd empty rows, every one of which needs bark behind it, so the old
+    // cap banned the shape while the head it was protecting was right there.
+    // Asserted directly instead — the spar may not reach row 1.
     for (const b of Object.values(BIOMES)) {
       for (const form of treeForms(b)) {
         const spar = form.spar ?? 0;
         if (!spar) continue;
-        const above = form.rows.length - (form.overlap ?? 0);
-        expect(spar, `${b.id}: a spar taller than its own crown`).toBeLessThanOrEqual(
-          Math.round(above * 0.67),
-        );
+        expect(
+          sparRowAt(form.rows.length, form.overlap ?? 0, 1),
+          `${b.id}: a spar reaching the top of its crown`,
+        ).toBeGreaterThanOrEqual(spar);
+      }
+    }
+  });
+
+  it("hangs every bough off bark, and none of them off the end of the world", () => {
+    // A bough springs from the TRUNK (content/biomes.ts §crownBoughs), so there
+    // has to be trunk at that height to spring from — the same rule the breaks
+    // obey, and the same failure when it is broken: a puff of foliage floating
+    // beside a tree with nothing joining it on.
+    for (const b of Object.values(BIOMES)) {
+      for (const form of treeForms(b)) {
+        for (const bough of form.boughs ?? []) {
+          const shape = BOUGH_SHAPES[bough.size];
+          expect(shape, `${b.id}: no such bough size`).toBeTruthy();
+          expect(bough.row, `${b.id}: a bough above the crown`).toBeGreaterThanOrEqual(0);
+          expect(
+            bough.row + shape.length,
+            `${b.id}: a bough hanging out of the bottom of the crown`,
+          ).toBeLessThanOrEqual(form.rows.length);
+          // Bark behind the row it attaches on. Below zero is the trunk itself,
+          // down where the crown overlaps it, which is the best case there is.
+          const i = sparRowAt(form.rows.length, form.overlap ?? 0, bough.row + 1);
+          expect(i, `${b.id}: a bough hung on thin air`).toBeLessThan(form.spar ?? 0);
+          // AND THE TREE STAYS ON ITS OWN GROUND. `crownRows` caps a crown at 8
+          // half-widths because past that it draws over the trunks either side of
+          // it. A bough reaches further by design, so it gets its own ceiling
+          // rather than an exemption: 11 is a tile and a third either way, which
+          // the giants can afford at 1.1x density and nothing else may ask for.
+          expect(boughReach(bough), `${b.id}: a bough over the next tree`).toBeLessThanOrEqual(11);
+        }
       }
     }
   });

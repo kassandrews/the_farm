@@ -579,6 +579,29 @@ export interface BiomeDef {
    *  size. */
   crownGaps?: number[];
 
+  /** PUFFS OF FOLIAGE HUNG OFF THE BOLE, at their own heights and on their own
+   *  sides. Empty for every region but the giants, and empty costs nothing.
+   *
+   *  WHY THE ROWS COULD NOT DO IT. `crownRows` is half-widths, so a crown drawn
+   *  from it is symmetric about the trunk by construction — that is what a
+   *  half-width IS. It can draw a tree that is the same on both sides and it can
+   *  draw nothing else. An old giant sequoia is not that tree: it carries a few
+   *  enormous limbs at different heights on different sides, each ending in a
+   *  rounded mass, with bare red trunk between them all the way up. Tiering the
+   *  rows and breaking them got the trunk showing and still drew a stack of
+   *  symmetric bands, because symmetric bands were the only thing available.
+   *
+   *  A bough is drawn as a small round puff (render/renderer.ts §BOUGH_SHAPES)
+   *  with a one-pixel limb running back to the bark — without the limb it is a
+   *  cloud parked beside a tree rather than a tree holding one up.
+   *
+   *  IT WANTS A SPAR UNDER IT. A bough hangs off the trunk, so there has to be
+   *  trunk at that height to hang it from: `render/palette.test.ts` checks every
+   *  one against the same taper the renderer draws, exactly as it checks the
+   *  breaks. A bough in mid-air is the same bug as a break with nothing behind
+   *  it, wearing a rounder hat. */
+  crownBoughs?: Bough[];
+
   /** How far the BOLE carries on up inside the crown, in pixels above the top of
    *  the bare stem. Default 0 — the trunk stops where the foliage starts, which
    *  is what a broadleaf does and what every region here did until the conifers
@@ -1486,6 +1509,18 @@ export const BROADLEAF = [2, 4, 5, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 6, 5, 
  *  asserts all of it over every form of every region rather than over the
  *  primary — a second silhouette nobody checked is how the first hole in a crown
  *  would get in. */
+/** One puff of foliage on the end of one limb. See §BiomeDef.crownBoughs. */
+export interface Bough {
+  /** Which crown row its TOP sits on. */
+  row: number;
+  /** Where its centre sits relative to the trunk's own column. Negative hangs it
+   *  to the left; the sign is the whole of which side it is on. */
+  dx: number;
+  /** How big, as the half-width at its widest — 2 to 5, and the sizes are a
+   *  table rather than a formula (render/renderer.ts §BOUGH_SHAPES). */
+  size: number;
+}
+
 export interface TreeShape {
   /** Half-widths, top row first — `BiomeDef.crownRows` for this form. */
   rows: number[];
@@ -1493,6 +1528,9 @@ export interface TreeShape {
   gaps?: number[];
   /** Bottom rows standing beside the trunk. See §BiomeDef.crownOverlap. */
   overlap?: number;
+  /** Puffs hung off the bole. See §BiomeDef.crownBoughs. Omitted, the region's
+   *  own — a form that only redraws the silhouette keeps the species' limbs. */
+  boughs?: Bough[];
   /** Bole carried up inside the crown. See §BiomeDef.crownSpar. Omitted, the
    *  region's own — two histories of one tree have the same bole, and a form
    *  that only redraws the silhouette should not have to restate it. */
@@ -1537,11 +1575,17 @@ export function treeForms(def: BiomeDef): TreeShape[] {
     overlap: def.crownOverlap,
     trunkHeight: def.trunkHeight,
     spar: def.crownSpar,
+    boughs: def.crownBoughs,
   };
   if (!def.crownAlt) return [own];
   return [
     own,
-    ...def.crownAlt.map((f) => ({ trunkHeight: def.trunkHeight, spar: def.crownSpar, ...f })),
+    ...def.crownAlt.map((f) => ({
+      trunkHeight: def.trunkHeight,
+      spar: def.crownSpar,
+      boughs: def.crownBoughs,
+      ...f,
+    })),
   ];
 }
 
@@ -4246,34 +4290,40 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // long way up (the branches are held out from it rather than drooping over
     // it), and out here there is nothing standing close enough to hide it.
     crownSpar: 16,
-    // THE SECOND PINE ON THE DOME, and it is the same tree that lost its top. A
-    // conifer at altitude gets its leader killed — by lightning, by the wind, by
-    // a hard winter — and regrows as a broad flat-headed thing, which is the
-    // shape everybody has actually seen on bare rock and half the reason those
-    // trees are photographed. So: no spire, a crown that starts wide, and a bole
-    // long enough that the two stand level in a stand of two.
+    // THE SECOND PINE ON THE DOME, and it is the OPEN one: tiered the whole way
+    // down, with more air in the bottom half than foliage and the shortest stem
+    // of any conifer here. A pine with nothing growing near it keeps its lower
+    // whorls and holds them well apart, so what you see between the plates is
+    // most of the tree — which is the reading the region's own note has always
+    // wanted ("a tree growing where you can see it has no business growing") and
+    // could not get from a silhouette.
+    //
+    // IT WON A SHEET OF SIX (src/tools/tree-options.ts), against a flat-topped
+    // one that had shipped here for a day and four others. The flat top was the
+    // better story — a leader killed by lightning, which is a real thing that
+    // happens at altitude — and it read as a shrub on a post: the crown was too
+    // short a proportion of the tree for the plates to say anything. Kept in the
+    // options file rather than deleted, because the story is still good and it
+    // may come back on a taller stem.
     //
     // Same six half-widths at the shoulder, which is the pair's species rule
-    // (§crownAlt): what differs is where the mass sits, never how big it is.
+    // (§crownAlt): what differs is how much air is in it, never how big it is.
     crownAlt: [
       {
         rows: [
-          3, 4, 4, 3, 5, 5, 4, 6, 6, //
+          1, 2, 2, 3, 3, 3, 4, 4, //
           0,
-          4, 5,
+          3, 4,
+          0,
+          4, 5, 4,
+          0,
+          4, 6, 5,
           0,
           5, 6, 5,
-          0,
-          3, 5, 4,
-          0,
-          5, 6, 6, 5,
         ],
         overlap: 3,
-        // Shorter, because the crown is: the cap on a spar is the crown it
-        // stands in (render/palette.test.ts), and a flat-topped tree has less of
-        // one to hide a trunk behind.
-        spar: 14,
-        trunkHeight: 18,
+        spar: 13,
+        trunkHeight: 16,
       },
     ],
     // GRIT AND CUSHIONS, and the sparsest kit in the file after the glimmer's.

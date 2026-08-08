@@ -9686,6 +9686,47 @@ perched on a lot of pole.
 - **A spar is capped at two thirds of its own crown** (`palette.test.ts`). Past that
   there is no canopy over the bark and the tree stops closing at the top.
 
+### Boughs: the crown gets an asymmetric mass (8 Aug 2026)
+
+`crownRows` is half-widths, so a crown drawn from it is symmetric about the trunk
+BY CONSTRUCTION — that is what a half-width is. It can draw a tree that is the
+same on both sides and it can draw nothing else. Tiering it and breaking it got
+the trunk showing and still drew a stack of symmetric bands, because symmetric
+bands were the only thing available.
+
+**`crownBoughs` is a list of puffs**: a crown row to hang from, a signed offset
+(the sign is the side), and a size off a four-entry shape table. Each is drawn as
+a small round mass with a **one-pixel limb** running back to the bark — without
+the limb it is a cloud parked beside a tree rather than a tree holding one up.
+
+**Drawn over the spar, and the order is the point.** A limb springs from the
+trunk, so where it meets the bark it is in front of it; under the spar each puff
+came out stuck to the side of the tree with a red stripe between it and the trunk
+it was supposed to be growing out of.
+
+**A bough needs bark behind it**, checked against the same taper the renderer
+draws with — a bough in mid-air is the break bug wearing a rounder hat. And it
+gets its own reach ceiling of 11 half-widths rather than an exemption from the
+crown's 8, which only the giants can afford at 1.1× density.
+
+**The spar cap changed shape.** It was "two thirds of the crown", which was a
+proxy for "the tree closes at the top" and stopped implying it once a crown could
+be mostly breaks: the giants carry a solid head over twenty-odd empty rows, all
+of which need bark behind them. Now asserted directly — a spar may not reach
+row 1.
+
+### The granite is settled (8 Aug 2026)
+
+Form zero is the tiered spire; the second form is **the open one** — tiered the
+whole way down, more air than foliage in the bottom half, the shortest stem of any
+conifer here. It won a sheet of six against the flat-topped pine that had shipped
+for a day.
+
+The flat top was the better STORY (a leader killed by lightning, which is what
+happens at altitude) and read as a shrub on a post: the crown was too small a
+share of the tree for the plates to say anything. Kept in `tree-options.ts` rather
+than deleted — it may come back on a taller stem.
+
 ### `/trees.html` — the instrument
 
 `src/tools/tree-preview.ts` plus `scripts/shot-trees.mjs`, the sibling of

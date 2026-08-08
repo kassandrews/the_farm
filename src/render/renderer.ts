@@ -413,6 +413,33 @@ export function trunkSpan(girth: number): { dx: number; w: number } {
   return { dx: -2 - girth, w: 5 + girth * 2 };
 }
 
+/** A BOUGH: one puff of foliage hung off the side of the bole, as half-widths
+ *  per row like everything else here (content/biomes.ts §crownBoughs).
+ *
+ *  ROUND, AND SLIGHTLY WIDER THAN TALL, which is the whole reason it is a table
+ *  and not `rows[r]` with an offset. A crown row is symmetric about the trunk by
+ *  construction — that is what a half-width IS — so the row model can draw a
+ *  tree that is the same on both sides and nothing else. An old sequoia is not:
+ *  it carries a few enormous limbs at different heights on different sides, each
+ *  ending in a rounded mass, with bare red trunk between them. That silhouette
+ *  cannot be spelled in symmetric rows at any width.
+ *
+ *  Indexed by the puff's half-width at its widest. Four sizes is enough for a
+ *  tree; a fifth would be a bough as wide as some whole species here. */
+export const BOUGH_SHAPES: Record<number, number[]> = {
+  2: [1, 2, 2, 1],
+  3: [2, 3, 3, 2],
+  4: [2, 4, 4, 3, 2],
+  5: [3, 5, 5, 4, 3],
+};
+
+/** How far a bough reaches from the trunk's column, on the side it hangs. Used
+ *  by the contact shadow (a wide tree needs a wide one) and by the test that
+ *  keeps a crown inside the ground it stands on. */
+export function boughReach(b: { dx: number; size: number }): number {
+  return Math.abs(b.dx) + Math.max(...(BOUGH_SHAPES[b.size] ?? [0]));
+}
+
 /** Which spar row, if any, sits behind crown row `r` — counting up from the top
  *  of the bare stem, the way `sparHalf` does. Negative means the row is down
  *  beside the trunk itself (`crownOverlap`), where the bark is full width; past
@@ -4831,6 +4858,9 @@ export class Renderer {
     // legible. Both default to "solid crown, perched on top".
     const gaps = form?.gaps;
     const overlap = form?.overlap ?? 0;
+    // The puffs hung off the bole (content/biomes.ts §crownBoughs). Empty for
+    // every region but the giants, and empty is free.
+    const boughs = form?.boughs ?? biome?.crownBoughs ?? [];
     // How much bare stem there is under all that. Per-FORM now, and per-region
     // before that (content/biomes.ts), because tallness is a species trait and
     // the crown could only ever express bushiness: the birches stand three pixels
@@ -4846,7 +4876,8 @@ export class Renderer {
     // Contact shadow — without it a tall sprite floats instead of standing. Sized
     // off the crown it belongs to: a fixed 9px puddle under a crown twice that
     // wide was a standing loose end, and it got worse the moment the trees grew.
-    const shadowW = Math.max(9, Math.max(...rows) * 2 - 3);
+    const reach = boughs.reduce((w: number, b) => Math.max(w, boughReach(b)), Math.max(...rows));
+    const shadowW = Math.max(9, reach * 2 - 3);
     this.footShadow(cx, base, shadowW, biome?.rake ?? this.rake, height);
 
     // The grove's trunks are the dark wood itself, which is the only place in
@@ -5184,6 +5215,46 @@ export class Renderer {
         if (rows[r] === 0 || rows[r] <= rows[r - 1]) continue;
         crownRow(r);
         if (r + 1 < lowest) crownRow(r + 1);
+      }
+    }
+
+    // THE BOUGHS, hung off the bole and drawn last of the foliage — see
+    // §BOUGH_SHAPES for why they exist at all and content/biomes.ts §crownBoughs
+    // for what they are for.
+    //
+    // OVER THE SPAR, WHICH IS THE POINT OF THE ORDER. A limb springs from the
+    // trunk, so where it meets the bark it is IN FRONT of it: drawn under the
+    // spar each puff came out stuck to the side of the tree with a red stripe
+    // between it and the trunk it is supposed to be growing out of. The bark
+    // still shows between them, because the boughs are at different heights and
+    // there is nothing else on those rows.
+    for (const b of boughs) {
+      const shape = BOUGH_SHAPES[b.size];
+      if (!shape) continue;
+      const bx = cx + b.dx;
+      const by = top + b.row;
+      // The limb itself, one pixel, from the bark out to the puff. Without it a
+      // bough is a cloud parked beside a tree; with it the tree is holding the
+      // cloud up. It runs at the puff's shoulder rather than its middle, which
+      // is where a real limb leaves the trunk — they rise, then the foliage
+      // hangs off the end.
+      const arm = by + 1;
+      const inner = b.dx < 0 ? bx : cx;
+      const outer = b.dx < 0 ? cx : bx;
+      ctx.fillStyle = mixHex(barkInk, { color: crown, amount: 0.45 });
+      ctx.fillRect(inner, arm, Math.max(1, outer - inner), 1);
+      ctx.fillStyle = ink(crown);
+      for (let r = 0; r < shape.length; r++) {
+        ctx.fillRect(bx - shape[r], by + r, shape[r] * 2 + 1, 1);
+      }
+      // Lit from the upper left like everything else, and pulling back as it
+      // descends for the crown's own reason — a flat left half is a paint job,
+      // and on a shape this small it is most of the shape.
+      ctx.fillStyle = ink(crownLit);
+      for (let r = 1; r < shape.length - 1; r++) {
+        const back = Math.floor((r / (shape.length - 1)) * shape[r] * 0.75);
+        const w = Math.max(1, shape[r] - 1 - back);
+        ctx.fillRect(bx - shape[r] + 1, by + r, w, 1);
       }
     }
 
