@@ -3710,21 +3710,32 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // near-black crown ink, so what actually lands on the violet is a scatter
     // of small lit heads hanging in the dark. Deliberately NOT the firefly's
     // ember — the one warm thing here stays the one warm thing.
-    // A HEAD IS THREE PIXELS WIDE OR IT IS NOT A HEAD, which is what "the
-    // plainest flower in the file" turned out to have been costing. The marks
-    // were a single `o` on a stem — and one lit pixel is a SPECK, indistinguishable
-    // from the tuft speckle standing beside it (which was itself lit, and nine
-    // times as numerous; see §tuft). Plain is a virtue and one pixel is not plain,
-    // it is absent. The third mark was worse: a bare stem with no flower on it at
-    // all, which on this floor is a two-pixel scratch.
+    // "THE PLAINEST FLOWER DRAWING IN THE FILE" WAS A RULE DEFENDING AN ABSENCE,
+    // and it took three passes to notice. It was written to justify a single lit
+    // pixel; the pixel was corrected to a 3x2 block on the argument that three
+    // wide is the floor for a head — and a block is not a flower either, it is a
+    // stamp. Plain is a virtue. Minimal is not the same virtue, and the row had
+    // been quietly reading one as the other since it was drawn.
     //
-    // A 3x2 BLOCK, and it is still the plainest drawing here. Three wide is the
-    // floor for a head anywhere in this file — the kingcup needed five to enclose
-    // an eye, the poppy needed its second row full width to stop being a T — and
-    // two rows is what keeps this from BEING that T: a single row of colour over a
-    // stem is a signpost, which is the shape a one-row head came out as when it
-    // was sketched. Nothing about it is odd, which is the requirement; it is
-    // simply large enough to see.
+    // THE SHAPE EVERYBODY DRAWS WHEN THEY DRAW A FLOWER: five petals round an
+    // enclosed centre, which is the kingcup's silhouette and its fourth
+    // deliberate use. Reuse is the strongest possible answer HERE and nowhere
+    // else — this is the region whose trees are the meadow's own broadleaf
+    // *because it is the shape you know*, and the same sentence is why its flower
+    // should be the flower you know. A campion that needed its own silhouette
+    // would be the region joining in, which is the objection the fly agaric row
+    // one screen up had to clear for the same reason.
+    //
+    // Five wide because the centre has to be ENCLOSED and three cannot do it —
+    // the kingcup's own finding, that at three wide petals all the way round a
+    // centre is a 3x3 block and reads as a TILE. A two-row head was sketched and
+    // came out a mushroom cap; a notched one came out the wood lily's star; two
+    // eyes came out a face.
+    //
+    // THE CENTRE IS DIM RATHER THAN PALE, which is the poppy's finding ("a poppy's
+    // centre really is the darker part of it") and is also true of the plant: what
+    // you see looking into a campion is where the petals converge on the calyx
+    // tube, and that is a shadow. A pale centre on a pale flower is no centre.
     //
     // Three heights and no other difference, which is the rule the lilies and the
     // cattails both landed on the same day: when a plant is one shape held up on a
@@ -3733,10 +3744,11 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       season: "summer",
       density: 0.08,
       accent: "#cfc8ea",
+      core: "#6b5f8c",
       marks: [
-        ["ooo", "ooo", ".x."],
-        ["ooo", "ooo", ".x.", ".x."],
-        ["ooo", "ooo", ".x.", ".x.", ".x."],
+        [".ooo.", "oo*oo", ".ooo.", "..x.."],
+        [".ooo.", "oo*oo", ".ooo.", "..x..", "..x.."],
+        [".ooo.", "oo*oo", ".ooo.", "..x..", "..x..", "..x.."],
       ],
     },
     // Fireflies, and they are LIGHT rather than animals — nothing catches one,

@@ -9491,6 +9491,33 @@ exactly that improvement.** It now counts how many kits put marks on the floor a
 one moment: one is the ceiling out here, spendable on something year-round (the
 glimmer, the glass) or on a season (the dusk) — never both.
 
+**And then it still was not a flower, because a rule was defending an absence.**
+"The plainest flower drawing in the file" was written to justify a single lit
+pixel. The pixel became a 3×2 block on the argument that three wide is the floor
+for a head — and **a block is not a flower either, it is a stamp.** Plain is a
+virtue; minimal is a different one, and the row had been reading one as the other
+since it was drawn. Three passes to notice, and it took somebody saying "this
+isn't really a flower" out loud.
+
+**So it is the shape everybody draws when they draw a flower**: five petals round
+an enclosed centre, which is the kingcup's silhouette and its fourth deliberate
+use. **Reuse is the strongest possible answer here and nowhere else** — this is
+the region whose trees are the meadow's own broadleaf *because it is the shape you
+know*, and the same sentence is why its flower should be the flower you know. A
+campion that needed its own silhouette would be the region joining in, which is
+the objection the fly agaric row had to clear a screen earlier for the same
+reason.
+
+- **Five wide, because the centre has to be enclosed and three cannot do it** —
+  the kingcup's own finding, that at three wide petals all the way round a centre
+  is a 3×3 block and reads as a TILE. Sketched against it: a two-row head came out
+  a mushroom cap, a notched one came out the wood lily's star, and two cores came
+  out a face.
+- **The centre is dim rather than pale**, which is the poppy's finding ("a poppy's
+  centre really is the darker part of it") and is true of the plant: what you see
+  looking into a campion is where the petals converge on the calyx tube, and that
+  is a shadow. A pale centre on a pale flower is no centre.
+
 **Still open:** the trunks are (85,64,60), the one warm mass left in the region.
 
 ### The prickly pear (6 Aug 2026) — built
