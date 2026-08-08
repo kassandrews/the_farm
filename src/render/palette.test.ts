@@ -854,6 +854,13 @@ describe("crown silhouettes", () => {
           sparRowAt(form.rows.length, form.overlap ?? 0, 1),
           `${b.id}: a spar reaching the top of its crown`,
         ).toBeGreaterThanOrEqual(spar);
+        // AND IT ENDS UNDER FOLIAGE. The spar no longer tapers to a point (see
+        // `sparHalf`: a bole does not run out, it goes up behind the limbs), so
+        // its top is a blunt end and something has to be in front of it. The
+        // crown row it stops on must be solid — a break there is a cut-off trunk
+        // hanging in the air with sky above it.
+        const tip = form.rows.length - (form.overlap ?? 0) - spar;
+        expect(form.rows[tip], `${b.id}: a spar ending in open sky`).toBeGreaterThan(0);
       }
     }
   });

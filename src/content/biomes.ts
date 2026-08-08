@@ -5528,33 +5528,35 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // longer: past two thirds there is no canopy left over the top of the bark and
     // the tree stops closing (§BiomeDef.crownSpar, render/palette.test.ts).
     crownSpar: 21,
-    // THE SECOND REDWOOD, and it is the first one old. A coast redwood loses its
-    // spire eventually and carries an irregular ragged head on a longer bare
-    // bole — which is how you tell the old ones in a stand, and the only thing
-    // that varies here that is worth varying: they grow at one width and differ
-    // in what has happened to them.
+    // THE SECOND REDWOOD, and it is form zero with the air taken out: deeper
+    // plates, more of them, less trunk between. The tree that grew where the
+    // light was worse, which is most of them — a stand is not a row of specimens.
     //
-    // Same six at the shoulder (§crownAlt, the species rule), four pixels more
-    // stem, and it stands within two pixels of the other, so a wood of the pair
-    // has a level canopy with two histories under it.
+    // IT WON A SHEET OF SIX (src/tools/tree-options.ts) over four louder ideas: a
+    // narrow grove tree, a limbed one on the new §crownBoughs, a candelabra with
+    // a forked top, and a veteran with its crown right at the top of a very long
+    // bole. Every one of them was a more interesting drawing on its own and every
+    // one of them changed what the WOOD is — and the wood is the thing this
+    // region is. A second form is meant to give a stand a history, not a second
+    // species to notice.
+    //
+    // Same six at the shoulder (§crownAlt, the species rule), two pixels more
+    // stem, and it stands within four pixels of the other, so the canopy is level
+    // and the difference is entirely how heavy the tree is.
     crownAlt: [
       {
         rows: [
-          3, 4, 4, 5, 5, 4, 6, 6, 5, 6, 6, //
+          2, 3, 4, 4, 5, 5, 6, 5, 6, 6, 5, 6, 6, 6, //
           0,
-          4, 5,
+          5, 6, 6,
           0,
           5, 6, 6, 5,
-          0,
-          3, 4,
-          0,
-          5, 6, 5,
           0,
           4, 6, 6, 5,
         ],
         overlap: 3,
-        spar: 18,
-        trunkHeight: 26,
+        spar: 16,
+        trunkHeight: 22,
       },
     ],
     // Wet, dark, and mostly buried. The fewest rocks of any region that has any,
@@ -5639,17 +5641,17 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // A sequoia does not turn either — see the redwoods, same argument, same
     // family (§BiomeDef.seasonPull).
     seasonPull: { crown: 0.16 },    mushroomCap: { cap: "#ddd3b8", lit: "#f2ecd8", gills: "#9c9070" },
-    // Thirty-four pixels of BARE stem, and twenty-two more of it drawn up inside
-    // the crown (`crownSpar`) — over three tiles of visible trunk on one tree,
-    // where the tallest thing in the rest of the world is a redwood's twenty. The
-    // sprite comes to seventy, which is four and a half tiles: the largest thing
-    // that has ever been drawn standing on this ground.
+    // Thirty-six pixels of BARE stem, and twenty-four more of it drawn up inside
+    // the crown (`crownSpar`) — five tiles of visible trunk on one tree, where
+    // the tallest thing in the rest of the world is a redwood's twenty. The sprite
+    // comes to sixty-six, over four tiles: the largest thing that has ever been
+    // drawn standing on this ground.
     //
     // The renderer takes the height from trunk plus crown, so occlusion stays
     // honest for free, and `hideFactor` already fades any tree tall enough to
     // swallow the player — which is how a tree this size is allowed to exist at
     // all without a rule about where it may stand.
-    trunkHeight: 34,
+    trunkHeight: 36,
     // THE POINT OF THE WHOLE ROW. Eight pixels of trunk against everything else's
     // four: this is the tree you cannot get round, and girth is what says so.
     // Height alone said "mast" — see the note on `trunkGirth`.
@@ -5683,50 +5685,51 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         ],
       ],
     },
-    // ROUNDED, AND WIDER THAN A CONIFER IS ALLOWED TO BE. `crownRows` says past
-    // eight the crown overhangs its neighbours and that broadleaves may and
-    // conifers may not — this row takes the exception, on the grounds the rule
-    // was written for: at 1.1× density there ARE no neighbours to overhang. It is
-    // also true of the tree. An old giant sequoia has lost its spire and carries a
-    // heavy rounded head, which is exactly how you tell one from the young ones —
-    // so the silhouette is doing the same job the girth is.
-    // THIRTY-FOUR ROWS, AND THE LENGTH IS THE FIX. At twenty-six it photographed
-    // as a fat pole with an ordinary crown on it — the girth had arrived and the
-    // MASS had not, so beside a plain redwood the giant read as the same tree
-    // with a thicker stem. `crownRows` is height (see its doc), so the way to
-    // make a tree bigger rather than merely wider is to give it more rows, and
-    // hold the full width across most of them: this carries eight half-widths
-    // for most of its length, where the wood outside carries six.
+    // A RED COLUMN WITH LIMBS ON IT, which is the picture everybody has of a
+    // giant sequoia and the fourth attempt at drawing it. The first three were
+    // all the same tree in different clothes — a symmetric mass on a stem, then a
+    // tiered one, then a tiered one with bands of trunk showing through it —
+    // because `crownRows` is half-widths and a crown built from half-widths is
+    // symmetric BY CONSTRUCTION (§crownBoughs). What a sequoia actually carries
+    // is a few enormous limbs at different heights on different sides, each
+    // ending in a rounded mass of foliage, with bare bark between all of them.
     //
-    // BUSHIER THAN THE WOOD OUTSIDE, AND THAT IS A SHAPE AND NOT A SIZE. Both
-    // trees now step their outline in tiers (see the redwoods' `crownRows`); the
-    // difference is that a sequoia's holds are LONGER and its pull-backs are one
-    // pixel where the coast redwood's crown is doing something more like a spire.
-    // Five or six rows at full width between steps gives a heavy, lumpy, rounded
-    // mass — an old sequoia is a cumulus of foliage on a column — against the
-    // narrow stepped taper of the tree it is standing among.
+    // So the crown here is barely a crown: eight solid rows of head, and then
+    // twenty-six rows of NOTHING (§crownRows: a 0 is a break, legal because the
+    // bole is behind it). Everything below the head is boughs and trunk. It is
+    // the emptiest silhouette in the file and the biggest tree in it, which is
+    // the right way round for this row — the note above about girth says the
+    // whole claim is "the trunk you cannot get round", and now you can see it.
+    //
+    // `crownRows` still sets the HEIGHT and the occlusion, breaks and all, so the
+    // sprite is 66 pixels and reaches over four tiles exactly as before.
     crownRows: [
-      2, 4, 5, 6, 6, 5, 7, 7, 7, 6, 8, 8, 8, 7, 8, 8, //
-      0,
-      6, 7, 7,
-      0,
-      7, 8, 8, 7,
-      0,
-      5, 7, 7,
-      0,
-      7, 8, 8, 8, 7,
-      0,
-      6, 8, 8, 7, 6,
+      2, 4, 5, 6, 6, 5, 5, 4, //
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ],
-    crownOverlap: 5,
-    // THE BOLE, ALL THE WAY UP INTO THAT. This is the row the field was built
-    // for: the one fact everybody knows about a giant sequoia is that the trunk
-    // does not stop, and a canopy sitting on top of it like a hat was drawing the
-    // opposite. Twenty-two pixels of nine-wide bark inside the crown, showing
-    // through the breaks between the limb masses and banded by the plates that
-    // cross in front of it (§BiomeDef.crownSpar). Nearly a tile and a half of
-    // trunk INSIDE the tree, on top of the thirty-four below it.
-    crownSpar: 22,
+    crownOverlap: 4,
+    // ALL THE WAY UP TO THE HEAD. Twenty-four pixels of nine-wide bark inside the
+    // crown, on top of thirty-six below it: five tiles of visible trunk on one
+    // tree, where the tallest thing in the rest of the world is a redwood's
+    // twenty. It narrows to half its width on the way (render/renderer.ts
+    // §sparHalf) and stops under the head, which is what covers the blunt end.
+    crownSpar: 24,
+    // SEVEN LIMBS, ALTERNATING, AND UNEVENLY SPACED. Three rows apart at the top
+    // and four in the middle, the two biggest at the widest part of the tree, the
+    // last one small — a real crown is heaviest a little above its middle and
+    // thins both ways from there. Even spacing would be the ladder the tiers were
+    // warned about (§crownRows), and on a bole this bare there is nothing else on
+    // screen to break it up.
+    crownBoughs: [
+      { row: 8, dx: -6, size: 4 },
+      { row: 11, dx: 6, size: 4 },
+      { row: 15, dx: -6, size: 5 },
+      { row: 19, dx: 6, size: 5 },
+      { row: 23, dx: -6, size: 4 },
+      { row: 26, dx: 6, size: 4 },
+      { row: 29, dx: -5, size: 3 },
+    ],
     // The redwoods' sorrel, thinner. More light reaches this floor — the crowns
     // are enormous but there are half as many of them — and a carpet as thick as
     // the wood outside would argue with that.

@@ -468,17 +468,24 @@ export function sparRowAt(rows: number, overlap: number, r: number): number {
  *  stopping flat mid-air. */
 export function sparHalf(i: number, spar: number, girth: number): number {
   if (spar <= 0) return 0;
-  // A COLUMN THAT GETS SWALLOWED, NOT A CONE. The first version tapered linearly
-  // over the whole spar and drew a perfect triangle of bark standing in the
-  // foliage — a fin, or an arrowhead, depending on the tree. It is wrong about
-  // the subject twice: a bole does not narrow appreciably over the few metres
-  // you can see of it inside a crown, and what ENDS it is the foliage closing
-  // over, not the trunk running out.
+  // A COLUMN, AND IT NEVER RUNS OUT. Two goes to get here and both were the same
+  // mistake in different sizes. It tapered linearly over the whole spar first,
+  // which drew a perfect triangle of bark standing in the foliage — a fin. Then
+  // it held full width for two thirds and gave the rest up, which is better and
+  // still ends the trunk in a point somewhere inside the crown.
   //
-  // So it holds its full width for most of its length and gives it all up in the
-  // last third, where the branches are thick enough to be hiding it anyway.
-  const held = 1 - i / spar;
-  return Math.round((2 + girth) * Math.max(0, Math.min(1, held / 0.34)));
+  // Both are wrong about the subject in the same way: a bole does not stop. It
+  // narrows — a sequoia is visibly thinner at the crown than at the ground — and
+  // then it goes on up BEHIND the limbs until the foliage is thick enough to hide
+  // it. What ends a trunk on screen is something in front of it, never the trunk
+  // running out, and a tree whose bark fades to nothing halfway up its own canopy
+  // reads as a trunk that was drawn and then rubbed out.
+  //
+  // So: HALF ITS WIDTH over the whole spar, and no less. The top of the spar is a
+  // blunt end, which is fine because it is covered — `palette.test.ts` requires
+  // the crown row it stops on to be solid foliage, which is the same closure rule
+  // the spar has always been held to, stated where it now bites.
+  return Math.round((2 + girth) * (1 - (0.5 * i) / spar));
 }
 
 

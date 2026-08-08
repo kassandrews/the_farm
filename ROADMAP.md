@@ -9727,6 +9727,32 @@ happens at altitude) and read as a shrub on a post: the crown was too small a
 share of the tree for the plates to say anything. Kept in `tree-options.ts` rather
 than deleted — it may come back on a taller stem.
 
+### All three settled, and the bole stopped running out (8 Aug 2026)
+
+**The granite** — the tiered spire, and the OPEN one beside it.
+**The redwoods** — the tiered spire, and the HEAVY one beside it: form zero with
+the air taken out, deeper plates, less trunk between. It won over four louder
+ideas (a narrow grove tree, a limbed one, a candelabra with a forked top, a
+veteran with its crown at the very top of a long bole). Every one of those was a
+better drawing alone and every one changed what the WOOD is. A second form gives a
+stand a history; it is not a second species to notice.
+**The giants** — a red column with seven limbs on it, off a reference drawing.
+Eight solid rows of head and then twenty-six rows of nothing but boughs and bark:
+the emptiest silhouette in the file on the biggest tree in it, which is the right
+way round for the row whose whole claim is "the trunk you cannot get round".
+
+**And `sparHalf` stopped tapering to a point.** Three versions, and the first two
+were the same mistake at different rates — linear over the whole spar drew a fin,
+holding two thirds and dropping the rest ended the trunk in a point somewhere
+inside the canopy. Both are wrong the same way: a bole does not stop. It narrows,
+then goes up BEHIND the limbs until foliage hides it. What ends a trunk on screen
+is something in front of it, never the trunk running out — bark fading to nothing
+halfway up its own crown reads as a trunk that was drawn and then rubbed out.
+
+It now gives up half its width over the whole spar and no more. The blunt top is
+covered, and `palette.test.ts` requires the crown row it stops on to be solid
+foliage, which is the closure rule stated where it actually bites.
+
 ### `/trees.html` — the instrument
 
 `src/tools/tree-preview.ts` plus `scripts/shot-trees.mjs`, the sibling of
