@@ -9783,6 +9783,49 @@ every puff, so a bough has to clear the trunk before it is a bough at all. Only
 this tree's proportions could have taught that — nine pixels of bark is most of a
 small crown.
 
+### The redwoods lose their breaks: what one tree cannot show you (8 Aug 2026)
+
+The single most useful finding of the whole pass, and it cost a day to see because
+it is invisible on the instrument built to judge trees.
+
+**A break is a horizontal bar of ground colour across a green mass.** One of them
+reads as a gap you can see the trunk through — which is what every contact sheet
+in this pass showed, one tree at a time on cleared ground, and it looked like the
+best drawing in the file. Sixty of them, on trees 2.4 to the cell with their crowns
+overlapping, read as **stripes**: the wood came out as a screen of dark green
+segments with brown slits between them.
+
+That is the per-cell edges band (CLAUDE.md) arriving by a route the rule does not
+cover. It is not tied to the tile grid — it is tied to the SPRITE, and a dense
+enough stand of one sprite IS a grid. Worth adding to the instinct: any repeated
+horizontal feature inside a repeated sprite is a candidate, at that sprite's
+density and no lower.
+
+**So the redwoods went back to solid tiered crowns** — the pinewood's own tier
+language drawn narrow. The pinewood stands at 1.4 with no breaks and has always
+read perfectly; the steps do everything an outline can do. The region's sentence
+about bark is carried where it always was, on the long bare bole underneath.
+
+**The giants keep the breaks and the boughs**, and the reason is density and
+nothing else: at 1.1, widely spaced, each tree is a thing you look AT rather than
+a texture you look THROUGH. Same mechanism, opposite verdict, and the number that
+decides it is `trees`.
+
+**Method, for next time: shoot `/biomes.html` before believing `/trees.html`.**
+One shows you a specimen and the other shows you a place. This failure was
+invisible at every zoom on the specimen page and obvious in a single swatch on the
+other.
+
+### The trunk is one material (8 Aug 2026)
+
+The bole inside the crown was drawn pulled a third toward the foliage's ink, on the
+reasoning that it is the one part of the trunk with a whole tree's shade over it.
+True about the light, false about what you are looking at. It is ONE TRUNK, and
+shaded, the upper half stopped reading as the same object as the lower — not "in
+shadow" but missing, with a dark stripe standing in for it. A material that changes
+colour halfway up is two materials. The fluting goes up with it too, for the same
+reason in texture.
+
 ### `/trees.html` — the instrument
 
 `src/tools/tree-preview.ts` plus `scripts/shot-trees.mjs`, the sibling of

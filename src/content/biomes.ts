@@ -5454,13 +5454,16 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // reads as an ordinary tree standing in a strange wood.
     trunk: { color: "#a5522c", amount: 0.6 },
     // Evergreen, and the largest evergreen there is (§BiomeDef.seasonPull).
-    seasonPull: { crown: 0.16 },    // TWENTY OF BARE STEM AND TWENTY MORE INSIDE THE CROWN, which comes to the
-    // same tree the flat 30 used to draw and reads as a far better one. Bare, the
-    // stem was a third of the sprite with a narrow column of foliage balanced on
-    // the end of it; the crown now starts lower and the bole carries on up through
-    // it (`crownSpar`), so what you are looking at standing in here is still red
-    // stem going up out of frame — but with a tree around it.
-    trunkHeight: 20,
+    seasonPull: { crown: 0.16 },    // TWENTY-SIX OF BARE RED BOLE, and it has been 30, 20 and 26 across three
+    // days of looking. 30 was a third of the sprite with a narrow column of
+    // foliage balanced on the end of it — a mast. 20 came with the crown that
+    // carried breaks, and went back up when the breaks came out (see
+    // `crownRows`): a solid crown needs less stem under it to read as tall,
+    // because the mass at the top is doing the work the bare pole was doing
+    // badly. What has never changed is why the number is large at all — standing
+    // in here, what you are mostly looking at is red stem going up out of frame,
+    // and that is the region's whole sentence.
+    trunkHeight: 26,
     // FLUTING, NOT DASHES. The birch's marks are horizontal because a birch's
     // are; a redwood's bark is furrowed straight up and down, in runs long enough
     // that at this size the RUN is the drawing and the individual pixels are not.
@@ -5491,72 +5494,66 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // where the fen's willow reaches eight — and held at that width for most of
     // its length instead of tapering. That is what a crown looks like when it has
     // grown in competition on every side: there is nowhere to spread, so it goes
-    // up. Twenty-four rows on a thirty-pixel trunk puts the foliage well up the
-    // tree, which is the other half of the same fact.
+    // up. Twenty-seven rows on a twenty-six-pixel trunk puts the foliage well up
+    // the tree, which is the other half of the same fact.
     //
-    // AND IT WAS A SMOOTH ONE FOR A LONG TIME, which is what a crown drawn as a
-    // list of increasing numbers always is: the widths only ever went up, so the
-    // outline was a convex hull and the tree read as a dark green lozenge on a
-    // stick. Nothing about the colour was wrong. A conifer's silhouette is made
-    // of BRANCH PLATES — the outline steps out where a whorl starts and pulls
-    // back in above the next one — and a shape with no steps in it cannot say so
-    // however tall and narrow it is.
+    // TIERED, AND SOLID, AND THE SECOND HALF OF THAT IS A CORRECTION. This row
+    // spent a day carrying BREAKS — empty rows with the bole showing through them
+    // (§crownRows) — and as a single tree on a contact sheet it was the best
+    // drawing in the file. At the region's own density it was a disaster, and the
+    // failure is worth writing down because nothing about the tree caused it:
     //
-    // So the widths hold for three or four rows and give a pixel back before the
-    // next step, and the holds are uneven for the granite's reason (a regular
-    // step is a ladder). Those steps are also the branch plates the BOLE gets
-    // banded by, which is why they are worth this much care — see `crownSpar`
-    // just below, and render/renderer.ts §crownSpar for the drawing of it.
+    //   A break is a horizontal bar of ground colour across a green mass. ONE of
+    //   them reads as a gap you can see the trunk through. Sixty of them, on
+    //   trees 2.4 to the cell with their crowns overlapping, read as STRIPES —
+    //   and the wood came out as a screen of dark green segments with brown slits
+    //   between, which is the per-cell edges band (CLAUDE.md) arriving by a route
+    //   that rule does not cover. It is not tied to the tile grid; it is tied to
+    //   the SPRITE, and a dense enough stand of one sprite is a grid.
+    //
+    // The pinewood, standing beside it on the same sheet at 1.4, reads perfectly
+    // and has never carried a break: solid tiered cones, and the tiers do all the
+    // work an outline can do. So this is the pinewood's own tier language, drawn
+    // narrow — the steps say conifer, the width says redwood, and the region's
+    // sentence about bark is carried where it always was, on the long bare bole
+    // underneath. The giants keep the breaks and the boughs, because a grove at
+    // 1.1 with the trees widely spaced is the one place they can work: there,
+    // each tree is a thing you look AT rather than a texture you look THROUGH.
     crownRows: [
-      1, 2, 3, 3, 4, 4, 5, 5, 4, 5, 5, 6, 6, 5, 6, 6, //
-      0,
-      4, 5,
-      0,
-      5, 6, 5,
-      0,
-      3, 4,
-      0,
-      5, 6, 6, 5,
-      0,
-      4, 6, 5,
+      1, 1, 2, //
+      2, 3, 3,
+      2, 3, 4,
+      3, 4, 4,
+      3, 5, 5,
+      4, 5, 5,
+      4, 6, 6,
+      5, 6, 6,
+      6, 4, 3,
     ],
     crownOverlap: 3,
-    // THE BOLE GOES UP INTO THE CROWN, which is the sentence the region's own
-    // header has been making about the trunks since it was written — "the one
-    // bright thing in the whole region is the bark" — and could not draw above
-    // head height. Long enough to reach every BREAK in the crown above and no
-    // longer: past two thirds there is no canopy left over the top of the bark and
-    // the tree stops closing (§BiomeDef.crownSpar, render/palette.test.ts).
-    crownSpar: 21,
-    // THE SECOND REDWOOD, and it is form zero with the air taken out: deeper
-    // plates, more of them, less trunk between. The tree that grew where the
-    // light was worse, which is most of them — a stand is not a row of specimens.
+    // THE SECOND REDWOOD, and it is the first one brushed out. A conifer in a
+    // closed stand loses its lower whorls to the shade of the tree above it, so a
+    // wood is neither all skirt nor all pole — the pinewood's pair makes exactly
+    // this argument and this region is denser than the pinewood.
     //
-    // IT WON A SHEET OF SIX (src/tools/tree-options.ts) over four louder ideas: a
-    // narrow grove tree, a limbed one on the new §crownBoughs, a candelabra with
-    // a forked top, and a veteran with its crown right at the top of a very long
-    // bole. Every one of them was a more interesting drawing on its own and every
-    // one of them changed what the WOOD is — and the wood is the thing this
-    // region is. A second form is meant to give a stand a history, not a second
-    // species to notice.
-    //
-    // Same six at the shoulder (§crownAlt, the species rule), two pixels more
-    // stem, and it stands within four pixels of the other, so the canopy is level
-    // and the difference is entirely how heavy the tree is.
+    // Four pixels more stem and three rows fewer of crown, which puts the canopy
+    // within two pixels of the other's and the DIFFERENCE entirely in how much
+    // bare red bole there is under it. That is the right axis for this region:
+    // the bark is the one bright thing in it.
     crownAlt: [
       {
         rows: [
-          2, 3, 4, 4, 5, 5, 6, 5, 6, 6, 5, 6, 6, 6, //
-          0,
+          1, 1, 2, //
+          2, 3, 3,
+          2, 3, 4,
+          3, 4, 4,
+          3, 5, 5,
+          4, 5, 5,
           5, 6, 6,
-          0,
-          5, 6, 6, 5,
-          0,
-          4, 6, 6, 5,
+          6, 4, 2,
         ],
-        overlap: 3,
-        spar: 16,
-        trunkHeight: 22,
+        overlap: 2,
+        trunkHeight: 30,
       },
     ],
     // Wet, dark, and mostly buried. The fewest rocks of any region that has any,

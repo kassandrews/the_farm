@@ -113,114 +113,18 @@ export const OPTIONS: Record<string, { note: string; forms: TreeShape[] }> = {
     ],
   },
 
-  // --- The redwoods: form zero settled, the SECOND form still open. -----------
+  // --- The redwoods: WITHDRAWN. -----------------------------------------------
   //
-  // A won form zero outright. The old ragged one that was going to be its
-  // partner came back "meh" and is not on this sheet — what replaced it is five
-  // ways of being the OTHER redwood, which is the question actually open: what
-  // does the tree standing next to A look like?
-  redwoods: {
-    note: "coast redwood — form zero settled, the second form open",
-    forms: [
-      // B — THE GROVE TREE. Grown in a closed stand: narrow, nearly unbroken,
-      // mostly bare bole. The argument that a redwood wood should read as
-      // columns and that A is the exception in it.
-      {
-        rows: [
-          1, 2, 2, 3, 3, 4, 4, 4, 5, 5, 4, 5, 5, 5, 6, 5, 6, 6, //
-          0,
-          4, 5,
-          0,
-          5, 6, 5,
-        ],
-        overlap: 3,
-        spar: 8,
-        trunkHeight: 26,
-      },
-      // C — THE LIMBED ONE, and the new idea on this page: a head on top and
-      // then real BOUGHS down the bole (§crownBoughs) instead of bands. Old
-      // coast redwoods carry a few big lateral limbs and nothing between them,
-      // which no symmetric row can say.
-      {
-        rows: [
-          3, 4, 4, 5, 5, 4, 5, 4, //
-          0, 0, 0, 0, 0, 0, 0, 0, 0,
-          0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ],
-        overlap: 3,
-        spar: 18,
-        boughs: [
-          { row: 9, dx: -5, size: 3 },
-          { row: 13, dx: 5, size: 4 },
-          { row: 17, dx: -5, size: 3 },
-          { row: 21, dx: 4, size: 3 },
-        ],
-        trunkHeight: 22,
-      },
-      // D — THE CANDELABRA. The top forks, which is a real and very redwood
-      // thing: a damaged leader reiterates into two and an old grove is full of
-      // them. The one shape here that changes the SKYLINE of the wood.
-      {
-        rows: [
-          3, 3, 4, 4, 5, 5, 4, 5, 6, 6, 5, 6, 6, //
-          0,
-          4, 5,
-          0,
-          5, 6, 6,
-          0,
-          4, 6, 5,
-        ],
-        gaps: [
-          1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, //
-          0,
-          0, 0,
-          0,
-          0, 0, 0,
-          0,
-          0, 0, 0,
-        ],
-        overlap: 3,
-        spar: 12,
-        trunkHeight: 26,
-      },
-      // E — THE VETERAN. A very long bole with a short, well-broken crown high up
-      // on it. Makes a wood of the pair read as a hall of pillars with one tree
-      // in it you can see the shape of.
-      {
-        rows: [
-          2, 3, 3, 4, 4, 5, 5, 4, //
-          0,
-          3, 4,
-          0,
-          4, 5, 4,
-          0,
-          3, 5, 4,
-          0,
-          4, 5, 5,
-        ],
-        overlap: 3,
-        spar: 13,
-        trunkHeight: 28,
-      },
-      // F — THE HEAVY ONE. A's shape with the air taken out: deeper plates, more
-      // of them, less trunk between. The mildest departure on the sheet, and the
-      // safe answer if the others all read as too odd to stand next to A.
-      {
-        rows: [
-          2, 3, 4, 4, 5, 5, 6, 5, 6, 6, 5, 6, 6, 6, //
-          0,
-          5, 6, 6,
-          0,
-          5, 6, 6, 5,
-          0,
-          4, 6, 6, 5,
-        ],
-        overlap: 3,
-        spar: 16,
-        trunkHeight: 22,
-      },
-    ],
-  },
+  // Five candidates stood here and all five were built on BREAKS, which turned
+  // out to be the wrong mechanism for this region at any weight — see
+  // content/biomes.ts §redwoods.crownRows for the finding. They looked their best
+  // on this page, one tree at a time on cleared ground, and that is exactly the
+  // blind spot: a page that shows one tree cannot show you a wood. The region now
+  // carries solid tiered crowns and there is no open question left to put options
+  // against.
+  //
+  // WHAT TO DO IF IT REOPENS: shoot /biomes.html, not this page. The failure was
+  // invisible at every zoom here and obvious in one swatch there.
 
   // --- The giants: rebuilt around BOUGHS, off the reference drawing. ----------
   //

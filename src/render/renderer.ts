@@ -4936,14 +4936,29 @@ export class Renderer {
     // already chose the sideways jitter, and sharing it would tie a tree's bark
     // to which way it leans. That is the decor kit's old bug, and this file has
     // now made it twice.
-    const barkArt = biome?.bark;
+    // Which grid this trunk wears and what colour it is in, kept for the SPAR to
+    // reuse further down — the fluting has to carry on up the bole, and picking
+    // the grid twice would let the two halves of one trunk disagree.
+    const barkArt = biome?.bark
+      ? {
+          grid: biome.bark.marks[
+            Math.floor(decoHash(tx, ty, world.seed ^ 0x5c07) * biome.bark.marks.length) %
+              biome.bark.marks.length
+          ],
+          color: biome.bark.color,
+        }
+      : null;
+    // Night pulls the mark toward the trunk rather than toward black: bark is one
+    // material in two lights, and a dash that stayed charcoal while the stem went
+    // blue would read as a hole in the tree after dark.
+    const markInk = barkArt
+      ? night
+        ? mixHex(barkArt.color, { color: "#2a3140", amount: 0.45 })
+        : barkArt.color
+      : "";
     if (barkArt) {
-      const bh = decoHash(tx, ty, world.seed ^ 0x5c07);
-      const grid = barkArt.marks[Math.floor(bh * barkArt.marks.length) % barkArt.marks.length];
-      // Night pulls the mark toward the trunk rather than toward black: bark is
-      // one material in two lights, and a dash that stayed charcoal while the
-      // stem went blue would read as a hole in the tree after dark.
-      ctx.fillStyle = night ? mixHex(barkArt.color, { color: "#2a3140", amount: 0.45 }) : barkArt.color;
+      const grid = barkArt.grid;
+      ctx.fillStyle = markInk;
       // AGAINST THE LIT EDGE, and clear of the shaded one. The inset used to run
       // on BOTH sides, and only one of the two was doing any work: a dash that
       // crossed the shaded column would flatten the round the two-tone stem is
@@ -5150,15 +5165,20 @@ export class Renderer {
     const litRows = Math.min(rows.length - 1, Math.max(6, Math.round(rows.length * 0.6)));
     for (let r = 0; r < rows.length; r++) crownRow(r);
 
-    // IN THE CROWN'S SHADE, and this is a third of what makes the bole read. Bark
-    // at its own brightness, inside a canopy, is a lit column standing in front of
-    // a dark mass — it comes forward, which is the opposite of true: this is the
-    // one part of the trunk with a whole tree's foliage over it. Pulled a third of
-    // the way to the crown's ink it sits back where it belongs, and the join at
-    // the top of the bare stem stops being a seam. The limbs are drawn in it too,
-    // for the same reason and by a little more.
-    const inCrown = mixHex(barkInk, { color: crown, amount: 0.34 });
-    const inCrownShade = mixHex(barkShade, { color: crown, amount: 0.34 });
+    // THE SAME BARK IT IS LOWER DOWN, and this was got wrong on a plausible
+    // argument. The bole inside the crown was pulled a third of the way to the
+    // foliage's ink, on the reasoning that this is the one part of the trunk with
+    // a whole tree's shade over it — which is true of the light and false about
+    // what you are looking at. It is ONE TRUNK. Shaded, the upper half stopped
+    // reading as the same object as the lower half: not "in shadow" but missing,
+    // with the tree apparently ending where the canopy started and a dark stripe
+    // standing in for it. A material that changes colour halfway up is two
+    // materials.
+    //
+    // The LIMBS keep a pull toward the foliage, because a limb genuinely is deep
+    // in the crown and it is one pixel wide — there is nothing else it can use to
+    // sit back.
+    const limbInk = mixHex(barkInk, { color: crown, amount: 0.45 });
 
     // THE BOUGHS, hung off the bole and drawn last of the foliage — see
     // §BOUGH_SHAPES for why they exist at all and content/biomes.ts §crownBoughs
@@ -5185,7 +5205,7 @@ export class Renderer {
       const arm = by + 1;
       const inner = b.dx < 0 ? bx : cx;
       const outer = b.dx < 0 ? cx : bx;
-      ctx.fillStyle = mixHex(barkInk, { color: crown, amount: 0.45 });
+      ctx.fillStyle = limbInk;
       ctx.fillRect(inner, arm, Math.max(1, outer - inner), 1);
       ctx.fillStyle = ink(crown);
       for (let r = 0; r < shape.length; r++) {
@@ -5233,15 +5253,36 @@ export class Renderer {
       if (cr >= 0 && cr < rows.length && rows[cr] > 0) continue;
       const hw = sparHalf(i, spar, girth);
       const y = base - trunkH - 1 - i;
-      ctx.fillStyle = inCrown;
+      ctx.fillStyle = barkInk;
       ctx.fillRect(cx - hw, y, hw * 2 + 1, 1);
       // The same shaded far side the stem has, clamped so the narrow end keeps
       // at least one lit pixel — a spar drawn entirely in the dark ink stops
       // being round exactly where it is thinnest and most in need of it.
       const sh = Math.min(shade, hw * 2);
       if (sh > 0) {
-        ctx.fillStyle = inCrownShade;
+        ctx.fillStyle = barkShade;
         ctx.fillRect(cx + hw + 1 - sh, y, sh, 1);
+      }
+      // AND THE FLUTING GOES UP WITH IT. A redwood's bark is furrowed straight up
+      // and down and the runs are the drawing at this size (content/biomes.ts
+      // §bark) — so a bole that carried them for thirty pixels and then went
+      // smooth is two trunks again, in texture this time rather than in colour.
+      // The grid keeps running: `i` counts UP from the top of the stem, and the
+      // pattern is read from its far end so the furrows carry across the join
+      // rather than restarting at it.
+      if (barkArt) {
+        ctx.fillStyle = markInk;
+        const litW = hw * 2 + 1 - sh;
+        const row = barkArt.grid[(barkArt.grid.length - 1 - (i % barkArt.grid.length))];
+        let n = 0;
+        for (const ch of row) if (ch === "x") n++;
+        if (litW <= 3) {
+          for (let c = 0; c < Math.min(n, litW); c++) ctx.fillRect(cx - hw + c, y, 1, 1);
+        } else {
+          for (let c = 0; c < litW && c < row.length; c++) {
+            if (row[c] === "x") ctx.fillRect(cx - hw + c, y, 1, 1);
+          }
+        }
       }
     }
 
