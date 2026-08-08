@@ -1118,34 +1118,44 @@ export interface BiomeDef {
    *  drawn across a beach. */
   sandTint?: Tint;
 
-  /** HOW LONG A SHADOW EVERYTHING HERE CASTS, as a fraction of its own height.
-   *  Optional; 0 (the default, and every region but one) is the contact shadow
-   *  every sprite has always had and nothing more.
+  /** WHERE THIS REGION'S SUN IS, as the length of shadow it throws — a fraction
+   *  of a sprite's own height. Optional, and omitting it (every region but one)
+   *  means the sun is wherever the CLOCK says: `sim/time.ts` §rakeAt, which is
+   *  near nothing at midday, long at dusk and dawn, and gone at night.
+   *
+   *  IT SHIPPED AS THE OPPOSITE OF THIS and the correction is worth reading. The
+   *  first version was "how long a shadow everything HERE casts", default 0 — the
+   *  twilight country had raked shadows and nowhere else did, because nowhere
+   *  else had asked. That is backwards: **a low sun is not a property of a place,
+   *  it is a property of an hour**, and every wood in the world has one at seven
+   *  in the evening. Written as a regional feature it would have had to be
+   *  granted region by region, and every region that did not get it would have
+   *  been a place where the sun does not set.
+   *
+   *  So the clock owns it and this field PINS it, which is the same shape as
+   *  `nightPull`: a row that states one is saying its light does not keep the
+   *  clock. The dusk states 0.55 — the horizon value — and therefore stands in a
+   *  permanent late afternoon, at noon and at midnight both, which is the whole
+   *  premise of the place.
    *
    *  THE TWILIGHT COUNTRY'S ONE SHAPE MOVE, and it is a shape move about the
-   *  LIGHT rather than about the trees. This region's whole thesis is that the
-   *  trees are the meadow's own broadleaf and only the light is not the light you
-   *  left — stated in its row, in its header, and relied on by
-   *  `palette.test.ts`, which grants it the file's only shared-outline exemption
-   *  on exactly that ground. A canopy of its own would spend that thesis. A long
-   *  shadow spends nothing: the tree is the tree you know, and the sun is in the
-   *  wrong place.
+   *  LIGHT rather than about the trees. That region's thesis is that the trees are
+   *  the meadow's own broadleaf and only the light is not the light you left —
+   *  stated in its row, in its header, and relied on by `palette.test.ts`, which
+   *  grants it the file's only shared-outline exemption on exactly that ground. A
+   *  canopy of its own would spend that thesis. A long shadow spends nothing: the
+   *  tree is the tree you know, and the sun is in the wrong place.
    *
-   *  It is also the most legible evening cue there is, which is the point. Every
-   *  other thing this region does is a FACT rather than a silhouette — flowers
-   *  that open at dusk, open at noon; fireflies at midday; a light that never
-   *  changes (§nightPull) — and a shadow at four in the afternoon, at noon, is
-   *  the same sentence in the same grammar.
+   *  EVERY SPRITE OR NONE. Trees, saplings, shrubs, rocks and mushrooms all take
+   *  it, which is not thoroughness but the whole requirement: a wood where the
+   *  trees have long shadows and the stones do not is a rendering bug, not an
+   *  hour. The direction is not a region's to choose either — the game lights
+   *  every crown from the upper left, so shadows fall down and to the right
+   *  everywhere or there are two suns. Length is the only dial, and length is what
+   *  "low" means.
    *
-   *  EVERY SPRITE OR NONE. Trees, saplings, shrubs and rocks all take it, which
-   *  is not thoroughness but the whole requirement: a wood where the trees have
-   *  long shadows and the stones do not is a rendering bug, not an hour. The
-   *  direction is not a region's to choose — the game lights every crown from the
-   *  upper left, so shadows fall down and to the right everywhere or there are two
-   *  suns. Length is the only dial, and length is what "low" means.
-   *
-   *  Averaged over a border like every other region field, so the shadows shorten
-   *  across the treeline instead of all standing up on one line. */
+   *  Averaged over a border like every other region field, so a pinned sun fades
+   *  into the real one across the treeline instead of standing up on a line. */
   rake?: number;
 
   float?: DecorKit;

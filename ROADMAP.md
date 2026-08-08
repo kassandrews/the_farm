@@ -9395,6 +9395,36 @@ wrong is that the mushroom was the one draw path that did not know about the rak
 `footShadow`), which made it the one thing in the twilight country standing at
 noon. Three pixels on a five-pixel cap: the same proportion the trees get.
 
+**And then the field turned out to be backwards, which is the best thing that
+happened to it.** `rake` shipped as "how long a shadow everything HERE casts",
+default 0 — the twilight country had raked shadows and nowhere else did, because
+nowhere else had asked. **A low sun is not a property of a place, it is a property
+of an hour**, and every wood in the world has one at seven in the evening. Written
+as a regional feature it would have had to be granted region by region, and every
+region that never got it would have been a place where the sun does not set.
+
+So the clock owns it — `sim/time.ts` §`rakeAt` — and the region field PINS it,
+which is the same shape as `nightPull`: a row that states one is saying its light
+does not keep the clock. The dusk states the horizon value and therefore stands in
+a permanent late afternoon, at noon and at midnight both, which is the premise of
+the place.
+
+- **It shares `boundsAt` with `tintAt`**, so the two are one fact about the hour
+  asked from opposite sides — that function says how much light there is, this
+  says where it is coming from. An evening that draws in with the season draws its
+  shadows out with it, and neither can drift from the other.
+- **Squared, not linear**, because a body's shadow runs as cot θ: flat across the
+  middle of the day, then up fast. A linear ramp puts a visible shadow on a two
+  o'clock afternoon, which reads as a permanent late-day filter rather than as an
+  hour passing. Nothing at lunchtime, something by mid-afternoon, long at supper.
+- **Nothing at night, and that is a choice rather than a limit.** Moonlight does
+  cast a shadow — a full moon throws one you can read by — and it is refused for
+  the reason the fireflies are the dusk's only warm thing: the night budget is
+  already spent on the wash and the lamps, and a second fainter set of shadows
+  under both is detail nobody would attribute to the moon. **The contact shadow is
+  not this and survives every hour**: it is not cast by anything, it is the dark
+  where a thing meets the ground, and without it every sprite floats after sunset.
+
 **Still open:** the trunks are (85,64,60), the one warm mass left in the region.
 
 ### The prickly pear (6 Aug 2026) — built

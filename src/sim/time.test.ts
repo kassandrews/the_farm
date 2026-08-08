@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { skyPhaseAt, isNight, tintAt } from "./time";
+import { skyPhaseAt, isNight, tintAt, rakeAt } from "./time";
 
 /** A local-time Date at a given hour, so the phase boundaries are exercised in
  *  the same timezone the game reads. */
@@ -49,5 +49,45 @@ describe("real-clock day/night", () => {
     expect(tintAt(at(12)).overlay).toBe("");
     expect(tintAt(at(12)).darkness).toBe(0);
     expect(tintAt(at(23)).darkness).toBeGreaterThan(tintAt(at(19)).darkness);
+  });
+});
+
+describe("where the sun is", () => {
+  it("throws no shadow at night, and the longest with the sun on the horizon", () => {
+    // The rule the whole thing rests on: shadow length is an HOUR, not a place
+    // (content/biomes.ts §rake). Midnight has no sun, so it has no cast shadow —
+    // moonlight is refused deliberately, see `rakeAt`. The contact shadow is not
+    // this and survives every hour; without it a sprite floats after dark.
+    expect(rakeAt(at(1))).toBe(0);
+    expect(rakeAt(at(23))).toBe(0);
+    // Dusk and dawn are the same geometry pointed opposite ways.
+    expect(rakeAt(at(19))).toBeCloseTo(rakeAt(at(6)), 5);
+    expect(rakeAt(at(19))).toBeGreaterThan(rakeAt(at(15)));
+  });
+
+  it("is nearly flat across the middle of the day and then goes up fast", () => {
+    // Squared rather than linear, because a body's shadow runs as cot θ. A linear
+    // ramp puts a visible shadow on a two o'clock afternoon, which reads as a
+    // permanent late-day filter rather than as an hour passing — so the assertion
+    // is about the SHAPE of the curve and not about any one number.
+    const noon = rakeAt(at(12, 30));
+    const three = rakeAt(at(15));
+    const five = rakeAt(at(17));
+    expect(noon).toBeLessThan(0.06);
+    expect(three).toBeGreaterThan(noon);
+    expect(five).toBeGreaterThan(three);
+    // The second half of the afternoon gains more than the first, which is the
+    // whole of what "not linear" means here.
+    expect(five - three).toBeGreaterThan(three - noon);
+  });
+
+  it("draws the shadows out with the evenings, season by season", () => {
+    // `rakeAt` and `tintAt` share `boundsAt`, so a summer evening that runs late
+    // is still bright AND still short-shadowed at the hour a winter one is
+    // neither. Two clocks for one fact is the bug this shares its bounds to
+    // avoid.
+    const summer = new Date(2026, 6, 24, 17, 0, 0, 0).getTime();
+    const winter = new Date(2026, 0, 24, 17, 0, 0, 0).getTime();
+    expect(rakeAt(winter)).toBeGreaterThan(rakeAt(summer));
   });
 });

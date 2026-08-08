@@ -89,6 +89,56 @@ export function tintAt(now: number): Tint {
   }
 }
 
+/** HOW LONG A SHADOW THE SUN IS THROWING, as a fraction of a sprite's own
+ *  height. 0 at night and near 0 at midday; longest with the sun on the horizon.
+ *
+ *  IT IS THE SAME FACT `tintAt` IS, asked the other way round. That function says
+ *  how much light there is; this says where it is coming FROM, which is the half
+ *  the ground can see. They share `boundsAt`, so an evening that draws in with the
+ *  season draws its shadows out with it and neither can drift from the other.
+ *
+ *  NOT LINEAR IN THE HOUR — squared, because the shadow of a body at elevation θ
+ *  runs as cot θ, which is flat across the middle of the day and then goes up
+ *  fast. A linear ramp puts noticeable shadows on a two o'clock afternoon, which
+ *  reads as a permanent late-day filter rather than as an hour passing. This is
+ *  nothing at lunchtime, something by mid-afternoon, and long at supper.
+ *
+ *  ZERO AT NIGHT, WHICH IS A CHOICE AND NOT A LIMIT. Moonlight does cast a
+ *  shadow — a full moon throws one you can read by — and it is refused here for
+ *  the reason the fireflies are the only warm thing in the dusk: the game already
+ *  spends its night budget on the wash and the lamps, and a second, fainter set
+ *  of shadows underneath both is detail nobody would attribute to the moon. The
+ *  CONTACT shadow stays, at every hour: that one is not cast by anything, it is
+ *  the dark where a thing meets the ground, and without it every sprite floats
+ *  after sunset.
+ *
+ *  A REGION MAY PIN THIS (§BiomeDef.rake) — the twilight country's sun never
+ *  moves, so it states its own and ignores the clock, exactly as it ignores the
+ *  clock for colour. */
+export function rakeAt(now: number): number {
+  const phase = skyPhaseAt(now);
+  if (phase === "night") return 0;
+  const b = boundsAt(now);
+  // The sun is ON the horizon through both cosmetic hours, so both get the
+  // maximum. Dawn and dusk are the same geometry pointed opposite ways, and the
+  // direction is not ours to vary (see `footShadow`: one light, upper left).
+  if (phase === "dusk" || phase === "dawn") return RAKE_MAX;
+  const h = new Date(now).getHours() + new Date(now).getMinutes() / 60;
+  const noon = (b.day + b.dusk) / 2;
+  const half = (b.dusk - b.day) / 2 || 1;
+  const t = Math.min(1, Math.abs(h - noon) / half);
+  return RAKE_MAX * t * t;
+}
+
+/** The longest shadow the sun throws here, at the horizon.
+ *
+ *  0.55 of a sprite's height, which on a 35px tree is about twenty pixels — over
+ *  a tile of shadow lying on the grass, and short enough that a stand does not
+ *  become one continuous smear. A true horizon sun throws a shadow many times the
+ *  height of what casts it; that is unarguable and unusable, so this is the
+ *  longest one that still reads as belonging to its tree. */
+const RAKE_MAX = 0.55;
+
 /** A short "3:42 PM" style label for the HUD clock. */
 export function clockLabel(now: number): string {
   return new Date(now).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });

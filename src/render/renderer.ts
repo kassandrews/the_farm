@@ -79,7 +79,7 @@ import { plinthRuns } from "../sim/museum";
 import type { PlinthRun } from "../sim/museum";
 import { rooms } from "../sim/rooms";
 import type { Room } from "../sim/rooms";
-import { tintAt, isNight, skyPhaseAt } from "../sim/time";
+import { tintAt, isNight, skyPhaseAt, rakeAt } from "../sim/time";
 import { seasonAt } from "../sim/seasons";
 import {
   scenePalette,
@@ -1139,6 +1139,11 @@ export class Renderer {
   private roomLit = new Map<string, boolean>();
   /** How dark the night wash is about to be, read at the top of the frame. */
   private darkness = 0;
+  /** How long a shadow the sun is throwing this frame (sim/time.ts §rakeAt).
+   *  Read at the top of the frame beside `darkness`, and for the same reason: the
+   *  two are one fact about the hour, and a shadow resolved from a second clock
+   *  is how a wood ends up lit at four and shadowed at noon. */
+  private rake = 0;
   /** Lit window panes, for the glow pass — the cell, and the pane's rectangle in
    *  SCENE px so the glow can repaint the glass itself after the night wash has
    *  gone over it. Carrying the rect rather than recomputing it keeps the merge
@@ -1337,6 +1342,7 @@ export class Renderer {
     // not after. Taking it from the same `now` as everything else keeps the one
     // clock this file argues so hard for.
     this.darkness = tintAt(now).darkness;
+    this.rake = rakeAt(now);
     const phase = skyPhaseAt(now);
     const night = isNight(phase);
     // Which world we are drawing. Below, nearly every pass in this method is a
@@ -2708,7 +2714,7 @@ export class Renderer {
       // whole point: the sun is one height for everybody, so a short thing casts
       // a short shadow. That is the physics doing the work rather than a number
       // per sprite.
-      const rake = skin?.rake ?? 0;
+      const rake = skin?.rake ?? this.rake;
       if (rake > 0) {
         const len = Math.round(g.length * rake);
         for (let i = 1; i <= len; i++) ctx.fillRect(x + i, y + (i >> 1), Math.max(2, w - i), 1);
@@ -4799,7 +4805,7 @@ export class Renderer {
     // off the crown it belongs to: a fixed 9px puddle under a crown twice that
     // wide was a standing loose end, and it got worse the moment the trees grew.
     const shadowW = Math.max(9, Math.max(...rows) * 2 - 3);
-    this.footShadow(cx, base, shadowW, biome?.rake ?? 0, height);
+    this.footShadow(cx, base, shadowW, biome?.rake ?? this.rake, height);
 
     // The grove's trunks are the dark wood itself, which is the only place in
     // the game where the finish and the material are the same object. It reads
@@ -5196,7 +5202,7 @@ export class Renderer {
       // Sized to what actually TOUCHES the ground, which is one pad and not the
       // whole plant: a shadow the width of the sprite would put this cactus on a
       // saucer. The bush's own shadow takes its last row for the same reason.
-      this.footShadow(cx, base, 5, biome?.rake ?? 0, grid.length);
+      this.footShadow(cx, base, 5, biome?.rake ?? this.rake, grid.length);
       // ITS OWN INK, AND IT DOES NOT SEASON — the only plant in the region that
       // does not. Everything else here browns with the ground and goes rust in
       // October (§autumnCrown); a cactus is a succulent and holds the same
@@ -5268,7 +5274,7 @@ export class Renderer {
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
     else ctx.globalAlpha = prev * this.hideFactor(world, tx, ty, height);
 
-    this.footShadow(cx, base, (rows[rows.length - 1] + 1) * 2, biome?.rake ?? 0, height);
+    this.footShadow(cx, base, (rows[rows.length - 1] + 1) * 2, biome?.rake ?? this.rake, height);
 
     // THE ONE PLACE A BUSH IS ALLOWED TO DISAGREE WITH THE TREE OVER IT
     // (§BiomeDef.shrubAutumn). Everything else about a shrub is inherited on
@@ -5466,7 +5472,7 @@ export class Renderer {
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
     else ctx.globalAlpha = prev * this.hideFactor(world, tx, ty, height);
 
-    this.footShadow(cx, base, (low + 1) * 2, here?.rake ?? 0, height);
+    this.footShadow(cx, base, (low + 1) * 2, here?.rake ?? this.rake, height);
 
     // The greys stay stated here — day and night, lit, body and shaded — and the
     // region pulls all four the same direction. That is the whole reason `stone`
