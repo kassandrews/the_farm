@@ -9814,7 +9814,16 @@ decides it is `trees`.
 **Method, for next time: shoot `/biomes.html` before believing `/trees.html`.**
 One shows you a specimen and the other shows you a place. This failure was
 invisible at every zoom on the specimen page and obvious in a single swatch on the
-other.
+other. `scripts/shot-wood.mjs` is that shutter, and it exists because of this.
+
+**And the pair is now an age gap.** The second redwood is the first one OLD: seven
+half-widths at the shoulder against six (the most §crownAlt's species rule allows,
+and the right pixel to spend — a redwood does not get much broader with age, it has
+no room to, but it gets broad enough that you can tell which trees have been there
+longest), and six rows of crown standing beside the trunk instead of three. Sixteen
+pixels of bare bole against the young tree's twenty-three. They stand within a pixel
+of each other, so the canopy is level and the whole difference is where the mass
+sits.
 
 ### The trunk is one material (8 Aug 2026)
 

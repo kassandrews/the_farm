@@ -5531,15 +5531,26 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
       6, 4, 3,
     ],
     crownOverlap: 3,
-    // THE SECOND REDWOOD, and it is the first one brushed out. A conifer in a
-    // closed stand loses its lower whorls to the shade of the tree above it, so a
-    // wood is neither all skirt nor all pole — the pinewood's pair makes exactly
-    // this argument and this region is denser than the pinewood.
+    // THE SECOND REDWOOD, AND IT IS THE FIRST ONE OLD. Same tree, same tier
+    // language, two things different — and both of them are the same fact about
+    // age, which is why this is a history rather than a second species.
     //
-    // Four pixels more stem and three rows fewer of crown, which puts the canopy
-    // within two pixels of the other's and the DIFFERENCE entirely in how much
-    // bare red bole there is under it. That is the right axis for this region:
-    // the bark is the one bright thing in it.
+    // WIDER BY ONE. Seven half-widths at the shoulder against six: the most the
+    // pair rule allows (§crownAlt asks for a pixel, and this spends it), and the
+    // right pixel to spend. A redwood does not get much broader with age — it has
+    // no room to — but it does get broad ENOUGH that you can tell which trees in a
+    // stand have been there longest, and one pixel either side at this size is
+    // exactly that much.
+    //
+    // AND IT COMES FARTHER DOWN THE BOLE. Six rows of crown standing beside the
+    // trunk instead of three, on a stem four pixels shorter: sixteen pixels of
+    // bare red bole against the young tree's twenty-three. An old redwood keeps
+    // branches lower — it has outgrown whatever was shading its lower whorls, and
+    // the big lateral limbs are the ones nearest the ground.
+    //
+    // It stands within a pixel of the other, so the canopy across a stand is level
+    // and the whole difference is where the mass sits — the pinewood's pair
+    // argument, arrived at independently by a denser wood.
     crownAlt: [
       {
         rows: [
@@ -5549,11 +5560,14 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
           3, 4, 4,
           3, 5, 5,
           4, 5, 5,
+          4, 6, 6,
           5, 6, 6,
-          6, 4, 2,
+          6, 7, 7,
+          6, 7, 7,
+          7, 6, 4,
         ],
-        overlap: 2,
-        trunkHeight: 30,
+        overlap: 6,
+        trunkHeight: 22,
       },
     ],
     // Wet, dark, and mostly buried. The fewest rocks of any region that has any,
