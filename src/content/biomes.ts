@@ -531,7 +531,21 @@ export interface BiomeDef {
    *  so a taller tree is a longer list — which is also how far it reaches to
    *  occlude the player, and it stays correct automatically. 7 is about a tile
    *  wide; past 8 the crown starts overhanging its neighbours, which broadleaves
-   *  are allowed to do and conifers are not. */
+   *  are allowed to do and conifers are not.
+   *
+   *  A ZERO IS A BREAK BETWEEN TWO LIMB MASSES, and it is the newest thing here.
+   *  Nothing is drawn on that row: what shows is bark up the middle and open sky
+   *  either side of it. That is what a conifer's crown IS, close up — not one
+   *  continuous outline but a stack of separate branch plates hung off a bole
+   *  with daylight between them — and it was unavailable while every row had to
+   *  carry foliage, so these trees could only ever be lozenges however carefully
+   *  their widths were stepped.
+   *
+   *  IT IS ONLY LEGAL WHERE THE BOLE IS BEHIND IT (§crownSpar), and never on row
+   *  zero. An empty row with foliage above and below and nothing between them is
+   *  not a tree made of plates, it is a tree cut in half and left floating; the
+   *  bark is what carries the eye across the gap. `render/palette.test.ts` checks
+   *  every break against the same arithmetic the renderer draws the spar with. */
   crownRows: number[];
 
   /** Optional, per row: how far the foliage stays CLEAR of the trunk, as a
@@ -570,24 +584,22 @@ export interface BiomeDef {
    *  is what a broadleaf does and what every region here did until the conifers
    *  were looked at properly.
    *
-   *  IT EXISTS TO MAKE A THIRD KIND OF GAP LEGAL, and that is the whole of it.
-   *  `crownGaps` above is allowed in two places only, and the reason given there
-   *  is enclosure: a gap with foliage above and below shows GRASS, and a square of
-   *  lawn inside a canopy reads as a hole punched through the tree. Over a spar
-   *  the same square shows bark — so it reads as the trunk, seen between two
-   *  branch plates, which is what you actually see looking at a pine.
+   *  DRAWN OVER THE FOLIAGE, NOT BEHIND IT, with the branch plates crossing back
+   *  over it. The whole mechanism is in render/renderer.ts §crownSpar, including
+   *  the two versions of it that did not work. What it is FOR is two things at
+   *  once: the trunk of a big conifer is visible a long way up, and the BREAKS in
+   *  `crownRows` above have to have something behind them.
    *
    *  A LOLLIPOP IS THE FAILURE IT FIXES. A conifer whose foliage is one solid
    *  mass perched on a pole is a broadleaf silhouette in a conifer's colours; the
-   *  real thing is a bole going up THROUGH the crown with the branches hung off
-   *  it in tiers, sky and trunk showing between them. That is legible at this
-   *  size — it is most of how you tell a redwood from a shrub on a stick — and
-   *  there was no way to draw it.
+   *  real thing is a bole going up THROUGH the crown with the branches hung off it
+   *  in plates, sky and trunk showing between them. That is legible at this size —
+   *  it is most of how you tell a redwood from a shrub on a stick — and there was
+   *  no way to draw it.
    *
-   *  It tapers to one pixel at the top (render/renderer.ts §sparHalf), off the
-   *  stem's own girth: a fat trunk carries a fat spar. A region that asks for a
-   *  spar and no gaps sees nothing of it and pays nothing for it — the foliage
-   *  covers the lot. */
+   *  Long enough to reach the topmost break and no longer: capped at two thirds of
+   *  the crown's live length (`render/palette.test.ts`), because past that there is
+   *  no canopy left over the bark and the tree stops closing at the top. */
   crownSpar?: number;
 
   /** How many of the bottom crown rows sit ALONGSIDE the trunk instead of above
@@ -4155,11 +4167,14 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // calls it — and a Jeffrey pine is a pine. This row had the largest wrong
     // swing in the game at 39 RGB (§BiomeDef.seasonPull), which is most of a real
     // turn on a tree that has never turned in its life.
-    seasonPull: { crown: 0.16 },    // A long bare bole. The single tree on the rock is a tall thin thing with
-    // its foliage held well above head height, which the ordinary 16 could not
-    // say — and here the trunk is doing what the birch's does, which is carrying
-    // the species on its own.
-    trunkHeight: 20,
+    seasonPull: { crown: 0.16 },    // A BOLE YOU CAN SEE ALL OF, which is a different claim from the long bare
+    // pole this used to be. It was 20 — foliage held well above head height, a
+    // tall thin thing standing on a rock — and that was the lollipop reading being
+    // paid for twice: a small crown perched on a lot of stem. The tree stands as
+    // tall as it did; the crown now comes two thirds of the way down it in
+    // separate plates (see `crownRows`), which is what an open-grown pine looks
+    // like, and the stem shows BETWEEN them rather than only under them.
+    trunkHeight: 14,
     // THE ROW. Palest stone in the game, pulled nearly twice as hard as the
     // birches' — this is not a grey rock catching a pale region's light, it is
     // the thing the region is made of.
@@ -4213,19 +4228,24 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // (render/renderer.ts §crownSpar), so these numbers are the branch plates and
     // the gaps between them at the same time.
     crownRows: [
-      1, 1, 2, //
-      2, 2, 1,
-      3, 3, 2,
-      4, 4, 4, 3,
-      5, 5, 4,
-      6, 6, 6, 6, 5, 5,
+      1, 1, 2, 2, 2, 1, 3, 3, 2, 4, 4, 3, //
+      0,
+      3, 4,
+      0,
+      4, 5, 4,
+      0,
+      3, 4,
+      0,
+      5, 6, 5,
+      0,
+      4, 6, 5,
     ],
     crownOverlap: 3,
-    // Two thirds of the crown's live length. A Jeffrey pine's bole is a thing you
-    // can see a long way up — the branches are held out from it rather than
-    // drooping over it — and out here there is nothing standing close enough to
-    // hide it (§BiomeDef.crownSpar).
-    crownSpar: 12,
+    // Far enough to reach every BREAK in the crown above, which is what the field
+    // is for now — see `crownRows`. A Jeffrey pine's bole is a thing you can see a
+    // long way up (the branches are held out from it rather than drooping over
+    // it), and out here there is nothing standing close enough to hide it.
+    crownSpar: 16,
     // THE SECOND PINE ON THE DOME, and it is the same tree that lost its top. A
     // conifer at altitude gets its leader killed — by lightning, by the wind, by
     // a hard winter — and regrows as a broad flat-headed thing, which is the
@@ -4237,13 +4257,23 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // (§crownAlt): what differs is where the mass sits, never how big it is.
     crownAlt: [
       {
-        rows: [3, 4, 4, 3, 5, 5, 4, 6, 6, 5, 6, 6, 5, 4],
+        rows: [
+          3, 4, 4, 3, 5, 5, 4, 6, 6, //
+          0,
+          4, 5,
+          0,
+          5, 6, 5,
+          0,
+          3, 5, 4,
+          0,
+          5, 6, 6, 5,
+        ],
         overlap: 3,
         // Shorter, because the crown is: the cap on a spar is the crown it
         // stands in (render/palette.test.ts), and a flat-topped tree has less of
         // one to hide a trunk behind.
-        spar: 7,
-        trunkHeight: 24,
+        spar: 14,
+        trunkHeight: 18,
       },
     ],
     // GRIT AND CUSHIONS, and the sparsest kit in the file after the glimmer's.
@@ -5374,11 +5404,13 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // reads as an ordinary tree standing in a strange wood.
     trunk: { color: "#a5522c", amount: 0.6 },
     // Evergreen, and the largest evergreen there is (§BiomeDef.seasonPull).
-    seasonPull: { crown: 0.16 },    // The tallest ordinary trunk in the world — half again the birch's, which
-    // held the record at 20. The foliage sits above it in a narrow column, so
-    // what you are mostly looking at, standing in here, is bare red stem going
-    // up out of frame.
-    trunkHeight: 30,
+    seasonPull: { crown: 0.16 },    // TWENTY OF BARE STEM AND TWENTY MORE INSIDE THE CROWN, which comes to the
+    // same tree the flat 30 used to draw and reads as a far better one. Bare, the
+    // stem was a third of the sprite with a narrow column of foliage balanced on
+    // the end of it; the crown now starts lower and the bole carries on up through
+    // it (`crownSpar`), so what you are looking at standing in here is still red
+    // stem going up out of frame — but with a tree around it.
+    trunkHeight: 20,
     // FLUTING, NOT DASHES. The birch's marks are horizontal because a birch's
     // are; a redwood's bark is furrowed straight up and down, in runs long enough
     // that at this size the RUN is the drawing and the individual pixels are not.
@@ -5394,17 +5426,14 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         [
           "x..", "x..", "x..", "...", "..x", "..x", "..x", "..x", "...", "x..",
           "x..", "x..", "x..", "...", "..x", "..x", "...", "x..", "x..", "x..",
-          "...", "..x", "..x", "..x",
         ],
         [
           "..x", "..x", "...", "x..", "x..", "x..", "...", "..x", "..x", "..x",
-          "..x", "...", "x..", "x..", "x..", "...", "..x", "..x", "..x", "...",
-          "x..", "x..", "x..", "x..",
+          "..x", "...", "x..", "x..", "x..", "...", "..x", "..x", "..x", "..."
         ],
         [
           "x..", "x..", "x..", "x..", "x..", "...", "..x", "..x", "..x", "...",
-          "x..", "x..", "...", "..x", "..x", "..x", "..x", "...", "x..", "x..",
-          "x..", "...", "..x", "..x",
+          "x..", "x..", "...", "..x", "..x", "..x", "..x", "...", "x..", "x.."
         ],
       ],
     },
@@ -5429,21 +5458,26 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // banded by, which is why they are worth this much care — see `crownSpar`
     // just below, and render/renderer.ts §crownSpar for the drawing of it.
     crownRows: [
-      1, 2, 2, //
-      3, 3, 2,
-      4, 4, 4, 3,
-      5, 5, 4,
-      6, 6, 6, 5,
-      6, 6, 6, 5,
-      6, 6, 5,
+      1, 2, 3, 3, 4, 4, 5, 5, 4, 5, 5, 6, 6, 5, 6, 6, //
+      0,
+      4, 5,
+      0,
+      5, 6, 5,
+      0,
+      3, 4,
+      0,
+      5, 6, 6, 5,
+      0,
+      4, 6, 5,
     ],
     crownOverlap: 3,
     // THE BOLE GOES UP INTO THE CROWN, which is the sentence the region's own
     // header has been making about the trunks since it was written — "the one
     // bright thing in the whole region is the bark" — and could not draw above
-    // head height. Half the live crown: past that there is not enough canopy left
-    // over the top of it and the tree stops closing (§BiomeDef.crownSpar).
-    crownSpar: 12,
+    // head height. Long enough to reach every BREAK in the crown above and no
+    // longer: past two thirds there is no canopy left over the top of the bark and
+    // the tree stops closing (§BiomeDef.crownSpar, render/palette.test.ts).
+    crownSpar: 21,
     // THE SECOND REDWOOD, and it is the first one old. A coast redwood loses its
     // spire eventually and carries an irregular ragged head on a longer bare
     // bole — which is how you tell the old ones in a stand, and the only thing
@@ -5455,10 +5489,22 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // has a level canopy with two histories under it.
     crownAlt: [
       {
-        rows: [3, 4, 4, 5, 5, 4, 6, 6, 5, 6, 6, 6, 5, 6, 6, 5, 4],
+        rows: [
+          3, 4, 4, 5, 5, 4, 6, 6, 5, 6, 6, //
+          0,
+          4, 5,
+          0,
+          5, 6, 6, 5,
+          0,
+          3, 4,
+          0,
+          5, 6, 5,
+          0,
+          4, 6, 6, 5,
+        ],
         overlap: 3,
-        spar: 9,
-        trunkHeight: 34,
+        spar: 18,
+        trunkHeight: 26,
       },
     ],
     // Wet, dark, and mostly buried. The fewest rocks of any region that has any,
@@ -5543,16 +5589,17 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // A sequoia does not turn either — see the redwoods, same argument, same
     // family (§BiomeDef.seasonPull).
     seasonPull: { crown: 0.16 },    mushroomCap: { cap: "#ddd3b8", lit: "#f2ecd8", gills: "#9c9070" },
-    // Forty pixels of bare stem — two and a half tiles before the foliage starts,
-    // where the tallest thing in the rest of the world is a thirty-pixel redwood
-    // trunk. The sprite comes to about sixty-six, which is four tiles: the largest
-    // thing that has ever been drawn standing on this ground.
+    // Thirty-four pixels of BARE stem, and twenty-two more of it drawn up inside
+    // the crown (`crownSpar`) — over three tiles of visible trunk on one tree,
+    // where the tallest thing in the rest of the world is a redwood's twenty. The
+    // sprite comes to seventy, which is four and a half tiles: the largest thing
+    // that has ever been drawn standing on this ground.
     //
     // The renderer takes the height from trunk plus crown, so occlusion stays
     // honest for free, and `hideFactor` already fades any tree tall enough to
     // swallow the player — which is how a tree this size is allowed to exist at
     // all without a rule about where it may stand.
-    trunkHeight: 40,
+    trunkHeight: 34,
     // THE POINT OF THE WHOLE ROW. Eight pixels of trunk against everything else's
     // four: this is the tree you cannot get round, and girth is what says so.
     // Height alone said "mast" — see the note on `trunkGirth`.
@@ -5609,23 +5656,27 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // mass — an old sequoia is a cumulus of foliage on a column — against the
     // narrow stepped taper of the tree it is standing among.
     crownRows: [
-      2, 4, 5, //
-      6, 6, 5,
-      7, 7, 7, 6,
-      8, 8, 8, 7,
-      8, 8, 8, 7,
-      8, 8, 8, 8, 8, 7,
-      8, 8, 8, 8, 7,
-      8, 8, 7, 6, 5,
+      2, 4, 5, 6, 6, 5, 7, 7, 7, 6, 8, 8, 8, 7, 8, 8, //
+      0,
+      6, 7, 7,
+      0,
+      7, 8, 8, 7,
+      0,
+      5, 7, 7,
+      0,
+      7, 8, 8, 8, 7,
+      0,
+      6, 8, 8, 7, 6,
     ],
     crownOverlap: 5,
     // THE BOLE, ALL THE WAY UP INTO THAT. This is the row the field was built
     // for: the one fact everybody knows about a giant sequoia is that the trunk
     // does not stop, and a canopy sitting on top of it like a hat was drawing the
-    // opposite. Sixteen pixels of nine-wide bark inside the crown, banded by the
-    // branch plates that cross in front of it (§BiomeDef.crownSpar), on top of
-    // forty of bare stem below. It is a tile and a half of trunk INSIDE the tree.
-    crownSpar: 16,
+    // opposite. Twenty-two pixels of nine-wide bark inside the crown, showing
+    // through the breaks between the limb masses and banded by the plates that
+    // cross in front of it (§BiomeDef.crownSpar). Nearly a tile and a half of
+    // trunk INSIDE the tree, on top of the thirty-four below it.
+    crownSpar: 22,
     // The redwoods' sorrel, thinner. More light reaches this floor — the crowns
     // are enormous but there are half as many of them — and a carpet as thick as
     // the wood outside would argue with that.

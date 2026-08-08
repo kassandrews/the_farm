@@ -1,6 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { scenePalette, seasonSkin, biomeSkin, mixHex, foliage, tuftInk } from "./palette";
-import { MUSHROOM_ART, DEADWOOD_ART, PRICKLY_PEAR, shrubPeak, shrubRows } from "./renderer";
+import {
+  MUSHROOM_ART,
+  DEADWOOD_ART,
+  PRICKLY_PEAR,
+  shrubPeak,
+  shrubRows,
+  sparRowAt,
+} from "./renderer";
 import { BIOMES, BROADLEAF, treeForms } from "../content/biomes";
 import { SEASONS, seasonOn } from "../content/seasons";
 import { TILES, tileDef, GRASS, MUSHROOM, SHALLOW, WATER, SAND, FARMLAND, FARMLAND_WET, FLOOR, STONE, BEDROCK, CAVE_FLOOR, ORE_VEIN, SHAFT, DARK_TREE } from "../content/tiles";
@@ -689,10 +696,24 @@ describe("crown silhouettes", () => {
     for (const b of Object.values(BIOMES)) {
       for (const form of treeForms(b)) {
         expect(form.rows.length, b.id).toBeGreaterThan(4);
-        for (const w of form.rows) {
+        const spar = form.spar ?? 0;
+        form.rows.forEach((w, r) => {
           expect(Number.isInteger(w), b.id).toBe(true); // integer rects only
-          expect(w, b.id).toBeGreaterThan(0); // a zero-width row is a gap in the trunk
-        }
+          expect(w, b.id).toBeGreaterThanOrEqual(0);
+          if (w > 0) return;
+          // A ZERO IS A BREAK BETWEEN TWO LIMB MASSES, and it is legal exactly
+          // where the bole is behind it (content/biomes.ts §crownRows). Without
+          // one the row is empty sky with foliage above and below, which is not a
+          // crown made of plates — it is a tree cut in half and left floating.
+          // Same argument as the gap rule below, and the same test shape.
+          const i = sparRowAt(form.rows.length, form.overlap ?? 0, r);
+          expect(i >= 0 && i < spar, `${b.id} row ${r}: a break with no bole behind it`).toBe(
+            true,
+          );
+          // And never at the very top: the first row is the tree's outline
+          // against the sky, and a crown that opens on a break has no top.
+          expect(r, `${b.id}: a crown that opens on a break`).toBeGreaterThan(0);
+        });
       }
     }
   });

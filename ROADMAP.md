@@ -9645,6 +9645,35 @@ third.** Linear over the whole length drew a perfect triangle — a fin. A bole 
 not narrow appreciably over the few metres of it you can see, and what ends it is
 the foliage closing over.
 
+### The crown breaks, and each plate is its own band (7 Aug 2026)
+
+The second half of the same afternoon, decided against a photograph of an
+open-grown redwood. Tiering the outline and banding the bole got most of the way
+and then stopped: the crown was still one continuous mass, so the tree read as a
+green sleeve with bark drawn through it.
+
+**A zero in `crownRows` is now a break between two limb masses** — nothing drawn
+on that row, bark up the middle, open sky either side. A conifer's crown close up
+is not one outline; it is separate branch plates hung off a bole with daylight
+between them, and while every row had to carry foliage these trees could only ever
+be lozenges however carefully their widths were stepped.
+
+**It is legal exactly where the spar reaches, and never on row zero.** An empty row
+with foliage above and below and nothing between is a tree cut in half and left
+floating; the bark is what carries the eye across. Same shape of rule as the gap
+rule, same test.
+
+**Uniform bands are pancakes.** The first pass made every break one row and every
+band the same width, and it read as a stack of slices. Bands now vary in height
+(2–5 rows) and in width (3 to full), with a dense unbroken mass over the top third
+— which is where the photograph has one too.
+
+**The foliage came a long way down the bole.** Granite 20 → 14 of bare stem,
+redwoods 30 → 20, giants 40 → 34. Every one of those trees stands as tall as it
+did; the crown starts lower and the trunk shows BETWEEN the plates rather than only
+under them. The old numbers were the lollipop being paid for twice — a small crown
+perched on a lot of pole.
+
 ### Settled here, don't relitigate
 
 - **Second forms for the granite and the redwoods.** The dome pine that lost its

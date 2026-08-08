@@ -413,6 +413,18 @@ export function trunkSpan(girth: number): { dx: number; w: number } {
   return { dx: -2 - girth, w: 5 + girth * 2 };
 }
 
+/** Which spar row, if any, sits behind crown row `r` — counting up from the top
+ *  of the bare stem, the way `sparHalf` does. Negative means the row is down
+ *  beside the trunk itself (`crownOverlap`), where the bark is full width; past
+ *  the spar's length means there is nothing behind it at all.
+ *
+ *  Out here so `palette.test.ts` can check the BREAKS in a crown against the same
+ *  arithmetic the renderer draws them with: a zero-width row is only allowed
+ *  where there is a bole behind it to carry the tree across the gap. */
+export function sparRowAt(rows: number, overlap: number, r: number): number {
+  return rows - overlap - 1 - r;
+}
+
 /** How wide the bole still is `i` pixels above the top of the bare stem, as a
  *  half-width off the tree's centre column — the spar's taper (see drawTree's
  *  §crownSpar note, and content/biomes.ts).
@@ -5014,6 +5026,7 @@ export class Renderer {
         ctx.globalAlpha = 0.25 + bad * 0.45;
         ctx.fillStyle = hex;
         for (let r = 0; r < rows.length; r++) {
+          if (rows[r] === 0) continue;
           const g = gaps?.[r] ?? 0;
           if (g > 0) {
             ctx.fillRect(cx - rows[r] + dx, top + r, rows[r] - g, 1);
@@ -5030,6 +5043,11 @@ export class Renderer {
     // §crownSpar. Everything it reads (`rows`, `gaps`, `litRows`) is fixed by
     // then, so a replayed row lands pixel-for-pixel on top of its first draw.
     const crownRow = (r: number): void => {
+      // A BREAK BETWEEN TWO LIMB MASSES, and nothing is drawn on it — see
+      // content/biomes.ts §crownRows. It is only legal where the spar reaches,
+      // so what shows through is bark and sky either side of it, which is what a
+      // crown made of separate branch plates actually looks like.
+      if (rows[r] === 0) return;
       const g = gaps?.[r] ?? 0;
       // ODD WIDTH, AND IT WAS EVEN FOR A LONG TIME. The trunk is three pixels at
       // cx-1..cx+1, so its centre is the COLUMN cx; a crown of `rows[r] * 2` spans
@@ -5163,7 +5181,7 @@ export class Renderer {
       // nearer the proportion a photograph has.
       const lowest = rows.length - overlap;
       for (let r = Math.max(1, lowest - spar); r < lowest; r++) {
-        if (rows[r] <= rows[r - 1]) continue;
+        if (rows[r] === 0 || rows[r] <= rows[r - 1]) continue;
         crownRow(r);
         if (r + 1 < lowest) crownRow(r + 1);
       }
@@ -5197,6 +5215,7 @@ export class Renderer {
         for (const [dx, row] of orbs.spots) {
           const r = Math.max(0, Math.min(rows.length - 1, row));
           const half = rows[r];
+          if (half === 0) continue; // a break has no foliage to hang a light in
           // Clamped to the row it landed on, so a spots table written against one
           // region's crown cannot hang a bead in the sky if it is reused on a
           // narrower one.
