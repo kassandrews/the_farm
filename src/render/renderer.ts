@@ -2699,6 +2699,20 @@ export class Renderer {
       const top = y - g.length;
       ctx.fillStyle = "rgba(0,0,0,0.14)"; // it stands ON the grass
       ctx.fillRect(x, y, w, 1);
+      // AND IT LEANS AWAY WITH EVERYTHING ELSE, where the region has a low sun
+      // (§BiomeDef.rake). This shadow is drawn here rather than through
+      // `footShadow` — a mushroom's is one row where every other sprite's is two —
+      // and being the one draw path that did not know about the rake made it the
+      // one thing in the twilight country standing at noon. Three pixels, on a
+      // five-pixel cap, which is the same proportion the trees get and is the
+      // whole point: the sun is one height for everybody, so a short thing casts
+      // a short shadow. That is the physics doing the work rather than a number
+      // per sprite.
+      const rake = skin?.rake ?? 0;
+      if (rake > 0) {
+        const len = Math.round(g.length * rake);
+        for (let i = 1; i <= len; i++) ctx.fillRect(x + i, y + (i >> 1), Math.max(2, w - i), 1);
+      }
       for (let r = 0; r < g.length; r++) {
         const row = g[r];
         for (let c = 0; c < w; c++) {
@@ -4671,12 +4685,33 @@ export class Renderer {
     // the ground, which is what it is.
     if (rake > 0 && artH > 0) {
       const len = Math.round(artH * rake);
+      // A NECK AND THEN A HEAD, BECAUSE A CAST SHADOW IS THE SPRITE'S OWN
+      // SILHOUETTE LYING DOWN. The first version tapered from the full width to a
+      // point and it was drawn from the wrong idea entirely — that a shadow fades
+      // with distance, which is a speed line, not a shadow. Nothing about a tree
+      // is widest at the ground: the stem is thin and the crown is at the far end,
+      // so the shadow has to be thin where it leaves the trunk and swell where the
+      // canopy lands.
+      //
+      // Which also fixes the thing that looked wrong before anyone worked out why.
+      // A point is a shape with a DIRECTION, and a wedge narrowing away from the
+      // tree reads as motion — the wood looked like it was travelling. A neck and
+      // a head is the same length of ink reading as an object.
+      //
+      // Both ends derived from `w` rather than from the trunk, because `w` is
+      // already sized off the crown at every call site and the ratio is what
+      // matters: about a third of the canopy for the stem, about two thirds for
+      // the mass, which is roughly true of everything that casts one here.
+      const neck = Math.max(3, Math.round(w * 0.3));
+      const head = Math.max(neck + 2, Math.round(w * 0.65));
       for (let i = 1; i <= len; i++) {
-        // Tapering to a point over its length, on the contact shadow's own
-        // argument one size up: a shadow that ended in a flat bar would be a
-        // plank lying on the grass. Floored at 2 so the far end is still a
-        // shadow and not a dotted line.
-        const tw = Math.max(2, Math.round(w * (1 - i / (len + 1))));
+        const f = i / (len + 1);
+        // The head is a parabola centred just past three quarters of the way out,
+        // so it arrives, peaks and rounds off inside the shadow's own length. It
+        // ends blunt rather than pointed: what lies furthest from the tree is the
+        // TOP of the crown, and a crown is not sharp.
+        const tw =
+          f < 0.4 ? neck : Math.max(3, Math.round(head * (1 - ((f - 0.72) / 0.34) ** 2)));
         ctx.fillRect(cx - (tw >> 1) + i, base - 2 + (i >> 1), tw, 1);
       }
     }

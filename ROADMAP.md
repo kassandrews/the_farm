@@ -9373,10 +9373,29 @@ evening cue there is, while leaving the tree the tree you know.
   "fully raked". Blended so the shadows shorten across the treeline instead of all
   standing up on one line.
 
+**Then the shadow was the wrong shape, and the fix is what a shadow IS.** The
+first version tapered from full width to a point, which was drawn from the idea
+that a shadow fades with distance — **that is a speed line, not a shadow.** Nothing
+about a tree is widest at the ground: the stem is thin and the crown is at the far
+end, so the shadow has to be thin where it leaves the trunk and swell where the
+canopy lands. A neck, then a head, ending blunt, because what lies furthest from
+the tree is the TOP of the crown and a crown is not sharp.
+
+It also explains what looked wrong before anyone worked out why. **A point is a
+shape with a direction**, and a wedge narrowing away from the tree reads as
+motion — the wood looked like it was travelling. Same length of ink, and it now
+reads as an object.
+
+**And the mushrooms rake now, which answers the other half.** Should the small
+things have LONGER shadows? No — the physics is already doing that work correctly.
+One sun elevation gives one ratio, so a 35px tree throws 19px and a 9px rock throws
+5px, and a rock's short shadow is right rather than a shortfall. What was actually
+wrong is that the mushroom was the one draw path that did not know about the rake
+(its shadow is one row where every other sprite's is two, so it never went through
+`footShadow`), which made it the one thing in the twilight country standing at
+noon. Three pixels on a five-pixel cap: the same proportion the trees get.
+
 **Still open:** the trunks are (85,64,60), the one warm mass left in the region.
-And the mushrooms do not rake — they draw their own contact shadow inline rather
-than through `footShadow`, so they are the one thing in the region standing at
-noon. At five pixels tall their shadow would be three, so it has been left.
 
 ### The prickly pear (6 Aug 2026) — built
 
