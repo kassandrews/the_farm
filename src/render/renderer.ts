@@ -4652,9 +4652,34 @@ export class Renderer {
    *  the whole of the fix and it costs one extra fillRect.
    *
    *  Square-footed things keep their rectangle on purpose; see the call sites. */
-  private footShadow(cx: number, base: number, w: number): void {
+  private footShadow(cx: number, base: number, w: number, rake = 0, artH = 0): void {
     const ctx = this.ctx;
     ctx.fillStyle = "rgba(0,0,0,0.16)";
+    // THE LONG SHADOW OF A LOW SUN, where the region says so (§BiomeDef.rake).
+    // Drawn BEFORE the contact shadow and in the same ink, so the two overlap into
+    // one mass at the foot rather than reading as an object with a stripe beside
+    // it, and so the near end is doubled — which is what a shadow does where it
+    // meets the thing casting it.
+    //
+    // DOWN AND TO THE RIGHT, because that is where this game's light already is:
+    // every crown in the file is lit from the upper LEFT, so a shadow anywhere
+    // else would be a second sun. The one thing the region gets to say is how
+    // LONG, and length is the whole of what "low" means.
+    //
+    // Two across for one down, not forty-five degrees. A diagonal at this size is
+    // a staircase and reads as a jaggy; a shallow slope reads as distance along
+    // the ground, which is what it is.
+    if (rake > 0 && artH > 0) {
+      const len = Math.round(artH * rake);
+      for (let i = 1; i <= len; i++) {
+        // Tapering to a point over its length, on the contact shadow's own
+        // argument one size up: a shadow that ended in a flat bar would be a
+        // plank lying on the grass. Floored at 2 so the far end is still a
+        // shadow and not a dotted line.
+        const tw = Math.max(2, Math.round(w * (1 - i / (len + 1))));
+        ctx.fillRect(cx - (tw >> 1) + i, base - 2 + (i >> 1), tw, 1);
+      }
+    }
     ctx.fillRect(cx - (w >> 1), base - 2, w, 1);
     // Narrower nearer the viewer, and never below three pixels — a taper that
     // eats a small shadow entirely leaves the object floating, which is the thing
@@ -4739,7 +4764,7 @@ export class Renderer {
     // off the crown it belongs to: a fixed 9px puddle under a crown twice that
     // wide was a standing loose end, and it got worse the moment the trees grew.
     const shadowW = Math.max(9, Math.max(...rows) * 2 - 3);
-    this.footShadow(cx, base, shadowW);
+    this.footShadow(cx, base, shadowW, biome?.rake ?? 0, height);
 
     // The grove's trunks are the dark wood itself, which is the only place in
     // the game where the finish and the material are the same object. It reads
@@ -5136,7 +5161,7 @@ export class Renderer {
       // Sized to what actually TOUCHES the ground, which is one pad and not the
       // whole plant: a shadow the width of the sprite would put this cactus on a
       // saucer. The bush's own shadow takes its last row for the same reason.
-      this.footShadow(cx, base, 5);
+      this.footShadow(cx, base, 5, biome?.rake ?? 0, grid.length);
       // ITS OWN INK, AND IT DOES NOT SEASON — the only plant in the region that
       // does not. Everything else here browns with the ground and goes rust in
       // October (§autumnCrown); a cactus is a succulent and holds the same
@@ -5208,7 +5233,7 @@ export class Renderer {
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
     else ctx.globalAlpha = prev * this.hideFactor(world, tx, ty, height);
 
-    this.footShadow(cx, base, (rows[rows.length - 1] + 1) * 2);
+    this.footShadow(cx, base, (rows[rows.length - 1] + 1) * 2, biome?.rake ?? 0, height);
 
     // THE ONE PLACE A BUSH IS ALLOWED TO DISAGREE WITH THE TREE OVER IT
     // (§BiomeDef.shrubAutumn). Everything else about a shrub is inherited on
@@ -5386,7 +5411,8 @@ export class Renderer {
     // stone is an object and takes a side. Half a shard fading into half a
     // boulder is not a rock anybody could name. The side is the one it came out
     // of (`scatterSkin`), like the tree and the mushroom.
-    const stone = scatterSkin(world.seed, world.homestead.spot, tx, ty)?.stone;
+    const here = scatterSkin(world.seed, world.homestead.spot, tx, ty);
+    const stone = here?.stone;
     const kinds = stone?.shapes ?? STONES_DEFAULT;
     const shape = ROCK_SHAPES[kinds[Math.floor(((h * 43) % 1) * kinds.length) % kinds.length]];
     const rows = shape.rows;
@@ -5405,7 +5431,7 @@ export class Renderer {
     if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
     else ctx.globalAlpha = prev * this.hideFactor(world, tx, ty, height);
 
-    this.footShadow(cx, base, (low + 1) * 2);
+    this.footShadow(cx, base, (low + 1) * 2, here?.rake ?? 0, height);
 
     // The greys stay stated here — day and night, lit, body and shaded — and the
     // region pulls all four the same direction. That is the whole reason `stone`

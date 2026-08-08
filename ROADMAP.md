@@ -9337,7 +9337,46 @@ only comes from 4.18 to 3.12 against the turf and keeps 1.51 against the water.
   sand and nothing but, and every row that declares none is byte-identical to what
   it drew before the field existed.
 
+**And the trees cast long shadows at one in the afternoon.** `BiomeDef.rake`, a
+fraction of a sprite's own height, 0.55 here and 0 everywhere else.
+
+**The question was whether the dusk could have a cuter canopy, and the answer is
+that it should not — but that the wanting was right.** Four silhouettes were
+sketched in the region's own inks (the current broadleaf, a gathered one, a parted
+lantern, a second form) and **they all read the same**: at nineteen rows and seven
+half-widths there is not enough silhouette space for a blob to become interesting.
+Shape is not where this region's creativity lives.
+
+**And a canopy of its own would have spent the thesis.** "The meadow's silhouette
+exactly. Colour carries this one alone, deliberately: it is the shape you know,
+which is what makes the colour unsettling instead of merely decorative" — said
+again in the region header ("nothing is shaped oddly — that is the point") and
+relied on by `palette.test.ts`, which grants the dusk the file's only
+shared-outline exemption on exactly that ground.
+
+**The region's grammar says where to spend it instead: the strangeness here is
+always a FACT, never a shape.** Flowers that open at dusk, open at noon. Fireflies
+at midday. A light that never changes. **A shadow at four in the afternoon, at
+noon, is the same sentence in the same grammar** — and it is the most legible
+evening cue there is, while leaving the tree the tree you know.
+
+- **Every sprite or none.** Trees, saplings, shrubs and rocks all take it, which is
+  the whole requirement rather than thoroughness: a wood where the trees have long
+  shadows and the stones do not is a rendering bug, not an hour.
+- **Direction is not a region's to choose.** Every crown in the file is lit from
+  the upper left, so shadows fall down and to the right everywhere or there are two
+  suns. Length is the only dial, and length is what "low" means. Two across for
+  one down — a 45° diagonal at this size is a staircase.
+- **Its own averaging, not `dial()`'s**, because the two defaults are opposite: a
+  region silent about the season takes ALL of it, and a region silent about the
+  light casts NO long shadow. Sharing the helper would have made silence mean
+  "fully raked". Blended so the shadows shorten across the treeline instead of all
+  standing up on one line.
+
 **Still open:** the trunks are (85,64,60), the one warm mass left in the region.
+And the mushrooms do not rake — they draw their own contact shadow inline rather
+than through `footShadow`, so they are the one thing in the region standing at
+noon. At five pixels tall their shadow would be three, so it has been left.
 
 ### The prickly pear (6 Aug 2026) — built
 

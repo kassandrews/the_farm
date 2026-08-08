@@ -418,6 +418,7 @@ export function blendRegions(parts: { def: BiomeDef; w: number }[]): BiomeDef {
   // nobody has one, which keeps the common case identical.
   const anyWater = parts.some((p) => p.def.waterTint);
   const anySand = parts.some((p) => p.def.sandTint);
+  const anyRake = parts.some((p) => p.def.rake);
   // THE SEASON DIALS BLEND TOO, on the water tint's argument exactly. A pine
   // floor takes half of October and the meadow beside it takes all of it; if the
   // number flipped on the tile the heaviest region flips, autumn would arrive
@@ -454,6 +455,17 @@ export function blendRegions(parts: { def: BiomeDef; w: number }[]): BiomeDef {
     // seam this function exists to prevent, drawn across the one surface where a
     // straight line is most obviously nobody's doing.
     ...(anySand ? { sandTint: blend((d) => d.sandTint ?? NO_TINT) } : {}),
+    // THE SHADOWS SHORTEN ACROSS A BORDER instead of all standing up on one line
+    // (§BiomeDef.rake). Its own averaging rather than `dial`'s, because the two
+    // defaults are opposite: a region that says nothing about the season takes ALL
+    // of it, and a region that says nothing about the light casts NO long shadow.
+    // Sharing the helper would have made silence mean "fully raked".
+    ...(anyRake
+      ? {
+          rake: parts.reduce((sum, p) => sum + (p.def.rake ?? 0) * p.w, 0) /
+            (parts.reduce((w, p) => w + p.w, 0) || 1),
+        }
+      : {}),
     ...(anyAutumn ? { autumnCrown: blend((d) => d.autumnCrown ?? NO_TINT) } : {}),
     // Snow blends over a border like everything else here, so a snowy wood meeting
     // an unsnowed one fades out over the same tiles its turf does rather than
