@@ -810,6 +810,27 @@ describe("crown silhouettes", () => {
     }
   });
 
+  it("never lets a spar outgrow the crown it stands in", () => {
+    // The bole is drawn OVER the foliage (render/renderer.ts §crownSpar), so
+    // nothing stops it running out of the top of the tree except this. A spar
+    // longer than the crown above the trunk is a bare pole with a wreath around
+    // its middle — the exact silhouette the field exists to get rid of.
+    //
+    // Two thirds, not the whole: past that there is no canopy left over the bark
+    // and the tree stops closing at the top, which is where a conifer's leader
+    // actually is thinnest and most covered.
+    for (const b of Object.values(BIOMES)) {
+      for (const form of treeForms(b)) {
+        const spar = form.spar ?? 0;
+        if (!spar) continue;
+        const above = form.rows.length - (form.overlap ?? 0);
+        expect(spar, `${b.id}: a spar taller than its own crown`).toBeLessThanOrEqual(
+          Math.round(above * 0.67),
+        );
+      }
+    }
+  });
+
   it("keeps the red cap where a red cap would actually grow", () => {
     // The default cap is red, and at this size with a white speck on it that is a
     // fly agaric — which is ectomycorrhizal and grows with BIRCH, pine and spruce

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Farm — trees</title>
+    <!-- Dev-only contact sheet for the tree silhouettes in
+         src/content/biomes.ts. One tree of every form of a species, planted in a
+         row on cleared ground, drawn by the game's own renderer. Not part of the
+         game build; reach it with `npm run dev` at /trees.html. -->
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #efe9dc;
+        --panel: #2b2540;
+        --bg: #1d1930;
+      }
+      body {
+        margin: 0;
+        padding: 16px 20px 40px;
+        background: var(--bg);
+        color: var(--ink);
+        font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      h1 {
+        font-size: 15px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+      p.blurb {
+        margin: 0 0 16px;
+        opacity: 0.6;
+        max-width: 62ch;
+      }
+      #bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: center;
+        padding: 10px 0 12px;
+        /* NOT sticky, unlike /biomes.html's. A card here is taller than the
+           viewport and is photographed as an ELEMENT by scripts/shot-trees.mjs;
+           a bar floating over the page lands in the middle of the shot. */
+      }
+      #bar label {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      #bar span {
+        opacity: 0.6;
+      }
+      select,
+      input {
+        font: inherit;
+        color: var(--ink);
+        background: var(--panel);
+        border: 1px solid #453c66;
+        border-radius: 6px;
+        padding: 4px 8px;
+      }
+      input[type="number"] {
+        width: 8ch;
+      }
+      #sheet {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        align-items: flex-start;
+      }
+      .card {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      /* Pixel art, never resampled (CLAUDE.md §Sprite rendering). */
+      canvas.strip {
+        image-rendering: pixelated;
+        border-radius: 8px;
+        display: block;
+        background: var(--panel);
+      }
+      figcaption {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .note {
+        opacity: 0.45;
+      }
+      .absent canvas.strip {
+        width: 120px;
+        height: 120px;
+        opacity: 0.25;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>The Farm — trees</h1>
+    <p class="blurb">
+      One tree of every form a region draws, planted in a row on cleared ground.
+      Edit <code>src/content/biomes.ts</code> and save; this reloads.
+    </p>
+    <div id="bar"></div>
+    <div id="sheet"></div>
+    <script type="module" src="/src/tools/tree-preview.ts"></script>
+  </body>
+</html>

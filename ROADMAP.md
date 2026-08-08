@@ -9591,6 +9591,85 @@ still the right way to buy it.
 yields the same two wood a bush does. The alternative was a new node class for
 one plant.
 
+## The conifers get branches, and a trunk you can see (7 Aug 2026)
+
+The granite's pine, the redwoods and the giants all had the right bones and the
+wrong canopy: a solid convex blob on a stick. Nothing was wrong with the colour
+or the height. A crown written as a list of increasing half-widths is a convex
+hull by construction, and a convex hull is a lozenge — which is a broadleaf's
+silhouette wearing a conifer's palette.
+
+**A conifer's outline is made of steps, not of a taper.** The widths now hold for
+three to six rows and give a pixel BACK before the next tier steps out. That one
+change is most of the fix, and it needs no new mechanism — the pinewood had been
+drawn this way since it was written, which is why it was the only conifer in the
+file that already read as one.
+
+**The holds are uneven on purpose.** Equal ones are a ladder: the vertical form of
+the per-cell edges band (CLAUDE.md), and it looked exactly as bad. Real whorls are
+annual and the years are not the same length.
+
+### `crownSpar` — the bole carried up into the crown
+
+New field on `BiomeDef` (and on `TreeShape`, so a form may set its own). Pixels of
+trunk drawn ABOVE the bare stem, inside the canopy. Three of these regions use it;
+everything else is `undefined` and draws exactly what it drew before.
+
+**It is drawn OVER the foliage, and it was built the other way first.** Behind the
+crown a spar can only be seen through a `crownGaps` hole, and a gap is symmetric
+about the trunk's column — so every width wide enough to read as a trunk also split
+the canopy into two fringes stuck to the sides of a red post. Three goes at the
+number, three times the same picture. The fault was never the number: a crown
+parted down the middle is a parted crown, not a tree with its trunk in front of it.
+(The gap rule in `palette.test.ts` was briefly relaxed to allow spar-backed
+mid-crown gaps and has been put back; nothing needs it now.)
+
+**Drawn flat over the crown it was a doorway** — a column of bark with a rounded
+top standing in a green field, and every length of it read as one. What was missing
+was that nothing passed IN FRONT of it.
+
+**So the branch plates cross back over it, and they come off the silhouette rather
+than a second table.** A row wider than the row above it is where a plate starts;
+a plate sticking out of the tree is in front of the bole as much as it is out to
+the sides, so those rows are drawn a second time, over the bark. Two rows to a
+plate, not one — at one the bands were wire around a post. The banding lands
+exactly where the tiers are and the two can never drift apart, because they are the
+same numbers.
+
+**The bole inside the crown is pulled a third toward the crown's ink.** Bark at its
+own brightness inside a canopy comes forward, which is backwards for the one part
+of a trunk with a whole tree's foliage over it.
+
+**`sparHalf` holds full width for two thirds and gives it all up in the last
+third.** Linear over the whole length drew a perfect triangle — a fin. A bole does
+not narrow appreciably over the few metres of it you can see, and what ends it is
+the foliage closing over.
+
+### Settled here, don't relitigate
+
+- **Second forms for the granite and the redwoods.** The dome pine that lost its
+  leader (broad, flat-headed, longer bole) and the old redwood that lost its spire.
+  Both obey the species rule: same width at the shoulder, differing only in what
+  has happened to them.
+- **The giants are bushier, and bushier is a SHAPE.** Longer holds between steps
+  and one-pixel pull-backs, against the coast redwood's narrow stepped taper. Not a
+  bigger number — they were already at the 8 ceiling.
+- **A spar is capped at two thirds of its own crown** (`palette.test.ts`). Past that
+  there is no canopy over the bark and the tree stops closing at the top.
+
+### `/trees.html` — the instrument
+
+`src/tools/tree-preview.ts` plus `scripts/shot-trees.mjs`, the sibling of
+`/biomes.html` aimed one level in. A swatch shows two or three trees, wherever the
+generator put them, in whatever form the tile hash rolled; a silhouette being tuned
+needs every form of the species side by side on cleared ground. So the page plants
+them — it finds the region, clears a band, and searches for the tile positions
+whose form hash lands on the form it wants. Everything else is the real generator,
+the real renderer, the real palette.
+
+Both `--when winter` and the far-region search were used in this pass; the giants
+are not on every seed, which the page says rather than drawing the wrong tree.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

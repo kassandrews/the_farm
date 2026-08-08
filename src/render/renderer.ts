@@ -413,6 +413,36 @@ export function trunkSpan(girth: number): { dx: number; w: number } {
   return { dx: -2 - girth, w: 5 + girth * 2 };
 }
 
+/** How wide the bole still is `i` pixels above the top of the bare stem, as a
+ *  half-width off the tree's centre column — the spar's taper (see drawTree's
+ *  §crownSpar note, and content/biomes.ts).
+ *
+ *  Out here with `trunkSpan` and for the same reason: the CROWN has to agree with
+ *  it. A gap in the middle of a canopy is legal exactly as far as there is bark
+ *  behind it, so `palette.test.ts` checks every gapped row against this function
+ *  rather than against a number somebody copied out of the renderer — the failure
+ *  it is defending against is a gap one pixel wider than the trunk under it,
+ *  which is a hole in the tree with a stripe of grass down each side of the
+ *  bole.
+ *
+ *  Zero at the top row, so a spar always finishes at a single pixel rather than
+ *  stopping flat mid-air. */
+export function sparHalf(i: number, spar: number, girth: number): number {
+  if (spar <= 0) return 0;
+  // A COLUMN THAT GETS SWALLOWED, NOT A CONE. The first version tapered linearly
+  // over the whole spar and drew a perfect triangle of bark standing in the
+  // foliage — a fin, or an arrowhead, depending on the tree. It is wrong about
+  // the subject twice: a bole does not narrow appreciably over the few metres
+  // you can see of it inside a crown, and what ENDS it is the foliage closing
+  // over, not the trunk running out.
+  //
+  // So it holds its full width for most of its length and gives it all up in the
+  // last third, where the branches are thick enough to be hiding it anyway.
+  const held = 1 - i / spar;
+  return Math.round((2 + girth) * Math.max(0, Math.min(1, held / 0.34)));
+}
+
+
 /** The rocks. Half-widths per row, read exactly like a tree's crown — one
  *  fillRect per row, `rows[r]` either side of centre, nothing off the pixel grid.
  *
@@ -4835,13 +4865,17 @@ export class Renderer {
     // sapling is skinny as well as short, and on the region's stem it came out a
     // fencepost wearing a shrub.
     const girth = form?.girth ?? biome?.trunkGirth ?? 0;
+    // How far the bole carries on up inside the crown; drawn after it, below.
+    const spar = form?.spar ?? biome?.crownSpar ?? 0;
     // At least one, or a narrowed stem loses its shaded side entirely and stops
     // being round — the fault this whole two-tone split exists to avoid.
     const shade = Math.max(1, 1 + Math.round(girth / 1.5));
-    ctx.fillStyle = biome ? mixHex(bark, biome.trunk) : bark;
+    const barkInk = biome ? mixHex(bark, biome.trunk) : bark;
+    const barkShade = biome ? mixHex(barkDark, biome.trunk) : barkDark;
+    ctx.fillStyle = barkInk;
     const stem = trunkSpan(girth);
     ctx.fillRect(cx + stem.dx, base - trunkH, stem.w, trunkH);
-    ctx.fillStyle = biome ? mixHex(barkDark, biome.trunk) : barkDark;
+    ctx.fillStyle = barkShade;
     ctx.fillRect(cx + stem.dx + stem.w - shade, base - trunkH, shade, trunkH);
 
     // The birches' dashes. Drawn BEFORE the crown, so the rows that hang beside
@@ -4991,8 +5025,11 @@ export class Renderer {
         ctx.globalAlpha = 1;
       }
     }
-    ctx.fillStyle = ink(crown);
-    for (let r = 0; r < rows.length; r++) {
+    // One row of canopy, mass then highlight. It is a function because the BOLE
+    // pass below draws some of these rows a second time, over the bark — see
+    // §crownSpar. Everything it reads (`rows`, `gaps`, `litRows`) is fixed by
+    // then, so a replayed row lands pixel-for-pixel on top of its first draw.
+    const crownRow = (r: number): void => {
       const g = gaps?.[r] ?? 0;
       // ODD WIDTH, AND IT WAS EVEN FOR A LONG TIME. The trunk is three pixels at
       // cx-1..cx+1, so its centre is the COLUMN cx; a crown of `rows[r] * 2` spans
@@ -5004,6 +5041,7 @@ export class Renderer {
       // widths, "one fillRect rows[r] wide EITHER SIDE of the trunk" — which needs
       // the trunk's own column in the middle to be true. Every crown is a pixel
       // wider than it was; none of them moved.
+      ctx.fillStyle = ink(crown);
       if (g > 0) {
         // Two lobes with the trunk between them. The gap is centred on the
         // trunk's own column (cx - g .. cx + g), so foliage sized to it meets
@@ -5013,7 +5051,7 @@ export class Renderer {
       } else {
         ctx.fillRect(cx - rows[r], top + r, rows[r] * 2 + 1, 1);
       }
-    }
+      if (r < 1 || r > litRows) return;
     // Light from the upper left, as everywhere else. Bounded by the crown's own
     // length rather than by a literal 6: the scrub's is nine rows tall, and a lit
     // side that ran past the end read off the end of the array.
@@ -5029,12 +5067,9 @@ export class Renderer {
     // clamped to the array so the shortest crowns can't run off the end. The
     // fraction is UNDER A HALF-AND-A-BIT on purpose: at 0.7 the blossom's crowns
     // came out more lit than shaded, which inverts what a highlight is.
-    ctx.fillStyle = ink(crownLit);
-    const litRows = Math.min(rows.length - 1, Math.max(6, Math.round(rows.length * 0.6)));
-    for (let r = 1; r <= litRows; r++) {
+      ctx.fillStyle = ink(crownLit);
       // Light lands on the LEFT lobe when a row is split — the lit side is the
       // upper left of the mass, not the upper left of each piece of it.
-      const g = gaps?.[r] ?? 0;
       // AND IT PULLS BACK AS IT DESCENDS, which is the difference between light
       // and a paint job. Every lit row used to run from the crown's left edge to
       // the trunk's own column, so the boundary was a straight vertical seam down
@@ -5055,6 +5090,83 @@ export class Renderer {
       const back = g > 0 ? 0 : Math.floor((r / litRows) * rows[r] * 0.75);
       const w = g > 0 ? rows[r] - g - 1 : Math.max(2, rows[r] - 1 - back);
       if (w > 0) ctx.fillRect(cx - rows[r] + 1, top + r, w, 1);
+    };
+    const litRows = Math.min(rows.length - 1, Math.max(6, Math.round(rows.length * 0.6)));
+    for (let r = 0; r < rows.length; r++) crownRow(r);
+
+    // THE BOLE, CARRIED ON UP INTO THE CROWN (content/biomes.ts §crownSpar).
+    //
+    // OVER THE FOLIAGE, NOT BEHIND IT, and that is the whole design of this — it
+    // was built the other way first and the other way does not work. Behind the
+    // crown a spar is only visible through a hole, so it needs `crownGaps`, and a
+    // gap is symmetric about the trunk's column: every width that showed enough
+    // bark to read as a trunk also split the canopy into two equal fringes stuck
+    // to the sides of a red post. Three goes at the widths, all the same picture.
+    // The fault was never the number. A crown parted down the middle is a parted
+    // crown; it is not a tree with its trunk in front of it.
+    //
+    // Drawn last, the crown stays a solid mass and the bark crosses it — which is
+    // what you actually see. The lower branches of a redwood are BEHIND its bole,
+    // and at this size that one occlusion is most of the difference between a
+    // conifer and a lollipop on a stick.
+    //
+    // It tapers to a single pixel (render/renderer.ts §sparHalf), because a bole
+    // that reached the top of the crown at full width would be a mast with
+    // greenery stapled to it. The taper is linear off the stem's own girth, so a
+    // fat trunk carries a fat spar and the sequoia's nine-pixel bole still reads
+    // as itself thirty pixels up.
+    if (spar > 0) {
+      // IN THE CROWN'S SHADE, and this is a third of what makes it read. Bark at
+      // its own brightness, inside a canopy, is a lit column standing in front of
+      // a dark mass — it comes forward, which is the opposite of true: this is the
+      // one part of the trunk with a whole tree's foliage over it. Pulled a third
+      // of the way to the crown's ink it sits back where it belongs, and the join
+      // at the top of the bare stem stops being a seam.
+      const inCrown = mixHex(barkInk, { color: crown, amount: 0.34 });
+      const inCrownShade = mixHex(barkShade, { color: crown, amount: 0.34 });
+      for (let i = 0; i < spar; i++) {
+        const hw = sparHalf(i, spar, girth);
+        const y = base - trunkH - 1 - i;
+        ctx.fillStyle = inCrown;
+        ctx.fillRect(cx - hw, y, hw * 2 + 1, 1);
+        // The same shaded far side the stem has, clamped so the narrow end keeps
+        // at least one lit pixel — a spar drawn entirely in the dark ink stops
+        // being round exactly where it is thinnest and most in need of it.
+        const sh = Math.min(shade, hw * 2);
+        if (sh > 0) {
+          ctx.fillStyle = inCrownShade;
+          ctx.fillRect(cx + hw + 1 - sh, y, sh, 1);
+        }
+      }
+
+      // AND THE BRANCHES CROSS BACK OVER IT, which is the half that makes the
+      // other half work. A bole drawn flat over the canopy is a column of bark
+      // with a rounded top standing in a green field — it reads as a doorway cut
+      // into the tree, and every length of it read as one, because the thing
+      // missing was never the shape of the trunk. It was that nothing passes IN
+      // FRONT of it. A trunk you can see between branches is a trunk; a trunk
+      // with an unbroken view of it is a post.
+      //
+      // WHICH ROWS, off the silhouette rather than off a second table: a row
+      // WIDER than the one above it is where a branch plate starts, because that
+      // is what makes the outline step out. A plate sticking out of the tree is
+      // in front of the bole as much as it is out to the sides, so it gets drawn
+      // again, over the bark. The foliage bands the trunk, the bands land exactly
+      // where the tiers are, and the two halves of the shape can never drift
+      // apart — they are the same numbers.
+      //
+      // TWO ROWS TO A PLATE, not one. At one the bands came out as narrow lines
+      // ruled across a wide bar of bark, and the bark won: what you read was a
+      // brown post with green wire around it. A branch mass is thicker than the
+      // step it makes in the outline — the step is where it STARTS — so it also
+      // covers the row below, and the green and the bark end up in something
+      // nearer the proportion a photograph has.
+      const lowest = rows.length - overlap;
+      for (let r = Math.max(1, lowest - spar); r < lowest; r++) {
+        if (rows[r] <= rows[r - 1]) continue;
+        crownRow(r);
+        if (r + 1 < lowest) crownRow(r + 1);
+      }
     }
 
     // Lights caught in the crown. NOT FRUIT — see BiomeDef.orbs for why that
