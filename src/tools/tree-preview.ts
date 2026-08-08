@@ -21,6 +21,7 @@
 // entry point, so main.ts's cleanup never runs here. See no-sw.ts.
 import "./no-sw";
 import { BIOMES, treeForms, type BiomeId } from "../content/biomes";
+import { OPTIONS } from "./tree-options";
 import { newWorld } from "../sim/game";
 import {
   biomeAt,
@@ -36,6 +37,7 @@ import {
 import { GRASS, TREE } from "../content/tiles";
 import { Renderer } from "../render/renderer";
 import type { WorldState } from "../sim/types";
+import type { TreeShape } from "../content/biomes";
 
 const TILE = 16;
 
@@ -43,7 +45,15 @@ const TILE = 16;
  *  half-widths, so seventeen pixels — a whole tile plus) never touches its
  *  neighbour's: two trees whose canopies overlap are one blob, and the shape is
  *  the entire thing this page exists to look at. */
-const SPACING = 4;
+const SPACING = 7;
+
+/** …except in a grove that is not seven tiles wide. THE GIANTS ARE A DISC OF
+ *  RADIUS FIVE and `scatterSkin` answers "redwoods" one tile outside it, so a row
+ *  laid out at the usual spacing puts most of its trees in the wrong region and
+ *  they come back drawn as the wrong species under the right letter. Four still
+ *  clears a giant's crown (eight half-widths is seventeen pixels, and four tiles
+ *  is sixty-four). */
+const SPACING_IN: Partial<Record<BiomeId, number>> = { giants: 4 };
 
 /** Tiles of clear ground around the row, so nothing the generator planted stands
  *  in the picture. */
@@ -68,7 +78,41 @@ const state = {
   clock: "summer",
   scale: 3,
   only: new Set<BiomeId>(DEFAULT),
+  /** Show the PROPOSALS (tree-options.ts) as extra forms, lettered A onward.
+   *  Off by default: the page's first job is still to show what the game draws. */
+  options: false,
+  /** Which slots to plant. THE GIANTS ARE WHY THIS EXISTS: their grove is a disc
+   *  of radius five, so eleven tiles is the whole region and six trees will not
+   *  stand in it — `scatterSkin` answers "redwoods" for anything further out and
+   *  the tree would be drawn as the wrong species under the right letter. Three
+   *  at a time fits, and two photographs is a cheaper answer than a rule about
+   *  how big a grove has to be. */
+  set: "all" as "all" | "abc" | "def",
 };
+
+/** Hang the candidate silhouettes off the region as extra `crownAlt` forms, or
+ *  take them off again.
+ *
+ *  IT MUTATES `BIOMES`, WHICH IS ONLY ALL RIGHT BECAUSE THIS PAGE IS THE WHOLE
+ *  DOCUMENT. `drawTree` reads `treeForms(def)` at draw time and there is no way
+ *  to hand it a shape from outside — so a proposal can either be temporarily
+ *  spliced into the table or authored twice, once as content and once as a
+ *  drawing the tool does itself. The second is how a preview starts lying about
+ *  the game (see the head of biome-preview.ts). The originals are put back on
+ *  the way out, and nothing here is in the shipped bundle. */
+function splice(on: boolean): void {
+  for (const [id, opt] of Object.entries(OPTIONS)) {
+    const def = BIOMES[id as BiomeId];
+    if (!def) continue;
+    if (on) {
+      shipped[id] ??= def.crownAlt;
+      def.crownAlt = opt.forms;
+    } else {
+      def.crownAlt = shipped[id];
+    }
+  }
+}
+const shipped: Record<string, TreeShape[] | undefined> = {};
 
 interface Card {
   id: BiomeId;
@@ -142,38 +186,89 @@ function formAt(world: WorldState, x: number, y: number, count: number): number 
   return Math.floor(decoHash(x, y, world.seed ^ 0x1d4f) * count) % count;
 }
 
-/** Clear a band of ground and plant one tree of each form along it.
+/** Clear a band of ground and plant one tree of each form along it, evenly.
  *
- *  The form is a function of the TILE, so the row is built by search: for slot
- *  `i`, walk outward from the ideal column until a tile turns up whose form hash
- *  is `i` and whose `scatterSkin` still says this species. Both checks matter —
- *  a tree three tiles into the scrub is drawn as a scrub bush (see drawTree),
- *  and one of those in a row labelled "the redwoods" would be a lie. */
-function plant(world: WorldState, at: { x: number; y: number }, id: BiomeId): number {
+ *  The form is a function of the TILE (`drawTree` hashes the coordinate), so the
+ *  row cannot be composed — it has to be FOUND. For slot `i` the search wants a
+ *  column whose form hash is `i`, close to where slot `i` belongs, and whose
+ *  `scatterSkin` still says this species: a tree three tiles into the scrub is
+ *  drawn as a scrub bush, and one of those in a row labelled "the redwoods" would
+ *  be a lie.
+ *
+ *  TWO THINGS KEEP THE LINE STRAIGHT, and the first version had neither. It
+ *  walked out from the ideal column as far as forty tiles, so a slot whose hash
+ *  was uncooperative was answered by a tree most of a screen away — the row came
+ *  out with a hole in the middle, two trees touching at one end, and every letter
+ *  under the wrong trunk.
+ *
+ *  - The search is CAPPED at half the spacing, so a tree can never wander into
+ *    its neighbour's slot. Unfilled is a better answer than misplaced: the card
+ *    says "5/6 forms" and the missing letter is simply absent.
+ *  - The ROW is chosen rather than given. Every row within a few tiles is scored
+ *    by how many slots it can fill, and the best one wins. One row in five or six
+ *    can seat the whole set, and the hashes are what decide which.
+ */
+function plant(
+  world: WorldState,
+  at: { x: number; y: number },
+  id: BiomeId,
+  show: number[],
+): number[] {
   const forms = treeForms(BIOMES[id]);
-  const row = at.y;
+  const gap = SPACING_IN[id] ?? SPACING;
+  const reach = Math.floor(gap / 2);
+  // Laid out over the slots being SHOWN, not over every form the region has, so
+  // half a set still fills the card instead of huddling in the middle of it.
+  const slot = (k: number): number =>
+    at.x - Math.floor(((show.length - 1) * gap) / 2) + k * gap;
+
+  /** Where each shown form could stand on this row, or undefined where none can.
+   *  Indexed by FORM, so the letters stay right whichever half is on screen. */
+  const seatOn = (row: number): (number | undefined)[] => {
+    const seats: (number | undefined)[] = [];
+    show.forEach((i, k) => {
+      const ideal = slot(k);
+      for (let d = 0; d <= reach; d++) {
+        for (const x of d === 0 ? [ideal] : [ideal - d, ideal + d]) {
+          if (formAt(world, x, row, forms.length) !== i) continue;
+          if (scatterSkin(world.seed, world.homestead.spot, x, row).id !== id) continue;
+          seats[i] = x;
+          return;
+        }
+      }
+    });
+    return seats;
+  };
+
+  let row = at.y;
+  let best = seatOn(row);
+  let bestN = best.filter((x) => x !== undefined).length;
+  for (let dy = 1; dy <= 6 && bestN < show.length; dy++) {
+    for (const y of [at.y - dy, at.y + dy]) {
+      const seats = seatOn(y);
+      const n = seats.filter((x) => x !== undefined).length;
+      if (n > bestN) {
+        best = seats;
+        bestN = n;
+        row = y;
+      }
+    }
+  }
+
   for (let y = row - CLEAR; y <= row + CLEAR; y++) {
     for (let x = at.x - CLEAR * 3; x <= at.x + CLEAR * 3; x++) {
       if (tileAt(world, x, y) !== GRASS) setTile(world, x, y, GRASS);
     }
   }
-  let planted = 0;
-  for (let i = 0; i < forms.length; i++) {
-    const ideal = at.x - Math.floor(((forms.length - 1) * SPACING) / 2) + i * SPACING;
-    for (let d = 0; d < 40; d++) {
-      // Out from the ideal column in both directions, nearest first, so the row
-      // stays evenly spaced when the hashes cooperate and only sags where they
-      // don't.
-      for (const x of d === 0 ? [ideal] : [ideal - d, ideal + d]) {
-        if (formAt(world, x, row, forms.length) !== i) continue;
-        if (scatterSkin(world.seed, world.homestead.spot, x, row).id !== id) continue;
-        setTile(world, x, row, TREE);
-        planted++;
-        d = 99;
-        break;
-      }
-    }
-  }
+  const planted: number[] = [];
+  best.forEach((x, i) => {
+    if (x === undefined) return;
+    setTile(world, x, row, TREE);
+    planted[i] = x;
+  });
+  // The camera and the letters are both hung off the row the trees actually
+  // landed on, not the one the region search handed us.
+  at.y = row;
   return planted;
 }
 
@@ -201,7 +296,12 @@ function build(): void {
     const note = document.createElement("span");
     note.className = "note";
     cap.append(Object.assign(document.createElement("strong"), { textContent: def.name }), note);
-    card.append(canvas, cap);
+    // The canvas inside a clipping box: the bottom half of a strip is bare floor
+    // (see `keep` below), and a card that is mostly floor compares nothing.
+    const crop = document.createElement("div");
+    crop.className = "crop";
+    crop.append(canvas);
+    card.append(crop, cap);
     sheet.append(card);
 
     const at = findRegion(state.seed, id);
@@ -220,12 +320,24 @@ function build(): void {
         (f) => (f.trunkHeight ?? def.trunkHeight ?? 16) + f.rows.length - (f.overlap ?? 0),
       ),
     );
-    const spanX = Math.max(10, forms.length * SPACING + 4);
+    // Which slots this pass plants — see §state.set.
+    const all = forms.map((_, i) => i);
+    const show =
+      state.set === "all" || forms.length < 4
+        ? all
+        : state.set === "abc"
+          ? all.slice(0, 3)
+          : all.slice(3, 6);
+    const spanX = Math.max(10, show.length * (SPACING_IN[id] ?? SPACING) + 4);
     // Camera centres on the player, so the player sits BELOW the row and the
-    // strip is sized around that: enough sky over the row for the tallest tree,
-    // and as little ground under it as the centring allows.
+    // strip is sized around that: enough sky over the row for the tallest tree.
+    // The ground under it is CROPPED rather than not drawn — the camera has to
+    // centre on something and the something has to stand clear of the trees
+    // (`hideFactor`), so the canvas is symmetric and the card hides the half of
+    // it that is nothing but floor.
     const above = Math.ceil(tallest / TILE) + 1;
     const spanY = (above + 2) * 2;
+
 
     const world: WorldState = {
       ...base,
@@ -234,15 +346,57 @@ function build(): void {
       // half-erase one of the trees this page exists to look at.
       player: { ...base.player, x: at.x + 0.5, y: at.y + 2, target: null },
     };
-    const n = plant(world, at, id);
-    note.textContent = `${n}/${forms.length} form${forms.length > 1 ? "s" : ""} · ${at.x}·${at.y}`;
+    const at_x = plant(world, at, id, show);
+    // `plant` may have moved the row to one whose hashes seat the whole set, so
+    // the camera follows it — the player was placed off the row we asked for.
+    world.player = { ...world.player, y: at.y + 2 };
+    const n = at_x.filter((x) => x !== undefined).length;
+    note.textContent = `${n}/${show.length} · ${at.x}·${at.y}`;
+
+    // A LETTER UNDER EACH TREE, so a choice can be made out loud. Positioned off
+    // the same arithmetic the camera uses — the view is centred on the player,
+    // who stands at `at.x + 0.5` — rather than by spacing the letters evenly:
+    // the planting search sags a column either way when the form hashes are
+    // uncooperative, and a label a tile off its tree is worse than none.
+    const strip = document.createElement("div");
+    strip.className = "letters";
+    card.append(strip);
 
     const r = new Renderer(canvas);
     r.setChrome(false);
     const c: Card = { id, world, renderer: r, canvas };
-    canvas.style.width = `${spanX * TILE * state.scale}px`;
+
+    // THE RENDERER PICKS THE SCALE, NOT THIS PAGE, and pretending otherwise put
+    // every letter under the wrong tree. `resize()` reads the CSS box and takes
+    // an integer off the zoom ladder (render/zoom.ts) — which aims for about
+    // eleven tiles on the SHORT edge — so a wide, short strip asked for at 4×
+    // came back drawn at 5× with a quarter fewer tiles in it than it was sized
+    // for. drive.mjs's header has carried the same warning for months: the tile
+    // size is not fixed, read it off the renderer.
+    //
+    // So: ask for a box, then walk DOWN the ladder until the view is tall enough
+    // to hold the tallest tree, and take the scale it settles on as the truth.
     canvas.style.height = `${spanY * TILE * state.scale}px`;
+    canvas.style.width = `${spanX * TILE * state.scale}px`;
     r.resize();
+    const boxH = canvas.clientHeight;
+    for (let step = 0; step < r.zoomStepCount(); step++) {
+      r.setZoomStep(step);
+      if (boxH / r.pxPerTile() >= spanY) break;
+    }
+    const px = r.pxPerTile();
+    canvas.style.width = `${Math.round(spanX * px)}px`;
+    r.resize();
+    crop.style.width = `${Math.round(spanX * px)}px`;
+    crop.style.height = `${Math.round((above + 3) * px)}px`;
+    strip.style.width = `${Math.round(spanX * px)}px`;
+    at_x.forEach((tx, i) => {
+      if (tx === undefined) return;
+      const tag = document.createElement("span");
+      tag.textContent = String.fromCharCode(65 + i);
+      tag.style.left = `${Math.round((tx - (at.x + 0.5)) * px + (spanX * px) / 2)}px`;
+      strip.append(tag);
+    });
     r.snapCamera(world);
     cards.push(c);
   }
@@ -284,6 +438,30 @@ scaleSel.onchange = () => {
   build();
 };
 control("Zoom", scaleSel);
+
+const setSel = document.createElement("select");
+for (const [v, l] of [
+  ["all", "all six"],
+  ["abc", "A–C"],
+  ["def", "D–F"],
+] as const) {
+  setSel.append(new Option(l, v));
+}
+setSel.onchange = () => {
+  state.set = setSel.value as typeof state.set;
+  build();
+};
+control("Set", setSel);
+
+const optToggle = document.createElement("input");
+optToggle.type = "checkbox";
+optToggle.checked = state.options;
+optToggle.onchange = () => {
+  state.options = optToggle.checked;
+  splice(state.options);
+  build();
+};
+control("Candidates", optToggle);
 
 const seedIn = document.createElement("input");
 seedIn.type = "number";

@@ -35,12 +35,18 @@ await page.goto(url, { waitUntil: "networkidle" });
 const set = async (label, value) => {
   const sel = page.locator(`#bar label:has(span:text-is("${label}")) select, ` +
     `#bar label:has(span:text-is("${label}")) input`);
+  if ((await sel.getAttribute("type")) === "checkbox") {
+    if (value === "1") await sel.check();
+    return;
+  }
   await sel.selectOption(value).catch(async () => {
     await sel.fill(value);
     await sel.dispatchEvent("change");
   });
 };
 
+if (flag("set")) await set("Set", flag("set"));
+if (flag("options")) await set("Candidates", "1");
 if (flag("seed")) await set("Seed", flag("seed"));
 if (flag("show")) await set("Show", flag("show"));
 if (flag("zoom")) await set("Zoom", flag("zoom"));
@@ -56,7 +62,8 @@ const n = await cards.count();
 for (let i = 0; i < n; i++) {
   const card = cards.nth(i);
   const name = (await card.locator("strong").innerText()).replace(/^the /, "").replace(/\s+/g, "-");
-  const file = `${out}/tree-${name}.png`;
+  const tag = flag("set") && flag("set") !== "all" ? `-${flag("set")}` : "";
+  const file = `${out}/tree-${name}${tag}.png`;
   await card.screenshot({ path: file });
   console.log(file, await card.locator(".note").innerText());
 }

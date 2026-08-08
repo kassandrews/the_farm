@@ -89,6 +89,28 @@
       .note {
         opacity: 0.45;
       }
+      /* The strip's clipping box — see tree-preview.ts §keep. */
+      .crop {
+        overflow: hidden;
+        border-radius: 8px;
+        background: var(--panel);
+      }
+      .crop canvas.strip {
+        border-radius: 0;
+      }
+      /* One letter under each planted tree, absolutely placed at the tree's own
+         column — see tree-preview.ts. The strip is `position: relative` so the
+         letters' `left` is measured from the canvas's own left edge. */
+      .letters {
+        position: relative;
+        height: 18px;
+        font-size: 13px;
+      }
+      .letters span {
+        position: absolute;
+        transform: translateX(-50%);
+        opacity: 0.75;
+      }
       .absent canvas.strip {
         width: 120px;
         height: 120px;
