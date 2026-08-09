@@ -90,7 +90,30 @@ export function tintAt(now: number): Tint {
 }
 
 /** HOW LONG A SHADOW THE SUN IS THROWING, as a fraction of a sprite's own
- *  height. 0 at night and near 0 at midday; longest with the sun on the horizon.
+ *  height, AND WHICH WAY. 0 at night and near 0 at midday; longest with the sun
+ *  on the horizon.
+ *
+ *  SIGNED, AND THE SIGN IS THE COMPASS. Negative throws the shadow WEST (left,
+ *  toward -x), positive throws it EAST. The sun rises in the east, so a morning
+ *  shadow points away from it — left — and swings right through the afternoon.
+ *
+ *  It used to be a magnitude, and this function's own note said so out loud:
+ *  "dawn and dusk are the same geometry pointed opposite ways, and the direction
+ *  is not ours to vary". The first half was right and the second half was the
+ *  bug. Every shadow in the game fell down-and-right at every hour, which makes
+ *  the sun set twice and never rise, and seven in the morning was photographed as
+ *  seven in the evening. Nothing else in the world tells you which side of noon
+ *  you are on — the sky tint is nearly symmetric about it by construction — so
+ *  this is the only cue there was, pointing the wrong way half the time.
+ *
+ *  THE KEY LIGHT DID NOT MOVE WITH IT, and that is deliberate rather than
+ *  unfinished. Every sprite in the game is lit from the upper left, and it stays
+ *  that way: a highlight is one or two pixels, and flipping it at noon would pop
+ *  — the sides would swap in a single frame with nothing to cover the change. The
+ *  cast shadow can swing precisely because it is SHORTEST at the crossover, so
+ *  the direction changes while there is nothing there to see change. A fixed key
+ *  light with a travelling shadow is the ordinary pixel-art bargain, and it is
+ *  the one this game was already half of.
  *
  *  IT IS THE SAME FACT `tintAt` IS, asked the other way round. That function says
  *  how much light there is; this says where it is coming FROM, which is the half
@@ -120,14 +143,17 @@ export function rakeAt(now: number): number {
   if (phase === "night") return 0;
   const b = boundsAt(now);
   // The sun is ON the horizon through both cosmetic hours, so both get the
-  // maximum. Dawn and dusk are the same geometry pointed opposite ways, and the
-  // direction is not ours to vary (see `footShadow`: one light, upper left).
-  if (phase === "dusk" || phase === "dawn") return RAKE_MAX;
+  // maximum length — and they are the two hours where the sign matters most,
+  // because a long shadow is the only one anybody reads a direction off.
+  if (phase === "dusk") return RAKE_MAX;
+  if (phase === "dawn") return -RAKE_MAX;
   const h = new Date(now).getHours() + new Date(now).getMinutes() / 60;
   const noon = (b.day + b.dusk) / 2;
   const half = (b.dusk - b.day) / 2 || 1;
   const t = Math.min(1, Math.abs(h - noon) / half);
-  return RAKE_MAX * t * t;
+  // `t` threw away which side of noon it was on — that is the same magnitude,
+  // and putting it back is the whole change. Morning is west.
+  return RAKE_MAX * t * t * Math.sign(h - noon || 1);
 }
 
 /** The longest shadow the sun throws here, at the horizon.

@@ -1212,10 +1212,20 @@ export interface BiomeDef {
    *  EVERY SPRITE OR NONE. Trees, saplings, shrubs, rocks and mushrooms all take
    *  it, which is not thoroughness but the whole requirement: a wood where the
    *  trees have long shadows and the stones do not is a rendering bug, not an
-   *  hour. The direction is not a region's to choose either — the game lights
-   *  every crown from the upper left, so shadows fall down and to the right
-   *  everywhere or there are two suns. Length is the only dial, and length is what
-   *  "low" means.
+   *  hour.
+   *
+   *  SIGNED NOW, AND A REGION MAY IN FACT CHOOSE THE SIDE. This paragraph used to
+   *  say the direction was nobody's to pick — down and to the right everywhere,
+   *  because the key light is upper left and anything else would be two suns. The
+   *  key light has not moved and still never will; what the argument got wrong is
+   *  that it also froze the sun's TRAVEL, so every morning in the game threw the
+   *  same shadows as every evening and nothing on screen could tell you which it
+   *  was. Negative is west (morning), positive is east (afternoon), and the clock
+   *  swings between them through a midday where the shadow is too short to see the
+   *  turn (sim/time.ts §rakeAt). A pinned region states which side of noon it is
+   *  stuck on: the dusk's +0.55 is a permanent late afternoon, and a -0.55
+   *  somewhere would be a permanent early morning, which is a place this file does
+   *  not have yet and could.
    *
    *  Averaged over a border like every other region field, so a pinned sun fades
    *  into the real one across the treeline instead of standing up on a line. */

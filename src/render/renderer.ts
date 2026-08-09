@@ -2805,9 +2805,19 @@ export class Renderer {
       // a short shadow. That is the physics doing the work rather than a number
       // per sprite.
       const rake = skin?.rake ?? this.rake;
-      if (rake > 0) {
-        const len = Math.round(g.length * rake);
-        for (let i = 1; i <= len; i++) ctx.fillRect(x + i, y + (i >> 1), Math.max(2, w - i), 1);
+      if (rake !== 0) {
+        // Signed, like everyone else's — a mushroom's shadow leans the way the
+        // trees' do or the cap is standing under a different sun.
+        // The wedge converges toward the far side, so mirroring it is a question
+        // of which EDGE is pinned — right at `x + w` going east, left at `x`
+        // going west — and not of offsetting the whole row, which would slide the
+        // shadow off the cap instead of turning it around.
+        const dir = Math.sign(rake);
+        const len = Math.round(g.length * Math.abs(rake));
+        for (let i = 1; i <= len; i++) {
+          const tw = Math.max(2, w - i);
+          ctx.fillRect(dir > 0 ? x + w - tw : x, y + (i >> 1), tw, 1);
+        }
       }
       for (let r = 0; r < g.length; r++) {
         const row = g[r];
@@ -4771,16 +4781,23 @@ export class Renderer {
     // it, and so the near end is doubled — which is what a shadow does where it
     // meets the thing casting it.
     //
-    // DOWN AND TO THE RIGHT, because that is where this game's light already is:
-    // every crown in the file is lit from the upper LEFT, so a shadow anywhere
-    // else would be a second sun. The one thing the region gets to say is how
-    // LONG, and length is the whole of what "low" means.
+    // DOWN, AND TO WHICHEVER SIDE THE SUN IS NOT ON — `rake`'s SIGN, which is
+    // west before noon and east after it (sim/time.ts §rakeAt). This used to be
+    // "down and to the right" unconditionally, on the reasoning that the key
+    // light is upper left and a shadow anywhere else would be a second sun. The
+    // key light IS still upper left and does not move; what that argument missed
+    // is that it then never rises, and a world where every morning shadow points
+    // the way the evening's does has no mornings in it.
+    //
+    // The region's own pinned rake keeps the same convention, so the twilight
+    // country's permanent evening is a positive number and still falls east.
     //
     // Two across for one down, not forty-five degrees. A diagonal at this size is
     // a staircase and reads as a jaggy; a shallow slope reads as distance along
     // the ground, which is what it is.
-    if (rake > 0 && artH > 0) {
-      const len = Math.round(artH * rake);
+    if (rake !== 0 && artH > 0) {
+      const dir = Math.sign(rake);
+      const len = Math.round(artH * Math.abs(rake));
       // A NECK AND THEN A HEAD, BECAUSE A CAST SHADOW IS THE SPRITE'S OWN
       // SILHOUETTE LYING DOWN. The first version tapered from the full width to a
       // point and it was drawn from the wrong idea entirely — that a shadow fades
@@ -4808,7 +4825,7 @@ export class Renderer {
         // TOP of the crown, and a crown is not sharp.
         const tw =
           f < 0.4 ? neck : Math.max(3, Math.round(head * (1 - ((f - 0.72) / 0.34) ** 2)));
-        ctx.fillRect(cx - (tw >> 1) + i, base - 2 + (i >> 1), tw, 1);
+        ctx.fillRect(cx - (tw >> 1) + i * dir, base - 2 + (i >> 1), tw, 1);
       }
     }
     ctx.fillRect(cx - (w >> 1), base - 2, w, 1);

@@ -9894,6 +9894,45 @@ whole family was grey-GREEN and had been since the row was written.
   on having none. The kit is all `o` now. Reach for `stem` or drop the `x`
   whenever a kit's plant is not the colour of the tree above it.
 
+## The sun rises now (9 Aug 2026)
+
+`rakeAt` returned a LENGTH and the draw paths hard-coded the direction, so every
+shadow in the game fell down-and-to-the-right at every hour. The sun set twice a
+day and never rose, and seven in the morning photographed as seven in the
+evening — which nothing else on screen could contradict, because `tintAt` is
+very nearly symmetric about noon by construction.
+
+The function's own note had the bug written into it: *"dawn and dusk are the
+same geometry pointed opposite ways, and the direction is not ours to vary"*.
+First half right, second half the fault. `footShadow`'s note made the same
+argument from the key light, and `sim/time.test.ts` asserted
+`rakeAt(19) ≈ rakeAt(6)` on the raw values, which passed happily.
+
+### Settled here, don't relitigate
+
+- **`rakeAt` is signed, and the sign is a compass.** Negative is west (morning),
+  positive is east (afternoon). Consumers take `Math.abs` for length and
+  `Math.sign` for side. `BiomeDef.rake` is signed with it, so a region may now
+  pin which side of noon it is stuck on — the dusk's `+0.55` is a permanent late
+  afternoon, and a `-0.55` region would be a permanent early morning, which is a
+  place this file does not have and could.
+- **The key light does NOT swing with it.** Every sprite stays lit from the upper
+  left. A highlight is one or two pixels and flipping it at noon would pop — the
+  sides would swap in a frame with nothing to cover the change. The cast shadow
+  can swing precisely because it is SHORTEST at the crossover, so the direction
+  turns while there is nothing there to see turn. Fixed key light, travelling
+  shadow, which is the ordinary pixel-art bargain.
+- **Mirroring a wedge is about which EDGE is pinned.** The mushroom's shadow
+  converges toward its far side, so going west pins the left edge at `x` and
+  going east pins the right at `x + w`. Offsetting the whole row instead slides
+  the shadow off the cap.
+- **Photograph one world at two hours, not two worlds.** The first check drove
+  the harness twice and got two seeds, so the morning shot had no trees in it and
+  read as "no shadows at all". `page.clock.setFixedTime` between two shots in one
+  session is the way to change only the sun. When a direction is still ambiguous
+  at a glance, measure it — mean ground luma in a box either side of each trunk
+  base settled this in one command.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

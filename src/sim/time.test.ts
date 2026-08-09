@@ -60,9 +60,26 @@ describe("where the sun is", () => {
     // this and survives every hour; without it a sprite floats after dark.
     expect(rakeAt(at(1))).toBe(0);
     expect(rakeAt(at(23))).toBe(0);
-    // Dusk and dawn are the same geometry pointed opposite ways.
-    expect(rakeAt(at(19))).toBeCloseTo(rakeAt(at(6)), 5);
-    expect(rakeAt(at(19))).toBeGreaterThan(rakeAt(at(15)));
+    // Dusk and dawn are the same geometry pointed opposite ways — the same
+    // LENGTH, and now the opposite sign, which is the half this used to assert
+    // away. `toBeCloseTo` on the raw values passed happily while every morning in
+    // the game threw an evening's shadow.
+    expect(rakeAt(at(19))).toBeCloseTo(-rakeAt(at(6)), 5);
+    expect(rakeAt(at(19))).toBeGreaterThan(Math.abs(rakeAt(at(15))));
+  });
+
+  it("puts the sun in the east in the morning and the west in the evening", () => {
+    // THE COMPASS, asserted as a sign. `rakeAt` is negative before noon (the
+    // shadow falls west, away from a risen sun) and positive after it. Nothing
+    // else in the world distinguishes seven in the morning from seven at night —
+    // `tintAt` is very nearly symmetric about noon by construction — so this is
+    // the only thing on screen that says which side of the day you are on.
+    for (const h of [6, 7, 9, 11]) expect(rakeAt(at(h)), `${h}:00`).toBeLessThan(0);
+    for (const h of [14, 16, 18, 19]) expect(rakeAt(at(h)), `${h}:00`).toBeGreaterThan(0);
+    // And it crosses through nothing rather than jumping: the turn happens where
+    // the shadow is too short to read a direction off, which is what lets the key
+    // light stay pinned to the upper left all day (sim/time.ts §rakeAt).
+    expect(Math.abs(rakeAt(at(12, 30)))).toBeLessThan(0.06);
   });
 
   it("is nearly flat across the middle of the day and then goes up fast", () => {
@@ -70,9 +87,11 @@ describe("where the sun is", () => {
     // ramp puts a visible shadow on a two o'clock afternoon, which reads as a
     // permanent late-day filter rather than as an hour passing — so the assertion
     // is about the SHAPE of the curve and not about any one number.
-    const noon = rakeAt(at(12, 30));
-    const three = rakeAt(at(15));
-    const five = rakeAt(at(17));
+    // Magnitudes: the curve's SHAPE is the subject here, and the afternoon is
+    // positive anyway — the sign has its own test above.
+    const noon = Math.abs(rakeAt(at(12, 30)));
+    const three = Math.abs(rakeAt(at(15)));
+    const five = Math.abs(rakeAt(at(17)));
     expect(noon).toBeLessThan(0.06);
     expect(three).toBeGreaterThan(noon);
     expect(five).toBeGreaterThan(three);
