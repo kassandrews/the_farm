@@ -4201,8 +4201,21 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // so there is less of it to cancel. Rock does not get greener — the same
     // sentence the `edge` two dozen lines up is made of, said about the middle of
     // the region rather than its border.
-    ground: { color: "#a3a4a9", amount: 0.95 },
-    tuft: { color: "#b3b4bb", amount: 0.92 },
+    //
+    // AND THEN FOUR POINTS OF RED BACK, WHICH IS FELDSPAR AND NOT A RETREAT.
+    // Dead neutral was correct about the green and wrong about the rock: a large
+    // field at zero saturation reads as untinted rather than as a colour someone
+    // chose, and this one came out overcast — battleship, on a region whose whole
+    // note is high country with the light full on it. Granite is pale WARM grey.
+    //
+    // ONLY THE RED MOVES. Warmth by dropping blue is how this row got to sage in
+    // the first place — that is the yellow axis, and the turf underneath is
+    // already pushing along it. Lifting red instead lands the pink-grey of
+    // feldspar, which is the one warm hue that cannot slide back into the green
+    // it just left. The turf resolves to (166,165,164): red highest by a point,
+    // green and blue a point apart, warm and still grey at arm's length.
+    ground: { color: "#a7a4a9", amount: 0.95 },
+    tuft: { color: "#b7b4bb", amount: 0.92 },
     // AN ALPINE DOME IN JANUARY, which is the least surprising snow in the file:
     // this is bare rock at altitude with a courtesy of turf on it. Deep, and
     // laid OVER the region's grey rather than instead of it — granite under snow
@@ -4244,11 +4257,13 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // flat, with not one sharp silhouette in the list. Two shapes only, which is
     // fewer than any other region has, because a landscape scoured by one process
     // does not offer variety.
-    // Neutral, with the region's own faint cool lean, and no leak to cancel —
-    // this one sits on stated greys (render/renderer.ts §rock) rather than on
-    // turf, so the tint says what it means. At the old #cbccc2 a lit boulder came
-    // out (170,168,161), which was the one warm-olive thing left on a grey field
-    // once the ground stopped being olive.
+    // Neutral, and no leak to cancel — this one sits on stated greys
+    // (render/renderer.ts §rock) rather than on turf, so the tint says what it
+    // means. It lands the body at (169,168,167), which is the ground's own warm
+    // grey a few points up: a boulder is a piece of the same rock the sheet is,
+    // and it would be strange if it were a different colour. At the old #cbccc2
+    // it came out (170,168,161) — the one warm-OLIVE thing left on the field once
+    // the ground stopped being olive, and warm-olive is the fault, not the warmth.
     stone: { tint: { color: "#c9cbd0", amount: 0.46 }, shapes: ["slab", "slab", "boulder"] },
     // THE ROW THE REGION IS ACTUALLY FOR. Without this the granite photographed
     // as a rocky meadow — pale green turf with a lot of stones lying on it, which
@@ -4261,10 +4276,14 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // stones' own colour rather than over it: a boulder sitting on a sheet has to
     // still read as a boulder, so the sheet stays the duller of the two.
     sheet: {
-      // At amount 1 there is no turf under these, so they are the region's grey
-      // stated flat — same cool neutral as `ground`, twenty points up.
-      ground: { color: "#c1c3c7", amount: 1 },
-      tuft: { color: "#cbcdd1", amount: 1 },
+      // At amount 1 there is no turf under these, so they are stated as the
+      // ANSWER rather than as a correction: no leak to cancel means no lean to
+      // cancel it with, and the blue-over-green `ground` carries would be a
+      // genuine cool cast out here instead of a neutral one. What these say is
+      // what `ground` resolves to, thirty points up — red highest, green and blue
+      // a point apart, the same warm grey the sheet is a brighter piece of.
+      ground: { color: "#c5c3c1", amount: 1 },
+      tuft: { color: "#cfcdcb", amount: 1 },
       period: 33,
       from: 0.36,
       to: 0.7,
