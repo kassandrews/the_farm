@@ -9887,6 +9887,17 @@ whole family was grey-GREEN and had been since the row was written.
   summer, and nothing the rest of the year. Every other blooming region gets two
   or three and the meadow's clover is there all year; a region that flowers for
   one month is the only thing in the file that says the year is short up here.
+- **A three-pixel mark needs a value difference INSIDE it, not just against the
+  ground.** The harebell's rule — value carries a small mark, not hue — is right
+  and incomplete. This region has TWO grounds (turf at luma 165, sheet at 190),
+  so one ink clears them by different margins and reads as a speck on the paler
+  one. The fix is `accent` #b4506e UNDER both and `core` #f2dce4 OVER both, so
+  the mark cannot disappear into anything it lands on. Reach for the pair
+  whenever a kit has to work on a region with a `sheet`.
+- **The flowers have no stems on purpose, and legibility is not the reason to
+  add one.** Pussypaws has no stalk and the granite has no vertical silhouette —
+  a stem would have added the missing dark anchor by accident while contradicting
+  both. The anchor is the flower's own dark ring.
 - **A bloom's `x` takes the region's CANOPY.** Caught on screen and worth
   writing down because the field's default is invisible in the table: the first
   cut put an `x` at the flower's centre for the rosette and every mark came out

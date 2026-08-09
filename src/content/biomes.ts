@@ -4445,23 +4445,47 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     //
     // DARKER THAN THE SHEET, not merely pinker — the birches' harebell learned
     // this and the lesson is worse here, because a bloom on this row lands on
-    // stone at luma 190 as often as on turf at 165. #c4607c measures 129: sixty
-    // under a sheet and thirty-six under the turf, so it reads on both grounds
-    // rather than on the softer one only. A pale pink — which is what the flower
-    // is at the end of its month — would have been invisible on the rock, and the
-    // rock is where it grows.
+    // stone at luma 190 as often as on turf at 165. A pale pink — which is what
+    // the flower is at the end of its month — would be invisible on the rock, and
+    // the rock is where it grows.
+    //
+    // AND THAT WAS NOT ENOUGH ON ITS OWN, which is the third draft. #c4607c at
+    // luma 129 sits a clear thirty-six under the turf and sixty under a sheet,
+    // and the marks were STILL hard to find. The harebell's rule is right and
+    // incomplete: value separates a mark from its GROUND, and this ground is two
+    // grounds — so a single ink that clears both by different margins reads as a
+    // speck on one of them. What a three-pixel mark also needs is a value
+    // difference INSIDE itself, so it is a little object rather than a coloured
+    // dot, and the granite is the one region with no other small thing nearby to
+    // borrow structure from.
+    //
+    // SO THE RING WENT DARKER AND GREW A LIGHT CENTRE. `accent` is #b4506e at
+    // luma 112 — under BOTH grounds by fifty and seventy-eight — and `core` is
+    // #f2dce4 at 226, which is forty over the sheet and sixty over the turf. The
+    // mark now clears whatever it lands on in both directions at once: there is no
+    // ground in this region that either ink can disappear into. It is the flower
+    // too — the puffs are papery and pale at the centre where the light gets
+    // through them — but the reason it is drawn is legibility, and the botany is
+    // the happy half.
+    //
+    // NOT SOLVED WITH A STEM, which was the obvious fix and the wrong one. A
+    // stalk would have added the dark anchor by accident while contradicting both
+    // the plant and the region three lines above. The anchor is the flower's own
+    // ring; nothing had to stand up to get it.
     bloom: {
       season: "summer",
-      // The sparsest bloom in the file, and it does not need to be otherwise: an
-      // empty ground shows a mark from much further off than a busy one, and this
-      // is the emptiest there is. The year-round kit is 0.055 and this sits just
-      // under it — what flowers here is not more than what is here.
-      density: 0.05,
-      accent: "#c4607c",
+      // Still among the sparsest in the file, and only nudged: "an empty ground
+      // shows a mark from further off than a busy one" was true and was doing the
+      // work of an excuse, because it was arguing about how MANY when the problem
+      // was each one. The mark carries itself now, so this is a flowering that you
+      // come across a few times crossing the region rather than once.
+      density: 0.065,
+      accent: "#b4506e",
+      core: "#f2dce4",
       marks: [
-        [".o.", "o.o", ".o."],
-        [".o.", "o.o"],
-        ["o.o", ".o."],
+        [".o.", "o*o", ".o."],
+        [".o.", "o*o"],
+        ["o*o", ".o."],
       ],
     },
   },
