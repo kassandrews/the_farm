@@ -65,9 +65,12 @@ export const TUFTS_DEFAULT: TuftShape[] = ["cluster", "cluster", "blades"];
  *  - `shard`   — narrow, tall and stepped. Reads as something that grew rather
  *                than something that fell, which is why it belongs to the far
  *                country and nowhere near town.
+ *  - `dome`    — the big one: a rounded whaleback, wider than anything else here
+ *                and half again the width of a boulder. Not a bigger rock but a
+ *                DIFFERENT one — what you step around rather than over.
  *
  *  Weights are repetition, same as `tufts`. */
-export type StoneShape = "boulder" | "crag" | "broken" | "slab" | "shard";
+export type StoneShape = "boulder" | "crag" | "broken" | "slab" | "shard" | "dome";
 
 /** How the mushrooms here are BUILT — not which species they are.
  *
@@ -4264,7 +4267,18 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // and it would be strange if it were a different colour. At the old #cbccc2
     // it came out (170,168,161) — the one warm-OLIVE thing left on the field once
     // the ground stopped being olive, and warm-olive is the fault, not the warmth.
-    stone: { tint: { color: "#c9cbd0", amount: 0.46 }, shapes: ["slab", "slab", "boulder"] },
+    //
+    // AND THE ROUND ONE IS A DOME NOW, WHICH THE NOTE ABOVE WAS ALREADY ASKING
+    // FOR. "Domes and sheets" was written here while the list said `boulder`, and
+    // a boulder is the ORDINARY stone — the same silhouette the meadow has, ten
+    // pixels wide, which on the ground read as a scatter of pebbles in the one
+    // region whose whole claim is that the rock IS the ground. The sheets said
+    // that and the loose stone quietly argued with them.
+    //
+    // Still TWO SHAPES, which is the paragraph above's count and it is kept: the
+    // dome replaces the boulder rather than joining it. One in three, because at
+    // fourteen pixels this is a thing you come across and not the floor.
+    stone: { tint: { color: "#c9cbd0", amount: 0.46 }, shapes: ["slab", "slab", "dome"] },
     // THE ROW THE REGION IS ACTUALLY FOR. Without this the granite photographed
     // as a rocky meadow — pale green turf with a lot of stones lying on it, which
     // is the scrub's sentence in a cooler colour and not "mostly rock" at all.
@@ -4381,6 +4395,63 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         ["oo", "o."], // chips off the sheet
         [".o", "oo"],
         ["xx.", "xxx"], // a cushion plant in a joint
+      ],
+    },
+    // PUSSYPAWS — Calyptridium umbellatum, and it is the plant this region has
+    // been describing for as long as it has had a `tufts` row. "A tuft in a rock
+    // joint grows as a cushion and not as a stand of grass" is a description of
+    // this species: a flat rosette pressed to the gravel with a few rose puffs
+    // lying out around it, growing in decomposed granite where nothing else will.
+    // The kit above already draws the cushion. This is the fortnight it flowers.
+    //
+    // ONE SEASON, AND THAT IS THE WHOLE STATEMENT. Every other region that
+    // flowers gets two or three, and the meadow's clover is there all year. A
+    // region with exactly one flowering month is saying the year is short up
+    // here, which nothing else in the file says and which no amount of grey
+    // could — the granite reads as bare in April and bare in October because it
+    // IS, and the summer is the one time that is a fact about the season rather
+    // than about the place.
+    //
+    // IT HAS NO STEM, WHICH IS THE CONTINUITY WORTH HAVING. Every silhouette this
+    // region owns lies down — two rock shapes, both flat, "not one sharp
+    // silhouette in the list" — and a flower on a wire would be the only vertical
+    // thing on the ground here. Pussypaws genuinely has none: the puffs lie ON
+    // the grit.
+    //
+    // AND SO IT IS ALL `o`, WHICH IS THE SECOND DRAFT AND A BUG REPORT. The first
+    // put an `x` at the centre for the rosette, and `x` with no `stem` override
+    // takes the REGION'S CANOPY (§DecorKit.stem) — which here is #3b4e47, the
+    // Jeffrey pine's dusty blue-green. Every flower came out with a dark pine
+    // pixel in the middle of it: the only saturated green in a region whose whole
+    // colour argument is that it has none, reading at that size as a hole rather
+    // than as a leaf. It also drew a stalk, three lines under a note saying this
+    // plant has not got one.
+    //
+    // The rosette was already on screen anyway. `decor`'s third mark is the
+    // cushion, drawn all year in the same cells' neighbourhood, so the flowering
+    // kit only ever had to add what flowering ADDS. Puffs around an empty centre,
+    // which is also what stops them reading as the grey chips above: same size,
+    // but a chip is a solid pair of pixels and this is a ring.
+    //
+    // DARKER THAN THE SHEET, not merely pinker — the birches' harebell learned
+    // this and the lesson is worse here, because a bloom on this row lands on
+    // stone at luma 190 as often as on turf at 165. #c4607c measures 129: sixty
+    // under a sheet and thirty-six under the turf, so it reads on both grounds
+    // rather than on the softer one only. A pale pink — which is what the flower
+    // is at the end of its month — would have been invisible on the rock, and the
+    // rock is where it grows.
+    bloom: {
+      season: "summer",
+      // The sparsest bloom in the file, and it does not need to be otherwise: an
+      // empty ground shows a mark from much further off than a busy one, and this
+      // is the emptiest there is. The year-round kit is 0.055 and this sits just
+      // under it — what flowers here is not more than what is here.
+      density: 0.05,
+      accent: "#c4607c",
+      marks: [
+        [".o.", "o.o", ".o."],
+        [".o.", "o.o"],
+        ["o.o", ".o."],
       ],
     },
   },

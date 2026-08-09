@@ -9848,6 +9848,52 @@ the real renderer, the real palette.
 Both `--when winter` and the far-region search were used in this pass; the giants
 are not on every seed, which the page says rather than drawing the wrong tree.
 
+## The granite goes grey, gets a dome, and flowers once (9 Aug 2026)
+
+Asked why the rock looked a little green, and the photograph agreed: the turf
+measured (158,162,142) — green channel highest, blue twenty under, which is
+olive, and olive over turf reads as green however little of it there is. The
+whole family was grey-GREEN and had been since the row was written.
+
+### Settled here, don't relitigate
+
+- **Rock does not get greener, and that is a rule about the MIDDLE of the region
+  as well as its border.** `edge: "outcrop"` already said it about the seam. The
+  five colours now say it about the ground: `ground`, `tuft`, both `sheet` inks
+  and `decor.accent`, which was the sheet's old olive left behind on marks the
+  kit calls "chips off the sheet".
+- **The tint leans blue over green to cancel a leak, not to be cool.** `ground`
+  sits at `amount: 0.95` and what gets past it is grass at `#8bbf5a`, which
+  arrives green. Blue a hair above green in the DEF is what lands neutral on the
+  SCREEN. The `sheet` inks are at `amount: 1` and therefore state the answer
+  flat with no lean — copying the ground's lean there would be a real cool cast
+  rather than a correction. If you ever change `sheet.ground.amount` off 1, the
+  lean has to come back with it.
+- **Warm, by red only.** Dead neutral photographed as overcast — battleship, on
+  the region whose own note is "high open country with the light full on it".
+  Four points of red back in lands feldspar's pink-grey. Warmth by dropping
+  BLUE is the yellow axis, which is how the row got to sage in the first place;
+  that direction is closed.
+- **A `dome` is a different rock, not a bigger one.** New in `ROCK_SHAPES`,
+  fourteen pixels wide on a sixteen pixel tile — the only stone that fills the
+  ground it stands on. It is safe at that width because two rocks may never
+  share an edge (`rockIsLoneliest`); diagonals are legal and are sixteen apart
+  on both axes. Every other shape in that table was sized under a caution that
+  turns out not to apply, so a future big shape does not need to re-derive this.
+  The granite draws `["slab", "slab", "dome"]` — still two shapes, which is the
+  row's own count, and `rocks: 4.5` was left alone because on screen the mix
+  does not crowd.
+- **One flowering season is the point, not a shortage of ideas.** Pussypaws, in
+  summer, and nothing the rest of the year. Every other blooming region gets two
+  or three and the meadow's clover is there all year; a region that flowers for
+  one month is the only thing in the file that says the year is short up here.
+- **A bloom's `x` takes the region's CANOPY.** Caught on screen and worth
+  writing down because the field's default is invisible in the table: the first
+  cut put an `x` at the flower's centre for the rosette and every mark came out
+  with a dark pine-green pixel in it — the one saturated green in a region built
+  on having none. The kit is all `o` now. Reach for `stem` or drop the `x`
+  whenever a kit's plant is not the colour of the tree above it.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

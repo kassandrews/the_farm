@@ -533,6 +533,20 @@ const ROCK_SHAPES: Record<
   // A narrow flat-topped column was tried too and came out a HEADSTONE, the
   // failure CUBE_H already records for the cube.
   shard: { rows: [2, 2, 3, 3] },
+  // A DOME is the big one, and the reason it can be is that two rocks may never
+  // share an edge — `rockIsLoneliest`, with `sim/biome.test.ts` §"rocks never
+  // touch" holding it. Diagonals are legal and are sixteen pixels apart on BOTH
+  // axes, so at fourteen wide and five tall a pair of these still cannot meet.
+  // Every other shape here was sized under a caution that turns out not to
+  // apply.
+  //
+  // FOURTEEN WIDE ON A SIXTEEN PIXEL TILE, which is the whole point: this is the
+  // only stone in the game that fills the ground it stands on. Half again a
+  // boulder's width and two rows shallower, so it reads as a whaleback the
+  // ground pushed up rather than as a boulder somebody scaled — the failure the
+  // shard's four attempts above record, where a shape that only grew turned into
+  // a monument.
+  dome: { rows: [4, 6, 7, 7, 6] },
 };
 
 /** The mushrooms, drawn rather than generated — same house style as ROCK_SHAPES
