@@ -4373,7 +4373,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // other thing on screen.
     decor: {
       density: 0.055,
-      accent: "#c6c7bc",
+      // The sheet's own colour, because that is what the chips are chips OF —
+      // so it moves when `sheet.ground` moves, and it was left behind olive at
+      // #c6c7bc when the region went grey.
+      accent: "#c5c3c1",
       marks: [
         ["oo", "o."], // chips off the sheet
         [".o", "oo"],
