@@ -10006,10 +10006,63 @@ all three**, standing in the snow.
   Winter is the sparsest because the picture that season already makes is the
   grass itself out of the white (`stubble` 0.38, the highest in the file); these
   are what is left among it, not a fourth flowering.
+- **No lopsided mark, in this kit or any other.** The coneflower shipped with a
+  third mark whose rays were on one side only, on the argument that a stand of
+  these is never symmetrical. On screen it does not read as a flower leaning, it
+  reads as a flower with a petal MISSING — damage rather than variety, which is
+  the meadow's lit-clover finding arrived at from a different direction. A plant
+  may differ from its neighbour in height, in age and in how far its rays have
+  dropped. It may not differ by being broken. The third mark is an older plant
+  whose cone has drawn out instead.
 - **The region has trees, and the question comes up every time.** `trees: 0.04`
   — a lone bur oak, one per screen and a half by design, so a given frame often
   has none. It is not a shrubland; it has three scales of plant (tussock, bush,
   tree) and that is still more than any other row in the file.
+
+## The cherry gets its bean back (9 Aug 2026)
+
+Reported as "the canopy used to be almost bean shaped and super cute, and that
+got messed up when we boosted tree size" — and the history says exactly that.
+Before 2 Aug the crown was `[4, 7, 8, 8, 8, 8, 8, 8, 8, 7, 6]`: eleven rows,
+tapered at BOTH ends, bottom three notched, wider than it was tall. "Trees stand
+up" resampled every region's crown to the new height and this one came out
+`[5, 7, 8 ×15, 7]` — **the bottom taper flattened into the middle**, so the crown
+ran full width from its third row to its last. What shipped for a week was a
+pink box with the corners off.
+
+The row's own comment predicted it in as many words — *"at fourteen rows the same
+16px of width came out as a tall pink box with a slot cut in it. Wide is a ratio,
+not a number"* — and nobody read it, because the change came from a resample
+rather than from an author.
+
+### Settled here, don't relitigate
+
+- **A crown may not exceed 8 half-widths, so "wider" was never on the table.**
+  `render/palette.test.ts`: past a tile wide a tree draws over its neighbours'
+  trunks, and this region plants in close rows. The ratio can therefore only be
+  recovered by making the crown SHORTER — and since the tree's height is
+  `rows + trunkHeight - overlap`, every crown row spent on the bean comes back
+  as bare bole. That trade is the whole decision.
+- **Four candidates, photographed, and the BIG crown won.** `tools/tree-options.ts`
+  carried the pre-boost crown verbatim on a long stem, two shorter fatter beans,
+  and the proper resample; all four held the tree at its shipped height. B, D and
+  E all read as an orchard tree with a clear stem — correct for a cherry
+  generally, wrong for this region's one enormous flowering thing. C keeps the
+  mass and gets the outline back by tapering, which is what was actually missing.
+- **Five gapped rows, not three, and the number is proportional rather than
+  chosen.** Three of eleven rows was a bit over a quarter of the old crown; three
+  of eighteen is a sixth, and a dip that shallow on a crown this tall is a slot
+  rather than an underside.
+- **`crownOverlap` moves with `crownGaps`, always.** A gap is only legal on a row
+  standing beside the trunk — anywhere else it is a hole punched in the foliage,
+  and `render/palette.test.ts` checks precisely that. Five notched rows needs
+  five rows of overlap, which costs the tree two pixels of height. That is the
+  whole price of the shape.
+- **The method: a resample is not an author.** Every other region's crown went
+  through the same 2 Aug stretch, and this is the first one anybody has looked at
+  since. If a row's silhouette has a note explaining what its proportions are
+  FOR, that note is a test the resample was never run against — worth re-reading
+  the other rows' notes before assuming they survived it.
 
 ## Known gaps and loose ends
 

@@ -239,4 +239,75 @@ export const OPTIONS: Record<string, { note: string; forms: TreeShape[] }> = {
       },
     ],
   },
+
+  // --- The cherry: GETTING ITS BEAN BACK -------------------------------------
+  //
+  // Reported as "the canopy used to be almost bean shaped and super cute, and
+  // that got messed up when we boosted tree size" — which the history confirms
+  // exactly. Before 8 Aug the crown was `[4, 7, 8, 8, 8, 8, 8, 8, 8, 7, 6]`:
+  // eleven rows, sixteen pixels wide, tapered at BOTH ends, with the bottom
+  // three gapped so the underside was concave. Wider than it was tall, with two
+  // lobes hanging either side of the trunk. A bean.
+  //
+  // "Trees stand up" resampled every region's crown to the new height, and this
+  // row came out `[5, 7, 8 ×15, 7]` — the taper at the bottom simply gone. What
+  // is on screen now is a pink box with the corners off, which is the failure the
+  // row's own note in content/biomes.ts warns about in as many words ("at
+  // fourteen rows the same 16px of width came out as a tall pink box with a slot
+  // cut in it. Wide is a ratio, not a number").
+  //
+  // THE CONSTRAINT THAT MAKES THIS A CHOICE RATHER THAN A REVERT: a crown may
+  // never exceed 8 half-widths (render/palette.test.ts — past a tile wide a tree
+  // draws over its neighbours' trunks, and this region plants in close rows). So
+  // "wider" is unavailable and the ratio can only be got back by making the crown
+  // SHORTER. Every candidate below therefore trades crown rows for bare stem, and
+  // what is really being chosen between is how much bole a cherry may show before
+  // it reads as a lollipop.
+  //
+  // B–E all keep the tree's total height at 31px, which is what "keep the current
+  // size" means: rows + trunkHeight - overlap, the same sum the renderer takes
+  // the sprite's height from.
+  //
+  // SETTLED: C WON and is now form zero in content/biomes.ts — the old profile
+  // resampled properly over the full eighteen rows, keeping the big crown. The
+  // three that lost are kept here because they all say the same useful thing: a
+  // rounder outline at this width can only be bought with crown rows, and every
+  // row spent shows up as bare bole. B, D and E are that trade at three prices,
+  // and all three read as an orchard tree with a clear stem rather than as this
+  // region's one enormous flowering thing.
+  blossom: {
+    note: "cherry — settled: C, the old profile at the new height",
+    forms: [
+      // B — THE OLD CROWN VERBATIM, on a stem long enough to hold the height.
+      // The eleven rows that shipped before the boost, unchanged, with the bare
+      // stem carrying the other twenty. The purest answer to "go back to that"
+      // and the one most at risk of the lollipop.
+      {
+        rows: [4, 7, 8, 8, 8, 8, 8, 8, 8, 7, 6],
+        gaps: [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
+        overlap: 3,
+        trunkHeight: 23,
+      },
+      // (C shipped — it is form zero in content/biomes.ts now, and the page
+      // always draws form zero as A, so it is not repeated here.)
+      // D — THE MIDDLE. Thirteen rows: wider than it is tall by a little, a full
+      // taper at both ends, and the notch four rows deep so the two lobes are
+      // unmistakable at a glance rather than on inspection.
+      {
+        rows: [4, 6, 7, 8, 8, 8, 8, 8, 8, 8, 7, 7, 6],
+        gaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+        overlap: 4,
+        trunkHeight: 22,
+      },
+      // E — THE FATTEST BEAN. Twelve rows, held at full width for over half of
+      // them and dropping fast at both ends, with the deepest underside here.
+      // The cutest of the four and the one furthest from a tree.
+      {
+        rows: [3, 6, 8, 8, 8, 8, 8, 8, 8, 8, 7, 5],
+        gaps: [0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2],
+        overlap: 4,
+        trunkHeight: 23,
+      },
+    ],
+  },
 };

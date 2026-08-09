@@ -4806,9 +4806,19 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
           ["..*..", ".***.", "oo.oo", "o...o", "..x..", "..x..", "..x.."],
           // Younger: the rays have not dropped away from the cone yet.
           ["..*..", ".***.", "oo.oo", "..x..", "..x.."],
-          // Lopsided, because a stand of these is never symmetrical and three
-          // marks differing only in height are one mark. One ray has gone.
-          ["..*..", ".***.", "oo.o.", "o....", "..x..", "..x.."],
+          // OLDER: THE CONE HAS DRAWN OUT, which is what a coneflower's disc
+          // actually does as the season goes on — it starts as a boss and ends
+          // as a thumb, and by September it is the only part of the plant left.
+          //
+          // NOT A LOPSIDED ONE, and that was the first attempt at a third mark:
+          // rays down one side only, on the argument that a stand of these is
+          // never symmetrical. On screen it does not read as a flower leaning,
+          // it reads as a flower with a petal MISSING — damage rather than
+          // variety, which is the same trap the meadow's lit clover leaflets
+          // fell into. A plant may differ from its neighbour in height, in age
+          // and in how far its rays have dropped; it may not differ by being
+          // broken.
+          ["..*..", "..*..", ".***.", "oo.oo", "..x..", "..x.."],
         ],
       },
       {
@@ -5688,7 +5698,24 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // Also the SHORTEST broadleaf here, which is half of how it reads wide: at
     // fourteen rows the same 16px of width came out as a tall pink box with a
     // slot cut in it. Wide is a ratio, not a number.
-    crownRows: [5, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7],
+    //
+    // AND THE SIZE BOOST TOOK THE BEAN AWAY, WHICH THE SENTENCE ABOVE PREDICTED
+    // AND NOBODY READ. "Trees stand up" (2 Aug) resampled every region's crown to
+    // the new height and this row came out `[5, 7, 8 ×15, 7]` — the taper at the
+    // BOTTOM flattened into the middle, so the crown ran full width from its
+    // third row to its last and the underside had nowhere to hang from. What
+    // shipped for a week was the tall pink box this comment warns about, arrived
+    // at by a resample rather than by an author.
+    //
+    // THE PROFILE IS BACK AND THE HEIGHT IS NOT REDUCED. The old eleven-row curve
+    // stretched properly over eighteen: taper in at the top, full width through
+    // the middle, and — the part that was lost — taper back out at the bottom, so
+    // the crown's sides come DOWN and IN to meet the notch instead of stopping
+    // square. Photographed against three shorter, fatter beans on `/trees.html`
+    // (see tools/tree-options.ts); the big crown won, because at 8 half-widths
+    // the only way to buy a rounder outline is to spend crown rows on bare bole,
+    // and a cherry with a long clear stem is an orchard tree rather than this one.
+    crownRows: [4, 6, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 6],
     // NO GROUND BLOOM, and this is the one region that was offered one and gives
     // it back. Fallen petals closed a tidy loop — the row has had petals falling
     // through the AIR since it was written, with nothing on the ground for them
@@ -5700,8 +5727,17 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // The bare ground is what the blossom is seen against. Note also that these
     // trees flower all year (see the motes below), so a spring-only carpet under
     // a permanently blooming orchard was never a season anybody could have read.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
-    crownOverlap: 3,
+    // FIVE GAPPED ROWS, not three, and the number is proportional rather than
+    // chosen: the pre-boost tree notched three of eleven rows, which is a bit
+    // over a quarter of the crown, and three of eighteen is a sixth. A dip that
+    // shallow on a crown this tall is a slot rather than an underside.
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+    // AND THE OVERLAP GOES WITH IT, because a gap is only legal on a row that
+    // stands beside the trunk (§crownGaps — anywhere else it is a hole punched
+    // in the foliage, and render/palette.test.ts checks exactly this). Five rows
+    // notched needs five rows alongside the bark. It costs the tree two pixels
+    // of height, which is the whole price of the shape.
+    crownOverlap: 5,
     // LAWN DAISIES, AND NOT ONE PIXEL OF PINK. The row that refused a ground
     // bloom (see the note above `crownGaps`) gets its kit on the terms the
     // refusal set. What was refused was petals — the crown's own colour doing a
