@@ -9944,6 +9944,73 @@ argument from the key light, and `sim/time.test.ts` asserted
   at a glance, measure it — mean ground luma in a box either side of each trunk
   base settled this in one command.
 
+## The long grass flowers all year (9 Aug 2026)
+
+The region had one bloom — asters, in October — and three empty seasons. Four
+screenshots of one spot with only the clock moved is what settled it: **spring
+and summer were the same photograph as each other**, grass and bushes and
+waxcaps, the only difference being a few strays bleeding across the blend from
+the meadow next door. A region with no trees to turn, no rock to catch light and
+no water in it has the ground and nothing but the ground, so a season with no
+bloom is a season the row cannot express at all.
+
+It now has four, which no other row here does. Spring: **prairie smoke**, nodding
+dusky-rose bells. Summer: the **pale coneflower** the row started as, before the
+asters took its month. Autumn: the asters, untouched. Winter: **what is left of
+all three**, standing in the snow.
+
+### Settled here, don't relitigate
+
+- **The winter entry is in `bloom`, not `decor`, and that is the whole trick.**
+  The year-round kit is thinned under snow (`stubble`, and the renderer's
+  `buriedKit`) because clover and litter are what a snowfall COVERS. A seed head
+  is the opposite — it is what you can still see when everything else is buried,
+  and it is the only reason a winter field is worth crossing. So it goes in the
+  slot nothing thins. The renderer's old note there said "nothing flowers in
+  January", which was a true sentence standing in for a rule; the rule is that
+  this slot draws what stands ABOVE the snow.
+- **Dark ink, because the snow is `#e7ebe5`.** Every other bloom in the file is
+  pale or bright and every one of them would vanish. The winter kit is the only
+  set of marks here chosen to read against white rather than against green.
+- **A head on a bare stalk is a CRUCIFIX, and it took two screenshots to see it
+  twice.** Both winter marks were drawn as a small head over a long stem — a
+  three-wide bar with a pixel above and below — and a field of them is a war
+  cemetery. It happened again from the other direction with a diamond, which is
+  a plus sign with a foot. The fix is proportion, not shape: **heads are solid
+  blocks two or three rows deep, and no row is narrower than the one above it
+  except at the very bottom.** Dead vegetation is top-heavy; a cross cannot be.
+- **A mushroom is wide on top, so a flower here must not be.** The coneflower's
+  first cut was the aster upside down — a rust block with two pale pixels at its
+  shoulders — and it photographed as a brown cap on a stalk, in the one region
+  that actually grows a brown cap on a stalk (its waxcaps). Two passes fixed it:
+  the cone became a narrow peak, and the rays became **an unbroken pale row
+  WIDER than the rust above it**. Two pale pixels tucked under a cap are a
+  mushroom's stem-and-ring; four in a row under a peak are a skirt.
+- **Pale, not purple, and that is why it is *Echinacea pallida*.** A region may
+  not have the same colour twice in one year and expect anybody to notice the
+  second one. The autumn asters own purple here, so the summer coneflower is the
+  tallgrass species with cream rays — which is also the honest one for this
+  ground.
+- **Spring hangs, which is why it is prairie smoke and not a pasqueflower.** The
+  pasqueflower is the other honest May answer out here and it is a purple
+  upright head one season from the asters — the same objection the asters
+  themselves were written to clear. A nodding head puts its ink BESIDE the stem,
+  which is a silhouette free at three pixels and one only the birches' harebell
+  otherwise has.
+- **`core` above `accent`, once.** Prairie smoke's calyx is maroon and the petal
+  tips inside it are rose, so this is the one kit in the file with its dark ink
+  over its bright one. It is the one flower whose face points at the ground.
+- **Densities: 0.14 spring, 0.11 summer, 0.11 autumn, 0.10 winter.** Spring is
+  the most generous because a prairie in May is short and green with nothing
+  standing in it yet — the one month where the flowers may BE the ground cover.
+  Winter is the sparsest because the picture that season already makes is the
+  grass itself out of the white (`stubble` 0.38, the highest in the file); these
+  are what is left among it, not a fourth flowering.
+- **The region has trees, and the question comes up every time.** `trees: 0.04`
+  — a lone bur oak, one per screen and a half by design, so a given frame often
+  has none. It is not a shrubland; it has three scales of plant (tussock, bush,
+  tree) and that is still more than any other row in the file.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

@@ -4679,31 +4679,233 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         ["x.....x", ".x...x.", ".x.x.x.", "..xxx.."],
       ],
     },
-    // ASTERS, IN AUTUMN — and the season is the one number here that changed when
-    // the bushes arrived. As a coneflower it was summer, which is true of a
-    // prairie and left autumn where it has always been: the only season with no
-    // signature in the whole file, carrying the largest crown swing in
-    // `seasons.ts` and a bare floor under it. Asters and goldenrod are what
-    // actually flowers on grassland in September and October, so the honest plant
-    // and the missing season turn out to be the same choice.
+    // SOMETHING IN FLOWER IN ALL FOUR MONTHS, WHICH NO OTHER ROW HERE HAS. The
+    // meadow's list stops at three and calls them the growing months; this one
+    // does not, and the fourth entry is the argument (see it, below).
     //
-    // PURPLE WITH A GOLD EYE, and both halves are forced. Yellow petals were the
-    // obvious pick and are unreadable on honey-coloured ground; and the scrub
-    // already owns a magenta head on a stem, so this needs a silhouette of its
-    // own. An aster's petals are narrow and many, radiating flat from a small
-    // bright centre — so this is the only flower in the file drawn as a ring of
-    // separate points with a lit middle, and it reads as a starburst at three
-    // pixels, which is what the plant is named for.
-    bloom: {
-      season: "autumn",
-      density: 0.11,
-      accent: "#b678c0",
-      core: "#e8c04a",
-      marks: [
-        ["o.o.o", ".o*o.", "o.o.o", "..x..", "..x.."],
-        [".o.o.", "o.*.o", ".o.o.", "..x..", "..x.."],
-      ],
-    },
+    // IT WAS ONE KIT AND THREE EMPTY SEASONS, and the four seasonal screenshots
+    // are what settled it. Autumn was the picture everybody meant by this region
+    // — purple to the horizon — and spring and summer were the SAME PHOTOGRAPH AS
+    // EACH OTHER: grass, bushes, waxcaps, nothing else, the only difference being
+    // a few strays bleeding across the blend from the meadow next door. A region
+    // with no trees to turn, no rock to catch light and no water in it has the
+    // ground and nothing but the ground, so a season with no bloom in it is a
+    // season this row cannot express at all.
+    //
+    // ONE PLANT'S YEAR, NOT FOUR DECORATIONS, which is the rule the meadow's list
+    // found (its dandelion goes to a clock) and is worth more out here where
+    // there is nothing else to carry continuity. Smoke in May, coneflowers in
+    // August, asters in October, and what is left of all three standing in the
+    // snow — the same field getting on with its year, four times.
+    bloom: [
+      {
+        // SPRING: PRAIRIE SMOKE. Geum triflorum, which is the first thing up on
+        // old grassland and is named twice over for what this row is — smoke for
+        // the plumes it goes to, three-flowered for the nodding heads it starts
+        // as.
+        //
+        // A FLOWER THAT HANGS, and it is the only reason this plant beat the
+        // pasqueflower (the other honest May answer out here). Everything on this
+        // ground but the birches' harebell is an upright head on a stalk, and the
+        // pasqueflower would have been a purple upright head one season away from
+        // the asters — which is the same objection the asters themselves were
+        // written to clear. A head that nods is a silhouette free at three
+        // pixels: the ink sits BESIDE the stem rather than on top of it, and the
+        // eye reads the weight before it reads the colour.
+        //
+        // DARK ABOVE, PALE BELOW, which is the drawing and is also the plant. A
+        // prairie smoke's calyx is a deep maroon and the petal tips inside it are
+        // dusty rose, so `core` is on TOP of `accent` here — the one kit in the
+        // file that puts its dark ink above its bright one, because it is the one
+        // flower whose face is pointed at the ground.
+        //
+        // NOT THE GRANITE'S PINK, and the distance is worth stating since both
+        // are pink flowers in far country: that is a moss campion, a flat 3x3
+        // rosette pressed to bare rock in July, and this is a hanging bell on a
+        // stalk in April. Different shape, different month, and nobody walks from
+        // one to the other.
+        season: "spring",
+        // The most generous bloom out here, and the season is why: a prairie in
+        // May is short and green and has nothing standing in it yet, so this is
+        // the one month where the flowers are allowed to BE the ground cover.
+        density: 0.14,
+        accent: "#d18ea0",
+        core: "#8e4a5e",
+        marks: [
+          // THREE, WHICH IS THE PLANT'S OWN NAME — and the middle one hangs lower
+          // so the branchlets converge on the stem instead of running across it
+          // as a bar. Three heads level would be a washing line.
+          ["**...**", "oo.*.oo", ".x.o.x.", "..xxx..", "...x...", "...x..."],
+          // Two, and shorter. Most of them are this.
+          ["**.**", "oo.oo", ".xxx.", "..x..", "..x.."],
+          // One, nodding off the side of a tall stalk — the young one, and the
+          // clearest statement of the hang: the head is not over the stem at all.
+          ["**.", "oo.", ".x.", ".x.", ".x."],
+        ],
+      },
+      {
+        // SUMMER: THE CONEFLOWER, and it is the plant this row started as. It was
+        // moved off to autumn when the asters arrived, on the grounds that autumn
+        // was the season with no signature anywhere in the file — a good trade
+        // that left summer holding the bill, and this is the bill being paid.
+        //
+        // PALE, BECAUSE PURPLE IS SPOKEN FOR TWO MONTHS LATER. Echinacea pallida
+        // rather than purpurea, which is not a dodge: it is the coneflower of the
+        // actual tallgrass prairie, its rays are cream to the point of white, and
+        // a region may not have the same colour twice in one year and expect
+        // anybody to notice the second one.
+        //
+        // THE RAYS DROOP, and that is what keeps it clear of the aster. Both are
+        // daisies and at five pixels a daisy is a daisy; what separates these is
+        // that an aster's petals radiate FLAT from a small bright middle, and a
+        // pale coneflower's sweep DOWN off a cone that stands proud above them.
+        // Drawn as a solid ring the two months would be one flower recoloured.
+        //
+        // THE CONE IS A THUMB, NOT A CAP, AND THE FIRST CUT WAS A MUSHROOM. It
+        // was drawn as the aster's shape upside down — a three-wide block of
+        // rust with two pale pixels at its shoulders — and it photographed as a
+        // brown cap on a stalk, in the one region that actually grows a brown
+        // cap on a stalk (its waxcaps, four rows up). What fixes it is the
+        // PROPORTION rather than the colour: a mushroom is wide on top and
+        // narrow at the bottom, so this has to be the other way round. The cone
+        // is one pixel wide and three tall, and the rays widen as they fall —
+        // narrow above, broad below, which no fungus is.
+        //
+        // AND IT STANDS TALL. Three rows of stem, the same reach the meadow's
+        // rudbeckia has for the same reason: this is the plant you see ACROSS a
+        // field in August, over the top of grass that is knee-high by then.
+        season: "summer",
+        // Sparser than either neighbour in the list, and it is a size argument
+        // rather than a restraint one: each of these is a seven-pixel plant on a
+        // three-row stalk, where an aster is a scatter of six close to the
+        // ground. Big things want counting down or the field reads as planted.
+        density: 0.11,
+        accent: "#ece3cd",
+        core: "#9a5c2e",
+        marks: [
+          // THE RAYS FALL DIAGONALLY, one pixel out per row, because two points
+          // with a gap between them are two specks — it is the diagonal contact
+          // that makes the eye join them into a sweep.
+          //
+          // AND THE CONE HAS A SHOULDER ROW, which is the correction the first
+          // shuttlecock wanted. A one-pixel column of rust with two pale specks
+          // beside it is not a flower at any distance — it photographed as a
+          // small pale ARROW, thin enough that the region read as unflowered
+          // again from more than a few tiles off. Three rust pixels across the
+          // top gives the plant a body without giving it a cap: what makes a cap
+          // is a wide row with a NARROW one under it, and every row under this
+          // one is wider.
+          //
+          // AND THE SKIRT IS A ROW, NOT TWO SHOULDERS. Two pale pixels tucked
+          // either side of the cone are the same two pixels a waxcap has under
+          // its cap, in a region that grows waxcaps — the first pass with a body
+          // on it came out as a small toadstool for exactly that reason. Four
+          // pale pixels in an unbroken row under the rust, wider than the rust
+          // is, is the thing no mushroom in this game has: a cap is the widest
+          // part of a mushroom, and here it is not the widest part of anything.
+          ["..*..", ".***.", "oo.oo", "o...o", "..x..", "..x..", "..x.."],
+          // Younger: the rays have not dropped away from the cone yet.
+          ["..*..", ".***.", "oo.oo", "..x..", "..x.."],
+          // Lopsided, because a stand of these is never symmetrical and three
+          // marks differing only in height are one mark. One ray has gone.
+          ["..*..", ".***.", "oo.o.", "o....", "..x..", "..x.."],
+        ],
+      },
+      {
+        // ASTERS, IN AUTUMN — and the season is the one number here that changed when
+        // the bushes arrived. As a coneflower it was summer, which is true of a
+        // prairie and left autumn where it has always been: the only season with no
+        // signature in the whole file, carrying the largest crown swing in
+        // `seasons.ts` and a bare floor under it. Asters and goldenrod are what
+        // actually flowers on grassland in September and October, so the honest plant
+        // and the missing season turn out to be the same choice.
+        //
+        // PURPLE WITH A GOLD EYE, and both halves are forced. Yellow petals were the
+        // obvious pick and are unreadable on honey-coloured ground; and the scrub
+        // already owns a magenta head on a stem, so this needs a silhouette of its
+        // own. An aster's petals are narrow and many, radiating flat from a small
+        // bright centre — so this is the only flower in the file drawn as a ring of
+        // separate points with a lit middle, and it reads as a starburst at three
+        // pixels, which is what the plant is named for.
+        season: "autumn",
+        density: 0.11,
+        accent: "#b678c0",
+        core: "#e8c04a",
+        marks: [
+          ["o.o.o", ".o*o.", "o.o.o", "..x..", "..x.."],
+          [".o.o.", "o.*.o", ".o.o.", "..x..", "..x.."],
+        ],
+      },
+      {
+        // WINTER, AND NOTHING IS IN FLOWER — which is the fact this entry is
+        // built out of rather than the objection to it. Nothing flowers on a
+        // snowy grassland; what a prairie has in January is LAST YEAR, standing
+        // up. Bare cones, split pods and aster heads gone to seed, all of them
+        // the three kits above three months on.
+        //
+        // WHY IT IS IN `bloom` RATHER THAN IN `decor`. The year-round kit is
+        // thinned under snow (§stubble, and the renderer's `buriedKit`) because
+        // clover and needle litter are things a snowfall COVERS. These are the
+        // opposite: a seed head is what you can still see when everything else is
+        // buried, and it is the entire reason anybody looks at a winter field. So
+        // it belongs in the slot that is not thinned — and the seasonal slot is
+        // the honest place for it anyway, since it is three months of the year
+        // and not twelve.
+        //
+        // DARK, WHICH IS THE ONE HARD CONSTRAINT. Snow here lands near #e7ebe5
+        // and every other bloom in this list is pale or bright; on white they
+        // would be invisible and the season would have gained nothing. These are
+        // drawn in a dead-stem brown with a rustier ink inside the split pods,
+        // and they are the only marks in the file chosen for reading against
+        // WHITE rather than against green.
+        //
+        // AND THE STEM IS STATED, for the same reason the meadow's rudbeckia
+        // states its own: a stem left to the region takes the canopy ink, and
+        // this canopy is a bush that HOLDS ITS GREEN all winter (see `crown`
+        // above). A green stalk under a dead seed head is a live plant wearing a
+        // corpse's head.
+        season: "winter",
+        // The sparsest of the four. The picture the season already makes is the
+        // grass itself standing out of the white (§stubble at 0.38, the highest
+        // in the file); these are what is left of the flowers among it, not a
+        // fourth flowering.
+        // A HEAD HAS TO BE A LUMP, AND THE FIRST CUT WAS A ROW OF CRUCIFIXES.
+        // Every mark here began as a small head on a long bare stalk — three
+        // pixels across, one above, one below — which is a PLUS SIGN on a post,
+        // and a field of them is a war cemetery. It is the deadpan this game
+        // does not do. Two changes fix it and both are about mass rather than
+        // about shape: the heads are solid blocks two or three rows deep, and
+        // the stalks are shorter than the heads are wide. Dead vegetation is
+        // top-heavy — that is why it falls over — and top-heavy is also the one
+        // proportion a cross can never have.
+        density: 0.1,
+        accent: "#6f5a43",
+        core: "#9c7a4e",
+        stem: "#8a7455",
+        marks: [
+          // THE CONEFLOWER'S CONE, stripped. It is the tallest thing here and the
+          // only one that survives at a glance, which is true of the plant: a
+          // coneflower's seed head stands all winter and is why the bird books
+          // tell you not to cut them back. A solid block tapering to a point,
+          // which is the summer thumb with the rays gone off it.
+          ["ooo", "ooo", ".o.", ".x.", ".x.", ".x."],
+          // A POD THAT HAS SPLIT, with the rust of the inside showing. The one
+          // place the second ink appears, so it reads as an opening rather than
+          // as a shading.
+          //
+          // A BLOCK, AND NOT A DIAMOND, which was the second crucifix and took a
+          // second screenshot to see. Drawn as a point above, a bar across and a
+          // point below it is a PLUS with a post under it — the exact shape the
+          // note above is about, arrived at from the other direction. Anything
+          // with a row narrower than the one over it grows a foot; the fix is
+          // that the head simply stops.
+          ["o*o", "ooo", ".x.", ".x."],
+          // TWO RATTLE PODS on one stalk — the spring smoke's nodding heads,
+          // come to this, and drawn in the same silhouette so the year closes.
+          ["oo.oo", "oo.oo", ".xxx.", "..x..", "..x.."],
+        ],
+      },
+    ],
     // SEED FLUFF, GOING ACROSS. The row this region is for: nothing else in the
     // game has air that TRAVELS (see MoteKit §blow), and a plain of grass with
     // still air over it is a photograph of a plain of grass.

@@ -2659,7 +2659,15 @@ export class Renderer {
           // makes. One number, scaled against the ordinary 0.38, so a mown common
           // loses nearly all of its and a grassland keeps all of its.
           //
-          // The bloom slot below needs no such rule: nothing flowers in January.
+          // THE BLOOM SLOT BELOW IS DELIBERATELY NOT THINNED, and it used to say
+          // "nothing flowers in January" — which stopped being the reason the day
+          // the long grass grew a winter kit. The rule that replaced it is better
+          // anyway: this slot is thinned by nothing because what goes in it for
+          // winter is what STANDS OUT OF the snow. Buried marks are the year-round
+          // kit's business (clover, litter, ferns); a seed head on a dead stalk is
+          // the one thing a snowfall leaves you, and burying it would delete the
+          // only picture the season has. A pale bloom in a winter slot would
+          // vanish on white, but that is a choice of ink and belongs to the row.
           const buriedKit =
             kdef?.snow && this.palette.season?.id === "winter"
               ? (kdef.stubble ?? 0.2) / 0.38
