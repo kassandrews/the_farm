@@ -4179,15 +4179,30 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // that there is little enough to fall, so this is the thinnest deadwood of
     // any region that has it at all.
     deadwood: 0.3,
-    // GREY-GREEN, AND MEASURED AGAINST THE TWO PALE ROWS IT COULD BE CONFUSED
-    // WITH. The birches land near (161,199,112) and the scrub near (181,194,114)
-    // — both light, both plainly grass. This lands near (163,174,143): the same
-    // brightness and almost no saturation left, which is what reads as thin turf
-    // over stone rather than as a meadow in the sun. Dropping the value instead
-    // was tried in the head and rejected: dark grey ground is the fen's move, and
+    // GREY, AND MEASURED AGAINST THE TWO PALE ROWS IT COULD BE CONFUSED WITH.
+    // The birches land near (161,199,112) and the scrub near (181,194,114) —
+    // both light, both plainly grass. This lands near (162,165,165): the same
+    // brightness with the saturation gone, which is what reads as thin turf over
+    // stone rather than as a meadow in the sun. Dropping the value instead was
+    // tried in the head and rejected: dark grey ground is the fen's move, and
     // this is high open country with the light full on it.
-    ground: { color: "#a8a79a", amount: 0.9 },
-    tuft: { color: "#b8b7a8", amount: 0.85 },
+    //
+    // IT WAS GREY-GREEN AND IT PHOTOGRAPHED AS SAGE. The old pair sat at
+    // (168,167,154) and (184,183,168) — a fifteen-point drop into blue, which is
+    // olive, and olive over turf is a hue the eye names as green however little
+    // of it there is. Measured off screen the ground came back (158,162,142):
+    // green channel highest, blue twenty under it, a moor rather than a dome.
+    //
+    // SO THE TINT LEANS THE OTHER WAY AND THE TURF UNDER IT WAS TURNED DOWN.
+    // Blue now sits a hair ABOVE green in these two, which looks wrong written
+    // out and is the point: the grass showing through is (139,191,90), and
+    // whatever gets past the tint arrives green. The lean cancels the leak
+    // instead of fighting it, and the amounts went up (0.9 → 0.95, 0.85 → 0.92)
+    // so there is less of it to cancel. Rock does not get greener — the same
+    // sentence the `edge` two dozen lines up is made of, said about the middle of
+    // the region rather than its border.
+    ground: { color: "#a3a4a9", amount: 0.95 },
+    tuft: { color: "#b3b4bb", amount: 0.92 },
     // AN ALPINE DOME IN JANUARY, which is the least surprising snow in the file:
     // this is bare rock at altitude with a courtesy of turf on it. Deep, and
     // laid OVER the region's grey rather than instead of it — granite under snow
@@ -4229,7 +4244,12 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // flat, with not one sharp silhouette in the list. Two shapes only, which is
     // fewer than any other region has, because a landscape scoured by one process
     // does not offer variety.
-    stone: { tint: { color: "#cbccc2", amount: 0.46 }, shapes: ["slab", "slab", "boulder"] },
+    // Neutral, with the region's own faint cool lean, and no leak to cancel —
+    // this one sits on stated greys (render/renderer.ts §rock) rather than on
+    // turf, so the tint says what it means. At the old #cbccc2 a lit boulder came
+    // out (170,168,161), which was the one warm-olive thing left on a grey field
+    // once the ground stopped being olive.
+    stone: { tint: { color: "#c9cbd0", amount: 0.46 }, shapes: ["slab", "slab", "boulder"] },
     // THE ROW THE REGION IS ACTUALLY FOR. Without this the granite photographed
     // as a rocky meadow — pale green turf with a lot of stones lying on it, which
     // is the scrub's sentence in a cooler colour and not "mostly rock" at all.
@@ -4241,8 +4261,10 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // stones' own colour rather than over it: a boulder sitting on a sheet has to
     // still read as a boulder, so the sheet stays the duller of the two.
     sheet: {
-      ground: { color: "#c6c7bc", amount: 1 },
-      tuft: { color: "#d0d1c6", amount: 1 },
+      // At amount 1 there is no turf under these, so they are the region's grey
+      // stated flat — same cool neutral as `ground`, twenty points up.
+      ground: { color: "#c1c3c7", amount: 1 },
+      tuft: { color: "#cbcdd1", amount: 1 },
       period: 33,
       from: 0.36,
       to: 0.7,
