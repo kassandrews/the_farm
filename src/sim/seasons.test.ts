@@ -165,7 +165,7 @@ describe("describeSeason", () => {
     const october = at(2026, 10, 3);
     expect(describeSeason(w, october).kind).toBe("season");
 
-    plant(w, 8, 8, "pumpkin", october);
+    plant(w, 4, 17, "pumpkin", october);
     const note = describeSeason(w, october);
     expect(note.kind).toBe("in_season_crop");
     expect(note.value).toBe("pumpkin");
@@ -175,7 +175,7 @@ describe("describeSeason", () => {
   it("ignores a planted crop whose month it isn't", () => {
     const w = freshWorld();
     const april = at(2026, 4, 3);
-    plant(w, 8, 8, "pumpkin", april);
+    plant(w, 4, 17, "pumpkin", april);
     expect(describeSeason(w, april).kind).toBe("season");
   });
 
@@ -183,8 +183,8 @@ describe("describeSeason", () => {
     // The line is "it's the month for these", which is as true of a sprout.
     const w = freshWorld();
     const july = at(2026, 7, 3);
-    plant(w, 8, 8, "tomato", july);
-    expect(w.crops["8,8"].stage).toBe(0);
+    plant(w, 4, 17, "tomato", july);
+    expect(w.crops["4,17"].stage).toBe(0);
     expect(describeSeason(w, july).kind).toBe("in_season_crop");
   });
 

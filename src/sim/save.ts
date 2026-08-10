@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 41;
+export const SCHEMA_VERSION = 42;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -1494,6 +1494,109 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
     return {
       ...raw,
       schemaVersion: 41,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
+      finishes: stamped.finishes ?? finishes,
+      garden: stamped.garden ?? raw.garden,
+      frozen,
+    };
+  },
+
+  /** v42 — a home comes off the square.
+   *
+   *  Prudence's house flanked the plaza's south-west corner, opposite the shop,
+   *  and a HOUSE ON THE SQUARE is the one building there with no business with
+   *  anybody else — plus a precedent that does not survive the town growing,
+   *  since commissions add houses and the square is what would get eaten. She
+   *  moves to the lane, east of it, with a spur to her door. Where she stood is
+   *  planted instead: the square is bounded by institutions on three sides and is
+   *  deliberately GREEN on the fourth.
+   *
+   *  Same shape as v37 and v40, and it inherits v40's harder question — the house
+   *  has stood on its old footprint since v7, so "there is a wall here" is the
+   *  normal case and whose it is has to be decided by exact comparison. Since the
+   *  new footprint is empty ground on any save reaching this rung, that check is
+   *  about the OLD one: if the player has repainted her walls or built inside
+   *  them, the house is left standing and no new one appears. They keep what they
+   *  made, which is the trade this ladder has made every time. */
+  41: (raw) => {
+    /** Where she stood at v41 — flanking the square. */
+    const V41_HOUSE = {
+      x0: -11,
+      y0: -2,
+      x1: -6,
+      y1: 2,
+      door: { x: -7, y: 2 },
+      finish: "pine",
+      furniture: [
+        { x: -10, y: -1, id: "bed" },
+        { x: -10, y: 1, id: "table" },
+        { x: -9, y: 0, id: "chair" },
+        { x: -8, y: -2, id: "shelf" },
+      ],
+    };
+
+    const overrides = { ...((raw.overrides ?? {}) as Record<string, number>) };
+    const build = { ...((raw.build ?? {}) as Record<string, { id: string; finish: string }>) };
+    const furniture = { ...((raw.furniture ?? {}) as Record<string, { id: string }>) };
+    const finishes = { ...((raw.finishes ?? {}) as Record<string, string>) };
+    const crops = (raw.crops ?? {}) as Record<string, unknown>;
+    const garden = (raw.garden ?? { plants: {} }) as { plants: Record<string, unknown> };
+    const frozen = { ...((raw.frozen ?? {}) as Record<string, unknown>) };
+
+    // Is the old house still exactly the house the town stamped? Anything else in
+    // it — a repaint, a shed built through the wall, a chair they carried in — and
+    // the pair is left alone.
+    const authored = new Set(V41_HOUSE.furniture.map((f) => `${f.x},${f.y}:${f.id}`));
+    let theirs = false;
+    for (let y = V41_HOUSE.y0; y <= V41_HOUSE.y1; y++) {
+      for (let x = V41_HOUSE.x0; x <= V41_HOUSE.x1; x++) {
+        const key = `${x},${y}`;
+        if (key in crops || key in garden.plants) theirs = true;
+        const piece = furniture[key];
+        if (piece && !authored.has(`${key}:${piece.id}`)) theirs = true;
+        const cell = build[key];
+        if (!cell) continue;
+        const ring =
+          x === V41_HOUSE.x0 ||
+          x === V41_HOUSE.x1 ||
+          y === V41_HOUSE.y0 ||
+          y === V41_HOUSE.y1;
+        if (!ring) {
+          theirs = true;
+          continue;
+        }
+        const isDoor = x === V41_HOUSE.door.x && y === V41_HOUSE.door.y;
+        if (cell.id !== (isDoor ? "door" : "wall") || cell.finish !== V41_HOUSE.finish) {
+          theirs = true;
+        }
+      }
+    }
+
+    if (!theirs) {
+      for (let y = V41_HOUSE.y0; y <= V41_HOUSE.y1; y++) {
+        for (let x = V41_HOUSE.x0; x <= V41_HOUSE.x1; x++) {
+          const key = `${x},${y}`;
+          delete overrides[key];
+          delete finishes[key];
+          const cell = build[key];
+          if (cell && (cell.id === "wall" || cell.id === "door" || cell.id === "window")) {
+            delete build[key];
+          }
+          delete frozen[key];
+        }
+      }
+      for (const f of V41_HOUSE.furniture) {
+        const key = `${f.x},${f.y}`;
+        if (furniture[key]?.id === f.id) delete furniture[key];
+      }
+    }
+
+    const stamped = stampInto({ ...raw, overrides, build, furniture, finishes });
+    return {
+      ...raw,
+      schemaVersion: 42,
       overrides: stamped.overrides,
       build: stamped.build,
       furniture: stamped.furniture,

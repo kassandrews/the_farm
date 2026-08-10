@@ -1503,3 +1503,75 @@ describe("v37 → v38: the plot arrives", () => {
     expect(m.homestead).toMatchObject({ originX: 6, originY: 5, struckAt: 1234 });
   });
 });
+
+describe("v41 → v42: a home comes off the square", () => {
+  const V41_HOUSE = { x0: -11, y0: -2, x1: -6, y1: 2, door: { x: -7, y: 2 } };
+
+  /** A v41 save: the town as it is now, but with Prudence's house back on the
+   *  square's south-west corner and nothing where it stands today. */
+  function v41Save(repaint?: Record<string, { id: string; finish: string }>): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const build = { ...(w.build as Record<string, { id: string; finish: string }>) };
+    const furniture = { ...(w.furniture as Record<string, unknown>) };
+    const garden = JSON.parse(JSON.stringify(w.garden)) as {
+      plants: Record<string, unknown>;
+    };
+    const house = TOWN_BUILDINGS.margfrom_house;
+    for (let y = house.y0; y <= house.y1; y++) {
+      for (let x = house.x0; x <= house.x1; x++) {
+        delete build[`${x},${y}`];
+        delete furniture[`${x},${y}`];
+      }
+    }
+    // A v41 save has NOTHING planted where the house stood, because a house stood
+    // there. The trees that green the square's west side arrive with this very
+    // rung; leaving a fresh world's copy of them in the fixture makes v42 read
+    // them as the player's own planting and decline to move anything.
+    for (let y = V41_HOUSE.y0; y <= V41_HOUSE.y1; y++) {
+      for (let x = V41_HOUSE.x0; x <= V41_HOUSE.x1; x++) delete garden.plants[`${x},${y}`];
+    }
+    for (let y = V41_HOUSE.y0; y <= V41_HOUSE.y1; y++) {
+      for (let x = V41_HOUSE.x0; x <= V41_HOUSE.x1; x++) {
+        const ring =
+          x === V41_HOUSE.x0 || x === V41_HOUSE.x1 || y === V41_HOUSE.y0 || y === V41_HOUSE.y1;
+        if (!ring) continue;
+        const isDoor = x === V41_HOUSE.door.x && y === V41_HOUSE.door.y;
+        build[`${x},${y}`] = { id: isDoor ? "door" : "wall", finish: "pine" };
+      }
+    }
+    furniture[`-10,-1`] = { id: "bed", facing: "s", finish: "pine" };
+    for (const [key, cell] of Object.entries(repaint ?? {})) build[key] = cell;
+    return { ...w, schemaVersion: 41, build, furniture, garden };
+  }
+
+  it("takes the house off the square and stands it on the lane", () => {
+    const m = migrateSave(v41Save())!;
+    expect(m.build[`${V41_HOUSE.x0},${V41_HOUSE.y0}`]).toBeUndefined();
+    const house = TOWN_BUILDINGS.margfrom_house;
+    expect(m.build[`${house.door.x},${house.door.y}`]).toMatchObject({ id: "door" });
+  });
+
+  it("brings her bed with her, so she is not left homeless", () => {
+    // The bed is the claim (sim/housing.ts). Moving a house and forgetting the
+    // bed would leave the one starter resident sleeping on the paving.
+    const m = migrateSave(v41Save())!;
+    const bed = TOWN_BUILDINGS.margfrom_house.furniture.find((f) => f.id === "bed")!;
+    expect(m.furniture[`${bed.x},${bed.y}`]).toMatchObject({ id: "bed" });
+    expect(m.furniture["-10,-1"]).toBeUndefined();
+  });
+
+  it("paves a doorstep for the new front", () => {
+    const house = TOWN_BUILDINGS.margfrom_house;
+    const m = migrateSave(v41Save())!;
+    expect(m.overrides[`${house.door.x},${house.door.y + 1}`]).toBe(FLOOR);
+  });
+
+  it("leaves the old house standing if the player repainted it", () => {
+    // The trade this ladder makes every time: a wall somebody chose the colour of
+    // outranks a wall the town would rather move. They keep the house; the new
+    // one does not appear.
+    const corner = `${V41_HOUSE.x0},${V41_HOUSE.y0}`;
+    const m = migrateSave(v41Save({ [corner]: { id: "wall", finish: "oxblood" } }))!;
+    expect(m.build[corner]).toMatchObject({ finish: "oxblood" });
+  });
+});

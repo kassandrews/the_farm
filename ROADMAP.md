@@ -11133,6 +11133,56 @@ unnoticed because the building still existed. The day it stopped existing the
 rung stopped compiling — which is the best possible outcome, and an argument for
 keeping migration geometry in the type system rather than in a comment.
 
+## A home comes off the square (10 Aug 2026)
+
+Asked as a question rather than an instruction — *"do we think a home is
+important enough to be on the square?"* — and the answer is no, for two reasons
+worth keeping.
+
+**A square is where the institutions face each other.** Hall, museum, shop, heap,
+the board, the stage: those are the things you go to a square FOR. Prudence's
+house flanked the plaza's south-west corner opposite the shop, and it was the one
+building there with no business with anybody else.
+
+**And it is a precedent that does not survive the town growing.** Commissions add
+houses (sim/commission.ts). If the square is where a house goes, the square is
+what gets eaten.
+
+So she moves to the lane, and the gap is planted rather than rebuilt: three
+plants on the square's west side, because a bare gap reads as a building missing
+where a green one reads as the side that was never built on. Institutions on
+three sides, trees on the fourth.
+
+### Settled here, don't relitigate
+
+- **`resident` is the test**, not a coordinate. `town.test.ts` asserts no building
+  with a resident sits within a tile of the plaza, so a future house cannot creep
+  back on.
+- **EAST of the lane, and that is a MIGRATION constraint rather than a taste.**
+  West of the lane is where the seed stall's building used to stand, and two
+  rungs of the ladder still demolish that footprint by frozen coordinate. A house
+  whose furniture sat inside it made those rungs read "the player has claimed
+  this ground" and decline — leaving a ghost building overlapping the new house.
+  Caught by an old test, and the lesson generalises: **old geometry is not free
+  ground until every rung that names it has run.**
+- **The spur is back**, east this time. It ran west to the seed stall's door once
+  and was pulled up when the stall stopped being a building; there is a door down
+  here again, and a doorstep lands on paving or it is not a front.
+- **The square's west side needed its own clearing rect.** It came free while a
+  house stood on it and stopped the day the house moved — without it the town
+  plants three trees into whatever wood the generator put there, which is not a
+  planting, it is a coincidence. Second time this exact thing has been true this
+  week (the stall's grove was the first), which is worth stating as a rule: **a
+  building clears its own ground, so removing one costs a clearing.**
+
+### And a whole class of test broke, in a way worth naming
+
+Nine crop tests planted at (8,8) and (6,6) — coordinates chosen years ago as
+"open grass near the homestead" — and Prudence's new house landed on both. They
+have all moved onto the FIELD inside the plot, which is the honest answer: a test
+that needs farmable ground should say so by standing on the farm, not by knowing
+a coordinate that happened to be empty.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

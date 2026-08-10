@@ -115,6 +115,11 @@ export const STREETS: { x0: number; y0: number; x1: number; y1: number }[] = [
   // the walk south stopped being a walk through grass. A path you can see grass
   // either side of is what makes the farm feel out of town.
   { x0: 0, y0: 4, x1: 0, y1: 11 },
+  // The spur east off the lane to Prudence's door. A spur ran west along this row
+  // to the seed stall once and was pulled up when the stall stopped being a
+  // building; there is a door down here again, and a doorstep lands on paving
+  // (§The street plan) or it is not a front.
+  { x0: 0, y0: 11, x1: 7, y1: 11 },
   // THROUGH THE GATE AND DOWN THE MIDDLE OF THE PLOT (§The plot). The lane does
   // not stop at the boundary and start again as a garden path: it is one road,
   // and it ends in your yard. That continuity is most of what makes the farm read
@@ -239,7 +244,7 @@ export const TOWN_PLANTINGS: { x: number; y: number; id: FloraId }[] = [
   { x: -2, y: 7, id: "buttercup" },
   { x: 2, y: 8, id: "daisy" },
   { x: -2, y: 10, id: "daisy" },
-  { x: 2, y: 11, id: "buttercup" },
+  { x: -2, y: 11, id: "buttercup" },
   // THE TWO ALLEYS in the north street's face — the gaps between the museum and
   // the hall, and the hall and the heap. Two cells wide each, and a street face
   // with a hole in it reads as a missing tooth. One tree fills the gap and leaves
@@ -258,6 +263,15 @@ export const TOWN_PLANTINGS: { x: number; y: number; id: FloraId }[] = [
   // there on purpose, and that is the whole of what they say.
   { x: 2, y: 13, id: "hydrangea" },
   { x: 3, y: 13, id: "hydrangea" },
+  // THE SQUARE'S WEST SIDE, which is open ground now that Prudence's house has
+  // moved off it. Three plants and not a fourth building: the square is bounded
+  // by institutions on the north and east and by its own street on the south, and
+  // the fourth side is deliberately GREEN rather than built. A gap left bare
+  // reads as a building missing; a gap with trees in it reads as the side of the
+  // square that was never built on, which is what it is.
+  { x: -7, y: -3, id: "broadleaf" },
+  { x: -7, y: 1, id: "broadleaf" },
+  { x: -6, y: -1, id: "bush" },
   // THE STALL'S GROVE. Derek's counter stands in the open now that his building
   // is gone, and an open-air stall on bare grass reads as a table somebody
   // abandoned. A loose ring of planting gives it somewhere to BE — the same job
@@ -401,26 +415,31 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // house did not notice, which is exactly how a building ends up labelled
     // after somebody who no longer lives there.
     name: `${CAST.resident1.name}'s House`,
-    // ON THE SOUTH STREET LINE, west of the square, one row south of where it
-    // stood (§FRONT_S). Its front used to be on y = 0 with its doorstep on a row
-    // of grass that led nowhere.
+    // OFF THE SQUARE, and that is a rule now rather than a move.
     //
-    // IT MOVED SOUTH AND NOT WEST, and the one column matters. `TOWN_RECTS` caps
-    // the water within six tiles of any town wall so a channel cannot lap a
-    // bedroom, and the riverside anchor is a few tiles off her western one — a
-    // house one column further west pinches the town's own promised river, which
-    // is the failure the cap's own note warns about.
-    // SIX BY FIVE, one wider than it was, and the extra column is load-bearing
-    // rather than generous. At five the interior is 3x3 with a piece in every
-    // corner, and two separate facts about this game stop being demonstrable in
-    // the only authored house there is: that home FOLLOWS THE BED (sim/housing.ts)
-    // needs somewhere else in the room to put one, and that a lamp is delight and
-    // never a gate needs a free cell beside a bed to stand it in. Both were
-    // asserted against a room that had run out of floor.
-    x0: -11,
-    y0: -2,
-    x1: -6,
-    y1: FRONT_S,
+    // She flanked the plaza's south-west corner, opposite the shop, and a HOUSE
+    // ON THE SQUARE is the one building there with no business with anybody else.
+    // A square is where the institutions face each other — hall, museum, shop,
+    // heap, the board, the stage — and those are the things you go to it FOR. It
+    // is also a precedent that does not survive the town growing: commissions add
+    // houses (sim/commission.ts), and if the square is where a house goes then the
+    // square is what gets eaten.
+    //
+    // So she is on the LANE instead, with a short spur to her door — the first
+    // house of what a residential row would be, on the way out to the farm, with
+    // the seed stall's grove facing her across the road.
+    //
+    // EAST of the lane and not west, and that is a migration constraint rather
+    // than a taste. West of the lane is where the seed stall's BUILDING used to
+    // stand, and two rungs of the save ladder still demolish that footprint by
+    // frozen coordinate — a house whose furniture sat inside it made those rungs
+    // read "the player has claimed this ground" and decline, leaving a ghost
+    // building overlapping the new house. Old geometry is not free ground until
+    // every rung that names it has run.
+    x0: 4,
+    y0: 6,
+    x1: 9,
+    y1: 10,
     // SOUTH wall, and that is not a free choice. A wall running away from the
     // camera shows its top rather than its face (DESIGN §Structures), so a door
     // cut into an east or west wall has no face to appear on and is invisible
@@ -428,7 +447,7 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // Doors belong on south walls until the renderer can draw them otherwise.
     // East end of the south wall, so the table along the west can never reach
     // across the doorstep.
-    door: { x: -7, y: FRONT_S },
+    door: { x: 7, y: 10 },
     finish: "pine",
     resident: "resident1",
     furniture: [
@@ -437,15 +456,15 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       // (sim/housing.ts picks a walkable neighbour), not authored. Wall the bed
       // in differently and her side of it moves; the coordinate here is where
       // the bed starts, not where she stands.
-      { x: -10, y: -1, id: "bed", facing: "s" },
+      { x: 5, y: 7, id: "bed", facing: "s" },
       // The table is along the south-west, deliberately clear of the doorway:
       // solid furniture in front of the door would seal her out of her own
       // house, and she'd snap home every night instead of walking in.
-      { x: -10, y: 1, id: "table", facing: "s" },
-      { x: -9, y: 0, id: "chair", facing: "s" },
+      { x: 5, y: 9, id: "table", facing: "s" },
+      { x: 6, y: 8, id: "chair", facing: "s" },
       // North wall, at the far end from the bed — see the note on the footprint
       // for why the cells between them are deliberately left empty.
-      { x: -8, y: -1, id: "shelf", facing: "s" },
+      { x: 7, y: 7, id: "shelf", facing: "s" },
     ],
   },
 
@@ -842,6 +861,10 @@ const CLEARED: { x0: number; y0: number; x1: number; y1: number }[] = [
     x1: r.x1 + CLEARING_MARGIN,
     y1: r.y1 + CLEARING_MARGIN,
   })),
+  // THE SQUARE'S WEST SIDE. It came free while a house stood on it and stopped
+  // the day the house moved; without it the town plants three trees into whatever
+  // wood the generator put there, which is not a planting, it is a coincidence.
+  { x0: -8, y0: -4, x1: -6, y1: 3 },
   // THE STALL AND ITS GROVE. This used to come free — a building clears its own
   // ground plus the margin — and stopped the day the seed stall stopped being a
   // building. Without it the town plants an avenue and a grove into whatever wood

@@ -517,14 +517,14 @@ describe("the street plan", () => {
     // The plan in one assertion. A south wall on neither line is a building whose
     // front faces a field, which is what all six of them used to be.
     //
-    // ONE EXEMPTION, deliberate: the BARN is not the town's at all. It is in your
-    // plot and its front is on your yard. It is still held to the doorstep and
-    // connectivity rules below, which are the ones that actually matter.
-    //
-    // (There were two. The seed stall was the other, and it is not a building any
-    // more — see content/town.ts §THE SEED STALL.)
+    // ONLY THE BUILDINGS THAT ACTUALLY FRONT THE SQUARE. The rest are named here
+    // rather than skipped by a growing list of exemptions, because which
+    // buildings are ON the square is itself a design decision and worth stating:
+    // the institutions are, and nothing else is. Prudence's house came off it
+    // deliberately (§margfrom_house) and the barn was never on it.
+    const onTheSquare = ["museum", "townhall", "heap", "shop"];
     for (const b of allTownBuildings()) {
-      if (b.id === "barn") continue;
+      if (!onTheSquare.includes(b.id)) continue;
       expect([FRONT_N, FRONT_S], `${b.id} fronts nothing`).toContain(b.y1);
     }
   });
@@ -552,6 +552,19 @@ describe("the street plan", () => {
         const path = findPath(w, { x: a.x, y: a.y }, { x: b.x, y: b.y });
         expect(path, `no way from ${a.id} to ${b.id}`).not.toBeNull();
       }
+    }
+  });
+
+  it("keeps HOMES off the square — it is for the institutions", () => {
+    // Not a layout detail. A square is where the things you go to it FOR face
+    // each other, and a house on it is also a precedent that does not survive the
+    // town growing: commissions add houses, and the square is what would get
+    // eaten. `resident` is the test, so a future house cannot creep back on.
+    for (const b of allTownBuildings()) {
+      if (!b.resident) continue;
+      const nearSquare =
+        b.x1 >= PLAZA.x0 - 1 && b.x0 <= PLAZA.x1 + 1 && b.y1 >= PLAZA.y0 - 1 && b.y0 <= PLAZA.y1 + 1;
+      expect(nearSquare, `${b.id} is a home on the square`).toBe(false);
     }
   });
 

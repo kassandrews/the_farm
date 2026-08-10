@@ -147,10 +147,10 @@ describe("varieties differ in time and in nothing else", () => {
       const before = count(w.inventory, id);
       // (4,4) rather than (3,3): the plaza is stone out to y 3, and you cannot
       // plant a carrot in the town square.
-      expect(sow(w, 8, 8, Date.now())).toBe(id);
-      const crop = w.crops["8,8"];
+      expect(sow(w, 4, 17, Date.now())).toBe(id);
+      const crop = w.crops["4,17"];
       crop.stage = CROPS[id].stages.length - 1;
-      harvest(w, 8, 8, Date.now());
+      harvest(w, 4, 17, Date.now());
       expect(count(w.inventory, id)).toBe(before + 1);
     }
   });
@@ -229,8 +229,8 @@ describe("sowing, and why farming can't dead-end", () => {
     selectCrop(w, "radish");
     w.inventory = {};
     add(w.inventory, "seed", 2);
-    expect(sow(w, 8, 8, Date.now())).toBe("radish");
-    expect(w.crops["8,8"].cropId).toBe("radish");
+    expect(sow(w, 4, 17, Date.now())).toBe("radish");
+    expect(w.crops["4,17"].cropId).toBe("radish");
     expect(count(w.inventory, "seed")).toBe(1);
   });
 
@@ -238,8 +238,8 @@ describe("sowing, and why farming can't dead-end", () => {
     const w = world();
     w.inventory = {};
     expect(canSow(w, 4, 4)).toBe(false);
-    expect(sow(w, 8, 8, Date.now())).toBeNull();
-    expect(w.crops["8,8"]).toBeUndefined();
+    expect(sow(w, 4, 17, Date.now())).toBeNull();
+    expect(w.crops["4,17"]).toBeUndefined();
   });
 
   it("refuses a variety the stall never sold you", () => {
@@ -260,12 +260,12 @@ describe("sowing, and why farming can't dead-end", () => {
     const now = Date.now();
 
     for (let i = 0; i < 5; i++) {
-      expect(sow(w, 8, 8, now)).toBe(STARTING_CROP);
+      expect(sow(w, 4, 17, now)).toBe(STARTING_CROP);
       expect(count(w.inventory, "seed")).toBe(0); // genuinely down to nothing
-      const crop = w.crops["8,8"];
+      const crop = w.crops["4,17"];
       crop.stage = CROPS[STARTING_CROP].stages.length - 1;
-      updateCrop(w, 8, 8, now);
-      expect(harvest(w, 8, 8, now)).not.toBeNull();
+      updateCrop(w, 4, 17, now);
+      expect(harvest(w, 4, 17, now)).not.toBeNull();
       expect(count(w.inventory, "seed")).toBeGreaterThanOrEqual(1);
     }
   });
