@@ -192,7 +192,7 @@ describe("ACT, on both sides of the ground", () => {
     expect(contextAction(w, "dig", now).kind).toBe("dig");
     expect(tileAt(w, at.x, at.y)).toBe(DIRT);
 
-    expect(actionTarget(w, "dig")).toEqual({ x: at.x, y: at.y, kind: "tool" });
+    expect(actionTarget(w, "dig")).toEqual({ x: at.x, y: at.y, kind: "tool", verb: "dig" });
     expect(contextAction(w, "dig", now).kind).toBe("sink");
     expect(tileAt(w, at.x, at.y)).toBe(SHAFT);
 
@@ -222,7 +222,7 @@ describe("ACT, on both sides of the ground", () => {
     w.player.heading = "n";
 
     const target = actionTarget(w, "dig");
-    expect(target).toEqual({ x: at.x, y: at.y - 1, kind: "tool" });
+    expect(target).toEqual({ x: at.x, y: at.y - 1, kind: "tool", verb: "dig" });
     expect(contextAction(w, "dig", Date.now()).kind).toBe("carve");
     expect(tileAt(w, at.x, at.y - 1, "under")).toBe(CAVE_FLOOR);
     expect(tileAt(w, at.x, at.y - 1)).toBe(TREE); // the surface is untouched

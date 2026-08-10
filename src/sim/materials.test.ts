@@ -111,15 +111,15 @@ describe("gathering", () => {
     expect(tileAt(w, x, y)).toBe(DIRT);
   });
 
-  it("falls back to felling when the held tool has nothing to do", () => {
+  it("the default tap fells the tree in reach", () => {
     const w = freshWorld();
     const { x, y } = findNode(w, TREE);
     w.player.x = x - 1;
     w.player.y = y;
     w.player.facing = 1;
-    // Watering bare ground does nothing — so the tree in reach is the obvious
-    // intent, and ACT should do it rather than refuse.
-    const res = contextAction(w, "water", 1000);
+    // The one-button contract: nothing is held, the tree in reach is the
+    // obvious intent, and the default tap does it rather than refuse.
+    const res = contextAction(w, null, 1000);
     expect(res.kind).toBe("gather");
     expect(tileAt(w, x, y)).toBe(DIRT);
   });

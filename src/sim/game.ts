@@ -731,6 +731,11 @@ export interface ActionTarget {
     /** Your own planted tree or bush, in reach and in fruit (sim/garden.ts). */
     | "fruit"
     | "none";
+  /** For kind "tool": WHICH verb this is (dig, gather, water, plant). The
+   *  default ladder resolves it — there is no held tool any more (ROADMAP §one
+   *  button) — and the explicit path echoes the verb it was asked about, so
+   *  `contextAction` executes exactly what the reticle promised either way. */
+  verb?: Tool;
 }
 
 /** Where ACT will land, decided in ONE place so the reticle the player sees and
@@ -767,7 +772,7 @@ export interface ActionTarget {
  *  other branch has already declined. It therefore cannot hijack a deliberate
  *  act — which is the exact failure step 3's comment was written about — and the
  *  reticle still promises precisely what ACT will do. */
-export function actionTarget(world: WorldState, tool: Tool, now: number = Date.now()): ActionTarget {
+export function actionTarget(world: WorldState, tool: Tool | null, now: number = Date.now()): ActionTarget {
   const { x, y } = playerTile(world);
   if (world.player.layer === "under") return undergroundTarget(world, tool, x, y);
   if (world.player.layer === "sky") return skyTarget(world, x, y);
@@ -932,40 +937,36 @@ export function actionTarget(world: WorldState, tool: Tool, now: number = Date.n
     if (fruit) return { x: fruit.x, y: fruit.y, kind: "fruit" };
   }
 
-  const underfoot = toolApplies(world, tool, x, y);
-
-  // DUG GROUND UNDERFOOT AND SEED IN POCKET SOWS — the ripe-override's twin,
-  // and the fix for dig → menu → sow → menu → water being three trips (ROADMAP
-  // §the verb review).
-  //
-  // DIRT AND THE BEDS, NEVER GRASS. Gated on `canSow` alone this fired on
-  // every lawn (canPlant accepts grass — the old rail tool auto-tilled) and
-  // hijacked the basket beside a tree. The dug bed is the statement of intent.
-  //
-  // AND NEVER WHILE THE SHOVEL IS IN HAND, which is not a taste — it is the
-  // shaft. "A shaft is two digs on one tile" is a settled gesture, and dig on
-  // dirt IS its second half, so on dirt the shovel and the sow are the same
-  // tap. The first ship of this rung demanded FARMLAND to dodge that collision
-  // and dodged it into a wall: nothing but the retired plant tool ever MADE
-  // farmland, so sowing on foot was unreachable and ACT-ACT on a lawn opened a
-  // hole where the player expected a crop (reported as exactly that). The
-  // resolution keeps both verbs whole, split by the hand: the shovel digs, and
-  // any other tool sows — dig your bed with 1, then the watering can sows with
-  // one tap and waters with the next, which is one tool for the whole morning
-  // walk. `underfoot` already keeps the shovel's claim on dirt, so the guard
-  // below is only saying the quiet part where the reticle can read it.
-  {
+  // THE DEFAULT TAP — no verb asked for, so the ladder finishes the job itself
+  // (ROADMAP §one button: there is no held tool). Priority is the farm's own
+  // frequency: what you grew, then what you tend, then what you pick up, then
+  // what stands beside you, then the ground itself. Sowing on a dug bed
+  // OUTRANKS digging it again, which is the inversion the whole redesign was
+  // for: you sow daily and sink a shaft once a month, and a crop must never
+  // turn into a hole by surprise. The shaft is still two digs on one tile —
+  // the second one asked for by name, from the verb fan.
+  if (tool === null) {
     const t = tileAt(world, x, y);
     const bed = t === DIRT || t === FARMLAND || t === FARMLAND_WET;
-    if (!underfoot && bed && canSow(world, x, y)) {
-      return { x, y, kind: "sow" };
-    }
+    if (bed && canSow(world, x, y)) return { x, y, kind: "sow" };
+    if (canWater(world, x, y)) return { x, y, kind: "tool", verb: "water" };
+    if (t === MUSHROOM || t === JUNK_PILE) return { x, y, kind: "tool", verb: "gather" };
+    const near = nodeNear(world, x, y, world.player.facing);
+    if (near) return { x: near.x, y: near.y, kind: "gather" };
+    if (canDig(world, x, y) || canSink(world, x, y)) return { x, y, kind: "tool", verb: "dig" };
+    return { x, y, kind: "none" };
   }
 
+  // THE EXPLICIT VERB — picked from the fan or pressed on a number key, and it
+  // is a ONE-SHOT: nothing is held afterwards. The verb wins the tile underfoot
+  // wherever it honestly applies; the one courtesy kept from the old rail is
+  // that an idle verb still reaches the node beside you, so asking to gather
+  // next to a tree gathers the tree.
+  const underfoot = toolApplies(world, tool, x, y);
   const near = nodeNear(world, x, y, world.player.facing);
   if (near && tool === "gather" && !underfoot) return { x: near.x, y: near.y, kind: "gather" };
-  if (underfoot) return { x, y, kind: "tool" };
-  if (near) return { x: near.x, y: near.y, kind: "gather" };
+  if (underfoot) return { x, y, kind: "tool", verb: tool };
+  if (near && tool === "gather") return { x: near.x, y: near.y, kind: "gather" };
 
   return { x, y, kind: "none" };
 }
@@ -1062,14 +1063,16 @@ function mailboxSiteAt(world: WorldState, x: number, y: number): number | null {
  *  a vein would break the one continuous verb the tunnel has, for a distinction
  *  only the code cares about. It is the same argument that let the second dig
  *  on a tile become a shaft: no new tool, no new button. */
-function undergroundTarget(world: WorldState, tool: Tool, x: number, y: number): ActionTarget {
+function undergroundTarget(world: WorldState, tool: Tool | null, x: number, y: number): ActionTarget {
   if (tileAt(world, x, y) === SHAFT) return { x, y, kind: "shaft" };
   // The tool is consulted, not assumed. Lighting the rock face while the
   // watering can is out would promise a cut that ACT is not going to make.
   const ahead = aheadOf(world);
-  if (tool !== "dig" && tool !== "gather") return { x, y, kind: "none" };
+  if (tool !== null && tool !== "dig" && tool !== "gather") return { x, y, kind: "none" };
   if (nodeAt(world, ahead.x, ahead.y, "under")) return { ...ahead, kind: "gather" };
-  if (tool === "dig" && canCarve(world, ahead.x, ahead.y)) return { ...ahead, kind: "tool" };
+  if (tool !== "gather" && canCarve(world, ahead.x, ahead.y)) {
+    return { ...ahead, kind: "tool", verb: "dig" };
+  }
   return { x, y, kind: "none" };
 }
 
@@ -1092,7 +1095,7 @@ function skyTarget(world: WorldState, x: number, y: number): ActionTarget {
 }
 
 /** The context action button: does whatever `actionTarget` is pointing at. */
-export function contextAction(world: WorldState, tool: Tool, now: number): ActionResult {
+export function contextAction(world: WorldState, tool: Tool | null, now: number): ActionResult {
   const target = actionTarget(world, tool, now);
 
   // Sowing without the menu: tilled soil underfoot answered ACT (see the
@@ -1301,7 +1304,46 @@ export function contextAction(world: WorldState, tool: Tool, now: number): Actio
 
   // "tool" or "none": the held tool on the tile underfoot. When nothing applies
   // this is what produces the refusal message.
-  return applyTool(world, tool, target.x, target.y, now);
+  // The default tap with nothing to do is QUIET — the reticle already went
+  // out, and a refusal line for standing on plain grass would natter. An
+  // explicit verb still answers ("Nothing to dig here."), because you asked.
+  const verb = target.verb ?? tool;
+  if (verb === null) return { kind: "none", changed: false, message: "" };
+  return applyTool(world, verb, target.x, target.y, now);
+}
+
+/** Which verbs would actually do something here — the fan's contents, and
+ *  nothing else's (ROADMAP §one button). The reticle rule, applied to a menu:
+ *  a verb that would refuse is a verb that isn't offered, so the fan is one
+ *  to three buttons and never a keyboard of grey ones. */
+export function availableVerbs(world: WorldState, now: number = Date.now()): Tool[] {
+  const { x, y } = playerTile(world);
+  const out: Tool[] = [];
+  if (world.player.layer === "sky") return out;
+  if (world.player.layer === "under") {
+    const ahead = aheadOf(world);
+    if (canCarve(world, ahead.x, ahead.y)) out.push("dig");
+    if (nodeAt(world, ahead.x, ahead.y, "under")) out.push("gather");
+    return out;
+  }
+  const t = tileAt(world, x, y);
+  const ahead = aheadOf(world);
+  if (canDig(world, x, y) || canSink(world, x, y) || canFill(world, ahead.x, ahead.y)) {
+    out.push("dig");
+  }
+  if (
+    t === MUSHROOM ||
+    t === JUNK_PILE ||
+    isRipe(world, x, y) ||
+    nodeNear(world, x, y, world.player.facing) !== null ||
+    gardenFruitNear(world, x, y, now) !== null
+  ) {
+    out.push("gather");
+  }
+  const bed = t === DIRT || t === FARMLAND || t === FARMLAND_WET;
+  if (bed && canSow(world, x, y)) out.push("plant");
+  if (canWater(world, x, y)) out.push("water");
+  return out;
 }
 
 /** Would the held tool change this tile? The dry-run half of `applyTool` — kept
@@ -1321,12 +1363,15 @@ function toolApplies(world: WorldState, tool: Tool, x: number, y: number): boole
       const t = tileAt(world, x, y);
       return t === MUSHROOM || t === JUNK_PILE;
     }
-    case "plant":
-      // canSow, not canPlant: the reticle promises exactly what ACT will do
-      // (ROADMAP §"The reticle is the promise"), and with an empty satchel ACT
-      // will do nothing. Lighting up plantable ground you can't sow is the same
-      // lie the reticle rule was written about, wearing farming's clothes.
-      return canSow(world, x, y);
+    case "plant": {
+      // canSow AND a dug bed. canSow alone still accepts grass (the retired
+      // rail tool auto-tilled), and the explicit verb obeys the same ground
+      // rule the default ladder does: dig first, sow second, and the junk
+      // faucet under the digging stays a faucet.
+      const t = tileAt(world, x, y);
+      const bed = t === DIRT || t === FARMLAND || t === FARMLAND_WET;
+      return bed && canSow(world, x, y);
+    }
     case "water":
       return canWater(world, x, y);
   }

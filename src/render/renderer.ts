@@ -9,7 +9,7 @@
 // day/night tint over everything. See the Raised docblock for why the standing
 // things share a single sorted pass rather than getting one each.
 
-import type { WorldState, Villager, Player, BuildCell, FurnitureCell, Tool, Layer } from "../sim/types";
+import type { WorldState, Villager, Player, BuildCell, FurnitureCell, Layer } from "../sim/types";
 import { tileAt, playerTile, actionTarget } from "../sim/game";
 import type { ActionTarget } from "../sim/game";
 import { cropDef, ripeStage } from "../content/crops";
@@ -1180,7 +1180,6 @@ export class Renderer {
    *  plan view while you build, 3/4 while you live there). */
   private buildView = false;
   /** Mirrors the HUD's held ACT tool, for the reticle. */
-  private tool: Tool = "dig";
   /** Whether to draw the player-facing furniture of the view — currently the
    *  reticle. True in the game, always; see `setChrome`. */
   private chrome = true;
@@ -1334,12 +1333,6 @@ export class Renderer {
    *  meanings on one affordance is how that rule got broken the first time. */
   setHomeCandidates(cells: { x: number; y: number; ok: boolean }[]): void {
     this.homeCandidates = cells;
-  }
-
-  /** The held ACT tool. The reticle needs it because which tile ACT lands on
-   *  depends on the tool (see actionTarget). */
-  setTool(tool: Tool): void {
-    this.tool = tool;
   }
 
   constructor(canvas: HTMLCanvasElement) {
@@ -6437,7 +6430,9 @@ export class Renderer {
 
   private drawTargetTile(world: WorldState): void {
     const ctx = this.ctx;
-    const target = actionTarget(world, this.tool, this.now);
+    // No held tool exists any more (ROADMAP §one button): the reticle draws
+    // the DEFAULT tap, which is the promise the ACT button keeps.
+    const target = actionTarget(world, null, this.now);
     const px = Math.round(this.sceneX(target.x) - TILE / 2);
     const py = Math.round(this.sceneY(target.y) - TILE / 2);
     const x0 = px + 0.5;

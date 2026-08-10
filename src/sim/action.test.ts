@@ -75,7 +75,7 @@ describe("action target", () => {
     // Digging grass works, so the dig is what happens — and the reticle has to
     // say so rather than lighting up the tree.
     const target = actionTarget(w, "dig");
-    expect(target).toEqual({ ...feet, kind: "tool" });
+    expect(target).toEqual({ ...feet, kind: "tool", verb: "dig" });
     contextAction(w, "dig", 1000);
     expect(tileAt(w, tree.x, tree.y)).toBe(TREE); // still standing
     expect(tileAt(w, feet.x, feet.y)).toBe(DIRT);
@@ -89,18 +89,22 @@ describe("action target", () => {
     expect(tileAt(w, tree.x, tree.y)).toBe(DIRT);
   });
 
-  it("aims at the tree when the held tool has nothing to do", () => {
+  it("the DEFAULT tap reaches the tree; an idle explicit verb goes quiet", () => {
+    // The one-button contract (ROADMAP §one button). There is no held tool:
+    // the default tap resolves the ladder itself, and an EXPLICIT verb that
+    // has no work here answers "none" rather than borrowing somebody else's —
+    // the fan never offered it, so only a number key can even ask.
     const w = freshWorld();
     const { tree, feet } = besideATree(w);
-    setTile(w, feet.x, feet.y, DIRT); // nothing here to dig
-    // The can now HAS something to do on dug dirt: sow (game.ts §the sow
-    // rung — dirt underfoot with seed in pocket is the can's own work, and
-    // underfoot beats beside, which is the ladder's oldest rule). The empty
-    // pocket restores the old picture: nothing underfoot, tree in reach.
-    expect(actionTarget(w, "water")).toEqual({ ...feet, kind: "sow" });
-    w.inventory.seed = 0;
-    expect(actionTarget(w, "water")).toEqual({ ...tree, kind: "gather" });
-    expect(actionTarget(w, "dig")).toEqual({ ...tree, kind: "gather" });
+    setTile(w, feet.x, feet.y, DIRT); // nothing here to dig for the default
+    w.inventory.seed = 0; // and nothing to sow, so the tree is the answer
+    expect(actionTarget(w, null)).toEqual({ ...tree, kind: "gather" });
+    expect(actionTarget(w, "water").kind).toBe("none");
+    // With seed back in the pocket, the dug bed OUTRANKS the tree: sowing is
+    // the daily verb and a crop must never turn into a hole — or a chop — by
+    // surprise.
+    w.inventory.seed = 5;
+    expect(actionTarget(w, null)).toEqual({ ...feet, kind: "sow" });
   });
 
   it("aims at a ripe crop underfoot whatever tool is held", () => {

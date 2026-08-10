@@ -10521,6 +10521,50 @@ orange meadow.
   a glass tree in a meadow garden reads as strangeness leaking, one flag on one
   species revokes it — revertible, no save carries a palette.
 
+## One button (10 Aug 2026)
+
+The ACT rail is gone. Asked for directly, after a day of the garden's verbs
+exposing what the rail had become: *"tapping water and having that sow"* was a
+mode error wearing a fix's clothes, and the dirt-versus-tilled distinction was
+internal bookkeeping a player could not see. The owner proposed the shape —
+one button, with the other verbs behind a right-click — and it survived
+scrutiny because the ladder already existed: `actionTarget` was contextual
+everywhere but a handful of ties, and the rail existed only to break them.
+
+**The contract:** the default tap does the obvious thing, resolved by the sim's
+own ladder; a LONG-PRESS (right-click on desktop) fans the other applicable
+verbs out to the left of ACT; a picked verb is a ONE-SHOT — it happens once and
+nothing is held afterwards. Keys 1–4 are the same one-shots for a desktop hand.
+
+### Settled here, don't relitigate
+
+- **There is no held tool anywhere in the game.** `actionTarget(world, null)`
+  is the default ladder; a `Tool` argument is an explicit one-shot verb. The
+  target carries its resolved `verb`, so the reticle and the button cannot
+  disagree. The renderer's `setTool` is deleted; the reticle draws the default.
+- **The default ladder's farm priority is frequency:** sow a dug bed, water a
+  dry crop, pick what's underfoot, gather what's beside you, dig the ground.
+  **Sowing OUTRANKS the second dig**, which is the inversion the redesign was
+  for — you sow daily and sink a shaft once a month, and a crop must never
+  become a hole by surprise. The shaft is still two digs on one tile; the
+  second is asked for by name, from the fan.
+- **The fan obeys the reticle rule.** `availableVerbs` lists only what would
+  do something here — one to three buttons, never four grey ones, nothing at
+  all on plain grass in the sky. An idle explicit verb answers "none" rather
+  than borrowing another verb's work; the one courtesy kept from the rail is
+  that an explicit GATHER still reaches the node beside you.
+- **One gesture, one meaning.** The release-click after a long-press is
+  swallowed (`fanJustOpened`), or opening the fan would also perform the
+  default act. Right-click toggles. Any canvas tap dismisses.
+- **Discoverability is one dot.** ACT wears a corner tick when more than one
+  verb applies where you stand — information, not chrome — and the button's
+  hint says "Hold for other verbs."
+- **The default tap with nothing to do is QUIET.** The reticle already went
+  out; "Nothing to dig here" is reserved for a verb you asked for by name.
+- **Explicit sow is bed-gated like the default** (`toolApplies` plant), so no
+  path — key, fan, or Crops-tab drag — auto-tills a lawn, and the dig-first
+  junk faucet survives the whole redesign.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

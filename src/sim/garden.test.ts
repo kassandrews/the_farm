@@ -195,7 +195,7 @@ describe("your own tree is the one that fruits", () => {
 });
 
 describe("the contextual verbs", () => {
-  it("dug ground underfoot sows — but never for the shovel, and never a lawn", () => {
+  it("the default tap sows a dug bed, and never a lawn; the shaft is asked for", () => {
     const w = freshWorld();
     const at = openGrass(w);
     w.player.x = at.x;
@@ -203,17 +203,21 @@ describe("the contextual verbs", () => {
     // A lawn with seed in your pocket is NOT an offer to sow — the dug bed is
     // the statement of intent, and this line failing is the basket-hijack
     // action.test.ts caught on the day the rung was written too wide.
-    expect(actionTarget(w, "water", AUTUMN).kind).not.toBe("sow");
+    expect(actionTarget(w, null, AUTUMN).kind).not.toBe("sow");
     setTile(w, at.x, at.y, DIRT);
-    // The shovel keeps the shaft: dig on dirt is the settled way-down gesture,
-    // so the can and the basket are the sowing hands.
-    expect(actionTarget(w, "dig", AUTUMN).kind).not.toBe("sow");
-    expect(actionTarget(w, "water", AUTUMN).kind).toBe("sow");
-    const res = contextAction(w, "water", AUTUMN);
+    // The default tap on the bed SOWS — you sow daily and sink a shaft once a
+    // month, and a crop must never turn into a hole by surprise. The shaft is
+    // still two digs on one tile: the second one asked for by name, from the
+    // fan, where the explicit verb still answers.
+    expect(actionTarget(w, null, AUTUMN).kind).toBe("sow");
+    expect(actionTarget(w, "dig", AUTUMN)).toEqual({ x: at.x, y: at.y, kind: "tool", verb: "dig" });
+    const res = contextAction(w, null, AUTUMN);
     expect(res.changed).toBe(true);
     expect(w.crops[tileKey(at.x, at.y)]).toBeDefined();
-    // And the NEXT tap of the same tool waters the bed it just sowed.
-    expect(actionTarget(w, "water", AUTUMN).kind).toBe("tool");
+    // And the NEXT default tap waters the bed it just sowed.
+    const next = actionTarget(w, null, AUTUMN);
+    expect(next.kind).toBe("tool");
+    expect(next.verb).toBe("water");
   });
 
   it("your own tree in fruit answers ACT from the tile beside it", () => {

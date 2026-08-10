@@ -97,6 +97,7 @@ import {
 import { audio } from "./audio";
 import type { Cue } from "./audio";
 import type { ActionKind } from "../sim/game";
+import { availableVerbs } from "../sim/game";
 
 /** Which cue a successful action earns. */
 const ACTION_CUES: Record<ActionKind, Cue> = {
@@ -148,15 +149,14 @@ const AUTOSAVE_MS = 15_000;
 // so a hint that repeats it is worth nothing to the person hovering. `key` is
 // the desktop shortcut where one exists; the hint is the only place they're
 // written down, since a keyboard legend would be HUD clutter on a phone.
-const TOOLS: { id: Tool; icon: IconName; label: string; hint: string; key?: string }[] = [
-  // THREE, NOT FOUR (ROADMAP §the verb review). Plant left the rail the day
-  // sowing became contextual: stand on tilled soil with seed in your pocket
-  // and ACT sows, whatever you hold — and layout-scale sowing is the garden
-  // wing's Crops tab. Dig, Gather, Water are the embodied verbs, three fat
-  // thumb targets, and the seedling icon now marks the garden door instead.
-  { id: "dig", icon: "spade", label: "Dig", hint: "Turn the ground into soil you can plant in.", key: "1" },
-  { id: "gather", icon: "basket", label: "Gather", hint: "Pick what's ripe, or fell a tree or rock beside you.", key: "2" },
-  { id: "water", icon: "droplet", label: "Water", hint: "Water what's planted. Growth resumes.", key: "3" },
+const VERBS: { id: Tool; icon: IconName; label: string; hint: string; key?: string }[] = [
+  // THE VERBS, not tools: nothing is held (ROADMAP §one button — the tap is
+  // contextual, and these are the fan's one-shots for the ties). Keys 1–4 are
+  // the same one-shots for a desktop hand.
+  { id: "dig", icon: "spade", label: "Dig", hint: "Dig here — a bed from grass, the way down from dirt.", key: "1" },
+  { id: "gather", icon: "basket", label: "Gather", hint: "Pick or fell what's here or beside you.", key: "2" },
+  { id: "plant", icon: "seedling", label: "Sow", hint: "Sow a seed in dug ground.", key: "3" },
+  { id: "water", icon: "droplet", label: "Water", hint: "Water what's planted. Growth resumes.", key: "4" },
 ];
 
 /** The build bar's tabs, in the order they appear.
@@ -313,7 +313,6 @@ export class App {
   private renderer: Renderer;
   private world: WorldState | null = null;
   private rng: Rng = makeRng(1);
-  private tool: Tool = "dig";
   /** Non-null means BUILD MODE: the view flattens and canvas taps place instead
    *  of walking. Null means the normal 3/4 living view. */
   private buildTool: BuildTool | null = null;
@@ -377,7 +376,6 @@ export class App {
     this.renderer = new Renderer(this.canvas);
     this.hud = buildHud(
       root,
-      (t) => this.selectTool(t),
       (t) => this.selectBuildTool(t),
       (g) => this.selectBuildGroup(g),
       () => this.openFurniture(),
@@ -392,6 +390,30 @@ export class App {
       () => this.cycleZoom(),
     );
     this.hud.giveUp.addEventListener("click", () => this.giveUpGame());
+    // The long-press and its desktop spelling. 450ms is the platform-feeling
+    // hold; the timer dies on release or on the pointer leaving the button.
+    let holdTimer: number | null = null;
+    this.hud.action.addEventListener("pointerdown", () => {
+      holdTimer = window.setTimeout(() => {
+        holdTimer = null;
+        this.fanJustOpened = true;
+        this.openFan();
+      }, 450);
+    });
+    for (const ev of ["pointerup", "pointerleave", "pointercancel"] as const) {
+      this.hud.action.addEventListener(ev, () => {
+        if (holdTimer !== null) {
+          clearTimeout(holdTimer);
+          holdTimer = null;
+        }
+      });
+    }
+    this.hud.action.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      this.fanJustOpened = false; // right-click fires no click after it
+      if (this.fanOpen) this.closeFan();
+      else this.openFan();
+    });
     this.wireInput();
     this.restoreZoom();
     window.addEventListener("resize", () => {
@@ -2403,6 +2425,7 @@ export class App {
 
     this.canvas.addEventListener("pointerdown", (e) => {
       if (this.modalOpen || !this.world) return;
+      this.closeFan();
 
       // In build mode the canvas is a canvas: taps place, drags paint a run.
       // Laying a wall a tile at a time by walking to each tile would be
@@ -2597,7 +2620,7 @@ export class App {
         this.doAction();
         e.preventDefault();
       } else if (k >= "1" && k <= "4") {
-        this.selectTool(TOOLS[Number(k) - 1].id);
+        this.verbAct(VERBS[Number(k) - 1].id);
       } else if (k === "r") {
         this.rotate();
       } else if (k === "b") {
@@ -2770,17 +2793,15 @@ export class App {
     if (best) this.openDialogue(best.id);
   }
 
-  /** Pick an ACT tool. Leaving build mode is implicit: choosing something you do
-   *  with your hands is the clearest possible "I'm done editing". */
-  private selectTool(t: Tool): void {
-    this.tool = t;
+  /** Do one verb, once, and hold nothing afterwards (ROADMAP §one button).
+   *  Leaving build mode is implicit: doing something with your hands is the
+   *  clearest possible "I'm done editing". */
+  private verbAct(t: Tool): void {
     this.buildTool = null;
-    // Picking up a tool leaves bed-picking. This is the mode's door on TOUCH,
-    // where there is no Escape key — the act palette is on screen whenever build
-    // mode isn't, so there's always a way out (house rule: every panel needs a
-    // door).
+    this.closeFan();
     this.endAssigning();
     this.syncToolUi();
+    this.doAction(t);
   }
 
   /** Enter or leave build mode. The one door: the BUILD button, Escape, and the
@@ -2909,9 +2930,6 @@ export class App {
 
   private syncToolUi(): void {
     const building = this.buildTool !== null;
-    for (const [id, btn] of this.hud.toolButtons) {
-      btn.classList.toggle("selected", !building && id === this.tool);
-    }
     // Which tabs have anything IN them here. Underground the palette is two
     // tools long, so most tabs would be empty — an empty tab is a promise the
     // room cannot keep, so it goes rather than showing an empty row.
@@ -2983,7 +3001,6 @@ export class App {
       this.panAnchor = null;
       this.pointers.clear();
     }
-    this.renderer.setTool(this.tool);
     this.hud.root.classList.toggle("building", building);
     this.hud.build.classList.toggle("selected", building);
     this.hud.build.setAttribute("aria-pressed", String(building));
@@ -3318,9 +3335,53 @@ export class App {
     this.doAction();
   }
 
-  private doAction(): void {
+  /** True while the verb fan is up. In-memory UI state, like the fan itself. */
+  private fanOpen = false;
+  /** Set when a long-press just opened the fan, so the click that follows the
+   *  release doesn't ALSO perform the default act — one gesture, one meaning. */
+  private fanJustOpened = false;
+
+  /** Summon the verb fan (ROADMAP §one button): long-press or right-click on
+   *  ACT. Only the verbs that would do something here appear — the reticle
+   *  rule applied to a menu — so it is one to three buttons, or nothing at
+   *  all, in which case nothing opens and the button's silence is the answer. */
+  private openFan(): void {
     if (!this.world || this.modalOpen) return;
-    const res = contextAction(this.world, this.tool, Date.now());
+    const verbs = availableVerbs(this.world);
+    const fan = this.hud.actFan;
+    fan.replaceChildren(
+      ...verbs.map((id) => {
+        const v = VERBS.find((x) => x.id === id)!;
+        const btn = el("button", { class: "tool", ariaLabel: v.label }, [iconEl(v.icon, SCALE.button)]);
+        hoverHint(btn, `${v.label} — ${v.hint}${v.key ? `  (${v.key})` : ""}`);
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.verbAct(id);
+        });
+        return btn;
+      }),
+    );
+    this.fanOpen = verbs.length > 0;
+    fan.classList.toggle("open", this.fanOpen);
+  }
+
+  private closeFan(): void {
+    if (!this.fanOpen) return;
+    this.fanOpen = false;
+    this.hud.actFan.classList.remove("open");
+    this.hud.actFan.replaceChildren();
+  }
+
+  private doAction(verb: Tool | null = null): void {
+    if (!this.world || this.modalOpen) return;
+    if (verb === null && this.fanJustOpened) {
+      // The release-click of the long-press that opened the fan. One gesture,
+      // one meaning: the fan is the meaning, and the default act waits.
+      this.fanJustOpened = false;
+      return;
+    }
+    this.closeFan();
+    const res = contextAction(this.world, verb, Date.now());
     // Reading opens a panel instead of flashing a line. It reports `changed:
     // false` — nothing in the world moved — so it has to be caught before the
     // cue below, or standing at the board would play the refusal sound.
@@ -3435,6 +3496,13 @@ export class App {
       // frame so the setlist and the sky tint can never disagree about the hour.
       audio.setScore(settledness(this.world), nightMusic(wallNow));
       this.hud.clock.textContent = clockLabel(Date.now());
+      // A tick on ACT's corner when more than one verb applies here — the fan's
+      // whole discoverability budget. Information, not chrome: one dot, only
+      // when a choice actually exists, gone in build mode where ACT is resting.
+      this.hud.action.classList.toggle(
+        "multi",
+        this.buildTool === null && availableVerbs(this.world).length > 1,
+      );
       // From the TILE, not from `player.x`: the player is a point moving
       // continuously across cells, and a reference reading off the float would
       // flicker between two numbers while you stand still.
@@ -3529,7 +3597,11 @@ interface HudRefs {
    *  of everything else lives in the conversation panel, and the hider is by
    *  construction not standing next to you to have one. */
   giveUp: HTMLElement;
-  toolButtons: [Tool, HTMLElement][];
+  /** The verb fan — the one-shot row summoned to the left of ACT. */
+  actFan: HTMLElement;
+  /** The ACT button itself — the app hangs the long-press and the multi-verb
+   *  tick off it. */
+  action: HTMLElement;
   buildButtons: [BuildTool, HTMLElement][];
   /** The category tabs, and which tools each button belongs to. */
   groupButtons: [BuildGroup, HTMLElement][];
@@ -3555,7 +3627,6 @@ interface HudRefs {
 
 function buildHud(
   root: HTMLElement,
-  onTool: (t: Tool) => void,
   onBuildTool: (t: BuildTool) => void,
   onBuildGroup: (g: BuildGroup) => void,
   onFurniture: () => void,
@@ -3626,16 +3697,11 @@ function buildHud(
   const giveUp = el("button", { class: "clock giveup" }, ["Call it off"]);
   hoverHint(giveUp, "Stop looking. They'll come out — no harm done.");
 
-  const toolButtons: [Tool, HTMLElement][] = [];
-  const palette = el("div", { class: "tool-palette" });
-  for (const t of TOOLS) {
-    const btn = el("button", { class: "tool", ariaLabel: t.label }, [iconEl(t.icon, SCALE.button)]);
-    btn.addEventListener("click", () => onTool(t.id));
-    hoverHint(btn, `${t.label} — ${t.hint}${t.key ? `  (${t.key})` : ""}`);
-    if (t.id === "dig") btn.classList.add("selected");
-    toolButtons.push([t.id, btn]);
-    palette.append(btn);
-  }
+  // THE RAIL IS GONE (ROADMAP §one button). What replaces it is the verb fan:
+  // a row that appears to the LEFT of ACT on a long-press or right-click,
+  // holding only the verbs that would do something here (availableVerbs — the
+  // reticle rule applied to a menu), each a ONE-SHOT. Filled by syncFan().
+  const actFan = el("div", { class: "act-fan" });
 
   // What the next seed becomes, beside the hand that sows it.
   //
@@ -3809,7 +3875,9 @@ function buildHud(
 
   const action = el("button", { class: "action-btn" }, ["ACT"]);
   action.addEventListener("click", onAction);
-  hoverHint(action, "Use the held tool on the tile you're standing on.  (Space)");
+  // Right-click is the desktop spelling of the long-press (wired in the app,
+  // which owns the fan's contents); the hint teaches both.
+  hoverHint(action, "Do the obvious thing here.  (Space)  Hold for other verbs.");
 
   const hud = el("div", { class: "hud" }, [
     menu,
@@ -3824,13 +3892,13 @@ function buildHud(
     // second line of chips pushes itself up and leaves the tools exactly where
     // your thumb left them — the same reason the build bar stacks its finishes
     // above its tools rather than below.
-    el("div", { class: "act-dock" }, [palette]),
+    actFan,
     buildBar,
     build,
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, survey, flash, giveUp, toolButtons, buildButtons, groupButtons, groupTabs, furniture, garden, gardenTools, buildFinishes, buildBar, build, rotate, undo, zoom };
+  return { root: hud, clock, survey, flash, giveUp, actFan, action, buildButtons, groupButtons, groupTabs, furniture, garden, gardenTools, buildFinishes, buildBar, build, rotate, undo, zoom };
 }
 
 // --- Panel helpers ------------------------------------------------------------

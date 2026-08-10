@@ -285,6 +285,38 @@ select {
   display: contents;
 }
 
+/* The verb fan (ROADMAP §one button): summoned to the LEFT of ACT by a
+   long-press or right-click, one to three one-shot buttons, gone on use. It
+   rides in the same bottom-right stack as BUILD/ACT so the buttons land beside
+   the thumb that asked for them. Hidden by default; `.open` shows it. */
+.act-fan {
+  position: fixed;
+  right: 132px; /* clear of the BUILD/ACT column */
+  bottom: 28px; /* level with ACT */
+  display: none;
+  gap: 8px;
+  z-index: 5;
+}
+.act-fan.open {
+  display: flex;
+}
+
+/* The fan's whole discoverability budget: one tick on ACT's corner, only when
+   more than one verb applies to where you stand. */
+.action-btn.multi::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+}
+.action-btn {
+  position: relative;
+}
+
 .build-finishes:empty {
   display: none;
 }
