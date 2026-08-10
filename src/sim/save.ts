@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 43;
+export const SCHEMA_VERSION = 44;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -1631,6 +1631,57 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
     return {
       ...raw,
       schemaVersion: 43,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
+      finishes: stamped.finishes ?? raw.finishes,
+      garden: stamped.garden ?? raw.garden,
+    };
+  },
+
+  /** v44 — the buildings get a material each.
+   *
+   *  Asked for in preference to signage: *"i think building materials and decor
+   *  would be ideal"*, which is also what DESIGN's tone would rather have — show
+   *  the player, don't label the building.
+   *
+   *  Two repaints and some decor. The repaints are the v28 pattern exactly, and
+   *  for its reason: a content change to a STAMPED building cannot reach a
+   *  deployed save any other way, because the walls were written into `build` at
+   *  world creation and nothing revisits them.
+   *
+   *  IT EDITS RATHER THAN RE-STAMPS, also on v28's argument, and this is the half
+   *  worth restating: a re-stamp rewrites every perimeter cell from the table and
+   *  would undo a colour the player chose, which outranks ours. So each wall is
+   *  changed only where it is still wearing exactly the finish the town gave it. */
+  43: (raw) => {
+    /** id → (the finish it wore at v43, the finish it wears now). Frozen, as
+     *  every rung's geometry and materials are. */
+    const REPAINTS = [
+      { rect: { x0: -3, y0: -10, x1: 3, y1: -6 }, door: { x: 0, y: -6 }, was: "ash", now: "sage" },
+      { rect: { x0: 6, y0: -11, x1: 10, y1: -6 }, door: { x: 8, y: -6 }, was: "ash", now: "salvage" },
+    ];
+
+    const build = { ...((raw.build ?? {}) as Record<string, { id: string; finish: string }>) };
+    for (const r of REPAINTS) {
+      for (let y = r.rect.y0; y <= r.rect.y1; y++) {
+        for (let x = r.rect.x0; x <= r.rect.x1; x++) {
+          const key = `${x},${y}`;
+          const cell = build[key];
+          if (!cell || cell.id !== "wall" || cell.finish !== r.was) continue;
+          build[key] = { ...cell, finish: r.now };
+        }
+      }
+    }
+    // The leaf is joinery and joinery is wood, even on a slate hall — the door
+    // keeps `ash` and the shell picks the masonry up from the wall beside it at
+    // draw time (`shellFinish`). Nothing to do here; the loop above skips it
+    // because it only touches cells whose id is "wall".
+
+    const stamped = stampInto({ ...raw, build });
+    return {
+      ...raw,
+      schemaVersion: 44,
       overrides: stamped.overrides,
       build: stamped.build,
       furniture: stamped.furniture,

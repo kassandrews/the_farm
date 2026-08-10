@@ -300,6 +300,10 @@ export const TOWN_PLANTINGS: { x: number; y: number; id: FloraId }[] = [
   // tree, and because they close the amphitheatre's back without walling it.
   { x: -13, y: 2, id: "bush" },
   { x: -7, y: 2, id: "bush" },
+  // Prudence's, because the one house in town should look lived in from outside
+  // and not merely occupied. Two bushes down her east side.
+  { x: 10, y: 7, id: "hydrangea" },
+  { x: 10, y: 9, id: "hydrangea" },
   // THE STALL'S GROVE. Derek's counter stands in the open now that his building
   // is gone, and an open-air stall on bare grass reads as a table somebody
   // abandoned. A loose ring of planting gives it somewhere to BE — the same job
@@ -419,7 +423,25 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     x1: 3,
     y1: FRONT_N,
     door: { x: 0, y: FRONT_N },
-    finish: "ash",
+    // SAGE GREEN — a tin of municipal paint, which is the most institutional
+    // object there is. It is the only green building in the world and it does not
+    // merge with the grass: the paint is grey-green (#8a9c7e) against a turf that
+    // is a full-blooded yellow-green, and on screen they sit apart rather than
+    // blending.
+    //
+    // IT WAS SLATE FOR ABOUT TEN MINUTES, on the reasoning that the hall should
+    // be the museum's stone opposite — marble pale and welcoming, slate dark and
+    // official. It photographed as a black slab at the head of the square, which
+    // is the museum's own warning coming true one building over: being
+    // distinctive is not the same as being welcoming, and the darkest grey
+    // available reads as a jail whatever its footprint. Granite and cobble are
+    // out for the reasons recorded on the museum (granite IS the plaza's colour,
+    // so the hall would vanish into its own paving).
+    //
+    // Painted timber also says the right thing about this particular institution.
+    // The museum is built of stone to last; the town hall was painted, once, by
+    // somebody following a schedule.
+    finish: "sage",
     furniture: [
       // The desk he is permanently "at the desk" at, immediately behind him.
       { x: -1, y: -8, id: "table", facing: "s", counter: "hall" },
@@ -548,7 +570,13 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // South wall, like every door in the town — a wall running away from the
     // camera has no face to draw a doorway on (see margfrom_house).
     door: { x: 8, y: FRONT_N },
-    finish: "ash",
+    // SALVAGE, and the finish was named for him before this building wore it:
+    // its hint in content/skins.ts reads "The Gremlin has a facility. He would
+    // like you to call it a facility." A shed made of reclaimed boards IS the
+    // joke, and it settles the one real material collision in town — the hall and
+    // the heap were both ash, which made the town's two most different errands
+    // look like the same building at a distance.
+    finish: "salvage",
     furniture: [
       // Shelves he refers to as "the system". He stands beside the counter, at
       // (9,-8).
@@ -821,6 +849,21 @@ export const TOWN_FIXTURES: TownFixture[] = [
   // 2x2 slab with board lines on it read as a sheet of paper lying in the
   // square, which is not the joke. A stage is made of ordinary boards.
   { x: STAGE.x, y: STAGE.y, id: "stage", facing: "s", finish: "pine", counter: "stage" },
+  // AN AWNING OVER THE SHOP'S DOOR, and it is the whole of what makes the Counter
+  // read as a shop from across the square. A building's identity is not its
+  // signage — DESIGN's tone note would rather the world showed you than told you
+  // — and one striped canopy says "you buy things here" faster than a name board
+  // ever could. Walk-through, so it hangs over the doorstep rather than blocking
+  // it, which is what an awning does.
+  { x: 10, y: 3, id: "awning", facing: "s", finish: "whitewash" },
+  // And a crate beside it, because a shop has stock that did not fit.
+  { x: 12, y: 3, id: "chest", facing: "s", finish: "whitewash" },
+  // THE FACILITY'S PILE, stacked against its own west wall on the street. Two
+  // crates and not six: the joke is that a shed with a heap in it is being called
+  // a facility, and a heap you have to squeeze past stops being funny and starts
+  // being an obstacle. Walk-through, like every chest.
+  { x: 6, y: -5, id: "chest", facing: "s", finish: "salvage" },
+  { x: 6, y: -4, id: "chest", facing: "s", finish: "salvage" },
   // THE AMPHITHEATRE'S BENCHES — two, covering the crowd's back row exactly
   // (content/festivals.ts §AUDIENCE). Walk-through like every seat, so a watcher
   // assigned to one of those cells simply sits on it and nothing in the festival

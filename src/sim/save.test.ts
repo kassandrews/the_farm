@@ -1037,10 +1037,21 @@ describe("v27 → v28: the museum is masonry", () => {
   });
 
   it("leaves every other building's walls as they were", () => {
-    // The museum alone. Two civic buildings in the same stone is a category,
-    // not an identity — the town hall's south-west corner stays ash.
-    const migrated = climb(v27Save(), 27, 30);
-    expect(migrated.build["-3,-9"].finish).toBe("ash");
+    // The museum alone. Two civic buildings in the same stone is a category, not
+    // an identity — and the town hall being SLATE today is that rule holding
+    // rather than breaking it: marble is pale and wide, slate is dark and tight,
+    // and one rung repainting the other's walls would still be the bug.
+    //
+    // UNCHANGED rather than a literal colour, and that is the fix this test
+    // needed: it asserted "ash", which was the hall's finish the day it was
+    // written and is not any more (the hall is slate now — see content/town.ts).
+    // A test for "this rung touches nobody else" should compare before with
+    // after, or it is really a test of what colour the hall happens to be.
+    const before = v27Save();
+    const wall = (b: Record<string, unknown>) =>
+      (b.build as Record<string, { finish: string }>)["-3,-9"];
+    const migrated = climb(before, 27, 30);
+    expect(wall(migrated)).toEqual(wall(before));
   });
 });
 

@@ -11229,6 +11229,62 @@ back to being whatever the generator says the moment the footprint left. It is
 written into `CLEARED` as an explicit rect every time now, but the rule is worth
 carrying: **check the clearing whenever a building moves or goes.**
 
+## The buildings get a material each (10 Aug 2026)
+
+Asked for in preference to signage — *"i think building materials and decor would
+be ideal"* — which is also what DESIGN's tone would rather have: show the player,
+do not label the building. The eave had given every building a silhouette; this
+gives them identities.
+
+### The two material calls
+
+- **The Facility is SALVAGE**, and the finish was named for its keeper before the
+  building ever wore it. Its hint in `content/skins.ts` reads *"The Gremlin has a
+  facility. He would like you to call it a facility."* A shed made of reclaimed
+  boards IS the joke. It also settles the one real collision in town: the hall
+  and the heap were both ash, which made the two most different errands in the
+  place look like the same building at a distance.
+- **The town hall is SAGE** — a tin of municipal paint, which is the most
+  institutional object there is, and the only green building in the world. It
+  does not merge with the turf: the paint is grey-green against a full-blooded
+  yellow-green, and on screen they sit apart.
+
+**It was SLATE for about ten minutes**, on the reasoning that the hall should be
+the museum's stone opposite — marble pale and welcoming, slate dark and official.
+It photographed as a black slab at the head of the square: the museum's own
+warning coming true one building over, that *being distinctive is not the same as
+being welcoming*, and that the darkest grey available reads as a jail whatever
+its footprint. Granite and cobble were already ruled out on the museum's notes
+(granite IS the plaza's colour, so the hall would vanish into its own paving).
+
+Painted timber also says the right thing about this institution. The museum is
+built of stone to last; the town hall was painted, once, by somebody following a
+schedule.
+
+### Decor, and the rule for it
+
+- **An awning over the Counter's door**, and it is the whole of what makes the
+  shop read as a shop from across the square. One striped canopy says "you buy
+  things here" faster than a name board could. Walk-through, so it hangs over the
+  doorstep rather than blocking it — which is what an awning does.
+- **Two crates against the Facility's wall.** Two and not six: the joke is that a
+  shed with a heap in it is being called a facility, and a heap you have to
+  squeeze past stops being funny and starts being an obstacle.
+- **Two bushes down Prudence's east side**, so the one house in town looks lived
+  in from outside rather than merely occupied.
+
+**Both awnings are red-and-white striped and that is deliberate.** The canopy
+colour is the piece's, not the finish's, because canvas is canvas — a market
+stall and a shopfront are the same object doing the same job, and giving them
+different stripes would have been variety for its own sake.
+
+### Still owed
+
+The museum needs nothing (marble plus two big windows is the most legible
+building in town), and the barn needs nothing (ox-blood does it in one field).
+What has no identity yet is **Prudence's house** — it is pine, like a default,
+and "the one where somebody lives" is currently carried by two bushes.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
