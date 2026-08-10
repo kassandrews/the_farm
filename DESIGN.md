@@ -582,6 +582,16 @@ scales of plant in it at once: tussock, bush, tree, in descending order of how
 much of it there is. A row with exactly one idea in it is a swatch, however well
 that idea is executed.
 
+**And a species does not belong to a region — a region PLANTS from a shared
+catalogue.** Silhouettes live in one flora table; a region says which it grows
+and how much. What silhouette proved (a recoloured meadow is not a pinewood) is
+that the DOMINANT species carries the region's identity — not that a region may
+hold only one. So the rule is a rate: one species, or two forms of one, is most
+of what stands there, and guests are allowed in the minority. An apple tree at a
+few percent of the meadow is a thing you come across; apples at forty percent
+and the meadow is an orchard. The same sentence has governed the bushes all
+along ("keep the unusual one in the minority"), and trees answer to it now too.
+
 ### Ground that is not turf
 
 A region's ground may vary **within itself**, on a field of its own — bare rock
@@ -1312,12 +1322,23 @@ seconds ago, not for regretting a house three days later. Building stays
 consequence-free in the direction that matters — you can always try
 something, because you can always take it back.
 
-**Build mode flattens the view.** Holding a structure tool drops raised
-faces to translucent outlines, hides roofs, and shows the ground grid —
-plan view while you build, 3/4 while you live there. Tap places, drag
-paints a run. This also splits the verbs cleanly: the **ACT** button is
-what you do to the tile at your feet (dig, gather, plant, water, harvest),
-**BUILD** is a mode where you edit the map by tapping it.
+**Build mode flattens the view — and the flatten belongs to the TOOL, not
+the mode.** Holding a structure tool drops raised faces to translucent
+outlines, hides roofs, and shows the ground grid — plan view while you lay
+walls, because walls occlude and alignment is the whole job. A garden tool
+(§The garden) places in the full living view: you judge a tree against the
+world as it actually looks, light and season included, because composing a
+view inside a muted view is impossible. One mode, two presentations, keyed
+to what is in your hand. Tap places, drag paints a run.
+
+**The principle that sorts every verb, and it is one sentence:** a verb
+whose target is YOUR OWN BODY'S POSITION belongs to **ACT** — dig, gather,
+water, harvest; standing there is the point, and dig can never be remote
+because digging is the verb that moves *you* down. A verb whose target is
+THE MAP belongs to **BUILD** — placing anything, anywhere you can see.
+There are exactly two modes and this sentence is why no third is coming:
+a mode earns its button by changing the grammar of touch, and everything
+placeable already shares build's grammar.
 
 ### A place keeps a history, the same way a resident does
 
@@ -1350,6 +1371,72 @@ first met Eloise", "you laid these boards yourself".
   the same reason.
 - **The log is capped**, like a villager's. A place that has been lived in for
   a year is not carrying a year of receipts.
+
+## The garden
+
+You may landscape your own land the way the Sims lets you: trees, bushes,
+flowers, grass, put where you want them, because building a beautiful place
+is a first-class activity here and plants are most of what beautiful means.
+
+**Everything green is BUILT, from one grammar.** Build mode gains a GARDEN
+group beside Furniture — crops, trees, bushes, flowers, grass — and there is
+no separate farm menu, no landscape mode. The test is that a player can
+predict where a thing lives: "anything you put on your land is in build"
+holds; "trees are in build unless they fruit" does not. Fruiting is a
+**property of a plant, never a category** — an apple tree fruits in autumn
+because that is what apple trees do, and you learn it by watching.
+
+**You plant what you have met.** Seeing a species growing in the world is
+what puts it in your palette, forever. Not bought, not dug up, not traded:
+met. The country is the catalogue, and the walk is the price — which means
+the far country's strangest trees are obtainable by exactly the people who
+have stood under them. It can never gate anything, because nothing requires
+a plant: a player who never leaves the plaza loses ornaments and not one
+thing they can do.
+
+**The palette never says what is missing.** No greyed-out slots, no counts,
+no checklist — the same rule secrets and found places already obey. The
+palette is simply bigger than it was yesterday, and you find out the world
+has a willow in it by standing next to a willow. A species entry may
+remember where you met it; it may never enumerate what you haven't.
+
+**Planted things grow in.** Everything goes into the ground small and fills
+out over days — flowers and bushes in about a day, trees over about three.
+Real time finishing your garden is Pillar 6 applied to your own land, and a
+garden that assembles instantly is furniture wearing leaves. Days, never
+seasons: seasons are a real year of a real life, and the payoff being
+bought is "this comes back", not "you waited".
+
+**Crops are the tended plants, and tending stays on foot.** A crop entry
+consumes a seed and targets tilled soil; sowing at layout scale is a drag
+in the mode, and sowing at garden scale never needs the menu at all — ACT
+sows when you stand on tilled ground with seed in your pocket, exactly as
+the ripe-crop override already harvests. Watering and harvesting are ACT
+forever: the morning walk along your rows is where the farm lives, and
+drag-watering a plan view would turn it into administration. Landscape
+plants are the untended ones — no seed, no water, no yield. That is the
+whole difference, and it is a property, not a menu.
+
+**Fruit is pickable exactly when you planted the tree.** Wild fruit is
+paint — a region gates nothing and the country stays a place you look at,
+not a resource sheet. Your own apple tree answers ACT with apples, because
+planting is what makes fruit yours. No recipe, commission or acceptance
+test may ever require a fruit: it goes to gifts, tastes, festivals and the
+museum, the sinks that already exist and that nothing depends on. And
+somewhere near every town there is an orchard — the place you first meet
+apples, in flower or in fruit, its own fruit forever paint.
+
+**Uprooting is erase, with the refund rule intact.** Removing a planted
+thing is the mode's erase, never the shovel: a crop erased refunds its
+seed and costs the growth, which is "it costs you the arrangement"
+transposed into time. The shovel keeps its own meanings, all of them
+underfoot.
+
+**Animals, if they ever come, appear in no menu.** Menus hold things with
+positions; creatures have wills, and an animal from a palette is furniture
+with a walk cycle. What you would build is the place for one — the fence,
+the coop, the pond — and the animal is met in the world, like everything
+else here worth having.
 
 ## Time and the away simulation
 
