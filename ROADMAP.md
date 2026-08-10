@@ -10058,6 +10058,25 @@ rather than from an author.
   and `render/palette.test.ts` checks precisely that. Five notched rows needs
   five rows of overlap, which costs the tree two pixels of height. That is the
   whole price of the shape.
+- **A NOTCH OF 2 IS THE TRUNK. `1` IS A LEFTOVER FROM WHEN STEMS WERE 3px WIDE,
+  AND IT IS WRONG IN SIX MORE ROWS.** Reported as "the notch looks a little
+  crazy", and it was really the TRUNK being pinched: a gap of `g` clears
+  `2g + 1` pixels and `trunkSpan` gives a stem of `5 + girth * 2`, so at `g: 1`
+  the crown's bottom rows draw over the outer column of bark on each side. The
+  trunk comes out of the foliage three wide, leaves it five wide, and has a step
+  at the crown's edge. The `crownGaps` doc said "1 is the trunk exactly" and was
+  true until 2 Aug, when "Trees stand up" took stems from three pixels to five
+  and left every gap in the file where it was.
+
+  **`trunkSpan`'s own note says this has now happened three times** — "broken
+  twice by someone making the trees bigger (once the crown, once the stem)" —
+  so the rule is written in both places now: any change to stem width or crown
+  scale sweeps `crownGaps` with it.
+
+  **Still unswept, and each wants a look rather than a find-and-replace**, since
+  three of them use `1` as the first step of a widening ramp and the ramp's shape
+  is the point: `birch` (…1, 1, 2, 2), `scrub` (…1, 2, 2), `fen` (…1, 2, 2, 3, 3,
+  4), `salt` (…1, 1, 1), `marsh` (…1, 1), `cinder`/`caldera` (…1, 1).
 - **The method: a resample is not an author.** Every other region's crown went
   through the same 2 Aug stretch, and this is the first one anybody has looked at
   since. If a row's silhouette has a note explaining what its proportions are

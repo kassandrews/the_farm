@@ -554,8 +554,26 @@ export interface BiomeDef {
   /** Optional, per row: how far the foliage stays CLEAR of the trunk, as a
    *  half-width of empty centred on the trunk's own column. 0 (the default for
    *  every row of every biome that omits this) is the solid row described above.
-   *  1 is the trunk exactly, and is usually what you want — the foliage should
-   *  MEET the bark, not float a stripe of grass away from it.
+   *
+   *  2 IS THE TRUNK EXACTLY, and that is the number you want unless you have a
+   *  reason: the foliage should MEET the bark, not float a stripe of grass away
+   *  from it and not sit ON it either. The arithmetic, since it is the third time
+   *  someone has got it wrong by not doing it: a gap of `g` clears `2g + 1`
+   *  pixels, and `render/renderer.ts` §trunkSpan gives a stem of `5 + girth * 2`.
+   *  At girth 0 that is five pixels of bark against a five-pixel hole.
+   *
+   *  THIS DOC SAID `1` UNTIL 9 AUG AND IT WAS A LEFTOVER. It was true when a stem
+   *  was three pixels wide; "Trees stand up" (2 Aug) took stems to five to keep
+   *  them under the taller crowns, and every `crownGaps` in the file stayed where
+   *  it was. A gap of 1 under a 5px trunk means the crown's bottom rows are drawn
+   *  OVER the outer column of bark on each side, so the trunk comes out of the
+   *  foliage three wide, leaves it five wide, and has a visible step at the
+   *  crown's edge. It reads as the notch being wrong, which is how it was
+   *  reported, and it is really the trunk being pinched.
+   *
+   *  §trunkSpan's own note warns about exactly this class of thing — "it has been
+   *  broken twice by someone making the trees bigger" — and this is the third.
+   *  ANY change to stem width or crown scale has to sweep `crownGaps` with it.
    *
    *  This is what turns a blob into a bean. A real broad crown doesn't come to
    *  a point over the trunk — it hangs at the sides and lifts in the middle,
@@ -5731,7 +5749,14 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // chosen: the pre-boost tree notched three of eleven rows, which is a bit
     // over a quarter of the crown, and three of eighteen is a sixth. A dip that
     // shallow on a crown this tall is a slot rather than an underside.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+    //
+    // AND THE NOTCH IS 2, WHICH IS THE TRUNK — see §crownGaps for the arithmetic
+    // and for how it came to be wrong everywhere. At 1 the bark came out of the
+    // crown three pixels wide and left it five, with a step at the crown's bottom
+    // edge where the foliage stopped sitting on it. A trunk that changes width
+    // halfway up is the thing the eye finds first, and it was reported as the
+    // notch looking wrong long before anybody counted pixels.
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2],
     // AND THE OVERLAP GOES WITH IT, because a gap is only legal on a row that
     // stands beside the trunk (§crownGaps — anywhere else it is a hole punched
     // in the foliage, and render/palette.test.ts checks exactly this). Five rows
