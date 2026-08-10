@@ -1,6 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { newWorld, tick } from "./game";
-import { tileKey, isWalkable, tileAt, floorFinish, generatedTile, PLAZA } from "./world";
+import { newWorld, tick, buildAt } from "./game";
+import { add, count } from "./inventory";
+import {
+  tileKey,
+  isWalkable,
+  tileAt,
+  floorFinish,
+  generatedTile,
+  homesteadOrigin,
+  HOME_REGION_REACH,
+  PLAZA,
+} from "./world";
 import { FLOOR, STONE, WATER, SHALLOW, TREE, tileDef } from "../content/tiles";
 import { rooms, roomAt } from "./rooms";
 import { findPath } from "./path";
@@ -12,6 +22,9 @@ import {
   footprintCells,
   isPerimeter,
   inTownClearing,
+  isPlotFence,
+  plotFenceCells,
+  PLOT,
   FRONT_N,
   FRONT_S,
   STREETS,
@@ -501,13 +514,14 @@ describe("the street plan", () => {
     // The plan in one assertion. A south wall on neither line is a building whose
     // front faces a field, which is what all six of them used to be.
     //
-    // THE SEED STALL IS THE ONE EXEMPTION AND IT IS DELIBERATE. It is not around
-    // the square: it stands out on the lane south of it, and its front is on the
-    // spur — the last shopfront you pass walking to your own ground, which is
-    // what a seed stall is for. It is still held to the doorstep and connectivity
-    // rules below, which are the ones that actually matter.
+    // TWO EXEMPTIONS, both deliberate, and neither is around the square. The SEED
+    // STALL stands out on the lane with its front on the spur — the last shopfront
+    // you pass walking to your own ground, which is what a seed stall is for. The
+    // BARN is not the town's at all: it is in your plot, and its front is on your
+    // yard. Both are still held to the doorstep and connectivity rules below,
+    // which are the ones that actually matter.
     for (const b of allTownBuildings()) {
-      if (b.id === "seedstall") continue;
+      if (b.id === "seedstall" || b.id === "barn") continue;
       expect([FRONT_N, FRONT_S], `${b.id} fronts nothing`).toContain(b.y1);
     }
   });
@@ -633,3 +647,107 @@ describe("the town's clearing", () => {
     expect(firstWet).toBeLessThan(0);
   });
 });
+
+describe("the plot", () => {
+  it("fences its whole boundary and leaves the gate open", () => {
+    const w = world();
+    for (let y = PLOT.y0; y <= PLOT.y1; y++) {
+      for (let x = PLOT.x0; x <= PLOT.x1; x++) {
+        const cell = w.build[tileKey(x, y)];
+        if (isPlotFence(x, y)) {
+          expect(cell, `no fence at ${x},${y}`).toMatchObject({ id: "fence" });
+        } else {
+          expect(cell?.id, `something fenced at ${x},${y}`).not.toBe("fence");
+        }
+      }
+    }
+  });
+
+  it("lets you walk in off the lane", () => {
+    // The gate is a GAP, so this is the only thing that proves it is one. A
+    // fence is solid; a plot fenced all the way round would be a pen you could
+    // see your own tent in and not reach.
+    const w = world();
+    const path = findPath(w, { x: 0, y: PLOT.y0 - 3 }, { x: 4, y: PLOT.y0 + 4 });
+    expect(path).not.toBeNull();
+  });
+
+  it("never roofs the field, because a fence does not enclose", () => {
+    // The reason `fence` is its own structure row and not a short wall. If it
+    // enclosed, the flood fill would call the fenced parcel a room and the sky
+    // would close over your field.
+    const w = world();
+    const inField = rooms(w).some((r) =>
+      [...r.interior].some((k) => {
+        const [x, y] = k.split(",").map(Number);
+        return x > PLOT.x0 && x < PLOT.x1 && y > PLOT.y0 && y < PLOT.y1 && !insideBarn(x, y);
+      }),
+    );
+    expect(inField).toBe(false);
+  });
+
+  it("stands the barn inside its own fence, with a door onto the yard", () => {
+    const w = world();
+    const b = TOWN_BUILDINGS.barn;
+    expect(b.x0).toBeGreaterThan(PLOT.x0);
+    expect(b.x1).toBeLessThan(PLOT.x1);
+    expect(b.y0).toBeGreaterThan(PLOT.y0);
+    expect(b.y1).toBeLessThan(PLOT.y1);
+    expect(tileAt(w, b.door.x, b.door.y + 1)).toBe(FLOOR); // the yard
+  });
+
+  it("holds the whole plot inside the region the town is guaranteed", () => {
+    // Not a style rule — `HOME_REGION_REACH` is derived from how far apart biome
+    // sites can be, so it cannot simply be raised. Outside it, a neighbouring
+    // region's pond can appear in your field. The first draft of the plot was
+    // 19x13 and reached 26.6 tiles.
+    for (const [x, y] of [
+      [PLOT.x0, PLOT.y0],
+      [PLOT.x1, PLOT.y0],
+      [PLOT.x0, PLOT.y1],
+      [PLOT.x1, PLOT.y1],
+    ]) {
+      expect(Math.hypot(x, y), `${x},${y}`).toBeLessThan(HOME_REGION_REACH);
+    }
+  });
+
+  it("puts your tent on your own ground", () => {
+    const w = world();
+    expect(w.homestead.originX).toBeGreaterThan(PLOT.x0);
+    expect(w.homestead.originX).toBeLessThan(PLOT.x1);
+    expect(w.homestead.originY).toBeGreaterThan(PLOT.y0);
+    expect(w.homestead.originY).toBeLessThan(PLOT.y1);
+  });
+
+  it("is the same plot whichever spot you chose", () => {
+    // The spot names TERRAIN, never a location (DESIGN §Town and homestead). It
+    // used to nudge the origin a tile or two per spot, which was invisible when
+    // the homestead was a tent and would put that tent through the barn wall now.
+    const spots: HomesteadSpot[] = ["riverside", "forest", "lakeside", "coast"];
+    const origins = spots.map((s) => JSON.stringify(homesteadOrigin(s)));
+    expect(new Set(origins).size).toBe(1);
+  });
+
+  it("enforces nothing — you may build outside the fence", () => {
+    // Settled explicitly: the boundary is signal, not a rule. Nothing in the game
+    // reads PLOT to decide what you may do.
+    const w = world();
+    add(w.inventory, "wood", 50);
+    const out = { x: PLOT.x1 + 6, y: PLOT.y1 + 6 };
+    expect(buildAt(w, "wall", out.x, out.y, 1000).changed).toBe(true);
+  });
+
+  it("lets you take your own fence down, and gives the wood back", () => {
+    const w = world();
+    const post = plotFenceCells()[0];
+    const before = count(w.inventory, "wood");
+    expect(buildAt(w, "erase", post.x, post.y, 1000).changed).toBe(true);
+    expect(w.build[tileKey(post.x, post.y)]).toBeUndefined();
+    expect(count(w.inventory, "wood")).toBeGreaterThan(before);
+  });
+});
+
+function insideBarn(x: number, y: number): boolean {
+  const b = TOWN_BUILDINGS.barn;
+  return x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1;
+}

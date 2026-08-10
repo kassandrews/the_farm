@@ -10821,6 +10821,101 @@ is a pure function; testing it as one is the fix.
 - **The lane ends in grass.** It runs to y 12 and stops, because what it is
   supposed to arrive at — the farm plot and its gate — is the next piece of work.
 
+## The fence, the plot and the barn (10 Aug 2026)
+
+The second piece of the town overhaul, and the one the owner named: *"i want to
+add in a dedicated plot that 'belongs' to the player with a barn since this is
+called the farm. they can use it or not, but it's a landing point."* The lane
+v37 ran south out of the square stopped in grass; this is what it was stopping
+short of. DESIGN §Town and homestead is amended for it rather than quietly
+contradicted.
+
+### The fence is a structure that does NOT enclose
+
+That is the whole reason it is its own row in `content/structures.ts` and not a
+short wall. `encloses` is what the room flood fill reads to decide a shape is a
+ROOM, and a room grows a roof — so a paddock fenced with anything that encloses
+gets ROOFED. You would put up four sides of railing and the sky would close over
+your field. Stated where the fill can read it, and asserted.
+
+It also means a fence needs no gate piece: a gate is a GAP. Nothing is being
+sealed, so a hole in a fence is a way through, complete.
+
+### Settled here, don't relitigate
+
+- **Cost 1**, the cheapest thing that stands up. The first thing anybody wants a
+  fence for is forty tiles of it round a field.
+- **Fences and walls are blind to each other** (`joinsFenceRun` beside
+  `joinsWallRun`). A fence that merged with a house's wall run would put a rail
+  through the masonry and a post in the doorway. They meet and stop, which is
+  what a real fence does when it reaches a building.
+- **The rail is stepped off the WORLD and spans the full tile; the posts are
+  every SECOND tile plus every end and corner.** CLAUDE.md's per-cell edges rule,
+  and a fence is the most obvious place in the game to get it wrong: the thing IS
+  repetitive, so a per-cell edge disappears into the repetition and stripes it
+  anyway. The posts are deliberate banding — the tent's stripes, one object over —
+  but one per cell is a picket every 16px, which reads as a palisade.
+- **A north-south run draws a full-tile-height rail with posts on it.** Drawn at
+  the fence's own HEIGHT instead of the cell's DEPTH, consecutive posts leave a
+  seven-pixel gap and a fence running north photographs as a column of tally
+  marks. Caught on screen, which is the only place it could have been.
+
+### The plot
+
+- **Seventeen by eight, and the size is a proof obligation.**
+  `HOME_REGION_REACH` guarantees the town's own region — ground paint, flora,
+  water table — only within about twenty-one tiles, and that number is NOT
+  tunable: it is derived from how far apart biome sites can be. The plot's far
+  corners sit at 20.6. The first draft was 19×13 and reached 26.6, which means a
+  neighbouring region's pond in your field on the seeds where a foreign site sits
+  close. The seed stall moved five rows north to make room for the north fence.
+- **NOTHING IS ENFORCED.** No code reads `PLOT` to decide what you may build.
+  Settled explicitly with the owner: people build wherever they want. The fence
+  says which ground the town considers yours, the way a hedge does, and you can
+  take it down for the wood.
+- **One plot whatever spot you picked.** `homesteadOrigin` used to nudge the
+  origin a tile or two per spot "for flavour" — invisible when the homestead was
+  a tent, and wrong now that the fence, the barn, the yard and the gate are at
+  fixed coordinates: an origin that wandered would put your tent through the barn
+  wall on one spot in four. The spot has never been about where the plot IS.
+  DESIGN is explicit that a spot names TERRAIN, and all of that is untouched.
+- **The lane does not stop at the boundary.** It runs through the gate and down
+  the middle of the plot into the yard — one road that ends in your yard, in the
+  same cobble the whole way. That continuity is most of what makes the farm read
+  as the thing the town opens onto rather than as a separate map.
+
+### The barn
+
+- **It does nothing, deliberately and completely.** No chore, no capacity, no
+  upgrade path. A room you own with a door on it. A barn that asked something of
+  you daily would be the first thing in the game that did.
+- **Ox-blood, the only painted building in the world.** Every other finish in
+  town is a MATERIAL — pine, ash, whitewash, marble — and this one is a tin of
+  paint somebody opened, which is the difference between a building the town put
+  up and a building on a smallholding. It does the whole of this building's
+  aesthetic work in one field: a red barn is legible at any zoom, and nothing else
+  in the game is that colour. It is a paint the player has not unlocked, which is
+  a hook rather than a leak — the Gremlin has the tins.
+- **Its front is on your yard, and from the gate you see its back.** Doors are on
+  south walls (§The street plan) and that is not being lifted. It is also what you
+  see of a real barn from a farm road.
+- **The starting materials are in your POCKETS, not in the chests** — twenty wood
+  and twelve stone, framed as the previous occupant's leftovers. They were nearly
+  gatherable nodes, a real woodpile and a real boulder, which is a better story
+  and does not work: a node's `felled` tile is GRASS, so clearing the woodpile
+  would punch a lawn through the barn's floor, and both regrow, so the barn would
+  quietly restock itself with boulders forever. Building a container system so a
+  chest could hold six planks would be a mechanic invented to justify a prop.
+
+### What the biome guarantee taught the tests
+
+`biome.test`'s town walk was derived from `home.y + 5` — a bubble round the tent —
+and had a two-tile skirt on it. Both had to go. The bubble never described the
+museum or the streets and stopped describing the homestead entirely; the SKIRT
+was asserting a promise nobody made, reaching 23.3 tiles where the generator
+guarantees ~21, and it failed on seed 16 the moment the plot arrived. It walks
+the town's actual footprint now — plaza, plot, every building, every street.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

@@ -173,11 +173,23 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     // the same reason: the tent comes with enough to put a row in, and the
     // Blessed Carrot is where you go when you want more of it or something
     // other than a carrot to plant.
-    inventory: { ...emptyInventory(), wood: 8, seed: STARTING_SEED },
+    // WHAT WAS IN THE BARN. The plot comes with one (content/town.ts §barn) and
+    // the owner's call was that you find some materials in it — so the opening
+    // stock is the previous occupant's leftovers rather than a balance number.
+    //
+    // It is in the INVENTORY rather than in a crate because there is no container
+    // system, and building one so that a chest could hold six planks would be a
+    // mechanic invented to justify a prop. The barn's chests are set dressing and
+    // say so in their own note.
+    //
+    // Enough to matter and not enough to skip anything: twenty wood is ten walls,
+    // which is a shed, and twelve stone is what one boulder yields — so the barn
+    // saves you the first errand and none of the second.
+    inventory: { ...emptyInventory(), wood: 20, stone: 12, seed: STARTING_SEED },
     // The opening stock counts as met — it is in your pockets before your
     // first step, and a museum that asked you to go discover wood would be
     // asking you to discover your own tent pegs.
-    met: ["wood", "seed"],
+    met: ["wood", "stone", "seed"],
     regrow: {},
     reclaim: {},
     // Empty on purpose: `selected` is keyed by tool and every entry is a choice
@@ -1867,8 +1879,12 @@ function placeOrRemove(
   return { changed: true, message: buildFlavour(tool), broke: false };
 }
 
-function buildFlavour(tool: "wall" | "door" | "window"): string {
+function buildFlavour(tool: "wall" | "door" | "window" | "fence"): string {
   if (tool === "wall") return "A wall goes up. It holds.";
+  // About the boundary, not about ownership — nothing in this game enforces one
+  // (DESIGN: land you own, not a job you have). A fence says where a thing is,
+  // and everybody can still walk round it.
+  if (tool === "fence") return "A fence. Now the ground on this side is a place.";
   if (tool === "door") return "A door. Now it's somewhere you go into.";
   // About the object, not about you (§Tone), and about the one thing a window
   // does that a wall doesn't — which is not "let light in" but "let the room be

@@ -247,6 +247,11 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
   // against each other. The hint says the thing you cannot see from the icon:
   // a window is still wall, and a row of them is one window.
   { id: "window", icon: "window", label: "Window", hint: "Still a wall — you just see through it. Side by side, they join up.", group: "structure" },
+  // AFTER the openings and before erase, which is reading order and also the
+  // order you reach for them: walls, then the holes in walls, then the thing
+  // that is not a wall at all. The hint says the one fact the icon cannot —
+  // that this is the piece which does NOT close a room.
+  { id: "fence", icon: "fence", label: "Fence", hint: "Posts and rails. Marks ground out without roofing it — leave a gap for a gate.", group: "structure" },
   { id: "erase", icon: "takedown", label: "Take back down", hint: "Remove what you built here. Materials come back.", group: "structure" },
 
   { id: "chair", icon: "chair", label: "Chair", hint: "Place a chair. Press R to turn it.", group: "seating" },

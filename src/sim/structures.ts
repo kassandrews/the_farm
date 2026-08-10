@@ -13,7 +13,7 @@
 
 import type { WorldState, BuildCell } from "./types";
 import type { StructureId } from "../content/structures";
-import { structureDef, joinsWallRun } from "../content/structures";
+import { structureDef, joinsWallRun, joinsFenceRun } from "../content/structures";
 import type { SkinId } from "../content/skins";
 import { tileAt, tileKey, isWalkable, refusesConstruction, refusesFooting } from "./world";
 import { tileDef } from "../content/tiles";
@@ -134,6 +134,24 @@ export function wallMask(world: WorldState, x: number, y: number): number {
 function joinsAt(world: WorldState, x: number, y: number): boolean {
   const cell = structureAt(world, x, y);
   return cell !== null && joinsWallRun(cell.id);
+}
+
+/** Which sides this FENCE joins to — the same four-neighbour mask, over a
+ *  different run (content/structures.ts §joinsFenceRun). Fences and walls are
+ *  deliberately blind to each other: a fence that reaches a house meets it and
+ *  stops, which is what a real one does. */
+export function fenceMask(world: WorldState, x: number, y: number): number {
+  let mask = 0;
+  if (isFence(world, x, y - 1)) mask |= CONNECT_N;
+  if (isFence(world, x + 1, y)) mask |= CONNECT_E;
+  if (isFence(world, x, y + 1)) mask |= CONNECT_S;
+  if (isFence(world, x - 1, y)) mask |= CONNECT_W;
+  return mask;
+}
+
+function isFence(world: WorldState, x: number, y: number): boolean {
+  const cell = structureAt(world, x, y);
+  return cell !== null && joinsFenceRun(cell.id);
 }
 
 /** Does this wall show its TOP SURFACE rather than its face?

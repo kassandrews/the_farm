@@ -94,7 +94,7 @@ describe("a villager with no bed", () => {
     // re-ran over a live world it would undo any rehousing the player did.
     const w = world();
     const v = margfrom(w);
-    const moved = { x: 8, y: 6 }; // a bed out on the player's homestead
+    const moved = { x: 5, y: 16 }; // a bed out on the player's own plot
     expect(placeFurniture(w, moved.x, moved.y, "bed", "s", "pine")).toBe(true);
     v.homeBed = tileKey(moved.x, moved.y);
 

@@ -167,6 +167,27 @@ const FARM_ICONS = {
     ],
     palette: { k: K, r: "#b8563c" },
   },
+  // Posts and two rails, and the icon has to say NOT-A-WALL at a glance because
+  // that is the only thing a player can get wrong about it. So: air between the
+  // rails, and the posts standing clear above and below them. The wall glyph two
+  // rows up is a solid block of courses; these two must never be confusable.
+  fence: {
+    rows: [
+      "............",
+      "............",
+      "..k..k..k...",
+      "..k..k..k...",
+      ".kkkkkkkkkk.",
+      ".kbbbbbbbbk.",
+      "..k..k..k...",
+      ".kkkkkkkkkk.",
+      ".kbbbbbbbbk.",
+      "..k..k..k...",
+      "..k..k..k...",
+      "............",
+    ],
+    palette: { k: K, b: WOOD },
+  },
   door: {
     rows: [
       "............",

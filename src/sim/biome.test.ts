@@ -30,6 +30,7 @@ import {
   LAKE_RADIUS,
 } from "./world";
 import { BIOMES, FIELD_WEIGHTS, bloomsOf, type BiomeId } from "../content/biomes";
+import { PLOT, STREETS, allTownBuildings } from "../content/town";
 import { SEASONS } from "../content/seasons";
 import { FOUND } from "../content/found";
 import { GRASS, tileDef } from "../content/tiles";
@@ -101,14 +102,34 @@ describe("the biome field", () => {
 describe("the town's own ground is untouched", () => {
   /** Every cell the town and homestead occupy, plus a margin. If any of these
    *  stops being meadow, a live save's terrain has moved. */
-  function townCells(spot: HomesteadSpot) {
-    const home = homesteadOrigin(spot);
+  /** Every cell the town actually OCCUPIES: the plaza, every building, every
+   *  street, and the fenced plot out to its own fence.
+   *
+   *  Two things changed here at once and both are worth stating.
+   *
+   *  It used to be derived from `home.y + 5` — a bubble round the tent — which
+   *  stopped describing the town the day the homestead became a parcel with a
+   *  barn in it, and never described the museum or the streets at all.
+   *
+   *  AND THE TWO-TILE SKIRT IS GONE, deliberately. The guarantee under test is
+   *  bounded at about twenty-one tiles BY A PROOF (`HOME_REGION_REACH`), not by a
+   *  tuning number: the plot's own far corner sits at 20.6 and a skirt round it
+   *  reaches 23.3, where the generator has never claimed anything. A skirt there
+   *  is not extra rigour, it is the test asserting a promise nobody made — and it
+   *  failed on seed 16 the moment the plot arrived. What the live save actually
+   *  depends on is that the ground the town STANDS ON is the town's own, and that
+   *  is what this walks. */
+  function townCells(_spot: HomesteadSpot) {
     const cells: { x: number; y: number }[] = [];
-    for (let y = PLAZA.y0 - 2; y <= Math.max(PLAZA.y1, home.y + 5) + 2; y++) {
-      for (let x = PLAZA.x0 - 2; x <= Math.max(PLAZA.x1, home.x + 5) + 2; x++) {
-        cells.push({ x, y });
+    const box = (x0: number, y0: number, x1: number, y1: number) => {
+      for (let y = y0; y <= y1; y++) {
+        for (let x = x0; x <= x1; x++) cells.push({ x, y });
       }
-    }
+    };
+    box(PLAZA.x0, PLAZA.y0, PLAZA.x1, PLAZA.y1);
+    box(PLOT.x0, PLOT.y0, PLOT.x1, PLOT.y1);
+    for (const b of allTownBuildings()) box(b.x0, b.y0, b.x1, b.y1);
+    for (const r of STREETS) box(r.x0, r.y0, r.x1, r.y1);
     return cells;
   }
 

@@ -22,7 +22,14 @@ import type { TileId } from "../content/tiles";
 import { FLOOR, GRASS } from "../content/tiles";
 import { tileDef } from "../content/tiles";
 import type { TownBuilding } from "../content/town";
-import { allTownBuildings, footprintCells, isPerimeter, STREETS, TOWN_FIXTURES } from "../content/town";
+import {
+  allTownBuildings,
+  footprintCells,
+  isPerimeter,
+  plotFenceCells,
+  STREETS,
+  TOWN_FIXTURES,
+} from "../content/town";
 import { tileKey } from "./world";
 
 /** Answers what generation would put at a tile, before any edits. Both callers
@@ -186,6 +193,27 @@ export function stampStreets(t: StampTarget): number {
   return laid;
 }
 
+/** The plot's fence — posts and rails round the homestead (content/town.ts
+ *  §The plot).
+ *
+ *  PINE, because it is yours and nobody has painted it. The barn beside it is the
+ *  one thing on this ground with a colour on it, and a fence in the same ox-blood
+ *  would have made the pair read as a matched set somebody commissioned rather
+ *  than as a barn on a smallholding.
+ *
+ *  Per cell like the streets and not all-or-nothing like a building: half a fence
+ *  is still a fence, so a player who has built across the line keeps their
+ *  building and the rails stop either side of it. */
+export function stampFences(t: StampTarget): number {
+  let laid = 0;
+  for (const c of plotFenceCells()) {
+    if (occupied(t, c.x, c.y)) continue;
+    t.build[tileKey(c.x, c.y)] = { id: "fence", finish: "pine" };
+    laid++;
+  }
+  return laid;
+}
+
 /** Stamp every town building AND every fixture. Returns the ids that were
  *  actually placed, so a migration can say what it did rather than claiming
  *  success it didn't have.
@@ -205,6 +233,9 @@ export function stampTown(t: StampTarget, probe?: TerrainProbe): string[] {
   // to them. Before the fixtures for no reason but reading order — a fixture
   // stands on ground and never lays any.
   stampStreets(t);
+  // Fences last of the three ground passes: they stand ON the ground the streets
+  // just laid, and the gate is a gap in them that the lane runs through.
+  stampFences(t);
   return [...placed, ...stampFixtures(t)];
 }
 

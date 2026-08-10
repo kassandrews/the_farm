@@ -430,11 +430,33 @@ family is anchored through the town, and the town's own bridge is generated
 where it crosses. The spot is the one guarantee of running water; the others
 take whatever the world gives them.
 
-You start with a tent. The house is **built from gathered materials**, tile
-by tile, expanded and reshaped freely — this is the Minecraft leg. Farmland
-is part of the homestead: land you own, not a job you have. Farming is
-fully optional; builder, forager, and museum-filler are complete ways to
-play.
+**The plot is a real parcel, and it is fenced.** A lane runs south out of the
+square and ends at your gate; inside the fence there is a barn, a yard in front
+of it, your tent, and grass. This amends the older reading of this section, in
+which "a plot on the edge of town" was a tent standing on open ground with
+nothing to say where the plot began or ended — a spawn point rather than a place.
+
+**The fence is signal, never a rule.** Nothing in the game reads the boundary to
+decide what you may build or where: you may build anywhere outside it that you
+may build anywhere else, and you may pull the fence down for the wood. A boundary
+that refused you would be the first "you may not build here" rule in a game whose
+entire build layer has none, and it would be the same mistake as a stamina meter
+wearing a different hat.
+
+**The barn stands there before you arrive, and it does nothing.** There is no
+barn mechanic — no chore, no capacity, no upgrade path. It is a room you own with
+a door on it, exactly like every other building in this town, and it exists so
+the lane arrives somewhere and so the ground is recognisably yours in the first
+minute. Use it or leave it empty. A barn that asked something of you daily would
+be the first thing in this game that did, and the invariants forbid that shape.
+What is in it is the previous occupant's leftover materials, which is why you
+start with wood and stone rather than wood alone.
+
+You start with a tent, and the house is still **built from gathered materials**,
+tile by tile, expanded and reshaped freely — that is the Minecraft leg and the
+barn does not stand in for it. Farmland is part of the homestead: land you own,
+not a job you have. Farming is fully optional; builder, forager, and
+museum-filler are complete ways to play.
 
 **And you take the tent down yourself.** Everyone else's tent goes when the
 Office Creature stamps a commission; there is no commission for the person

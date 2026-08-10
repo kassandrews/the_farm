@@ -61,6 +61,7 @@ import { dayNumber } from "../sim/found";
 import { letterFor } from "../content/found";
 import {
   wallMask,
+  fenceMask,
   blockedDoorsteps,
   shellFinish,
   showsTop,
@@ -264,6 +265,15 @@ const HIDDEN_FADE = 0.28;
 const STOREY = 24;
 /** The lit top surface of a wall, seen from slightly above. */
 const WALL_CAP = 3;
+
+/** A fence, in scene pixels. Knee high on a sprite that stands about a tile: at
+ *  a wall's 24 it is a wall, and at 4 it is a kerb. Nine reads as something you
+ *  lean on and can see over, which is the whole point of putting one round a
+ *  field you want to look at. */
+const FENCE_H = 9;
+const FENCE_RAIL = 2; // one rail's thickness
+const FENCE_RAIL_GAP = 4; // top rail to middle rail
+const FENCE_POST = 2;
 /** The town square is cut in bigger slabs than anybody's kitchen floor.
  *
  *  The plaza and a laid flagstone floor were the same stone in the same bond,
@@ -2127,7 +2137,14 @@ export class Renderer {
         if (built) {
           const x = tx;
           const y = ty;
-          this.raised.push({ y, bias: BIAS_TERRAIN, draw: () => this.drawWall(world, x, y, built) });
+          this.raised.push({
+            y,
+            bias: BIAS_TERRAIN,
+            draw: () =>
+              built.id === "fence"
+                ? this.drawFence(world, x, y, built)
+                : this.drawWall(world, x, y, built),
+          });
           // Only while building: a blocked doorstep is a mistake you make with
           // the build tools, and it's the build tools that can fix it. Asked
           // per visible door, so the cost is bounded by the screen like the
@@ -4486,6 +4503,102 @@ export class Renderer {
         ctx.fillRect(px + mx, py + my, mw, mh);
       },
     );
+  }
+
+  /** A fence: posts and rails, knee high.
+   *
+   *  ITS OWN PATH RATHER THAN A SHORT WALL, and the drawing is where that pays
+   *  off rather than where it costs. A wall is a MASS — a face you look at, a cap
+   *  you look across, a grain on both. A fence is a LINE with air behind it, and
+   *  the only things in it are the rail and the posts. Rendered as a 6px wall it
+   *  came out as a kerb.
+   *
+   *  THE RAIL IS STEPPED OFF THE WORLD, NOT THE CELL (`px` is already a world
+   *  position, and the rail spans the full tile with no end caps), so a run reads
+   *  as one continuous rail rather than as a row of little hurdles butted
+   *  together. That is CLAUDE.md's per-cell edges rule, and a fence is the most
+   *  obvious place in the game to get it wrong: the thing IS repetitive, so a
+   *  per-cell edge disappears into the repetition and stripes it anyway.
+   *
+   *  THE POSTS ARE THE EXCEPTION AND THEY ARE DELIBERATE BANDING — the tent's
+   *  stripes, one object over. But not one per cell: at 16px to a tile that is a
+   *  picket every 16 pixels, which reads as a palisade. Every SECOND world column
+   *  (or row), measured off the world coordinate so the spacing carries across
+   *  cells, plus one at every end and corner — which is where a real fence puts
+   *  its posts, because that is where the load is. */
+  private drawFence(world: WorldState, tx: number, ty: number, cell: BuildCell): void {
+    const ctx = this.ctx;
+    const skin = skinDef(cell.finish);
+    const mask = fenceMask(world, tx, ty);
+    const px = Math.round(this.sceneX(tx) - TILE / 2);
+    const base = Math.round(this.sceneY(ty) + TILE / 2);
+    const top = base - FENCE_H;
+
+    const prev = ctx.globalAlpha;
+    if (this.buildView) ctx.globalAlpha = prev * BUILD_VIEW_FADE;
+
+    // Contact shadow at the foot, on every cell: a fence stands ON the ground
+    // rather than being part of it, and unlike a wall's there is no cell in
+    // front to hide it. One flat 1px line, so a run gets one shadow and not a
+    // dotted one.
+    ctx.fillStyle = "rgba(0,0,0,0.16)";
+    ctx.fillRect(px, base, TILE, 1);
+
+    const ew = (mask & CONNECT_E) !== 0 || (mask & CONNECT_W) !== 0;
+    const ns = (mask & CONNECT_N) !== 0 || (mask & CONNECT_S) !== 0;
+    // A lone post with nothing either side still gets an east-west rail, so a
+    // single fence cell reads as a piece of fence rather than as a bollard.
+    const rails = ew || !ns;
+    const corner = ns && ew;
+
+    if (rails) {
+      // Two rails across the whole cell, top and middle. Full width and no end
+      // cap — see the note above.
+      for (const ry of [top, top + FENCE_RAIL_GAP]) {
+        ctx.fillStyle = skin.color;
+        ctx.fillRect(px, ry, TILE, FENCE_RAIL);
+        ctx.fillStyle = skin.shade;
+        ctx.fillRect(px, ry + FENCE_RAIL, TILE, 1);
+      }
+    }
+    if (ns) {
+      // A run travelling away from the camera is seen nearly edge-on: the rails
+      // foreshorten into a single line and what stands out of it are the posts.
+      //
+      // THE RAIL SPANS THE WHOLE TILE HEIGHT, and that is the whole fix rather
+      // than a detail. Drawn at FENCE_H — the height of the thing rather than
+      // the depth of the cell — consecutive posts leave a seven-pixel gap
+      // between them and a fence line running north photographs as a column of
+      // tally marks. A full-tile band butts exactly against its neighbour's, so
+      // the run reads as one rail with posts ON it.
+      const cx = px + (TILE - FENCE_RAIL) / 2;
+      ctx.fillStyle = skin.color;
+      ctx.fillRect(cx, top, FENCE_RAIL, TILE);
+      ctx.fillStyle = skin.shade;
+      ctx.fillRect(cx + FENCE_RAIL - 1, top, 1, TILE);
+      // Posts on it, every second world ROW and at both ends — the same spacing
+      // rule the east-west run uses, on the other axis.
+      const endNS = !(mask & CONNECT_N) || !(mask & CONNECT_S);
+      if (corner || endNS || ty % 2 === 0) {
+        const bx = px + (TILE - FENCE_POST - 1) / 2;
+        ctx.fillStyle = skin.color;
+        ctx.fillRect(bx, top + 4, FENCE_POST + 1, FENCE_H - 1);
+        ctx.fillStyle = skin.shade;
+        ctx.fillRect(bx + FENCE_POST, top + 4, 1, FENCE_H - 1);
+      }
+    }
+
+    // Posts. Every second world column, plus every end and every corner.
+    const end = !ew || !(mask & CONNECT_E) || !(mask & CONNECT_W);
+    if (rails && (corner || end || tx % 2 === 0)) {
+      const cx = px + (TILE - FENCE_POST) / 2;
+      ctx.fillStyle = skin.color;
+      ctx.fillRect(cx, top - 1, FENCE_POST, FENCE_H + 1);
+      ctx.fillStyle = skin.shade;
+      ctx.fillRect(cx + FENCE_POST - 1, top - 1, 1, FENCE_H + 1);
+    }
+
+    ctx.globalAlpha = prev;
   }
 
   private drawWall(world: WorldState, tx: number, ty: number, cell: BuildCell): void {

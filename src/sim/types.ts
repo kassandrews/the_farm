@@ -532,6 +532,9 @@ export type BuildTool =
   | "wall"
   | "door"
   | "window"
+  /** Posts and rails, and pointedly NOT a short wall — see
+   *  content/structures.ts §fence for why it does not enclose. */
+  | "fence"
   | "erase"
   /** The garden's one tool (DESIGN §The garden). WHICH plant rides beside it
    *  in the UI (ui/app.ts §gardenFlora), the way a finish rides beside a wall

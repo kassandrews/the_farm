@@ -278,22 +278,29 @@ export function baseTileAt(
  *  dimension and the paving stops dividing — see PLAZA_GRAIN in render/renderer.ts
  *  for the arithmetic and for why the paver is 24 and not 16. */
 export const PLAZA = { x0: -5, y0: -5, x1: 5, y1: 2 };
-export const HOME = { x: 6, y: 5 }; // homestead origin (tent sits here-ish)
+/** Where your tent stands — INSIDE the plot now, east of the lane, on the ground
+ *  that is going to be your field (content/town.ts §The plot). It used to be
+ *  (6,5): open grass between the town and nothing, chosen when there was nothing
+ *  for it to be near. */
+export const HOME = { x: 4, y: 15 };
 
 /** Homestead origin per chosen spot — all near HOME, nudged for flavour. Lives
  *  here rather than in game.ts because terrain generation needs it (it keeps a
  *  clearing around your plot), and world.ts must not import upward. */
-export function homesteadOrigin(spot: HomesteadSpot): { x: number; y: number } {
-  switch (spot) {
-    case "riverside":
-      return { x: HOME.x, y: HOME.y };
-    case "forest":
-      return { x: HOME.x + 2, y: HOME.y + 1 };
-    case "lakeside":
-      return { x: HOME.x, y: HOME.y - 1 };
-    case "coast":
-      return { x: HOME.x + 1, y: HOME.y - 1 };
-  }
+/** ONE PLOT, WHATEVER SPOT YOU PICKED. It used to nudge the origin a tile or two
+ *  per spot "for flavour", which was harmless while the homestead was a tent on
+ *  open ground and is wrong now that it is a fenced parcel with a barn in it: the
+ *  fence, the barn, the yard and the gate are all at fixed coordinates, so an
+ *  origin that wandered would put your tent through the barn wall on one spot in
+ *  four.
+ *
+ *  The spot has never been about where the plot IS. DESIGN §Town and homestead is
+ *  explicit that a spot names TERRAIN — a river past the bottom of the garden, a
+ *  treeline at twenty-four tiles, a shore at thirty-four — and every one of those
+ *  is a promise about what surrounds the farm. That is untouched. What is dropped
+ *  is a two-tile jiggle no player could ever have perceived. */
+export function homesteadOrigin(_spot: HomesteadSpot): { x: number; y: number } {
+  return { x: HOME.x, y: HOME.y };
 }
 
 /** Tiles around the homestead origin kept clear of trees and rocks, so you

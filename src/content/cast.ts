@@ -300,7 +300,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // over him, and a carrot is short enough that all you could see was the
     // leaves. Found on screen; the unit tests were green, because "is he inside
     // his own walls" is true either way.
-    schedule: [{ fromHour: 0, x: -6, y: 9, doing: "beside the seeds" }],
+    schedule: [{ fromHour: 0, x: -6, y: 8, doing: "beside the seeds" }],
   },
   errands: {
     id: "errands",
@@ -344,7 +344,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
       // its south wall at y -5, so a stop one row further north would have put
       // him in the antiquities wing, which is both wrong and against the glass.
       { fromHour: 16, x: -10, y: -4, doing: "at the museum, not touching anything" },
-      { fromHour: 18, x: -6, y: 12, doing: "last call at the stall" },
+      { fromHour: 18, x: -6, y: 11, doing: "last call at the stall" },
       { fromHour: 20, x: 3, y: 2, doing: "back at the board, sorting" },
     ],
   },

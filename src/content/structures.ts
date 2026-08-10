@@ -22,7 +22,7 @@
 import type { BuildPrice } from "./items";
 import type { SkinClass } from "./skins";
 
-export type StructureId = "wall" | "door" | "window";
+export type StructureId = "wall" | "door" | "window" | "fence";
 
 export interface StructureDef {
   id: StructureId;
@@ -120,6 +120,36 @@ export const STRUCTURES: Record<StructureId, StructureDef> = {
     // meets a wooden window and no further.
     finishes: [],
   },
+  fence: {
+    id: "fence",
+    name: "Fence",
+    // A UNIT, and it is the cheapest thing that stands up in the game. A fence is
+    // rails between posts and a wall is a wall; charging the same for both would
+    // say they are the same amount of object, and the first thing anybody wants a
+    // fence for is to run forty tiles of it round a field.
+    cost: 1,
+    // Solid, because a fence you can walk through is a decoration. This is the
+    // whole of what a fence does.
+    solid: true,
+    // AND IT DOES NOT ENCLOSE, which is the entire reason it is its own row and
+    // not a short wall.
+    //
+    // `encloses` is what the flood fill reads to decide a shape is a ROOM, and a
+    // room grows a roof. Fence a paddock with anything that encloses and the game
+    // roofs the paddock — you would put up four sides of railing and the sky
+    // would close over your field. That is not a bug you tune afterwards; it is
+    // the difference between the two objects, stated where the fill can read it.
+    //
+    // It is also why a fence needs no door row of its own. A gate is a GAP: leave
+    // a cell out and you can walk through it, and since nothing here is sealing
+    // anything, a gap costs nothing and seals nothing.
+    encloses: false,
+    // Both, so a paddock can be paling or drystone. Two options is exactly the
+    // number that opens the swatch level (ROADMAP §a swatch for every surface),
+    // which is the right outcome: post-and-rail and a drystone wall are two
+    // different fences, not one fence in two colours.
+    finishes: ["wood", "stone"],
+  },
 };
 
 export function structureDef(id: StructureId): StructureDef {
@@ -133,4 +163,13 @@ export function structureDef(id: StructureId): StructureDef {
  *  see straight through the fact that a window is still wall. */
 export function joinsWallRun(id: StructureId): boolean {
   return id === "wall" || id === "door" || id === "window";
+}
+
+/** Does this join a FENCE run? Fences only, and the exclusion is the point: a
+ *  fence that ran into a house and merged with its wall would put a rail through
+ *  the masonry and a post in the doorway. They are different objects and they
+ *  meet rather than join — which is also what a real fence does when it reaches
+ *  a building. */
+export function joinsFenceRun(id: StructureId): boolean {
+  return id === "fence";
 }

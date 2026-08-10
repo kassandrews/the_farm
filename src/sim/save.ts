@@ -11,7 +11,7 @@ import { STARTING_SEED } from "./seeds";
 import { newErrands } from "./errands";
 import { stampTown, ensureFixedCast } from "./town";
 import type { StampTarget } from "./town";
-import { generatedTile, tileKey, RECLAIM_MS } from "./world";
+import { generatedTile, homesteadOrigin, tileKey, RECLAIM_MS } from "./world";
 import { DIRT } from "../content/tiles";
 import { makeVillager } from "./villagers";
 import { authoredBed, TOWN_BUILDINGS } from "../content/town";
@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 37;
+export const SCHEMA_VERSION = 38;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -1118,6 +1118,100 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
       furniture: stamped.furniture,
       finishes: stamped.finishes ?? raw.finishes,
       frozen,
+    };
+  },
+
+  /** v38 — the plot (content/town.ts §The plot).
+   *
+   *  The lane that v37 ran south out of the square stopped in grass. This is what
+   *  it was stopping short of: a fenced parcel with a barn in it, a yard, and a
+   *  tent that now stands inside its own boundary instead of on open ground a
+   *  screen away from anything.
+   *
+   *  Three jobs, and the third is the one with a judgement in it.
+   *
+   *  1. TAKE THE SEED STALL DOWN WHERE IT WAS. It moved five rows south of the
+   *     square to make room for the plot's north fence, so it is a mover like
+   *     v37's four and gets v37's treatment, old rectangle frozen in the rung.
+   *  2. RE-STAMP, which puts the stall back, stands the barn up, lays the plot's
+   *     lane and yard and runs the fence. All of it is idempotent and all of it
+   *     refuses ground the player has claimed.
+   *  3. MOVE THE TENT — but ONLY IF IT IS STILL STANDING. `struckAt` is the whole
+   *     test. A struck tent is a decision the player made (DESIGN §"you take the
+   *     tent down yourself"), and there is nothing to move; an unstruck one means
+   *     they have not yet built a bed in a room with a door, which means they have
+   *     not built a house, which means nothing of theirs is anchored to the old
+   *     coordinate. Moving it is then the smallest honest change: your tent is on
+   *     your plot, where the plot now is. Moving a struck one would resurrect a
+   *     tent somebody deliberately took down. */
+  37: (raw) => {
+    /** The seed stall as it stood in v37 and in every version before it. */
+    const V37_STALL = {
+      x0: -9,
+      y0: 4,
+      x1: -4,
+      y1: 9,
+      furniture: [
+        { x: -8, y: 8, id: "table" },
+        { x: -8, y: 5, id: "shelf" },
+        { x: -5, y: 5, id: "shelf" },
+      ],
+    };
+
+    const overrides = { ...((raw.overrides ?? {}) as Record<string, number>) };
+    const build = { ...((raw.build ?? {}) as Record<string, { id: string; finish: string }>) };
+    const furniture = { ...((raw.furniture ?? {}) as Record<string, { id: string }>) };
+    const crops = (raw.crops ?? {}) as Record<string, unknown>;
+    const frozen = { ...((raw.frozen ?? {}) as Record<string, unknown>) };
+
+    const now = TOWN_BUILDINGS.seedstall;
+    const authored = new Set(now.furniture.map((f) => `${f.x},${f.y}:${f.id}`));
+    let playerWork = false;
+    for (let y = now.y0; y <= now.y1; y++) {
+      for (let x = now.x0; x <= now.x1; x++) {
+        const key = `${x},${y}`;
+        if (key in crops) playerWork = true;
+        const piece = furniture[key];
+        if (piece && !authored.has(`${key}:${piece.id}`)) playerWork = true;
+      }
+    }
+
+    if (!playerWork) {
+      for (const r of [V37_STALL, now]) {
+        for (let y = r.y0; y <= r.y1; y++) {
+          for (let x = r.x0; x <= r.x1; x++) {
+            const key = `${x},${y}`;
+            delete overrides[key];
+            const cell = build[key];
+            if (cell && (cell.id === "wall" || cell.id === "door" || cell.id === "window")) {
+              delete build[key];
+            }
+            delete frozen[key];
+          }
+        }
+      }
+      for (const f of [...V37_STALL.furniture, ...now.furniture]) {
+        const key = `${f.x},${f.y}`;
+        if (furniture[key]?.id === f.id) delete furniture[key];
+      }
+    }
+
+    const stamped = stampInto({ ...raw, overrides, build, furniture });
+
+    const homestead = (raw.homestead ?? {}) as Record<string, unknown>;
+    const struck = homestead.struckAt != null;
+    const spot = (typeof homestead.spot === "string" ? homestead.spot : "forest") as HomesteadSpot;
+    const home = homesteadOrigin(spot);
+
+    return {
+      ...raw,
+      schemaVersion: 38,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
+      finishes: stamped.finishes ?? raw.finishes,
+      frozen,
+      homestead: struck ? homestead : { ...homestead, originX: home.x, originY: home.y },
     };
   },
 };

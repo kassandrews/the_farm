@@ -433,7 +433,7 @@ describe("the town remarks on the month", () => {
     const before = [...everything(w, "resident1", october)];
     expect(before.some((t) => /pumpkin/i.test(t))).toBe(false);
 
-    plant(w, 8, 8, "pumpkin", october);
+    plant(w, 5, 16, "pumpkin", october);
     const after = [...everything(w, "resident1", october)];
     expect(after.some((t) => /pumpkin/i.test(t))).toBe(true);
   });
@@ -441,7 +441,7 @@ describe("the town remarks on the month", () => {
   it("does not mention a crop whose month it isn't", () => {
     const w = importedScholarWorld();
     const april = at(4);
-    plant(w, 8, 8, "pumpkin", april);
+    plant(w, 5, 16, "pumpkin", april);
     expect([...everything(w, "resident1", april)].some((t) => /pumpkin/i.test(t))).toBe(false);
   });
 

@@ -3,7 +3,7 @@ import { newWorld, loadedFinish } from "./game";
 import { serialize, deserialize, migrateSave, MIGRATIONS, SCHEMA_VERSION } from "./save";
 import { tileKey, shafts, RECLAIM_MS, floorFinish } from "./world";
 import { SHAFT, CAVE_FLOOR, DIRT, FLOOR } from "../content/tiles";
-import { TOWN_BUILDINGS, TOWN_FIXTURES, footprintCells } from "../content/town";
+import { TOWN_BUILDINGS, TOWN_FIXTURES, footprintCells, plotFenceCells, PLOT } from "../content/town";
 import { count, spend } from "./inventory";
 import { STARTING_SEED } from "./seeds";
 import { STARTING_CROP } from "../content/crops";
@@ -1412,5 +1412,91 @@ describe("v36 → v37: the street plan moves four buildings", () => {
     furniture["9,-2"] = { id: "cushion", facing: "s", finish: "sage" };
     const m = migrateSave(raw)!;
     expect(m.furniture["9,-2"]).toMatchObject({ id: "cushion" });
+  });
+});
+
+describe("v37 → v38: the plot arrives", () => {
+  /** A v37 save: the town with its street plan, but no plot — no barn, no fence,
+   *  no paving south of the lane's old foot, and the seed stall five rows north
+   *  of where it stands now. */
+  const V37_STALL = { x0: -9, y0: 4, x1: -4, y1: 9 };
+
+  function v37Save(extra: Record<string, unknown> = {}): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const build = { ...(w.build as Record<string, { id: string; finish: string }>) };
+    const furniture = { ...(w.furniture as Record<string, unknown>) };
+    const overrides = { ...(w.overrides as Record<string, number>) };
+
+    // No plot: strip the barn, the fence and everything paved inside it.
+    const barn = TOWN_BUILDINGS.barn;
+    for (let y = PLOT.y0; y <= PLOT.y1; y++) {
+      for (let x = PLOT.x0; x <= PLOT.x1; x++) {
+        delete build[`${x},${y}`];
+        delete furniture[`${x},${y}`];
+        delete overrides[`${x},${y}`];
+      }
+    }
+    void barn;
+    // The stall back where it was, as a plain ring.
+    const stall = TOWN_BUILDINGS.seedstall;
+    for (let y = stall.y0; y <= stall.y1; y++) {
+      for (let x = stall.x0; x <= stall.x1; x++) delete build[`${x},${y}`];
+    }
+    for (const f of stall.furniture) delete furniture[`${f.x},${f.y}`];
+    for (let y = V37_STALL.y0; y <= V37_STALL.y1; y++) {
+      for (let x = V37_STALL.x0; x <= V37_STALL.x1; x++) {
+        const ring =
+          x === V37_STALL.x0 || x === V37_STALL.x1 || y === V37_STALL.y0 || y === V37_STALL.y1;
+        if (ring) build[`${x},${y}`] = { id: "wall", finish: "pine" };
+      }
+    }
+    return {
+      ...w,
+      schemaVersion: 37,
+      build,
+      furniture,
+      overrides,
+      homestead: { spot: "forest", originX: 6, originY: 5, struckAt: null },
+      ...extra,
+    };
+  }
+
+  it("stands the barn up and runs the fence round the plot", () => {
+    const m = migrateSave(v37Save())!;
+    const barn = TOWN_BUILDINGS.barn;
+    expect(m.build[`${barn.door.x},${barn.door.y}`]).toMatchObject({ id: "door" });
+    for (const c of plotFenceCells()) {
+      expect(m.build[`${c.x},${c.y}`], `no fence at ${c.x},${c.y}`).toMatchObject({ id: "fence" });
+    }
+  });
+
+  it("leaves the gate open", () => {
+    const m = migrateSave(v37Save())!;
+    expect(m.build["0," + PLOT.y0]).toBeUndefined();
+  });
+
+  it("moves the seed stall, leaving no ghost behind", () => {
+    const m = migrateSave(v37Save())!;
+    const stall = TOWN_BUILDINGS.seedstall;
+    expect(m.build[`${stall.door.x},${stall.door.y}`]).toMatchObject({ id: "door" });
+    // The old ring's north-west corner is well clear of the new footprint.
+    expect(m.build[`${V37_STALL.x0},${V37_STALL.y0}`]).toBeUndefined();
+  });
+
+  it("moves a tent that is still standing onto the plot", () => {
+    const m = migrateSave(v37Save())!;
+    const home = m.homestead as { originX: number; originY: number };
+    expect(home.originX).toBeGreaterThan(PLOT.x0);
+    expect(home.originY).toBeGreaterThan(PLOT.y0);
+    expect(home.originY).toBeLessThan(PLOT.y1);
+  });
+
+  it("does NOT move a tent the player already struck", () => {
+    // Striking the tent is a decision (DESIGN §"you take the tent down
+    // yourself"). There is nothing standing to move, and rewriting the origin
+    // would put one back up somewhere new.
+    const raw = v37Save({ homestead: { spot: "forest", originX: 6, originY: 5, struckAt: 1234 } });
+    const m = migrateSave(raw)!;
+    expect(m.homestead).toMatchObject({ originX: 6, originY: 5, struckAt: 1234 });
   });
 });

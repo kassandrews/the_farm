@@ -177,7 +177,7 @@ describe("a placed piece invalidates what depends on walkability", () => {
     // something, so placement does not ask.
     const w = world();
     const before = buildRevision(w);
-    expect(placeFurniture(w, 7, 7, "cushion", "s", "undyed")).toBe(true);
+    expect(placeFurniture(w, 5, 16, "cushion", "s", "undyed")).toBe(true);
     expect(buildRevision(w)).not.toBe(before);
   });
 });

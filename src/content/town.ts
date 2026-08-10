@@ -25,7 +25,14 @@ import { CAST } from "./cast";
 import type { WingId } from "./museum";
 import { STAGE } from "./festivals";
 
-export type TownBuildingId = "townhall" | "margfrom_house" | "shop" | "heap" | "museum" | "seedstall";
+export type TownBuildingId =
+  | "townhall"
+  | "margfrom_house"
+  | "shop"
+  | "heap"
+  | "museum"
+  | "seedstall"
+  | "barn";
 
 // --- The street plan -----------------------------------------------------------
 //
@@ -87,11 +94,80 @@ export const STREETS: { x0: number; y0: number; x1: number; y1: number }[] = [
   // The one north-south run in the town, and wider than the streets on purpose:
   // it is the road out, it is the last thing the square opens onto, and at one
   // tile it read as a garden path.
-  { x0: -1, y0: 5, x1: 1, y1: 12 },
+  { x0: -1, y0: 5, x1: 1, y1: 11 },
   // The spur west off the lane's foot to the seed stall's door — the last front
   // you pass on the way to your own ground, which is what the stall is for.
-  { x0: -6, y0: 12, x1: 0, y1: 12 },
+  { x0: -6, y0: 11, x1: 0, y1: 11 },
+  // THROUGH THE GATE AND DOWN THE MIDDLE OF THE PLOT (§The plot). The lane does
+  // not stop at the boundary and start again as a garden path: it is one road,
+  // and it ends in your yard. That continuity is most of what makes the farm read
+  // as the thing the town opens onto rather than as a separate map.
+  { x0: -1, y0: 12, x1: 1, y1: 18 },
+  // THE YARD, in front of the barn door and joining it to the lane's foot. Paved
+  // in the same cobble as the road for the same reason — it is where the road
+  // arrives, not a second surface laid against it.
+  { x0: -7, y0: 18, x1: 1, y1: 18 },
 ];
+
+// --- The plot -------------------------------------------------------------------
+//
+// THE FARM. The lane out of the square used to stop in grass; this is what it was
+// stopping short of. DESIGN §Town and homestead calls the homestead "a plot on the
+// edge of town — land you own, not a job you have", and until now the whole of
+// that was a tent standing on open ground with a four-tile bubble of no-trees
+// round it. It was a spawn point, not a place.
+//
+// WHAT IT IS: a fenced parcel at the foot of the lane, with a barn in it, a yard
+// in front of the barn, and the rest left as grass. You may use every inch of it
+// or none of it.
+//
+// WHAT IT IS NOT, and this is the load-bearing half: it is NOT ENFORCED. Nothing
+// anywhere in the game reads these bounds to decide what you may build or where.
+// The fence is signal — it says which ground the town considers yours, the way a
+// hedge does — and you can take it down for the wood. Building outside it is
+// allowed everywhere the rest of the world is; that was settled explicitly, and
+// it is the same instinct as no stamina and no daily caps. A boundary that
+// refused you would be the first "you may not build here" rule in a game whose
+// entire build layer has none.
+//
+// SEVENTEEN BY EIGHT, and the size is a proof obligation rather than a taste.
+// `HOME_REGION_REACH` guarantees the town's own region — its ground paint, its
+// flora settings, its water table — only within about twenty-one tiles of the
+// origin, and that number is not tunable: it is derived from how far apart the
+// biome sites can be (sim/world.ts). The plot's far corners sit at 20.6, just
+// inside it. A plot one row deeper puts its corner outside the guarantee, and
+// what "outside" means here is a neighbouring region's pond in your field and a
+// neighbouring region's dirt painted across the corner of it, on the seeds where
+// a foreign site happens to sit close. The first draft was 19x13 and reached 26.6.
+export const PLOT = { x0: -8, y0: 12, x1: 8, y1: 19 };
+
+/** The gate: three cells of the north fence left OUT, where the lane arrives.
+ *
+ *  A GAP AND NOT A GATE PIECE. A fence does not enclose (content/structures.ts
+ *  §fence), so nothing is being sealed and there is nothing for a gate to open —
+ *  a hole in a fence is a way through, complete. Three wide because the lane is
+ *  three wide, and a three-tile road that necks down to one at the boundary reads
+ *  as a stile rather than as the way into a farm. */
+const GATE = { x0: -1, x1: 1 };
+
+/** Is this cell part of the plot's fence? The perimeter of PLOT, less the gate. */
+export function isPlotFence(x: number, y: number): boolean {
+  if (x < PLOT.x0 || x > PLOT.x1 || y < PLOT.y0 || y > PLOT.y1) return false;
+  const perimeter = x === PLOT.x0 || x === PLOT.x1 || y === PLOT.y0 || y === PLOT.y1;
+  if (!perimeter) return false;
+  return !(y === PLOT.y0 && x >= GATE.x0 && x <= GATE.x1);
+}
+
+/** Every fence cell, as a list, for the stamp. */
+export function plotFenceCells(): { x: number; y: number }[] {
+  const cells: { x: number; y: number }[] = [];
+  for (let y = PLOT.y0; y <= PLOT.y1; y++) {
+    for (let x = PLOT.x0; x <= PLOT.x1; x++) {
+      if (isPlotFence(x, y)) cells.push({ x, y });
+    }
+  }
+  return cells;
+}
 
 /** A piece of furniture that comes with the building, at an absolute anchor. */
 export interface TownFurniture {
@@ -493,11 +569,11 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     id: "seedstall",
     name: "The Seed Stall",
     x0: -9,
-    y0: 6,
+    y0: 5,
     x1: -4,
-    y1: 11,
+    y1: 10,
     // South wall, like every door in the town — see margfrom_house.
-    door: { x: -6, y: 11 },
+    door: { x: -6, y: 10 },
     // Pine, unfinished. He has not decorated. It has not come up.
     finish: "pine",
     furniture: [
@@ -506,10 +582,67 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       // room to buy a thing. It started centred on the door, which walled the
       // building shut — a table is solid, and town.test.ts caught it before a
       // browser had to.
-      { x: -8, y: 10, id: "table", facing: "s", counter: "seedstall" },
+      { x: -8, y: 9, id: "table", facing: "s", counter: "seedstall" },
       // Stock along the back wall, in no order anybody has explained.
-      { x: -8, y: 7, id: "shelf", facing: "s" },
-      { x: -5, y: 7, id: "shelf", facing: "s" },
+      { x: -8, y: 6, id: "shelf", facing: "s" },
+      { x: -5, y: 6, id: "shelf", facing: "s" },
+    ],
+  },
+
+  // THE BARN, and the game is called The Farm.
+  //
+  // It stands in your plot before you arrive, which is a change to DESIGN's old
+  // "you start with a tent and build everything" line and is written into DESIGN
+  // now rather than left as a surprise in a table. The argument for it is the one
+  // the owner gave: the plot needs a LANDING POINT — somewhere the lane arrives
+  // at, somewhere that is recognisably yours from the first minute — and a tent
+  // on open grass was not it.
+  //
+  // IT DOES NOTHING, deliberately and completely. There is no barn mechanic, no
+  // chore, no capacity, no upgrade path. It is a room you own with a door on it,
+  // which is exactly what every other building in this town is; a barn that asked
+  // something of you daily would be the first thing in the game that did, and
+  // DESIGN spends a whole invariant forbidding that shape. Use it or don't.
+  //
+  // ON THE WEST SIDE with the field east of the lane, so the road runs between
+  // them and you pass the barn's gable coming in. Its door is on the south wall
+  // like every other door in the game (§The street plan), so what you see from
+  // the gate is its back — which is what you see of a real barn from a farm road,
+  // and the yard you walk round to is the front.
+  barn: {
+    id: "barn",
+    name: "The Barn",
+    x0: -7,
+    y0: 13,
+    x1: -2,
+    y1: 17,
+    door: { x: -4, y: 17 },
+    // OX-BLOOD, and it is the only painted building in the world. Every other
+    // finish in town is a material — pine, ash, whitewash, marble — and this one
+    // is a TIN OF PAINT somebody opened, which is the difference between a
+    // building the town put up and a building that belongs to a smallholding.
+    // It also does the whole of this building's aesthetic work in one field: a
+    // red barn is legible at any zoom and from any distance, and nothing else in
+    // the game is that colour.
+    //
+    // It is a paint the player has not unlocked yet (`starter: false`), which is
+    // a feature — the Gremlin has the tins, and now there is a reason to want
+    // one. Same shape of hook as the museum's marble.
+    finish: "oxblood",
+    furniture: [
+      // What the last occupant left. Set dressing and nothing more: the actual
+      // wood and stone are in your pockets at world creation (sim/game.ts), NOT
+      // in these — there is no container system, and inventing one so that a
+      // chest could hold six planks would be a mechanic built to justify a prop.
+      //
+      // They were nearly gatherable NODES instead — a real woodpile and a real
+      // boulder you fell on your first morning, which is a better story and does
+      // not work: a node's `felled` tile is GRASS, so clearing the woodpile would
+      // punch a lawn through the barn's floor, and both regrow, so the barn would
+      // quietly restock itself with boulders forever.
+      { x: -6, y: 14, id: "chest", facing: "s" },
+      { x: -5, y: 14, id: "chest", facing: "s" },
+      { x: -3, y: 14, id: "shelf", facing: "s" },
     ],
   },
 };
@@ -613,6 +746,12 @@ const CLEARED: { x0: number; y0: number; x1: number; y1: number }[] = [
     x1: r.x1 + CLEARING_MARGIN,
     y1: r.y1 + CLEARING_MARGIN,
   })),
+  // THE WHOLE PLOT, fence to fence, and this one is not margined — it is cleared
+  // to its own boundary and the wood starts outside it, which is what a fence
+  // line looks like. Cleared at all because a field with six trees standing in it
+  // is not a field, and because the alternative is handing the player a plot and
+  // asking them to spend their first hour logging it.
+  { x0: PLOT.x0, y0: PLOT.y0, x1: PLOT.x1, y1: PLOT.y1 },
 ];
 
 /** The cheap rejection: nothing outside this box can be cleared ground. The
