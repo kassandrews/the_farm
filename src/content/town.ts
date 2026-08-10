@@ -229,6 +229,26 @@ export function plotFenceCells(): { x: number; y: number }[] {
  *  is placed below the water to avoid. */
 export const TOWN_DRY_GROUND = { x0: -8, y0: 3, x1: -2, y1: 7 };
 
+/** THE PARK — the town's green, west of the square, with the stage in it.
+ *
+ *  It is the answer to a gap rather than a feature somebody wanted: Prudence's
+ *  house came off the square (§margfrom_house) and left a building-shaped hole in
+ *  its west side. A fourth building would have put the problem back; bare ground
+ *  reads as a building missing. A park reads as the side that was never built on,
+ *  which is what it is.
+ *
+ *  AND THE STAGE CAME WITH IT. The plaza stage stood on stone in the square's
+ *  south-west corner, which was the right corner of the wrong surface — a 2x2
+ *  wooden platform on paving, with the town's one open space doubling as its
+ *  audience floor. On a green, with benches behind an open apron, it is an
+ *  amphitheatre; and the square gets its quadrant back.
+ *
+ *  Bounded by the museum and the north street above, the plaza to the east, the
+ *  south street below, and the river country to the west. `TOWN_RECTS` keeps it
+ *  dry like the rest of the town's own ground — its west edge stops at x -13
+ *  because the cap reaches six tiles and the promised river is anchored at -20. */
+export const PARK = { x0: -13, y0: -3, x1: -6, y1: 2 };
+
 export const TOWN_PLANTINGS: { x: number; y: number; id: FloraId }[] = [
   // THE AVENUE — four birches, two a side, down the lane out of the square.
   // The single strongest planting in the town and the reason this table exists:
@@ -263,15 +283,23 @@ export const TOWN_PLANTINGS: { x: number; y: number; id: FloraId }[] = [
   // there on purpose, and that is the whole of what they say.
   { x: 2, y: 13, id: "hydrangea" },
   { x: 3, y: 13, id: "hydrangea" },
-  // THE SQUARE'S WEST SIDE, which is open ground now that Prudence's house has
-  // moved off it. Three plants and not a fourth building: the square is bounded
-  // by institutions on the north and east and by its own street on the south, and
-  // the fourth side is deliberately GREEN rather than built. A gap left bare
-  // reads as a building missing; a gap with trees in it reads as the side of the
-  // square that was never built on, which is what it is.
+  // THE PARK (§THE PARK). A RIM AND NEVER A FILL: trees round the edges and open
+  // grass in the middle, because the middle is the amphitheatre's floor and a
+  // park you cannot cross is a wood. The east rim doubles as the square's west
+  // side — the plaza is bounded by institutions on three sides and by this on the
+  // fourth, which is a better answer than a fourth building and than a bare gap.
   { x: -7, y: -3, id: "broadleaf" },
   { x: -7, y: 1, id: "broadleaf" },
   { x: -6, y: -1, id: "bush" },
+  { x: -13, y: -3, id: "broadleaf" },
+  { x: -13, y: 1, id: "broadleaf" },
+  { x: -12, y: -3, id: "bush" },
+  { x: -9, y: -3, id: "birch" },
+  { x: -13, y: -1, id: "hydrangea" },
+  // Two by the benches, because the one thing a park bench wants behind it is a
+  // tree, and because they close the amphitheatre's back without walling it.
+  { x: -13, y: 2, id: "bush" },
+  { x: -7, y: 2, id: "bush" },
   // THE STALL'S GROVE. Derek's counter stands in the open now that his building
   // is gone, and an open-air stall on bare grass reads as a table somebody
   // abandoned. A loose ring of planting gives it somewhere to BE — the same job
@@ -793,6 +821,16 @@ export const TOWN_FIXTURES: TownFixture[] = [
   // 2x2 slab with board lines on it read as a sheet of paper lying in the
   // square, which is not the joke. A stage is made of ordinary boards.
   { x: STAGE.x, y: STAGE.y, id: "stage", facing: "s", finish: "pine", counter: "stage" },
+  // THE AMPHITHEATRE'S BENCHES — two, covering the crowd's back row exactly
+  // (content/festivals.ts §AUDIENCE). Walk-through like every seat, so a watcher
+  // assigned to one of those cells simply sits on it and nothing in the festival
+  // code has to know benches exist.
+  //
+  // The FRONT row is deliberately left bare. Two rows of seating with nobody able
+  // to stand in front reads as a waiting room; one row of benches behind an open
+  // apron reads as a place people gather, some of whom sat down.
+  { x: -12, y: 2, id: "bench", facing: "s", finish: "pine" },
+  { x: -10, y: 2, id: "bench", facing: "s", finish: "pine" },
   // THE SEED STALL, and it is an actual stall now.
   //
   // It was a six-by-six BUILDING with a door and a roof, and the table row said
@@ -861,10 +899,11 @@ const CLEARED: { x0: number; y0: number; x1: number; y1: number }[] = [
     x1: r.x1 + CLEARING_MARGIN,
     y1: r.y1 + CLEARING_MARGIN,
   })),
-  // THE SQUARE'S WEST SIDE. It came free while a house stood on it and stopped
-  // the day the house moved; without it the town plants three trees into whatever
-  // wood the generator put there, which is not a planting, it is a coincidence.
-  { x0: -8, y0: -4, x1: -6, y1: 3 },
+  // THE PARK (§THE PARK). Part of it came free while Prudence's house stood on
+  // it and stopped the day the house moved — a building clears its own ground, so
+  // taking one away costs a clearing, which is the second time that has bitten
+  // this week (the seed stall's grove was the first).
+  { x0: PARK.x0, y0: PARK.y0, x1: PARK.x1, y1: PARK.y1 },
   // THE STALL AND ITS GROVE. This used to come free — a building clears its own
   // ground plus the margin — and stopped the day the seed stall stopped being a
   // building. Without it the town plants an avenue and a grove into whatever wood

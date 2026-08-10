@@ -4,7 +4,7 @@ import { SCHEMA_VERSION } from "./save";
 import { FESTIVALS, FESTIVAL_FROM_HOUR, FESTIVAL_TO_HOUR, AUDIENCE, STAGE, STAGE_STAND, watchCell } from "../content/festivals";
 import { CAST, charDef, scheduledStop } from "../content/cast";
 import { festivalOn, activeFestival, isEve, nextFestival, lastFestival, daysUntil, festivalsBetween, attend, sawYouAt } from "./festival";
-import { PLAZA } from "./world";
+import { PARK } from "../content/town";
 
 function freshWorld() {
   const w = newWorld({ name: "Sprout", form: "blob", spot: "forest", seed: 4 });
@@ -125,12 +125,18 @@ describe("the gather", () => {
     expect(scheduledStop(newcomer, DURING).doing).toBe("at the festival");
   });
 
-  it("stands the audience on open plaza, not on the platform or on the Blob", () => {
+  it("stands the audience on the park's open ground, not on the platform or on the Blob", () => {
+    // It used to say PLAZA, because the stage stood on the paving. The stage is
+    // in the park now (content/town.ts §THE PARK) and the crowd went with it, so
+    // the claim that actually matters is the one this always meant: they stand on
+    // the amphitheatre's own ground, in front of the platform, on nobody.
     for (const cell of AUDIENCE) {
-      expect(cell.x).toBeGreaterThanOrEqual(PLAZA.x0);
-      expect(cell.x).toBeLessThanOrEqual(PLAZA.x1);
-      expect(cell.y).toBeGreaterThanOrEqual(PLAZA.y0);
-      expect(cell.y).toBeLessThanOrEqual(PLAZA.y1);
+      expect(cell.x).toBeGreaterThanOrEqual(PARK.x0);
+      expect(cell.x).toBeLessThanOrEqual(PARK.x1);
+      expect(cell.y).toBeGreaterThanOrEqual(PARK.y0);
+      expect(cell.y).toBeLessThanOrEqual(PARK.y1);
+      // In FRONT of it, which is the half the old bounds check never made.
+      expect(cell.y).toBeGreaterThan(STAGE.y + 1);
       // The stage is 2x2 anchored at STAGE.
       const onStage = cell.x >= STAGE.x && cell.x <= STAGE.x + 1 && cell.y >= STAGE.y && cell.y <= STAGE.y + 1;
       expect(onStage).toBe(false);

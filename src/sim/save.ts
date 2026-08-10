@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 42;
+export const SCHEMA_VERSION = 43;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -1603,6 +1603,39 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
       finishes: stamped.finishes ?? finishes,
       garden: stamped.garden ?? raw.garden,
       frozen,
+    };
+  },
+
+  /** v43 — the park, and the stage moves into it.
+   *
+   *  Prudence's house came off the square at v42 and left a green gap on its west
+   *  side. This fills it with a PARK rather than a fourth building, and moves the
+   *  plaza stage off the paving and into it — a 2x2 wooden platform on stone was
+   *  the right corner of the wrong surface, and the square's south-west quadrant
+   *  was quietly doubling as the audience floor.
+   *
+   *  One piece of furniture moves and the rest is planting, so this is a small
+   *  rung: lift the old stage, let the stamp put the new one down with the
+   *  benches and the trees. The stage is TOWN furniture — nobody can buy one —
+   *  so the only thing that could be at its old anchor is the town's own, and if
+   *  something else is there it belongs to the player and stays. */
+  42: (raw) => {
+    /** Where the stage stood at v42, on the plaza's south-west corner. */
+    const V42_STAGE = { x: -4, y: -3 };
+
+    const furniture = { ...((raw.furniture ?? {}) as Record<string, { id: string }>) };
+    const key = `${V42_STAGE.x},${V42_STAGE.y}`;
+    if (furniture[key]?.id === "stage") delete furniture[key];
+
+    const stamped = stampInto({ ...raw, furniture });
+    return {
+      ...raw,
+      schemaVersion: 43,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
+      finishes: stamped.finishes ?? raw.finishes,
+      garden: stamped.garden ?? raw.garden,
     };
   },
 };

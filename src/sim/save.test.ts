@@ -1523,12 +1523,15 @@ describe("v41 → v42: a home comes off the square", () => {
         delete furniture[`${x},${y}`];
       }
     }
-    // A v41 save has NOTHING planted where the house stood, because a house stood
-    // there. The trees that green the square's west side arrive with this very
-    // rung; leaving a fresh world's copy of them in the fixture makes v42 read
-    // them as the player's own planting and decline to move anything.
+    // A v41 save has NOTHING planted or stood where the house stood, because a
+    // house stood there. The park's trees and its stage arrive with LATER rungs;
+    // leaving a fresh world's copies of them in the fixture makes v42 read them
+    // as the player's own work and decline to move anything.
     for (let y = V41_HOUSE.y0; y <= V41_HOUSE.y1; y++) {
-      for (let x = V41_HOUSE.x0; x <= V41_HOUSE.x1; x++) delete garden.plants[`${x},${y}`];
+      for (let x = V41_HOUSE.x0; x <= V41_HOUSE.x1; x++) {
+        delete garden.plants[`${x},${y}`];
+        delete furniture[`${x},${y}`];
+      }
     }
     for (let y = V41_HOUSE.y0; y <= V41_HOUSE.y1; y++) {
       for (let x = V41_HOUSE.x0; x <= V41_HOUSE.x1; x++) {

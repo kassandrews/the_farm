@@ -24,6 +24,7 @@ import {
   footprintCells,
   isPerimeter,
   inTownClearing,
+  PARK,
   isPlotFence,
   plotFenceCells,
   PLOT,
@@ -35,7 +36,7 @@ import {
 } from "../content/town";
 import { structureDef } from "../content/structures";
 import { AUDIENCE } from "../content/festivals";
-import { cellsFor } from "./furniture";
+import { cellsFor, furnitureAt } from "./furniture";
 import { stopTarget } from "./housing";
 import { CAST } from "../content/cast";
 import type { HomesteadSpot } from "./types";
@@ -422,17 +423,38 @@ describe("the errands board", () => {
 // the board's block above checks, plus the two facts a 2x2 solid in the middle
 // of the square adds: it must not stand on the Dog's round, and it must not
 // stand where the town is about to stand.
-describe("the plaza stage", () => {
+describe("the stage", () => {
   const stage = TOWN_FIXTURES.find((f) => f.id === "stage")!;
   const cells = cellsFor(stage.x, stage.y, "stage", stage.facing);
 
-  it("stands on the plaza, all of it", () => {
+  it("stands in the park, all of it, and on none of the paving", () => {
+    // It was the PLAZA stage and stood on stone, which is the right corner of the
+    // wrong surface — a 2x2 wooden platform on paving, with the town's one open
+    // space doubling as its audience floor. On a green with benches it is an
+    // amphitheatre, and the square gets its south-west quadrant back.
     for (const [x, y] of cells) {
-      expect(x).toBeGreaterThanOrEqual(PLAZA.x0);
-      expect(x).toBeLessThanOrEqual(PLAZA.x1);
-      expect(y).toBeGreaterThanOrEqual(PLAZA.y0);
-      expect(y).toBeLessThanOrEqual(PLAZA.y1);
+      expect(x, `${x},${y} left the park`).toBeGreaterThanOrEqual(PARK.x0);
+      expect(x).toBeLessThanOrEqual(PARK.x1);
+      expect(y).toBeGreaterThanOrEqual(PARK.y0);
+      expect(y).toBeLessThanOrEqual(PARK.y1);
+      const onPlaza = x >= PLAZA.x0 && x <= PLAZA.x1 && y >= PLAZA.y0 && y <= PLAZA.y1;
+      expect(onPlaza, `${x},${y} is back on the paving`).toBe(false);
     }
+  });
+
+  it("has its crowd in front of it, on grass, with the back row seated", () => {
+    // The amphitheatre, asserted as geometry rather than as a picture: everybody
+    // watches from south of the platform, standing on something they can stand
+    // on, and the back row's cells are the two benches.
+    const w = world();
+    for (const seat of AUDIENCE) {
+      expect(seat.y, `${seat.x},${seat.y} is beside or behind the stage`).toBeGreaterThan(
+        stage.y + 1,
+      );
+      expect(isWalkable(w, seat.x, seat.y), `${seat.x},${seat.y} is not standable`).toBe(true);
+    }
+    const benched = AUDIENCE.filter((c) => furnitureAt(w, c.x, c.y)?.cell.id === "bench");
+    expect(benched.length, "nobody in the crowd gets to sit down").toBe(4);
   });
 
   it("lays no floor under itself", () => {

@@ -74,11 +74,16 @@ function findTreeInWood(w: ReturnType<typeof newWorld>): { x: number; y: number 
   throw new Error("no wood generated nearby");
 }
 
-/** Nothing the town (or anyone) has built within `m` tiles. */
+/** Nothing the town (or anyone) has BUILT OR PLANTED within `m` tiles.
+ *
+ *  The planted half arrived with the park: a felled block that happens to include
+ *  one of the town's own trees never comes back as dirt, because it was never a
+ *  wild tree — and the test reads as regrowth being broken. */
 function clearAround(w: ReturnType<typeof newWorld>, x: number, y: number, m: number): boolean {
   for (let dy = -m; dy <= m; dy++) {
     for (let dx = -m; dx <= m; dx++) {
-      if (`${x + dx},${y + dy}` in w.build) return false;
+      const key = `${x + dx},${y + dy}`;
+      if (key in w.build || key in w.garden.plants) return false;
     }
   }
   return true;

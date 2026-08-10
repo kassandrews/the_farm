@@ -274,22 +274,35 @@ export function activeFestival(now: number): FestivalDef | null {
  *
  *  Here the only thing north of the crowd is the stage, and the only thing
  *  north of the stage is open paving as far as the town hall. */
-export const STAGE = { x: -4, y: -3 } as const;
-export const STAGE_STAND = { x: -2, y: -2 } as const;
+// THE STAGE MOVED OFF THE PAVING AND ONTO THE GREEN (content/town.ts §THE PARK).
+// It stood in the square's south-west corner, which was the right corner of the
+// wrong surface: a 2x2 wooden platform on stone, with the town's one open space
+// doing double duty as its audience floor. On a green with seating around it, it
+// is an amphitheatre; on the paving it was a pallet somebody had left out.
+//
+// Everything below still holds — it faces south, nothing tall stands north of the
+// crowd, and there is open ground in front of it. The park was shaped around
+// those requirements rather than the stage being squeezed into the park.
+export const STAGE = { x: -11, y: -2 } as const;
+export const STAGE_STAND = { x: -9, y: -1 } as const;
 
 /** Where everyone else stands while it is on: two rows of open plaza in front
  *  of the platform.
  *
  *  Longer than the town is, so nobody has to share. */
 export const AUDIENCE: { x: number; y: number }[] = [
-  { x: -4, y: 0 },
-  { x: -3, y: 0 },
-  { x: -5, y: 0 },
-  { x: -2, y: 0 },
-  { x: -4, y: 1 },
-  { x: -3, y: 1 },
-  { x: -5, y: 1 },
-  { x: -2, y: 1 },
+  { x: -11, y: 1 },
+  { x: -10, y: 1 },
+  { x: -12, y: 1 },
+  { x: -9, y: 1 },
+  // The back row stands ON THE BENCHES, which is to say it sits on them: a bench
+  // is walk-through like every seat (the chair rule), so the crowd's back four
+  // resolve to seated without the crowd code knowing benches exist. That is the
+  // whole of the amphitheatre as far as the sim is concerned.
+  { x: -11, y: 2 },
+  { x: -10, y: 2 },
+  { x: -12, y: 2 },
+  { x: -9, y: 2 },
 ];
 
 /** The cell this particular person watches from.

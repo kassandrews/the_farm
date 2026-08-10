@@ -58,7 +58,7 @@ import { structureDef } from "../content/structures";
 import { defaultSkin } from "../content/skins";
 import type { SkinId } from "../content/skins";
 import { furnitureDef, covers, MAX_SPAN } from "../content/furniture";
-import { allTownBuildings, inTownClearing, TOWN_DRY_GROUND, PLOT } from "../content/town";
+import { allTownBuildings, inTownClearing, TOWN_DRY_GROUND, PARK, PLOT } from "../content/town";
 import type { WorldState, HomesteadSpot, Layer } from "./types";
 import { hash2 } from "./rng";
 
@@ -2864,6 +2864,8 @@ const TOWN_RECTS = [
   // this protection by being inside a wall ring; his does not, and without it the
   // first seed anybody looked at had him keeping his stall in a stream.
   TOWN_DRY_GROUND,
+  // And the park, on the same argument: a bandstand in a pond is not a park.
+  PARK,
   // AND YOUR OWN PLOT, fence to fence. Same claim as a bedroom wall, one scale
   // up: a fenced field with a channel running through the middle of it is not a
   // field. The cap shallows rather than deletes, so a stream that crosses your

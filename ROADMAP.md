@@ -11183,6 +11183,52 @@ have all moved onto the FIELD inside the plot, which is the honest answer: a tes
 that needs farmable ground should say so by standing on the farm, not by knowing
 a coordinate that happened to be empty.
 
+## The park, and the stage moves into it (10 Aug 2026)
+
+Asked as an either/or — park, amphitheatre, or both — and the answer is both,
+because they are the same thing. A green with the stage in it.
+
+**Why the stage had to move.** It stood on the plaza's south-west corner: a 2x2
+wooden platform on stone, which is the right corner of the wrong surface. It read
+as a pallet somebody had left out, and the town's one open space was quietly
+doing double duty as its audience floor. On grass, with benches behind an open
+apron, the same object is an amphitheatre — and the square gets its quadrant
+back.
+
+**Why the park had to exist.** Prudence's house came off the square and left a
+building-shaped hole in its west side. A fourth building would have put the
+problem back; bare ground reads as a building missing. A park reads as the side
+that was never built on, which is what it is.
+
+### Settled here, don't relitigate
+
+- **A RIM AND NEVER A FILL.** Trees round the edges, open grass in the middle,
+  because the middle is the amphitheatre's floor — and a park you cannot cross is
+  a wood.
+- **The back row of the crowd stands ON the benches, which is to say it sits.**
+  A bench is walk-through like every seat (the chair rule), so a watcher assigned
+  to one of those cells resolves to seated and nothing in the festival code has to
+  know benches exist. Four seats and four standing places: two rows of seating
+  with nobody able to stand in front reads as a waiting room.
+- **The front row is deliberately bare.** An open apron in front of a platform is
+  what makes it a place people gather at, some of whom sat down.
+- **Its west edge stops at x −13.** `TOWN_RECTS` keeps the park dry like the rest
+  of the town's own ground, and the cap reaches six tiles: one column further and
+  it starts pinching the river anchored at −20. The same wall the museum and
+  Prudence's house have both run into.
+- **`festival.test`'s audience check said PLAZA and now says PARK** — and gained
+  the half it never made: the crowd must be in FRONT of the platform. Bounds are
+  not the claim; "they can see it" is.
+
+### The pattern that has now bitten three times
+
+**A building clears its own ground, so removing one costs a clearing.** The seed
+stall's grove was the first, the square's west side the second, and the park is
+the third — each time, ground that was tidy because a footprint sat on it went
+back to being whatever the generator says the moment the footprint left. It is
+written into `CLEARED` as an explicit rect every time now, but the rule is worth
+carrying: **check the clearing whenever a building moves or goes.**
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
