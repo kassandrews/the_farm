@@ -10236,6 +10236,39 @@ cost at all.
   it, over a season, and the game noticed. That wants its own register and it is
   the interesting writing problem in the whole feature.
 
+### One system, not two: everything green is BUILT
+
+Asked as a real fork — *"are these things you plant or things you build?"* — with
+the proposal that environmental plants live in a build-menu outdoors category and
+fruit trees are plantables, and the worry attached: *"I don't want it to be too
+confusing."* That worry is the right instinct and it settles it.
+
+- **The test is whether a player can predict where a thing lives.** "Anything you
+  put on your land is in build" holds. "Trees are in build unless they fruit, in
+  which case they are in the farm menu" does not — the difference is invisible
+  until after you have learned it, and both are a tree you put in your garden.
+- **So the placement grammar is one: build mode, an outdoors category, then
+  trees / bushes / flowers.** The ones you have met are there and the ones you
+  have not are simply absent — see the no-checklist rule below, which this is the
+  main application of.
+- **FRUITING IS A PROPERTY, NOT A CATEGORY.** You build an apple tree and it
+  fruits in autumn because that is what apple trees do. It teaches itself by being
+  watched, which is how everything else here works; nothing should have to route
+  the player through a different menu to say "this one is alive".
+- **If the planting FEEL is wanted, give it to every plant rather than to four.**
+  Everything goes in small and fills out over a few days. One rule, uniformly
+  applied, and the garden reads as grown rather than assembled — with no second
+  placement grammar to learn. This is the one live decision in this section:
+  instant trees are more satisfying to PLACE, growing trees are more satisfying to
+  HAVE. Leaning growing, and fast — days, never seasons (see the clock note).
+
+**AND THIS IS WHAT RESCUES THE APPLE ORCHARD.** If seeing is what unlocks, apples
+must exist somewhere in the world to be met. So the orchard comes back — **not as
+a place you harvest, but as the place you learn apples exist.** Its fruit stays
+paint, exactly like the blueberries, and yours fruits because it is yours. That is
+"planting is what makes fruit pickable" enacted in geography rather than asserted
+in a doc, and it is the answer to the question this whole note started as.
+
 ### YOU PLANT WHAT YOU HAVE MET — settled, and it is the spine of the feature
 
 The acquisition question above was posed as "bought, or dug up where it grows?"
