@@ -131,7 +131,8 @@ export type BiomeId =
   | "redwoods"
   | "giants"
   | "caldera"
-  | "static";
+  | "static"
+  | "orchard";
 
 /** What a bush in a region actually is. `bush` is the generic dome every region
  *  drew before this existed — see `drawShrub`, where its proportions are argued
@@ -220,6 +221,23 @@ export interface BiomeDef {
    *  printed however well it was drawn, and orbs got away with one only because
    *  `chance` leaves most trees unlit. Every bush in a barren fruits. */
   berries?: { season: SeasonId; color: string; spots: [number, number][][] };
+
+  /** FRUIT ON THE TREES — the berries idea one storey up, and under the same
+   *  law: IT IS PAINT AND IT CHANGES NO NUMBER. A wild fruiting tree chops into
+   *  the same wood in the same swing all year, nothing here is picked, and
+   *  §orbs' warning ("a round pale thing hanging in a tree reads as pickable")
+   *  is answered the only way it can be now — DESIGN §The garden: the promise
+   *  is kept by the PLANTED tree, which really does yield to ACT. The wild one
+   *  is the advertisement; your own is the delivery.
+   *
+   *  Per FORM, because the one region that has this grows two species by the
+   *  amended mixture rule (§crownRows note on the orchard): the apple form
+   *  reddens in autumn and the plum form goes dusty purple in summer, and one
+   *  field colouring both would fruit the plums scarlet. `spots` are [dx, row]
+   *  from the crown's own top-centre, DRAWN rather than rolled — §berries
+   *  learned that a hash makes clusters, and a cluster at this size is one
+   *  bigger object. */
+  treeFruit?: { form: number; season: SeasonId; color: string; spots: [number, number][][] }[];
   /** Chance a bare cell carries a patch of mushrooms. */
   mushrooms: number;
 
@@ -5871,6 +5889,119 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // pixel a shade off the ground and vanished; magenta found it in one shot.
     // A mote has to win against what it FLIES OVER, and here that is a lawn.
     motes: { density: 0.3, color: "#e79ec4", drift: -22, sway: 5, period: 9, size: 2 },
+  },
+
+  /** THE OLD ORCHARD — sited near, one per town, and it exists to TEACH.
+   *
+   *  DESIGN §The garden: fruit is pickable exactly when you planted the tree,
+   *  and you plant what you have met — so apples have to grow somewhere for
+   *  anybody to meet them. This is that somewhere: rows of old apples with a
+   *  few plums in among them and hydrangeas gone feral along the margins, all
+   *  three of which enter your palette by your standing here. Its own fruit is
+   *  paint forever (§treeFruit), which is the blueberry's bargain restated:
+   *  the wild one is the advertisement, your own is the delivery.
+   *
+   *  "OLD", BECAUSE NOBODY TENDS IT. An orchard in this world with a keeper
+   *  would be a farm with an owner who is not you, and the town does not work
+   *  anybody (DESIGN §Affinity perks). Somebody planted it long ago and it has
+   *  been getting on without them — which is also the honest read of the
+   *  grass: kept short by nothing but shade.
+   *
+   *  THE FIRST REGION UNDER THE AMENDED MIXTURE RULE (§"a region PLANTS from a
+   *  shared catalogue"): two species, one dominant. The apple is three forms
+   *  out of four; the plum is the guest, narrower and darker, at one in four —
+   *  a rate, not a demonstration, and the rate is what keeps it reading as an
+   *  apple orchard with plums in it rather than as two orchards shuffled. */
+  orchard: {
+    id: "orchard",
+    name: "the old orchard",
+    // Rows, close but not the blossom's crush: an orchard is planted at
+    // spacing, and the gaps between trees are where you walk.
+    trees: 1.7,
+    rocks: 0.08,
+    mushrooms: 0,
+    water: 0,
+    // The meadow's own green, barely tinted — this is near country and the
+    // ground under fruit trees is just grass. What says "orchard" is the trees.
+    ground: { color: "#b4cc7e", amount: 0.16 },
+    tuft: { color: "#c8dc9a", amount: 0.24 },
+    tufts: ["cluster", "blades"],
+    // Apple-leaf green, deeper than the meadow's crowns and flat matte — an
+    // orchard canopy is dense and pruned low.
+    crown: { color: "#55803f", amount: 0.66 },
+    trunk: { color: "#5e4632", amount: 0.3 },
+    // THE APPLE: short and round on a clear little stem, the cherry's lesson
+    // ("wider than tall is the shape of every cute thing here") applied to a
+    // tree that is pruned to be picked from. Thirteen rows, 17 wide, the notch
+    // the trunk's own width with its one-pixel lapped corner (§crownGaps).
+    crownRows: [3, 6, 8, 8, 8, 8, 8, 8, 8, 8, 7, 6, 4],
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2],
+    crownOverlap: 3,
+    trunkHeight: 12,
+    // THE PLUM, the one-in-four guest: an egg rather than a bean — narrower,
+    // a row shorter, higher-shouldered, on a slightly taller stem. Different
+    // enough to spot across the region once you know, which is the whole of
+    // what a guest species owes.
+    crownAlt: [
+      {
+        rows: [2, 5, 7, 8, 8, 8, 8, 8, 7, 6, 4, 3],
+        gaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2],
+        overlap: 3,
+        trunkHeight: 14,
+      },
+    ],
+    // THE FRUIT, per form (§treeFruit): apples redden in autumn, plums go
+    // dusty purple in summer. Three arrangements each, DRAWN — two fruit a
+    // pixel apart is one bigger fruit — and hung in the lower half of the
+    // crown, where fruit weighs a branch down to be reached.
+    treeFruit: [
+      {
+        form: 0,
+        season: "autumn",
+        color: "#c23b2e",
+        spots: [
+          [[-5, 6], [3, 5], [0, 8], [6, 7]],
+          [[-4, 8], [5, 6], [-1, 5], [2, 9]],
+          [[-6, 7], [-2, 9], [4, 8], [1, 5]],
+        ],
+      },
+      {
+        form: 1,
+        season: "summer",
+        color: "#7a4e86",
+        spots: [
+          [[-4, 5], [3, 7], [0, 9]],
+          [[-3, 8], [4, 5], [1, 6]],
+          [[-5, 6], [2, 8], [5, 7]],
+        ],
+      },
+    ],
+    // HYDRANGEAS GONE FERAL along the margins — the garden's one piece of new
+    // art, met here (content/flora.ts). Drawn as the region's bushes wearing
+    // §berries paint: big soft heads, not single pixels, because a hydrangea
+    // is a fist of florets and one dot of pink on a green dome is a berry.
+    // Summer into early autumn is the plant; one season is the file's grain.
+    shrubs: 0.3,
+    berries: {
+      season: "summer",
+      color: "#d490b4",
+      spots: [
+        [[-3, 1], [-2, 1], [-3, 2], [2, 2], [3, 2], [2, 3], [0, 0], [1, 0]],
+        [[-2, 0], [-1, 0], [-2, 1], [3, 1], [4, 1], [3, 2], [0, 3], [1, 3]],
+      ],
+    },
+    // Windfalls, year round at a whisper — an old orchard's floor is never
+    // quite clear of them, and the ground needs one thing of its own or the
+    // region is a swatch of trees on a lawn. Two small russet marks, one
+    // whole, one gone over.
+    decor: {
+      density: 0.05,
+      accent: "#a8542f",
+      marks: [
+        ["oo", "oo"],
+        [".o", "o."],
+      ],
+    },
   },
 
   // --- The redwoods, and what is at the middle of some of them ----------------

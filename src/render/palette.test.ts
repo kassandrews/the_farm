@@ -534,6 +534,15 @@ describe("the regions with berries in them", () => {
       // bush with three of them wears a nut instead. Authoring the arrangement
       // is only worth anything if the arrangement is checked.
       //
+      // ONE EXEMPTION, BY NAME, AND IT IS THE RULE'S OWN LOGIC INVERTED. The
+      // orchard's `berries` are not berries — they are HYDRANGEA HEADS
+      // (content/biomes.ts §orchard), and a hydrangea is a fist of florets: the
+      // touching pixels are the drawing, not the accident. The rule exists to
+      // stop points becoming masses by mistake; a mass on purpose has to be
+      // allowed to be one, and it is named here so the next region wanting
+      // clustered fruit has to come and say why.
+      if (b.id === "orchard") return;
+      //
       // Against every width the sprite actually makes — `drawShrub` rolls the
       // peak a pixel either way — because the clamp that keeps a berry inside a
       // narrow row is exactly what can shove two of them together, and the

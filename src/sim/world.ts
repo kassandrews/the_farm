@@ -1031,6 +1031,26 @@ export function blossomCentre(seed: number, spot: HomesteadSpot): { x: number; y
   );
 }
 
+/** THE OLD ORCHARD — sited like the blossom rows and nearer, because its job is
+ *  to TEACH (DESIGN §The garden: apples have to grow somewhere for anybody to
+ *  meet them), and a teacher you cannot find teaches nobody. Inside the cube's
+ *  58 and outside the town's own reach: an afternoon's walk, not a pilgrimage. */
+const ORCHARD_RING = 46;
+
+/** Smaller than the blossom's nine — an orchard is a stand you walk through in
+ *  a minute, not a district you could live in. Exported for the turf-blend test
+ *  on the same argument as BLOSSOM_RADIUS. */
+export const ORCHARD_RADIUS = 6;
+
+/** Where the old orchard is. Its own bearing, its own salt — on a seed where it
+ *  and the blossom rows land close, `biomeAt` resolves the blossom first, which
+ *  is the order that keeps the region somebody can ask to LIVE in whole. */
+export function orchardCentre(seed: number, spot: HomesteadSpot): { x: number; y: number } {
+  return memoCentre("orchard", seed, spot, () =>
+    onLand(seed, spot, ORCHARD_RING, (hash2(11, 0, seed ^ 0x3e57) / 4294967296) * Math.PI * 2),
+  );
+}
+
 // --- The redwood stands -------------------------------------------------------
 //
 // SITED LIKE THE BLOSSOM ROWS AND RECURRING LIKE A FOUND PLACE, which is a
@@ -1349,6 +1369,12 @@ export function skyStairSiteAt(
 export function biomeAt(seed: number, spot: HomesteadSpot, x: number, y: number): BiomeId {
   const b = blossomCentre(seed, spot);
   if (Math.hypot(x - b.x, y - b.y) <= BLOSSOM_RADIUS) return "blossom";
+
+  // The old orchard, after the blossom rows for the reason on `orchardCentre`
+  // and before everything else for the blossom's own reason: it is sited, and a
+  // sited region is a statement about a place.
+  const oc = orchardCentre(seed, spot);
+  if (Math.hypot(x - oc.x, y - oc.y) <= ORCHARD_RADIUS) return "orchard";
 
   // The redwood stands, after the blossom rows and before the field. Order is a
   // decision and not an accident: the cherry trees are the region a villager can
@@ -1782,6 +1808,12 @@ export function regionParts(
   // has to still have a middle.
   const bd = Math.hypot(x - b.x, y - b.y);
   parts = overlay(parts, "blossom", edgeMix(bd - BLOSSOM_RADIUS, BLOSSOM_RADIUS / 3));
+
+  // The old orchard, same overlay and the same thirds rule, in `biomeAt`'s own
+  // order so the tint can never disagree with the region a tile actually is.
+  const oc = orchardCentre(seed, spot);
+  const od = Math.hypot(x - oc.x, y - oc.y);
+  parts = overlay(parts, "orchard", edgeMix(od - ORCHARD_RADIUS, ORCHARD_RADIUS / 3));
 
   // The redwood stands and the calderas — the same overlay, in the same order
   // `biomeAt` resolves them, so the tint can never disagree with the region a

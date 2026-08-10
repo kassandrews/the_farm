@@ -24,7 +24,13 @@ export type ItemId =
   | "kale"
   | "cloth"
   | "junk"
-  | "seed";
+  | "seed"
+  // The garden's fruit (DESIGN §The garden). Produce, never material: no
+  // recipe, commission or acceptance test may ever ask for one — they go to
+  // gifts, tastes, festivals and the museum, and nothing depends on them.
+  | "apple"
+  | "plum"
+  | "blueberry";
 
 /** What an item is for. Drives which UI groups it and, later, what the shop
  *  and museum will accept.
@@ -174,6 +180,34 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     icon: "seed",
     category: "seed",
     blurb: "Small, brown, non-committal. Decides what it is on the way into the ground.",
+  },
+  // THE GARDEN'S FRUIT. Only a tree or bush YOU PLANTED ever yields one
+  // (sim/garden.ts) — the wild kind is paint, and the orchard is the
+  // advertisement. Produce like the carrot and worth exactly as much, which is
+  // to say nothing anybody's ledger can see.
+  apple: {
+    id: "apple",
+    name: "Apple",
+    plural: "Apples",
+    icon: "apple",
+    category: "produce",
+    blurb: "Off your own tree. It knows, somehow, and tastes accordingly.",
+  },
+  plum: {
+    id: "plum",
+    name: "Plum",
+    plural: "Plums",
+    icon: "plum",
+    category: "produce",
+    blurb: "Dusty purple, exactly ripe for about an afternoon. You caught it.",
+  },
+  blueberry: {
+    id: "blueberry",
+    name: "Blueberry",
+    plural: "Blueberries",
+    icon: "blueberry",
+    category: "produce",
+    blurb: "A handful from your own bush. The pinewood's ones were never on offer.",
   },
   // The ONE thing in this table you cannot gather. It is why the Menace's
   // counter exists (DESIGN §Materials): the shop sells what the world won't

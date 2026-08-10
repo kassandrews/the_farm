@@ -931,6 +931,60 @@ const FARM_ICONS = {
     ],
     palette: { k: K, w: "#dcc06a", s: "#ab9044" },
   },
+  // The garden's fruit (items.ts). Same 12-grid as the crops around them, and
+  // each is mostly one round mass — fruit icons that read at satchel size are
+  // silhouettes first, highlights second.
+  apple: {
+    rows: [
+      "......g.....",
+      "....gg......",
+      "....k.......",
+      "..kkrkrkk...",
+      ".krrrrrrrk..",
+      ".krwrrrrrk..",
+      ".krwrrrrrrk.",
+      ".krrrrrrrrk.",
+      "..krrrrrrk..",
+      "...krrrrk...",
+      "....kkkk....",
+      "............",
+    ],
+    palette: { k: K, r: "#c23b2e", w: "#e8766a", g: "#5aa85a" },
+  },
+  plum: {
+    rows: [
+      ".....gk.....",
+      "......k.....",
+      "....kkkk....",
+      "...kppppk...",
+      "..kpwppppk..",
+      "..kpwppppk..",
+      "..kppppppk..",
+      "..kppppppk..",
+      "...kppppk...",
+      "....kkkk....",
+      "............",
+      "............",
+    ],
+    palette: { k: K, p: "#7a4e86", w: "#a87ab2", g: "#5aa85a" },
+  },
+  blueberry: {
+    rows: [
+      "............",
+      "....g..g....",
+      "..kkk.......",
+      ".kbbbk.kkk..",
+      ".kbwbbkbbbk.",
+      ".kbbbbkbwbk.",
+      "..kbbk.kbbk.",
+      "...kkkkkkk..",
+      "...kbbbk....",
+      "...kbwbk....",
+      "....kkk.....",
+      "............",
+    ],
+    palette: { k: K, b: "#4a6ea8", w: "#7e9cc8", g: "#5aa85a" },
+  },
   peas: {
     rows: [
       "............",
