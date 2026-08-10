@@ -10916,6 +10916,51 @@ was asserting a promise nobody made, reaching 23.3 tiles where the generator
 guarantees ~21, and it failed on seed 16 the moment the plot arrived. It walks
 the town's actual footprint now — plaza, plot, every building, every street.
 
+## The roofs get an eave (10 Aug 2026)
+
+Third piece of the town overhaul — "building aesthetics" — and the first cut of
+it is one geometric fact rather than a pass over six buildings.
+
+**Every building in the game was a rectangle.** The roof plane ended exactly on
+the footprint, so a house was a coloured rectangle sitting on a slightly larger
+coloured rectangle, and six of them round a square read as six slabs. The
+existing eave LINES were doing what they could — 2px of `skin.color` where the
+surface ends — but a line is not an overhang. What the eye uses to tell a roof
+from a floor is that the roof hangs over, and the shadow under it.
+
+### Settled here, don't relitigate
+
+- **An eave and a verge are not the same depth**, and the first version drew them
+  as though they were: 3px all the way round, which came out as a PICTURE FRAME
+  on every roof in town. A pitched roof overhangs generously on the two sides it
+  FALLS toward — where the water leaves — and barely at all on the two gable ends,
+  where it stops against the wall. `EAVE` is 3 and `VERGE` is 1, keyed off
+  `fall.axis`, so the overhang states which way the ridge runs without drawing
+  anything extra. Equal on four sides is a border; unequal is a roof.
+- **The eave carries the pitch ramp.** Drawn in bare `skin.shade` it came out
+  LIGHTER than the roof it hangs off — the roof plane has the ramp painted over
+  it and the overhang did not — so every building wore a bright border. It takes
+  the DARKEST end of the ramp, which is physics rather than taste: an eave is the
+  lowest point of the slope by definition.
+- **Only the south eave casts a shadow**, onto the wall below it. That is the one
+  edge whose underside faces the camera, and it is what turns the overhang into
+  depth rather than a wider roof.
+- **Drawn from the edge cell outward, tested against the neighbour** — the same
+  rule the eave lines already followed and the same rule CLAUDE.md's band note
+  insists on. Per cell it would put a fascia through the middle of the roof.
+- **Three pixels.** At one it is a rounding error, at two the fascia eats it, at
+  five a cottage wears a sombrero and the eave starts competing with the wall for
+  the building's width. Three is about a fifth of a tile, which is roughly what a
+  real eave is against a storey.
+
+### Still owed on this thread
+
+The eave is the silhouette. What the buildings still lack is IDENTITY: nothing
+about the Counter says shop, and the only building in the world that reads as
+what it is from across the square is the barn, which gets it from one field
+(ox-blood paint). Signage over a door, an awning on the shop, and per-building
+roof materials are the obvious next moves, in that order.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

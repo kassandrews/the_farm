@@ -266,6 +266,21 @@ const STOREY = 24;
 /** The lit top surface of a wall, seen from slightly above. */
 const WALL_CAP = 3;
 
+/** How far the roof projects past the wall, in scene px.
+ *
+ *  THREE. At one it is a rounding error, at two the fascia line eats it, and at
+ *  five a cottage wears a sombrero — the eave starts competing with the wall for
+ *  the building's whole width. Three is a fifth of a tile, which is about what a
+ *  real eave is against a storey, and it is enough that the outline of a house
+ *  stops being the outline of its floor plan. */
+const EAVE = 3;
+
+/** And the VERGE — the overhang on a gable end, where the roof stops against the
+ *  wall rather than shedding over it. One pixel: enough to read as a lip, not
+ *  enough to be a second eave. See the note at the draw site for why the two
+ *  numbers must differ. */
+const VERGE = 1;
+
 /** A fence, in scene pixels. Knee high on a sprite that stands about a tile: at
  *  a wall's 24 it is a wall, and at 4 it is a kerb. Nine reads as something you
  *  lean on and can see over, which is the whole point of putting one round a
@@ -3825,13 +3840,79 @@ export class Renderer {
       if ((ty * TILE + i) % 4 === 0) ctx.fillRect(px, py + i, TILE, 1);
     }
 
+    const has = (dx: number, dy: number) => covered.has(tileKey(tx + dx, ty + dy));
+
+    // THE EAVE — the roof projecting past the walls that hold it up.
+    //
+    // This is the single thing that stopped every building in the game being a
+    // rectangle. The roof plane used to end exactly on the footprint, so a house
+    // was a coloured rectangle sitting on a slightly larger coloured rectangle
+    // and nothing about its outline said "building": six of them round a square
+    // read as six slabs. A real roof hangs over, and the overhang plus the shadow
+    // under it is most of what the eye uses to tell a roof from a floor.
+    //
+    // DRAWN FROM THE EDGE CELL OUTWARD, which is the same rule the eave LINES
+    // below already follow and the same rule CLAUDE.md's band note insists on:
+    // only where the surface actually ends, tested against the neighbour. An
+    // overhang drawn per cell would put a fascia through the middle of the roof.
+    //
+    // The overhang lands on the row BEYOND the building, which is safe because
+    // the ground pass has already run and nothing raised normally stands against
+    // a wall — it is the same liberty the walls themselves take (§the overhang IS
+    // the height cue).
+    const eave = (ex: number, ey: number, ew: number, eh: number) => {
+      ctx.fillStyle = skin.shade;
+      ctx.fillRect(ex, ey, ew, eh);
+      // AND IT CARRIES THE PITCH, which is the correction the first version
+      // needed. Drawn in the bare skin it came out LIGHTER than the roof it hangs
+      // off — because the roof plane has the pitch ramp painted over it and the
+      // eave did not — so every building in town wore a bright border and the
+      // roofs read as framed pictures. That is the per-cell edges failure at
+      // building scale: an edge drawn all the way round something that is one
+      // surface.
+      //
+      // The DARKEST end of the ramp, not an average, and that is physics as much
+      // as taste: an eave is the lowest point of the slope by definition, so
+      // wherever the ramp is dark at the edge, the overhang is at least that.
+      ctx.fillStyle = `rgba(0,0,0,${(ROOF_PITCH_LIT + ROOF_PITCH_LEE + (ROOF_PITCH_STEPS - 1) * ROOF_PITCH_FALL).toFixed(3)})`;
+      ctx.fillRect(ex, ey, ew, eh);
+      // The fascia: one dark line at the very lip. Without it the overhang
+      // dissolves into whatever is behind the house and reads as the roof simply
+      // being bigger.
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      if (eh <= EAVE) ctx.fillRect(ex, ey + eh - 1, ew, 1);
+      else ctx.fillRect(ex + (ew > 1 ? ew - 1 : 0), ey, 1, eh);
+    };
+    // AN EAVE AND A VERGE ARE NOT THE SAME DEPTH, and drawing them as though they
+    // were is what made the first version read as a picture frame round every
+    // roof. A pitched roof overhangs generously on the two sides it FALLS toward
+    // — those are the eaves, where the water leaves — and barely at all on the
+    // two GABLE ends, where the roof simply stops against the wall. Equal on four
+    // sides is a border; unequal is a roof, and it says which way the ridge runs
+    // without drawing anything extra. `fall.axis` already knows: "ew" is a ridge
+    // running east-west, so the roof falls north and south.
+    const deepNS = fall.axis === "ew" ? EAVE : VERGE;
+    const deepEW = fall.axis === "ew" ? VERGE : EAVE;
+    const outW = has(-1, 0) ? 0 : deepEW;
+    const outE = has(1, 0) ? 0 : deepEW;
+    if (!has(0, -1)) eave(px - outW, py - deepNS, TILE + outW + outE, deepNS);
+    if (!has(0, 1)) {
+      eave(px - outW, py + TILE, TILE + outW + outE, deepNS);
+      // The shadow the south overhang throws onto the wall below it. Only here:
+      // this is the one edge whose underside faces the camera, and it is what
+      // makes the overhang read as depth rather than as a wider roof.
+      ctx.fillStyle = "rgba(0,0,0,0.18)";
+      ctx.fillRect(px, py + TILE + deepNS, TILE, 2);
+    }
+    if (!has(-1, 0)) eave(px - deepEW, py, deepEW, TILE);
+    if (!has(1, 0)) eave(px + TILE, py, deepEW, TILE);
+
     // The far edge used to be a 2px line of `skin.top`, called a sunlit ridge.
     // It was standing in for a ridge the roof did not have, and once the pitch
     // is real that line is the brightest thing on the plane sitting at the
     // LOWEST point of the slope — the north eave. Both edges the roof falls
     // toward are eaves now, in the eave's own colour, and the ridge is where
     // the ramp says it is.
-    const has = (dx: number, dy: number) => covered.has(tileKey(tx + dx, ty + dy));
     if (!has(0, -1)) {
       ctx.fillStyle = skin.color;
       ctx.fillRect(px, py, TILE, 2);
