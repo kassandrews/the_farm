@@ -466,9 +466,13 @@ describe("v13 → v14: the seed stall", () => {
   });
 
   it("brings the stall AND the Blessed Carrot, or it repeats the shop's bug", () => {
+    // Asserted against the stall's COUNTER rather than its door: Derek's stall
+    // stopped being a building (content/town.ts §THE SEED STALL) and is a counter
+    // under an awning now. The claim is unchanged — a v13 save gets the stall and
+    // the person who keeps it, and neither arrives without the other.
     const migrated = migrateSave(v13Save())!;
-    const stall = TOWN_BUILDINGS.seedstall;
-    expect(migrated.build[tileKey(stall.door.x, stall.door.y)]).toMatchObject({ id: "door" });
+    const counter = TOWN_FIXTURES.find((f) => f.counter === "seedstall")!;
+    expect(migrated.furniture[tileKey(counter.x, counter.y)]).toMatchObject({ id: counter.id });
     expect(migrated.villagers.some((v) => v.id === "seedstall")).toBe(true);
   });
 });
@@ -1437,12 +1441,9 @@ describe("v37 → v38: the plot arrives", () => {
       }
     }
     void barn;
-    // The stall back where it was, as a plain ring.
-    const stall = TOWN_BUILDINGS.seedstall;
-    for (let y = stall.y0; y <= stall.y1; y++) {
-      for (let x = stall.x0; x <= stall.x1; x++) delete build[`${x},${y}`];
-    }
-    for (const f of stall.furniture) delete furniture[`${f.x},${f.y}`];
+    // The stall back where it was, as a plain ring — and the counter that stands
+    // in its place today taken away, because a v37 save has no such thing.
+    for (const f of TOWN_FIXTURES) delete furniture[`${f.x},${f.y}`];
     for (let y = V37_STALL.y0; y <= V37_STALL.y1; y++) {
       for (let x = V37_STALL.x0; x <= V37_STALL.x1; x++) {
         const ring =
@@ -1475,12 +1476,14 @@ describe("v37 → v38: the plot arrives", () => {
     expect(m.build["0," + PLOT.y0]).toBeUndefined();
   });
 
-  it("moves the seed stall, leaving no ghost behind", () => {
+  it("takes the seed stall's building down and leaves no ghost of it", () => {
+    // At v38 this asserted the stall had MOVED; by v41 it has stopped being a
+    // building at all, so what a v37 save gets is the ring gone and a counter
+    // under an awning at the edge of the square.
     const m = migrateSave(v37Save())!;
-    const stall = TOWN_BUILDINGS.seedstall;
-    expect(m.build[`${stall.door.x},${stall.door.y}`]).toMatchObject({ id: "door" });
-    // The old ring's north-west corner is well clear of the new footprint.
     expect(m.build[`${V37_STALL.x0},${V37_STALL.y0}`]).toBeUndefined();
+    const counter = TOWN_FIXTURES.find((f) => f.counter === "seedstall")!;
+    expect(m.furniture[`${counter.x},${counter.y}`]).toMatchObject({ id: counter.id });
   });
 
   it("moves a tent that is still standing onto the plot", () => {

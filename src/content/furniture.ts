@@ -47,7 +47,10 @@ export type FurnitureId =
   | "desklamp"
   | "painting"
   | "noticeboard"
-  | "stage";
+  | "stage"
+  /** The seed stall's canopy — see the row for why a stall is furniture and not
+   *  a building. */
+  | "awning";
 
 /** Which way a piece is turned. "s" is the default — facing the camera. */
 export type Facing = "n" | "e" | "s" | "w";
@@ -68,6 +71,20 @@ export interface FurnitureDef {
   /** How far it stands off the floor, in scene px. Below TILE on purpose for
    *  the low pieces — they should read as sitting IN the room, not looming. */
   height: number;
+  /** No top surface: draw the FACE and nothing else.
+   *
+   *  The default geometry for a standing piece is a near face plus a top surface
+   *  the depth of its footprint, which is right for everything you look down on —
+   *  a table, a bed, a chest — and wrong for anything whose whole point is the
+   *  vertical plane. A board with a 16px lid on it reads as a crate no matter
+   *  what is drawn on the front, because the lid is half the shape.
+   *
+   *  Distinct from `mount: "wall"`, which hangs a piece on the face of the wall
+   *  in its own cell and has no floor geometry at all. A flat piece still STANDS
+   *  somewhere — it has a footprint, it is solid, you can put it anywhere — it
+   *  just has no top. */
+  flat?: boolean;
+
   /** Which finish classes it may wear. A list to match structures, though every
    *  row here is single-class and probably always will be: a piece of furniture
    *  is a made object, and unlike a floor or a wall it is not a surface you
@@ -398,6 +415,29 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   // SOLID, and tall enough to read as a board rather than a crate. Solid is the
   // right call outdoors where the chair rule (don't make a small room a maze)
   // doesn't apply: you walk up to a notice board, you do not walk through it.
+  // Derek's canopy, and the reason he has no building.
+  //
+  // A market stall is a counter with something over it, and until now this town
+  // could not draw one: an open-fronted stall is a room the flood fill never
+  // closes, so every rule about roofs, doorsteps and cutaways would have needed
+  // an exception for one structure — which is why the seed stall spent a year
+  // being a small building that everybody agreed to call a stall. The way out is
+  // that it was never a STRUCTURE question at all. A canopy is furniture, like
+  // the plaza stage, and furniture needs no room around it.
+  //
+  // WALK-THROUGH, because it is overhead. You stand under an awning; a canopy you
+  // could not step beneath would be a shed with the walls missing, which is the
+  // shape this is escaping.
+  awning: {
+    id: "awning",
+    name: "Awning",
+    cost: { wood: 4, cloth: 2 },
+    w: 2,
+    h: 1,
+    solid: false,
+    height: 14,
+    finishes: ["wood"],
+  },
   noticeboard: {
     id: "noticeboard",
     name: "The Errands Board",
@@ -406,6 +446,13 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: true,
     height: 22,
+    // FLAT — a panel, not a box. See `flat` on the interface: the generic path
+    // gives every piece a top surface the depth of its footprint, and on a board
+    // that lid was half the silhouette. It had been dressed up as a little
+    // pitched roof to stop it reading as a crate, which worked and was a fix for
+    // the wrong problem. A parish notice board is a face on legs, and it hangs
+    // against the town hall's wall, where a face is all there is to see.
+    flat: true,
     finishes: ["wood"],
   },
   // The plaza stage. Town furniture like the board — no cost, not in the build

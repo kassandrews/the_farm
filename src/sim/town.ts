@@ -234,16 +234,22 @@ export function stampFences(t: StampTarget): number {
  *  flower is a mark on the grass, not an object standing on it.
  *
  *  Per cell and skipping anything occupied, like the streets and the fence. */
-export function stampPlantings(t: StampTarget): number {
+export function stampPlantings(t: StampTarget, probe?: TerrainProbe): number {
   if (!t.garden) return 0;
   let put = 0;
   for (const p of TOWN_PLANTINGS) {
     const key = tileKey(p.x, p.y);
     if (occupied(t, p.x, p.y) || t.garden.plants[key]) continue;
-    // Only onto ground a plant would actually take. The stamp runs after the
-    // streets and the buildings, so this is what keeps a hydrangea off the
-    // cobbles if a rectangle is ever moved over one.
-    const ground = t.overrides[key];
+    // Only onto ground a plant would actually take — and the GENERATED ground
+    // counts, not just the edits.
+    //
+    // It read `t.overrides` alone, which is undefined for every unedited tile in
+    // the world, so "no override" was being taken as "grass". It is not: it is
+    // whatever the generator says, and on a seed where a stream crosses the seed
+    // stall's grove the town planted four trees and a bush into open water. A
+    // plant that lands somewhere it cannot grow is a table row that renders
+    // nothing, which is the failure this project keeps writing tests against.
+    const ground = t.overrides[key] ?? probe?.(p.x, p.y);
     if (ground !== undefined && ground !== GRASS && ground !== DIRT) continue;
     const kind = FLORA[p.id].kind;
     if (kind === "tree") t.overrides[key] = TREE;
@@ -278,7 +284,7 @@ export function stampTown(t: StampTarget, probe?: TerrainProbe): string[] {
   stampFences(t);
   // Planting last of all: it is the only pass that has to look at what every
   // other pass has already put down.
-  stampPlantings(t);
+  stampPlantings(t, probe);
   return [...placed, ...stampFixtures(t)];
 }
 

@@ -1926,6 +1926,10 @@ function furnitureFlavour(id: FurnitureId, layer: Layer): string {
     // becomes a compile error instead of a silent blank.
     case "noticeboard":
       return "A board, for notices. It is not yours, and it is already up.";
+    // Derek's, and reachable one day if the awning is ever sold — the stall was
+    // a building until this piece existed (content/furniture.ts §awning).
+    case "awning":
+      return "An awning. Shade, and the strong suggestion of a stall beneath it.";
     // --- The furnishing pass. Same rules: about the object, never about you,
     // and one idea each. A line that needs two sentences to land usually wanted
     // to be a different object.

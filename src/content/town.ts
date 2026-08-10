@@ -32,7 +32,6 @@ export type TownBuildingId =
   | "shop"
   | "heap"
   | "museum"
-  | "seedstall"
   | "barn";
 
 // --- The street plan -----------------------------------------------------------
@@ -116,9 +115,6 @@ export const STREETS: { x0: number; y0: number; x1: number; y1: number }[] = [
   // the walk south stopped being a walk through grass. A path you can see grass
   // either side of is what makes the farm feel out of town.
   { x0: 0, y0: 4, x1: 0, y1: 11 },
-  // The spur west off the lane's foot to the seed stall's door — the last front
-  // you pass on the way to your own ground, which is what the stall is for.
-  { x0: -6, y0: 11, x1: 0, y1: 11 },
   // THROUGH THE GATE AND DOWN THE MIDDLE OF THE PLOT (§The plot). The lane does
   // not stop at the boundary and start again as a garden path: it is one road,
   // and it ends in your yard. That continuity is most of what makes the farm read
@@ -211,6 +207,23 @@ export function plotFenceCells(): { x: number; y: number }[] {
  *  not: along the lane, in the two alleys that break the north street's face, and
  *  on your own ground.
  */
+/** Ground the town keeps DRY that is not a building.
+ *
+ *  `TOWN_RECTS` in sim/world.ts caps the water table within six tiles of any town
+ *  wall, so a channel cannot lap a bedroom — and every piece of town ground got
+ *  that protection for free, because every piece of town ground was inside a
+ *  building. The seed stall stopped being a building (§THE SEED STALL) and took
+ *  its own dry footing with it: on the very first seed looked at, Derek was
+ *  standing behind his counter in a stream, with his grove growing out of it.
+ *
+ *  It is the cap and not an override, deliberately. The cap SHALLOWS water near
+ *  town rather than deleting it, so on a wet seed the stall stands on a sandy
+ *  bank instead of in the current — which is a market on a dry bank, and is a
+ *  picture. Forcing grass here instead would cut any stream that crossed it into
+ *  two halves with a lawn between them, which is the failure the whole clearing
+ *  is placed below the water to avoid. */
+export const TOWN_DRY_GROUND = { x0: -8, y0: 3, x1: -2, y1: 7 };
+
 export const TOWN_PLANTINGS: { x: number; y: number; id: FloraId }[] = [
   // THE AVENUE — four birches, two a side, down the lane out of the square.
   // The single strongest planting in the town and the reason this table exists:
@@ -245,6 +258,21 @@ export const TOWN_PLANTINGS: { x: number; y: number; id: FloraId }[] = [
   // there on purpose, and that is the whole of what they say.
   { x: 2, y: 13, id: "hydrangea" },
   { x: 3, y: 13, id: "hydrangea" },
+  // THE STALL'S GROVE. Derek's counter stands in the open now that his building
+  // is gone, and an open-air stall on bare grass reads as a table somebody
+  // abandoned. A loose ring of planting gives it somewhere to BE — the same job
+  // the walls used to do, done by the thing a seed merchant would actually have
+  // around him.
+  //
+  // Loose on purpose: not a ring, and never enclosing the counter, which has to
+  // stay reachable from three sides. Two trees behind and to the west, two
+  // bushes low and near, and open ground on the square's side so you can see the
+  // stall from the street.
+  { x: -8, y: 4, id: "broadleaf" },
+  { x: -8, y: 7, id: "broadleaf" },
+  { x: -2, y: 8, id: "birch" },
+  { x: -6, y: 7, id: "bush" },
+  { x: -3, y: 4, id: "hydrangea" },
 ];
 
 /** A piece of furniture that comes with the building, at an absolute anchor. */
@@ -631,42 +659,6 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     ],
   },
 
-  // The seed stall, south-west of the plaza — the one institution that sits
-  // between the town and the ground you dig, because that is what it is for.
-  // Everywhere else was taken: the shop and the heap are east, the museum and
-  // Margfrom west and north, and the plaza is the plaza. South is also the way
-  // you walk from the square toward open land, which is the right direction to
-  // pass a seed stall in.
-  //
-  // It is called a stall and it is a small building, which is the same
-  // compromise the heap made about being a facility. A genuinely open-fronted
-  // stall would be a room the flood-fill never closes, and every rule about
-  // roofs, doorsteps and cutaways would need an exception for one structure.
-  // He has a door like everybody else and does not appear to have noticed.
-  seedstall: {
-    id: "seedstall",
-    name: "The Seed Stall",
-    x0: -9,
-    y0: 5,
-    x1: -4,
-    y1: 10,
-    // South wall, like every door in the town — see margfrom_house.
-    door: { x: -6, y: 10 },
-    // Pine, unfinished. He has not decorated. It has not come up.
-    finish: "pine",
-    furniture: [
-      // The counter, along the front wall but OFF the doorway, with him behind
-      // it at (-7,7). Same arrangement as the Menace's: you do not walk the
-      // room to buy a thing. It started centred on the door, which walled the
-      // building shut — a table is solid, and town.test.ts caught it before a
-      // browser had to.
-      { x: -8, y: 9, id: "table", facing: "s", counter: "seedstall" },
-      // Stock along the back wall, in no order anybody has explained.
-      { x: -8, y: 6, id: "shelf", facing: "s" },
-      { x: -5, y: 6, id: "shelf", facing: "s" },
-    ],
-  },
-
   // THE BARN, and the game is called The Farm.
   //
   // It stands in your plot before you arrive, which is a change to DESIGN's old
@@ -742,12 +734,17 @@ export interface TownFixture extends TownFurniture {
   finish: SkinId;
 }
 
-/** The errands board, in the plaza's south-east corner.
+/** The errands board, against the town hall's front wall.
  *
- *  SOUTH-EAST because it is the only quadrant left: the town hall is north, the
- *  museum and Margfrom west, the shop and heap east, the seed stall south-west.
- *  It is also the corner you cross going from the square toward your own land,
- *  which is the right direction to pass a notice board in.
+ *  IT USED TO STAND IN THE MIDDLE OF THE SQUARE'S SOUTH-EAST CORNER, chosen when
+ *  every quadrant was taken by something and that one was left. Standing free on
+ *  open paving is the wrong place for a board twice over: it is the one object in
+ *  town with a FACE and nothing behind it, and a notice board belongs on a wall.
+ *  Against the hall it reads as mounted — the wall is drawn first, the board over
+ *  it — and it puts the town's paperwork on the building that produces it.
+ *
+ *  East of the doorway, never on it. The doorstep is the only way into the hall
+ *  and a solid board across it would seal the Office Creature in.
  *
  *  IN THE OPEN, not in a sixth building. Everything else in town is a counter
  *  you go inside to reach; a board is a thing you walk past and glance at, and
@@ -761,7 +758,7 @@ export interface TownFixture extends TownFurniture {
  *  assumes. */
 export const TOWN_FIXTURES: TownFixture[] = [
   // Weathered, because it has been up a while and nobody has offered to redo it.
-  { x: 4, y: 2, id: "noticeboard", facing: "s", finish: "pine" },
+  { x: 2, y: FRONT_N + 1, id: "noticeboard", facing: "s", finish: "pine" },
   // The plaza stage, in the south-west of the square, facing the open paving so
   // there is room for the town to stand in front of it (the audience cells are
   // in content/festivals.ts, immediately south of here).
@@ -777,6 +774,27 @@ export const TOWN_FIXTURES: TownFixture[] = [
   // 2x2 slab with board lines on it read as a sheet of paper lying in the
   // square, which is not the joke. A stage is made of ordinary boards.
   { x: STAGE.x, y: STAGE.y, id: "stage", facing: "s", finish: "pine", counter: "stage" },
+  // THE SEED STALL, and it is an actual stall now.
+  //
+  // It was a six-by-six BUILDING with a door and a roof, and the table row said
+  // so apologetically: "a genuinely open-fronted stall would be a room the flood
+  // fill never closes, and every rule about roofs, doorsteps and cutaways would
+  // need an exception for one structure. He has a door like everybody else and
+  // does not appear to have noticed."
+  //
+  // The way out was that it was never a structure question. A canopy is
+  // FURNITURE — like the stage, three lines up — and furniture needs no room
+  // around it, no doorstep, no flood fill and no exception. So Derek gets a
+  // counter under an awning at the edge of the square, which is what a seed stall
+  // is, and the town loses a building it was pretending about.
+  //
+  // The awning goes NORTH of the counter, which is both what a stall looks like
+  // (cloth at the back, goods at the front) and what the renderer needs: it is
+  // drawn a row earlier, so the counter and whoever is standing at it are drawn
+  // over it rather than under it. That is the Blessed Carrot rule, and it is why
+  // the awning is not simply on top of the counter cell.
+  { x: -5, y: 4, id: "awning", facing: "s", finish: "pine" },
+  { x: -5, y: 5, id: "table", facing: "s", finish: "pine", counter: "seedstall" },
   // A bench, mid-east plaza, facing the square. It exists so that sitting
   // down together (sim/play.ts `sittingAt`) is reachable before the player
   // has built a seat of their own — the town owns one bench the way it owns
@@ -824,6 +842,12 @@ const CLEARED: { x0: number; y0: number; x1: number; y1: number }[] = [
     x1: r.x1 + CLEARING_MARGIN,
     y1: r.y1 + CLEARING_MARGIN,
   })),
+  // THE STALL AND ITS GROVE. This used to come free — a building clears its own
+  // ground plus the margin — and stopped the day the seed stall stopped being a
+  // building. Without it the town plants an avenue and a grove into whatever wood
+  // the generator happened to put there, which is not a grove, it is a clearing
+  // that never happened.
+  { x0: -9, y0: 3, x1: -1, y1: 8 },
   // THE WHOLE PLOT, fence to fence, and this one is not margined — it is cleared
   // to its own boundary and the wood starts outside it, which is what a fence
   // line looks like. Cleared at all because a field with six trees standing in it

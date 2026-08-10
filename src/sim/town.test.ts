@@ -11,7 +11,7 @@ import {
   HOME_REGION_REACH,
   PLAZA,
 } from "./world";
-import { FLOOR, STONE, WATER, SHALLOW, TREE, SHRUB, GRASS, tileDef } from "../content/tiles";
+import { FLOOR, STONE, WATER, SHALLOW, TREE, SHRUB, GRASS, DIRT, tileDef } from "../content/tiles";
 import { FLORA } from "../content/flora";
 import { growthStage } from "./garden";
 import { rooms, roomAt } from "./rooms";
@@ -517,14 +517,14 @@ describe("the street plan", () => {
     // The plan in one assertion. A south wall on neither line is a building whose
     // front faces a field, which is what all six of them used to be.
     //
-    // TWO EXEMPTIONS, both deliberate, and neither is around the square. The SEED
-    // STALL stands out on the lane with its front on the spur — the last shopfront
-    // you pass walking to your own ground, which is what a seed stall is for. The
-    // BARN is not the town's at all: it is in your plot, and its front is on your
-    // yard. Both are still held to the doorstep and connectivity rules below,
-    // which are the ones that actually matter.
+    // ONE EXEMPTION, deliberate: the BARN is not the town's at all. It is in your
+    // plot and its front is on your yard. It is still held to the doorstep and
+    // connectivity rules below, which are the ones that actually matter.
+    //
+    // (There were two. The seed stall was the other, and it is not a building any
+    // more — see content/town.ts §THE SEED STALL.)
     for (const b of allTownBuildings()) {
-      if (b.id === "seedstall" || b.id === "barn") continue;
+      if (b.id === "barn") continue;
       expect([FRONT_N, FRONT_S], `${b.id} fronts nothing`).toContain(b.y1);
     }
   });
@@ -800,16 +800,33 @@ describe("what the town planted", () => {
   it("is the garden's own objects, not a second kind of scenery", () => {
     // The point of stamping rather than inventing: the avenue is uprootable, the
     // hydrangeas are a bush you could plant yourself, and the fruit is pickable.
+    //
+    // WHEREVER THE GROUND TAKES IT, and not unconditionally. A plant wants grass
+    // or bare dirt (sim/garden.ts), and the town's ground is only guaranteed to
+    // be clear of TREES — a stream can still cross it, and on a riverside seed
+    // one sometimes does. A planting that lands on sand is skipped, which is the
+    // graceful half of that: you get a thinner grove, never a tree in a river.
     const w = world();
+    let took = 0;
     for (const p of TOWN_PLANTINGS) {
+      const ground = generatedTile(w.seed, w.homestead.spot, p.x, p.y);
       const entry = w.garden.plants[tileKey(p.x, p.y)];
-      expect(entry, `nothing planted at ${p.x},${p.y}`).toMatchObject({ id: p.id });
+      if (ground === GRASS || ground === DIRT) {
+        expect(entry, `nothing planted at ${p.x},${p.y}`).toMatchObject({ id: p.id });
+        took++;
+      } else {
+        expect(entry, `planted on ${ground} at ${p.x},${p.y}`).toBeUndefined();
+      }
     }
+    // And most of the table takes on a normal seed, or the check above passes on
+    // a world where the town planted nothing at all.
+    expect(took).toBeGreaterThan(TOWN_PLANTINGS.length - 4);
   });
 
   it("arrives grown, not as a town of seedlings", () => {
     const w = world();
     for (const p of TOWN_PLANTINGS) {
+      if (!w.garden.plants[tileKey(p.x, p.y)]) continue; // ground refused it
       expect(growthStage(w, p.x, p.y, Date.now()), `${p.id} at ${p.x},${p.y}`).toBe(2);
     }
   });
@@ -817,12 +834,28 @@ describe("what the town planted", () => {
   it("stands its trees and bushes on the tile as well as in the record", () => {
     const w = world();
     for (const p of TOWN_PLANTINGS) {
+      if (!w.garden.plants[tileKey(p.x, p.y)]) continue; // ground refused it
       const kind = FLORA[p.id].kind;
       const t = tileAt(w, p.x, p.y);
       if (kind === "tree") expect(t, `${p.x},${p.y}`).toBe(TREE);
       else if (kind === "bush") expect(t, `${p.x},${p.y}`).toBe(SHRUB);
       // A flower is a mark on the grass, never an object standing on it.
       else expect(t, `${p.x},${p.y}`).toBe(GRASS);
+    }
+  });
+
+  it("never plants on water or sand — it skips rather than drowning", () => {
+    // The bug this is for: `stampPlantings` read `overrides` alone, and an
+    // unedited tile has no override — so "no override" was being taken as
+    // "grass". It is whatever the generator says, and on a stream seed the town
+    // planted four trees and a bush into open water.
+    for (let seed = 1; seed <= 30; seed++) {
+      const w = world("riverside", seed);
+      for (const key of Object.keys(w.garden.plants)) {
+        const [x, y] = key.split(",").map(Number);
+        const t = tileAt(w, x, y);
+        expect([TREE, SHRUB, GRASS], `${t} at ${key} on seed ${seed}`).toContain(t);
+      }
     }
   });
 
@@ -855,5 +888,75 @@ describe("what the town planted", () => {
       const touching = Math.abs(p.x - originX) <= 1 && Math.abs(p.y - originY) <= 1;
       expect(touching, `${p.id} is against the tent at ${p.x},${p.y}`).toBe(false);
     }
+  });
+});
+
+describe("the seed stall is a stall", () => {
+  it("is furniture and not a building, so nothing had to grow an exception", () => {
+    // The whole point. It was a six-by-six building with a door and a roof,
+    // because an open-fronted STRUCTURE is a room the flood fill never closes.
+    // A canopy is furniture, and furniture needs no room around it.
+    expect(allTownBuildings().some((b) => b.name.includes("Stall"))).toBe(false);
+    const counter = TOWN_FIXTURES.find((f) => f.counter === "seedstall");
+    expect(counter, "no seed stall counter").toBeDefined();
+    expect(TOWN_FIXTURES.some((f) => f.id === "awning"), "no awning").toBe(true);
+  });
+
+  it("does not roof itself, however you fence it in", () => {
+    // A stall that grew a roof would be the building coming back by accident.
+    const w = world();
+    const counter = TOWN_FIXTURES.find((f) => f.counter === "seedstall")!;
+    for (const r of rooms(w)) {
+      expect(r.interior.has(tileKey(counter.x, counter.y)), "the stall is in a room").toBe(false);
+    }
+  });
+
+  it("stands on dry ground on every spot and every seed", () => {
+    // It used to get its dry footing for free, by being a building: the stamp
+    // lays floor under a whole footprint, and `TOWN_RECTS` caps the water within
+    // six tiles of any wall. Losing the walls lost both — Derek kept his stall in
+    // a stream on the first seed anybody looked at, with his grove growing out of
+    // it. `TOWN_DRY_GROUND` puts the cap back, and the clearing grasses over the
+    // dry bank the cap leaves behind.
+    const counter = TOWN_FIXTURES.find((f) => f.counter === "seedstall")!;
+    const awning = TOWN_FIXTURES.find((f) => f.id === "awning")!;
+    const cells = [
+      [counter.x, counter.y],
+      [counter.x + 1, counter.y],
+      [awning.x, awning.y],
+      [awning.x + 1, awning.y],
+    ];
+    for (const spot of ["riverside", "forest", "lakeside", "coast"] as const) {
+      for (let seed = 1; seed <= 60; seed++) {
+        for (const [x, y] of cells) {
+          const t = generatedTile(seed, spot, x, y);
+          expect([GRASS, DIRT], `${t} under the stall at ${x},${y} on ${spot}/${seed}`).toContain(t);
+        }
+      }
+    }
+  });
+
+  it("leaves the water alone while it does it", () => {
+    // The clearing grasses over dry BANKS and never wet cells, or a stream that
+    // crossed the town would come out as two halves with a lawn between them.
+    let wet = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      for (let y = -6; y <= 20; y++) {
+        for (let x = -14; x <= 13; x++) {
+          if (!inTownClearing(x, y)) continue;
+          const t = generatedTile(seed, "riverside", x, y);
+          if (t === WATER || t === SHALLOW) wet++;
+        }
+      }
+    }
+    expect(wet, "no water survives inside the clearing at all").toBeGreaterThan(0);
+  });
+
+  it("keeps Derek beside his counter, and reachable", () => {
+    const w = world();
+    const derek = w.villagers.find((v) => v.id === "seedstall")!;
+    const counter = TOWN_FIXTURES.find((f) => f.counter === "seedstall")!;
+    expect(Math.abs(derek.x - counter.x) + Math.abs(derek.y - counter.y)).toBeLessThanOrEqual(3);
+    expect(isWalkable(w, Math.round(derek.x), Math.round(derek.y))).toBe(true);
   });
 });

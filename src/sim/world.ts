@@ -58,7 +58,7 @@ import { structureDef } from "../content/structures";
 import { defaultSkin } from "../content/skins";
 import type { SkinId } from "../content/skins";
 import { furnitureDef, covers, MAX_SPAN } from "../content/furniture";
-import { allTownBuildings, inTownClearing } from "../content/town";
+import { allTownBuildings, inTownClearing, TOWN_DRY_GROUND, PLOT } from "../content/town";
 import type { WorldState, HomesteadSpot, Layer } from "./types";
 import { hash2 } from "./rng";
 
@@ -417,6 +417,19 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
       // decked — the shore either side is left as shore, so a bridge reads as a
       // bridge and not as a road that stops at the bank.
       if (at && (wet === WATER || wet === SHALLOW) && isTownBridge(x, y, at.kind)) return FLOOR;
+      // THE TOWN GRASSES OVER ITS OWN BANKS. A shore is DRY, walkable ground —
+      // it is the beach beside a channel, not the channel — so turning it to
+      // lawn inside the town's cleared ground dams nothing: every wet cell is
+      // still wet and every stream still runs. What it fixes is a market stall
+      // standing in the middle of a sand flat, which is what Derek got on the
+      // first riverside seed anybody looked at once he stopped having a building
+      // to lay its own floor.
+      //
+      // The water itself is deliberately NOT touched here, and that is the same
+      // line §The clearing draws one block down: clear what is dry, never move
+      // the water. A clearing that ate the wet cells too would cut a stream into
+      // two halves with a lawn between them.
+      if (wet === SAND && inTownClearing(x, y)) return GRASS;
       if (wet !== null) return wet;
     }
 
@@ -2844,7 +2857,20 @@ const CHANNEL_CLEAR_SLOPE = 1.5;
 
 /** The rectangles, hoisted once — content, so they are the same six on every
  *  seed, which is what lets this stay a total function of (x, y) alone. */
-const TOWN_RECTS = allTownBuildings().map((b) => ({ x0: b.x0, y0: b.y0, x1: b.x1, y1: b.y1 }));
+const TOWN_RECTS = [
+  ...allTownBuildings().map((b) => ({ x0: b.x0, y0: b.y0, x1: b.x1, y1: b.y1 })),
+  // AND THE GROUND UNDER THE SEED STALL, which is not a building and used to be
+  // (content/town.ts §TOWN_DRY_GROUND). Every other piece of town ground gets
+  // this protection by being inside a wall ring; his does not, and without it the
+  // first seed anybody looked at had him keeping his stall in a stream.
+  TOWN_DRY_GROUND,
+  // AND YOUR OWN PLOT, fence to fence. Same claim as a bedroom wall, one scale
+  // up: a fenced field with a channel running through the middle of it is not a
+  // field. The cap shallows rather than deletes, so a stream that crosses your
+  // land still crosses it — as a shallow and a bank, which is a farm with a
+  // stream in it rather than a farm with a river through it.
+  PLOT,
+];
 /** A bounding box past which the cap cannot bite, so the whole check is two
  *  comparisons for almost every tile in the world. Reach is where the cap
  *  clears the deepest channel there is (halfMax 4.6): 2 + 4.6 / 1.5 ≈ 5.1. */

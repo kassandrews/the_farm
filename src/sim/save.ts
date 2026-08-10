@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 40;
+export const SCHEMA_VERSION = 41;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -1164,7 +1164,24 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
     const crops = (raw.crops ?? {}) as Record<string, unknown>;
     const frozen = { ...((raw.frozen ?? {}) as Record<string, unknown>) };
 
-    const now = TOWN_BUILDINGS.seedstall;
+    /** And where it stood AFTER this rung ran — frozen too, because the rung has
+     *  to keep meaning what it meant. It read `TOWN_BUILDINGS.seedstall` live
+     *  until the stall stopped being a building at all (content/town.ts §the seed
+     *  stall is a stall now), at which point this stopped compiling, which is the
+     *  compiler catching exactly the drift the ladder's own rules warn about. */
+    const V38_STALL = {
+      x0: -9,
+      y0: 5,
+      x1: -4,
+      y1: 10,
+      door: { x: -6, y: 10 },
+      furniture: [
+        { x: -8, y: 9, id: "table" },
+        { x: -8, y: 6, id: "shelf" },
+        { x: -5, y: 6, id: "shelf" },
+      ],
+    };
+    const now = V38_STALL;
     const authored = new Set(now.furniture.map((f) => `${f.x},${f.y}:${f.id}`));
     let playerWork = false;
     for (let y = now.y0; y <= now.y1; y++) {
@@ -1380,6 +1397,103 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
     return {
       ...raw,
       schemaVersion: 40,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
+      finishes: stamped.finishes ?? finishes,
+      garden: stamped.garden ?? raw.garden,
+      frozen,
+    };
+  },
+
+  /** v41 — the seed stall becomes a seed stall.
+   *
+   *  Derek had a six-by-six building with a door and a roof on it, and the table
+   *  row apologised for that in so many words: an open-fronted stall would be a
+   *  room the flood fill never closes, so it was a small building everybody
+   *  agreed to call a stall. It turned out never to be a structure question — a
+   *  canopy is FURNITURE, like the plaza stage — so the building comes down and
+   *  he gets a counter under an awning at the edge of the square, in a grove.
+   *
+   *  So this rung DEMOLISHES A WHOLE BUILDING and puts nothing back in its place,
+   *  which no rung has done. The ground goes back to grass and the town plants a
+   *  grove over part of it.
+   *
+   *  The all-or-nothing courtesy from v37 applies as it always has: if the player
+   *  has built or planted inside the old footprint, the whole thing is left
+   *  standing. They will have a spare building and no seed stall in it, which is
+   *  strictly better than the town pulling down a wall they were using. */
+  40: (raw) => {
+    /** The stall as it stood at v40 — and at v38, v39, and every version since
+     *  the plot arrived. Frozen, like every other rung's geometry. */
+    const V40_STALL = {
+      x0: -9,
+      y0: 5,
+      x1: -4,
+      y1: 10,
+      furniture: [
+        { x: -8, y: 9, id: "table" },
+        { x: -8, y: 6, id: "shelf" },
+        { x: -5, y: 6, id: "shelf" },
+      ],
+    };
+    /** And the spur that used to run to its door, which now leads nowhere. */
+    const V40_SPUR = { x0: -6, y0: 11, x1: 0, y1: 11 };
+
+    const overrides = { ...((raw.overrides ?? {}) as Record<string, number>) };
+    const build = { ...((raw.build ?? {}) as Record<string, { id: string; finish: string }>) };
+    const furniture = { ...((raw.furniture ?? {}) as Record<string, { id: string }>) };
+    const finishes = { ...((raw.finishes ?? {}) as Record<string, string>) };
+    const crops = (raw.crops ?? {}) as Record<string, unknown>;
+    const garden = (raw.garden ?? { plants: {} }) as { plants: Record<string, unknown> };
+    const frozen = { ...((raw.frozen ?? {}) as Record<string, unknown>) };
+
+    const authored = new Set(V40_STALL.furniture.map((f) => `${f.x},${f.y}:${f.id}`));
+    let playerWork = false;
+    for (let y = V40_STALL.y0; y <= V40_STALL.y1; y++) {
+      for (let x = V40_STALL.x0; x <= V40_STALL.x1; x++) {
+        const key = `${x},${y}`;
+        if (key in crops || key in garden.plants) playerWork = true;
+        const piece = furniture[key];
+        if (piece && !authored.has(`${key}:${piece.id}`)) playerWork = true;
+      }
+    }
+
+    if (!playerWork) {
+      for (let y = V40_STALL.y0; y <= V40_STALL.y1; y++) {
+        for (let x = V40_STALL.x0; x <= V40_STALL.x1; x++) {
+          const key = `${x},${y}`;
+          delete overrides[key];
+          delete finishes[key];
+          const cell = build[key];
+          if (cell && (cell.id === "wall" || cell.id === "door" || cell.id === "window")) {
+            delete build[key];
+          }
+          delete frozen[key];
+        }
+      }
+      for (const f of V40_STALL.furniture) {
+        const key = `${f.x},${f.y}`;
+        if (furniture[key]?.id === f.id) delete furniture[key];
+      }
+    }
+
+    // The spur, on v40's rule: only where it still looks like paving the town
+    // laid and nobody has touched.
+    for (let y = V40_SPUR.y0; y <= V40_SPUR.y1; y++) {
+      for (let x = V40_SPUR.x0; x <= V40_SPUR.x1; x++) {
+        const key = `${x},${y}`;
+        if (key in build || key in furniture || key in crops || key in garden.plants) continue;
+        if (overrides[key] !== 2 /* FLOOR */ || finishes[key] !== "cobble") continue;
+        delete overrides[key];
+        delete finishes[key];
+      }
+    }
+
+    const stamped = stampInto({ ...raw, overrides, build, furniture, finishes });
+    return {
+      ...raw,
+      schemaVersion: 41,
       overrides: stamped.overrides,
       build: stamped.build,
       furniture: stamped.furniture,

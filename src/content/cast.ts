@@ -300,7 +300,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // over him, and a carrot is short enough that all you could see was the
     // leaves. Found on screen; the unit tests were green, because "is he inside
     // his own walls" is true either way.
-    schedule: [{ fromHour: 0, x: -6, y: 8, doing: "beside the seeds" }],
+    schedule: [{ fromHour: 0, x: -3, y: 5, doing: "beside the seeds" }],
   },
   errands: {
     id: "errands",
@@ -327,12 +327,12 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // and the board is readable without him (sim/game.ts's "read" action) —
     // which is why that action exists rather than being a nicety.
     //
-    // He is BESIDE the board at (3,2), never north of it. A 22px piece drawn
+    // He is BESIDE the board at (3,-5), never north of it. A 22px piece drawn
     // over somebody standing behind it is exactly the Blessed Carrot bug
     // (ROADMAP), and paying for that lesson twice would be careless.
     schedule: [
-      { fromHour: 0, x: 3, y: 2, doing: "asleep at the board, technically on duty" },
-      { fromHour: 7, x: 3, y: 2, doing: "at the board, officially" },
+      { fromHour: 0, x: 3, y: -5, doing: "asleep at the board, technically on duty" },
+      { fromHour: 7, x: 3, y: -5, doing: "at the board, officially" },
       { fromHour: 10, x: 0, y: -4, doing: "collecting from the town hall" },
       // ON THE STREETS, both of them — the round moved when the buildings did
       // (content/town.ts §The street plan). These used to be bare grass
@@ -344,8 +344,8 @@ export const CAST: Record<AuthoredId, CharDef> = {
       // its south wall at y -5, so a stop one row further north would have put
       // him in the antiquities wing, which is both wrong and against the glass.
       { fromHour: 16, x: -10, y: -4, doing: "at the museum, not touching anything" },
-      { fromHour: 18, x: -6, y: 11, doing: "last call at the stall" },
-      { fromHour: 20, x: 3, y: 2, doing: "back at the board, sorting" },
+      { fromHour: 18, x: -3, y: 6, doing: "last call at the stall" },
+      { fromHour: 20, x: 3, y: -5, doing: "back at the board, sorting" },
     ],
   },
   stage: {

@@ -4166,22 +4166,28 @@ export class Renderer {
 
     ctx.fillStyle = skin.shade; // the near face — this is the height you see
     ctx.fillRect(px, base - H, pw, H);
-    ctx.fillStyle = skin.color; // the top, lifted clear of the floor
-    ctx.fillRect(px, py - H, pw, base - py);
+    // The top, lifted clear of the floor — unless the piece is FLAT, which is a
+    // panel and has no top to see (content/furniture.ts §flat).
+    if (!def.flat) {
+      ctx.fillStyle = skin.color;
+      ctx.fillRect(px, py - H, pw, base - py);
+    }
 
     // Outline the whole silhouette. Furniture wears the same finish as the
     // walls it stands against, so without a hard edge a furnished room is one
     // continuous tan mass and you can't tell architecture from objects. The top
     // surface and the near face meet flush, so the silhouette is a single rect.
-    const oy = py - H;
-    const oh = base - py + H;
+    const oy = def.flat ? base - H : py - H;
+    const oh = def.flat ? H : base - py + H;
     ctx.fillStyle = "rgba(0,0,0,0.38)";
     ctx.fillRect(px, oy, pw, 1);
     ctx.fillRect(px, base - 1, pw, 1);
     ctx.fillRect(px, oy, 1, oh);
     ctx.fillRect(px + pw - 1, oy, 1, oh);
-    ctx.fillStyle = "rgba(0,0,0,0.20)"; // the lip where the top meets the face
-    ctx.fillRect(px + 1, base - H, pw - 2, 1);
+    if (!def.flat) {
+      ctx.fillStyle = "rgba(0,0,0,0.20)"; // the lip where the top meets the face
+      ctx.fillRect(px + 1, base - H, pw - 2, 1);
+    }
     ctx.fillStyle = skin.top; // sunlit far edge, kept inside the outline
     ctx.fillRect(px + 1, oy + 1, pw - 2, 1);
 
@@ -4225,28 +4231,12 @@ export class Renderer {
         // reason a crop's leaves are: it is its own material.
         const face = base - H;
 
-        // THE TOP SURFACE IS A LITTLE ROOF, and it has to become something on
-        // purpose. The generic path gives every piece a top the full depth of
-        // its footprint, which is right for a table and wrong for a board: a
-        // 16px lid over a 22px face read as a crate, and no amount of detail on
-        // the face fixed it, because the lid was half the silhouette.
-        //
-        // A parish notice board has a little pitched roof over it to keep the
-        // rain off the paper, so that is what that surface is. It costs nothing
-        // — the block is already drawn — and it turns the heaviest part of the
-        // shape from a mistake into the thing that identifies the object.
-        //
-        // One ridge and one eave, not a course of shingles. This is a single
-        // object rather than a continuous surface, so the per-cell edges band
-        // rule isn't in play; it's simply that a 16px roof has room for two
-        // lines and looks like corrugation with more.
-        ctx.fillStyle = skin.shade;
-        ctx.fillRect(px, py - H, pw, deep);
-        ctx.fillStyle = skin.top; // sunlit ridge along the far edge
-        ctx.fillRect(px + 1, py - H + 1, pw - 2, 2);
-        ctx.fillStyle = "rgba(0,0,0,0.22)"; // the eave, where the roof overhangs
-        ctx.fillRect(px, py - H + deep - 1, pw, 1);
-
+        // THE LID IS GONE. It used to be dressed as a little pitched roof over
+        // the paper — which a parish board really has, and which really did stop
+        // a 16px slab reading as a crate. But it was a fix for the wrong problem:
+        // the board did not need a better top, it needed no top. It is `flat`
+        // now (content/furniture.ts), and what is left is the face, which is the
+        // only part of a notice board anybody has ever looked at.
         ctx.fillStyle = skin.shade; // a recessed panel, so it reads as framed
         ctx.fillRect(px + 1, face + 1, pw - 2, H - 3);
         // Three sheets, deliberately misaligned and different sizes. A grid of
@@ -4265,6 +4255,33 @@ export class Renderer {
         ctx.fillRect(px + 4, face + 3, 1, 1);
         ctx.fillRect(px + 11, face + 2, 1, 1);
         ctx.fillRect(px + 7, face + 12, 1, 1);
+        break;
+      }
+      case "awning": {
+        // A STRIPED CANOPY ON TWO POSTS, and the stripes are the whole of what
+        // says "stall" rather than "roof". Deliberate banding, exactly like the
+        // tent's canvas — CLAUDE.md's per-cell rule forbids stripes that follow
+        // the TILE GRID, and these run across the piece at four px regardless of
+        // where its cells fall, so a 2-wide awning is one striped sheet and not
+        // two little ones butted together.
+        //
+        // Drawn on the TOP surface because that is the face of a canopy you can
+        // see from here — it slopes away from you, so what you look at is the
+        // cloth, not its edge.
+        ctx.fillStyle = "#c9503f"; // the one canvas colour in the game
+        ctx.fillRect(px + 1, top + 1, pw - 2, deep - 2);
+        ctx.fillStyle = "#efe6cf";
+        for (let i = 1; i < pw - 2; i += 8) {
+          ctx.fillRect(px + 1 + i, top + 1, 4, deep - 2);
+        }
+        // A scalloped valance along the near edge — the frill a market awning
+        // has, and the detail that stops the shape reading as a slab of cloth.
+        ctx.fillStyle = "rgba(0,0,0,0.25)";
+        ctx.fillRect(px + 1, top + deep - 2, pw - 2, 1);
+        // The two posts holding it up, at the ends, on the face below the cloth.
+        ctx.fillStyle = skin.shade;
+        ctx.fillRect(px + 1, base - H, 2, H);
+        ctx.fillRect(px + pw - 3, base - H, 2, H);
         break;
       }
       case "stage": {

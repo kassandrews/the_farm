@@ -6,6 +6,7 @@ import { tileAt, setTile, tileKey, generatedTile, dig, sink, RECLAIM_MS, floorFi
 import { GRASS, DIRT, TREE, ROCK, FLOOR, MUSHROOM, FARMLAND, SHAFT } from "../content/tiles";
 import { NODES } from "../content/nodes";
 import { shellFinish } from "./structures";
+import { furnitureAt } from "./furniture";
 
 const HOUR = 3_600_000;
 
@@ -36,7 +37,7 @@ function findNode(
         // stored overrides rather than generation — so a test that compares a
         // found tree against `generatedTile` gets GRASS back and reads as a
         // determinism bug. Everything here wants a wild node.
-        if (`${x},${y}` in w.garden.plants) continue;
+        if (`${x},${y}` in w.garden.plants || furnitureAt(w, x, y)) continue;
         if (elbow && !clearAround(w, x, y, elbow)) continue;
         return { x, y };
       }
@@ -362,7 +363,18 @@ describe("grass closes over what you dug", () => {
     for (let r = 1; r < 60; r++) {
       for (let y = -r; y <= r; y++) {
         for (let x = -r; x <= r; x++) {
-          if (tileAt(w, x, y) === GRASS && !w.build[tileKey(x, y)]) return { x, y };
+          // Plain grass means nothing standing on it and nothing growing IN it:
+          // the town's flowers leave the tile as GRASS (a flower is a mark, not
+          // an object), so a cell can look bare and still be somebody's planting.
+          const key = tileKey(x, y);
+          if (tileAt(w, x, y) !== GRASS) continue;
+          // `furnitureAt` and not a key lookup: a multi-tile piece is stored at
+          // its ANCHOR only, so the seed stall's two-wide awning is absent from
+          // `world.furniture` under its own eastern half. That cell looks like
+          // open grass to a key check and is standing under a canopy.
+          if (key in w.build || key in w.garden.plants) continue;
+          if (furnitureAt(w, x, y)) continue;
+          return { x, y };
         }
       }
     }

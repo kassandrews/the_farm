@@ -11063,6 +11063,76 @@ comparison: work out what the stamp would write in a cell and see whether that i
 what is there. A perimeter cell in somebody else's finish is a repaint or a shed.
 Three tests caught it, all of them older than this overhaul.
 
+## The board goes flat, and the seed stall becomes a seed stall (10 Aug 2026)
+
+Two asked for together, and the second one deletes a compromise this file has
+been apologising for since the stall was written.
+
+### The errands board is a panel now, on the hall's wall
+
+It stood free in the middle of the square's south-east corner and was drawn as a
+22px face under a 16px LID — a lid that had been dressed up as a little pitched
+roof, because a bare one read as a crate. That worked, and it was a fix for the
+wrong problem: the board did not need a better top, it needed no top.
+
+- **`flat` is a furniture flag, not a special case in the board's draw.** The
+  default geometry is a near face plus a top surface the depth of the footprint,
+  which is right for everything you look down ON — a table, a bed, a chest — and
+  wrong for anything whose whole point is the vertical plane.
+- **Distinct from `mount: "wall"`**, which hangs a piece on the face of the wall
+  in its own cell and has no floor geometry at all. A flat piece still STANDS
+  somewhere: it has a footprint, it is solid, you can put it anywhere.
+- **Against the town hall**, east of the doorway. A notice board belongs on a
+  wall, the wall is drawn first and the board over it, and it puts the town's
+  paperwork on the building that produces it.
+
+### Derek loses his building
+
+The old table row said it out loud: *"a genuinely open-fronted stall would be a
+room the flood-fill never closes, and every rule about roofs, doorsteps and
+cutaways would need an exception for one structure. He has a door like everybody
+else and does not appear to have noticed."*
+
+**It was never a structure question.** A canopy is FURNITURE — like the plaza
+stage, which has stood in the open since Phase 16 — and furniture needs no room
+around it, no doorstep, no flood fill and no exception. So the building comes
+down and he gets a counter under a striped awning at the edge of the square, in a
+grove. The town loses a building it was pretending about, and the codebase loses
+the paragraph explaining why.
+
+### Settled here, don't relitigate
+
+- **The awning goes NORTH of the counter.** It is what a stall looks like — cloth
+  at the back, goods at the front — and it is what the renderer needs: drawn a row
+  earlier, so the counter and whoever stands at it are drawn OVER it rather than
+  under. That is the Blessed Carrot rule.
+- **`TOWN_DRY_GROUND`, and it is the bill for losing the walls.** Every piece of
+  town ground used to get its dry footing free, twice over: `stampBuilding` lays
+  floor under a whole footprint, and `TOWN_RECTS` caps the water within six tiles
+  of any wall. A stall with no walls has neither — and on the very first seed
+  looked at, Derek was keeping his stall in a stream with his grove growing out of
+  it. Measured after the fix: 0 of 200 seeds put the stall in water, on all four
+  spots. The PLOT went into the same list on the same argument, one scale up.
+- **AND THE CLEARING GRASSES OVER DRY BANKS.** The cap shallows water rather than
+  deleting it, so what it leaves is SAND — and a market on a sand flat was the
+  next picture, on 45 of 200 riverside seeds. A shore is dry, walkable ground, so
+  turning it to lawn inside the town's cleared ground dams nothing: every wet cell
+  stays wet and every stream still runs. Sand: 0 of 200 after. The wet cells are
+  deliberately untouched, which is the same line §The clearing already drew.
+- **`stampPlantings` reads the GENERATED ground, not just the overrides.** It
+  looked at `t.overrides` alone, and an unedited tile has none — so "no override"
+  was being taken as "grass". On a stream seed the town planted four trees and a
+  bush into open water. A planting that cannot take is now skipped, which is the
+  graceful half: a thinner grove, never a tree in a river.
+
+### The compiler caught the ladder's oldest trap, again
+
+v38 read `TOWN_BUILDINGS.seedstall` LIVE to decide where the stall had moved to.
+That is exactly the drift v37 froze its coordinates to avoid, and it went
+unnoticed because the building still existed. The day it stopped existing the
+rung stopped compiling — which is the best possible outcome, and an argument for
+keeping migration geometry in the type system rather than in a comment.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
