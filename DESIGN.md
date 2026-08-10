@@ -1335,10 +1335,17 @@ to what is in your hand. Tap places, drag paints a run.
 whose target is YOUR OWN BODY'S POSITION belongs to **ACT** — dig, gather,
 water, harvest; standing there is the point, and dig can never be remote
 because digging is the verb that moves *you* down. A verb whose target is
-THE MAP belongs to **BUILD** — placing anything, anywhere you can see.
+THE MAP belongs to **SHAPE** — placing anything, anywhere you can see.
 There are exactly two modes and this sentence is why no third is coming:
 a mode earns its button by changing the grammar of touch, and everything
-placeable already shares build's grammar.
+placeable already shares the mode's grammar.
+
+**The mode is called SHAPE, and "build" is its structure wing's name.** It
+was BUILD until the garden moved in; a mode that plants hydrangeas and
+uproots them again is shaping your surroundings, and "reshape" was already
+this document's own verb for the activity class (§The sky refuses it by
+name). Walls and floors keep the word "build" where it is true — as the
+wing you land in.
 
 ### A place keeps a history, the same way a resident does
 

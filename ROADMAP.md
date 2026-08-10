@@ -10592,6 +10592,22 @@ nothing is held afterwards. Keys 1–4 are the same one-shots for a desktop hand
   remains the browse-and-settle place. One extra tap, only when a choice
   actually exists — the seed row's own oldest rule.
 
+## The mode is SHAPE (10 Aug 2026)
+
+The BUILD button says SHAPE now, and the rename is the garden's bill arriving:
+a mode that plants hydrangeas and uproots them again is not "build", and the
+owner flagged the word the day after the wing shipped. SHAPE won over CREATE
+and MAKE because it covers all three wings honestly — walls are shaping,
+planting is shaping, ERASING is shaping, where creating and making both
+stumble on the take-backs — and because "reshape" was already DESIGN's own
+verb for the activity class (§The sky: "you visit; you do not reshape").
+
+**"Build" survives as the structure wing's name**, where the word is true:
+SHAPE contains Build, Furniture and Garden. Five letters, so the button didn't
+move; user-facing strings only, so `buildTool`, `buildAt` and friends keep
+their names in code — a mechanical identifier sweep would touch forty files to
+say nothing new.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

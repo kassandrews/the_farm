@@ -3029,11 +3029,17 @@ export class App {
     this.hud.root.classList.toggle("building", building);
     this.hud.build.classList.toggle("selected", building);
     this.hud.build.setAttribute("aria-pressed", String(building));
-    // The same button in and out, so it has to say which way it goes. BUILD is
+    // The same button in and out, so it has to say which way it goes. SHAPE is
     // an invitation; once you're in it, the only thing it does is leave, and a
-    // lit button still reading BUILD looks like the way further in.
-    this.hud.build.textContent = building ? "DONE" : "BUILD";
-    this.hud.build.setAttribute("aria-label", building ? "Leave build mode" : "Build mode");
+    // lit button still reading SHAPE looks like the way further in.
+    //
+    // SHAPE, NOT BUILD, since the garden moved in (ROADMAP §the mode is
+    // SHAPE): the mode edits your surroundings — walls, gardens, and taking
+    // either back — and "build" is the STRUCTURE WING's name now, where the
+    // word is true. It is DESIGN's own verb for the activity class ("you
+    // visit; you do not reshape" — §The sky, refusing exactly this mode).
+    this.hud.build.textContent = building ? "DONE" : "SHAPE";
+    this.hud.build.setAttribute("aria-label", building ? "Leave shape mode" : "Shape mode");
 
     // Rotation is a furniture idea; showing it for walls would imply walls have
     // a facing, which is exactly the confusion the design avoids.
@@ -3939,12 +3945,12 @@ function buildHud(
   // BUILD sits directly above ACT, in the one corner the hands already live in,
   // and the two never appear together: entering build mode is the game putting
   // your hands down and picking up the plans. Same button leaves.
-  const build = el("button", { class: "mode-btn", ariaLabel: "Build mode" }, ["BUILD"]);
+  const build = el("button", { class: "mode-btn", ariaLabel: "Shape mode" }, ["SHAPE"]);
   build.addEventListener("click", onBuild);
   hoverHint(build, () =>
     build.classList.contains("selected")
-      ? "Done building — back to your hands.  (B)"
-      : "Build mode — floors, walls, and furniture. Press it again to leave.  (B)",
+      ? "Done shaping — back to your hands.  (B)"
+      : "Shape your surroundings — build, furnish, garden. Press it again to leave.  (B)",
   );
 
   const action = el("button", { class: "action-btn" }, ["ACT"]);
