@@ -10137,6 +10137,100 @@ rather than from an author.
   FOR, that note is a test the resample was never run against — worth re-reading
   the other rows' notes before assuming they survived it.
 
+## Landscaping: plants you put in the ground (parked, 9 Aug 2026)
+
+**Nothing here is built.** This is a conversation written down so it survives,
+and the next person to open it should read it before proposing an orchard.
+
+**It began as "can we add an apple orchard?" and that was the wrong question.**
+A sited region of apple trees is three days' work and the machinery is all
+there — but an apple hanging in a crown is the one thing this file has refused
+twice in writing. `orbs`: *"a round pale thing hanging in a tree reads as
+pickable, and walking under it to find that ACT does nothing is a promise the
+game made and broke."* `berries`: *"expect to be asked why you cannot pick
+them."* Adding a whole region of the most pickable-looking paint in the game
+would have been the third refusal, and a louder one.
+
+**The real question is whether fruiting plants should be PLANTABLE, and the
+answer is yes — as a BUILD system rather than a farm one.** Asked for
+explicitly: *"you should be able to landscape with bushes and trees and plants
+like the Sims."* Landscaping is the point; fruit is a thing some of the plants
+happen to do.
+
+### Why this shape and not the other one
+
+- **It puts the feature next to machinery that works.** A placed bush is much
+  closer to furniture and structures — placement, persistence, a migration —
+  than to crops. Those patterns are in the repo already.
+- **It is the strongest fit for the game's own clock.** DESIGN: real time gates
+  the living world, never the player's hands. An annual crop says that at a
+  three-day scale; a bush that comes back every summer says it at a YEAR scale,
+  in a town people were sent to retire in. Nothing else here reaches for that.
+- **AND IT RESOLVES THE WILD-FRUIT TENSION IN THE RIGHT DIRECTION, which is the
+  best thing about it.** If PLANTING is what makes fruit pickable, the wild
+  berries stay paint for a real reason rather than an apologetic one — the
+  country gates nothing, and what you can pick came off your own ground. The
+  orchard question then answers itself: a region is scenery, and the fruit you
+  get is one you put in.
+
+### The one architectural move
+
+**Tree species live on `BiomeDef` and would have to stop.** `crownRows`,
+`crownGaps`, `trunkHeight`, `crownAlt` and `shrubShapes` are all fields of a
+REGION, and `treeForms(biome)` is the only thing that knows how to read them. A
+tree you can carry home has no region. Species become their own content table and
+regions reference them by id.
+
+That is a refactor rather than an addition, and it is the good kind: **the art
+already exists.** Twenty-odd silhouettes drawn over the last month — the bur oak,
+the cherry, the birch, the coast live oak, the blueberry, the thorn, the prickly
+pear — are currently visible only where the field happens to put them. Making
+them plantable turns the regions into a CATALOGUE you walk through: see a tree in
+the country, want one, come back with it. Exploring feeds building, at no art
+cost at all.
+
+### Held firm
+
+- **Fruit may never be a material or a required input.** The moment an apple is
+  needed for a recipe the country gates building again — *"walk two hundred tiles
+  or no pink house"*, DESIGN §Biomes. Fruit goes to gifts, `tastes`, festivals and
+  the museum: sinks that already exist and that nothing depends on.
+- **No caps, like everything else.** No plot limit, no trees-per-day. If plants
+  cost anything it is the ordinary materials, and the real cost is the space.
+- **UNLOCKS ARE ALLOWED AND MUST STAY COSMETIC** — asked for, and the example was
+  fruit-shaped furniture for growing or finding a fruit. This is exactly the
+  friendship-finish rule (§"Finishes people give you"): *"the mechanism can never
+  become a gate... a player who never warms to anybody loses two colours and not
+  one thing they can do."* A novelty chair costs nothing to place and no
+  commission, room or acceptance test asks what shape a chair is.
+
+  **It would be a THIRD unlock channel, and the channels are told apart by who
+  caused it** (`app.ts`' rule). You FOUND it — silent. A person GAVE it to you —
+  they say something, then you see what they meant. This one is neither: you grew
+  it, over a season, and the game noticed. That wants its own register and it is
+  the interesting writing problem in the whole feature.
+
+### Open, and it shapes everything else
+
+- **How you get a plant: bought, or dug up where it grows?** The seed stall is
+  simple and always available; digging needs no new verb (the shovel exists) and
+  is what makes the long grass worth a walk. Leaning to dug-up for anything with a
+  region's character and the stall for the ordinary ones — but this decides
+  whether landscaping is a shopping list or a reason to leave town, so it is not a
+  detail.
+- **Maturity in DAYS, not years.** Seasons come off the real calendar, so "fruits
+  in a year" is a literal year of somebody's life. The payoff being bought is
+  *"this comes back"*, not *"you waited"* — a bush should establish in about a
+  week and then fruit every season it is supposed to, forever. A multi-year tree
+  is a daily cap wearing a very slow hat.
+- **It is the first thing that grows and is also STORED.** Everything wild is a
+  total function of (seed, x, y) and stored nowhere. A planted bush is persistent
+  state with a lifecycle: new schema, a tested migration, and `away.ts` has to
+  ripen it while you are gone.
+- **Its neighbour is the furniture project**, which is already parked with its own
+  rotation and redraw gaps. Whether these are one phase or two has not been
+  argued.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
