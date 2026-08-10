@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 35;
+export const SCHEMA_VERSION = 36;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -931,6 +931,11 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
     const homestead = (typeof raw.homestead === "object" && raw.homestead ? raw.homestead : {}) as Record<string, unknown>;
     return { ...raw, schemaVersion: 35, homestead: { ...homestead, struckAt: null } };
   },
+  // The garden (DESIGN §The garden). Empty on arrival is the DESIGN: `seen`
+  // fills itself the first time the player stands anywhere — the town's own
+  // region teaches the starter species within a second of loading — so a live
+  // save needs nothing backfilled and there is nothing here to get wrong.
+  35: (raw) => ({ ...raw, schemaVersion: 36, garden: { seen: [], plants: {} } }),
 };
 
 /** The name the tables now give an authored character, or null for anyone the

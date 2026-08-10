@@ -105,6 +105,7 @@ import {
   BROADLEAF,
   TUFTS_DEFAULT,
   STONES_DEFAULT,
+  BIOMES,
   bloomsOf,
   treeForms,
   type StoneShape,
@@ -114,6 +115,8 @@ import {
   type MoteKit,
   type Tint,
 } from "../content/biomes";
+import { FLORA } from "../content/flora";
+import { growthStage, fruitReady } from "../sim/garden";
 import { present } from "../sim/presence";
 import { creatureKey } from "../content/canon/sprites";
 import { lookFor } from "../content/looks";
@@ -402,6 +405,18 @@ const ROOF_PITCH_FALL = 0.045;
 /** The trunk, in pixels. A tree's full height is this plus its crown's row count,
  *  which now varies per biome (content/biomes.ts) — so nothing may assume 24. */
 const TRUNK_H = 16;
+
+/** What a planted flower draws before it flowers (DESIGN §The garden — grows
+ *  in over about a day): two leaves off a stem, the meadow's own sprout mark.
+ *  A kit rather than a fillRect so it goes through `drawKitMark` like every
+ *  other thing on the grass and seasons with the turf. */
+const GARDEN_SPROUT: DecorKit = {
+  density: 1,
+  marks: [
+    ["x.x", ".x."],
+    [".x.", ".x."],
+  ],
+};
 
 /** The trunk's horizontal span, as an offset from the tree's centre COLUMN and a
  *  width. Odd at every girth, because every other part of the sprite — crown,
@@ -2708,6 +2723,29 @@ export class Renderer {
             const p = decoHash(tx, ty, world.seed ^ 0x3ac9);
             this.drawKitMark(bkit, px, py, p, bkit.stem ?? this.stemInk(world, tx, ty), paint?.glitch);
           }
+
+          // A PLANTED FLOWER (DESIGN §The garden): a mark exactly like the
+          // wild kind, except the record put it here rather than the hash. In
+          // its species' month it is its skin's own bloom, drawn by the same
+          // call; the rest of the year, and for its first day in the ground,
+          // it is greenery — an empty cell you paid for reads as a refund
+          // owed, and a flowerbed in January is still a bed.
+          const gid = world.garden.plants[tileKey(tx, ty)]?.id;
+          const gdef = gid ? FLORA[gid] : null;
+          if (gdef && gdef.kind === "flower") {
+            const skin = BIOMES[gdef.skin];
+            const gkit =
+              gdef.bloom === "decor"
+                ? skin.decor
+                : bloomsOf(skin).find((k) => k.season === gdef.bloom);
+            const grown = growthStage(world, tx, ty, this.now) >= 2;
+            const p = decoHash(tx, ty, world.seed ^ 0x77c3);
+            if (grown && gkit && this.inSeason(gkit)) {
+              this.drawKitMark(gkit, px, py, p, gkit.stem ?? this.stemInk(world, tx, ty), paint?.glitch);
+            } else {
+              this.drawKitMark(GARDEN_SPROUT, px, py, p, this.stemInk(world, tx, ty), paint?.glitch);
+            }
+          }
         } else if (def.name === "Sand") {
           // Grain, on the same terms as the grass tuft: a hash of the WORLD
           // coordinate, sparse, single pixels. Sand without it is a flat block
@@ -4876,9 +4914,17 @@ export class Renderer {
     // into the scrub is drawn as a pine. That is the whole of what softening a
     // treeline means — the alternative interleaves the COUNT and keeps the
     // species changing on the line, which is the seam you can actually see.
+    // A PLANTED TREE WEARS ITS OWN REGION'S SKIN (DESIGN §The garden, and
+    // content/flora.ts §skin): a bur oak on your lawn is drawn by exactly this
+    // call with exactly the prairie's inks, seasons and all. The generator has
+    // no say — the record does.
+    const planted = dark ? null : world.garden.plants[tileKey(tx, ty)];
+    const species = planted ? FLORA[planted.id] : null;
     const biome = dark
       ? null
-      : scatterSkin(world.seed, world.homestead.spot, tx, ty);
+      : species
+        ? BIOMES[species.skin]
+        : scatterSkin(world.seed, world.homestead.spot, tx, ty);
 
     // Silhouette and therefore HEIGHT, both from the region. Read before the fade
     // because how far a tree reaches up is what decides whether it's hiding you:
@@ -4895,9 +4941,29 @@ export class Renderer {
     // A region with no second form gets a one-item list and the same tree it
     // always drew, hash or no hash.
     const forms = biome ? treeForms(biome) : null;
-    const form = forms
-      ? forms[Math.floor(decoHash(tx, ty, world.seed ^ 0x1d4f) * forms.length) % forms.length]
-      : null;
+    // A planted tree's form is its SPECIES' (the orchard's plum is form 1 of
+    // the orchard's tree), never the hash's — two taps of the same palette
+    // entry must plant the same tree.
+    const formIdx = forms
+      ? species
+        ? Math.min(species.form ?? 0, forms.length - 1)
+        : Math.floor(decoHash(tx, ty, world.seed ^ 0x1d4f) * forms.length) % forms.length
+      : 0;
+    let form = forms ? (forms[formIdx] ?? forms[0]) : null;
+    // AND IT GROWS IN (DESIGN: everything goes in small and fills out over
+    // days). Stages are authored transforms of the grown form, not fractional
+    // scales — the sprite rule (CLAUDE.md) bans resampling, so a young tree is
+    // FEWER ROWS on a shorter stem, which is also what a young tree is. Gaps
+    // and overlap are dropped: a sapling has no underside to notch.
+    if (planted && form) {
+      const stage = growthStage(world, tx, ty, this.now);
+      if (stage === 0) {
+        form = { rows: [1, 2], trunkHeight: 4 };
+      } else if (stage === 1) {
+        const half = form.rows.filter((_, i) => i % 2 === 0);
+        form = { rows: half, trunkHeight: Math.max(6, Math.ceil((form.trunkHeight ?? TRUNK_H) / 2)) };
+      }
+    }
     const rows = form ? form.rows : BROADLEAF;
     // Empty half-width at the middle of each row (the blossom's dip over the
     // trunk), and how many rows come down beside the trunk to make that dip
@@ -5391,6 +5457,33 @@ export class Renderer {
       }
     }
 
+    // FRUIT IN THE CROWN (§BiomeDef.treeFruit). On a wild tree it is paint,
+    // every year, promising nothing. On a PLANTED one it draws only while there
+    // is something to pick — so your tree visibly empties for the day when you
+    // pick it, and fills again tomorrow, which is the entire status display the
+    // garden gets (no bars, no badges; DESIGN §The garden).
+    //
+    // A 2×2 bead like the orbs', flat rather than additive: an apple is an
+    // object in the leaves, not a light. Clamped inside the row it hangs on so
+    // a narrow crown carries its fruit closer in, same arithmetic as the orbs.
+    const fruitOn = biome?.treeFruit?.find((f) => f.form === formIdx);
+    if (
+      fruitOn &&
+      this.palette.season?.id === fruitOn.season &&
+      (!planted || fruitReady(world, tx, ty, this.now))
+    ) {
+      const pick = decoHash(tx, ty, world.seed ^ 0x5f21);
+      const spots = fruitOn.spots[Math.floor(pick * fruitOn.spots.length) % fruitOn.spots.length];
+      ctx.fillStyle = fruitOn.color;
+      for (const [dx, row] of spots) {
+        const r = Math.max(0, Math.min(rows.length - 1, row));
+        const half = rows[r];
+        if (half === 0) continue;
+        const ox = cx + Math.max(-(half - 1), Math.min(half - 1, dx));
+        ctx.fillRect(ox, top + r, 2, 2);
+      }
+    }
+
     ctx.globalAlpha = prev;
   }
 
@@ -5413,7 +5506,13 @@ export class Renderer {
     const h = decoHash(tx, ty, world.seed);
     const cx = Math.round(this.sceneX(tx)) + Math.floor(h * 3) - 1;
     const base = Math.round(this.sceneY(ty) + TILE / 2);
-    const biome = scatterSkin(world.seed, world.homestead.spot, tx, ty);
+    // A planted bush wears its species' skin, exactly as a planted tree does —
+    // see drawTree, whose note this one only points at.
+    const planted = world.garden.plants[tileKey(tx, ty)];
+    const species = planted ? FLORA[planted.id] : null;
+    const biome = species
+      ? BIOMES[species.skin]
+      : scatterSkin(world.seed, world.homestead.spot, tx, ty);
     // THE WIDEST FORM, where a region draws more than one tree (§crownAlt). A
     // bush is a bush: it takes one number from its region — how wide the foliage
     // around here gets — and picking the fattest of the forms keeps that number
@@ -5450,9 +5549,15 @@ export class Renderer {
     // ever appeared on bushes that had leaned left would be one roll wearing
     // three hats. This file has made that mistake often enough to name it.
     const kinds = biome?.shrubShapes;
-    const kind = kinds
-      ? kinds[Math.floor(decoHash(tx, ty, world.seed ^ 0x71c3) * kinds.length) % kinds.length]
-      : "bush";
+    // A PLANTED bush is the shape its species says, never the roll's: a
+    // prickly pear you planted is a prickly pear (content/flora.ts §shape) —
+    // the weighting exists to keep the strange plant rare in the WILD, and a
+    // deliberate planting is the opposite of rare by accident.
+    const kind = species?.shape
+      ? species.shape
+      : kinds
+        ? kinds[Math.floor(decoHash(tx, ty, world.seed ^ 0x71c3) * kinds.length) % kinds.length]
+        : "bush";
     if (kind === "pear") {
       // WHICH PLANT THIS ONE IS. Its own salt again — the shape roll above already
       // decided it was a cactus at all, and a pear whose pose tracked that would
@@ -5509,6 +5614,13 @@ export class Renderer {
     }
 
     let peak = shrubPeak(src);
+    // A planted bush GROWS IN (DESIGN §The garden): for its first day it is a
+    // small version of itself — the dome at half its peak, which the row maths
+    // below turns into a genuinely smaller plant rather than a squashed one.
+    // Bushes skip the tree's middle stage (sim/garden.ts §growthStage).
+    if (planted && growthStage(world, tx, ty, this.now) < 2) {
+      peak = Math.max(3, Math.ceil(peak / 2));
+    }
     // AND ONE PIXEL EITHER WAY, off the tile's own hash. Every bush in a region
     // was exactly the same width, which was invisible while undergrowth was a
     // scatter under trees and became the whole picture on the heath, where 18% of
@@ -5602,7 +5714,14 @@ export class Renderer {
     // hash picks which ARRANGEMENT this bush wears; the arrangement itself is
     // drawn, and the gaps in it are the drawing.
     const fruit = biome?.berries;
-    if (fruit && this.inSeason(fruit)) {
+    // On a PLANTED bush whose species really fruits (the blueberry), the paint
+    // doubles as the day's stock: picked, the bush goes bare until tomorrow —
+    // the tree's rule in drawTree, one storey down. A planted HYDRANGEA's heads
+    // are flowers wearing this field's machinery, not fruit (no `fruit` on its
+    // species row), so they stay put all season.
+    const fruitHeld =
+      planted && species?.fruit ? fruitReady(world, tx, ty, this.now) : true;
+    if (fruit && this.inSeason(fruit) && fruitHeld) {
       ctx.fillStyle = fruit.color;
       // Its own salt, and not the one that chose the width or the one that
       // nudged the bush sideways: a plant whose fruit rearranged itself when it

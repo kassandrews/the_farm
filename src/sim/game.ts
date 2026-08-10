@@ -75,6 +75,7 @@ import type { Cost } from "./inventory";
 import { itemLabel, priceItems } from "../content/items";
 import type { ItemId } from "../content/items";
 import { gather, nodeAt, nodeNear, updateRegrowth, updateReclaim } from "./gather";
+import { uprootAt, noticeFlora } from "./garden";
 import { nodeDef } from "../content/nodes";
 import { mineVein } from "./mining";
 import { meetMole } from "./mole";
@@ -164,6 +165,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     furniture: {},
     underFurniture: {},
     crops: {},
+    garden: { seen: [], plants: {} },
     villagers,
     commissions: [],
     // A few boards' worth of wood so the very first thing you try to build
@@ -523,6 +525,11 @@ export function tick(world: WorldState, dt: number, now: number): void {
   if (now - lastSweep(world) >= NOTICE_SWEEP_MS) {
     setLastSweep(world, now);
     sweepNoticed(world, now);
+    // And what the ground here grows, which rides the same throttle for the
+    // same reason: it is a question about where you are standing (DESIGN §The
+    // garden — you plant what you have met), and you cannot cross a region
+    // between frames. Appends to a set and never removes; the palette reads it.
+    noticeFlora(world);
     // And whether the world is in a shape worth remembering, which rides the
     // same throttle for the same reason: its predicates are about the calendar,
     // the hour and where you are standing, and none of those can change between
@@ -1513,6 +1520,16 @@ function placeOrRemove(
       refund(world.inventory, buildCost(taken.id, taken.finish));
       return { changed: true, message: `${structureDef(taken.id).name} taken back down.`, broke: false };
     }
+    // A planted thing comes back out here and ONLY here (DESIGN §The garden:
+    // uprooting is erase, never the shovel and never the basket). After
+    // furniture and structure — a shelf over a flowerbed is erased shelf-first,
+    // like everything else — and before the ground layers, because the plant is
+    // the thing standing ON them.
+    {
+      const uprooted = uprootAt(world, x, y);
+      if (uprooted) return uprooted;
+    }
+
     // A shaft comes up like anything else you put down. ACT has no undo
     // (ROADMAP §"Undo covers BUILD strokes only") and a hole in the lawn from a
     // mis-tap is the one dug tile that isn't cheap to live with — so the take-it-

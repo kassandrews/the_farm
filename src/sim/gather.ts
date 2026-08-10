@@ -84,6 +84,13 @@ export function gather(
   now: number,
   layer: Layer = "surface",
 ): GatherResult | null {
+  // A PLANTED tree or bush never fells to gather (DESIGN §The garden:
+  // uprooting is erase, and only erase). Without this line the basket is one
+  // mis-tap from turning three days of growing into two wood — the exact
+  // arrangement-versus-materials asymmetry the build undo exists for, except
+  // ACT has no undo. Your own fruit answers ACT through sim/garden.ts
+  // §pickFruit instead, on the harvest-override path.
+  if (layer === "surface" && world.garden.plants[tileKey(x, y)]) return null;
   const node = nodeAt(world, x, y, layer);
   if (!node) return null;
   const def = nodeDef(node);

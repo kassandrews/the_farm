@@ -4,6 +4,7 @@
 
 import type { TileId } from "../content/tiles";
 import type { CropId } from "../content/crops";
+import type { FloraId } from "../content/flora";
 import type { AdultForm } from "../content/canon/forms";
 import type { CharId, NewcomerId } from "../content/cast";
 import type { MemoryLog } from "./memory";
@@ -330,6 +331,23 @@ export interface WorldState {
   underFurniture: Record<string, FurnitureCell>;
 
   crops: Record<string, Crop>;
+
+  /** THE GARDEN (DESIGN §The garden) — what you have planted, and what you have
+   *  met and may therefore plant.
+   *
+   *  `plants` is keyed "x,y" like every sparse layer here. An entry plus the
+   *  tile override (TREE/SHRUB for the woody kinds) IS the planted thing;
+   *  growth is a pure function of `at` against the clock, so nothing ticks,
+   *  nothing else is stored, and the away simulation gets it for free.
+   *
+   *  `seen` is the discovery record — species ids, appended the first time you
+   *  stand in a region that teaches one (content/flora.ts §metIn) and never
+   *  removed. It is a record of meetings, not a checklist: no UI may ever
+   *  count it, total it, or show a gap where an unseen species would go. */
+  garden: {
+    seen: FloraId[];
+    plants: Record<string, { id: FloraId; at: number; picked?: number }>;
+  };
   villagers: Villager[];
 
   /** Housing paperwork, oldest first. An arrival's villager is an ordinary
