@@ -317,6 +317,17 @@ select {
   position: relative;
 }
 
+/* The variety dot the fan's Sow button wears — which seed, before you commit. */
+.fan-seed {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+
 .build-finishes:empty {
   display: none;
 }

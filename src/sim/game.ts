@@ -1312,6 +1312,22 @@ export function contextAction(world: WorldState, tool: Tool | null, now: number)
   return applyTool(world, verb, target.x, target.y, now);
 }
 
+/** Does THIS TILE carry work you'd do standing on it — the walk-and-act test
+ *  for a tap on a walkable cell (ui/app.ts). The rule it draws: TAP A THING,
+ *  DEAL WITH THE THING; TAP THE GROUND, JUST GO THERE. A ripe crop, a dry
+ *  crop, a sowable bed and something to pick up are things; plain diggable
+ *  ground is not, because grass is always diggable and "act on arrival" for
+ *  the shovel would end every walk in a hole. Dig stays a verb you perform
+ *  where you already stand. */
+export function standingWork(world: WorldState, x: number, y: number): boolean {
+  if (isRipe(world, x, y)) return true;
+  if (canWater(world, x, y)) return true;
+  const t = tileAt(world, x, y);
+  if (t === MUSHROOM || t === JUNK_PILE) return true;
+  const bed = t === DIRT || t === FARMLAND || t === FARMLAND_WET;
+  return bed && canSow(world, x, y);
+}
+
 /** Which verbs would actually do something here — the fan's contents, and
  *  nothing else's (ROADMAP §one button). The reticle rule, applied to a menu:
  *  a verb that would refuse is a verb that isn't offered, so the fan is one

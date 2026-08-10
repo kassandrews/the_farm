@@ -97,7 +97,7 @@ import {
 import { audio } from "./audio";
 import type { Cue } from "./audio";
 import type { ActionKind } from "../sim/game";
-import { availableVerbs } from "../sim/game";
+import { availableVerbs, standingWork } from "../sim/game";
 
 /** Which cue a successful action earns. */
 const ACTION_CUES: Record<ActionKind, Cue> = {
@@ -2486,6 +2486,19 @@ export class App {
         }
       }
 
+      // TAP YOUR OWN WORK AND GO AND DO IT — a ripe crop, a dry bed, a bed
+      // waiting for seed, a mushroom (sim/game.ts §standingWork). The same
+      // promise as tapping a tree, one ring in: these cells are WALKABLE, so
+      // the walk ends ON the work and the arrival act is the default tap. Dig
+      // is deliberately not work a tap can order from a distance.
+      if (this.layer() === "surface" && standingWork(this.world, Math.round(wpt.x), Math.round(wpt.y))) {
+        const gx = Math.round(wpt.x);
+        const gy = Math.round(wpt.y);
+        this.walkingToAct = { x: gx, y: gy };
+        moveTo(this.world, gx, gy);
+        return;
+      }
+
       // TAP A TREE AND GO AND DEAL WITH IT.
       //
       // Nodes are solid, so a tap on one used to reach `moveTo` and stop dead
@@ -3324,14 +3337,17 @@ export class App {
     if (this.world.player.target) return; // still on the way
     this.walkingToAct = null;
     const at = playerTile(this.world);
-    // Adjacency, not arrival at a particular cell: a wall going up mid-walk can
-    // land you on the node's other side, which is just as good. If the walk was
-    // blocked outright, we are nowhere near it and there is nothing to swing at.
-    if (Math.abs(at.x - goal.x) + Math.abs(at.y - goal.y) !== 1) return;
+    // Adjacency OR arrival: a solid node is dealt with from beside it, and
+    // walkable work (a bed, a ripe row — §standingWork) from on top of it. A
+    // wall going up mid-walk can land you on the node's other side, which is
+    // just as good; blocked outright, we are nowhere near it and there is
+    // nothing to swing at.
+    const dist = Math.abs(at.x - goal.x) + Math.abs(at.y - goal.y);
+    if (dist > 1) return;
     // Aims by MOVING at it: `moveTo` sets your heading before it tests
     // walkability, so a refused step into something solid is exactly how the
     // game already turns you to face a tree (sim/game.ts).
-    moveTo(this.world, goal.x, goal.y);
+    if (dist === 1) moveTo(this.world, goal.x, goal.y);
     this.doAction();
   }
 
@@ -3349,10 +3365,28 @@ export class App {
     if (!this.world || this.modalOpen) return;
     const verbs = availableVerbs(this.world);
     const fan = this.hud.actFan;
+    const world = this.world;
     fan.replaceChildren(
       ...verbs.map((id) => {
         const v = VERBS.find((x) => x.id === id)!;
         const btn = el("button", { class: "tool", ariaLabel: v.label }, [iconEl(v.icon, SCALE.button)]);
+        // SOW WEARS ITS VARIETY, and opens the choice when there is one. The
+        // swatch answers "which seed?" before you commit; tapping swaps the
+        // fan for the variety chips — one extra tap, only when a choice
+        // actually exists ("one chip is not a choice", the seed row's oldest
+        // rule). The default ACT tap always sows the last-used variety.
+        if (id === "plant") {
+          const sw = el("span", { class: "finish-swatch fan-seed" }, []);
+          sw.style.background = cropDef(world.seeds.selected).ripeColor;
+          btn.append(sw);
+          hoverHint(btn, `Sow ${cropDef(world.seeds.selected).name.toLowerCase()} — hold ACT again to switch seed.`);
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (plantable(world).length > 1) this.openSeedFan();
+            else this.verbAct(id);
+          });
+          return btn;
+        }
         hoverHint(btn, `${v.label} — ${v.hint}${v.key ? `  (${v.key})` : ""}`);
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -3363,6 +3397,34 @@ export class App {
     );
     this.fanOpen = verbs.length > 0;
     fan.classList.toggle("open", this.fanOpen);
+  }
+
+  /** The fan's second page: which seed. Every chip SOWS on pick — choosing and
+   *  doing are one gesture here, because the fan was summoned to act, not to
+   *  configure. The garden wing's Crops tab remains the browse-and-settle
+   *  place; this remembers your pick there and everywhere (seeds.selected). */
+  private openSeedFan(): void {
+    const world = this.world;
+    if (!world) return;
+    const fan = this.hud.actFan;
+    fan.replaceChildren(
+      ...plantable(world).map((id) => {
+        const crop = cropDef(id);
+        const chip = el("button", { class: "finish-chip", ariaLabel: crop.name }, [
+          el("span", { class: "finish-swatch" }, []),
+          el("span", { class: "finish-name" }, [crop.name]),
+        ]);
+        (chip.firstElementChild as HTMLElement).style.background = crop.ripeColor;
+        chip.classList.toggle("chosen", id === world.seeds.selected);
+        chip.addEventListener("click", (e) => {
+          e.stopPropagation();
+          selectCrop(world, id);
+          saveWorld(world);
+          this.verbAct("plant");
+        });
+        return chip;
+      }),
+    );
   }
 
   private closeFan(): void {

@@ -10564,6 +10564,22 @@ nothing is held afterwards. Keys 1–4 are the same one-shots for a desktop hand
 - **Explicit sow is bed-gated like the default** (`toolApplies` plant), so no
   path — key, fan, or Crops-tab drag — auto-tills a lawn, and the dig-first
   junk faucet survives the whole redesign.
+- **TAP A THING, DEAL WITH THE THING; TAP THE GROUND, JUST GO THERE.** The
+  reconciliation of click-to-move with click-to-act, and it is one sentence.
+  Tapping a tree or a counter always walked-and-acted; `standingWork` extends
+  the same promise to WALKABLE work — a ripe crop, a dry bed, a sowable bed, a
+  mushroom — where the walk ends ON the cell and the arrival act is the
+  default tap. Dig is deliberately not work a tap can order from a distance:
+  grass is always diggable, and act-on-arrival for the shovel would end every
+  walk in a hole. `resolveWalkToAct` takes distance 0 or 1 now — beside a
+  solid thing, on top of walkable work.
+- **The fan's Sow button IS the seed picker.** It wears the current variety's
+  swatch; with one variety known it just sows; with more, tapping it swaps the
+  fan for the variety chips and the pick SOWS — choosing and doing are one
+  gesture, because the fan was summoned to act, not to configure. The default
+  tap always sows the last-used variety, and the garden wing's Crops tab
+  remains the browse-and-settle place. One extra tap, only when a choice
+  actually exists — the seed row's own oldest rule.
 
 ## Known gaps and loose ends
 
