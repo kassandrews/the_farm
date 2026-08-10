@@ -3894,24 +3894,26 @@ function buildHud(
   // BEFORE the bulldozer, not after it. Take-down is the end of the row on
   // purpose — it is the only button here that removes rather than places, and it
   // keeps the end the way the modifiers keep the far end past their gap.
-  // THE THREE DOORS (ROADMAP §three doors) — what SHAPE opens onto. Icon AND
-  // word, unlike the tools: a door is a category, a category is a word, and
-  // three labelled doors is a menu you can read without a legend.
+  // THE THREE DOORS (ROADMAP §three doors) — what SHAPE opens onto. Icons in
+  // the row, names on hover: labels beside the icons overflowed the tool
+  // button's own box, and a door whose name is clipped is worse than a door
+  // that answers when you ask. The hint LEADS with the name so hover (and the
+  // long-press hint on touch) reads as a caption, and the aria-label carries
+  // it for everything else.
   const door = (icon: IconName, label: string, hint: string, on: () => void): HTMLElement => {
     const btn = el("button", { class: "tool shape-door", ariaLabel: label }, [
       iconEl(icon, SCALE.button),
-      el("span", { class: "door-name" }, [label]),
     ]);
     btn.addEventListener("click", on);
-    hoverHint(btn, hint);
+    hoverHint(btn, `${label} — ${hint}`);
     return btn;
   };
-  const buildDoor = door("wall", "Build", "Walls, floors, doors and windows.", onStructure);
-  const furniture = door("chair", "Furnish", "Chairs, tables, beds, storage, lamps.  (F)", onFurniture);
+  const buildDoor = door("wall", "Build", "walls, floors, doors and windows.", onStructure);
+  const furniture = door("chair", "Furnish", "chairs, tables, beds, storage, lamps.  (F)", onFurniture);
   const garden = door(
     "seedling",
     "Garden",
-    "Trees, bushes, flowers, crops and grass. What you've met, you can plant.  (G)",
+    "trees, bushes, flowers, crops and grass. What you've met, you can plant.  (G)",
     onGarden,
   );
   buildTools.append(buildDoor, furniture, garden);

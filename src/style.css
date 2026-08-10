@@ -285,17 +285,6 @@ select {
   display: contents;
 }
 
-/* The three doors SHAPE opens onto — icon + word, sized like tools but read
-   like a menu (ROADMAP §three doors). */
-.shape-door {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding-right: 12px;
-}
-.door-name {
-  font-weight: 600;
-}
 
 /* The verb fan (ROADMAP §one button): summoned to the LEFT of ACT by a
    long-press or right-click, one to three one-shot buttons, gone on use. It
