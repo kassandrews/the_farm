@@ -4,7 +4,7 @@
 // layer is a tile plus a record, so the migration is one empty object.
 
 import { describe, it, expect } from "vitest";
-import { newWorld, buildAt, tick } from "./game";
+import { newWorld, buildAt, tick, actionTarget, contextAction } from "./game";
 import {
   plantAt,
   growthStage,
@@ -16,7 +16,7 @@ import {
 } from "./garden";
 import { gather } from "./gather";
 import { migrateSave, SCHEMA_VERSION } from "./save";
-import { tileKey, tileAt, biomeAt } from "./world";
+import { tileKey, tileAt, setTile, biomeAt, FARMLAND } from "./world";
 import { GRASS, TREE, SHRUB } from "../content/tiles";
 import { FLORA, TAUGHT_BY, type FloraId } from "../content/flora";
 import { BIOMES } from "../content/biomes";
@@ -191,6 +191,39 @@ describe("your own tree is the one that fruits", () => {
     expect(fruitReady(w, at.x, at.y, AUTUMN + 1)).toBe(false); // a sprout
     const JANUARY = new Date("2027-01-15T12:00:00").getTime();
     expect(fruitReady(w, at.x, at.y, JANUARY)).toBe(false); // grown, wrong month
+  });
+});
+
+describe("the contextual verbs", () => {
+  it("tilled soil underfoot sows, whatever the hand holds — and a lawn never does", () => {
+    const w = freshWorld();
+    const at = openGrass(w);
+    w.player.x = at.x;
+    w.player.y = at.y;
+    // A lawn with seed in your pocket is NOT an offer to sow — the tilled bed
+    // is the statement of intent, and this line failing is the basket-hijack
+    // action.test.ts caught on the day the rung was written too wide.
+    expect(actionTarget(w, "dig", AUTUMN).kind).not.toBe("sow");
+    setTile(w, at.x, at.y, FARMLAND);
+    expect(actionTarget(w, "dig", AUTUMN).kind).toBe("sow");
+    const res = contextAction(w, "dig", AUTUMN);
+    expect(res.changed).toBe(true);
+    expect(w.crops[tileKey(at.x, at.y)]).toBeDefined();
+  });
+
+  it("your own tree in fruit answers ACT from the tile beside it", () => {
+    const w = freshWorld();
+    meet(w, "apple");
+    const at = openGrass(w);
+    plantAt(w, "apple", at.x, at.y, AUTUMN);
+    const grown = AUTUMN + 3 * DAY + 1;
+    w.player.x = at.x - 1;
+    w.player.y = at.y;
+    setTile(w, at.x - 1, at.y, GRASS);
+    expect(actionTarget(w, "water", grown).kind).toBe("fruit");
+    const res = contextAction(w, "water", grown);
+    expect(res.changed).toBe(true);
+    expect(count(w.inventory, "apple")).toBe(1);
   });
 });
 

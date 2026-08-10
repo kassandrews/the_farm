@@ -104,6 +104,7 @@ const ACTION_CUES: Record<ActionKind, Cue> = {
   gather: "harvest",
   plank: "place",
   plant: "plant",
+  fruit: "harvest",
   water: "water",
   harvest: "harvest",
   read: "menu",
@@ -148,10 +149,14 @@ const AUTOSAVE_MS = 15_000;
 // the desktop shortcut where one exists; the hint is the only place they're
 // written down, since a keyboard legend would be HUD clutter on a phone.
 const TOOLS: { id: Tool; icon: IconName; label: string; hint: string; key?: string }[] = [
+  // THREE, NOT FOUR (ROADMAP §the verb review). Plant left the rail the day
+  // sowing became contextual: stand on tilled soil with seed in your pocket
+  // and ACT sows, whatever you hold — and layout-scale sowing is the garden
+  // wing's Crops tab. Dig, Gather, Water are the embodied verbs, three fat
+  // thumb targets, and the seedling icon now marks the garden door instead.
   { id: "dig", icon: "spade", label: "Dig", hint: "Turn the ground into soil you can plant in.", key: "1" },
   { id: "gather", icon: "basket", label: "Gather", hint: "Pick what's ripe, or fell a tree or rock beside you.", key: "2" },
-  { id: "plant", icon: "seedling", label: "Plant", hint: "Sow a seed in tilled soil.", key: "3" },
-  { id: "water", icon: "droplet", label: "Water", hint: "Water what's planted. Growth resumes.", key: "4" },
+  { id: "water", icon: "droplet", label: "Water", hint: "Water what's planted. Growth resumes.", key: "3" },
 ];
 
 /** The build bar's tabs, in the order they appear.
@@ -189,6 +194,7 @@ const BUILD_GROUPS = [
   // made, made again: GARDEN is a door in the landing row, and these are what
   // it opens onto. A `wing` field rather than a third level, because the strip
   // shows one wing at a time and the back chip is the same way out of both.
+  { id: "gcrops", label: "Crops", tab: true, wing: "garden" },
   { id: "gtrees", label: "Trees", tab: true, wing: "garden" },
   { id: "gbushes", label: "Bushes", tab: true, wing: "garden" },
   { id: "gflowers", label: "Flowers", tab: true, wing: "garden" },
@@ -2998,7 +3004,6 @@ export class App {
 
     this.syncFinishUi();
     this.syncFurnitureTiles();
-    this.syncSeedUi();
     this.syncGardenUi();
     this.syncUndoUi();
   }
@@ -3023,7 +3028,35 @@ export class App {
       return;
     }
     const chips: HTMLElement[] = [];
-    if (this.buildGroup === "gground") {
+    if (this.buildGroup === "gcrops") {
+      // THE SEED CHIPS, MOVED HOME — this row is what dissolved `syncSeedUi`
+      // (ROADMAP §the menu work). Each variety is a palette entry like any
+      // species; WHICH one rides in `world.seeds.selected` exactly as it always
+      // did, so the contextual ACT sow and this row can never disagree about
+      // what goes in the ground next.
+      for (const id of plantable(world)) {
+        const crop = cropDef(id);
+        const chip = el("button", { class: "finish-chip", ariaLabel: crop.name }, [
+          el("span", { class: "finish-swatch" }, []),
+          el("span", { class: "finish-name" }, [crop.name]),
+        ]);
+        (chip.firstElementChild as HTMLElement).style.background = crop.ripeColor;
+        chip.classList.toggle(
+          "chosen",
+          this.buildTool === "crop" && id === world.seeds.selected,
+        );
+        chip.addEventListener("click", () => {
+          selectCrop(world, id);
+          saveWorld(world);
+          this.buildTool = "crop";
+          this.syncToolUi();
+        });
+        // Time is the ONE axis varieties vary on (DESIGN §Materials), so the
+        // hint states it plainly rather than implying a value the game lacks.
+        hoverHint(chip, `${crop.name} — ${ripenHours(crop)}h to ripen. Costs a seed; wants tilled soil.`);
+        chips.push(chip);
+      }
+    } else if (this.buildGroup === "gground") {
       // Grass is ground cover, not a species (types.ts §BuildTool.grass) — one
       // chip, always available, in the lawn's own green.
       const chip = el("button", { class: "finish-chip", ariaLabel: "Grass" }, [
@@ -3097,59 +3130,9 @@ export class App {
     }
   }
 
-  /** Rebuild the variety row for the seed about to go in the ground.
-   *
-   *  Shown only while the plant tool is held, and only outside build mode —
-   *  the same rule the act palette itself follows, since the two modes are
-   *  never on screen together. Any other tool and the row collapses, so it
-   *  cannot sit under your thumb while you are digging.
-   *
-   *  Rebuilt from scratch on every sync rather than diffed, for the same reason
-   *  the finish row is: the list grows mid-session — a variety can arrive from
-   *  the stall between one tap and the next — and eight buttons is nothing to
-   *  make. */
-  private syncSeedUi(): void {
-    const row = this.hud.seedVarieties;
-    const world = this.world;
-    if (!world || this.buildTool !== null || this.tool !== "plant") {
-      row.replaceChildren();
-      return;
-    }
-
-    // One unlocked variety is not a choice — a lone chip you cannot deselect is
-    // furniture, not a control, and a fresh town holding only the carrot should
-    // look exactly as it did before the row existed.
-    const varieties = plantable(world);
-    if (varieties.length < 2) {
-      row.replaceChildren();
-      return;
-    }
-
-    const chips = varieties.map((id) => {
-      const crop = cropDef(id);
-      const chip = el("button", { class: "finish-chip", ariaLabel: crop.name }, [
-        // The crop's ripe colour, the same swatch-and-name pairing the finishes
-        // use. Seed is one item and every variety of it looks identical in the
-        // satchel, so the swatch is the only place the choice has a face.
-        el("span", { class: "finish-swatch" }, []),
-        el("span", { class: "finish-name" }, [crop.name]),
-      ]);
-      const swatch = chip.firstElementChild as HTMLElement;
-      swatch.style.background = crop.ripeColor;
-      chip.classList.toggle("chosen", id === world.seeds.selected);
-      chip.addEventListener("click", () => {
-        selectCrop(world, id);
-        saveWorld(world);
-        this.syncSeedUi();
-      });
-      // Time is the ONE axis varieties vary on (DESIGN §Materials: "no crop is
-      // better than another"), so the hint states it plainly rather than
-      // implying a yield or a value the game does not have.
-      hoverHint(chip, `${crop.name} — ${ripenHours(crop)}h to ripen. Free to change.`);
-      return chip;
-    });
-    row.replaceChildren(...chips);
-  }
+  // syncSeedUi lived here from Phase 3 to the garden. Its chips are the Crops
+  // tab of the garden wing now (§syncGardenUi) — one bespoke mechanism deleted,
+  // which was the point (ROADMAP §the menu work).
 
   /** Rebuild the finish row for the tool in hand.
    *
@@ -3552,8 +3535,6 @@ interface HudRefs {
   groupButtons: [BuildGroup, HTMLElement][];
   /** The finish row, refilled per held tool by syncFinishUi(). */
   buildFinishes: HTMLElement;
-  /** The variety row, refilled by syncSeedUi() while the plant tool is held. */
-  seedVarieties: HTMLElement;
   /** The category strip, hidden entirely at the structure level. */
   groupTabs: HTMLElement;
   /** The way in to furniture, and the one tool-row button that holds no tool. */
@@ -3676,8 +3657,6 @@ function buildHud(
   // the screen. Above them it has the whole width, wraps to two or three short
   // rows, and clears the BUILD/ACT column entirely, which only occupies the
   // bottom band.
-  const seedVarieties = el("div", { class: "seed-varieties" });
-
   // The build bar: one strip across the foot of the screen, present only while
   // build mode is on. A strip rather than a column because the list is eleven
   // long and growing, and because a bar along the bottom is what every building
@@ -3845,13 +3824,13 @@ function buildHud(
     // second line of chips pushes itself up and leaves the tools exactly where
     // your thumb left them — the same reason the build bar stacks its finishes
     // above its tools rather than below.
-    el("div", { class: "act-dock" }, [seedVarieties, palette]),
+    el("div", { class: "act-dock" }, [palette]),
     buildBar,
     build,
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, survey, flash, giveUp, toolButtons, buildButtons, groupButtons, groupTabs, furniture, garden, gardenTools, buildFinishes, seedVarieties, buildBar, build, rotate, undo, zoom };
+  return { root: hud, clock, survey, flash, giveUp, toolButtons, buildButtons, groupButtons, groupTabs, furniture, garden, gardenTools, buildFinishes, buildBar, build, rotate, undo, zoom };
 }
 
 // --- Panel helpers ------------------------------------------------------------

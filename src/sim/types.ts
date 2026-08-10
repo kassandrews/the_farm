@@ -543,4 +543,8 @@ export type BuildTool =
    *  no record, no growth and no species entry, because a lawn is a TILE and
    *  always was (the same fact that lets dig remove it). */
   | "grass"
+  /** Sowing from the garden wing's Crops tab — the same `sow` the ACT
+   *  override calls (game.ts), dragged at layout scale. WHICH variety rides in
+   *  `world.seeds.selected`, exactly where it always lived. */
+  | "crop"
   | FurnitureId;

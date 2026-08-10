@@ -165,6 +165,12 @@ const SPRITE = 16; // sprite draw size
  *  ACT would do nothing here, so an unlit square is honest rather than broken. */
 const TARGET_COLOR: Record<ActionTarget["kind"], string> = {
   harvest: "rgba(255,220,120,0.9)", // something ripe underfoot
+  // Your own fruit, in the harvest's gold: both are "something you grew is
+  // ready", and the reticle should not distinguish a carrot from an apple.
+  fruit: "rgba(255,220,120,0.9)",
+  // Sowing without the menu, in the tool's white — it IS the plant tool's own
+  // work, reached without holding it.
+  sow: "rgba(255,255,255,0.85)",
   gather: "rgba(160,255,150,0.9)", // a tree or rock in reach
   tool: "rgba(255,255,255,0.85)", // the held tool has work here
   read: "rgba(190,205,255,0.9)", // the errands board is within reach
@@ -6429,7 +6435,7 @@ export class Renderer {
 
   private drawTargetTile(world: WorldState): void {
     const ctx = this.ctx;
-    const target = actionTarget(world, this.tool);
+    const target = actionTarget(world, this.tool, this.now);
     const px = Math.round(this.sceneX(target.x) - TILE / 2);
     const py = Math.round(this.sceneY(target.y) - TILE / 2);
     const x0 = px + 0.5;

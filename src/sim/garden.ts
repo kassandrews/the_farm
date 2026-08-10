@@ -184,6 +184,27 @@ export function noticeFlora(world: WorldState): void {
   }
 }
 
+/** A planted thing in reach with fruit on it — underfoot first, then the four
+ *  sides, the same reach every `*Near` in the ladder uses. The ladder asks so
+ *  the reticle and the button agree (game.ts §actionTarget). */
+export function gardenFruitNear(
+  world: WorldState,
+  x: number,
+  y: number,
+  now: number,
+): { x: number; y: number } | null {
+  for (const [dx, dy] of [
+    [0, 0],
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ] as const) {
+    if (fruitReady(world, x + dx, y + dy, now)) return { x: x + dx, y: y + dy };
+  }
+  return null;
+}
+
 /** Everything the palette may offer, in catalogue order — the seen set, and
  *  NEVER the complement. There is deliberately no `unseenFlora`. */
 export function knownFlora(world: WorldState, kind?: "tree" | "bush" | "flower"): FloraId[] {

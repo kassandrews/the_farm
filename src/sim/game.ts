@@ -75,7 +75,7 @@ import type { Cost } from "./inventory";
 import { itemLabel, priceItems } from "../content/items";
 import type { ItemId } from "../content/items";
 import { gather, nodeAt, nodeNear, updateRegrowth, updateReclaim } from "./gather";
-import { uprootAt, noticeFlora } from "./garden";
+import { uprootAt, noticeFlora, gardenFruitNear, pickFruit } from "./garden";
 import { nodeDef } from "../content/nodes";
 import { mineVein } from "./mining";
 import { meetMole } from "./mole";
@@ -232,7 +232,7 @@ function standingOn(world: WorldState, x: number, y: number, layer: Layer): bool
  *  answers even though both are furniture. */
 function placingSomethingSolid(tool: BuildTool): boolean {
   if (isFurnitureTool(tool)) return furnitureDef(tool).solid;
-  if (tool === "floor" || tool === "erase" || tool === "grass") return false;
+  if (tool === "floor" || tool === "erase" || tool === "grass" || tool === "crop") return false;
   // A planted tree IS solid — but plantAt refuses the cell you stand on the
   // same way the wall gate does, from its own ground checks, and the flora
   // tool never reaches the gate this function feeds. Solid-when-grown is the
@@ -586,7 +586,7 @@ export function toolFinishes(tool: BuildTool): SkinClass[] {
   if (tool === "floor") return FLOOR_BUILD.finishes;
   // The garden tools wear no finish: a plant's colours are its species'
   // (content/flora.ts §skin), and grass is grass.
-  if (tool === "erase" || tool === "flora" || tool === "grass") return [];
+  if (tool === "erase" || tool === "flora" || tool === "grass" || tool === "crop") return [];
   if (isFurnitureTool(tool)) return furnitureDef(tool).finishes;
   return structureDef(tool).finishes;
 }
@@ -666,7 +666,7 @@ export function buildCost(tool: BuildTool, finish: SkinId): Cost {
   // The garden is free — you met it, you may plant it (DESIGN §The garden);
   // the space is the cost. Grass likewise: un-digging should not bill you for
   // the lawn you already had.
-  if (tool === "erase" || tool === "flora" || tool === "grass") return {};
+  if (tool === "erase" || tool === "flora" || tool === "grass" || tool === "crop") return {};
   const price =
     tool === "floor"
       ? FLOOR_BUILD.cost
@@ -683,6 +683,8 @@ export type ActionKind =
   | "plant"
   | "water"
   | "harvest"
+  /** An apple off your own tree (sim/garden.ts §pickFruit). */
+  | "fruit"
   | "read"
   | "counter" // a shop, a heap, a museum, a stall, a desk or a stage, touched
   | "letter" // a mailbox in the middle of nowhere, and what was in it today
@@ -723,6 +725,11 @@ export interface ActionTarget {
     | "strike"
     | "shaft"
     | "stair"
+    /** Tilled soil underfoot, seed in pocket, nothing held that applies — ACT
+     *  sows (DESIGN §The garden: sowing at garden scale never needs the menu). */
+    | "sow"
+    /** Your own planted tree or bush, in reach and in fruit (sim/garden.ts). */
+    | "fruit"
     | "none";
 }
 
@@ -760,7 +767,7 @@ export interface ActionTarget {
  *  other branch has already declined. It therefore cannot hijack a deliberate
  *  act — which is the exact failure step 3's comment was written about — and the
  *  reticle still promises precisely what ACT will do. */
-export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
+export function actionTarget(world: WorldState, tool: Tool, now: number = Date.now()): ActionTarget {
   const { x, y } = playerTile(world);
   if (world.player.layer === "under") return undergroundTarget(world, tool, x, y);
   if (world.player.layer === "sky") return skyTarget(world, x, y);
@@ -909,8 +916,39 @@ export function actionTarget(world: WorldState, tool: Tool): ActionTarget {
   // diggable as any other, and afterwards the tent is gone and it is again.
   if (canStrikeTent(world, x, y)) return { x, y, kind: "strike" };
 
-  const near = nodeNear(world, x, y, world.player.facing);
   const underfoot = toolApplies(world, tool, x, y);
+
+  // YOUR OWN TREE, IN REACH AND IN FRUIT — the delivery on the wild paint's
+  // advertisement (DESIGN §The garden: your own apple tree answers ACT).
+  // Above the node shortcut because the node answer for a TREE tile is a
+  // fell, and a fell is the one thing a planted tree never does; below the
+  // held tool so a deliberate act still wins.
+  if (!underfoot) {
+    const fruit = gardenFruitNear(world, x, y, now);
+    if (fruit) return { x: fruit.x, y: fruit.y, kind: "fruit" };
+  }
+
+  // TILLED SOIL UNDERFOOT AND SEED IN POCKET SOWS, whatever the hand holds —
+  // the ripe-override's twin, and the fix for dig → menu → sow → menu → water
+  // being three trips (ROADMAP §the verb review).
+  //
+  // FARMLAND ONLY, and the gate is the whole design. `canPlant` also accepts
+  // grass — the old rail tool auto-tilled — so a rung gated on `canSow` alone
+  // fired on EVERY LAWN with seed in your pocket and hijacked the basket
+  // beside a tree (caught by action.test.ts within the hour). The tilled bed
+  // is the statement of intent: you dug it, so standing in it means sowing.
+  {
+    const t = tileAt(world, x, y);
+    if (
+      !underfoot &&
+      (t === FARMLAND || t === FARMLAND_WET) &&
+      canSow(world, x, y)
+    ) {
+      return { x, y, kind: "sow" };
+    }
+  }
+
+  const near = nodeNear(world, x, y, world.player.facing);
   if (near && tool === "gather" && !underfoot) return { x: near.x, y: near.y, kind: "gather" };
   if (underfoot) return { x, y, kind: "tool" };
   if (near) return { x: near.x, y: near.y, kind: "gather" };
@@ -1041,7 +1079,19 @@ function skyTarget(world: WorldState, x: number, y: number): ActionTarget {
 
 /** The context action button: does whatever `actionTarget` is pointing at. */
 export function contextAction(world: WorldState, tool: Tool, now: number): ActionResult {
-  const target = actionTarget(world, tool);
+  const target = actionTarget(world, tool, now);
+
+  // Sowing without the menu: tilled soil underfoot answered ACT (see the
+  // ladder). The plant arm of applyTool IS the sow — one implementation,
+  // reached from the rail for years and from here now that the rail no longer
+  // carries it.
+  if (target.kind === "sow") return applyTool(world, "plant", target.x, target.y, now);
+
+  if (target.kind === "fruit") {
+    const picked = pickFruit(world, target.x, target.y, now)!;
+    if (picked.changed) witness(world, "harvested", undefined, now, false, target);
+    return { kind: "fruit", changed: picked.changed, message: picked.message };
+  }
 
   if (target.kind === "harvest") {
     // `harvest` pays out the produce AND a seed itself — the cost of sowing and
@@ -1576,6 +1626,33 @@ function placeOrRemove(
   // never arrive here; refusing beats planting something structural by accident.
   if (tool === "flora") {
     return { changed: false, message: "That goes in through the garden.", broke: false };
+  }
+  // SOWING AT LAYOUT SCALE — the garden wing's Crops tab, dragging a row into
+  // tilled beds. The same `sow` the ACT override calls, so the seed spend, the
+  // variety and the water-next rule cannot drift between the two doors.
+  if (tool === "crop") {
+    // Tilled beds only, here too — `sow` itself would happily auto-till a
+    // lawn (canPlant takes grass), and a drag that turned open meadow into
+    // farmland would delete the dig-first ritual and the junk faucet under it
+    // (ROADMAP §the verb review: keep the tilled-soil requirement).
+    const bed = tileAt(world, x, y);
+    if (bed !== FARMLAND && bed !== FARMLAND_WET) {
+      return { changed: false, message: "Wants tilled soil — dig a bed first.", broke: false };
+    }
+    const sown = sow(world, x, y, now);
+    if (sown) {
+      return {
+        changed: true,
+        message: `${cropDef(sown).name} seed, planted. Now it needs water.`,
+        broke: false,
+      };
+    }
+    const short = canPlant(world, x, y); // right ground, no seed
+    return {
+      changed: false,
+      message: short ? "No seed in the satchel." : "Wants tilled soil — dig a bed first.",
+      broke: short,
+    };
   }
 
   // Ground that won't take construction, said BEFORE the price. The three
