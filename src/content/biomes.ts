@@ -5748,19 +5748,46 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // fixed means every row taken off the crown reappears as bare bole. That is
     // why every candidate in round one read as an orchard tree with a clear stem.
     //
-    // TWELVE ROWS, 17 WIDE: wider than it is tall, which is the shape of every
+    // THIRTEEN ROWS, 17 WIDE: wider than it is tall, which is the shape of every
     // cute thing in this game — the player, the shrubs, the mushroom cap are all
-    // a rounded mass on a small stem. Six rows shorter than what it replaces, and
-    // the tree six pixels shorter overall.
+    // a rounded mass on a small stem. Five rows shorter than what it replaces.
     //
-    // IT STILL HAS TO OUT-TOP A VILLAGER, which is the constraint that stopped
-    // this going further. The squattest candidate put the crown down on a 12px
-    // stem for a 21px tree, and a villager is 16 — the exact complaint that
-    // caused "Trees stand up" in the first place ("the tallest thing in a wood was
-    // exactly as tall as a garden wall"). The stem stays at 16 and the tree at 25,
-    // which is a third again over head height: an orchard cherry is a low tree and
-    // is allowed to be short, but it is not allowed to be furniture.
-    crownRows: [3, 5, 7, 8, 8, 8, 8, 8, 8, 7, 7, 6],
+    // THE LAST TEN PERCENT WENT ON HEIGHT ALONE, BECAUSE THE WIDTH IS AT THE
+    // FILE'S CEILING AND THE CEILING IS RIGHT. Asked for "the entire thing up 10%"
+    // and built exactly that — 13 rows, 9 half-widths, a 13px stem — and the DENSE
+    // ROWS FUSED. At 19px on a 16px tile, neighbouring crowns in a region planted
+    // at `trees: 2.6` meet edge to edge and a rank of five comes out as one
+    // unbroken pink slab with five trunks under it, which is the exact failure
+    // `render/palette.test.ts` caps half-widths at 8 to prevent ("a stand becomes
+    // a smear"). This is the worst region in the game to try it in: it is the
+    // densest planting there is, and legibility of the single tree is most of what
+    // the last three passes have been buying.
+    //
+    // So the row grew a crown row and a pixel of stem and stayed 17 wide. Worth
+    // knowing before anybody tries it again: WIDER IS NOT AVAILABLE HERE at any
+    // amount, and the lever that would make it available is the region's own
+    // density, which is what an orchard IS.
+    //
+    // AND THE STEM CAME DOWN, WHICH IS A DELIBERATE OVERRIDE OF THE SCALE RULE
+    // AND SHOULD BE READ AS ONE. "These trees tend to be short and wide" — true
+    // of an orchard cherry, which is pruned to be picked from — so the stem is 13
+    // and the tree stands 23 against a villager's 16. Every other tree in the file
+    // clears a person by much more, and the margin here is the smallest there is:
+    // this is the row closest to the complaint "Trees stand up" (2 Aug) was
+    // written to fix, which was that "the tallest thing in a wood was exactly as
+    // tall as a garden wall".
+    //
+    // What makes it survivable rather than a regression: this row is a SITED
+    // destination of one species, so nothing about it generalises to the wood you
+    // live in; the crown is the widest in the file, so the tree still reads as a
+    // canopy rather than as a bush; and the conifers along the region edge put
+    // something correctly-scaled in the same frame. Shot in the region with those
+    // neighbours in view, at 12 and at 13, before it shipped.
+    //
+    // FULLY REVERTIBLE — a silhouette is generated, never stored, so no save
+    // carries a tree's height. If the scale reads wrong in play, `trunkHeight`
+    // back to 16 restores a 26px tree and nothing else has to move.
+    crownRows: [3, 5, 7, 8, 8, 8, 8, 8, 8, 8, 7, 7, 6],
     // NO GROUND BLOOM, and this is the one region that was offered one and gives
     // it back. Fallen petals closed a tidy loop — the row has had petals falling
     // through the AIR since it was written, with nothing on the ground for them
@@ -5805,13 +5832,14 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // lapping the bark for ONE row is a tree growing around its own stem, and
     // lapping it all the way down is a crown lying across one. The difference
     // between a mistake and a detail is how much of it there is.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2],
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2],
     crownOverlap: 3,
-    // STATED, AND IT USED TO BE THE RENDERER'S DEFAULT 16 BY COINCIDENCE. It is
-    // the same number, written down, because it is now load-bearing: this crown
-    // is short enough that the stem is what keeps the tree over head height, and
-    // a future change to the default would quietly turn this row into a shrub.
-    trunkHeight: 16,
+    // STATED RATHER THAN INHERITED, and it has to be: the row used to run on the
+    // renderer's default 16 by coincidence, and this number is now the whole
+    // difference between a low tree and a shrub. Ten pixels of it show below the
+    // crown — about the bare stem the candidate everybody liked had, which reached
+    // it the wrong way round (a 15px stem with six rows of crown swallowing it).
+    trunkHeight: 13,
     // LAWN DAISIES, AND NOT ONE PIXEL OF PINK. The row that refused a ground
     // bloom (see the note above `crownGaps`) gets its kit on the terms the
     // refusal set. What was refused was petals — the crown's own colour doing a

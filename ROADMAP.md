@@ -10062,12 +10062,31 @@ rather than from an author.
   is a mushroom's arrangement rather than a tree's. Three — the pre-boost number.
   Note the notch caps out with it: a gap is only legal beside the trunk, so
   overlap 3 means at most three gapped rows, whatever anybody would prefer.
-- **A tree still has to out-top a villager.** The squattest candidate was 21px
-  against a 16px sprite, which is the exact complaint that caused "Trees stand
-  up" — *"the tallest thing in a wood was exactly as tall as a garden wall"*. The
-  shipped tree keeps a 16px stem and stands 25. An orchard cherry is allowed to
-  be a low tree; it is not allowed to be furniture. `trunkHeight` is now STATED
-  on this row rather than inherited, because the stem is what carries that.
+- **The stem came down too, and it is a deliberate override of the scale rule.**
+  A 25px tree was held for one pass on the argument that a tree must out-top a
+  villager — *"the tallest thing in a wood was exactly as tall as a garden
+  wall"*, the complaint that caused "Trees stand up". Overruled on the grounds
+  that an orchard cherry is pruned short and wide, and the row now stands 23
+  against a villager's 16: the smallest margin in the file. It survives because
+  this is a SITED destination of one species (nothing generalises to the wood you
+  live in), because the crown is the widest here so it still reads as a canopy,
+  and because the region's edge conifers put something correctly-scaled in frame.
+  **Revertible with one number** — `trunkHeight` back to 16 — since a silhouette
+  is generated and no save carries it. `trunkHeight` is now STATED on this row
+  rather than inherited, because the stem is what carries the scale.
+- **"SIZE THE WHOLE THING UP 10%" WAS BUILT AND HALF OF IT WAS REJECTED BY THE
+  SCREEN.** 13 rows, 9 half-widths, a 13px stem — and the dense rows FUSED. At
+  19px on a 16px tile, crowns in a region planted at `trees: 2.6` meet edge to
+  edge, and a rank of five comes out as one unbroken pink slab with five trunks
+  under it. That is precisely what the 8-half-width cap in
+  `render/palette.test.ts` is for ("a stand becomes a smear"), and this is the
+  worst region in the game to test it in: the densest planting there is, where
+  legibility of the single tree is what the whole pass has been buying.
+
+  So the ten percent went on HEIGHT alone — one crown row and one pixel of stem,
+  17 wide as before. **Wider is not available on this row at any amount**, and
+  the only lever that would make it available is the region's own density, which
+  is what an orchard IS.
 - **Photograph a short tree in the REGION, not on `/trees.html`.** Both
   corrections above were invisible on the card — one tree on cleared ground says
   nothing about how it stands next to a villager, or about whether forty of them
