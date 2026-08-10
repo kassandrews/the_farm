@@ -10181,6 +10181,32 @@ REGION, and `treeForms(biome)` is the only thing that knows how to read them. A
 tree you can carry home has no region. Species become their own content table and
 regions reference them by id.
 
+**AND SPECIES SHOULD NOT BELONG TO REGIONS AT ALL** — asked for directly: *"the
+meadow having apples or the pines having blueberries are just cute adds."* A
+region does not OWN a silhouette; it plants a mixture. This is already half-true
+and nobody noticed: `shrubShapes` is exactly that list today, with the rule
+written on it — *"keep the unusual one in the minority... if every bush in the
+scrub were a cactus the region would stop being chaparral and start being
+desert."* Bushes got a catalogue and a weighting. Trees never did, and the
+refactor is mostly giving trees what shrubs already have. DESIGN agrees in
+advance: *"a region is a mixture, not a demonstration."*
+
+**One rule has to be amended for it, and it should be amended on purpose rather
+than drifted past.** `crownAlt` currently says: *"TWO, AND THE SAME SPECIES
+TWICE. Not two species: the silhouette is how a region says which region it is
+(colour alone left the pines reading as a dark meadow), so a stand with two
+unrelated outlines in it stops being anywhere."* That forbids apples in the
+meadow by name.
+
+The rule is right about its evidence and too strong in its conclusion. What the
+dark-meadow finding proves is that **silhouette carries identity** — not that a
+region may hold only one. The amendment that keeps the finding and allows the
+cute adds is a RATE, which is how the shrub doc already reasons: **a dominant
+species, or two forms of one, carries the region; guests are allowed in the
+minority.** An apple at 3% in the meadow is something you come across. Apples at
+40% and the meadow is an orchard. Per CLAUDE.md the doc gets reconciled before
+any code — this paragraph is not that reconciliation, it is the argument for it.
+
 That is a refactor rather than an addition, and it is the good kind: **the art
 already exists.** Twenty-odd silhouettes drawn over the last month — the bur oak,
 the cherry, the birch, the coast live oak, the blueberry, the thorn, the prickly
