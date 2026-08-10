@@ -10321,6 +10321,33 @@ current names. The settled shape:
    in a muted view is impossible. This is the Sims' build-vs-buy separation
    achieved inside one mode by per-tool presentation.
 
+**The menu work the change pays for** (read against `src/ui/app.ts` as it is
+today — `TOOLS`, `BUILD_GROUPS`, `syncSeedUi`):
+
+- **A species entry's hint says where you met it** — "Bur oak — you met this in
+  the long grass." The hint machinery exists (`hoverHint`); the notebook knows
+  the region. A travel journal with zero checklist risk, because it only ever
+  speaks of what you have. The cheapest delight in the feature.
+- **`syncSeedUi` and the variety chips DISSOLVE.** The chips exist because every
+  seed looks identical in the satchel; in the Garden group each variety is its
+  own catalogue entry wearing its ripe-colour swatch, which is the finish-row
+  pattern the bar already uses. A bespoke mechanism deleted, not moved.
+- **The ACT rail drops to three** — Dig / Gather / Water on keys 1/2/3.
+- **Consider the ACT button naming its override** — SOW, HARVEST — since the
+  contextual override is the smartest thing in the HUD and currently invisible
+  until it surprises you. On-screen judgment call; it changes a button pressed
+  hundreds of times.
+- **GARDEN mirrors FURNITURE exactly**: the landing row's second no-tool door,
+  opening Crops / Trees / Bushes / Flowers / Grass. One decision attached: erase
+  lives in the structure landing row today, and uprooting-is-erase means it must
+  be reachable from Garden's wing without a walk back.
+- **Catalogue tiles need a size answer for trees.** `THUMB_SCALE` 2 makes a
+  17×25 tree 50+ device px tall, which blows the row. Scale 1 for trees (still
+  integer — the sprite rule holds) or a crown crop. Decide before building, not
+  after the row breaks.
+- **Undo, erase-refund and refuses-for-want-of come free** — Garden inherits the
+  stroke model whole; nobody should rebuild any of it per-category.
+
 Migration pressure on all of this is low by the owner's own call (sole player
 right now) — the schema rules still apply, but habit-breaking is not a
 constraint.
