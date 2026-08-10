@@ -16,8 +16,8 @@ import {
 } from "./garden";
 import { gather } from "./gather";
 import { migrateSave, SCHEMA_VERSION } from "./save";
-import { tileKey, tileAt, setTile, biomeAt, FARMLAND } from "./world";
-import { GRASS, TREE, SHRUB } from "../content/tiles";
+import { tileKey, tileAt, setTile, biomeAt } from "./world";
+import { GRASS, TREE, SHRUB, DIRT } from "../content/tiles";
 import { FLORA, TAUGHT_BY, type FloraId } from "../content/flora";
 import { BIOMES } from "../content/biomes";
 import { count } from "./inventory";
@@ -195,20 +195,25 @@ describe("your own tree is the one that fruits", () => {
 });
 
 describe("the contextual verbs", () => {
-  it("tilled soil underfoot sows, whatever the hand holds — and a lawn never does", () => {
+  it("dug ground underfoot sows — but never for the shovel, and never a lawn", () => {
     const w = freshWorld();
     const at = openGrass(w);
     w.player.x = at.x;
     w.player.y = at.y;
-    // A lawn with seed in your pocket is NOT an offer to sow — the tilled bed
-    // is the statement of intent, and this line failing is the basket-hijack
+    // A lawn with seed in your pocket is NOT an offer to sow — the dug bed is
+    // the statement of intent, and this line failing is the basket-hijack
     // action.test.ts caught on the day the rung was written too wide.
+    expect(actionTarget(w, "water", AUTUMN).kind).not.toBe("sow");
+    setTile(w, at.x, at.y, DIRT);
+    // The shovel keeps the shaft: dig on dirt is the settled way-down gesture,
+    // so the can and the basket are the sowing hands.
     expect(actionTarget(w, "dig", AUTUMN).kind).not.toBe("sow");
-    setTile(w, at.x, at.y, FARMLAND);
-    expect(actionTarget(w, "dig", AUTUMN).kind).toBe("sow");
-    const res = contextAction(w, "dig", AUTUMN);
+    expect(actionTarget(w, "water", AUTUMN).kind).toBe("sow");
+    const res = contextAction(w, "water", AUTUMN);
     expect(res.changed).toBe(true);
     expect(w.crops[tileKey(at.x, at.y)]).toBeDefined();
+    // And the NEXT tap of the same tool waters the bed it just sowed.
+    expect(actionTarget(w, "water", AUTUMN).kind).toBe("tool");
   });
 
   it("your own tree in fruit answers ACT from the tile beside it", () => {

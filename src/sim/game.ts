@@ -934,22 +934,30 @@ export function actionTarget(world: WorldState, tool: Tool, now: number = Date.n
 
   const underfoot = toolApplies(world, tool, x, y);
 
-  // TILLED SOIL UNDERFOOT AND SEED IN POCKET SOWS, whatever the hand holds —
-  // the ripe-override's twin, and the fix for dig → menu → sow → menu → water
-  // being three trips (ROADMAP §the verb review).
+  // DUG GROUND UNDERFOOT AND SEED IN POCKET SOWS — the ripe-override's twin,
+  // and the fix for dig → menu → sow → menu → water being three trips (ROADMAP
+  // §the verb review).
   //
-  // FARMLAND ONLY, and the gate is the whole design. `canPlant` also accepts
-  // grass — the old rail tool auto-tilled — so a rung gated on `canSow` alone
-  // fired on EVERY LAWN with seed in your pocket and hijacked the basket
-  // beside a tree (caught by action.test.ts within the hour). The tilled bed
-  // is the statement of intent: you dug it, so standing in it means sowing.
+  // DIRT AND THE BEDS, NEVER GRASS. Gated on `canSow` alone this fired on
+  // every lawn (canPlant accepts grass — the old rail tool auto-tilled) and
+  // hijacked the basket beside a tree. The dug bed is the statement of intent.
+  //
+  // AND NEVER WHILE THE SHOVEL IS IN HAND, which is not a taste — it is the
+  // shaft. "A shaft is two digs on one tile" is a settled gesture, and dig on
+  // dirt IS its second half, so on dirt the shovel and the sow are the same
+  // tap. The first ship of this rung demanded FARMLAND to dodge that collision
+  // and dodged it into a wall: nothing but the retired plant tool ever MADE
+  // farmland, so sowing on foot was unreachable and ACT-ACT on a lawn opened a
+  // hole where the player expected a crop (reported as exactly that). The
+  // resolution keeps both verbs whole, split by the hand: the shovel digs, and
+  // any other tool sows — dig your bed with 1, then the watering can sows with
+  // one tap and waters with the next, which is one tool for the whole morning
+  // walk. `underfoot` already keeps the shovel's claim on dirt, so the guard
+  // below is only saying the quiet part where the reticle can read it.
   {
     const t = tileAt(world, x, y);
-    if (
-      !underfoot &&
-      (t === FARMLAND || t === FARMLAND_WET) &&
-      canSow(world, x, y)
-    ) {
+    const bed = t === DIRT || t === FARMLAND || t === FARMLAND_WET;
+    if (!underfoot && bed && canSow(world, x, y)) {
       return { x, y, kind: "sow" };
     }
   }
@@ -1637,13 +1645,15 @@ function placeOrRemove(
   // tilled beds. The same `sow` the ACT override calls, so the seed spend, the
   // variety and the water-next rule cannot drift between the two doors.
   if (tool === "crop") {
-    // Tilled beds only, here too — `sow` itself would happily auto-till a
+    // Dug ground only, here too — `sow` itself would happily auto-till a
     // lawn (canPlant takes grass), and a drag that turned open meadow into
     // farmland would delete the dig-first ritual and the junk faucet under it
-    // (ROADMAP §the verb review: keep the tilled-soil requirement).
+    // (ROADMAP §the verb review: keep the dig-first requirement). Dirt counts:
+    // the shovel has never made FARMLAND — sowing is what tills a bed, and
+    // demanding farmland here demanded a tile nothing could produce.
     const bed = tileAt(world, x, y);
-    if (bed !== FARMLAND && bed !== FARMLAND_WET) {
-      return { changed: false, message: "Wants tilled soil — dig a bed first.", broke: false };
+    if (bed !== DIRT && bed !== FARMLAND && bed !== FARMLAND_WET) {
+      return { changed: false, message: "Wants dug ground — turn a bed over first.", broke: false };
     }
     const sown = sow(world, x, y, now);
     if (sown) {

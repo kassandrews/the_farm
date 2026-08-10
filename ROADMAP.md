@@ -10471,11 +10471,18 @@ orange meadow.
   nobody can open is a feature that does not exist", now with fruit in it. The
   branch declines outside the season, so the dig-shadow around a fruit tree
   exists three months a year.
-- **The contextual sow is FARMLAND-only, and the gate is the design.** Gated on
-  `canSow` alone it fired on every lawn (canPlant accepts grass — the old rail
-  tool auto-tilled) and hijacked the basket beside a tree; the ACT-contract
-  tests caught it within the hour. The tilled bed is the statement of intent,
-  and dig-first keeps the junk faucet.
+- **The contextual sow is DUG-GROUND-only, and never the shovel's.** Three
+  states of this rung, each caught by a different net. Gated on `canSow` alone
+  it fired on every lawn (canPlant accepts grass — the old rail tool
+  auto-tilled) and hijacked the basket beside a tree: the ACT-contract tests.
+  Gated on FARMLAND it was unreachable, because nothing but the retired plant
+  tool ever MADE farmland — the shovel makes dirt — so ACT-ACT on a lawn
+  opened a shaft where the player expected a crop: found in play, day one.
+  The resolution: DIRT and the beds sow, grass never does, and **the shovel is
+  the one hand that doesn't sow**, because dig-on-dirt is the settled shaft
+  gesture and the two verbs would share a tap. Dig your bed with 1; the
+  watering can sows with one tap and waters with the next — one tool for the
+  whole morning walk, and the reticle names the verb before you spend it.
 - **A planted tree never fells to the basket, and never answers erase with a
   refund it didn't charge.** Uprooting is erase, in the erase chain between
   furniture and the ground; gather returns null on garden cells outright,

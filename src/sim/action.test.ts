@@ -92,7 +92,13 @@ describe("action target", () => {
   it("aims at the tree when the held tool has nothing to do", () => {
     const w = freshWorld();
     const { tree, feet } = besideATree(w);
-    setTile(w, feet.x, feet.y, DIRT); // nothing here to water, nothing to dig
+    setTile(w, feet.x, feet.y, DIRT); // nothing here to dig
+    // The can now HAS something to do on dug dirt: sow (game.ts §the sow
+    // rung — dirt underfoot with seed in pocket is the can's own work, and
+    // underfoot beats beside, which is the ladder's oldest rule). The empty
+    // pocket restores the old picture: nothing underfoot, tree in reach.
+    expect(actionTarget(w, "water")).toEqual({ ...feet, kind: "sow" });
+    w.inventory.seed = 0;
     expect(actionTarget(w, "water")).toEqual({ ...tree, kind: "gather" });
     expect(actionTarget(w, "dig")).toEqual({ ...tree, kind: "gather" });
   });
@@ -114,6 +120,9 @@ describe("action target", () => {
     w.player.x = 40; // open country, no nodes claimed to be near
     w.player.y = 40;
     setTile(w, 40, 40, DIRT);
+    // An empty pocket, or the dirt underfoot is an offer to sow — the quiet
+    // reticle this asserts is "nothing to do", and with seed there IS something.
+    w.inventory.seed = 0;
     const target = actionTarget(w, "water");
     if (target.kind !== "gather") {
       // (a generated tree could sit beside us; only assert when it doesn't)
