@@ -11,7 +11,9 @@ import {
   HOME_REGION_REACH,
   PLAZA,
 } from "./world";
-import { FLOOR, STONE, WATER, SHALLOW, TREE, tileDef } from "../content/tiles";
+import { FLOOR, STONE, WATER, SHALLOW, TREE, SHRUB, GRASS, tileDef } from "../content/tiles";
+import { FLORA } from "../content/flora";
+import { growthStage } from "./garden";
 import { rooms, roomAt } from "./rooms";
 import { findPath } from "./path";
 import { stampBuilding, stampTown, stampFixtures } from "./town";
@@ -29,6 +31,7 @@ import {
   FRONT_S,
   STREETS,
   TOWN_FIXTURES,
+  TOWN_PLANTINGS,
 } from "../content/town";
 import { structureDef } from "../content/structures";
 import { AUDIENCE } from "../content/festivals";
@@ -751,3 +754,65 @@ function insideBarn(x: number, y: number): boolean {
   const b = TOWN_BUILDINGS.barn;
   return x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1;
 }
+
+describe("what the town planted", () => {
+  it("is the garden's own objects, not a second kind of scenery", () => {
+    // The point of stamping rather than inventing: the avenue is uprootable, the
+    // hydrangeas are a bush you could plant yourself, and the fruit is pickable.
+    const w = world();
+    for (const p of TOWN_PLANTINGS) {
+      const entry = w.garden.plants[tileKey(p.x, p.y)];
+      expect(entry, `nothing planted at ${p.x},${p.y}`).toMatchObject({ id: p.id });
+    }
+  });
+
+  it("arrives grown, not as a town of seedlings", () => {
+    const w = world();
+    for (const p of TOWN_PLANTINGS) {
+      expect(growthStage(w, p.x, p.y, Date.now()), `${p.id} at ${p.x},${p.y}`).toBe(2);
+    }
+  });
+
+  it("stands its trees and bushes on the tile as well as in the record", () => {
+    const w = world();
+    for (const p of TOWN_PLANTINGS) {
+      const kind = FLORA[p.id].kind;
+      const t = tileAt(w, p.x, p.y);
+      if (kind === "tree") expect(t, `${p.x},${p.y}`).toBe(TREE);
+      else if (kind === "bush") expect(t, `${p.x},${p.y}`).toBe(SHRUB);
+      // A flower is a mark on the grass, never an object standing on it.
+      else expect(t, `${p.x},${p.y}`).toBe(GRASS);
+    }
+  });
+
+  it("never plants on the paving, in a building, or on the fence", () => {
+    // Flora wants grass or bare dirt, so a planting over a street would silently
+    // not happen — a table row that renders nothing, which is exactly the failure
+    // this project keeps writing tests against.
+    const w = world();
+    for (const p of TOWN_PLANTINGS) {
+      expect(w.build[tileKey(p.x, p.y)], `built on at ${p.x},${p.y}`).toBeUndefined();
+      for (const r of STREETS) {
+        const on = p.x >= r.x0 && p.x <= r.x1 && p.y >= r.y0 && p.y <= r.y1;
+        expect(on, `${p.id} on a street at ${p.x},${p.y}`).toBe(false);
+      }
+    }
+  });
+
+  it("never stands anything solid against the tent", () => {
+    // The homestead clearing keeps GENERATION off your plot, and an authored
+    // planting goes in underneath that promise — so this is the check generation
+    // already has, asked of the table. Adjacency and not a radius, deliberately:
+    // the plot is seventeen by eight and the tent sits in it, so a four-tile
+    // exclusion would forbid the town planting anything on your ground at all.
+    // What actually matters is that you can step out of your tent in any
+    // direction, which is the same thing `HOMESTEAD_CLEARING` was written for.
+    const w = world();
+    const { originX, originY } = w.homestead;
+    for (const p of TOWN_PLANTINGS) {
+      if (FLORA[p.id].kind === "flower") continue;
+      const touching = Math.abs(p.x - originX) <= 1 && Math.abs(p.y - originY) <= 1;
+      expect(touching, `${p.id} is against the tent at ${p.x},${p.y}`).toBe(false);
+    }
+  });
+});

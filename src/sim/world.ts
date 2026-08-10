@@ -282,7 +282,7 @@ export const PLAZA = { x0: -5, y0: -5, x1: 5, y1: 2 };
  *  that is going to be your field (content/town.ts §The plot). It used to be
  *  (6,5): open grass between the town and nothing, chosen when there was nothing
  *  for it to be near. */
-export const HOME = { x: 4, y: 15 };
+export const HOME = { x: 2, y: 15 };
 
 /** Homestead origin per chosen spot — all near HOME, nudged for flavour. Lives
  *  here rather than in game.ts because terrain generation needs it (it keeps a

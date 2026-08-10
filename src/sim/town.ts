@@ -19,14 +19,16 @@ import type { BuildCell, FurnitureCell } from "./types";
 import type { CharDef } from "../content/cast";
 import { CAST } from "../content/cast";
 import type { TileId } from "../content/tiles";
-import { FLOOR, GRASS } from "../content/tiles";
+import { FLOOR, GRASS, DIRT, TREE, SHRUB } from "../content/tiles";
 import { tileDef } from "../content/tiles";
 import type { TownBuilding } from "../content/town";
+import { FLORA } from "../content/flora";
 import {
   allTownBuildings,
   footprintCells,
   isPerimeter,
   plotFenceCells,
+  TOWN_PLANTINGS,
   STREETS,
   TOWN_FIXTURES,
 } from "../content/town";
@@ -56,6 +58,10 @@ export interface StampTarget {
    *  the streets are the only thing here that writes one — a building's floor is
    *  plain FLOOR and takes the default. */
   finishes?: Record<string, string>;
+  /** The garden's planted things (sim/garden.ts). Optional for the same reason
+   *  `finishes` is: a save being migrated from before the garden existed has no
+   *  such field, and the plantings simply do not happen rather than crashing. */
+  garden?: { seen: string[]; plants: Record<string, { id: string; at: number }> };
 }
 
 /** Has the player already claimed this cell for something of their own?
@@ -214,6 +220,40 @@ export function stampFences(t: StampTarget): number {
   return laid;
 }
 
+/** Put the town's own trees, bushes and flowers in (content/town.ts §What the
+ *  town planted).
+ *
+ *  `at: 0` — planted at the epoch, which is to say LONG AGO. Growth is a pure
+ *  function of age against the clock (sim/garden.ts §growthStage), so an authored
+ *  planting with a zero timestamp is simply mature, and it is mature on the first
+ *  frame of a brand-new world without anything having to special-case it. A
+ *  timestamp of "now" would hand you a town of seedlings.
+ *
+ *  It writes the tile AND the record, because that pair IS the planted thing —
+ *  the same two writes `plantAt` makes. Flowers deliberately get no tile: a
+ *  flower is a mark on the grass, not an object standing on it.
+ *
+ *  Per cell and skipping anything occupied, like the streets and the fence. */
+export function stampPlantings(t: StampTarget): number {
+  if (!t.garden) return 0;
+  let put = 0;
+  for (const p of TOWN_PLANTINGS) {
+    const key = tileKey(p.x, p.y);
+    if (occupied(t, p.x, p.y) || t.garden.plants[key]) continue;
+    // Only onto ground a plant would actually take. The stamp runs after the
+    // streets and the buildings, so this is what keeps a hydrangea off the
+    // cobbles if a rectangle is ever moved over one.
+    const ground = t.overrides[key];
+    if (ground !== undefined && ground !== GRASS && ground !== DIRT) continue;
+    const kind = FLORA[p.id].kind;
+    if (kind === "tree") t.overrides[key] = TREE;
+    else if (kind === "bush") t.overrides[key] = SHRUB;
+    t.garden.plants[key] = { id: p.id, at: 0 };
+    put++;
+  }
+  return put;
+}
+
 /** Stamp every town building AND every fixture. Returns the ids that were
  *  actually placed, so a migration can say what it did rather than claiming
  *  success it didn't have.
@@ -236,6 +276,9 @@ export function stampTown(t: StampTarget, probe?: TerrainProbe): string[] {
   // Fences last of the three ground passes: they stand ON the ground the streets
   // just laid, and the gate is a gap in them that the lane runs through.
   stampFences(t);
+  // Planting last of all: it is the only pass that has to look at what every
+  // other pass has already put down.
+  stampPlantings(t);
   return [...placed, ...stampFixtures(t)];
 }
 

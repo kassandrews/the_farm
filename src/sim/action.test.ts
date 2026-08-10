@@ -26,7 +26,11 @@ function besideATree(w: WorldState): { tree: { x: number; y: number }; feet: { x
   for (let r = 1; r < 60; r++) {
     for (let y = -r; y <= r; y++) {
       for (let x = -r; x <= r; x++) {
-        if (tileAt(w, x, y) !== TREE) continue;
+        // A WILD tree, never one the town planted (content/town.ts §What the
+        // town planted): a planted tree is picked or uprooted, not gathered, so
+        // `gather` correctly returns null and the test reads as the action ladder
+        // being broken.
+        if (tileAt(w, x, y) !== TREE || `${x},${y}` in w.garden.plants) continue;
         w.player.x = x - 1;
         w.player.y = y;
         w.player.facing = 1;

@@ -22,6 +22,7 @@ import type { FurnitureId, Facing } from "./furniture";
 import type { CounterId } from "./counters";
 import type { CharId } from "./cast";
 import { CAST } from "./cast";
+import type { FloraId } from "./flora";
 import type { WingId } from "./museum";
 import { STAGE } from "./festivals";
 
@@ -168,6 +169,64 @@ export function plotFenceCells(): { x: number; y: number }[] {
   }
   return cells;
 }
+
+// --- What the town planted ------------------------------------------------------
+
+/** Trees, bushes and flowers the town put in before you arrived.
+ *
+ *  THE SAME OBJECTS THE GARDEN MAKES (DESIGN §The garden), stamped rather than
+ *  planted — an entry in `world.garden.plants` plus the tile under it, exactly
+ *  what `plantAt` writes. So the town's avenue is uprootable, its hydrangeas are
+ *  a bush you could have planted yourself, and its fruit is pickable. There is no
+ *  second notion of "scenery" anywhere, which is the same argument the header
+ *  makes about the buildings and `content/town.ts` §STREETS makes about paving.
+ *
+ *  THIS IS A SHORT LIST ON PURPOSE. The town's own note about restraint applies
+ *  hardest here: the failure mode of landscaping is not too little, it is a
+ *  place that reads as a mashup of textures instead of as one settlement. Every
+ *  entry below is doing a specific job, and there is nothing here that is merely
+ *  filling space.
+ *
+ *  IT CANNOT REACH THE SQUARE. Flora wants grass or bare dirt (sim/garden.ts) and
+ *  the whole town centre is paving now — so the planting is where the paving is
+ *  not: along the lane, in the two alleys that break the north street's face, and
+ *  on your own ground.
+ */
+export const TOWN_PLANTINGS: { x: number; y: number; id: FloraId }[] = [
+  // THE AVENUE — four birches, two a side, down the lane out of the square.
+  // The single strongest planting in the town and the reason this table exists:
+  // a three-tile cobbled strip running south through grass is a paved strip, and
+  // the same strip with trees down it is a ROAD. Birch because it is the one
+  // pale, upright tree in the set and reads as planted rather than as left.
+  { x: -3, y: 6, id: "birch" },
+  { x: 3, y: 6, id: "birch" },
+  { x: -3, y: 9, id: "birch" },
+  { x: 3, y: 9, id: "birch" },
+  // Verges. Flowers are walkable and cost the layout nothing, which is exactly
+  // why they go where a tree would be in the way.
+  { x: -2, y: 7, id: "buttercup" },
+  { x: 2, y: 8, id: "daisy" },
+  { x: -2, y: 10, id: "daisy" },
+  { x: 2, y: 11, id: "buttercup" },
+  // THE TWO ALLEYS in the north street's face — the gaps between the museum and
+  // the hall, and the hall and the heap. Two cells wide each, and a street face
+  // with a hole in it reads as a missing tooth. One tree fills the gap and leaves
+  // the other cell walkable, which is what a real gap between two buildings has
+  // in it.
+  { x: -4, y: -7, id: "broadleaf" },
+  { x: 5, y: -7, id: "broadleaf" },
+  // YOUR OWN GROUND: two fruit trees along the plot's east fence, well clear of
+  // the field and of the tent. A smallholding that arrived with an apple tree on
+  // it is the oldest picture there is of one, and they are PICKABLE — the town
+  // planted them, and the fruit is yours.
+  { x: 7, y: 14, id: "apple" },
+  { x: 7, y: 17, id: "plum" },
+  // And a pair of hydrangeas just inside your gate, which is the one piece of
+  // pure decoration in the table and is allowed to be: somebody planted them
+  // there on purpose, and that is the whole of what they say.
+  { x: 2, y: 13, id: "hydrangea" },
+  { x: 3, y: 13, id: "hydrangea" },
+];
 
 /** A piece of furniture that comes with the building, at an absolute anchor. */
 export interface TownFurniture {

@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 38;
+export const SCHEMA_VERSION = 39;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -1214,6 +1214,31 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
       homestead: struck ? homestead : { ...homestead, originX: home.x, originY: home.y },
     };
   },
+
+  /** v39 — the town plants itself (content/town.ts §What the town planted).
+   *
+   *  The avenue down the lane, the two alley trees, the fruit on your own fence
+   *  and the flowers on the verges. Nothing is REMOVED here, which makes this the
+   *  simplest rung since v15: the plantings are additive, `stampPlantings` skips
+   *  any cell somebody has claimed, and a town that already has them (a save made
+   *  after this shipped) gets nothing done to it at all.
+   *
+   *  It reaches through the full `stampInto` rather than calling the planting
+   *  pass alone, on the ladder's oldest rule: a returning player's town and a new
+   *  player's town must not be able to differ, and the way that is guaranteed is
+   *  that both go through the same function. */
+  38: (raw) => {
+    const stamped = stampInto(raw);
+    return {
+      ...raw,
+      schemaVersion: 39,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
+      finishes: stamped.finishes ?? raw.finishes,
+      garden: stamped.garden ?? raw.garden,
+    };
+  },
 };
 
 /** The name the tables now give an authored character, or null for anyone the
@@ -1300,6 +1325,8 @@ function stampInto(raw: Record<string, unknown>): StampTarget {
     finishes: (typeof raw.finishes === "object" && raw.finishes ? raw.finishes : undefined) as
       | Record<string, string>
       | undefined,
+    garden: (typeof raw.garden === "object" && raw.garden ? raw.garden : undefined) as
+      | StampTarget["garden"],
   };
   const seed = typeof raw.seed === "number" ? raw.seed : 0;
   const homestead = (raw.homestead ?? {}) as Record<string, unknown>;

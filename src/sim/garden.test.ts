@@ -15,7 +15,7 @@ import {
   plantedAt,
 } from "./garden";
 import { gather } from "./gather";
-import { migrateSave, SCHEMA_VERSION } from "./save";
+import { MIGRATIONS } from "./save";
 import { tileKey, tileAt, setTile, biomeAt } from "./world";
 import { GRASS, TREE, SHRUB, DIRT } from "../content/tiles";
 import { FLORA, TAUGHT_BY, type FloraId } from "../content/flora";
@@ -242,8 +242,12 @@ describe("the migration", () => {
     const old = JSON.parse(JSON.stringify(w)) as Record<string, unknown>;
     old.schemaVersion = 35;
     delete old.garden;
-    const out = migrateSave(old)!;
-    expect(out.schemaVersion).toBe(SCHEMA_VERSION);
+    // THIS RUNG ONLY. v39 plants the town's avenue and its fruit trees into the
+    // very field this rung creates, so a full climb legitimately arrives with
+    // things in it — "an empty garden" is a claim about what v36 backfills, not
+    // about the top of the ladder.
+    const out = MIGRATIONS[35](old);
+    expect(out.schemaVersion).toBe(36);
     expect(out.garden).toEqual({ seen: [], plants: {} });
   });
 

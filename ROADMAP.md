@@ -10961,6 +10961,62 @@ what it is from across the square is the barn, which gets it from one field
 (ox-blood paint). Signage over a door, an awning on the shop, and per-building
 roof materials are the obvious next moves, in that order.
 
+## The town plants itself (10 Aug 2026)
+
+Last of the five threads in the town overhaul. `TOWN_PLANTINGS` is a short table
+of trees, bushes and flowers the town put in before you arrived, stamped exactly
+the way the buildings and the streets are.
+
+**They are the GARDEN's own objects** — an entry in `world.garden.plants` plus
+the tile under it, which is precisely the pair `plantAt` writes. So the avenue is
+uprootable, the hydrangeas are a bush you could have planted yourself, and the
+fruit on your fence is pickable. There is no second notion of "scenery" anywhere,
+which is the third time this overhaul has made the same argument (buildings,
+paving, and now planting).
+
+### Settled here, don't relitigate
+
+- **`at: 0` — planted at the epoch, which is to say long ago.** Growth is a pure
+  function of age against the clock, so an authored planting with a zero
+  timestamp is simply mature, on the first frame of a brand-new world, with
+  nothing special-cased. A timestamp of "now" hands you a town of seedlings.
+- **THE LIST IS SHORT ON PURPOSE.** The failure mode of landscaping is not too
+  little, it is a place that reads as a mashup of textures instead of as one
+  settlement — the restraint note, applied where it bites hardest. Fourteen
+  entries, and every one is doing a job.
+- **It cannot reach the square.** Flora wants grass or bare dirt and the whole
+  town centre is paving now, so the planting is where the paving is not: the
+  lane, the two alleys in the north street's face, and your own ground. That
+  constraint turned out to be a good editor.
+- **The avenue is the whole point.** Four birches, two a side, down the lane out
+  of the square. A three-tile cobbled strip running through grass is a paved
+  strip; the same strip with trees down it is a ROAD. Birch because it is the one
+  pale upright tree in the set and reads as planted rather than as left.
+- **The alley trees fill the two gaps in the north street's face.** A street of
+  fronts with a two-cell hole in it reads as a missing tooth; one tree fills the
+  gap and leaves the other cell walkable, which is what a real gap between two
+  buildings has in it.
+- **The tent moved beside the lane**, to (2,15). The four-tile no-generation
+  bubble round it covers most of a seventeen-by-eight plot, so a tent in the
+  middle leaves nowhere the town could plant anything of its own — the fruit
+  trees were inside it at the first coordinate tried. Beside the lane the bubble
+  sits over the road, which needs nothing to grow in it anyway.
+
+### Two tests were asserting the opposite of the design
+
+Both passed for months because no seed had put the question, and both failed the
+day the tent moved:
+
+- **The landing at the bottom of a shaft.** `sink` carves four neighbours through
+  `carve`, and `carve` refuses ore — the very next test asserts that a vein
+  beside the ladder survives. The landing test demanded bare `CAVE_FLOOR` on all
+  four, which is the opposite claim. It asks for "carved, and somewhere to step
+  off" now.
+- **`findNode` and `besideATree`** returned whatever tree was nearest, which is
+  now sometimes one the TOWN planted. A planted tree is picked or uprooted, never
+  gathered, so `gather` correctly returned null and the action ladder read as
+  broken. Both helpers skip `garden.plants` now.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

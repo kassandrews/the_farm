@@ -31,6 +31,12 @@ function findNode(
     for (let y = -r; y <= r; y++) {
       for (let x = -r; x <= r; x++) {
         if (tileAt(w, x, y) !== want) continue;
+        // Never a PLANTED one. The town puts an avenue down the lane and fruit on
+        // the plot fence (content/town.ts §What the town planted), and those are
+        // stored overrides rather than generation — so a test that compares a
+        // found tree against `generatedTile` gets GRASS back and reads as a
+        // determinism bug. Everything here wants a wild node.
+        if (`${x},${y}` in w.garden.plants) continue;
         if (elbow && !clearAround(w, x, y, elbow)) continue;
         return { x, y };
       }
@@ -54,7 +60,7 @@ function findTreeInWood(w: ReturnType<typeof newWorld>): { x: number; y: number 
   for (let r = 1; r < 60; r++) {
     for (let y = -r; y <= r; y++) {
       for (let x = -r; x <= r; x++) {
-        if (tileAt(w, x, y) !== TREE) continue;
+        if (tileAt(w, x, y) !== TREE || `${x},${y}` in w.garden.plants) continue;
         for (let dy = -rad; dy <= rad; dy++) {
           for (let dx = -rad; dx <= rad; dx++) {
             if (dx === 0 && dy === 0) continue;

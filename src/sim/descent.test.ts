@@ -17,7 +17,7 @@ import {
   buildAt,
 } from "./game";
 import { dig, sink, carve, setTile, fillShaft, tileAt } from "./world";
-import { BEDROCK, CAVE_FLOOR, GRASS, DIRT, SHAFT, TREE, ORE_VEIN } from "../content/tiles";
+import { BEDROCK, CAVE_FLOOR, ORE_VEIN, GRASS, DIRT, SHAFT, TREE } from "../content/tiles";
 import type { WorldState } from "./types";
 import { count } from "./inventory";
 import { NODES } from "../content/nodes";
@@ -110,16 +110,29 @@ describe("the landing at the bottom", () => {
     const w = freshWorld();
     const at = onAShaft(w);
     useShaft(w);
+    // CARVED, WHICH IS NOT THE SAME AS EMPTY. The landing goes through `carve`
+    // on purpose, and `carve` refuses ore — the very next test asserts that a
+    // vein beside the ladder survives. So the four neighbours are each either
+    // open floor or the vein that was already there, and asserting bare
+    // CAVE_FLOOR on all four was asserting the opposite of the design. It passed
+    // for a year because no vein happened to sit beside the old homestead, and
+    // it failed the day the tent moved onto the plot.
+    let steppable = 0;
     for (const [dx, dy] of [
       [0, -1],
       [1, 0],
       [0, 1],
       [-1, 0],
     ]) {
-      expect(tileAt(w, at.x + dx, at.y + dy, "under")).toBe(CAVE_FLOOR);
+      const t = tileAt(w, at.x + dx, at.y + dy, "under");
+      expect([CAVE_FLOOR, ORE_VEIN], `${dx},${dy}`).toContain(t);
+      if (t !== CAVE_FLOOR) continue;
+      steppable++;
       moveTo(w, at.x + dx, at.y + dy);
       expect(w.player.target).not.toBeNull();
     }
+    // And the whole point: there IS somewhere to step off onto.
+    expect(steppable).toBeGreaterThan(0);
   });
 
   it("does not eat a vein it happens to land beside", () => {
