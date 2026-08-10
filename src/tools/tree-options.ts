@@ -268,46 +268,90 @@ export const OPTIONS: Record<string, { note: string; forms: TreeShape[] }> = {
   // size" means: rows + trunkHeight - overlap, the same sum the renderer takes
   // the sprite's height from.
   //
-  // SETTLED: C WON and is now form zero in content/biomes.ts — the old profile
-  // resampled properly over the full eighteen rows, keeping the big crown. The
-  // three that lost are kept here because they all say the same useful thing: a
-  // rounder outline at this width can only be bought with crown rows, and every
-  // row spent shows up as bare bole. B, D and E are that trade at three prices,
-  // and all three read as an orchard tree with a clear stem rather than as this
-  // region's one enormous flowering thing.
+  // ROUND TWO: "it's just not as cute as I want it to be." Round one restored the
+  // old PROFILE and held the tree at its shipped 31px, and that was the wrong
+  // constraint — it is the RATIO that is the complaint, and holding the height
+  // fixed means every row taken off the crown reappears as bare bole. Hence
+  // round one's losers all reading as an orchard tree with a clear stem.
+  //
+  // The thing to notice is that everything cute in this game is the same shape: a
+  // rounded mass, wider than it is tall, on a small stem. The player is one, the
+  // shrubs are, the mushroom cap is. A crown may not pass 8 half-widths, so
+  // "wider than tall" has exactly one spelling — FEWER ROWS — and the tree simply
+  // has to be allowed to get shorter to have it.
+  //
+  // So this round gives up the height on purpose. B, C and F are three prices for
+  // a crown-dominant tree; D rounds both ends at the current height, as the
+  // control; E leaves the outline alone and deepens the parting instead, on the
+  // theory that what is missing is the two LOBES rather than the proportion.
+  //
+  // SETTLED: B's CROWN WON, ON C's STEM AND WITH A THIRD OF ITS OVERLAP — see
+  // content/biomes.ts, where it is form zero now. Two corrections came out of
+  // looking at B in the region rather than on this page:
+  //
+  //   - **Its overlap was wrong at 6.** Six rows of foliage down the sides of the
+  //     bark is a crown wearing a tree: the stem vanishes into the mass and comes
+  //     out as a stub, which is a mushroom's arrangement. Three, the pre-boost
+  //     number, and the notch caps at three with it (a gap is only legal beside
+  //     the trunk).
+  //   - **Its stem was wrong at 15**, which made a 21px tree against a 16px
+  //     villager — the exact scale complaint that caused the size boost. The
+  //     shipped tree keeps the 16px stem and stands 25.
+  //
+  // The candidate as photographed is kept below, wrong overlap and all, because
+  // the difference between it and what shipped is the whole finding.
   blossom: {
-    note: "cherry — settled: C, the old profile at the new height",
+    note: "cherry — round two: cuteness is a ratio, and it costs height",
     forms: [
-      // B — THE OLD CROWN VERBATIM, on a stem long enough to hold the height.
-      // The eleven rows that shipped before the boost, unchanged, with the bare
-      // stem carrying the other twenty. The purest answer to "go back to that"
-      // and the one most at risk of the lollipop.
+      // B — SQUAT. Twelve rows, 17 wide: wider than it is tall, sat low on a
+      // short stem with the crown coming down six rows around it. The extreme,
+      // and ten pixels shorter than what ships. ITS CROWN SHIPPED; its overlap
+      // and its stem did not — see the note above the region.
       {
-        rows: [4, 7, 8, 8, 8, 8, 8, 8, 8, 7, 6],
-        gaps: [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
-        overlap: 3,
-        trunkHeight: 23,
+        rows: [3, 5, 7, 8, 8, 8, 8, 8, 8, 7, 7, 6],
+        gaps: [0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2],
+        overlap: 6,
+        trunkHeight: 15,
       },
-      // (C shipped — it is form zero in content/biomes.ts now, and the page
-      // always draws form zero as A, so it is not repeated here.)
-      // D — THE MIDDLE. Thirteen rows: wider than it is tall by a little, a full
-      // taper at both ends, and the notch four rows deep so the two lobes are
-      // unmistakable at a glance rather than on inspection.
+      // C — CHUBBY. Fourteen rows and a taller taper at the bottom, so the crown
+      // is round rather than squat, still low on its stem. Five pixels shorter
+      // than what ships.
       {
-        rows: [4, 6, 7, 8, 8, 8, 8, 8, 8, 8, 7, 7, 6],
-        gaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
-        overlap: 4,
-        trunkHeight: 22,
+        rows: [3, 5, 7, 8, 8, 8, 8, 8, 8, 8, 8, 7, 6, 5],
+        gaps: [0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2],
+        overlap: 6,
+        trunkHeight: 18,
       },
-      // E — THE FATTEST BEAN. Twelve rows, held at full width for over half of
-      // them and dropping fast at both ends, with the deepest underside here.
-      // The cutest of the four and the one furthest from a tree.
+      // D — THE CONTROL: the shipped height, both ends rounded harder. If this
+      // one reads cute then the problem was never the ratio and everything else
+      // here is wasted height.
       {
-        rows: [3, 6, 8, 8, 8, 8, 8, 8, 8, 8, 7, 5],
-        gaps: [0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2],
-        overlap: 4,
-        trunkHeight: 23,
+        rows: [2, 4, 6, 7, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 6, 5],
+        gaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2],
+        overlap: 5,
+        trunkHeight: 20,
+      },
+      // E — TWO LOBES. The shipped outline exactly, with the parting taken to
+      // seven rows and widened as it goes, so the crown reads as two masses
+      // hanging either side of the stem rather than as one with a slot in it.
+      // The literal reading of "bean", and the only candidate that changes
+      // nothing about the tree's proportions.
+      {
+        rows: [4, 6, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 6],
+        gaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 3, 3, 3],
+        overlap: 7,
+        trunkHeight: 20,
+      },
+      // F — THE FAT ONE. Thirteen rows that reach full width by the third and
+      // hold it for eight, dropping fast at both ends: the roundest mass here,
+      // and the closest thing to a shrub on a stick if it goes wrong.
+      {
+        rows: [4, 6, 8, 8, 8, 8, 8, 8, 8, 8, 7, 6, 4],
+        gaps: [0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2],
+        overlap: 6,
+        trunkHeight: 17,
       },
     ],
   },
+
 };

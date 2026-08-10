@@ -5739,15 +5739,28 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // shipped for a week was the tall pink box this comment warns about, arrived
     // at by a resample rather than by an author.
     //
-    // THE PROFILE IS BACK AND THE HEIGHT IS NOT REDUCED. The old eleven-row curve
-    // stretched properly over eighteen: taper in at the top, full width through
-    // the middle, and — the part that was lost — taper back out at the bottom, so
-    // the crown's sides come DOWN and IN to meet the notch instead of stopping
-    // square. Photographed against three shorter, fatter beans on `/trees.html`
-    // (see tools/tree-options.ts); the big crown won, because at 8 half-widths
-    // the only way to buy a rounder outline is to spend crown rows on bare bole,
-    // and a cherry with a long clear stem is an orchard tree rather than this one.
-    crownRows: [4, 6, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 6],
+    // THE PROFILE IS BACK AND SO IS THE RATIO, WHICH TOOK TWO ROUNDS. The first
+    // one restored the old CURVE over the full eighteen rows and held the tree at
+    // its shipped 31px, and it was still not right — "not as cute as I want it to
+    // be" — because the height was the wrong thing to protect. A crown may not
+    // pass 8 half-widths (render/palette.test.ts), so "wider than tall" has
+    // exactly one spelling, which is FEWER ROWS, and holding the total height
+    // fixed means every row taken off the crown reappears as bare bole. That is
+    // why every candidate in round one read as an orchard tree with a clear stem.
+    //
+    // TWELVE ROWS, 17 WIDE: wider than it is tall, which is the shape of every
+    // cute thing in this game — the player, the shrubs, the mushroom cap are all
+    // a rounded mass on a small stem. Six rows shorter than what it replaces, and
+    // the tree six pixels shorter overall.
+    //
+    // IT STILL HAS TO OUT-TOP A VILLAGER, which is the constraint that stopped
+    // this going further. The squattest candidate put the crown down on a 12px
+    // stem for a 21px tree, and a villager is 16 — the exact complaint that
+    // caused "Trees stand up" in the first place ("the tallest thing in a wood was
+    // exactly as tall as a garden wall"). The stem stays at 16 and the tree at 25,
+    // which is a third again over head height: an orchard cherry is a low tree and
+    // is allowed to be short, but it is not allowed to be furniture.
+    crownRows: [3, 5, 7, 8, 8, 8, 8, 8, 8, 7, 7, 6],
     // NO GROUND BLOOM, and this is the one region that was offered one and gives
     // it back. Fallen petals closed a tidy loop — the row has had petals falling
     // through the AIR since it was written, with nothing on the ground for them
@@ -5759,10 +5772,19 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // The bare ground is what the blossom is seen against. Note also that these
     // trees flower all year (see the motes below), so a spring-only carpet under
     // a permanently blooming orchard was never a season anybody could have read.
-    // FIVE GAPPED ROWS, not three, and the number is proportional rather than
-    // chosen: the pre-boost tree notched three of eleven rows, which is a bit
-    // over a quarter of the crown, and three of eighteen is a sixth. A dip that
-    // shallow on a crown this tall is a slot rather than an underside.
+    // THREE GAPPED ROWS, AND THE CROWN MAY NOT SWALLOW THE TRUNK. Reported
+    // against the squat crown while it was still on six: "it should not overlap
+    // the trunk that much at all". Six rows of foliage down the sides of the bark
+    // is a crown WEARING a tree — the stem disappears into the mass and comes out
+    // as a stub, which is a mushroom's arrangement and not a cherry's. Three is
+    // the pre-boost number and it is enough: the trunk runs up, the crown parts
+    // around the top of it, and you can see it happen.
+    //
+    // THE GAPS AND THE OVERLAP ARE ONE DECISION, not two. A gap is only legal on
+    // a row standing beside the trunk, so notching five rows requires overlapping
+    // five, and cutting the overlap to three caps the notch at three whatever
+    // anybody would prefer. Nothing enforces the pairing but
+    // render/palette.test.ts, which rejects the illegal half of it as a hole.
     //
     // AND THE NOTCH IS 2, WHICH IS THE TRUNK — see §crownGaps for the arithmetic
     // and for how it came to be wrong everywhere. At 1 the bark came out of the
@@ -5781,15 +5803,15 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     //
     // It is the same fact the pinch above is about, used the right way round:
     // lapping the bark for ONE row is a tree growing around its own stem, and
-    // lapping it for all five is a crown lying across one. The difference between
-    // a mistake and a detail is how much of it there is.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2],
-    // AND THE OVERLAP GOES WITH IT, because a gap is only legal on a row that
-    // stands beside the trunk (§crownGaps — anywhere else it is a hole punched
-    // in the foliage, and render/palette.test.ts checks exactly this). Five rows
-    // notched needs five rows alongside the bark. It costs the tree two pixels
-    // of height, which is the whole price of the shape.
-    crownOverlap: 5,
+    // lapping it all the way down is a crown lying across one. The difference
+    // between a mistake and a detail is how much of it there is.
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2],
+    crownOverlap: 3,
+    // STATED, AND IT USED TO BE THE RENDERER'S DEFAULT 16 BY COINCIDENCE. It is
+    // the same number, written down, because it is now load-bearing: this crown
+    // is short enough that the stem is what keeps the tree over head height, and
+    // a future change to the default would quietly turn this row into a shrub.
+    trunkHeight: 16,
     // LAWN DAISIES, AND NOT ONE PIXEL OF PINK. The row that refused a ground
     // bloom (see the note above `crownGaps`) gets its kit on the terms the
     // refusal set. What was refused was petals — the crown's own colour doing a

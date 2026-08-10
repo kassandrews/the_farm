@@ -10043,12 +10043,36 @@ rather than from an author.
   recovered by making the crown SHORTER — and since the tree's height is
   `rows + trunkHeight - overlap`, every crown row spent on the bean comes back
   as bare bole. That trade is the whole decision.
-- **Four candidates, photographed, and the BIG crown won.** `tools/tree-options.ts`
-  carried the pre-boost crown verbatim on a long stem, two shorter fatter beans,
-  and the proper resample; all four held the tree at its shipped height. B, D and
-  E all read as an orchard tree with a clear stem — correct for a cherry
-  generally, wrong for this region's one enormous flowering thing. C keeps the
-  mass and gets the outline back by tapering, which is what was actually missing.
+- **ROUND ONE HELD THE HEIGHT FIXED AND THAT WAS THE WRONG CONSTRAINT.** Four
+  candidates all pinned at 31px; the big crown won on the argument that the
+  alternatives read as an orchard tree with a clear stem. It shipped and was
+  still wrong — *"it's just not as cute as I want it to be"* — because with the
+  width capped, **"wider than tall" has exactly one spelling, which is FEWER
+  ROWS**, and holding the total height fixed means every row taken off the crown
+  reappears as bare bole. Of course they all read as a stem with something on it:
+  that is the only thing that constraint could produce.
+
+  **Round two let the tree get shorter.** Twelve rows, 17 wide, and it is six
+  pixels shorter than what it replaced. The test that decided it: everything cute
+  in this game is the same shape — the player, the shrubs, the mushroom cap are
+  all a rounded mass wider than it is tall on a small stem.
+- **The crown may not swallow the trunk, and `crownOverlap` is where that lives.**
+  The winning candidate came down six rows around the bark and was reported
+  immediately: the stem disappears into the mass and comes out as a stub, which
+  is a mushroom's arrangement rather than a tree's. Three — the pre-boost number.
+  Note the notch caps out with it: a gap is only legal beside the trunk, so
+  overlap 3 means at most three gapped rows, whatever anybody would prefer.
+- **A tree still has to out-top a villager.** The squattest candidate was 21px
+  against a 16px sprite, which is the exact complaint that caused "Trees stand
+  up" — *"the tallest thing in a wood was exactly as tall as a garden wall"*. The
+  shipped tree keeps a 16px stem and stands 25. An orchard cherry is allowed to
+  be a low tree; it is not allowed to be furniture. `trunkHeight` is now STATED
+  on this row rather than inherited, because the stem is what carries that.
+- **Photograph a short tree in the REGION, not on `/trees.html`.** Both
+  corrections above were invisible on the card — one tree on cleared ground says
+  nothing about how it stands next to a villager, or about whether forty of them
+  in rows read as an orchard or as a smear. Same lesson the redwoods' withdrawn
+  candidates left on that page.
 - **Five gapped rows, not three, and the number is proportional rather than
   chosen.** Three of eleven rows was a bit over a quarter of the old crown; three
   of eighteen is a sixth, and a dip that shallow on a crown this tall is a slot
