@@ -10269,6 +10269,62 @@ paint, exactly like the blueberries, and yours fruits because it is yours. That 
 "planting is what makes fruit pickable" enacted in geography rather than asserted
 in a doc, and it is the answer to the question this whole note started as.
 
+### The verb review (Fable, 9 Aug 2026) — and the three concerns raised against it
+
+The ACT/BUILD/GROW three-mode proposal went to a design review and came back
+corrected: **the taxonomy is right and the mode count is wrong.** Two modes,
+current names. The settled shape:
+
+- **GARDEN is a landing-row group inside BUILD**, beside Wall and Furniture,
+  opening Crops / Trees / Bushes / Flowers / Grass — the same two-level move
+  furniture already made. A third mode with the identical touch grammar (tap
+  places, drag paints) would be a mode-error trap on a phone.
+- **The principle that sorts every verb, in one sentence:** verbs whose target is
+  YOUR OWN BODY'S POSITION (dig, water, gather, harvest) are ACT; verbs whose
+  target is THE MAP (place anything) are the mode. Dig needs no exception clause —
+  digging moves *you*; the shaft is the way down you then descend.
+- **The watering can never leaves the ACT rail.** Watering is the standing-there
+  verb — drag-watering in plan view turns farming into map administration. The
+  Sims precedent: place in Buy/Build, tend in Live, and nobody has ever been
+  confused. Harvest already has the ripe-underfoot override and needs nothing.
+- **Uprooting a planted thing is mode-erase with refund**, not the shovel — "it
+  costs you the arrangement" transposed into time.
+- **Guards:** no mode-only dry/ripe overlay (the plant itself must show it, or
+  the mode becomes a scanner); never a count on a species entry (the `3/17`
+  checklist through the side door); the two-level Garden palette from day one.
+
+**Three concerns raised against the review, and where each landed:**
+
+1. **"Dig, then into build to sow, then out to water is arduous."** Softened by
+   frequency (beds are once per plot, sowing once per cycle; only watering is
+   daily and it never enters the mode) — and FIXED by the game's own grammar:
+   ACT is already contextual (the ripe-crop override), so the symmetric rule is
+   **tilled soil underfoot + seed in pocket → ACT sows.** The embodied path
+   survives whole — dig, sow, water without ever opening a menu — and the
+   Garden group is for layout-scale sowing, twelve rows in one drag. Two paths,
+   one object model, neither mandatory. Proposed, not yet settled.
+2. **Fauna — "where in these menus would animals appear?" NOWHERE, and that is
+   the answer even though fauna itself stays absent-by-design for now** (the
+   written rule in content, killed two headline examples already; reversing it
+   is its own conversation). Menus hold things with positions; creatures have
+   wills. An animal from a palette is furniture with a walk cycle. The version
+   consistent with everything above: **animals are met in the world, and what
+   you build is the PLACE for them** — fence, coop, pond. "You plant what you
+   have met" extends to "you keep what followed you home." The build menu's
+   entire contribution to fauna is enclosures, which are walls, which exist.
+3. **"The muted screen and visible tiles compete with the landscaping
+   aesthetic" — DISSOLVED, because the flatten is keyed to the TOOL, not the
+   mode.** DESIGN's own sentence: "holding a structure tool drops raised
+   faces". Walls flatten because walls occlude and alignment is the job.
+   **Garden tools place in the full living view** — you judge a tree against
+   the world as it looks, light and season included, because composing a view
+   in a muted view is impossible. This is the Sims' build-vs-buy separation
+   achieved inside one mode by per-tool presentation.
+
+Migration pressure on all of this is low by the owner's own call (sole player
+right now) — the schema rules still apply, but habit-breaking is not a
+constraint.
+
 ### YOU PLANT WHAT YOU HAVE MET — settled, and it is the spine of the feature
 
 The acquisition question above was posed as "bought, or dug up where it grows?"
