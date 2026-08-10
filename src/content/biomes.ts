@@ -575,6 +575,20 @@ export interface BiomeDef {
    *  broken twice by someone making the trees bigger" — and this is the third.
    *  ANY change to stem width or crown scale has to sweep `crownGaps` with it.
    *
+   *  ONE ROW OF 1 AT THE TOP OF THE PARTING, THOUGH, AND IT IS DELIBERATE. Every
+   *  region here that notches properly reads `1, 2, 2, …` rather than `2, 2, 2`,
+   *  which looks like the bug above and is the opposite of it: flush at 2 all the
+   *  way up, the gap is a clean rectangle taken out of the crown, and a rectangle
+   *  is a thing somebody MADE. Leaving the outer column of bark covered for ONE
+   *  row puts a single pixel of foliage on the trunk at each top corner, which
+   *  turns a right angle into a leaf resting on a branch. The scrub found it
+   *  (ROADMAP §"the top row of the parting keeps its 1"); the fen and the cherry
+   *  use it. Lapping the bark for one row is a tree growing round its own stem;
+   *  lapping it all the way down is a crown lying across one.
+   *
+   *  So a row of `1` is only wrong where NO row reaches 2 — a notch that never
+   *  gets as wide as the trunk is the pinch, whatever else it does.
+   *
    *  This is what turns a blob into a bean. A real broad crown doesn't come to
    *  a point over the trunk — it hangs at the sides and lifts in the middle,
    *  and the underside is concave where the branches leave the trunk. With
@@ -5756,7 +5770,20 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // edge where the foliage stopped sitting on it. A trunk that changes width
     // halfway up is the thing the eye finds first, and it was reported as the
     // notch looking wrong long before anybody counted pixels.
-    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2],
+    //
+    // EXCEPT THE TOP ROW OF THE PARTING, WHICH KEEPS ITS 1 — the scrub's finding
+    // (ROADMAP §"the top row of the parting keeps its 1"), and it is the whole
+    // difference between a notch and a cut. Flush at 2 all the way up, the gap is
+    // a clean rectangle taken out of the crown, and a rectangle is a thing
+    // somebody MADE. One row at 1 leaves the outer column of bark covered on each
+    // side — a single pixel of foliage lapping the trunk at each top corner —
+    // which turns a right angle into a leaf resting on a branch.
+    //
+    // It is the same fact the pinch above is about, used the right way round:
+    // lapping the bark for ONE row is a tree growing around its own stem, and
+    // lapping it for all five is a crown lying across one. The difference between
+    // a mistake and a detail is how much of it there is.
+    crownGaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2],
     // AND THE OVERLAP GOES WITH IT, because a gap is only legal on a row that
     // stands beside the trunk (§crownGaps — anywhere else it is a hole punched
     // in the foliage, and render/palette.test.ts checks exactly this). Five rows

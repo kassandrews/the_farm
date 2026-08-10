@@ -10073,10 +10073,21 @@ rather than from an author.
   so the rule is written in both places now: any change to stem width or crown
   scale sweeps `crownGaps` with it.
 
-  **Still unswept, and each wants a look rather than a find-and-replace**, since
-  three of them use `1` as the first step of a widening ramp and the ramp's shape
-  is the point: `birch` (…1, 1, 2, 2), `scrub` (…1, 2, 2), `fen` (…1, 2, 2, 3, 3,
-  4), `salt` (…1, 1, 1), `marsh` (…1, 1), `cinder`/`caldera` (…1, 1).
+  **And the top row of the parting keeps its 1, which is the scrub's finding and
+  NOT the bug.** Flush at 2 all the way up, the gap is a clean rectangle taken out
+  of the crown, and a rectangle is a thing somebody made; one row at 1 leaves the
+  outer column of bark covered on each side, so a single pixel of foliage laps the
+  trunk at each top corner and the right angle becomes a leaf resting on a branch.
+  Lapping the bark for one row is a tree growing round its own stem; lapping it
+  all the way down is a crown lying across one. The cherry reads `1, 2, 2, 2, 2`.
+
+  **So the rule is "no row reaches 2", not "a row is 1".** That corrects the first
+  version of this note, which listed six rows as unswept and was counting the
+  deliberate ones: `scrub` (…1, 2, 2), `fen` (…1, 2, 2, 3, 3, 4) and `birch`
+  (…1, 1, 2, 2) all part properly and are fine. **The three actually pinched are
+  the flat ones — `salt` (…1, 1, 1), `marsh` (…1, 1) and `cinder`/`caldera`
+  (…1, 1)** — whose notches never reach the trunk's width at all. Each is a
+  one-line change and none has been photographed yet.
 - **The method: a resample is not an author.** Every other region's crown went
   through the same 2 Aug stretch, and this is the first one anybody has looked at
   since. If a row's silhouette has a note explaining what its proportions are
