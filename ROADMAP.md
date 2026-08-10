@@ -10236,14 +10236,72 @@ cost at all.
   it, over a season, and the game noticed. That wants its own register and it is
   the interesting writing problem in the whole feature.
 
-### Open, and it shapes everything else
+### YOU PLANT WHAT YOU HAVE MET — settled, and it is the spine of the feature
 
-- **How you get a plant: bought, or dug up where it grows?** The seed stall is
-  simple and always available; digging needs no new verb (the shovel exists) and
-  is what makes the long grass worth a walk. Leaning to dug-up for anything with a
-  region's character and the stall for the ordinary ones — but this decides
-  whether landscaping is a shopping list or a reason to leave town, so it is not a
-  detail.
+The acquisition question above was posed as "bought, or dug up where it grows?"
+and the answer is neither: **seeing a plant in the world is what makes it
+plantable at home.** Asked for directly — *"you need to see them in the world,
+learn that they exist, to be able to recreate them at home"* — and it is better
+than either option that was on the table. The country stops being somewhere you
+harvest and becomes the thing that teaches you what is possible, which is what
+"the regions become a catalogue" was reaching for and failing to say.
+
+- **It is legal by a rule already written.** §"Finishes people give you": an
+  unlock may never become a gate, and it is safe there because *"a finish costs
+  nothing to apply, weighs nothing... a player who never warms to anybody loses
+  two colours and not one thing they can do."* A plant you have not met is the
+  same class. Nobody needs a bur oak. Someone who never leaves the plaza loses
+  ornaments and not one thing they can do. **The moment a planted thing is
+  required for anything, this whole mechanism becomes illegal.**
+- **NO CHECKLIST, NO COUNTER, NO GREYED-OUT SLOTS.** The obvious build palette —
+  seventeen slots, fourteen dimmed, `3/17` in the corner — breaks two rules at
+  once: CLAUDE.md's *"secrets are never spoiled by UI"* and the found places'
+  *"no pin, no list, no count"*. The palette is simply BIGGER than it was, with
+  no announcement that anything is missing. You learn the world has a willow in
+  it by standing next to a willow. This is the single easiest thing to get wrong
+  here and it will look like helpfulness when somebody does it.
+- **The machinery is mostly there.** `notebook.ts` already records "you have
+  stood in the blossom rows"; this is the same shape one step finer. A set of
+  species ids in the save: small schema change, easy migration. The check belongs
+  to the SIM (what is growing near you), never to the renderer (what is on
+  screen) — the second one makes discovery depend on the camera.
+- **The starter set falls out for free.** You have been standing in the meadow's
+  broadleaf and its bushes since the first morning, so the palette is never empty
+  and nothing has to be special-cased to make that true.
+- **It dissolves the far-country question**, which was left undecided: a glass
+  tree is plantable and the walk is the price, because you cannot own one without
+  having gone. If some strangeness turns out to need to stay put, that is one
+  flag on one species and it blocks nothing now.
+- **Still open: the register for the moment it happens.** The channels are told
+  apart by who caused it (`app.ts`) — found is silent, given has a person saying
+  something first. Seen is closest to found and should probably be silent too,
+  which means the discovery is that the palette has something new in it. Wanting
+  a notice here is the same instinct as wanting the counter, and should be
+  resisted on the same grounds.
+- **The catalogue, and it is mostly a curation problem rather than a drawing
+  one.** Every one of these is an authored silhouette in `biomes.ts` today and
+  becomes plantable the moment species stop belonging to regions. By the job it
+  does in a garden: the SHADE TREE (bur oak, broadleaf); ORNAMENTALS (cherry,
+  birch — the only bright trunk in the game); EVERGREEN STRUCTURE, for hiding a
+  wall (lodgepole and Jeffrey pine, both of which already have two forms so a row
+  of them is not a stamp); CHARACTER TREES (willow for a waterside, and the SNAG,
+  a dead tree on purpose, which costs nothing and will be somebody's favourite
+  thing in the game); HEDGING (plain bush, thorn); and two plants that already
+  fruit for free — blueberry, and the prickly pear, whose tunas are a real fruit.
+
+  **New art wanted: a FLOWERING SHRUB**, and it is the one genuine gap. Everything
+  owned is a tree, a plain bush, or a flower at ankle height; there is nothing at
+  knee-to-waist with colour on it, which is the piece that makes a planted garden
+  read as designed rather than scattered.
+
+  **Fruit trees: the apple, plus at most one more.** The apple is cheap (a
+  broadleaf crown and fruit paint). Stop at two: each fruit wants its own
+  cosmetic unlock, and four of those is a collection while five is a chore.
+- **Ground plants are placed one at a time — but a drag may paint them.** Settled.
+  The object model is one plant, one placement, exactly like a tree; the GESTURE
+  may be a drag, which build mode already does for walls, so a bed of daisies is
+  not forty taps. Keeping the model singular is what stops flowers quietly
+  becoming a flooring material.
 - **Maturity in DAYS, not years.** Seasons come off the real calendar, so "fruits
   in a year" is a literal year of somebody's life. The payoff being bought is
   *"this comes back"*, not *"you waited"* — a bush should establish in about a
