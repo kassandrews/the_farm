@@ -232,7 +232,12 @@ function standingOn(world: WorldState, x: number, y: number, layer: Layer): bool
  *  answers even though both are furniture. */
 function placingSomethingSolid(tool: BuildTool): boolean {
   if (isFurnitureTool(tool)) return furnitureDef(tool).solid;
-  if (tool === "floor" || tool === "erase") return false;
+  if (tool === "floor" || tool === "erase" || tool === "grass") return false;
+  // A planted tree IS solid — but plantAt refuses the cell you stand on the
+  // same way the wall gate does, from its own ground checks, and the flora
+  // tool never reaches the gate this function feeds. Solid-when-grown is the
+  // honest answer for the one caller left (the reticle's preview).
+  if (tool === "flora") return true;
   return structureDef(tool).solid;
 }
 
@@ -579,7 +584,9 @@ export function tick(world: WorldState, dt: number, now: number): void {
  *  copy of this switch would be the thing that drifts. */
 export function toolFinishes(tool: BuildTool): SkinClass[] {
   if (tool === "floor") return FLOOR_BUILD.finishes;
-  if (tool === "erase") return [];
+  // The garden tools wear no finish: a plant's colours are its species'
+  // (content/flora.ts §skin), and grass is grass.
+  if (tool === "erase" || tool === "flora" || tool === "grass") return [];
   if (isFurnitureTool(tool)) return furnitureDef(tool).finishes;
   return structureDef(tool).finishes;
 }
@@ -656,7 +663,10 @@ function whereToFind(need: Partial<Record<ItemId, number>>): string {
  *
  *  Erase is free and refunds; it wears no finish and has no price to name. */
 export function buildCost(tool: BuildTool, finish: SkinId): Cost {
-  if (tool === "erase") return {};
+  // The garden is free — you met it, you may plant it (DESIGN §The garden);
+  // the space is the cost. Grass likewise: un-digging should not bill you for
+  // the lawn you already had.
+  if (tool === "erase" || tool === "flora" || tool === "grass") return {};
   const price =
     tool === "floor"
       ? FLOOR_BUILD.cost
@@ -1549,6 +1559,23 @@ function placeOrRemove(
       return { changed: true, message: "Board lifted.", broke: false };
     }
     return { changed: false, message: "Nothing built here.", broke: false };
+  }
+
+  // GRASS, painted back over bare dirt — the garden wing's ground cover. Before
+  // the construction gate on purpose: regrassing is un-digging, not building,
+  // and the only ground it answers to is the ground.
+  if (tool === "grass") {
+    const here = tileAt(world, x, y);
+    if (here !== DIRT) {
+      return { changed: false, message: "Grass wants bare dirt to take to.", broke: false };
+    }
+    setTile(world, x, y, GRASS);
+    return { changed: true, message: "Grass. It was always going to win eventually.", broke: false };
+  }
+  // The flora tool routes to sim/garden.ts §plantAt in the UI layer and should
+  // never arrive here; refusing beats planting something structural by accident.
+  if (tool === "flora") {
+    return { changed: false, message: "That goes in through the garden.", broke: false };
   }
 
   // Ground that won't take construction, said BEFORE the price. The three

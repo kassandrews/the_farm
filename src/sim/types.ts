@@ -527,4 +527,20 @@ export type Tool = "dig" | "gather" | "plant" | "water";
 /** A tool BUILD MODE applies, to a tapped tile. `erase` takes back whatever is
  *  there and refunds it — building and un-building must never quietly drain
  *  you. */
-export type BuildTool = "floor" | "wall" | "door" | "window" | "erase" | FurnitureId;
+export type BuildTool =
+  | "floor"
+  | "wall"
+  | "door"
+  | "window"
+  | "erase"
+  /** The garden's one tool (DESIGN §The garden). WHICH plant rides beside it
+   *  in the UI (ui/app.ts §gardenFlora), the way a finish rides beside a wall
+   *  — the tool is the verb, the species is the loaded material. The build
+   *  pipeline routes it to sim/garden.ts §plantAt and it never reaches
+   *  placeOrRemove's structure arms. */
+  | "flora"
+  /** Grass, painted back over bare dirt — ground cover, not a species: it has
+   *  no record, no growth and no species entry, because a lawn is a TILE and
+   *  always was (the same fact that lets dig remove it). */
+  | "grass"
+  | FurnitureId;

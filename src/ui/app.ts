@@ -55,6 +55,9 @@ import type { MeadowImport } from "../sim/meadow_import";
 import { recall, remember, hasMemory } from "../sim/memory";
 import { count } from "../sim/inventory";
 import { beginStroke, captureCell, endStroke, undoStroke, canUndo, undoLabel } from "../sim/undo";
+import { plantAt, knownFlora } from "../sim/garden";
+import { floraDef, type FloraId } from "../content/flora";
+import { BIOMES, bloomsOf } from "../content/biomes";
 import { qualify, assign, beds, rehomeAcrossStroke, bedKeys, pendingRehome, DISQUALIFIER_TEXT } from "../sim/assign";
 import { counterBatches, cabinet, cabinetEmpty, file } from "../sim/filings";
 import { journalPages, journalEmpty } from "../sim/notebook";
@@ -176,14 +179,28 @@ const TOOLS: { id: Tool; icon: IconName; label: string; hint: string; key?: stri
  *  in this table because it is still a group in the tool sense; `tab: false` is
  *  what keeps it out of the strip. */
 const BUILD_GROUPS = [
-  { id: "structure", label: "Build", tab: false },
-  { id: "seating", label: "Seating", tab: true },
-  { id: "surface", label: "Tables", tab: true },
-  { id: "sleep", label: "Beds", tab: true },
-  { id: "storage", label: "Storage", tab: true },
-  { id: "decor", label: "Light", tab: true },
+  { id: "structure", label: "Build", tab: false, wing: "none" },
+  { id: "seating", label: "Seating", tab: true, wing: "furniture" },
+  { id: "surface", label: "Tables", tab: true, wing: "furniture" },
+  { id: "sleep", label: "Beds", tab: true, wing: "furniture" },
+  { id: "storage", label: "Storage", tab: true, wing: "furniture" },
+  { id: "decor", label: "Light", tab: true, wing: "furniture" },
+  // THE GARDEN WING (DESIGN §The garden) — the same two-level move furniture
+  // made, made again: GARDEN is a door in the landing row, and these are what
+  // it opens onto. A `wing` field rather than a third level, because the strip
+  // shows one wing at a time and the back chip is the same way out of both.
+  { id: "gtrees", label: "Trees", tab: true, wing: "garden" },
+  { id: "gbushes", label: "Bushes", tab: true, wing: "garden" },
+  { id: "gflowers", label: "Flowers", tab: true, wing: "garden" },
+  { id: "gground", label: "Grass", tab: true, wing: "garden" },
 ] as const;
 type BuildGroup = (typeof BUILD_GROUPS)[number]["id"];
+type Wing = (typeof BUILD_GROUPS)[number]["wing"];
+
+/** Which wing a group belongs to — the strip shows one wing's tabs at a time. */
+function wingOf(g: BuildGroup): Wing {
+  return BUILD_GROUPS.find((b) => b.id === g)?.wing ?? "none";
+}
 
 /** Device px per scene px in a catalogue tile. A WHOLE NUMBER, and the sprite
  *  rule is the whole reason (CLAUDE.md): the art is authored at 16 scene px to
@@ -194,7 +211,22 @@ const THUMB_SCALE = 2;
 
 /** Everything behind the Furniture button — derived from the table rather than
  *  listed again, so a new category is one row and not two places to remember. */
-const FURNITURE_GROUPS: BuildGroup[] = BUILD_GROUPS.filter((g) => g.tab).map((g) => g.id);
+const FURNITURE_GROUPS: BuildGroup[] = BUILD_GROUPS.filter((g) => g.wing === "furniture").map(
+  (g) => g.id,
+);
+
+/** The garden's categories, same derivation — one row in the table is one tab
+ *  in the wing, and nothing is listed twice. */
+const GARDEN_GROUPS: BuildGroup[] = BUILD_GROUPS.filter((g) => g.wing === "garden").map(
+  (g) => g.id,
+);
+
+/** Which garden tab a species files under. */
+const KIND_GROUP: Record<"tree" | "bush" | "flower", BuildGroup> = {
+  tree: "gtrees",
+  bush: "gbushes",
+  flower: "gflowers",
+};
 
 const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string; group: BuildGroup }[] = [
   { id: "floor", icon: "plank", label: "Floor", hint: "Lay a floor. Boards or flagstones — pick the finish below.", group: "structure" },
@@ -238,8 +270,21 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
  *  drops into "Undo the wall" — after twenty minutes of building, the thing you
  *  regret and the thing you did last aren't reliably the same, and naming it is
  *  how the button says which one you're getting. */
+/** Compose a tint over a base — the renderer's blend, restated for one swatch.
+ *  The base is the summer canopy (content/seasons.ts), because the swatch shows
+ *  the plant at its most itself and July is the game's baseline month. */
+function mixHex(base: string, tint: string, amount: number): string {
+  const b = parseInt(base.slice(1), 16);
+  const t = parseInt(tint.slice(1), 16);
+  const ch = (shift: number): number =>
+    Math.round(((b >> shift) & 0xff) * (1 - amount) + ((t >> shift) & 0xff) * amount);
+  return `#${((ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).padStart(6, "0")}`;
+}
+
 function buildToolLabel(t: BuildTool): string {
   if (t === "erase") return "taking that down";
+  if (t === "flora") return "the planting";
+  if (t === "grass") return "the grass";
   const def = BUILD_TOOLS.find((b) => b.id === t);
   return def ? `the ${def.label.toLowerCase()}` : "that";
 }
@@ -283,6 +328,13 @@ export class App {
   /** Which category the Furniture button reopens on. Session-only and pointedly
    *  not saved: it is where you were a minute ago, not a setting. */
   private lastFurnitureGroup: BuildGroup = "seating";
+  /** The garden wing's own memory of where you were, `lastFurnitureGroup`'s
+   *  twin. */
+  private lastGardenGroup: BuildGroup = "gtrees";
+  /** WHICH plant the flora tool is loaded with — the species rides beside the
+   *  tool the way a finish rides beside a wall (types.ts §BuildTool). Never in
+   *  the save: what you were about to plant is not a fact about the town. */
+  private gardenFlora: FloraId | null = null;
   /** Tiles already painted during the current drag, so dragging back and forth
    *  over one tile doesn't re-charge or re-message for it. */
   private painted = new Set<string>();
@@ -323,6 +375,7 @@ export class App {
       (t) => this.selectBuildTool(t),
       (g) => this.selectBuildGroup(g),
       () => this.openFurniture(),
+      () => this.openGarden(),
       () => this.toggleBuild(),
       () => this.rotate(),
       () => this.doUndo(),
@@ -2551,6 +2604,10 @@ export class App {
         // being a different key would make the pair harder than the trip.
         if (this.buildGroup === "structure") this.openFurniture();
         else this.selectBuildGroup("structure");
+      } else if (k === "g" && this.buildTool) {
+        // The garden door, F's twin — same toggle, same build-mode-only rule.
+        if (this.buildGroup === "structure") this.openGarden();
+        else this.selectBuildGroup("structure");
       } else if (k === "e") {
         this.tryTalkNearest();
       } else if (k === "-" || k === "_") {
@@ -2817,6 +2874,26 @@ export class App {
     this.selectBuildGroup(live.includes(this.lastFurnitureGroup) ? this.lastFurnitureGroup : live[0]);
   }
 
+  /** The garden door, `openFurniture`'s twin. Surface only — nothing grows in
+   *  the rock and the button is not there to press (the same hiding the
+   *  furniture door does in a tunnel). Does not touch the held tool, for the
+   *  browsing reason `selectBuildGroup` states. */
+  private openGarden(): void {
+    if (this.layer() !== "surface") return;
+    this.selectBuildGroup(
+      GARDEN_GROUPS.includes(this.lastGardenGroup) ? this.lastGardenGroup : GARDEN_GROUPS[0],
+    );
+  }
+
+  /** Load the flora tool with a species — a chip tap in the garden wing. The
+   *  chip row is the palette and the tool is the verb, exactly the finish
+   *  row's split. */
+  private selectFlora(id: FloraId): void {
+    this.gardenFlora = id;
+    this.buildTool = "flora";
+    this.syncToolUi();
+  }
+
   /** Turn the next piece a quarter turn. Only meaningful for furniture, so the
    *  control only appears when a furniture tool is held. */
   private rotate(): void {
@@ -2835,6 +2912,10 @@ export class App {
     const live = new Set(
       BUILD_TOOLS.filter((b) => toolAllowedOn(b.id, this.layer())).map((b) => b.group),
     );
+    // The garden's tabs hold no BUILD_TOOLS — their tools are the species
+    // chips, rebuilt per sync — so their liveness is the wing's own rule:
+    // the surface grows things and the rock does not.
+    if (this.layer() === "surface") for (const g of GARDEN_GROUPS) live.add(g);
     // If the tab we're on has nothing left in it — you climbed down a shaft with
     // Seating open — move to one that does, rather than showing an empty row and
     // no way to understand why.
@@ -2842,22 +2923,26 @@ export class App {
       const first = BUILD_GROUPS.find((g) => live.has(g.id));
       if (first) this.buildGroup = first.id;
     }
+    // One WING's tabs at a time: browsing beds should not show Trees, and the
+    // back chip is the same way out of both wings.
+    const wing = wingOf(this.buildGroup);
     for (const [id, btn] of this.hud.groupButtons) {
       btn.classList.toggle("selected", id === this.buildGroup);
-      btn.style.display = live.has(id) ? "" : "none";
+      btn.style.display = live.has(id) && wingOf(id) === wing ? "" : "none";
     }
     // The two levels. Structure is the level you land in and has no tab of its
-    // own, so the strip is simply absent there — and the Furniture button is
-    // absent the whole time you are inside furniture, because the way back is
+    // own, so the strip is simply absent there — and the two door buttons are
+    // absent the whole time you are inside either wing, because the way back is
     // the "‹ Build" chip at the head of the strip and two ways out of one room
     // is one more than the room needs.
-    const inFurniture = this.buildGroup !== "structure";
-    this.hud.groupTabs.style.display = inFurniture ? "" : "none";
+    const inWing = this.buildGroup !== "structure";
+    this.hud.groupTabs.style.display = inWing ? "" : "none";
     // Nothing to open in a tunnel, where the rock allows two structure tools and
     // no furniture at all. Hidden rather than refusing, the same call the tools
     // themselves make one line down.
     const anyFurniture = FURNITURE_GROUPS.some((g) => live.has(g));
-    this.hud.furniture.style.display = !inFurniture && anyFurniture ? "" : "none";
+    this.hud.furniture.style.display = !inWing && anyFurniture ? "" : "none";
+    this.hud.garden.style.display = !inWing && this.layer() === "surface" ? "" : "none";
     // Only ever one tab's worth of tools at a time, and that IS the fix: the row
     // used to hold every tool in the game, which fitted while there were eleven
     // and did not at twenty-two.
@@ -2867,10 +2952,21 @@ export class App {
       // that refuse. Hidden, not disabled: a row of greyed buttons in a tunnel
       // reads as the game being broken, where two buttons read as what the rock
       // is for.
-      const inTab = btn.dataset.group === this.buildGroup;
+      const inTab =
+        btn.dataset.group === this.buildGroup ||
+        // ERASE FOLLOWS YOU INTO THE GARDEN: uprooting is erase and only erase
+        // (DESIGN §The garden), so the one tool that takes things back cannot
+        // be a walk away from the wing that plants them.
+        (id === "erase" && wing === "garden");
       btn.style.display = inTab && toolAllowedOn(id, this.layer()) ? "" : "none";
     }
-    this.renderer.setBuildView(building);
+    // THE FLATTEN BELONGS TO THE TOOL, NOT THE MODE (DESIGN §Structures): a
+    // garden tool places in the full living view, because you judge a tree
+    // against the world as it actually looks and composing a view inside a
+    // muted view is impossible. Erase keeps the plan view even in the garden —
+    // taking things back is exactly when you want to see the bones.
+    const gardenHeld = this.buildTool === "flora" || this.buildTool === "grass";
+    this.renderer.setBuildView(building && !gardenHeld);
     // Leaving build mode puts the camera back on the player, and this is the one
     // choke point every exit goes through — the palette toggle, Escape, picking
     // an ACT tool, and climbing a shaft all land here. A pan that outlived its
@@ -2903,7 +2999,77 @@ export class App {
     this.syncFinishUi();
     this.syncFurnitureTiles();
     this.syncSeedUi();
+    this.syncGardenUi();
     this.syncUndoUi();
+  }
+
+  /** Rebuild the species chips for whichever garden tab is open.
+   *
+   *  THE ROW IS THE SEEN SET AND NEVER THE COMPLEMENT (DESIGN §The garden): a
+   *  species you haven't met is absent, not greyed — no counts, no gaps, no
+   *  checklist. The row simply grows as you travel, which is the entire
+   *  discovery UI, and the hint on each chip is where you met it: a travel
+   *  journal line, never an enumeration.
+   *
+   *  Chips rather than art tiles, deliberately. A tree's sprite is up to 46px
+   *  tall and a catalogue tile that big blows the row (ROADMAP §the menu work);
+   *  a swatch in the species' own crown ink plus its name is the finish row's
+   *  answer, and the finish row is the pattern this whole wing rides. */
+  private syncGardenUi(): void {
+    const row = this.hud.gardenTools;
+    const world = this.world;
+    if (!world || wingOf(this.buildGroup) !== "garden") {
+      row.replaceChildren();
+      return;
+    }
+    const chips: HTMLElement[] = [];
+    if (this.buildGroup === "gground") {
+      // Grass is ground cover, not a species (types.ts §BuildTool.grass) — one
+      // chip, always available, in the lawn's own green.
+      const chip = el("button", { class: "finish-chip", ariaLabel: "Grass" }, [
+        el("span", { class: "finish-swatch" }, []),
+        el("span", { class: "finish-name" }, ["Grass"]),
+      ]);
+      (chip.firstElementChild as HTMLElement).style.background = "#7aa85a";
+      chip.classList.toggle("chosen", this.buildTool === "grass");
+      chip.addEventListener("click", () => {
+        this.buildTool = "grass";
+        this.syncToolUi();
+      });
+      hoverHint(chip, "Grass — paints bare dirt back to lawn. Drag for a run of it.");
+      chips.push(chip);
+    } else {
+      const kind = (Object.keys(KIND_GROUP) as (keyof typeof KIND_GROUP)[]).find(
+        (k) => KIND_GROUP[k] === this.buildGroup,
+      );
+      for (const id of knownFlora(world, kind)) {
+        const def = floraDef(id);
+        const skin = BIOMES[def.skin];
+        // The species' own ink: crown for the woody kinds, the bloom's accent
+        // for a flower — the swatch is the plant's colour, not its region's
+        // grass. A crown is a TINT (DESIGN §Biomes: a direction and how far to
+        // go), so it has to be composed over the summer canopy the same way
+        // the renderer composes it — the meadow's is `#000000 at 0`, which
+        // painted the first swatch black and the ordinary tree goth.
+        const bloomKit =
+          def.kind === "flower"
+            ? def.bloom === "decor"
+              ? skin.decor
+              : bloomsOf(skin).find((k) => k.season === def.bloom)
+            : undefined;
+        const colour = bloomKit?.accent ?? mixHex("#4d8a45", skin.crown.color, skin.crown.amount);
+        const chip = el("button", { class: "finish-chip", ariaLabel: def.name }, [
+          el("span", { class: "finish-swatch" }, []),
+          el("span", { class: "finish-name" }, [def.name]),
+        ]);
+        (chip.firstElementChild as HTMLElement).style.background = colour;
+        chip.classList.toggle("chosen", this.buildTool === "flora" && this.gardenFlora === id);
+        chip.addEventListener("click", () => this.selectFlora(id));
+        hoverHint(chip, `${def.name} — ${def.hint}.`);
+        chips.push(chip);
+      }
+    }
+    row.replaceChildren(...chips);
   }
 
   /** Paint the catalogue tiles for whichever furniture category is open.
@@ -3097,16 +3263,25 @@ export class App {
     this.painted.add(key);
 
     captureCell(this.world, x, y); // before the edit — it snapshots the old state
-    const res = buildAt(
-      this.world,
-      this.buildTool,
-      x,
-      y,
-      Date.now(),
-      this.facing,
-      this.layer(),
-      sweeping,
-    );
+    // The flora tool routes to the garden and everything else to the build
+    // pipeline — one branch, here, so the stroke machinery above (undo, the
+    // painted set, the two-finger pan) never learns there are two kinds of
+    // placing.
+    const res =
+      this.buildTool === "flora"
+        ? this.gardenFlora
+          ? plantAt(this.world, this.gardenFlora, x, y, Date.now())
+          : { changed: false, message: "Pick a plant first.", broke: false }
+        : buildAt(
+            this.world,
+            this.buildTool,
+            x,
+            y,
+            Date.now(),
+            this.facing,
+            this.layer(),
+            sweeping,
+          );
     // Only speak up when something happened or the player is actually short of
     // materials. Dragging across ground you can't build on shouldn't natter.
     if (res.changed) {
@@ -3383,6 +3558,10 @@ interface HudRefs {
   groupTabs: HTMLElement;
   /** The way in to furniture, and the one tool-row button that holds no tool. */
   furniture: HTMLElement;
+  /** The way in to the garden — the second no-tool door (DESIGN §The garden). */
+  garden: HTMLElement;
+  /** The species chips, refilled per garden tab by syncGardenUi(). */
+  gardenTools: HTMLElement;
   /** The whole build tray. Kept only so the toast can measure it and sit above
    *  it — the bar's height changes with the held tool, so no fixed offset in the
    *  stylesheet can clear it. */
@@ -3399,6 +3578,7 @@ function buildHud(
   onBuildTool: (t: BuildTool) => void,
   onBuildGroup: (g: BuildGroup) => void,
   onFurniture: () => void,
+  onGarden: () => void,
   onBuild: () => void,
   onRotate: () => void,
   onUndo: () => void,
@@ -3555,9 +3735,26 @@ function buildHud(
   ]);
   furniture.addEventListener("click", onFurniture);
   hoverHint(furniture, "Furniture — chairs, tables, beds, storage, lamps.  (F)");
+  // The garden — the landing row's second no-tool door, in the series with the
+  // first (DESIGN §The garden: everything green is built, from one grammar).
+  // The seedling the ACT rail is about to give up, doing the same job one mode
+  // over.
+  const garden = el("button", { class: "tool garden-btn", ariaLabel: "Garden" }, [
+    iconEl("seedling", SCALE.button),
+  ]);
+  garden.addEventListener("click", onGarden);
+  hoverHint(garden, "Garden — trees, bushes, flowers, and grass. What you've met, you can plant.  (G)");
   const eraseBtn = buildButtons.find(([id]) => id === "erase")?.[1];
-  if (eraseBtn) buildTools.insertBefore(furniture, eraseBtn);
-  else buildTools.append(furniture);
+  if (eraseBtn) {
+    buildTools.insertBefore(furniture, eraseBtn);
+    buildTools.insertBefore(garden, eraseBtn);
+  } else {
+    buildTools.append(furniture, garden);
+  }
+  // The species chips live in the tool row itself, where the tools of the open
+  // tab would be — they ARE that tab's tools, rebuilt per sync.
+  const gardenTools = el("div", { class: "garden-tools" });
+  buildTools.append(gardenTools);
 
   // The tabs. Text rather than icons, because a group is a WORD — "Seating" is
   // one glance and a picture of a category is a riddle. They sit above the tool
@@ -3654,7 +3851,7 @@ function buildHud(
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, survey, flash, giveUp, toolButtons, buildButtons, groupButtons, groupTabs, furniture, buildFinishes, seedVarieties, buildBar, build, rotate, undo, zoom };
+  return { root: hud, clock, survey, flash, giveUp, toolButtons, buildButtons, groupButtons, groupTabs, furniture, garden, gardenTools, buildFinishes, seedVarieties, buildBar, build, rotate, undo, zoom };
 }
 
 // --- Panel helpers ------------------------------------------------------------

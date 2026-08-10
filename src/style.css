@@ -277,6 +277,14 @@ select {
   gap: 8px;
 }
 
+/* The garden's species chips ride in the tool row itself — they ARE the open
+   tab's tools (ui/app.ts §syncGardenUi). `display: contents` hands the chips to
+   the row's own flex layout, so they wrap and gap exactly as the tool buttons
+   beside them do and the container adds no box of its own. */
+.garden-tools {
+  display: contents;
+}
+
 .build-finishes:empty {
   display: none;
 }

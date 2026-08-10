@@ -80,6 +80,16 @@ export function plantAt(
   if (structureAt(world, x, y) || furnitureAt(world, x, y)) {
     return { changed: false, message: "There's something built there.", broke: false };
   }
+  // A tree under your own feet would entomb you — the wall gate's rule
+  // (game.ts §placingSomethingSolid), asked here because the flora tool
+  // routes around that gate. Flowers are walkable and exempt.
+  if (def.kind !== "flower" && world.player.layer === "surface") {
+    const px = Math.round(world.player.x);
+    const py = Math.round(world.player.y);
+    if (px === x && py === y) {
+      return { changed: false, message: "Not where you're standing.", broke: false };
+    }
+  }
   const ground = tileAt(world, x, y);
   // A flower is a mark on GRASS and nothing else — the renderer draws it in
   // the grass pass, and a flower on bare dirt would be invisible, which is a
