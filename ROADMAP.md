@@ -10702,6 +10702,125 @@ Escape at the landing took the wing branch, put you back at the landing, and
 everything reads `buildGroup` during the sync that sets it, except the one thing
 that reads it on the next keystroke.
 
+## The town gets a street plan (10 Aug 2026)
+
+Asked for directly: *"the town needs an overhaul. building placement. building
+aesthetics. landscaping. paths."* This is the first of those — placement and the
+paths, plus the clearing that had to come with them. Aesthetics, landscaping and
+the farm plot follow.
+
+**What the town was.** Six rectangles at whatever coordinates each one was
+written at, with generated forest growing between and against them, and no paved
+route anywhere: every door in town opened onto grass. The plaza was a stone
+rectangle dropped in a wood. Nothing had been laid out; things had been *placed*,
+one at a time, each avoiding the last.
+
+### The constraint that decides the whole shape
+
+**A door has to be on a SOUTH wall or it has no face to be drawn on.** That is a
+renderer fact and it is not being lifted here. Everything follows from it: every
+building is entered from below, so a coherent townscape cannot be a ring around
+the square — it has to be **rows of fronts with the streets running east–west
+along them**. Laid any other way you get the town that was there.
+
+### Settled here, don't relitigate
+
+- **Two front lines, and every building around the square is on one.**
+  `FRONT_N` (y −5) carries the museum, the town hall and the heap; `FRONT_S`
+  (y 2) carries Prudence's house and the shop, level with the plaza's own bottom
+  row so the pair frame the square's south corners. The seed stall is the one
+  exemption and it is deliberate: it is not around the square, it stands out on
+  the lane with its front on the spur — the last shopfront you pass walking to
+  your own ground, which is what a seed stall is for.
+- **Every street is TWO ROWS deep.** The first draft used one and it was wrong on
+  screen, which is the only place it could have been caught: a single row between
+  the museum's south wall and the back of Prudence's house is a crack with a
+  doorstep in it, and you could not see that the museum had a front at all.
+- **The south street runs UNBROKEN across the whole town** rather than in two
+  arms like the north one. The plaza stops at y 2, so there is no already-paved
+  middle to leave a gap for — and one continuous frontage under the square is
+  what makes the place read as a street with a square on it rather than as a
+  square with two spurs off it.
+- **The streets are ORDINARY FLOOR CELLS, stamped like the buildings.** Same
+  argument the buildings themselves were given: a path you can take up, repave
+  and extend is the same object as a path the town laid, and the alternative is a
+  second notion of paving that only the generator can write. You can quarry the
+  high street.
+- **Cobble, because granite is byte for byte the plaza's own colour.** The museum
+  learned that one already. The square is dressed stone, the streets are cobbles,
+  and you can see where one stops.
+- **The town clears its own ground** (`inTownClearing`), per feature and never as
+  one bounding box. A single box round the town is a 30-by-40 bald rectangle you
+  can walk the corner of; clearing each building and each street with a two-tile
+  margin makes the outline the town's own shape. Two tiles and not one, because
+  at one the alleys between the fronts keep a tree wedged in each.
+- **The clearing is checked BELOW the water, and that is load-bearing.** Cleared
+  ground reaches past the museum's west wall and the riverside spot's channel
+  runs there; clearing above the water dammed the town's own promised river with
+  three columns of lawn. It clears what GROWS. It does not move water and it does
+  not lift the plaza — both of those are the land itself.
+- **`townMown` now thins the CANOPY, not just the mushrooms, with a floor of
+  0.25.** The ground between the houses was already tidy and the wood over it was
+  full forest. At zero the twenty tiles around the plaza go bald, which reads as
+  a lawn mown to the horizon and puts your first armful of wood a two-minute walk
+  away; a quarter leaves a scattering you can see past and chop. Rocks are
+  deliberately not thinned — a boulder on the common is a boulder nobody moved.
+- **The riverside anchor moved from x −14 to x −20.** The museum coming south
+  onto the street line put the westernmost building in town inside the six-tile
+  water cap of the bridge row, and the channel it capped was the town's own
+  promised river — so a third of seeds arrived with a dry sandy trench where the
+  river should be. Shrinking the cap would let water lap the museum; the museum
+  has nowhere to go. Measured after: water near town went DOWN, 305 tiles to 235
+  on average across forty riverside seeds.
+- **Prudence's house is six by five, one wider than it was, and the extra column
+  is load-bearing.** At five the interior is 3×3 with a piece in every corner, and
+  two facts stop being demonstrable in the only authored house there is: that home
+  follows the bed needs somewhere else in the room to put one, and that a lamp is
+  delight and never a gate needs a free cell beside a bed. Both were asserted
+  against a room that had run out of floor.
+
+### v37 is the first migration that takes something down
+
+Every other rung on the ladder only ever added. Four buildings moved, and a stamp
+alone is additive — a deployed town would have ended up with eight buildings in
+it, four of them ghosts still holding counters somebody's schedule points at.
+
+Two things it had to learn the hard way:
+
+- **The old coordinates are frozen in the rung**, not read from `TOWN_BUILDINGS`.
+  A migration that asked the live table where the museum "was" would demolish
+  wherever it IS the next time somebody moves it.
+- **It clears the NEW footprints too, not only the old ones.** A save that climbed
+  from far enough back has already had the *current* town stamped into it by an
+  earlier rung (v13 rebuilds the museum, v15 re-stamps the lot), so by the time
+  v37 runs the museum may be standing in its new place already. Demolishing only
+  the old rectangle ate the overlapping half and left the rest, and the re-stamp
+  refused the ruin as occupied. A v12 save came out with a museum missing two
+  corners.
+- **All-or-nothing per building**: if the player has built or planted where one is
+  going, the pair is left entirely alone. Taking the old one down when the stamp
+  is going to refuse the new one costs them a building and gives nothing back.
+- What it cannot preserve, stated plainly: a repaint on one of the four, and
+  anything built onto its outside. v27 went out of its way to protect a repaint
+  and could, because the building stayed put. A repainted wall of a building that
+  has moved is a wall in a field.
+
+**And it broke the ladder's testing habit.** Half a dozen tests asserted their
+own rung's effect after a FULL climb, which was safe while migrations only added
+fields — a later rung could not disturb an earlier one's evidence. v37 rewrites
+the very cells the v27 and v28 museum rungs are about. `MIGRATIONS` is exported
+now and those tests climb only their own stretch (`climb(raw, 27, 30)`). A rung
+is a pure function; testing it as one is the fix.
+
+### Loose ends this opened
+
+- **Riverside towns have a lot of beach, and now you can see it.** Felling the
+  canopy over the town uncovered shore that was always there. Measured as not a
+  regression (the numbers above), so it is a paint-and-planting question for the
+  landscaping pass rather than a placement bug.
+- **The lane ends in grass.** It runs to y 12 and stops, because what it is
+  supposed to arrive at — the farm plot and its gate — is the next piece of work.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

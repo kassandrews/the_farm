@@ -254,7 +254,7 @@ describe("the postcard", () => {
     const w = worldWithBoards(0);
     const now = new Date(2026, 6, 15, 12).getTime(); // July: nobody's month but the tomato's
     w.lastSaved = now - 5 * HOUR;
-    ripe(w, 4, 4, "radish", now);
+    ripe(w, 8, 8, "radish", now);
     const lines = summarizeAway(w, now, makeRng(2));
     expect(lines.join(" ")).toContain("radish");
     expect(lines.join(" ")).not.toContain("carrot");
@@ -264,9 +264,9 @@ describe("the postcard", () => {
     const w = worldWithBoards(0);
     const now = new Date(2026, 6, 15, 12).getTime();
     w.lastSaved = now - 5 * HOUR;
-    ripe(w, 4, 4, "radish", now);
-    ripe(w, 5, 4, "radish", now);
-    ripe(w, 6, 4, "potato", now);
+    ripe(w, 8, 8, "radish", now);
+    ripe(w, 9, 8, "radish", now);
+    ripe(w, 10, 8, "potato", now);
     const text = summarizeAway(w, now, makeRng(2)).join(" ");
     expect(text).toContain("2 radishes");
     expect(text).not.toContain("potato");
@@ -277,8 +277,8 @@ describe("the postcard", () => {
     const w = worldWithBoards(0);
     const now = new Date(2026, 6, 15, 12).getTime();
     w.lastSaved = now - 5 * HOUR;
-    ripe(w, 4, 4, "radish", now);
-    ripe(w, 5, 4, "potato", now);
+    ripe(w, 8, 8, "radish", now);
+    ripe(w, 9, 8, "potato", now);
     const text = summarizeAway(w, now, makeRng(2)).join(" ");
     expect(text).toContain("2 crops");
   });
@@ -287,13 +287,13 @@ describe("the postcard", () => {
     const october = new Date(2026, 9, 15, 12).getTime();
     const w = worldWithBoards(0);
     w.lastSaved = october - 5 * HOUR;
-    ripe(w, 4, 4, "pumpkin", october);
+    ripe(w, 8, 8, "pumpkin", october);
     expect(summarizeAway(w, october, makeRng(2)).join(" ")).toContain("own month");
 
     // …and not for a variety whose month it isn't.
     const w2 = worldWithBoards(0);
     w2.lastSaved = october - 5 * HOUR;
-    ripe(w2, 4, 4, "radish", october);
+    ripe(w2, 8, 8, "radish", october);
     expect(summarizeAway(w2, october, makeRng(2)).join(" ")).not.toContain("own month");
   });
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { newWorld, loadedFinish } from "./game";
-import { serialize, deserialize, migrateSave, SCHEMA_VERSION } from "./save";
+import { serialize, deserialize, migrateSave, MIGRATIONS, SCHEMA_VERSION } from "./save";
 import { tileKey, shafts, RECLAIM_MS, floorFinish } from "./world";
 import { SHAFT, CAVE_FLOOR, DIRT, FLOOR } from "../content/tiles";
 import { TOWN_BUILDINGS, TOWN_FIXTURES, footprintCells } from "../content/town";
@@ -16,6 +16,20 @@ import { startPlay, playing } from "./play";
 import { makeRng } from "./rng";
 import { MUSEUM } from "../content/museum";
 import { gain, hasMet } from "./met";
+
+
+/** Climb the ladder from `from` up to and including the rung that lands on `to`.
+ *
+ *  Tests about a specific rung use this rather than `migrateSave`, which always
+ *  runs to the top. That was harmless while every rung only added fields; v37
+ *  moves four buildings, so it rewrites the cells the museum rungs are about and
+ *  a full climb can no longer show you what happened in the middle. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function climb(raw: Record<string, unknown>, from: number, to: number): any {
+  let out = raw;
+  for (let v = from; v < to; v++) out = MIGRATIONS[v](out);
+  return out;
+}
 
 function freshWorld() {
   return newWorld({ name: "Keeper", form: "menace", spot: "riverside", seed: 99 });
@@ -97,8 +111,11 @@ describe("migrations", () => {
     const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
     delete w.build;
     (w.overrides as Record<string, number>)["4,4"] = 2; // a board they laid
-    const migrated = migrateSave({ ...w, schemaVersion: 4 })!;
-    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    // This rung alone. Later rungs stamp the town into `build` on purpose (v7,
+    // v15, v37) — "an empty structure layer" is a claim about what v5 backfills,
+    // not about what a save looks like at the top of the ladder.
+    const migrated = climb({ ...w, schemaVersion: 4 }, 4, 5);
+    expect(migrated.schemaVersion).toBe(5);
     expect(migrated.build).toEqual({});
     expect(migrated.overrides["4,4"]).toBe(2);
   });
@@ -525,8 +542,10 @@ describe("v16 → v17: the underground", () => {
   });
 
   it("rekeys nothing on the surface", () => {
+    // This rung and no further: v37 re-lays the town's streets and takes four
+    // buildings' floors up, so a full climb legitimately changes `overrides`.
     const before = v16Save();
-    const migrated = migrateSave(before)!;
+    const migrated = climb(before, 16, 17);
     expect(migrated.overrides).toEqual(before.overrides);
   });
 });
@@ -771,7 +790,7 @@ describe("v23 → v24: the ground gained a memory", () => {
   it("invents nothing from the buildings that are already standing", () => {
     const raw = v23Save();
     raw.build = { "10,10": { id: "floor", finish: "pine" }, "10,11": { id: "wall", finish: "pine" } };
-    const migrated = migrateSave(raw)!;
+    const migrated = climb(raw, 23, 24); // this rung only — v37 re-lays the town
     expect(migrated.places).toEqual([]);
     // And the buildings themselves are untouched: a migration that reads the
     // world to describe its past must not also rewrite it.
@@ -897,7 +916,9 @@ describe("v26 → v27: floors carry their own finish", () => {
     // An absent entry already means pale pine, so the commonest case must cost
     // zero bytes — otherwise the map is the size of everything ever paved
     // rather than the size of the choices actually made.
-    const migrated = migrateSave(v26Save("pine"))!;
+    // Through v27 only. The streets arrive at v37 wearing cobble, which is a
+    // finish the town chose and not one this rung stored.
+    const migrated = climb(v26Save("pine"), 26, 27);
     expect(migrated.finishes).toEqual({});
     expect(floorFinish(migrated, 5, 5)).toBe("pine"); // and still reads back right
   });
@@ -932,25 +953,50 @@ describe("v26 → v27: floors carry their own finish", () => {
 
   it("leaves the rest of the town alone", () => {
     const raw = v26Save();
-    const migrated = migrateSave(raw)!;
+    const migrated = climb(raw, 26, 27); // this rung only — v37 moves four buildings
     expect(migrated.build).toEqual(raw.build);
     expect(migrated.crops).toEqual(raw.crops);
     expect(migrated.skins.unlocked).toEqual(["pine", "walnut", "granite", "undyed"]);
   });
 });
 
+/** Where the museum stood before the street plan moved it two rows south
+ *  (content/town.ts §The street plan) — and where every save old enough to need
+ *  the v27 and v28 museum migrations still has it.
+ *
+ *  FROZEN HERE, exactly as the migrations themselves freeze it. These fixtures
+ *  used to be built by taking a FRESH world and repainting whatever museum it
+ *  happened to contain, which quietly tied a test about saves from three months
+ *  ago to wherever the museum is today: the day the building moved, every one of
+ *  them started asserting on a key that no longer existed and failed with
+ *  "cannot read properties of undefined". A migration is frozen in time by
+ *  contract, so the world it runs against has to be too. */
+const OLD_MUSEUM = { x0: -13, y0: -16, x1: -6, y1: -7, door: { x: -10, y: -7 } };
+
+/** Put that museum's wall ring into a build map, in one finish. */
+function oldMuseumRing(
+  build: Record<string, { id: string; finish: string }>,
+  finish: string,
+): void {
+  for (let y = OLD_MUSEUM.y0; y <= OLD_MUSEUM.y1; y++) {
+    for (let x = OLD_MUSEUM.x0; x <= OLD_MUSEUM.x1; x++) {
+      const ring =
+        x === OLD_MUSEUM.x0 || x === OLD_MUSEUM.x1 || y === OLD_MUSEUM.y0 || y === OLD_MUSEUM.y1;
+      if (!ring) continue;
+      const isDoor = x === OLD_MUSEUM.door.x && y === OLD_MUSEUM.door.y;
+      // The leaf is joinery and joinery is wood, in every era of this building.
+      build[`${x},${y}`] = isDoor ? { id: "door", finish: "whitewash" } : { id: "wall", finish };
+    }
+  }
+}
+
 describe("v27 → v28: the museum is masonry", () => {
-  /** A v27 save with the museum's walls as the old table stamped them. Built by
-   *  taking a fresh world (whose museum is already cobble) back to whitewash,
-   *  which is what every deployed save actually holds. */
+  /** A v27 save with the museum's walls as the old table stamped them:
+   *  whitewash planks, no windows, at the coordinates it stood on then. */
   function v27Save(repaint?: Record<string, string>): Record<string, unknown> {
     const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
     const build = { ...(w.build as Record<string, { id: string; finish: string }>) };
-    for (const [key, cell] of Object.entries(build)) {
-      if (cell.id === "wall" && cell.finish === "marble") build[key] = { ...cell, finish: "whitewash" };
-      // A v27 museum had no windows either — they were plain wall.
-      if (cell.id === "window") build[key] = { id: "wall", finish: "whitewash" };
-    }
+    oldMuseumRing(build, "whitewash");
     for (const [key, finish] of Object.entries(repaint ?? {})) {
       build[key] = { ...build[key], finish };
     }
@@ -963,8 +1009,8 @@ describe("v27 → v28: the museum is masonry", () => {
   const DOOR = "-10,-7";
 
   it("turns the museum's plank walls to stone", () => {
-    const migrated = migrateSave(v27Save())!;
-    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    const migrated = climb(v27Save(), 27, 30);
+    expect(migrated.schemaVersion).toBe(30);
     // Through v28 (cobble) and out the far side of v29 (marble). Asserted at
     // the END of the ladder, not at 28, because that is where a real save lands.
     expect(migrated.build[CORNER].finish).toBe("marble");
@@ -973,7 +1019,7 @@ describe("v27 → v28: the museum is masonry", () => {
   it("leaves the door leaf alone", () => {
     // Joinery is wood even in a stone building. The door's FRAME picks the
     // masonry up from the wall beside it at draw time and stores nothing.
-    const migrated = migrateSave(v27Save())!;
+    const migrated = climb(v27Save(), 27, 30);
     expect(migrated.build[DOOR].id).toBe("door");
     expect(migrated.build[DOOR].finish).toBe("whitewash");
   });
@@ -982,14 +1028,14 @@ describe("v27 → v28: the museum is masonry", () => {
     // The reason this edits instead of re-stamping the town the way v15 did.
     // A re-stamp rewrites every perimeter cell from the table and would undo
     // the player's choice, which outranks ours.
-    const migrated = migrateSave(v27Save({ [CORNER]: "oxblood" }))!;
+    const migrated = climb(v27Save({ [CORNER]: "oxblood" }), 27, 30);
     expect(migrated.build[CORNER].finish).toBe("oxblood");
   });
 
   it("leaves every other building's walls as they were", () => {
     // The museum alone. Two civic buildings in the same stone is a category,
     // not an identity — the town hall's south-west corner stays ash.
-    const migrated = migrateSave(v27Save())!;
+    const migrated = climb(v27Save(), 27, 30);
     expect(migrated.build["-3,-9"].finish).toBe("ash");
   });
 });
@@ -999,10 +1045,7 @@ describe("v28 → v29: marble, and windows in the façade", () => {
   function v28Save(repaint?: Record<string, { id: string; finish: string }>): Record<string, unknown> {
     const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
     const build = { ...(w.build as Record<string, { id: string; finish: string }>) };
-    for (const [key, cell] of Object.entries(build)) {
-      if (cell.id === "wall" && cell.finish === "marble") build[key] = { ...cell, finish: "cobble" };
-      if (cell.id === "window") build[key] = { id: "wall", finish: "cobble" };
-    }
+    oldMuseumRing(build, "cobble");
     for (const [key, cell] of Object.entries(repaint ?? {})) build[key] = cell;
     return { ...w, schemaVersion: 28, build };
   }
@@ -1012,13 +1055,13 @@ describe("v28 → v29: marble, and windows in the façade", () => {
   const SOLID = "-7,-7"; // south wall, deliberately left unglazed
 
   it("turns cobble to marble", () => {
-    const migrated = migrateSave(v28Save())!;
-    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    const migrated = climb(v28Save(), 28, 30);
+    expect(migrated.schemaVersion).toBe(30);
     expect(migrated.build[CORNER].finish).toBe("marble");
   });
 
   it("cuts the four façade cells into windows", () => {
-    const migrated = migrateSave(v28Save())!;
+    const migrated = climb(v28Save(), 28, 30);
     for (const key of ["-12,-7", "-11,-7", "-9,-7", "-8,-7"]) {
       expect(migrated.build[key].id, key).toBe("window");
     }
@@ -1027,7 +1070,7 @@ describe("v28 → v29: marble, and windows in the façade", () => {
   it("leaves the corners and the far end of the south wall solid", () => {
     // Glazing to the edge reads as a shed with the walls missing. A corner of
     // plain masonry is what says the building is holding itself up.
-    const migrated = migrateSave(v28Save())!;
+    const migrated = climb(v28Save(), 28, 30);
     expect(migrated.build[SOLID].id).toBe("wall");
     expect(migrated.build[CORNER].id).toBe("wall");
   });
@@ -1035,19 +1078,19 @@ describe("v28 → v29: marble, and windows in the façade", () => {
   it("gives the sash a wood finish, not the wall's stone", () => {
     // A window's own finish paints the frame; the masonry around the opening
     // comes from the run via shellFinish. A marble sash would be an arrow slit.
-    const migrated = migrateSave(v28Save())!;
+    const migrated = climb(v28Save(), 28, 30);
     expect(migrated.build[PANE].finish).toBe("whitewash");
   });
 
   it("does not glaze a cell the player has already changed", () => {
     // Stricter than v28's repaint check: the cell must still be a WALL. Somebody
     // who knocked the façade through and put a door there keeps their door.
-    const migrated = migrateSave(v28Save({ [PANE]: { id: "door", finish: "walnut" } }))!;
+    const migrated = climb(v28Save({ [PANE]: { id: "door", finish: "walnut" } }), 28, 30);
     expect(migrated.build[PANE].id).toBe("door");
   });
 
   it("does not repaint a wall the player has repainted", () => {
-    const migrated = migrateSave(v28Save({ [CORNER]: { id: "wall", finish: "oxblood" } }))!;
+    const migrated = climb(v28Save({ [CORNER]: { id: "wall", finish: "oxblood" } }), 28, 30);
     expect(migrated.build[CORNER].finish).toBe("oxblood");
   });
 });
@@ -1258,5 +1301,116 @@ describe("a game in progress is not state", () => {
     const back = deserialize(serialize(w))!;
     expect(back.company?.id).toBe("resident1");
     expect(playing(back)).toBeNull();
+  });
+});
+
+describe("v36 → v37: the street plan moves four buildings", () => {
+  /** A v36 save: the town as it stood before the street plan, which means the
+   *  four movers at their old coordinates. Frozen here for the same reason the
+   *  migration freezes them — a fixture read off the live table would stop
+   *  describing the save it claims to be.
+   *
+   *  Built by taking a fresh world and MOVING its four back, so everything else
+   *  in the blob (the hall, the stall, the fixtures, the plaza) is real. */
+  const OLD = [
+    { x0: -11, y0: -4, x1: -7, y1: 0 }, // Prudence's house
+    { x0: 7, y0: -4, x1: 12, y1: 0 }, // the shop
+    { x0: 6, y0: -11, x1: 10, y1: -6 }, // the heap
+    { x0: -13, y0: -16, x1: -6, y1: -7 }, // the museum
+  ];
+  const NEW_IDS = ["margfrom_house", "shop", "heap", "museum"] as const;
+
+  function v36Save(): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const build = { ...(w.build as Record<string, { id: string; finish: string }>) };
+    const overrides = { ...(w.overrides as Record<string, number>) };
+    const furniture = { ...(w.furniture as Record<string, unknown>) };
+    // Take the four down where they stand now — walls AND the furniture in them,
+    // because a v36 save has neither at these coordinates.
+    for (const id of NEW_IDS) {
+      const b = TOWN_BUILDINGS[id];
+      for (let y = b.y0; y <= b.y1; y++) {
+        for (let x = b.x0; x <= b.x1; x++) {
+          delete build[`${x},${y}`];
+          delete furniture[`${x},${y}`];
+        }
+      }
+    }
+    // …and put a plain ring back at each old rectangle.
+    for (const r of OLD) {
+      for (let y = r.y0; y <= r.y1; y++) {
+        for (let x = r.x0; x <= r.x1; x++) {
+          overrides[`${x},${y}`] = FLOOR;
+          const ring = x === r.x0 || x === r.x1 || y === r.y0 || y === r.y1;
+          if (ring) build[`${x},${y}`] = { id: "wall", finish: "pine" };
+        }
+      }
+    }
+    return { ...w, schemaVersion: 36, build, overrides, furniture };
+  }
+
+  it("takes the old buildings down instead of leaving eight in the town", () => {
+    // The failure this rung exists for. A stamp on its own is additive, so a
+    // deployed save would have kept four furnished, walkable ghosts — each one
+    // still holding a counter that somebody's schedule points at.
+    const m = migrateSave(v36Save())!;
+    for (const r of OLD) {
+      for (let y = r.y0; y <= r.y1; y++) {
+        for (let x = r.x0; x <= r.x1; x++) {
+          const ring = x === r.x0 || x === r.x1 || y === r.y0 || y === r.y1;
+          if (!ring) continue;
+          // Only where the new town has not since claimed the cell for itself —
+          // the old and new footprints overlap, and the stamp runs after.
+          const claimed = NEW_IDS.some((id) => {
+            const b = TOWN_BUILDINGS[id];
+            return x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1;
+          });
+          if (claimed) continue;
+          expect(m.build[`${x},${y}`], `ghost wall at ${x},${y}`).toBeUndefined();
+        }
+      }
+    }
+  });
+
+  it("takes the plank floor up with them, so no decking is left in the grass", () => {
+    const m = migrateSave(v36Save())!;
+    // The museum's old north end, well clear of anything the new town covers.
+    expect(m.overrides["-10,-16"]).toBeUndefined();
+  });
+
+  it("stands all four up again where the plan puts them", () => {
+    const m = migrateSave(v36Save())!;
+    for (const id of NEW_IDS) {
+      const b = TOWN_BUILDINGS[id];
+      expect(m.build[`${b.door.x},${b.door.y}`], `${id} has no door`).toMatchObject({ id: "door" });
+      expect(m.build[`${b.x0},${b.y0}`], `${id} has no corner`).toMatchObject({ id: "wall" });
+    }
+  });
+
+  it("paves the streets, in cobble", () => {
+    const m = migrateSave(v36Save())!;
+    expect(m.overrides["-1,6"]).toBe(FLOOR); // mid-lane
+    expect((m.finishes as Record<string, string>)["-1,6"]).toBe("cobble");
+  });
+
+  it("leaves the two that did not move alone, refinish and all", () => {
+    // The town hall and the seed stall are on the cells they always were, so
+    // demolishing them would only throw away a colour somebody chose.
+    const raw = v36Save();
+    const build = raw.build as Record<string, { id: string; finish: string }>;
+    const hall = TOWN_BUILDINGS.townhall;
+    build[`${hall.x0},${hall.y0}`] = { id: "wall", finish: "oxblood" };
+    const m = migrateSave(raw)!;
+    expect(m.build[`${hall.x0},${hall.y0}`].finish).toBe("oxblood");
+  });
+
+  it("keeps furniture the player put in a room that moved", () => {
+    // Only the AUTHORED pieces come out, matched by id. A chair somebody stood in
+    // the shop is theirs; it will end up in the grass, and it can be picked up.
+    const raw = v36Save();
+    const furniture = raw.furniture as Record<string, unknown>;
+    furniture["9,-2"] = { id: "cushion", facing: "s", finish: "sage" };
+    const m = migrateSave(raw)!;
+    expect(m.furniture["9,-2"]).toMatchObject({ id: "cushion" });
   });
 });

@@ -224,7 +224,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // One cell past the counter's east end and one row north, which is Derek's
     // relation to his own (see `seedstall` below). She still reads as the person
     // whose counter it is, and now she reads as a person.
-    schedule: [{ fromHour: 0, x: 10, y: -2, doing: "beside the counter" }],
+    schedule: [{ fromHour: 0, x: 10, y: 0, doing: "beside the counter" }],
   },
   heap: {
     id: "heap",
@@ -245,7 +245,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // else who keeps one. He used to stand at (8,-8), which is now the counter's
     // right-hand cell: the table moved out of the west wall it was embedded in
     // and landed on him (content/town.ts).
-    schedule: [{ fromHour: 0, x: 9, y: -9, doing: "at the facility" }],
+    schedule: [{ fromHour: 0, x: 9, y: -8, doing: "at the facility" }],
   },
   museum: {
     id: "museum",
@@ -274,7 +274,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // (-8,-8), so the desk drew its twelve pixels of height straight over her
     // and the curator of the town museum was a pair of eyes above a counter.
     // West end rather than east, because the east is the doorstep's side.
-    schedule: [{ fromHour: 0, x: -9, y: -9, doing: "beside the desk" }],
+    schedule: [{ fromHour: 0, x: -9, y: -7, doing: "beside the desk" }],
   },
   seedstall: {
     id: "seedstall",
@@ -300,7 +300,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // over him, and a carrot is short enough that all you could see was the
     // leaves. Found on screen; the unit tests were green, because "is he inside
     // his own walls" is true either way.
-    schedule: [{ fromHour: 0, x: -6, y: 7, doing: "beside the seeds" }],
+    schedule: [{ fromHour: 0, x: -6, y: 9, doing: "beside the seeds" }],
   },
   errands: {
     id: "errands",
@@ -334,13 +334,17 @@ export const CAST: Record<AuthoredId, CharDef> = {
       { fromHour: 0, x: 3, y: 2, doing: "asleep at the board, technically on duty" },
       { fromHour: 7, x: 3, y: 2, doing: "at the board, officially" },
       { fromHour: 10, x: 0, y: -4, doing: "collecting from the town hall" },
-      { fromHour: 12, x: 8, y: 1, doing: "on the round, eastward" },
-      { fromHour: 14, x: 7, y: -5, doing: "delivering to the heap, cautiously" },
-      // Outside the museum door, not inside it. The gallery runs from y -16 to
-      // its south wall at y -7, so a stop at (-7,-8) would have put him in the
-      // antiquities wing, which is both wrong and against the glass.
-      { fromHour: 16, x: -10, y: -6, doing: "at the museum, not touching anything" },
-      { fromHour: 18, x: -6, y: 10, doing: "last call at the stall" },
+      // ON THE STREETS, both of them — the round moved when the buildings did
+      // (content/town.ts §The street plan). These used to be bare grass
+      // coordinates that the shop and the heap have since been laid over: (8,1)
+      // is now the shop's south wall and (7,-5) is the heap's.
+      { fromHour: 12, x: 8, y: 3, doing: "on the round, eastward" },
+      { fromHour: 14, x: 7, y: -4, doing: "delivering to the heap, cautiously" },
+      // Outside the museum door, not inside it. The gallery runs from y -14 to
+      // its south wall at y -5, so a stop one row further north would have put
+      // him in the antiquities wing, which is both wrong and against the glass.
+      { fromHour: 16, x: -10, y: -4, doing: "at the museum, not touching anything" },
+      { fromHour: 18, x: -6, y: 12, doing: "last call at the stall" },
       { fromHour: 20, x: 3, y: 2, doing: "back at the board, sorting" },
     ],
   },

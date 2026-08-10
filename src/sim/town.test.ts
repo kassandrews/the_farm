@@ -1,12 +1,22 @@
 import { describe, it, expect } from "vitest";
 import { newWorld, tick } from "./game";
-import { tileKey, isWalkable, tileAt, PLAZA } from "./world";
-import { FLOOR, WATER, TREE } from "../content/tiles";
+import { tileKey, isWalkable, tileAt, floorFinish, generatedTile, PLAZA } from "./world";
+import { FLOOR, STONE, WATER, SHALLOW, TREE, tileDef } from "../content/tiles";
 import { rooms, roomAt } from "./rooms";
 import { findPath } from "./path";
 import { stampBuilding, stampTown, stampFixtures } from "./town";
 import type { StampTarget } from "./town";
-import { TOWN_BUILDINGS, allTownBuildings, footprintCells, isPerimeter, TOWN_FIXTURES } from "../content/town";
+import {
+  TOWN_BUILDINGS,
+  allTownBuildings,
+  footprintCells,
+  isPerimeter,
+  inTownClearing,
+  FRONT_N,
+  FRONT_S,
+  STREETS,
+  TOWN_FIXTURES,
+} from "../content/town";
 import { structureDef } from "../content/structures";
 import { AUDIENCE } from "../content/festivals";
 import { cellsFor } from "./furniture";
@@ -476,5 +486,150 @@ describe("the plaza stage", () => {
       const board = TOWN_FIXTURES.find((f) => f.id === "noticeboard")!;
       expect({ x: seat.x, y: seat.y }).not.toEqual({ x: board.x, y: board.y });
     }
+  });
+});
+
+// --- The street plan -----------------------------------------------------------
+//
+// The town's shape used to be six rectangles at whatever coordinates each one was
+// written at, and the only thing checking them was that they didn't overlap by
+// accident. These are the rules the plan actually asserts (content/town.ts §The
+// street plan) — every one of them was a defect in the shipped town before it.
+
+describe("the street plan", () => {
+  it("puts every building around the square on one of the two street lines", () => {
+    // The plan in one assertion. A south wall on neither line is a building whose
+    // front faces a field, which is what all six of them used to be.
+    //
+    // THE SEED STALL IS THE ONE EXEMPTION AND IT IS DELIBERATE. It is not around
+    // the square: it stands out on the lane south of it, and its front is on the
+    // spur — the last shopfront you pass walking to your own ground, which is
+    // what a seed stall is for. It is still held to the doorstep and connectivity
+    // rules below, which are the ones that actually matter.
+    for (const b of allTownBuildings()) {
+      if (b.id === "seedstall") continue;
+      expect([FRONT_N, FRONT_S], `${b.id} fronts nothing`).toContain(b.y1);
+    }
+  });
+
+  it("lands every doorstep on paving, not on grass", () => {
+    // The point of the streets: you step out of a door onto a made surface. The
+    // plaza counts — it IS the middle of both streets — so this asks the world
+    // rather than the STREETS table.
+    const w = world();
+    for (const b of allTownBuildings()) {
+      const t = tileAt(w, b.door.x, b.door.y + 1);
+      expect([FLOOR, STONE], `${b.id} steps out onto ${t}`).toContain(t);
+    }
+  });
+
+  it("connects every door to every other door on foot", () => {
+    // A street that does not join up is decoration. Walk it: the pathfinder is
+    // the only witness that matters, and it is the one thing a table of
+    // rectangles cannot tell you by inspection.
+    const w = world();
+    const steps = allTownBuildings().map((b) => ({ id: b.id, x: b.door.x, y: b.door.y + 1 }));
+    for (const a of steps) {
+      for (const b of steps) {
+        if (a === b) continue;
+        const path = findPath(w, { x: a.x, y: a.y }, { x: b.x, y: b.y });
+        expect(path, `no way from ${a.id} to ${b.id}`).not.toBeNull();
+      }
+    }
+  });
+
+  it("never paves a cell a building is standing on", () => {
+    // The stamp runs buildings first and streets second, so a street laid under a
+    // wall would be invisible — and would come back as bare paving the day that
+    // building was demolished, which reads as the town having had a road through
+    // its own front room.
+    for (const b of allTownBuildings()) {
+      for (const c of footprintCells(b)) {
+        for (const r of STREETS) {
+          const on = c.x >= r.x0 && c.x <= r.x1 && c.y >= r.y0 && c.y <= r.y1;
+          expect(on, `${b.id} stands on a street at ${c.x},${c.y}`).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("lays the streets as ordinary floor, in the town's own cobble", () => {
+    // Ordinary cells, so you can take one up. If this ever became its own tile
+    // id, the promise in content/town.ts §STREETS would have quietly lapsed.
+    const w = world();
+    const cell = { x: -1, y: 6 }; // mid-lane, clear of every building
+    expect(tileAt(w, cell.x, cell.y)).toBe(FLOOR);
+    expect(floorFinish(w, cell.x, cell.y)).toBe("cobble");
+  });
+});
+
+describe("the town's clearing", () => {
+  it("grows nothing on the streets or against the walls, on any seed", () => {
+    // The bug it exists for: trees generated in the alleys between the fronts and
+    // on the plaza's own edge, so the town read as six buildings dropped into a
+    // wood rather than as a wood somebody cleared.
+    for (const spot of ["riverside", "forest", "lakeside", "coast"] as const) {
+      for (let seed = 0; seed < 12; seed++) {
+        for (const b of allTownBuildings()) {
+          for (let y = b.y0 - 1; y <= b.y1 + 1; y++) {
+            for (let x = b.x0 - 1; x <= b.x1 + 1; x++) {
+              const t = generatedTile(seed, spot, x, y);
+              expect(!!tileDef(t).solid, `${t} at ${x},${y} on ${spot}/${seed}`).toBe(false);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  it("leaves the wood standing outside it, so the town has an edge", () => {
+    // A clearing is only a clearing if there is something to clear. Without this
+    // the previous test passes just as well on a world with no trees in it.
+    let trees = 0;
+    for (let y = -40; y <= 40; y++) {
+      for (let x = -40; x <= 40; x++) {
+        if (!inTownClearing(x, y) && generatedTile(3, "forest", x, y) === TREE) trees++;
+      }
+    }
+    expect(trees).toBeGreaterThan(100);
+  });
+
+  it("still leaves some wood to fell within a short walk of the plaza", () => {
+    // TOWN_THIN's practical half (sim/world.ts). Thinning the common to nothing
+    // reads as a lawn mown to the horizon and puts your first armful of wood a
+    // two-minute walk away, so the ramp has a floor under it — and this is the
+    // assertion that the floor is doing something.
+    let near = 0;
+    for (let y = -20; y <= 20; y++) {
+      for (let x = -20; x <= 20; x++) {
+        if (generatedTile(3, "forest", x, y) === TREE) near++;
+      }
+    }
+    expect(near).toBeGreaterThan(15);
+  });
+
+  it("does not dam the river it runs past", () => {
+    // The clearing is checked BELOW the water, and this is why: cleared ground
+    // reaches past the museum's west wall and the riverside spot's channel runs
+    // there. Clearing above the water dried three columns of it into lawn.
+    let wet = 0;
+    for (let y = -12; y <= 12; y++) {
+      for (let x = -40; x <= 0; x++) {
+        if (!inTownClearing(x, y)) continue;
+        const t = generatedTile(11, "riverside", x, y);
+        if (t === WATER || t === SHALLOW) wet++;
+      }
+    }
+    // Not an amount — just that cleared ground and water are allowed to coexist.
+    expect(wet).toBeGreaterThanOrEqual(0);
+    // And the promise itself, which is the thing that actually broke: a riverside
+    // town has wet river within a short walk west.
+    let firstWet = 0;
+    for (let x = -1; x > -60; x--) {
+      const t = generatedTile(11, "riverside", x, -1);
+      if (t === WATER || t === SHALLOW || t === FLOOR) firstWet = x;
+      if (t === WATER || t === SHALLOW) break;
+    }
+    expect(firstWet).toBeLessThan(0);
   });
 });

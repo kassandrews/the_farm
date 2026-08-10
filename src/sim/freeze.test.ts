@@ -4,7 +4,7 @@ import { freezeBuilt } from "./freeze";
 import { rooms } from "./rooms";
 import { tileAt, baseTileAt, setTile, tileKey } from "./world";
 import { GRASS } from "../content/tiles";
-import { migrateSave, SCHEMA_VERSION } from "./save";
+import { MIGRATIONS } from "./save";
 import { add } from "./inventory";
 import type { WorldState } from "./types";
 
@@ -146,9 +146,13 @@ describe("the v31 migration", () => {
     raw.schemaVersion = 30;
     delete raw.frozen;
 
-    const migrated = migrateSave(raw);
+    // This rung alone: v37 moves four of the town's buildings, so a full climb
+    // legitimately changes `build`, `overrides` and `frozen`. What v31 promises
+    // is narrower and is what is asserted here.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const migrated = MIGRATIONS[30](raw) as any;
     expect(migrated).not.toBeNull();
-    expect(migrated!.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated!.schemaVersion).toBe(31);
     // Empty, deliberately: the catch-up runs on load rather than here, so a
     // migration stays frozen in time instead of calling live `rooms()` code.
     expect(migrated!.frozen).toEqual({});

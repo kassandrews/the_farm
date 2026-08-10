@@ -58,7 +58,7 @@ import { structureDef } from "../content/structures";
 import { defaultSkin } from "../content/skins";
 import type { SkinId } from "../content/skins";
 import { furnitureDef, covers, MAX_SPAN } from "../content/furniture";
-import { allTownBuildings } from "../content/town";
+import { allTownBuildings, inTownClearing } from "../content/town";
 import type { WorldState, HomesteadSpot, Layer } from "./types";
 import { hash2 } from "./rng";
 
@@ -300,6 +300,16 @@ export function homesteadOrigin(spot: HomesteadSpot): { x: number; y: number } {
  *  always arrive to somewhere you can actually stand and start building. */
 const HOMESTEAD_CLEARING = 4;
 
+/** How much of its wood the town leaves standing on its own common — the floor
+ *  under the `townMown` ramp where it reaches the plaza. See the note beside
+ *  `wood` in `generatedTile` for why it is not zero.
+ *
+ *  NOT APPLIED TO ROCKS, deliberately. A boulder on the common is a boulder
+ *  somebody never got round to moving, which is exactly what a town looks like,
+ *  and it is also the nearest stone. Trees read as a wood the town failed to
+ *  clear; stones read as ground. */
+const TOWN_THIN = 0.25;
+
 /** Deterministic base terrain at a surface tile, before any edits: paved plaza,
  *  water and its shore, resource nodes scattered by seed, and grass everywhere
  *  else. */
@@ -314,6 +324,7 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
   const home = homesteadOrigin(spot);
   const nearHome =
     Math.abs(x - home.x) <= HOMESTEAD_CLEARING && Math.abs(y - home.y) <= HOMESTEAD_CLEARING;
+
 
   // The two secrets that are places rather than people (Phase 4c). Both sit far
   // outside the plaza, the river and the clearing, so they are checked after
@@ -402,6 +413,20 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
       if (wet !== null) return wet;
     }
 
+    // THE TOWN'S OWN CLEARED GROUND (content/town.ts §The clearing). Same idea as
+    // `nearHome` above and for the same reason, but shaped to the streets and the
+    // buildings rather than to a square around a tent: a town is a piece of wood
+    // somebody cleared, and until this existed the generator grew trees in the
+    // alleys, against the walls and on the very edge of the plaza.
+    //
+    // BELOW THE WATER AND NOT ABOVE IT, which is the one placement decision here
+    // and it is load-bearing. Cleared ground reaches x -15 beside the museum and
+    // the riverside spot's river runs at x <= -12: a clearing that short-circuited
+    // to grass before `waterAt` would have dammed the town's own river with three
+    // columns of lawn. It clears what GROWS. It does not move the water, and it
+    // does not lift the plaza — both of those are the land itself.
+    if (inTownClearing(x, y)) return GRASS;
+
     // Two independent hashes so trees and rocks don't correlate into stripes.
     //
     // NO SPOT TERM HERE ANY MORE. "Forest edge" used to multiply this by 1.8,
@@ -432,15 +457,28 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     const kit = grew.sheet;
     const thin =
       kit?.bare === undefined ? 1 : 1 - (1 - kit.bare) * sheetAt(seed, x, y, kit);
+    // AND THE TOWN THINS ITS OWN WOOD. `townMown` already ramps from 0 on the
+    // common to 1 out in the country; until now only the mushrooms read it, so
+    // the ground between the houses was tidy and the CANOPY over it was forest.
+    // A hard clearing alone would have left a bald outline with full wood
+    // starting one tile past it, which is the line `clearingRadius` exists to
+    // avoid — this is the ramp that hides the join.
+    //
+    // WITH A FLOOR, and that is the whole difference from the mushrooms' use of
+    // it. At zero, the twenty tiles around the plaza are bare of every tree,
+    // which reads as a lawn somebody mows to the horizon and — the practical
+    // half — puts your first armful of wood a two-minute walk away. A quarter
+    // leaves a scattering you can see past and chop, thickening as you go out.
+    const wood = TOWN_THIN + (1 - TOWN_THIN) * (grew.mown ? townMown(seed, x, y) : 1);
     const treeRoll = hash2(x, y, seed ^ 0x7a11) / 4294967296;
-    const density = NODES.tree.density * grew.trees * thin;
+    const density = NODES.tree.density * grew.trees * thin * wood;
     if (treeRoll < density) return TREE;
     // Shrubs, on their own hash and AFTER the trees — a cell that grew a tree
     // stays a tree, so turning shrubs up in a region thickens its undergrowth
     // instead of thinning its canopy. Zero in every region that doesn't ask.
     if (
       grew.shrubs &&
-      hash2(x, y, seed ^ 0x5e2b) / 4294967296 < NODES.shrub.density * grew.shrubs * thin
+      hash2(x, y, seed ^ 0x5e2b) / 4294967296 < NODES.shrub.density * grew.shrubs * thin * wood
     ) {
       return SHRUB;
     }
@@ -457,7 +495,7 @@ export function generatedTile(seed: number, spot: HomesteadSpot, x: number, y: n
     // rendering bug rather than like a wood.
     if (
       grew.deadwood &&
-      deadRoll(seed, x, y) < DEADWOOD_DENSITY * grew.deadwood &&
+      deadRoll(seed, x, y) < DEADWOOD_DENSITY * grew.deadwood * wood &&
       deadIsLoneliest(seed, x, y)
     ) {
       // Which of the two, on a hash that is NOT the placement roll. Sharing it
@@ -2947,7 +2985,22 @@ const BRIDGE_COL = 0; // and east-west
  *
  *  Only the anchor is fixed; the bearing, the meander and the pinch are the
  *  seed's, so no two riverside towns have the same river — it just goes past. */
-const RIVERSIDE_ANCHOR = { x: -14, y: BRIDGE_ROW };
+const RIVERSIDE_ANCHOR = { x: -20, y: BRIDGE_ROW };
+
+// TWENTY, AND IT WAS FOURTEEN UNTIL THE STREET PLAN. The museum came south onto
+// the north street's line (content/town.ts §The street plan), which put the
+// biggest building in town — and the westernmost, at x -13 — within the six-tile
+// water cap of the bridge row itself. The channel it capped was the town's own
+// promised river, so on a good third of seeds the riverside spot arrived with a
+// dry sandy trench where its river should be: exactly the failure §The town's dry
+// banks warns about, arriving from the building side rather than the water side.
+//
+// Moving the anchor is the honest fix of the two available. Shrinking the cap
+// would let water lap the museum's west wall, and moving the museum has nowhere
+// to go — the town hall is east of it and the alley between them is already the
+// only gap in the street's face. Six tiles further out is still well inside
+// BRIDGE_REACH (22), so the crossing is still built, and "water a short walk
+// west" — which is the promise, not a distance — survives with room to spare.
 
 /** Is this one of the town's own crossings? Streams and rivers only: the town
  *  bridges what runs through it, and does not build a pier out into the sea. */

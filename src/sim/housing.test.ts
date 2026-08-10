@@ -47,7 +47,7 @@ describe("the bed is the claim", () => {
     const before = stopTarget(w, v, at(2));
 
     removeFurnitureAt(w, BED.x, BED.y);
-    const moved = { x: -8, y: -2 }; // east side of the same room
+    const moved = { x: -7, y: -1 }; // east side of the same room
     expect(placeFurniture(w, moved.x, moved.y, "bed", "s", "pine")).toBe(true);
     v.homeBed = tileKey(moved.x, moved.y);
 
@@ -63,7 +63,7 @@ describe("the bed is the claim", () => {
     const w = world();
     const v = margfrom(w);
     removeFurnitureAt(w, BED.x, BED.y);
-    const moved = { x: -8, y: -2 };
+    const moved = { x: -7, y: -1 };
     placeFurniture(w, moved.x, moved.y, "bed", "s", "pine");
     v.homeBed = tileKey(moved.x, moved.y);
 

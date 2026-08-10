@@ -14,13 +14,13 @@ import type { StampTarget } from "./town";
 import { generatedTile, tileKey, RECLAIM_MS } from "./world";
 import { DIRT } from "../content/tiles";
 import { makeVillager } from "./villagers";
-import { authoredBed } from "../content/town";
+import { authoredBed, TOWN_BUILDINGS } from "../content/town";
 import type { CharId, AuthoredId } from "../content/cast";
 import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 36;
+export const SCHEMA_VERSION = 37;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -69,8 +69,16 @@ export const SCHEMA_VERSION = 36;
 const SAVE_KEY = "the-farm-save";
 
 /** Migrations from version N to N+1, applied in sequence. Each takes the raw
- *  parsed object and returns it upgraded. */
-const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
+ *  parsed object and returns it upgraded.
+ *
+ *  EXPORTED FOR TESTS, and specifically so a rung can be climbed ON ITS OWN.
+ *  Every test here used to run the whole ladder and then assert on the thing its
+ *  rung had done, which was fine while migrations only ever added fields: a later
+ *  rung could not disturb an earlier one's evidence. v37 can and does — it moves
+ *  four buildings, so it rewrites the very cells the v27 and v28 museum rungs are
+ *  about, and the ladder's far end stopped being a place you can see the middle
+ *  of it from. A rung is a pure function; testing it as one is the fix. */
+export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
   // v1 → v2: the player gained its own memory log and an `imported` flag, so an
   // embodied Meadow pet can carry its history (DESIGN §"Player identity").
   // A v1 player was always freshly hatched here, so it has no history to lose:
@@ -936,6 +944,182 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
   // region teaches the starter species within a second of loading — so a live
   // save needs nothing backfilled and there is nothing here to get wrong.
   35: (raw) => ({ ...raw, schemaVersion: 36, garden: { seen: [], plants: {} } }),
+
+  /** v37 — the street plan (content/town.ts §The street plan).
+   *
+   *  THE FIRST MIGRATION THAT TAKES SOMETHING DOWN, and that needs saying out
+   *  loud, because every other rung on this ladder only ever added. Four
+   *  buildings MOVED — the museum and the heap south onto the north street's
+   *  line, the shop and Prudence's house onto the south street's — and a stamp
+   *  alone would have left a deployed town with eight buildings in it: four in
+   *  their new places and four ghosts in their old ones, each still walkable,
+   *  still furnished, and still holding a counter somebody's schedule points at.
+   *
+   *  So it demolishes the four, then re-stamps the town.
+   *
+   *  THE OLD COORDINATES ARE FROZEN HERE, in full, and are not read from
+   *  `TOWN_BUILDINGS`. That is the v27 museum rule (§the ladder's own contract):
+   *  a migration has to keep meaning what it meant the day it shipped, and one
+   *  that asked the live table where the museum "was" would demolish wherever it
+   *  IS the next time somebody moves it — which is a migration that eats the
+   *  town it was supposed to fix.
+   *
+   *  THE TWO THAT DID NOT MOVE ARE NOT TOUCHED. The town hall and the seed stall
+   *  are on the same cells they always were, so demolishing them would only
+   *  throw away a refinish somebody chose. `stampTown` skips a footprint that is
+   *  already occupied, which is exactly the right no-op for them.
+   *
+   *  WHAT IT CANNOT PRESERVE, stated plainly: a wall the player repainted on one
+   *  of the four, and anything they built onto its outside. v27 went out of its
+   *  way to protect a repaint, and could, because the building stayed put — a
+   *  repainted wall of a building that has moved is a wall in a field. Furniture
+   *  the player added inside one is kept (only the AUTHORED pieces are removed by
+   *  id), which will leave a chair standing in the grass; that is a chair they
+   *  can pick up, and the alternative is deleting it for them. */
+  36: (raw) => {
+    /** The four, as they stood in v36. Perimeter, furniture and the plank floor
+     *  underneath — everything `stampBuilding` writes. */
+    /** Which four moved, in the same order as V36_MOVED below. */
+    const MOVED_IDS = ["margfrom_house", "shop", "heap", "museum"] as const;
+    const V36_MOVED = [
+      {
+        x0: -11,
+        y0: -4,
+        x1: -7,
+        y1: 0,
+        furniture: [
+          { x: -10, y: -3, id: "bed" },
+          { x: -10, y: -1, id: "table" },
+          { x: -9, y: -2, id: "chair" },
+          { x: -8, y: -3, id: "shelf" },
+        ],
+      },
+      {
+        x0: 7,
+        y0: -4,
+        x1: 12,
+        y1: 0,
+        furniture: [
+          { x: 8, y: -1, id: "table" },
+          { x: 8, y: -3, id: "shelf" },
+          { x: 11, y: -3, id: "shelf" },
+        ],
+      },
+      {
+        x0: 6,
+        y0: -11,
+        x1: 10,
+        y1: -6,
+        furniture: [
+          { x: 7, y: -10, id: "shelf" },
+          { x: 9, y: -10, id: "shelf" },
+          { x: 7, y: -8, id: "table" },
+        ],
+      },
+      {
+        x0: -13,
+        y0: -16,
+        x1: -6,
+        y1: -7,
+        furniture: [
+          { x: -8, y: -8, id: "table" },
+          { x: -12, y: -15, id: "shelf" },
+          { x: -8, y: -15, id: "shelf" },
+        ],
+      },
+    ];
+
+    const overrides = { ...((raw.overrides ?? {}) as Record<string, number>) };
+    const build = { ...((raw.build ?? {}) as Record<string, { id: string; finish: string }>) };
+    const furniture = { ...((raw.furniture ?? {}) as Record<string, { id: string }>) };
+    const crops = (raw.crops ?? {}) as Record<string, unknown>;
+    const frozen = { ...((raw.frozen ?? {}) as Record<string, unknown>) };
+
+    /** Where the four stand NOW. Read from the live table on purpose, and it is
+     *  the one thing here that may be: this half is not "where the save's town
+     *  is", it is "where the stamp about to run will want to put things", so it
+     *  has to agree with the stamp or the two disagree by construction.
+     *
+     *  IT IS HERE BECAUSE THE OLD RECTANGLES ARE NOT THE WHOLE STORY. A save that
+     *  climbed from far enough back has already had the CURRENT town stamped into
+     *  it by an earlier rung — v13 rebuilds the museum, v15 re-stamps the lot — so
+     *  by the time this runs the museum may be standing in its new place already.
+     *  Demolishing only the old rectangle then eats the half of the new building
+     *  that overlaps it and leaves the other half standing, and the re-stamp
+     *  refuses the ruin because the remaining walls read as occupied. The museum
+     *  came out of a v12 save with two of its four corners missing. */
+    const NOW = MOVED_IDS.map((id) => TOWN_BUILDINGS[id]);
+
+    /** Has the player put something of their own inside this building's new
+     *  footprint? Ground edits don't count, for `stampBuilding`'s own reason. */
+    const playerWorkIn = (b: { x0: number; y0: number; x1: number; y1: number }): boolean => {
+      const authored = new Set(
+        NOW.flatMap((n) => n.furniture.map((f) => `${f.x},${f.y}:${f.id}`)),
+      );
+      for (let y = b.y0; y <= b.y1; y++) {
+        for (let x = b.x0; x <= b.x1; x++) {
+          const key = `${x},${y}`;
+          if (key in crops) return true;
+          const piece = furniture[key];
+          if (piece && !authored.has(`${key}:${piece.id}`)) return true;
+        }
+      }
+      return false;
+    };
+
+    /** Structure and authored furniture out of one rectangle, floor back to
+     *  generated ground. */
+    const demolish = (r: { x0: number; y0: number; x1: number; y1: number }): void => {
+      for (let y = r.y0; y <= r.y1; y++) {
+        for (let x = r.x0; x <= r.x1; x++) {
+          const key = `${x},${y}`;
+          // The plank floor the stamp laid, back to whatever generation says —
+          // otherwise the town leaves rectangles of decking in the grass.
+          delete overrides[key];
+          // Only STRUCTURE comes down. A rug the player laid inside the shop is
+          // not part of the shop.
+          const cell = build[key];
+          if (cell && (cell.id === "wall" || cell.id === "door" || cell.id === "window")) {
+            delete build[key];
+          }
+          // The freeze pins a built room's shape; a pin on a room that no longer
+          // exists would keep drawing its roof. `freezeBuilt` re-runs on load and
+          // heals the rest (see v31).
+          delete frozen[key];
+        }
+      }
+    };
+
+    for (let i = 0; i < V36_MOVED.length; i++) {
+      const was = V36_MOVED[i];
+      const now = NOW[i];
+      // ALL OR NOTHING PER BUILDING, on `stampBuilding`'s own instinct. If the
+      // player has built or planted where this one is going, the stamp is going
+      // to refuse it — so taking the old one down first would cost them a
+      // building and give nothing back. Leave the pair alone and let them keep
+      // whatever they made.
+      if (playerWorkIn(now)) continue;
+      demolish(was);
+      demolish(now);
+      // Authored furniture only, matched by id, so anything the player put in one
+      // of these rooms survives it — in the grass, where they can pick it up.
+      for (const f of [...was.furniture, ...now.furniture]) {
+        const key = `${f.x},${f.y}`;
+        if (furniture[key]?.id === f.id) delete furniture[key];
+      }
+    }
+
+    const stamped = stampInto({ ...raw, overrides, build, furniture });
+    return {
+      ...raw,
+      schemaVersion: 37,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
+      finishes: stamped.finishes ?? raw.finishes,
+      frozen,
+    };
+  },
 };
 
 /** The name the tables now give an authored character, or null for anyone the
@@ -1015,6 +1199,13 @@ function stampInto(raw: Record<string, unknown>): StampTarget {
     build: (typeof raw.build === "object" && raw.build ? raw.build : {}) as StampTarget["build"],
     furniture: (typeof raw.furniture === "object" && raw.furniture ? raw.furniture : {}) as StampTarget["furniture"],
     crops: (typeof raw.crops === "object" && raw.crops ? raw.crops : {}) as Record<string, unknown>,
+    // The streets store a floor finish per cell (sim/town.ts §stampStreets), so
+    // a stamp into a save has to be able to reach the finish map. Older saves
+    // may not have grown the field; `stampStreets` writes none when it's absent,
+    // which leaves the cobbles at the default board and is the right failure.
+    finishes: (typeof raw.finishes === "object" && raw.finishes ? raw.finishes : undefined) as
+      | Record<string, string>
+      | undefined,
   };
   const seed = typeof raw.seed === "number" ? raw.seed : 0;
   const homestead = (raw.homestead ?? {}) as Record<string, unknown>;

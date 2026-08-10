@@ -13,16 +13,68 @@ function freshWorld() {
   return newWorld({ name: "Me", form: "dog", spot: "forest", seed: 21 });
 }
 
-/** Find a generated tree near the town for tests that need a real one. */
-function findNode(w: ReturnType<typeof newWorld>, want: number): { x: number; y: number } {
+/** Find a generated tree near the town for tests that need a real one.
+ *
+ *  `elbow` is how much open ground the caller needs AROUND it — nothing built
+ *  within that square. Tests that fell a block and watch it grow back need real
+ *  estate, and since the town started clearing its own ground (content/town.ts
+ *  §The clearing) the nearest tree to the origin is one that stands just past
+ *  the buildings rather than among them: a five-tile block centred on it used to
+ *  land on open meadow and now lands on the town hall and the heap, where
+ *  `gather` correctly refuses and the test reads as a regrowth bug. */
+function findNode(
+  w: ReturnType<typeof newWorld>,
+  want: number,
+  elbow = 0,
+): { x: number; y: number } {
   for (let r = 1; r < 60; r++) {
     for (let y = -r; y <= r; y++) {
       for (let x = -r; x <= r; x++) {
-        if (tileAt(w, x, y) === want) return { x, y };
+        if (tileAt(w, x, y) !== want) continue;
+        if (elbow && !clearAround(w, x, y, elbow)) continue;
+        return { x, y };
       }
     }
   }
   throw new Error("no node generated nearby");
+}
+
+/** A tree with another tree close enough to re-seed it — i.e. a tree standing in
+ *  a WOOD rather than on its own.
+ *
+ *  Regrowth needs a standing neighbour within `seedRadius` (sim/gather.ts), so
+ *  "fell it and watch it come back" is a claim about woodland and never about a
+ *  lone tree. It used to be safe to ignore that, because the meadow around the
+ *  origin was thick enough that the first tree found always had company. The town
+ *  thins its own common now (sim/world.ts §TOWN_THIN), and the nearest tree to
+ *  the plaza is exactly the kind that has none — so the tests that assert
+ *  regrowth have to say out loud that they want a wood. */
+function findTreeInWood(w: ReturnType<typeof newWorld>): { x: number; y: number } {
+  const rad = NODES.tree.seedRadius!;
+  for (let r = 1; r < 60; r++) {
+    for (let y = -r; y <= r; y++) {
+      for (let x = -r; x <= r; x++) {
+        if (tileAt(w, x, y) !== TREE) continue;
+        for (let dy = -rad; dy <= rad; dy++) {
+          for (let dx = -rad; dx <= rad; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            if (tileAt(w, x + dx, y + dy) === TREE) return { x, y };
+          }
+        }
+      }
+    }
+  }
+  throw new Error("no wood generated nearby");
+}
+
+/** Nothing the town (or anyone) has built within `m` tiles. */
+function clearAround(w: ReturnType<typeof newWorld>, x: number, y: number, m: number): boolean {
+  for (let dy = -m; dy <= m; dy++) {
+    for (let dx = -m; dx <= m; dx++) {
+      if (`${x + dx},${y + dy}` in w.build) return false;
+    }
+  }
+  return true;
 }
 
 describe("inventory", () => {
@@ -195,7 +247,7 @@ describe("gathering", () => {
     // reach `rad` tiles into what you felled; everything further in has nothing
     // to grow from and is yours.
     const w = freshWorld();
-    const { x, y } = findNode(w, TREE);
+    const { x, y } = findNode(w, TREE, NODES.tree.seedRadius! + 4);
     const rad = NODES.tree.seedRadius!;
     const half = rad + 3; // a felled block comfortably wider than the reach
     for (let dy = -half - 1; dy <= half + 1; dy++) {
@@ -287,7 +339,7 @@ describe("gathering", () => {
 
   it("the woods refill across a long absence with no catch-up loop", () => {
     const w = freshWorld();
-    const first = findNode(w, TREE);
+    const first = findTreeInWood(w);
     gather(w, first.x, first.y, 1000);
     // Return a week later: one call restores everything due.
     updateRegrowth(w, 1000 + 7 * 24 * HOUR);
@@ -395,7 +447,7 @@ describe("grass closes over what you dug", () => {
     // Two timers on one tile is the race `reclaim` was shaped to avoid: gathering
     // books regrowth and must NOT also book a reclaim.
     const w = freshWorld();
-    const { x, y } = findNode(w, TREE);
+    const { x, y } = findTreeInWood(w);
     gather(w, x, y, 1000);
     expect(Object.keys(w.reclaim)).toHaveLength(0);
     updateReclaim(w, 1000 + RECLAIM_MS * 10);

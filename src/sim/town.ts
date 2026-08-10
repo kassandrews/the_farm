@@ -22,7 +22,7 @@ import type { TileId } from "../content/tiles";
 import { FLOOR, GRASS } from "../content/tiles";
 import { tileDef } from "../content/tiles";
 import type { TownBuilding } from "../content/town";
-import { allTownBuildings, footprintCells, isPerimeter, TOWN_FIXTURES } from "../content/town";
+import { allTownBuildings, footprintCells, isPerimeter, STREETS, TOWN_FIXTURES } from "../content/town";
 import { tileKey } from "./world";
 
 /** Answers what generation would put at a tile, before any edits. Both callers
@@ -44,6 +44,11 @@ export interface StampTarget {
   build: Record<string, BuildCell>;
   furniture: Record<string, FurnitureCell>;
   crops: Record<string, unknown>;
+  /** Per-cell floor finish (world.ts §floorFinish). Optional because a save
+   *  being migrated from far enough back may not have grown the field yet, and
+   *  the streets are the only thing here that writes one — a building's floor is
+   *  plain FLOOR and takes the default. */
+  finishes?: Record<string, string>;
 }
 
 /** Has the player already claimed this cell for something of their own?
@@ -146,6 +151,41 @@ export function stampFixtures(t: StampTarget): string[] {
   return placed;
 }
 
+/** The material the town paved its streets in. Cobble because it is the one
+ *  stone that cannot be confused with the plaza — granite is byte for byte the
+ *  plaza's own colour (see the museum's note in content/town.ts), so a granite
+ *  street would have made the square's edge disappear, which is the opposite of
+ *  what the street plan is for. The square is dressed stone; the streets are
+ *  cobbles; you can see where one stops. */
+const STREET_FINISH = "cobble";
+
+/** Lay the town's streets — ordinary floor cells, exactly like the ones you lay
+ *  (content/town.ts §STREETS).
+ *
+ *  PER CELL RATHER THAN ALL-OR-NOTHING, which is the one place this deliberately
+ *  differs from `stampBuilding`. A building stamped around somebody's shed is a
+ *  roofless L with a door into a wall; a street with a shed on it is a street
+ *  with a shed on it. Half a lane is still a lane, so a player who built across
+ *  the route keeps their building and the paving goes round them.
+ *
+ *  It writes the floor and its finish and nothing else — no walls, no clearing,
+ *  no apron. A street is ground. */
+export function stampStreets(t: StampTarget): number {
+  let laid = 0;
+  for (const r of STREETS) {
+    for (let y = r.y0; y <= r.y1; y++) {
+      for (let x = r.x0; x <= r.x1; x++) {
+        if (occupied(t, x, y)) continue;
+        const key = tileKey(x, y);
+        t.overrides[key] = FLOOR;
+        if (t.finishes) t.finishes[key] = STREET_FINISH;
+        laid++;
+      }
+    }
+  }
+  return laid;
+}
+
 /** Stamp every town building AND every fixture. Returns the ids that were
  *  actually placed, so a migration can say what it did rather than claiming
  *  success it didn't have.
@@ -160,6 +200,11 @@ export function stampTown(t: StampTarget, probe?: TerrainProbe): string[] {
   for (const b of allTownBuildings()) {
     if (stampBuilding(t, b, probe)) placed.push(b.id);
   }
+  // Streets AFTER the buildings, so a building that stamped its own floor over
+  // a route keeps it: the walls are the fixed thing here and the paving runs up
+  // to them. Before the fixtures for no reason but reading order — a fixture
+  // stands on ground and never lays any.
+  stampStreets(t);
   return [...placed, ...stampFixtures(t)];
 }
 

@@ -83,10 +83,13 @@ describe("the sky layer", () => {
     // The sky ships no `world.sky` record (sim/world.ts §editsFor), which is why
     // Phase 7c cost no schema change. A write that should never happen must not
     // land quietly in the SURFACE's record, which is where it would have gone.
+    // Well out of town. (3,3) was the old coordinate and it is the town's high
+    // street now (content/town.ts §STREETS), which the town paves at world
+    // creation — so "no override here" stopped being a fact about the sky.
     const w = freshWorld();
-    expect(() => setTile(w, 3, 3, GRASS, "sky")).toThrow();
-    expect(tileAt(w, 3, 3)).not.toBe(GRASS === tileAt(w, 3, 3) ? -1 : GRASS); // untouched either way
-    expect(Object.keys(w.overrides).some((k) => k === "3,3")).toBe(false);
+    expect(() => setTile(w, 300, 300, GRASS, "sky")).toThrow();
+    expect(tileAt(w, 300, 300)).not.toBe(GRASS === tileAt(w, 300, 300) ? -1 : GRASS);
+    expect(Object.keys(w.overrides).some((k) => k === "300,300")).toBe(false);
   });
 });
 
