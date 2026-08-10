@@ -165,8 +165,9 @@ export function showsTop(mask: number): boolean {
  *
  *  The note on `door.finishes` in content/structures.ts already states this:
  *  "the stone finishes reach the wall it sits in; they stop at the door itself."
- *  Nothing implemented it. A door carries a wood finish by construction
- *  (`finishes: ["wood"]`), so a doorway cut into a granite wall drew its lintel
+ *  Nothing implemented it. A door carries a wood finish by construction (it was
+ *  `finishes: ["wood"]` then and is `[]` now, which defaults to the same pine),
+ *  so a doorway cut into a granite wall drew its lintel
  *  and both jambs — the whole cell — in pine, and every stone house in the game
  *  had a plank of timber let into it at the front door.
  *

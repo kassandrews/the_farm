@@ -94,7 +94,7 @@ import {
   type ScenePalette,
 } from "./palette";
 import { zoomLadder } from "./zoom";
-import { forEachGrainMark } from "./grain";
+import { forEachGrainMark, GRAIN } from "./grain";
 import { roofFinish, roofPitch, type RoofPitch } from "./roof";
 import { gridFor, pieceCanvas } from "./furnishings";
 import { FURNITURE_ART } from "../content/furnishings";
@@ -264,34 +264,6 @@ const HIDDEN_FADE = 0.28;
 const STOREY = 24;
 /** The lit top surface of a wall, seen from slightly above. */
 const WALL_CAP = 3;
-/** How a surface is grained, per material class (render/grain.ts).
- *
- *  BOTH PERIODS ARE COPRIME WITH TILE, and that is not a taste call — it is the
- *  per-cell edges rule, which a plank seam is otherwise a textbook violation of.
- *  Read grain.ts's docblock before changing either number; 4 or 8 would look
- *  nearly the same in a mockup and stripe the floor at the tile pitch in game.
- *
- *  Wood boards are narrower and LONGER than flagstones are, and the length is
- *  what separates the two surfaces — more than the colour does and more than the
- *  course height does. The first version butted its boards every 13px and
- *  photographed as brickwork: a five-px course broken every thirteen IS a brick
- *  bond, whatever colour it is painted. A board is milled from a tree and runs
- *  most of a room, so it butts every 47 — three tiles, and rarely twice in one
- *  view. Flagstones are cut and laid, and break every nine.
- *
- *  `bond` is how many courses before the joints line up again — 3 for boards, a
- *  stepped bond; 2 for stone, the running bond every brick wall is laid in. It
- *  replaced a random per-course offset, which is what a floor looks like if you
- *  have never seen one: joints crowding, drifting, sometimes landing two pixels
- *  apart. Regularity is the thing that reads as workmanship. */
-const GRAIN = {
-  wood: { course: 5, joint: 47, bond: 3, seam: 0.13, joint_ink: 0.2 },
-  stone: { course: 6, joint: 9, bond: 2, seam: 0.11, joint_ink: 0.17 },
-  // Cloth has no grain. A rug is woven, not built, and a seam across one would
-  // read as two rugs — the pieces that wear cloth get their pattern from their
-  // own draw path (drawFurniture), not from this.
-  cloth: null,
-} as const;
 /** The town square is cut in bigger slabs than anybody's kitchen floor.
  *
  *  The plaza and a laid flagstone floor were the same stone in the same bond,

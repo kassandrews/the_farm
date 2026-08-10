@@ -29,11 +29,34 @@ import { FURNITURE_ART } from "../content/furnishings";
 import { FURNITURE, furnitureDef, type FurnitureId, type Facing } from "../content/furniture";
 import { skinDef, type SkinId } from "../content/skins";
 import { gridFor, pieceCanvas } from "./furnishings";
+import { forEachGrainMark, GRAIN } from "./grain";
+import { mixHex } from "./palette";
 
 /** Scene px per world tile — the renderer's own TILE, which the art is authored
  *  against. Repeated rather than exported from renderer.ts because that module
  *  pulls in the whole scene, and a thumb needs one number from it. */
 const TILE = 16;
+/** A wall's height and the lit strip along its top, the renderer's own numbers,
+ *  repeated for the same reason TILE is. A wall swatch is a piece of wall, so it
+ *  is exactly one storey tall and wears its cap. */
+const STOREY = 24;
+const WALL_CAP = 3;
+
+/** The swatch box, in scene px: two tiles across, one storey tall.
+ *
+ *  TWO TILES, and the width is doing real work. A board butts every 47px against
+ *  a flagstone's 9, and that difference is most of what tells the two surfaces
+ *  apart — so a swatch narrow enough to miss the joints shows boards and
+ *  flagstones as two colours. At 16px wide, the stepped bond puts a joint inside
+ *  only one course in three; at 32 it puts one in every course (asserted in
+ *  thumbs.test.ts). It is the same arithmetic the floor pass reasons about when
+ *  it withholds joints from a lone tile — 16px is not long enough to have a
+ *  joint in — read from the other end.
+ *
+ *  One storey tall so the wall swatch is a wall rather than a crop of one, and
+ *  the floor swatch shares the box so a row of both sits on one line. */
+const SWATCH_W = 2 * TILE;
+const SWATCH_H = STOREY;
 
 const urls = new Map<string, string>();
 
@@ -96,6 +119,90 @@ export function furnitureThumb(id: FurnitureId, facing: Facing, finish: SkinId, 
   const url = canvas.toDataURL();
   urls.set(key, url);
   return url;
+}
+
+/** A patch of laid floor or standing wall in `finish`, as a data URL.
+ *
+ *  THE SWATCH IS THE SURFACE, not a colour chip of it. The finish row this
+ *  replaced showed an 18px square of `skin.color` beside a name, which is enough
+ *  to tell walnut from pine and cannot tell BOARDS from FLAGSTONES — and that is
+ *  the difference the player is actually choosing between when they open the
+ *  floor menu. Granite and slate are two grey squares; grained, one is a floor
+ *  laid in nine-pixel stones and the other is a floor laid in nine-pixel stones
+ *  of a different grey, which is at least the truth.
+ *
+ *  It is the renderer's own arithmetic, deliberately — the same GRAIN table, the
+ *  same fill-then-grain-then-cap order, the same coprime periods (render/grain.ts).
+ *  The one thing it cannot share is the world: a swatch has no neighbours, so it
+ *  is grained from world origin (0,0) and always jointed. A floor tile in game
+ *  withholds its joints when nothing runs on beside it; a swatch is showing you
+ *  what a RUN of this material looks like, and a run has joints.
+ *
+ *  Integer scale only, like every other thumb here (CLAUDE.md §Sprite rendering).
+ *  The marks are 1px lines; at a fractional scale they land between device pixels
+ *  and a floor's seams come back doubled in places and missing in others. */
+export function surfaceThumb(kind: "floor" | "wall", finish: SkinId, scale: number): string {
+  const key = `surface:${kind}:${finish}@${scale}`;
+  const hit = urls.get(key);
+  if (hit) return hit;
+
+  const skin = skinDef(finish);
+  const g = GRAIN[skin.applies];
+  const canvas = document.createElement("canvas");
+  canvas.width = SWATCH_W * scale;
+  canvas.height = SWATCH_H * scale;
+  const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = skin.color;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (g) {
+    const seam = mixHex(skin.color, { color: "#000000", amount: g.seam });
+    const joint = mixHex(skin.color, { color: "#000000", amount: g.joint_ink });
+    // A wall face is planking stood on end in wood and horizontal masonry in
+    // stone, and that difference is most of what makes a stone wall read as
+    // stone at this size — so the swatch has to make it too, or the menu shows
+    // two colours where the wall shows two materials. Straight off the wall
+    // pass in renderer.ts, including the `wy` trick: the courses are measured
+    // from the top of the FACE, not from the world row, because every wall in
+    // the game stands the same height.
+    const stone = skin.applies === "stone";
+    const cap = kind === "wall" ? WALL_CAP : 0;
+    forEachGrainMark(
+      {
+        wx: 0,
+        wy: cap,
+        w: SWATCH_W,
+        h: SWATCH_H - cap,
+        axis: kind === "wall" && !stone ? "v" : "h",
+        course: g.course,
+        joint: kind === "wall" && !stone ? null : g.joint,
+        bond: g.bond,
+      },
+      (mx, my, mw, mh, ink) => {
+        ctx.fillStyle = ink === "seam" ? seam : joint;
+        ctx.fillRect(mx * scale, (my + cap) * scale, mw * scale, mh * scale);
+      },
+    );
+  }
+
+  // The lit top, last, over the grain — a wall is seen from slightly above and
+  // the cap is the part of it you look down on. A floor has no cap: you are
+  // already looking at its top.
+  if (kind === "wall") {
+    ctx.fillStyle = skin.top;
+    ctx.fillRect(0, 0, canvas.width, WALL_CAP * scale);
+  }
+
+  const url = canvas.toDataURL();
+  urls.set(key, url);
+  return url;
+}
+
+/** The swatch box at `scale`, for the CSS that lays the buttons out — the same
+ *  ask-the-content move `thumbBox` makes for the catalogue tiles. */
+export function swatchBox(scale: number): { w: number; h: number } {
+  return { w: SWATCH_W * scale, h: SWATCH_H * scale };
 }
 
 /** The largest thumb any piece produces in any facing, at `scale`.

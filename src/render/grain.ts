@@ -36,6 +36,41 @@
 // hundred thousand short-lived allocations a second for no gain. A callback is
 // just as testable (collect into an array in the test) and allocates nothing.
 
+/** How a surface is grained, per material class.
+ *
+ *  IT LIVES HERE, next to the rule it obeys. It was declared in renderer.ts for
+ *  as long as the renderer was the only thing that drew a built surface; the
+ *  build menu's swatches draw one too (render/thumbs.ts §surfaceThumb), and a
+ *  second copy of these numbers is a floor whose picture in the menu is grained
+ *  differently from the floor you get.
+ *
+ *  BOTH PERIODS ARE COPRIME WITH TILE, and that is not a taste call — it is the
+ *  per-cell edges rule, which a plank seam is otherwise a textbook violation of.
+ *  Read the docblock above before changing either number; 4 or 8 would look
+ *  nearly the same in a mockup and stripe the floor at the tile pitch in game.
+ *
+ *  Wood boards are narrower and LONGER than flagstones are, and the length is
+ *  what separates the two surfaces — more than the colour does and more than the
+ *  course height does. The first version butted its boards every 13px and
+ *  photographed as brickwork: a five-px course broken every thirteen IS a brick
+ *  bond, whatever colour it is painted. A board is milled from a tree and runs
+ *  most of a room, so it butts every 47 — three tiles, and rarely twice in one
+ *  view. Flagstones are cut and laid, and break every nine.
+ *
+ *  `bond` is how many courses before the joints line up again — 3 for boards, a
+ *  stepped bond; 2 for stone, the running bond every brick wall is laid in. It
+ *  replaced a random per-course offset, which is what a floor looks like if you
+ *  have never seen one: joints crowding, drifting, sometimes landing two pixels
+ *  apart. Regularity is the thing that reads as workmanship. */
+export const GRAIN = {
+  wood: { course: 5, joint: 47, bond: 3, seam: 0.13, joint_ink: 0.2 },
+  stone: { course: 6, joint: 9, bond: 2, seam: 0.11, joint_ink: 0.17 },
+  // Cloth has no grain. A rug is woven, not built, and a seam across one would
+  // read as two rugs — the pieces that wear cloth get their pattern from their
+  // own draw path (drawFurniture), not from this.
+  cloth: null,
+} as const;
+
 /** What a mark is FOR, so the caller picks the ink. A seam is the gap between
  *  two boards or two courses and runs the length of the surface; a joint is
  *  where one board ends and the next begins, and crosses a single course. */

@@ -10641,6 +10641,67 @@ the garden's living view included, "so you can see where you're placing items."
   which is the SHAPE rename cashing out: the mode contains Build rather than
   being it.
 
+## A swatch for every surface (10 Aug 2026)
+
+The finish row is gone from the structure wing. Picking Floor now opens a THIRD
+RUNG — a row of floors, each one a patch of the real surface in the real grain —
+and picking Wall opens the same row drawn as wall. Asked for directly, the day
+after the doors landed: "instead of populating across the top, i want a new menu
+overlay with the same square style buttons to open that show a swatch of each
+floor type."
+
+The argument underneath the request is that a floor is not one thing you then
+tint. It is boards or it is flagstones, and those are two different floors. The
+old control could not say which: an 18px square of flat colour tells walnut from
+pine and cannot tell a board from a stone, which is the half of the choice that
+matters most. Granite and slate were two grey chips.
+
+### Settled here, don't relitigate
+
+- **The level is a rung in the bar, not a panel over the scene.** Same square
+  buttons as the doors, the tool row replaced rather than covered, world fully
+  visible — you are choosing a floor for a room you can see. The ladder is now
+  styles → wing → doors → out, and Escape and the back chip walk it through one
+  method (`buildBack`), so the key and the chip cannot drift apart.
+- **The swatch is the game's own pixels** (`surfaceThumb`), which is the
+  catalogue tiles' argument applied to surfaces: the same GRAIN table, the same
+  fill-then-grain-then-cap order, so a menu cannot lie about the floor it sells.
+  It is TWO TILES WIDE for a stated reason — a board butts every 47px against a
+  flagstone's 9, and at one tile the stepped bond puts a joint inside only one
+  course in three, so a narrower swatch shows boards and flagstones as two
+  colours. Asserted in `thumbs.test.ts`, because it looks fine at one tile.
+  `GRAIN` moved from renderer.ts to grain.ts to be shared rather than copied.
+- **Picking a swatch does not close the level.** You stay, holding that floor —
+  lay some pine, tap ash, lay more, no navigation between them. That is the
+  row's whole advantage over a panel that closes on you.
+- **A level only opens when there is a choice in it.** Fewer than two options
+  and the tap just arms the tool. Same rule as the fan's Sow button (§one
+  button); it is why Door and Window arm instantly today and will open a level
+  the day they have styles.
+- **Doors and windows have NO FINISH now** (`finishes: []`). A door lays over a
+  wall that already has one — the stone reaches the wall and stops at the frame
+  (`shellFinish`) — so the only thing being chosen was which timber the frame of
+  an opening in somebody else's masonry was cut from. Nothing repaints: cells
+  keep the finish stored on them, and `loadedFinish` still defaults to pine, so
+  new doors cost wood exactly as before.
+- **Furniture is owed the same treatment and is NOT getting it here.** The owner
+  wants to expand its options well past finish, which is its own sitting; until
+  then a chair keeps the finish row, and `syncFinishUi` carries a retirement
+  note saying so. Structure-only is staging, not a design boundary.
+- **The level names itself** ("‹ Build │ Wall"). Granite floor and granite wall
+  are the same masonry drawn the same way — correctly — so below the wood the
+  two rows are near-identical, and a back chip alone did not answer "am I
+  choosing a floor or a wall?".
+
+**A bug fell out of the ladder, and it predates this work.** `syncToolUi`'s
+"move off an empty tab" rule read the DOORS as an empty tab — no tool has that
+group — and reset `buildGroup` to `structure` on the very sync that drew the
+landing. The screen was right and the state was wrong one frame later, so
+Escape at the landing took the wing branch, put you back at the landing, and
+**build mode could not be left from the keyboard at all**. It hid because
+everything reads `buildGroup` during the sync that sets it, except the one thing
+that reads it on the next keystroke.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

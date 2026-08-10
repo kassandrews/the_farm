@@ -70,11 +70,26 @@ export const STRUCTURES: Record<StructureId, StructureDef> = {
     cost: 4,
     solid: false,
     encloses: true,
-    // Wood only, and not an oversight. A door is a made object rather than a
+    // NO FINISH AT ALL, which is the door's own old argument carried one step
+    // further. It was wood-only because a door is a made object rather than a
     // surface — it swings, it has a handle, it is the one part of a wall you
-    // touch — and a slab of granite on hinges is a portcullis. The stone
-    // finishes reach the wall it sits in; they stop at the door itself.
-    finishes: ["wood"],
+    // touch — and a slab of granite on hinges is a portcullis. But a door is
+    // also always SET INTO a wall that already has a finish, and it lays over
+    // whatever that is: the stone reaches the wall and stops at the frame
+    // (`shellFinish`), so the only thing the player was choosing here was which
+    // timber the frame of an opening in somebody else's masonry was cut from.
+    // That is a choice about a detail nobody looks at, occupying the slot where
+    // the choice that matters — WHICH DOOR — is going to go (ROADMAP §a swatch
+    // for every surface).
+    //
+    // An empty list is a tool with nothing to pick, and every path already
+    // handles that: `loadedFinish` falls back to the default for wood, so a new
+    // door is still framed in pine and still costs wood; the build menu's style
+    // level does not open for a tool with fewer than two options, so tapping
+    // Door simply arms it. Doors ALREADY BUILT keep the finish stored on their
+    // cell — nothing repaints, and a walnut frame you chose last month stays
+    // walnut.
+    finishes: [],
   },
   window: {
     id: "window",
@@ -97,12 +112,13 @@ export const STRUCTURES: Record<StructureId, StructureDef> = {
     // Obviously. A room does not stop being a room because it has a window, and
     // a house that lost its roof when you glazed it would be a bad joke.
     encloses: true,
-    // Wood only, on exactly the door's argument: a window is a made object
-    // rather than a surface, and a sash cut from granite is an arrow slit. The
-    // stone finishes reach the wall it is set into and stop at the frame — which
-    // is what `shellFinish` already arranges, and why the museum's marble runs
-    // right up to a wooden window and no further.
-    finishes: ["wood"],
+    // None, on exactly the door's argument above — a window is a made object
+    // set into somebody else's wall, and the sash was the last place in the
+    // game you could pick a timber nobody would ever notice you had picked.
+    // `shellFinish` is what makes this safe: the masonry runs right up to the
+    // opening and stops at the frame, which is why the museum's marble still
+    // meets a wooden window and no further.
+    finishes: [],
   },
 };
 

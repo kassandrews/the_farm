@@ -7,7 +7,7 @@ import { el, hoverHint, modal } from "./dom";
 import { mountTitleScene, type TitleScene } from "./title";
 import { Renderer } from "../render/renderer";
 import { iconEl, gridEl, SCALE } from "../render/icons";
-import { furnitureThumb, thumbBox } from "../render/thumbs";
+import { furnitureThumb, surfaceThumb, swatchBox, thumbBox } from "../render/thumbs";
 import { portrait } from "../render/portrait";
 import { lookFor } from "../content/looks";
 import type { IconName } from "../content/icons";
@@ -277,6 +277,29 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
   { id: "painting", icon: "painting", label: "Painting", hint: "Hangs on a wall. Point it at one.", group: "decor" },
 ];
 
+/** Which tools answer a tap by opening a LEVEL rather than by simply arming.
+ *
+ *  THE STYLE LEVEL (ROADMAP §a swatch for every surface). A floor is not one
+ *  thing you then tint; it is boards or it is flagstones, and those are two
+ *  different floors. So picking Floor opens a row of floors — the real surface,
+ *  drawn in the real grain (render/thumbs.ts §surfaceThumb) — the same way
+ *  picking Furnish opens a row of chairs. The finish row across the top of the
+ *  bar was the old answer, and its shape was the problem: a swatch-and-name chip
+ *  18px square, above the tools, in a strip that also had to serve cushions.
+ *
+ *  STRUCTURE ONLY, for now, and it is a staging decision rather than a design
+ *  one — furniture is getting far more to choose from than a finish, and it
+ *  wants its own sitting rather than a level bolted on to the row of tiles it
+ *  already has. Until then a chair keeps the finish row, which is why
+ *  `syncFinishUi` still exists.
+ *
+ *  Erase is excluded by name and not by having no finishes, though it also has
+ *  none: a bulldozer that opened a menu of ways to bulldoze would be a joke the
+ *  fourth time you used it. */
+function hasStyleLevel(t: BuildTool): boolean {
+  return t !== "erase" && BUILD_TOOLS.find((b) => b.id === t)?.group === "structure";
+}
+
 /** What the undo control calls the last stroke. A phrase, not a tool name, so it
  *  drops into "Undo the wall" — after twenty minutes of building, the thing you
  *  regret and the thing you did last aren't reliably the same, and naming it is
@@ -325,6 +348,12 @@ export class App {
    *  the doors landing holds nothing, so "a tool is in hand" stopped being
    *  usable as the mode flag. */
   private shaping = false;
+  /** Standing at the STYLE LEVEL: the rung below a tool, where the swatches for
+   *  the held tool replace the tool row (ROADMAP §a swatch for every surface).
+   *  A boolean rather than a third `buildGroup` value, because the level is
+   *  entirely a fact about the tool already in hand — which tool it belongs to
+   *  is `buildTool`, and a second field naming it could disagree. */
+  private styleLevel = false;
   /** Whether the shaft has already said what going down is like this session. */
   private saidShaftLine = false;
   /** A node you tapped and are walking over to deal with. UI state, never the
@@ -386,6 +415,7 @@ export class App {
       () => this.selectBuildGroup("structure"),
       () => this.openFurniture(),
       () => this.openGarden(),
+      () => this.buildBack(),
       () => this.toggleBuild(),
       () => this.rotate(),
       () => this.doUndo(),
@@ -2644,11 +2674,11 @@ export class App {
       // And build mode's. The BUILD button is the pointer door; Escape is the
       // keyboard one, and both go through `toggleBuild` so the pan resets and the
       // view flattens back through one path rather than two.
-      if (k === "escape" && this.shaping && this.buildGroup !== "doors") {
-        // One step back: a wing's Escape is the back chip, and the doors'
-        // Escape is the way out — the same ladder the taps walk.
-        this.buildTool = null;
-        this.selectBuildGroup("doors");
+      if (k === "escape" && this.shaping && (this.styleLevel || this.buildGroup !== "doors")) {
+        // One step back: Escape IS the back chip, at whichever rung you are on
+        // — swatches, then wing, then out. Same ladder the taps walk, same one
+        // method, so the two cannot drift apart.
+        this.buildBack();
         e.preventDefault();
         return;
       }
@@ -2843,6 +2873,7 @@ export class App {
   private verbAct(t: Tool): void {
     this.buildTool = null;
     this.shaping = false;
+    this.styleLevel = false;
     this.closeFan();
     this.endAssigning();
     this.syncToolUi();
@@ -2860,6 +2891,7 @@ export class App {
     if (this.shaping) {
       this.shaping = false;
       this.buildTool = null;
+      this.styleLevel = false;
       this.syncToolUi();
       return;
     }
@@ -2883,6 +2915,7 @@ export class App {
     // a hand grabbing at you now that the landing is a menu.
     this.shaping = true;
     this.buildTool = null;
+    this.styleLevel = false;
     this.buildGroup = "doors";
     this.closeFan();
     this.endAssigning();
@@ -2911,6 +2944,19 @@ export class App {
     }
     this.buildTool = t;
     this.shaping = true;
+    // DOWN A LEVEL IF THERE IS A CHOICE DOWN THERE, and not otherwise. Two
+    // floors is a menu; one floor is a floor, and a level holding a single
+    // button you cannot decline is a door into a corridor. It is the same rule
+    // the fan's Sow button follows (ROADMAP §one button — "one extra tap, only
+    // when a choice actually exists") and the same one the finish row followed
+    // before it, which is why Door and Window simply arm: they have no finish
+    // at all now, and their styles are a table row that does not exist yet.
+    //
+    // The tool is armed EITHER WAY. Arriving at the swatches already holding
+    // the floor you laid last time means the level costs nothing to pass
+    // through — tap Floor, tap the ground, and you never learned there was a
+    // rung there.
+    this.styleLevel = this.styleOptions(t).length >= 2;
     // THE TAB FOLLOWS THE TOOL, and only here — when the tool actually changes.
     // Doing it inside syncToolUi instead meant every sync re-derived the tab
     // from whatever was in hand, so tapping a tab was overwritten the same
@@ -2933,8 +2979,31 @@ export class App {
    *  lands. Tapping a tool is what picks one up. */
   private selectBuildGroup(g: BuildGroup): void {
     this.buildGroup = g;
+    // Any move sideways closes the level, because the level belongs to a tool
+    // in a wing and you have just left one or both. It does NOT put the tool
+    // down, on the same browsing argument as the tabs.
+    this.styleLevel = false;
     if (g !== "structure") this.lastFurnitureGroup = g;
     this.syncToolUi();
+  }
+
+  /** The way back up ONE rung — the back chip, and Escape's first press.
+   *
+   *  The ladder is styles → wing → doors → out, and this walks the top two of
+   *  it; `toggleBuild` is the last step. It leaves the tool IN HAND on the way
+   *  out of the style level and takes it out of your hand on the way out of a
+   *  wing, which sounds inconsistent and is the same rule both times: you can
+   *  still use what you are holding everywhere the tool row is, and the doors
+   *  landing is the one place in the mode that holds nothing (ROADMAP §three
+   *  doors). */
+  private buildBack(): void {
+    if (this.styleLevel) {
+      this.styleLevel = false;
+      this.syncToolUi();
+      return;
+    }
+    this.buildTool = null;
+    this.selectBuildGroup("doors");
   }
 
   /** Open the furniture level — the Furniture button, and F.
@@ -2986,6 +3055,13 @@ export class App {
   private syncToolUi(): void {
     const building = this.shaping;
     const doors = building && this.buildGroup === "doors";
+    // The level closes itself if the choice underneath it goes away — you can
+    // climb down a shaft holding a floor, and a rung whose swatches the rock
+    // refuses is a rung standing on nothing. Re-derived here rather than
+    // trusted from the tap that opened it, because the world can change
+    // underneath a level nobody is touching.
+    if (this.styleLevel && this.styleOptions(this.buildTool).length < 2) this.styleLevel = false;
+    const styles = building && this.styleLevel;
     // Which tabs have anything IN them here. Underground the palette is two
     // tools long, so most tabs would be empty — an empty tab is a promise the
     // room cannot keep, so it goes rather than showing an empty row.
@@ -2999,7 +3075,18 @@ export class App {
     // If the tab we're on has nothing left in it — you climbed down a shaft with
     // Seating open — move to one that does, rather than showing an empty row and
     // no way to understand why.
-    if (!live.has(this.buildGroup)) {
+    //
+    // NOT AT THE DOORS, and that exception is a bug fix. `live` is built from
+    // BUILD_TOOLS, and no tool has group "doors" — the landing is a menu of
+    // wings and holds nothing — so this rule read the landing as an empty tab
+    // and quietly moved you to `structure` on the very sync that was drawing
+    // the landing. The screen was right (`doors` is computed above this) and the
+    // STATE was wrong, one frame later, which is the worst version: Escape at
+    // the landing then took the wing branch, put you back at the landing, and
+    // build mode could not be left from the keyboard at all. It survived
+    // because everything that reads `buildGroup` reads it during the same sync
+    // that sets it, except the one thing that reads it on the next keystroke.
+    if (!doors && !live.has(this.buildGroup)) {
       const first = BUILD_GROUPS.find((g) => live.has(g.id));
       if (first) this.buildGroup = first.id;
     }
@@ -3008,8 +3095,26 @@ export class App {
     const wing = wingOf(this.buildGroup);
     for (const [id, btn] of this.hud.groupButtons) {
       btn.classList.toggle("selected", id === this.buildGroup);
-      btn.style.display = live.has(id) && wingOf(id) === wing ? "" : "none";
+      // And one wing's tabs only while you are IN the wing: a level below it is
+      // a room off that corridor, and the corridor's other doors have no
+      // business over the swatches you went in to choose between.
+      btn.style.display = live.has(id) && wingOf(id) === wing && !styles ? "" : "none";
     }
+    // The back chip names where it GOES, so it has to know which rung it is on:
+    // out of the swatches is back to the wing, out of the wing is back to the
+    // doors. The wing's own name comes from the table rather than being written
+    // here twice — "Build" is the structure wing's label (ROADMAP §the mode is
+    // SHAPE), and a second copy of that string is how the two stop agreeing.
+    const wingName = BUILD_GROUPS.find((g) => g.id === this.buildGroup)?.label ?? "Shape";
+    this.hud.buildBack.textContent = styles ? `‹ ${wingName}` : "‹ Shape";
+    this.hud.buildBack.setAttribute(
+      "aria-label",
+      styles ? `Back to ${wingName}` : "Back to the doors",
+    );
+    this.hud.buildLevel.style.display = styles ? "" : "none";
+    this.hud.buildLevel.textContent = styles
+      ? (BUILD_TOOLS.find((b) => b.id === this.buildTool)?.label ?? "")
+      : "";
     // THE DOORS AND THE WINGS (ROADMAP §three doors). The landing shows the
     // three doors and nothing else; a wing shows its tools with the back chip
     // at the head of the strip; the doors themselves are absent inside a wing,
@@ -3033,6 +3138,10 @@ export class App {
       // is for.
       const inTab =
         !doors &&
+        // A LEVEL SHOWS ONE THING. At the swatches the tool row is gone
+        // entirely, erase included — the swatches are what you came down here
+        // to look at, and the back chip is one tap away for everything else.
+        !styles &&
         (btn.dataset.group === this.buildGroup ||
           // ERASE FOLLOWS YOU INTO EVERY WING: uprooting is erase and only
           // erase (DESIGN §The garden), a shelf comes back down where the
@@ -3087,9 +3196,70 @@ export class App {
       : "Rotate";
 
     this.syncFinishUi();
+    this.syncStyleUi();
     this.syncFurnitureTiles();
     this.syncGardenUi();
     this.syncUndoUi();
+  }
+
+  /** The styles a tool has to choose between, or nothing for a tool that has no
+   *  level. One list, asked in three places — the tap that opens the level, the
+   *  sync that closes it again, and the row that draws it — so "how many floors
+   *  are there" can only ever have one answer. */
+  private styleOptions(t: BuildTool | null): SkinId[] {
+    if (!this.world || t === null || !hasStyleLevel(t)) return [];
+    return availableSkinsForClasses(this.world.skins.unlocked, toolFinishes(t));
+  }
+
+  /** Rebuild the swatch row for the tool whose level you are standing in.
+   *
+   *  A SWATCH IS A PICTURE OF THE FLOOR, drawn in the game's own pixels and its
+   *  own grain (render/thumbs.ts §surfaceThumb) — the catalogue tiles' argument,
+   *  applied to the surfaces. The finish chips this replaced were an 18px square
+   *  of flat colour, which can tell walnut from pine and cannot tell a board
+   *  from a flagstone; and boards-or-flagstones is the actual question, with the
+   *  colour being what you settle once you have answered it.
+   *
+   *  Rebuilt from scratch per sync, like the finish row and the species chips.
+   *  The list changes with what you have unlocked — slate arrives twelve tiles
+   *  down a tunnel, mid-session — and a dozen buttons is nothing to make. The
+   *  thumbs themselves are cached in render/thumbs.ts, so a rebuild is a dozen
+   *  cache hits and no rasterizing. */
+  private syncStyleUi(): void {
+    const row = this.hud.buildStyles;
+    const tool = this.buildTool;
+    if (!this.world || !this.styleLevel || tool === null) {
+      row.replaceChildren();
+      return;
+    }
+    const world = this.world;
+    // Which surface the swatch should be a picture OF. A wall swatch stands up
+    // and wears its cap; a floor lies down. Anything else that grows a level
+    // later gets its own answer here rather than borrowing the floor's, because
+    // a picture of the wrong surface is worse than no picture.
+    const kind = tool === "wall" ? "wall" : "floor";
+    const chosen = loadedFinish(world, tool);
+    const chips = this.styleOptions(tool).map((id) => {
+      const skin = skinDef(id);
+      const btn = el("button", { class: "tool swatch", ariaLabel: skin.name }, [
+        el("img", { class: "swatch-art", src: surfaceThumb(kind, id, THUMB_SCALE) }),
+        el("span", { class: "tile-name" }, [skin.name]),
+      ]);
+      btn.classList.toggle("selected", id === chosen);
+      btn.addEventListener("click", () => {
+        world.skins.selected[tool] = id;
+        saveWorld(world);
+        // AND YOU STAY HERE. Picking a swatch is picking up that floor, not
+        // answering a question and being sent back — the bar does not cover the
+        // ground, so laying some pine, tapping ash and laying more is one
+        // gesture each with no navigation between them. It is the row's whole
+        // advantage over a panel that closes on you.
+        this.syncToolUi();
+      });
+      hoverHint(btn, `${skin.name} — free to change, on anything already built.`);
+      return btn;
+    });
+    row.replaceChildren(...chips);
   }
 
   /** Rebuild the species chips for whichever garden tab is open.
@@ -3233,6 +3403,15 @@ export class App {
     const row = this.hud.buildFinishes;
     const tool = this.buildTool;
     if (!this.world || tool === null) {
+      row.replaceChildren();
+      return;
+    }
+    // A tool with a level of its own does not ALSO fill this row. The swatches
+    // are the same choice, drawn properly and one rung down, and two controls
+    // for one fact is how they end up disagreeing (ROADMAP §a swatch for every
+    // surface). This is the row's retirement notice: it serves furniture until
+    // furniture gets its own level, and goes when that lands.
+    if (hasStyleLevel(tool)) {
       row.replaceChildren();
       return;
     }
@@ -3733,6 +3912,15 @@ interface HudRefs {
   garden: HTMLElement;
   /** The species chips, refilled per garden tab by syncGardenUi(). */
   gardenTools: HTMLElement;
+  /** The style swatches — the level below a structure tool, refilled by
+   *  syncStyleUi(). Empty and absent unless you are standing in it. */
+  buildStyles: HTMLElement;
+  /** The way back up a level, at the head of the tab strip. Its label changes
+   *  with the level it is leaving, so it always names where it goes. */
+  buildBack: HTMLElement;
+  /** Names the style level you are standing in — "Floor", "Wall". Absent
+   *  everywhere else, where the tools on screen already say it. */
+  buildLevel: HTMLElement;
   /** The whole build tray. Kept only so the toast can measure it and sit above
    *  it — the bar's height changes with the held tool, so no fixed offset in the
    *  stylesheet can clear it. */
@@ -3750,6 +3938,7 @@ function buildHud(
   onStructure: () => void,
   onFurniture: () => void,
   onGarden: () => void,
+  onBuildBack: () => void,
   onBuild: () => void,
   onRotate: () => void,
   onUndo: () => void,
@@ -3921,6 +4110,12 @@ function buildHud(
   // tab would be — they ARE that tab's tools, rebuilt per sync.
   const gardenTools = el("div", { class: "garden-tools" });
   buildTools.append(gardenTools);
+  // The style swatches, in the tool row for the same reason the species chips
+  // are: at the style level they ARE the row. `display: contents` in the
+  // stylesheet hands them to the row's own flex layout, so a level with nine
+  // floors in it wraps exactly as a level with five tools does.
+  const buildStyles = el("div", { class: "build-styles" });
+  buildTools.append(buildStyles);
 
   // The tabs. Text rather than icons, because a group is a WORD — "Seating" is
   // one glance and a picture of a category is a riddle. They sit above the tool
@@ -3932,10 +4127,24 @@ function buildHud(
   // have gone in — the categories of a thing you are not doing have no business
   // sitting over the bar while you lay a floor. `back` is the way out, first in
   // the strip and reading as a direction rather than a category.
+  //
+  // ONE CHIP FOR A LADDER THAT IS NOW THREE RUNGS DEEP. It says where it goes,
+  // not where you are — "‹ Shape" from a wing, "‹ Build" from the floor swatches
+  // — because a back control that named the room you were standing in would be
+  // the one thing on screen already obvious from everything else on it.
   const groupTabs = el("div", { class: "build-groups" });
   const back = el("button", { class: "build-group build-back", ariaLabel: "Back to the doors" }, ["‹ Shape"]);
-  back.addEventListener("click", () => onBuildGroup("doors"));
+  back.addEventListener("click", onBuildBack);
   groupTabs.append(back);
+  // WHICH LEVEL YOU ARE IN, said once. Granite floor and granite wall are the
+  // same masonry drawn the same way — correctly, they ARE the same stone — so
+  // the two swatch rows are all but identical below the wood, and with only a
+  // back chip on screen there was nothing that answered "am I choosing a floor
+  // or a wall right now?". A word, not a tab: it navigates nowhere, so it must
+  // not look like the things that do.
+  const levelName = el("span", { class: "build-level" }, []);
+  levelName.style.display = "none";
+  groupTabs.append(levelName);
   const groupButtons: [BuildGroup, HTMLElement][] = [];
   for (const g of BUILD_GROUPS) {
     if (!g.tab) continue;
@@ -3982,6 +4191,11 @@ function buildHud(
   ]);
   buildBar.style.setProperty("--tile-art-w", `${box.w}px`);
   buildBar.style.setProperty("--tile-art-h", `${box.h}px`);
+  // Same move for the swatches — the box comes from the content, so a surface
+  // drawn at a different size cannot quietly overflow the button around it.
+  const swatch = swatchBox(THUMB_SCALE);
+  buildBar.style.setProperty("--swatch-art-w", `${swatch.w}px`);
+  buildBar.style.setProperty("--swatch-art-h", `${swatch.h}px`);
 
   // BUILD sits directly above ACT, in the one corner the hands already live in,
   // and the two never appear together: entering build mode is the game putting
@@ -4019,7 +4233,7 @@ function buildHud(
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, survey, flash, giveUp, actFan, action, buildButtons, groupButtons, groupTabs, buildDoor, furniture, garden, gardenTools, buildFinishes, buildBar, build, rotate, undo, zoom };
+  return { root: hud, clock, survey, flash, giveUp, actFan, action, buildButtons, groupButtons, groupTabs, buildDoor, furniture, garden, gardenTools, buildStyles, buildBack: back, buildLevel: levelName, buildFinishes, buildBar, build, rotate, undo, zoom };
 }
 
 // --- Panel helpers ------------------------------------------------------------

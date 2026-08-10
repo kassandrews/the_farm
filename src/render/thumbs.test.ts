@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { thumbBox } from "./thumbs";
+import { swatchBox, thumbBox } from "./thumbs";
 import { FURNITURE_ART } from "../content/furnishings";
 import { FURNITURE, type FurnitureId, type Facing } from "../content/furniture";
 import { gridFor } from "./furnishings";
+import { forEachGrainMark, GRAIN } from "./grain";
 
 const TILE = 16;
 const FACINGS: Facing[] = ["s", "n", "e", "w"];
@@ -45,5 +46,43 @@ describe("thumbBox", () => {
     const one = thumbBox(1);
     expect(thumbBox(2)).toEqual({ w: one.w * 2, h: one.h * 2 });
     expect(thumbBox(3)).toEqual({ w: one.w * 3, h: one.h * 3 });
+  });
+});
+
+describe("the swatch box", () => {
+  /** Which courses of a floor swatch `w` wide have a butt joint inside them. The
+   *  swatch's own spec (thumbs.ts §surfaceThumb): world origin, always jointed. */
+  function jointedCourses(w: number): number {
+    const g = GRAIN.wood;
+    const rows = new Set<number>();
+    forEachGrainMark(
+      { wx: 0, wy: 0, w, h: swatchBox(1).h, axis: "h", course: g.course, joint: g.joint, bond: g.bond },
+      (_x, y, _mw, _mh, ink) => {
+        if (ink === "joint") rows.add(y);
+      },
+    );
+    return rows.size;
+  }
+
+  // WHY THE SWATCH IS TWO TILES WIDE, made mechanical. A board butts every 47px
+  // and a flagstone every 9, and that difference is most of what tells the two
+  // surfaces apart at this size — so a swatch too narrow to contain a joint
+  // shows the player two colours and calls them two floors. The width is not a
+  // number anyone would defend by looking at one swatch, which is exactly why it
+  // wants a test: one tile looks fine, and is wrong three courses in four.
+  it("is wide enough that every course of boards shows a joint", () => {
+    const courses = Math.ceil(swatchBox(1).h / GRAIN.wood.course);
+    expect(jointedCourses(swatchBox(1).w)).toBe(courses);
+    // …and the one-tile swatch this rejected, so the reason stays on the record.
+    expect(jointedCourses(16)).toBeLessThan(courses);
+  });
+
+  // The seams are 1px lines. A fractional scale lands them between device pixels
+  // and a floor comes back with some boards wider than others — CLAUDE.md's
+  // sprite rule, and the swatches are the most fragile thing in the HUD under it.
+  it("scales by whole numbers", () => {
+    const one = swatchBox(1);
+    expect(swatchBox(2)).toEqual({ w: one.w * 2, h: one.h * 2 });
+    expect(swatchBox(3)).toEqual({ w: one.w * 3, h: one.h * 3 });
   });
 });

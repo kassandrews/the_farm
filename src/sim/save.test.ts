@@ -906,8 +906,12 @@ describe("v26 → v27: floors carry their own finish", () => {
     const migrated = migrateSave(v26Save())!;
     expect(loadedFinish(migrated, "floor")).toBe("walnut");
     expect(loadedFinish(migrated, "wall")).toBe("walnut");
-    expect(loadedFinish(migrated, "door")).toBe("walnut");
     expect(loadedFinish(migrated, "cushion")).toBe("undyed");
+    // The door was asserted here too, back when a door wore a finish. It does
+    // not any more (content/structures.ts §door.finishes), and the migration
+    // still writes it an entry — harmlessly, since nothing reads one for a tool
+    // with no finish classes. What the rekey has to get right is one tool per
+    // class, and the three above are that.
   });
 
   it("renames built_plank in all three logs, or old memories are orphaned", () => {

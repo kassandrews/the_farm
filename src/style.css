@@ -271,6 +271,18 @@ select {
   border-radius: 999px 0 0 999px;
 }
 
+/* The level's own name, in the strip where the tabs would be. It reads at the
+   same size as a tab and takes none of a tab's affordances — no border, no
+   press, no ring — because it is a caption for the row underneath rather than
+   somewhere you can go. Full opacity against the tabs' 0.62: the one thing up
+   here that is a statement rather than a choice may as well be the one thing
+   you can read at a glance. */
+.build-level {
+  padding: 4px 2px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
 .build-finishes {
   display: flex;
   flex-wrap: wrap;
@@ -283,6 +295,51 @@ select {
    beside them do and the container adds no box of its own. */
 .garden-tools {
   display: contents;
+}
+
+/* The style swatches ride in the tool row the same way, and for the same reason:
+   at the style level they ARE the row (ui/app.ts §syncStyleUi). */
+.build-styles {
+  display: contents;
+}
+
+/* A swatch button: a patch of the actual surface over its name. It is a `.tool`
+   first — same square corners, same border, same press — because it sits exactly
+   where the tools it replaced sat and is pressed for the same kind of reason.
+
+   Wider than a 52px tool and shorter than a catalogue tile, because the thing on
+   it is a piece of SURFACE rather than a symbol or an object: two tiles across
+   is what it takes for boards to show a butt joint (render/thumbs.ts §SWATCH_W),
+   and one storey is as tall as a wall gets. Sized from the art through the vars
+   the bar sets, never from a number measured once by eye. */
+.tool.swatch {
+  width: calc(var(--swatch-art-w, 64px) + 16px);
+  height: calc(var(--swatch-art-h, 48px) + 30px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 6px 4px;
+}
+
+/* THE SURFACE AT ITS OWN SIZE, no fit, no scaling — CLAUDE.md's sprite rule, the
+   same clause `.tile-art` is written under. A swatch is 1px seams on a 2x grid,
+   which is the most fragile thing in the HUD to resample: half a pixel of fit
+   and a floor comes back with some of its boards twice as wide as the others. */
+.swatch-art {
+  image-rendering: pixelated;
+  border-radius: 3px;
+}
+
+/* …which is also why the chosen swatch does NOT grow. `.tool.selected` lifts a
+   button 6%, which is a fractional scale over pixel art: harmless on a 12px icon
+   of a wall, visible on a picture of one, where the resample doubles some seams
+   and drops others and the chosen floor is the one swatch in the row whose grain
+   is wrong. The accent border and the warm fill say "chosen" perfectly well
+   without touching the pixels. */
+.tool.swatch.selected {
+  transform: none;
 }
 
 
