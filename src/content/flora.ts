@@ -231,7 +231,10 @@ export const FLORA: Record<FloraId, FloraDef> = {
     name: "plum tree",
     kind: "tree",
     skin: "orchard",
-    form: 1,
+    // Form 3 — the guest's slot at the end of the weighted list (§orchard's
+    // crownAlt note). Planting reads the species' own form, so YOUR plum is
+    // always a plum however rare the wild roll is.
+    form: 3,
     grows: TREE_DAYS,
     metIn: ["orchard"],
     fruit: { item: "plum", season: "summer" },

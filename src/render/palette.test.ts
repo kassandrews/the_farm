@@ -765,13 +765,21 @@ describe("crown silhouettes", () => {
           `${b.id}: its two trees differ in girth`,
         ).toBeLessThanOrEqual(1);
       }
-      // And they have to actually DIFFER, or a region is paying for a list in
-      // order to draw the same tree twice — the one failure a "more than one"
-      // rule cannot catch by counting.
+      // And the list has to hold MORE THAN ONE distinct tree, or a region is
+      // paying for a list in order to draw the same tree twice.
+      //
+      // ≥ 2 DISTINCT, NOT ALL-DISTINCT, and the loosening is the mixture rule
+      // arriving here (DESIGN §Biomes: a region plants from a catalogue, the
+      // dominant carries it, guests in the minority). A REPEATED form is how a
+      // list says the rate — the orchard writes its apple three times against
+      // one plum, which is "one tree in four" in exactly the way shrubShapes
+      // and the rock shapes have always weighted by repetition. What stays
+      // caught is the original fault: a list whose every entry is the same
+      // tree, which weights nothing and draws nothing new.
       const seen = new Set(
         forms.map((f) => `${f.rows.join(",")}|${f.overlap ?? 0}|${f.trunkHeight ?? 10}`),
       );
-      expect(seen.size, `${b.id}: two identical forms`).toBe(forms.length);
+      expect(seen.size, `${b.id}: a list of one tree`).toBeGreaterThanOrEqual(2);
     }
   });
 

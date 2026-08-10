@@ -41,6 +41,7 @@ import { drive } from "./drive.mjs";
 import {
   biomeAt,
   blossomCentre,
+  orchardCentre,
   generatedTile,
   redwoodCentre,
   calderaCentre,
@@ -93,6 +94,9 @@ function usable(id: BiomeId, x: number, y: number): boolean {
  *  the nearest example, which is also the one a player would actually meet. */
 function findBiome(id: BiomeId): { x: number; y: number } | null {
   if (id === "blossom") return blossomCentre(seed, spot);
+  // Sited near, small — a spiral at 3-tile steps can walk straight over a
+  // six-tile disc, so ask where it is, like every other sited place.
+  if (id === "orchard") return orchardCentre(seed, spot);
   // THE SITED WOODS. Searching for these by spiral would work and would be the
   // wrong tool: they are discs at known rings, so ask where they are. The giants
   // are asked for by walking outward through the instances until one of them has

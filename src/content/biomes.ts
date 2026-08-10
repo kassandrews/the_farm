@@ -237,7 +237,7 @@ export interface BiomeDef {
    *  from the crown's own top-centre, DRAWN rather than rolled — §berries
    *  learned that a hash makes clusters, and a cluster at this size is one
    *  bigger object. */
-  treeFruit?: { form: number; season: SeasonId; color: string; spots: [number, number][][] }[];
+  treeFruit?: { form: number | number[]; season: SeasonId; color: string; spots: [number, number][][] }[];
   /** Chance a bare cell carries a patch of mushrooms. */
   mushrooms: number;
 
@@ -5942,7 +5942,26 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // a row shorter, higher-shouldered, on a slightly taller stem. Different
     // enough to spot across the region once you know, which is the whole of
     // what a guest species owes.
+    //
+    // THE RATE LIVES IN THE FORM LIST, and the two repeats are the mechanism
+    // rather than a slip: `treeForms` weights by hash over the list, exactly as
+    // `shrubShapes` and the rock shapes weight by repetition, so an apple
+    // written three times against a plum written once IS "one tree in four".
+    // The first cut had one apple and one plum and photographed as half the
+    // orchard purple — a fifty-fifty is two orchards shuffled, not a guest.
     crownAlt: [
+      {
+        rows: [3, 6, 8, 8, 8, 8, 8, 8, 8, 8, 7, 6, 4],
+        gaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2],
+        overlap: 3,
+        trunkHeight: 12,
+      },
+      {
+        rows: [3, 6, 8, 8, 8, 8, 8, 8, 8, 8, 7, 6, 4],
+        gaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2],
+        overlap: 3,
+        trunkHeight: 12,
+      },
       {
         rows: [2, 5, 7, 8, 8, 8, 8, 8, 7, 6, 4, 3],
         gaps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2],
@@ -5956,7 +5975,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
     // crown, where fruit weighs a branch down to be reached.
     treeFruit: [
       {
-        form: 0,
+        form: [0, 1, 2],
         season: "autumn",
         color: "#c23b2e",
         spots: [
@@ -5966,7 +5985,7 @@ export const BIOMES: Record<BiomeId, BiomeDef> = {
         ],
       },
       {
-        form: 1,
+        form: 3,
         season: "summer",
         color: "#7a4e86",
         spots: [

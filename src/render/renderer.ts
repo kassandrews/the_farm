@@ -5472,7 +5472,9 @@ export class Renderer {
     // A 2×2 bead like the orbs', flat rather than additive: an apple is an
     // object in the leaves, not a light. Clamped inside the row it hangs on so
     // a narrow crown carries its fruit closer in, same arithmetic as the orbs.
-    const fruitOn = biome?.treeFruit?.find((f) => f.form === formIdx);
+    const fruitOn = biome?.treeFruit?.find((f) =>
+      Array.isArray(f.form) ? f.form.includes(formIdx) : f.form === formIdx,
+    );
     if (
       fruitOn &&
       this.palette.season?.id === fruitOn.season &&
