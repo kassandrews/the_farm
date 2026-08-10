@@ -1389,8 +1389,8 @@ describe("v36 → v37: the street plan moves four buildings", () => {
 
   it("paves the streets, in cobble", () => {
     const m = migrateSave(v36Save())!;
-    expect(m.overrides["-1,6"]).toBe(FLOOR); // mid-lane
-    expect((m.finishes as Record<string, string>)["-1,6"]).toBe("cobble");
+    expect(m.overrides["0,6"]).toBe(FLOOR); // mid-lane
+    expect((m.finishes as Record<string, string>)["0,6"]).toBe("cobble");
   });
 
   it("leaves the two that did not move alone, refinish and all", () => {

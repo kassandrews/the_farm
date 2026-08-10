@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 39;
+export const SCHEMA_VERSION = 40;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -1237,6 +1237,155 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
       furniture: stamped.furniture,
       finishes: stamped.finishes ?? raw.finishes,
       garden: stamped.garden ?? raw.garden,
+    };
+  },
+
+  /** v40 — the square is cleared and the path is one tile.
+   *
+   *  Two corrections, both asked for after looking at the town on screen, and
+   *  both about STONE.
+   *
+   *  1. NOTHING MAY STAND ON THE SQUARE. The town hall's south wall sat on the
+   *     plaza's own top row, so the one shared space in the town had a building's
+   *     wall ring eating a slice of it — and the stamp had laid plank over the
+   *     paving there. Nothing else overlapped (every other building is outside
+   *     the plaza's x range), which is exactly why it survived: one building
+   *     quietly took part of the square. The whole north front line moved back a
+   *     row rather than the hall alone, or the row of fronts would have grown a
+   *     step in it to fix a problem about the square.
+   *  2. THE PAVING SHRANK. The lane went from three tiles to one and the south
+   *     street from two rows to one. Together with the plaza they had put a wall
+   *     of stone across the town at the place you stand most.
+   *
+   *  So this rung has to take paving UP, which no rung has done before. The old
+   *  rectangles are frozen here, as always, and a cell is only lifted if it still
+   *  looks exactly like paving the town laid: FLOOR, wearing the town's cobble,
+   *  with nothing built or planted on it. Repave a stretch of the old lane in
+   *  your own boards and it stays — that is a floor you laid. */
+  39: (raw) => {
+    /** Everything the town had paved at v39. */
+    const V39_STREETS = [
+      { x0: -13, y0: -4, x1: -6, y1: -3 },
+      { x0: 6, y0: -4, x1: 11, y1: -3 },
+      { x0: -13, y0: 3, x1: 12, y1: 4 },
+      { x0: -1, y0: 5, x1: 1, y1: 11 },
+      { x0: -6, y0: 11, x1: 0, y1: 11 },
+      { x0: -1, y0: 12, x1: 1, y1: 18 },
+      { x0: -7, y0: 18, x1: 1, y1: 18 },
+    ];
+    /** And the three institutions, where they stood at v39. */
+    const V39_NORTH = [
+      { x0: -3, y0: -9, x1: 3, y1: -5, furniture: [
+        { x: -1, y: -7, id: "table" },
+        { x: 1, y: -7, id: "chair" },
+        { x: -2, y: -8, id: "shelf" },
+        { x: 2, y: -8, id: "shelf" },
+      ] },
+      { x0: 6, y0: -10, x1: 10, y1: -5, furniture: [
+        { x: 7, y: -9, id: "shelf" },
+        { x: 9, y: -9, id: "shelf" },
+        { x: 7, y: -7, id: "table" },
+      ] },
+      { x0: -13, y0: -14, x1: -6, y1: -5, furniture: [
+        { x: -8, y: -6, id: "table" },
+        { x: -12, y: -13, id: "shelf" },
+        { x: -8, y: -13, id: "shelf" },
+      ] },
+    ];
+    const NOW_NORTH = ["townhall", "heap", "museum"] as const;
+
+    const overrides = { ...((raw.overrides ?? {}) as Record<string, number>) };
+    const build = { ...((raw.build ?? {}) as Record<string, { id: string; finish: string }>) };
+    const furniture = { ...((raw.furniture ?? {}) as Record<string, { id: string }>) };
+    const finishes = { ...((raw.finishes ?? {}) as Record<string, string>) };
+    const crops = (raw.crops ?? {}) as Record<string, unknown>;
+    const garden = (raw.garden ?? { plants: {} }) as { plants: Record<string, unknown> };
+    const frozen = { ...((raw.frozen ?? {}) as Record<string, unknown>) };
+
+    // Paving up first. FLOOR in the town's own cobble, with nothing on it — the
+    // narrowest description of "a cell the town paved and nobody has touched".
+    for (const r of V39_STREETS) {
+      for (let y = r.y0; y <= r.y1; y++) {
+        for (let x = r.x0; x <= r.x1; x++) {
+          const key = `${x},${y}`;
+          if (key in build || key in furniture || key in crops || key in garden.plants) continue;
+          if (overrides[key] !== 2 /* FLOOR */ || finishes[key] !== "cobble") continue;
+          delete overrides[key];
+          delete finishes[key];
+        }
+      }
+    }
+
+    // Then the three that moved back a row, on v37's terms exactly.
+    for (let i = 0; i < V39_NORTH.length; i++) {
+      const was = V39_NORTH[i];
+      const now = TOWN_BUILDINGS[NOW_NORTH[i]];
+      // HAS THE PLAYER CLAIMED THIS GROUND? Crops and furniture, as v37 asked —
+      // and STRUCTURE too, which v37 did not and which cost three tests to
+      // notice.
+      //
+      // v37's four movers could skip the question for walls: `stampBuilding` is
+      // all-or-nothing, so a player wall anywhere in a footprint means the town
+      // never stamped that building at all, and there was nothing of the town's
+      // there to protect. The hall is different — it has been standing on this
+      // exact footprint since v7, so "there is a wall here" is the normal case
+      // and the question becomes WHOSE. The answer is exact comparison: work out
+      // what the stamp would write in this cell and see whether that is what is
+      // there. A perimeter cell in somebody's own finish is a repaint or a shed,
+      // and either way it is theirs.
+      const authored = new Set(now.furniture.map((f) => `${f.x},${f.y}:${f.id}`));
+      const glazed = new Set((now.windows ?? []).map((w) => `${w.x},${w.y}`));
+      let playerWork = false;
+      for (let y = now.y0; y <= now.y1; y++) {
+        for (let x = now.x0; x <= now.x1; x++) {
+          const key = `${x},${y}`;
+          if (key in crops || key in garden.plants) playerWork = true;
+          const piece = furniture[key];
+          if (piece && !authored.has(`${key}:${piece.id}`)) playerWork = true;
+          const cell = build[key];
+          if (!cell) continue; // empty is not a claim
+          const ring = x === now.x0 || x === now.x1 || y === now.y0 || y === now.y1;
+          if (!ring) {
+            playerWork = true; // the stamp puts nothing inside; this is theirs
+            continue;
+          }
+          const isDoor = x === now.door.x && y === now.door.y;
+          const isWindow = !isDoor && glazed.has(key);
+          const wantId = isDoor ? "door" : isWindow ? "window" : "wall";
+          const wantFinish = isDoor || isWindow ? now.finish : (now.walls ?? now.finish);
+          if (cell.id !== wantId || cell.finish !== wantFinish) playerWork = true;
+        }
+      }
+      if (playerWork) continue;
+      for (const r of [was, now]) {
+        for (let y = r.y0; y <= r.y1; y++) {
+          for (let x = r.x0; x <= r.x1; x++) {
+            const key = `${x},${y}`;
+            delete overrides[key];
+            const cell = build[key];
+            if (cell && (cell.id === "wall" || cell.id === "door" || cell.id === "window")) {
+              delete build[key];
+            }
+            delete frozen[key];
+          }
+        }
+      }
+      for (const f of [...was.furniture, ...now.furniture]) {
+        const key = `${f.x},${f.y}`;
+        if (furniture[key]?.id === f.id) delete furniture[key];
+      }
+    }
+
+    const stamped = stampInto({ ...raw, overrides, build, furniture, finishes });
+    return {
+      ...raw,
+      schemaVersion: 40,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
+      finishes: stamped.finishes ?? finishes,
+      garden: stamped.garden ?? raw.garden,
+      frozen,
     };
   },
 };

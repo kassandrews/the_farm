@@ -11017,6 +11017,52 @@ day the tent moved:
   gathered, so `gather` correctly returned null and the action ladder read as
   broken. Both helpers skip `garden.plants` now.
 
+## The square is cleared and the path is one tile (10 Aug 2026)
+
+Two corrections asked for after looking at the shipped town, and both are about
+STONE. Worth recording because both were things the plan got wrong in the same
+direction — it kept reaching for width.
+
+**Nothing may stand on the square.** The town hall's south wall sat on the
+plaza's own top row, so the one shared space in the town had a wall ring eating a
+slice of it and the stamp had laid plank over the paving. Nothing else
+overlapped, which is exactly why it survived a whole pass: every other building
+is outside the plaza's x range, so there was no second case to notice it by.
+`FRONT_N` moved from −5 to −6 — the WHOLE north line, not the hall alone, because
+the row of fronts is the point and a hall set back on its own would have put a
+step in the street face to fix a problem about the square.
+
+**The path is one tile, and the south street is one row.** The lane was three,
+argued for as "it is the road out and one tile reads as a garden path". That was
+true about the lane and wrong about the town: three tiles of cobble running to
+the gate, stacked under a plaza and a two-row full-width street, is more stone
+than a place this size can carry, and the walk south stopped being a walk through
+grass. The south street loses its second row on its own merits — the north street
+is two rows because it is pinched between buildings on BOTH sides, where one row
+is a crack, and nothing fronts the south one from below.
+
+**The general lesson, which this project keeps relearning at different scales:**
+a surface that reads well in isolation reads as too much when it meets the next
+one. The plaza is fine, the street is fine, the lane is fine, and all three
+together were a wall of stone at exactly the place you stand most.
+
+### v40 is the first rung that takes paving UP
+
+Same discipline as v37: old rectangles frozen in the rung. A cell is only lifted
+if it still looks exactly like paving the town laid — FLOOR, wearing the town's
+cobble, with nothing built or planted on it. Repave a stretch of the old lane in
+your own boards and it stays, because that is a floor you laid.
+
+**And it had to learn a question v37 could skip.** v37's movers could ignore
+walls when asking "has the player claimed this ground", because `stampBuilding`
+is all-or-nothing: a player wall anywhere in a footprint means the town never
+stamped that building at all, so there was nothing of the town's to protect. The
+HALL is different — it has stood on its footprint since v7, so "there is a wall
+here" is the normal case and the question becomes whose. The answer is exact
+comparison: work out what the stamp would write in a cell and see whether that is
+what is there. A perimeter cell in somebody else's finish is a repaint or a shed.
+Three tests caught it, all of them older than this overhaul.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

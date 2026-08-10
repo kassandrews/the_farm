@@ -48,9 +48,19 @@ export type TownBuildingId =
 //
 // The two lines:
 //
-//   FRONT_N (y = -5) — the institutions' wall line. Museum, town hall and the
+//   FRONT_N (y = -6) — the institutions' wall line. Museum, town hall and the
 //     heap all put their south wall on it, so their fronts read as one street
-//     face, and their doorsteps land on the street below at y -4.
+//     face; their doorsteps land on the row below, which is the plaza's own top
+//     row in the middle and the north street's arms either side.
+//
+//     IT WAS -5, WHICH IS THE PLAZA'S TOP ROW, and the town hall therefore STOOD
+//     ON THE SQUARE — its wall ring occupied a row of the paving, and the stamp
+//     laid plank over it. Nothing else overlapped (the others are all outside the
+//     plaza's x range), which is exactly why it went unnoticed: one building
+//     quietly ate a slice of the town's one shared space. The whole line moved
+//     back a row rather than the hall alone, because the street face is the point
+//     — a hall set back on its own would have put a step in the row of fronts to
+//     fix a problem about the square.
 //   FRONT_S (y =  2) — the flank line. Prudence's house and the shop put their
 //     south wall on it, level with the plaza's own bottom row, so the two of them
 //     frame the square's south corners; doorsteps land at y 3.
@@ -66,7 +76,7 @@ export type TownBuildingId =
 // square spans y -5..2, so it is the wide part of the north street. STREETS below
 // is the rest: the arms that carry each one out past the plaza's edge, and the
 // lane south.
-export const FRONT_N = -5;
+export const FRONT_N = -6;
 export const FRONT_S = 2;
 
 /** Ground the town paved, as absolute inclusive rectangles.
@@ -83,19 +93,29 @@ export const FRONT_S = 2;
 export const STREETS: { x0: number; y0: number; x1: number; y1: number }[] = [
   // The north street's two arms, either side of the square, under the museum's
   // and the heap's fronts. The plaza is the stretch between them.
-  { x0: -13, y0: -4, x1: -6, y1: -3 },
-  { x0: 6, y0: -4, x1: 11, y1: -3 },
-  // The south street, and it runs UNBROKEN across the whole town rather than in
-  // two arms. The plaza stops at y 2, so nothing here is already paved and there
-  // is no gap to leave: one continuous frontage under the square's south side is
-  // what makes the town read as a street with a square on it rather than as a
-  // square with two spurs off it.
-  { x0: -13, y0: 3, x1: 12, y1: 4 },
-  // THE LANE — three wide, running south out of the south street toward the farm.
-  // The one north-south run in the town, and wider than the streets on purpose:
-  // it is the road out, it is the last thing the square opens onto, and at one
-  // tile it read as a garden path.
-  { x0: -1, y0: 5, x1: 1, y1: 11 },
+  { x0: -13, y0: -5, x1: -6, y1: -4 },
+  { x0: 6, y0: -5, x1: 11, y1: -4 },
+  // The south street, unbroken across the whole town rather than in two arms.
+  // The plaza stops at y 2, so nothing here is already paved and there is no gap
+  // to leave: one continuous frontage under the square's south side is what makes
+  // the town read as a street with a square on it rather than as a square with
+  // two spurs off it.
+  //
+  // ONE ROW, NOT TWO. The north street is two rows because it is pinched between
+  // buildings on BOTH sides, where one row is a crack. Nothing fronts this one
+  // from the south, so the second row was paving with nothing on either side of
+  // it — and stacked under the plaza it put a wall of stone across the whole town
+  // at exactly the place you stand most.
+  { x0: -13, y0: 3, x1: 12, y1: 3 },
+  // THE LANE — ONE TILE, running south out of the south street toward the farm.
+  //
+  // It was three, on the argument that it is the road out and a one-tile road
+  // reads as a garden path. That was true about the LANE and wrong about the
+  // TOWN: three tiles of cobble running the whole way to the gate, below a plaza
+  // and a full-width street, is more stone than a place this size can carry, and
+  // the walk south stopped being a walk through grass. A path you can see grass
+  // either side of is what makes the farm feel out of town.
+  { x0: 0, y0: 4, x1: 0, y1: 11 },
   // The spur west off the lane's foot to the seed stall's door — the last front
   // you pass on the way to your own ground, which is what the stall is for.
   { x0: -6, y0: 11, x1: 0, y1: 11 },
@@ -103,11 +123,11 @@ export const STREETS: { x0: number; y0: number; x1: number; y1: number }[] = [
   // not stop at the boundary and start again as a garden path: it is one road,
   // and it ends in your yard. That continuity is most of what makes the farm read
   // as the thing the town opens onto rather than as a separate map.
-  { x0: -1, y0: 12, x1: 1, y1: 18 },
+  { x0: 0, y0: 12, x1: 0, y1: 18 },
   // THE YARD, in front of the barn door and joining it to the lane's foot. Paved
   // in the same cobble as the road for the same reason — it is where the road
   // arrives, not a second surface laid against it.
-  { x0: -7, y0: 18, x1: 1, y1: 18 },
+  { x0: -7, y0: 18, x1: 0, y1: 18 },
 ];
 
 // --- The plot -------------------------------------------------------------------
@@ -142,14 +162,13 @@ export const STREETS: { x0: number; y0: number; x1: number; y1: number }[] = [
 // a foreign site happens to sit close. The first draft was 19x13 and reached 26.6.
 export const PLOT = { x0: -8, y0: 12, x1: 8, y1: 19 };
 
-/** The gate: three cells of the north fence left OUT, where the lane arrives.
+/** The gate: the cell of the north fence left OUT, where the lane arrives.
  *
  *  A GAP AND NOT A GATE PIECE. A fence does not enclose (content/structures.ts
  *  §fence), so nothing is being sealed and there is nothing for a gate to open —
- *  a hole in a fence is a way through, complete. Three wide because the lane is
- *  three wide, and a three-tile road that necks down to one at the boundary reads
- *  as a stile rather than as the way into a farm. */
-const GATE = { x0: -1, x1: 1 };
+ *  a hole in a fence is a way through, complete. One cell, because the lane is
+ *  one cell: the gate is as wide as the road, whatever the road is. */
+const GATE = { x0: 0, x1: 0 };
 
 /** Is this cell part of the plot's fence? The perimeter of PLOT, less the gate. */
 export function isPlotFence(x: number, y: number): boolean {
@@ -213,8 +232,8 @@ export const TOWN_PLANTINGS: { x: number; y: number; id: FloraId }[] = [
   // with a hole in it reads as a missing tooth. One tree fills the gap and leaves
   // the other cell walkable, which is what a real gap between two buildings has
   // in it.
-  { x: -4, y: -7, id: "broadleaf" },
-  { x: 5, y: -7, id: "broadleaf" },
+  { x: -4, y: -8, id: "broadleaf" },
+  { x: 5, y: -8, id: "broadleaf" },
   // YOUR OWN GROUND: two fruit trees along the plot's east fence, well clear of
   // the field and of the tent. A smallholding that arrived with an apple tree on
   // it is the oldest picture there is of one, and they are PICKABLE — the town
@@ -326,18 +345,18 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     id: "townhall",
     name: "Town Hall",
     x0: -3,
-    y0: -9,
+    y0: -10,
     x1: 3,
-    y1: -5,
-    door: { x: 0, y: -5 },
+    y1: FRONT_N,
+    door: { x: 0, y: FRONT_N },
     finish: "ash",
     furniture: [
       // The desk he is permanently "at the desk" at, immediately behind him.
-      { x: -1, y: -7, id: "table", facing: "s", counter: "hall" },
-      { x: 1, y: -7, id: "chair", facing: "s" },
+      { x: -1, y: -8, id: "table", facing: "s", counter: "hall" },
+      { x: 1, y: -8, id: "chair", facing: "s" },
       // Paperwork, filed along the back wall in whatever order it arrived.
-      { x: -2, y: -8, id: "shelf", facing: "s" },
-      { x: 2, y: -8, id: "shelf", facing: "s" },
+      { x: -2, y: -9, id: "shelf", facing: "s" },
+      { x: 2, y: -9, id: "shelf", facing: "s" },
     ],
   },
 
@@ -448,7 +467,7 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // its front joins the town hall's and the museum's instead of floating a row
     // above them with grass in between.
     x0: 6,
-    y0: -10,
+    y0: -11,
     x1: 10,
     y1: FRONT_N,
     // South wall, like every door in the town — a wall running away from the
@@ -458,8 +477,8 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     furniture: [
       // Shelves he refers to as "the system". He stands beside the counter, at
       // (9,-8).
-      { x: 7, y: -9, id: "shelf", facing: "s" },
-      { x: 9, y: -9, id: "shelf", facing: "s" },
+      { x: 7, y: -10, id: "shelf", facing: "s" },
+      { x: 9, y: -10, id: "shelf", facing: "s" },
       // The counter, one row inside the door.
       //
       // IT WAS AT (6,-7), WHICH IS THE WEST WALL. `x0` is 6, so the wall ring
@@ -474,7 +493,7 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       // solid furniture in front of a door seals the building, which is the bug
       // "never lets its own furniture seal the front door" was written for when
       // the shop's counter did exactly that.
-      { x: 7, y: -7, id: "table", facing: "s", counter: "heap" },
+      { x: 7, y: -8, id: "table", facing: "s", counter: "heap" },
     ],
   },
 
@@ -501,7 +520,7 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // which for the largest building in town was the most visible version of the
     // problem the street plan exists to fix.
     x0: -13,
-    y0: -14,
+    y0: -15,
     x1: -6,
     y1: FRONT_N,
     // South wall, like every door in the town — a wall running away from the
@@ -556,11 +575,11 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       // same objection DESIGN raised to identification taking time. She stands
       // at (-9,-7), off its west end — beside it rather than behind it, which
       // the old coordinate claimed and did not do. Clear of the doorstep.
-      { x: -8, y: -6, id: "table", facing: "s", counter: "museum" },
+      { x: -8, y: -7, id: "table", facing: "s", counter: "museum" },
       // Reference along the north wall, behind the last case. She has read all
       // of it and drawn her own conclusions.
-      { x: -12, y: -13, id: "shelf", facing: "s" },
-      { x: -8, y: -13, id: "shelf", facing: "s" },
+      { x: -12, y: -14, id: "shelf", facing: "s" },
+      { x: -8, y: -14, id: "shelf", facing: "s" },
     ],
     // Cases on alternating rows, with a walkway between each — you move up the
     // gallery and the exhibits are on your left and right. Fill order within a
@@ -585,30 +604,30 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // through the display case in the doorway.
     plinths: [
       // Nature, deepest in.
-      { wing: "nature", x: -12, y: -12 },
-      { wing: "nature", x: -11, y: -12 },
-      { wing: "nature", x: -10, y: -12 },
-      { wing: "nature", x: -9, y: -12 },
-      { wing: "nature", x: -8, y: -12 },
-      { wing: "nature", x: -7, y: -12 },
+      { wing: "nature", x: -12, y: -13 },
+      { wing: "nature", x: -11, y: -13 },
+      { wing: "nature", x: -10, y: -13 },
+      { wing: "nature", x: -9, y: -13 },
+      { wing: "nature", x: -8, y: -13 },
+      { wing: "nature", x: -7, y: -13 },
       // …and the overflow, west of the doorway. Two cells, which is one more
       // than the crop table currently needs; a third crop will want the room
       // reshaped rather than another corner found for it.
-      { wing: "nature", x: -12, y: -6 },
-      { wing: "nature", x: -11, y: -6 },
+      { wing: "nature", x: -12, y: -7 },
+      { wing: "nature", x: -11, y: -7 },
       // Antiquities, the two runs nearest the door — they are what fills up.
-      { wing: "antiquities", x: -12, y: -8 },
-      { wing: "antiquities", x: -11, y: -8 },
-      { wing: "antiquities", x: -10, y: -8 },
-      { wing: "antiquities", x: -9, y: -8 },
-      { wing: "antiquities", x: -8, y: -8 },
-      { wing: "antiquities", x: -7, y: -8 },
-      { wing: "antiquities", x: -12, y: -10 },
-      { wing: "antiquities", x: -11, y: -10 },
-      { wing: "antiquities", x: -10, y: -10 },
-      { wing: "antiquities", x: -9, y: -10 },
-      { wing: "antiquities", x: -8, y: -10 },
-      { wing: "antiquities", x: -7, y: -10 },
+      { wing: "antiquities", x: -12, y: -9 },
+      { wing: "antiquities", x: -11, y: -9 },
+      { wing: "antiquities", x: -10, y: -9 },
+      { wing: "antiquities", x: -9, y: -9 },
+      { wing: "antiquities", x: -8, y: -9 },
+      { wing: "antiquities", x: -7, y: -9 },
+      { wing: "antiquities", x: -12, y: -11 },
+      { wing: "antiquities", x: -11, y: -11 },
+      { wing: "antiquities", x: -10, y: -11 },
+      { wing: "antiquities", x: -9, y: -11 },
+      { wing: "antiquities", x: -8, y: -11 },
+      { wing: "antiquities", x: -7, y: -11 },
     ],
   },
 

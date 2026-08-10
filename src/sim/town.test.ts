@@ -555,6 +555,47 @@ describe("the street plan", () => {
     }
   });
 
+  it("lets nothing stand on the square", () => {
+    // The one shared space in the town, and the town hall used to have its south
+    // wall on the plaza's top row — a building quietly eating a slice of it, with
+    // the stamp laying plank over the paving. It survived because nothing else
+    // came close: every other building is outside the plaza's x range, so there
+    // was no second case to notice it by.
+    for (const b of allTownBuildings()) {
+      for (const c of footprintCells(b)) {
+        const on =
+          c.x >= PLAZA.x0 && c.x <= PLAZA.x1 && c.y >= PLAZA.y0 && c.y <= PLAZA.y1;
+        expect(on, `${b.id} stands on the square at ${c.x},${c.y}`).toBe(false);
+      }
+    }
+  });
+
+  it("keeps the square's paving as generated stone, not stamped plank", () => {
+    // The consequence, asserted where you can see it: every cell of the plaza is
+    // the terrain the generator makes, with no override laid over it.
+    const w = world();
+    for (let y = PLAZA.y0; y <= PLAZA.y1; y++) {
+      for (let x = PLAZA.x0; x <= PLAZA.x1; x++) {
+        expect(tileAt(w, x, y), `${x},${y}`).toBe(STONE);
+      }
+    }
+  });
+
+  it("keeps the path to the farm a single tile wide", () => {
+    // Asked for after looking at it: three tiles of cobble running to the gate,
+    // under a plaza and a full-width street, and the walk south stopped being a
+    // walk through grass. A path you can see grass either side of is what makes
+    // the farm feel out of town.
+    // Stopping short of y 11, where the spur to the seed stall's door crosses —
+    // that is a different piece of paving and it is allowed to be beside the lane.
+    const w = world();
+    for (let y = 5; y <= 10; y++) {
+      expect(tileAt(w, 0, y), `lane at ${y}`).toBe(FLOOR);
+      expect(tileAt(w, -1, y), `paved beside the lane at ${y}`).not.toBe(FLOOR);
+      expect(tileAt(w, 1, y), `paved beside the lane at ${y}`).not.toBe(FLOOR);
+    }
+  });
+
   it("never paves a cell a building is standing on", () => {
     // The stamp runs buildings first and streets second, so a street laid under a
     // wall would be invisible — and would come back as bare paving the day that
@@ -574,7 +615,7 @@ describe("the street plan", () => {
     // Ordinary cells, so you can take one up. If this ever became its own tile
     // id, the promise in content/town.ts §STREETS would have quietly lapsed.
     const w = world();
-    const cell = { x: -1, y: 6 }; // mid-lane, clear of every building
+    const cell = { x: 0, y: 6 }; // mid-lane, clear of every building
     expect(tileAt(w, cell.x, cell.y)).toBe(FLOOR);
     expect(floorFinish(w, cell.x, cell.y)).toBe("cobble");
   });

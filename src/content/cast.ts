@@ -189,7 +189,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // no bed to claim, and "at: desk" would be a second symbolic anchor bought
     // for one character who never moves. What happens when you demolish the town
     // hall around him is a line of dialogue (Phase 3), not a pathing problem.
-    schedule: [{ fromHour: 0, x: 0, y: -6, doing: "at the desk" }],
+    schedule: [{ fromHour: 0, x: 0, y: -7, doing: "at the desk" }],
   },
   shop: {
     id: "shop",
@@ -245,7 +245,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // else who keeps one. He used to stand at (8,-8), which is now the counter's
     // right-hand cell: the table moved out of the west wall it was embedded in
     // and landed on him (content/town.ts).
-    schedule: [{ fromHour: 0, x: 9, y: -8, doing: "at the facility" }],
+    schedule: [{ fromHour: 0, x: 9, y: -9, doing: "at the facility" }],
   },
   museum: {
     id: "museum",
@@ -274,7 +274,7 @@ export const CAST: Record<AuthoredId, CharDef> = {
     // (-8,-8), so the desk drew its twelve pixels of height straight over her
     // and the curator of the town museum was a pair of eyes above a counter.
     // West end rather than east, because the east is the doorstep's side.
-    schedule: [{ fromHour: 0, x: -9, y: -7, doing: "beside the desk" }],
+    schedule: [{ fromHour: 0, x: -9, y: -8, doing: "beside the desk" }],
   },
   seedstall: {
     id: "seedstall",

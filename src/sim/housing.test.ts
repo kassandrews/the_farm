@@ -152,6 +152,6 @@ describe("residents are settled after the town is stamped, not before", () => {
     const w = world();
     const office = w.villagers.find((v) => v.id === "office")!;
     expect(office.homeBed).toBeNull();
-    expect(stopTarget(w, office, at(2))).toMatchObject({ x: 0, y: -6 });
+    expect(stopTarget(w, office, at(2))).toMatchObject({ x: 0, y: -7 });
   });
 });

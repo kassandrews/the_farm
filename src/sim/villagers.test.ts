@@ -33,7 +33,7 @@ describe("daily routines", () => {
   it("the fixed cast never leaves its desk", () => {
     const def = CAST.office;
     for (const hour of [0, 6, 12, 18, 23]) {
-      expect(scheduledStop(def, at(hour))).toMatchObject({ x: 0, y: -6 });
+      expect(scheduledStop(def, at(hour))).toMatchObject({ x: 0, y: -7 });
     }
   });
 
