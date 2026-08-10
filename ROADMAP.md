@@ -10573,6 +10573,17 @@ nothing is held afterwards. Keys 1–4 are the same one-shots for a desktop hand
   grass is always diggable, and act-on-arrival for the shovel would end every
   walk in a hole. `resolveWalkToAct` takes distance 0 or 1 now — beside a
   solid thing, on top of walkable work.
+- **"Should tap-to-act be a toggle?" NO — DISTANCE IS THE TOGGLE.** The
+  accidental-harvest worry (tap your garden to walk into it, lose a standing
+  crop) is answered in the gesture rather than in settings, because a settings
+  switch forks the grammar and is found only after the accident. Walkable work
+  acts on arrival only when tapped from NEARBY (≤2.5 tiles); a far tap is
+  travel and only walks you there — you arrive ON the work, reticle lit, act
+  still yours to press. Solid things keep any-distance walk-and-act: a tap on
+  a cell you cannot stand in can only mean the thing standing there. Verified:
+  a five-tile tap onto a ripe crop walks and does not harvest; ACT on arrival
+  does. (An accidental harvest is also more scare than loss — it pays produce
+  and seed back; what's at stake is the standing plant and the regrow days.)
 - **The fan's Sow button IS the seed picker.** It wears the current variety's
   swatch; with one variety known it just sows; with more, tapping it swaps the
   fan for the variety chips and the pick SOWS — choosing and doing are one

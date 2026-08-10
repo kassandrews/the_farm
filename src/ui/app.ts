@@ -2491,10 +2491,22 @@ export class App {
       // promise as tapping a tree, one ring in: these cells are WALKABLE, so
       // the walk ends ON the work and the arrival act is the default tap. Dig
       // is deliberately not work a tap can order from a distance.
+      //
+      // NEARBY ONLY, AND DISTANCE IS THE INTENT — the answer to "should this
+      // be a toggle?", which it should not: a toggle forks the grammar, and
+      // the gesture already says which you meant. Nobody taps a tile across
+      // the field meaning "harvest that one plant"; a far tap is travel, so it
+      // only walks you there — you arrive ON the work with the reticle lit and
+      // the act still yours to press. A near tap is the work. Solid things
+      // (the tree branch below) keep any-distance walk-and-act, because a tap
+      // on a cell you cannot stand in can only mean the thing standing there.
       if (this.layer() === "surface" && standingWork(this.world, Math.round(wpt.x), Math.round(wpt.y))) {
         const gx = Math.round(wpt.x);
         const gy = Math.round(wpt.y);
-        this.walkingToAct = { x: gx, y: gy };
+        const p = this.world.player;
+        if (Math.hypot(gx - p.x, gy - p.y) <= 2.5) {
+          this.walkingToAct = { x: gx, y: gy };
+        }
         moveTo(this.world, gx, gy);
         return;
       }
