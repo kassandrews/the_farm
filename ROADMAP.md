@@ -10431,6 +10431,89 @@ harvest and becomes the thing that teaches you what is possible, which is what
   rotation and redraw gaps. Whether these are one phase or two has not been
   argued.
 
+## Phase 18 — the garden (10 Aug 2026)
+
+The parked landscaping note above, built, in one arc: DESIGN §The garden first
+(doc before code), then the flora catalogue, the sim, the build wing, crops
+folded in, and the orchard. Schema 36. Everything below was verified in a real
+browser — the loop that closed the phase was: walk to the orchard and the
+blossom rows, come home with eight species met, plant an apple, a cherry,
+hydrangeas and a bed of buttercups, jump the clock to October, and pick an
+apple off your own tree while the planted cherry stands stubbornly pink in an
+orange meadow.
+
+### The shape (content/flora.ts, sim/garden.ts)
+
+- **A species is a reference to a region's drawing.** `FloraDef.skin` names the
+  region whose silhouette and inks the plant wears; a planted bur oak is drawn
+  by exactly the call that draws the prairie's, seasons included. No new art
+  except the orchard's three (apple, plum, hydrangea). **The ownership
+  inversion is still owed** — regions referencing the flora table rather than
+  the table referencing rows — and was deliberately not smuggled in half-done:
+  the region rows carry a month of intertwined comments each.
+- **A planted thing is a tile plus a record.** Trees and bushes write the same
+  TREE/SHRUB tiles the generator scatters, so collision, occlusion and draw
+  order come free; flowers are a record alone, walkable like wild decor. The
+  record (`garden.plants`, keyed "x,y") is species id + timestamp.
+- **Growth is a pure function of (plantedAt, now).** Nothing ticks, away-time
+  needs no work. Stages are authored transforms — fewer rows on a shorter stem,
+  never a resample (the sprite rule) — and small kinds skip the middle stage.
+- **Discovery is the sim's, never the camera's.** `noticeFlora` rides the
+  notice sweep and marks the standing region's species met. The migration adds
+  an EMPTY garden on purpose: the first sweep teaches the starter set wherever
+  you load, so nothing is backfilled and nothing can be backfilled wrong.
+
+### Settled here, don't relitigate
+
+- **The fruit rung sits ABOVE the held tool, and it is the mailbox's argument
+  learned the fourth time.** It shipped below the tool; standing at your own
+  apple tree in October, ACT dug the lawn — grass is always diggable. "A letter
+  nobody can open is a feature that does not exist", now with fruit in it. The
+  branch declines outside the season, so the dig-shadow around a fruit tree
+  exists three months a year.
+- **The contextual sow is FARMLAND-only, and the gate is the design.** Gated on
+  `canSow` alone it fired on every lawn (canPlant accepts grass — the old rail
+  tool auto-tilled) and hijacked the basket beside a tree; the ACT-contract
+  tests caught it within the hour. The tilled bed is the statement of intent,
+  and dig-first keeps the junk faucet.
+- **A planted tree never fells to the basket, and never answers erase with a
+  refund it didn't charge.** Uprooting is erase, in the erase chain between
+  furniture and the ground; gather returns null on garden cells outright,
+  because ACT has no undo and a mis-tap costing three days of growth is the
+  asymmetry the build undo exists for.
+- **The plum is one in four, and the rate lives in the form list.** Two forms
+  hash 50/50 and summer photographed half the orchard purple; the apple is
+  written three times against one plum, which is weighting-by-repetition
+  exactly as `shrubShapes` and the rock shapes do it. The identical-forms test
+  loosened from all-distinct to ≥2-distinct — a repeated form is how a list
+  says a rate; a list of ONE tree is still caught.
+- **Species chips, not catalogue tiles.** A tree's sprite is up to 46px and
+  blows the row; the finish-chip pattern (swatch + name) carries the wing. The
+  swatch composes the crown TINT over the summer canopy — the meadow's crown is
+  `#000000 at 0` and painted the first swatch black.
+- **The hydrangea is the berries machinery worn as flowers**, big touching
+  heads on the orchard's bushes — which took the one named exemption to the
+  berries-apart rule: a mass on purpose is the drawing, and the rule guards
+  masses by accident.
+- **Fruit paint doubles as the day's stock on planted things.** Picked, the
+  tree draws bare until tomorrow — the entire status display the garden gets,
+  beyond the ACT toast lines ("The apple tree is new in the ground. It is
+  taking this seriously.").
+- **`syncSeedUi` is deleted, the rail is three tools** (Dig/Gather/Water on
+  1/2/3), and the seedling icon marks the garden door. The variety chips are
+  the Crops tab, riding `world.seeds.selected` as ever.
+
+### Deferred, deliberately
+
+- The species-table inversion (above).
+- The ACT button naming its override (SOW/HARVEST) — still worth a look on
+  screen; nothing depends on it.
+- Fruit-shaped furniture unlocks — the furniture project's, when it runs.
+- The far country's flora is plantable by the seeing-rule with no extra gate
+  (glass tree included; the Static's tree and the grove's are out by name). If
+  a glass tree in a meadow garden reads as strangeness leaking, one flag on one
+  species revokes it — revertible, no save carries a palette.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

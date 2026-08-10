@@ -916,17 +916,23 @@ export function actionTarget(world: WorldState, tool: Tool, now: number = Date.n
   // diggable as any other, and afterwards the tent is gone and it is again.
   if (canStrikeTent(world, x, y)) return { x, y, kind: "strike" };
 
-  const underfoot = toolApplies(world, tool, x, y);
-
   // YOUR OWN TREE, IN REACH AND IN FRUIT — the delivery on the wild paint's
   // advertisement (DESIGN §The garden: your own apple tree answers ACT).
-  // Above the node shortcut because the node answer for a TREE tile is a
-  // fell, and a fell is the one thing a planted tree never does; below the
-  // held tool so a deliberate act still wins.
-  if (!underfoot) {
+  //
+  // ABOVE THE TOOL, on the mailbox's argument, learned here the same way for
+  // the fourth time: it shipped below the tool, and standing at your own apple
+  // tree in October pressing ACT DUG THE LAWN, because the ground beside a
+  // tree is grass and grass is always diggable. Fruit nobody can pick is a
+  // feature that does not exist. The cost is the mailbox's cost — you cannot
+  // dig the four tiles around a fruiting tree during its season — and the
+  // branch DECLINES the other nine months, so most of the year it costs
+  // nothing at all.
+  {
     const fruit = gardenFruitNear(world, x, y, now);
     if (fruit) return { x: fruit.x, y: fruit.y, kind: "fruit" };
   }
+
+  const underfoot = toolApplies(world, tool, x, y);
 
   // TILLED SOIL UNDERFOOT AND SEED IN POCKET SOWS, whatever the hand holds —
   // the ripe-override's twin, and the fix for dig → menu → sow → menu → water
