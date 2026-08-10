@@ -184,6 +184,11 @@ const VERBS: { id: Tool; icon: IconName; label: string; hint: string; key?: stri
  *  in this table because it is still a group in the tool sense; `tab: false` is
  *  what keeps it out of the strip. */
 const BUILD_GROUPS = [
+  // THE LANDING (ROADMAP §three doors): entering SHAPE shows three doors —
+  // Build, Furnish, Garden — and nothing else. A door is one tap; the back
+  // chip is the way home to them; no tool is in hand until a wing hands you
+  // one.
+  { id: "doors", label: "Shape", tab: false, wing: "none" },
   { id: "structure", label: "Build", tab: false, wing: "none" },
   { id: "seating", label: "Seating", tab: true, wing: "furniture" },
   { id: "surface", label: "Tables", tab: true, wing: "furniture" },
@@ -316,16 +321,16 @@ export class App {
   /** Non-null means BUILD MODE: the view flattens and canvas taps place instead
    *  of walking. Null means the normal 3/4 living view. */
   private buildTool: BuildTool | null = null;
+  /** SHAPE mode itself, separate from any held tool (ROADMAP §three doors):
+   *  the doors landing holds nothing, so "a tool is in hand" stopped being
+   *  usable as the mode flag. */
+  private shaping = false;
   /** Whether the shaft has already said what going down is like this session. */
   private saidShaftLine = false;
   /** A node you tapped and are walking over to deal with. UI state, never the
    *  save: an errand you were on when you closed the tab is not one the town
    *  should still be holding you to when you come back. */
   private walkingToAct: { x: number; y: number } | null = null;
-  /** What re-entering build mode hands you. Coming back to a wall you were
-   *  halfway through and having to say "wall" again is the kind of small tax
-   *  that makes a mode feel like a detour rather than a place. */
-  private lastBuildTool: BuildTool = "wall";
   /** Which tab of the build bar is showing. Not persisted: it follows the tool
    *  you are holding (see syncBuildUi), so restoring it separately could put the
    *  bar on a tab that does not contain the selected tool. */
@@ -378,6 +383,7 @@ export class App {
       root,
       (t) => this.selectBuildTool(t),
       (g) => this.selectBuildGroup(g),
+      () => this.selectBuildGroup("structure"),
       () => this.openFurniture(),
       () => this.openGarden(),
       () => this.toggleBuild(),
@@ -2141,7 +2147,8 @@ export class App {
   private beginAssigning(id: CharId): void {
     if (!this.world) return;
     this.assigning = id;
-    this.buildTool = null; // building and choosing are different verbs
+    this.buildTool = null; // shaping and choosing are different verbs
+    this.shaping = false;
     this.syncToolUi();
     this.syncHomeCandidates();
     const who = this.world.villagers.find((v) => v.id === id);
@@ -2431,7 +2438,7 @@ export class App {
       // Laying a wall a tile at a time by walking to each tile would be
       // miserable on a phone, and painting is the whole reason the view
       // flattens (DESIGN §Structures).
-      if (this.buildTool) {
+      if (this.shaping) {
         this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
         // A SECOND FINGER MEANS PAN. One finger paints; two move the view. They
         // can't be told apart by where the touch lands — an edge-drag pan (the
@@ -2442,6 +2449,10 @@ export class App {
           this.panAnchor = this.pointerMidpoint();
           return;
         }
+        // At the doors, with nothing in hand, a tap is a tap on scenery: the
+        // menu is the mode until a wing hands you a tool. Two fingers still
+        // pan (handled above).
+        if (!this.buildTool) return;
         this.painted.clear();
         // The stroke boundary for undo is the same span, deliberately: the set
         // that stops a sweep charging twice is already the game's definition of
@@ -2566,7 +2577,7 @@ export class App {
     });
 
     this.canvas.addEventListener("pointermove", (e) => {
-      if (!this.buildTool || this.modalOpen) return;
+      if (!this.shaping || this.modalOpen) return;
       if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
       // Two fingers: slide the view by how far their midpoint moved. The view
@@ -2604,7 +2615,7 @@ export class App {
     this.canvas.addEventListener(
       "wheel",
       (e) => {
-        if (!this.buildTool || this.modalOpen) return;
+        if (!this.shaping || this.modalOpen) return;
         e.preventDefault();
         const per = this.renderer.pxPerTile();
         this.renderer.panBy(e.deltaX / per, e.deltaY / per);
@@ -2633,7 +2644,15 @@ export class App {
       // And build mode's. The BUILD button is the pointer door; Escape is the
       // keyboard one, and both go through `toggleBuild` so the pan resets and the
       // view flattens back through one path rather than two.
-      if (k === "escape" && this.buildTool) {
+      if (k === "escape" && this.shaping && this.buildGroup !== "doors") {
+        // One step back: a wing's Escape is the back chip, and the doors'
+        // Escape is the way out — the same ladder the taps walk.
+        this.buildTool = null;
+        this.selectBuildGroup("doors");
+        e.preventDefault();
+        return;
+      }
+      if (k === "escape" && this.shaping) {
         this.toggleBuild();
         e.preventDefault();
         return;
@@ -2651,17 +2670,17 @@ export class App {
       } else if (k === "b") {
         // Desktop shortcut for the BUILD button, in and out.
         this.toggleBuild();
-      } else if (k === "f" && this.buildTool) {
+      } else if (k === "f" && this.shaping) {
         // The two levels, from the keyboard. Only inside build mode, where the
         // Furniture button exists — F over the open field would be a shortcut to
         // a control that isn't on screen. It toggles, because the way back out
         // being a different key would make the pair harder than the trip.
-        if (this.buildGroup === "structure") this.openFurniture();
-        else this.selectBuildGroup("structure");
-      } else if (k === "g" && this.buildTool) {
-        // The garden door, F's twin — same toggle, same build-mode-only rule.
-        if (this.buildGroup === "structure") this.openGarden();
-        else this.selectBuildGroup("structure");
+        if (FURNITURE_GROUPS.includes(this.buildGroup)) this.selectBuildGroup("doors");
+        else this.openFurniture();
+      } else if (k === "g" && this.shaping) {
+        // The garden door, F's twin — same toggle, same in-mode-only rule.
+        if (GARDEN_GROUPS.includes(this.buildGroup)) this.selectBuildGroup("doors");
+        else this.openGarden();
       } else if (k === "e") {
         this.tryTalkNearest();
       } else if (k === "-" || k === "_") {
@@ -2823,6 +2842,7 @@ export class App {
    *  clearest possible "I'm done editing". */
   private verbAct(t: Tool): void {
     this.buildTool = null;
+    this.shaping = false;
     this.closeFan();
     this.endAssigning();
     this.syncToolUi();
@@ -2837,7 +2857,8 @@ export class App {
    *  underground the palette is two tools long, and opening the mode with a
    *  wall selected would be opening it onto a refusal. */
   private toggleBuild(): void {
-    if (this.buildTool) {
+    if (this.shaping) {
+      this.shaping = false;
       this.buildTool = null;
       this.syncToolUi();
       return;
@@ -2856,7 +2877,16 @@ export class App {
       );
       return;
     }
-    this.selectBuildTool(allowed.includes(this.lastBuildTool) ? this.lastBuildTool : allowed[0]);
+    // ENTER AT THE DOORS (ROADMAP §three doors): Build, Furnish, Garden, and
+    // nothing in hand until you pick one. The old behaviour handed you the
+    // last tool, which was right when the landing WAS the structure row and is
+    // a hand grabbing at you now that the landing is a menu.
+    this.shaping = true;
+    this.buildTool = null;
+    this.buildGroup = "doors";
+    this.closeFan();
+    this.endAssigning();
+    this.syncToolUi();
   }
 
   /** Pick a BUILD tool, entering build mode if you weren't in it. This no longer
@@ -2880,7 +2910,7 @@ export class App {
       return;
     }
     this.buildTool = t;
-    this.lastBuildTool = t;
+    this.shaping = true;
     // THE TAB FOLLOWS THE TOOL, and only here — when the tool actually changes.
     // Doing it inside syncToolUi instead meant every sync re-derived the tab
     // from whatever was in hand, so tapping a tab was overwritten the same
@@ -2954,7 +2984,8 @@ export class App {
   }
 
   private syncToolUi(): void {
-    const building = this.buildTool !== null;
+    const building = this.shaping;
+    const doors = building && this.buildGroup === "doors";
     // Which tabs have anything IN them here. Underground the palette is two
     // tools long, so most tabs would be empty — an empty tab is a promise the
     // room cannot keep, so it goes rather than showing an empty row.
@@ -2979,19 +3010,18 @@ export class App {
       btn.classList.toggle("selected", id === this.buildGroup);
       btn.style.display = live.has(id) && wingOf(id) === wing ? "" : "none";
     }
-    // The two levels. Structure is the level you land in and has no tab of its
-    // own, so the strip is simply absent there — and the two door buttons are
-    // absent the whole time you are inside either wing, because the way back is
-    // the "‹ Build" chip at the head of the strip and two ways out of one room
-    // is one more than the room needs.
-    const inWing = this.buildGroup !== "structure";
-    this.hud.groupTabs.style.display = inWing ? "" : "none";
-    // Nothing to open in a tunnel, where the rock allows two structure tools and
-    // no furniture at all. Hidden rather than refusing, the same call the tools
-    // themselves make one line down.
+    // THE DOORS AND THE WINGS (ROADMAP §three doors). The landing shows the
+    // three doors and nothing else; a wing shows its tools with the back chip
+    // at the head of the strip; the doors themselves are absent inside a wing,
+    // because two ways out of one room is one more than the room needs.
+    this.hud.groupTabs.style.display = building && !doors ? "" : "none";
+    // A door only stands where its wing has something in it — a tunnel allows
+    // a lamp and an eraser, so down there Furnish is the only door. Hidden
+    // rather than refusing, the same call the tools themselves make below.
     const anyFurniture = FURNITURE_GROUPS.some((g) => live.has(g));
-    this.hud.furniture.style.display = !inWing && anyFurniture ? "" : "none";
-    this.hud.garden.style.display = !inWing && this.layer() === "surface" ? "" : "none";
+    this.hud.buildDoor.style.display = doors && live.has("structure") ? "" : "none";
+    this.hud.furniture.style.display = doors && anyFurniture ? "" : "none";
+    this.hud.garden.style.display = doors && this.layer() === "surface" ? "" : "none";
     // Only ever one tab's worth of tools at a time, and that IS the fix: the row
     // used to hold every tool in the game, which fitted while there were eleven
     // and did not at twenty-two.
@@ -3002,11 +3032,13 @@ export class App {
       // reads as the game being broken, where two buttons read as what the rock
       // is for.
       const inTab =
-        btn.dataset.group === this.buildGroup ||
-        // ERASE FOLLOWS YOU INTO THE GARDEN: uprooting is erase and only erase
-        // (DESIGN §The garden), so the one tool that takes things back cannot
-        // be a walk away from the wing that plants them.
-        (id === "erase" && wing === "garden");
+        !doors &&
+        (btn.dataset.group === this.buildGroup ||
+          // ERASE FOLLOWS YOU INTO EVERY WING: uprooting is erase and only
+          // erase (DESIGN §The garden), a shelf comes back down where the
+          // shelves are, and the one tool that takes things back cannot be a
+          // walk away from any wing that places them.
+          (id === "erase" && this.buildGroup !== "structure"));
       btn.style.display = inTab && toolAllowedOn(id, this.layer()) ? "" : "none";
     }
     // THE FLATTEN BELONGS TO THE TOOL, NOT THE MODE (DESIGN §Structures): a
@@ -3015,7 +3047,11 @@ export class App {
     // muted view is impossible. Erase keeps the plan view even in the garden —
     // taking things back is exactly when you want to see the bones.
     const gardenHeld = this.buildTool === "flora" || this.buildTool === "grass";
-    this.renderer.setBuildView(building && !gardenHeld);
+    // The FLATTEN belongs to the structure tools; the GRID belongs to the whole
+    // mode (ROADMAP §three doors — placement is per tile everywhere, the
+    // garden's living view included).
+    this.renderer.setBuildView(building && this.buildTool !== null && !gardenHeld);
+    this.renderer.setGrid(building);
     // Leaving build mode puts the camera back on the player, and this is the one
     // choke point every exit goes through — the palette toggle, Escape, picking
     // an ACT tool, and climbing a shaft all land here. A pan that outlived its
@@ -3689,6 +3725,8 @@ interface HudRefs {
   buildFinishes: HTMLElement;
   /** The category strip, hidden entirely at the structure level. */
   groupTabs: HTMLElement;
+  /** The Build door — walls and floors, the wing that keeps the old name. */
+  buildDoor: HTMLElement;
   /** The way in to furniture, and the one tool-row button that holds no tool. */
   furniture: HTMLElement;
   /** The way in to the garden — the second no-tool door (DESIGN §The garden). */
@@ -3709,6 +3747,7 @@ function buildHud(
   root: HTMLElement,
   onBuildTool: (t: BuildTool) => void,
   onBuildGroup: (g: BuildGroup) => void,
+  onStructure: () => void,
   onFurniture: () => void,
   onGarden: () => void,
   onBuild: () => void,
@@ -3855,27 +3894,27 @@ function buildHud(
   // BEFORE the bulldozer, not after it. Take-down is the end of the row on
   // purpose — it is the only button here that removes rather than places, and it
   // keeps the end the way the modifiers keep the far end past their gap.
-  const furniture = el("button", { class: "tool furniture-btn", ariaLabel: "Furniture" }, [
-    iconEl("chair", SCALE.button),
-  ]);
-  furniture.addEventListener("click", onFurniture);
-  hoverHint(furniture, "Furniture — chairs, tables, beds, storage, lamps.  (F)");
-  // The garden — the landing row's second no-tool door, in the series with the
-  // first (DESIGN §The garden: everything green is built, from one grammar).
-  // The seedling the ACT rail is about to give up, doing the same job one mode
-  // over.
-  const garden = el("button", { class: "tool garden-btn", ariaLabel: "Garden" }, [
-    iconEl("seedling", SCALE.button),
-  ]);
-  garden.addEventListener("click", onGarden);
-  hoverHint(garden, "Garden — trees, bushes, flowers, and grass. What you've met, you can plant.  (G)");
-  const eraseBtn = buildButtons.find(([id]) => id === "erase")?.[1];
-  if (eraseBtn) {
-    buildTools.insertBefore(furniture, eraseBtn);
-    buildTools.insertBefore(garden, eraseBtn);
-  } else {
-    buildTools.append(furniture, garden);
-  }
+  // THE THREE DOORS (ROADMAP §three doors) — what SHAPE opens onto. Icon AND
+  // word, unlike the tools: a door is a category, a category is a word, and
+  // three labelled doors is a menu you can read without a legend.
+  const door = (icon: IconName, label: string, hint: string, on: () => void): HTMLElement => {
+    const btn = el("button", { class: "tool shape-door", ariaLabel: label }, [
+      iconEl(icon, SCALE.button),
+      el("span", { class: "door-name" }, [label]),
+    ]);
+    btn.addEventListener("click", on);
+    hoverHint(btn, hint);
+    return btn;
+  };
+  const buildDoor = door("wall", "Build", "Walls, floors, doors and windows.", onStructure);
+  const furniture = door("chair", "Furnish", "Chairs, tables, beds, storage, lamps.  (F)", onFurniture);
+  const garden = door(
+    "seedling",
+    "Garden",
+    "Trees, bushes, flowers, crops and grass. What you've met, you can plant.  (G)",
+    onGarden,
+  );
+  buildTools.append(buildDoor, furniture, garden);
   // The species chips live in the tool row itself, where the tools of the open
   // tab would be — they ARE that tab's tools, rebuilt per sync.
   const gardenTools = el("div", { class: "garden-tools" });
@@ -3892,8 +3931,8 @@ function buildHud(
   // sitting over the bar while you lay a floor. `back` is the way out, first in
   // the strip and reading as a direction rather than a category.
   const groupTabs = el("div", { class: "build-groups" });
-  const back = el("button", { class: "build-group build-back", ariaLabel: "Back to building" }, ["‹ Build"]);
-  back.addEventListener("click", () => onBuildGroup("structure"));
+  const back = el("button", { class: "build-group build-back", ariaLabel: "Back to the doors" }, ["‹ Shape"]);
+  back.addEventListener("click", () => onBuildGroup("doors"));
   groupTabs.append(back);
   const groupButtons: [BuildGroup, HTMLElement][] = [];
   for (const g of BUILD_GROUPS) {
@@ -3978,7 +4017,7 @@ function buildHud(
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, survey, flash, giveUp, actFan, action, buildButtons, groupButtons, groupTabs, furniture, garden, gardenTools, buildFinishes, buildBar, build, rotate, undo, zoom };
+  return { root: hud, clock, survey, flash, giveUp, actFan, action, buildButtons, groupButtons, groupTabs, buildDoor, furniture, garden, gardenTools, buildFinishes, buildBar, build, rotate, undo, zoom };
 }
 
 // --- Panel helpers ------------------------------------------------------------

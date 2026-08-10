@@ -10608,6 +10608,39 @@ move; user-facing strings only, so `buildTool`, `buildAt` and friends keep
 their names in code — a mechanical identifier sweep would touch forty files to
 say nothing new.
 
+## Three doors, and the grid goes everywhere (10 Aug 2026)
+
+SHAPE opens onto a landing of three labelled doors now — **Build, Furnish,
+Garden** — instead of dropping you into the structure row with a wall in hand.
+Asked for directly, with the second half attached: every wing needs the GRID,
+the garden's living view included, "so you can see where you're placing items."
+
+### Settled here, don't relitigate
+
+- **The mode flag separated from the held tool** (`shaping`), because the doors
+  landing holds nothing and "a tool is in hand" stopped being usable as the
+  mode test. Everything that routed on `buildTool` — canvas taps, Escape, the
+  wheel-pan, F/G — routes on `shaping` now; a tap at the doors with nothing in
+  hand is a tap on scenery.
+- **The GRID split from the FLATTEN** (`renderer.setGrid`). The flatten belongs
+  to the structure tools — plan view for walls, where alignment is the job.
+  The grid belongs to the whole mode: placement is per tile everywhere, so the
+  cells show even over the garden's full living view. This amends the earlier
+  "garden places in the living view" call by half: living view yes, gridless
+  no — the owner reversed the gridless half on seeing placement without it.
+- **Entering hands you NOTHING.** The old mode restored your last tool on
+  entry, which was right when the landing was the structure row and is a hand
+  grabbing at you now that the landing is a menu. The flatten therefore
+  arrives tool-by-tool: pick Wall and the view drops to plan, back out and it
+  lives again.
+- **Escape walks the ladder the taps walk**: wing → doors → out. The back chip
+  reads "‹ Shape" and goes to the doors; F and G toggle their wings from
+  anywhere in the mode.
+- **Erase follows you into every wing** — a shelf comes back down where the
+  shelves are — and "Build" is now unambiguously the structure wing's name,
+  which is the SHAPE rename cashing out: the mode contains Build rather than
+  being it.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

@@ -1270,6 +1270,16 @@ export class Renderer {
     this.buildView = on;
   }
 
+  /** The ground grid, SEPARATED from the flatten (ROADMAP §three doors): the
+   *  garden places in the full living view — light, season, leaves — but
+   *  placement is still per tile, so the cells have to be visible even where
+   *  the flatten would be wrong. The grid is every shape tool's; the flatten
+   *  is the structure tools' own. */
+  private gridOn = false;
+  setGrid(on: boolean): void {
+    this.gridOn = on;
+  }
+
   /** How far the camera is shifted off the player, in tiles. Build mode only.
    *
    *  Build mode paints a TAPPED tile, so on a phone you could only ever build
@@ -1487,7 +1497,7 @@ export class Renderer {
     this.litWindows.length = 0;
     this.lavaRim.length = 0;
     this.drawTiles(world, t, night, layer);
-    if (this.buildView && ground) this.drawBuildGrid();
+    if ((this.buildView || this.gridOn) && ground) this.drawBuildGrid();
     if (ground) {
       this.drawCrops(world, now);
       this.collectTent(world, night);
