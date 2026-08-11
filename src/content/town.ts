@@ -1011,15 +1011,34 @@ export const TOWN_FIXTURES: TownFixture[] = [
   // 2x2 slab with board lines on it read as a sheet of paper lying in the
   // square, which is not the joke. A stage is made of ordinary boards.
   { x: STAGE.x, y: STAGE.y, id: "stage", facing: "s", finish: "pine", counter: "stage" },
-  // AN AWNING OVER THE SHOP'S DOOR, and it is the whole of what makes the Counter
-  // read as a shop from across the square. A building's identity is not its
-  // signage — DESIGN's tone note would rather the world showed you than told you
-  // — and one striped canopy says "you buy things here" faster than a name board
-  // ever could. Walk-through, so it hangs over the doorstep rather than blocking
-  // it, which is what an awning does.
-  { x: 10, y: 3, id: "awning", facing: "s", finish: "whitewash" },
-  // And a crate beside it, because a shop has stock that did not fit.
-  { x: 12, y: 3, id: "chest", facing: "s", finish: "whitewash" },
+  // AN AWNING OVER THE SHOP'S WINDOW, and it is the whole of what makes the
+  // Counter read as a shop from across the square. A building's identity is not
+  // its signage — DESIGN's tone note would rather the world showed you than told
+  // you — and one striped canopy says "you buy things here" faster than a name
+  // board ever could.
+  //
+  // OVER THE GLASS, NOT OVER THE DOOR, which is the correction and it took
+  // standing in the square to see. It sat at x 10..11, which is the door column
+  // and the east window: a canopy is drawn on the row IN FRONT of the wall it
+  // belongs to, standing 14px proud of a 24px storey, so it covered the bottom
+  // half of the doorway. The door did not read as shaded, it read as bricked up
+  // — and the piece was drawing itself as a solid box at the time (§drawAwning),
+  // so it genuinely was a wall across the entrance.
+  //
+  // At x 8..9 the same overlap is the point rather than the bug: what it covers
+  // is the bottom of the shopfront, which is what an awning is FOR. A real shop
+  // shades its display window and leaves its door clear, and now this one does.
+  // The east window at x 10 stays open, so the glass is still glass — you are
+  // meant to be able to see the stock (§shop windows).
+  { x: 8, y: 3, id: "awning", facing: "s", finish: "whitewash" },
+  // And a crate, because a shop has stock that did not fit.
+  //
+  // AT THE WEST END, off the doorstep. It was at x 12, immediately east of the
+  // door's own doorstep at (11,3), so between it and the awning the entrance was
+  // bracketed on both sides — walk-through in the sim, and a gauntlet to the eye.
+  // Down here the street face reads west to east as crate, canopy, glass, door,
+  // which is a parade of shop and then a way in.
+  { x: 7, y: 3, id: "chest", facing: "s", finish: "whitewash" },
   // THE FACILITY'S PILE, stacked against its own west wall on the street. Two
   // crates and not six: the joke is that a shed with a heap in it is being called
   // a facility, and a heap you have to squeeze past stops being funny and starts

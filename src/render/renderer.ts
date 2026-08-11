@@ -4539,6 +4539,31 @@ export class Renderer {
       return;
     }
 
+    // AND THE AWNING LEAVES IT TOO, for the same reason one step further on. The
+    // lamp's argument is that the generic silhouette is a box and a lamp is a
+    // post; an awning is a box with the FRONT TAKEN OUT, which the generic path
+    // cannot express at all — line ~4597 fills a near face for every piece that
+    // is not `flat`, so the two posts this case used to draw were being painted
+    // onto a solid wall of whitewash that had already been laid down under them.
+    //
+    // Nobody noticed until one stood in front of a door. It was read as a stall
+    // for a year because a stall is what it looked like — a counter with a
+    // striped lid — and at Derek's it sits BEHIND his counter with nothing behind
+    // it to hide, so the solid front was doing an honest job as the back of the
+    // stall. Put the same piece in front of The Counter's doorway and the door
+    // vanishes behind it: not shaded, bricked up.
+    //
+    // The whole point of this object is that you can stand under it (§awning:
+    // "a canopy you could not step beneath would be a shed with the walls
+    // missing"). It was walk-through in the sim and solid to the eye, which is
+    // the worst of both — the game let you walk through something the picture
+    // said was a wall.
+    if (cell.id === "awning") {
+      this.drawAwning(px, py, base, pw, H, skin);
+      ctx.globalAlpha = prev;
+      return;
+    }
+
     // A WALL-MOUNTED piece hangs on the face of the wall it was placed on, so
     // none of the floor geometry below applies: there is no footprint to lift,
     // no near face, and no shadow on a floor it does not touch. Its grid is
@@ -4687,33 +4712,6 @@ export class Renderer {
         ctx.fillRect(px + 7, face + 12, 1, 1);
         break;
       }
-      case "awning": {
-        // A STRIPED CANOPY ON TWO POSTS, and the stripes are the whole of what
-        // says "stall" rather than "roof". Deliberate banding, exactly like the
-        // tent's canvas — CLAUDE.md's per-cell rule forbids stripes that follow
-        // the TILE GRID, and these run across the piece at four px regardless of
-        // where its cells fall, so a 2-wide awning is one striped sheet and not
-        // two little ones butted together.
-        //
-        // Drawn on the TOP surface because that is the face of a canopy you can
-        // see from here — it slopes away from you, so what you look at is the
-        // cloth, not its edge.
-        ctx.fillStyle = "#c9503f"; // the one canvas colour in the game
-        ctx.fillRect(px + 1, top + 1, pw - 2, deep - 2);
-        ctx.fillStyle = "#efe6cf";
-        for (let i = 1; i < pw - 2; i += 8) {
-          ctx.fillRect(px + 1 + i, top + 1, 4, deep - 2);
-        }
-        // A scalloped valance along the near edge — the frill a market awning
-        // has, and the detail that stops the shape reading as a slab of cloth.
-        ctx.fillStyle = "rgba(0,0,0,0.25)";
-        ctx.fillRect(px + 1, top + deep - 2, pw - 2, 1);
-        // The two posts holding it up, at the ends, on the face below the cloth.
-        ctx.fillStyle = skin.shade;
-        ctx.fillRect(px + 1, base - H, 2, H);
-        ctx.fillRect(px + pw - 3, base - H, 2, H);
-        break;
-      }
       case "stage": {
         // A LOW PLATFORM, and the restraint is the design. Every other standing
         // thing in this game sells its height by overhanging the cell behind
@@ -4755,6 +4753,80 @@ export class Renderer {
     }
 
     ctx.globalAlpha = prev;
+  }
+
+  /** An awning: a striped cloth on two posts, with AIR BETWEEN THEM.
+   *
+   *  The air is the entire reason this has its own method. On the generic path it
+   *  came out as a solid box with a striped lid — see the note at the call site —
+   *  which is a market stall seen from the front, and which walls off whatever
+   *  stands behind it. Here the only things drawn are the cloth, the two posts,
+   *  and the shadow the posts put on the ground; everything between them is left
+   *  as it was, so a doorway behind an awning is a doorway you can see.
+   *
+   *  THE STRIPES ARE DELIBERATE BANDING, and they are the whole of what says
+   *  "stall" rather than "roof". CLAUDE.md's per-cell rule forbids banding that
+   *  follows the TILE grid; these are stepped off the piece's own anchor at 8px
+   *  regardless of where its cells fall, so a 2-wide awning is one striped sheet
+   *  rather than two little ones butted together at a seam down the middle.
+   *
+   *  The cloth is drawn on the TOP surface, because a canopy slopes away from you
+   *  and what you look at from here is the sheet, not its edge. It still overlaps
+   *  the bottom of the wall behind it by `height` px, and that is not a bug to
+   *  fix — it is what an awning DOES to the window it shades. It is also why one
+   *  must never be parked in front of a door: see content/town.ts §The Counter,
+   *  where that was the whole mistake. */
+  private drawAwning(
+    px: number,
+    py: number,
+    base: number,
+    pw: number,
+    H: number,
+    skin: SkinDef,
+  ): void {
+    const ctx = this.ctx;
+    // The posts' feet, and nothing wider. The generic path lays a shadow the full
+    // width of the footprint, which under a canopy is a slab of shade with
+    // daylight visible above it — the shadow of the box this no longer is.
+    ctx.fillStyle = "rgba(0,0,0,0.16)";
+    ctx.fillRect(px + 1, base - 1, 3, 2);
+    ctx.fillRect(px + pw - 4, base - 1, 3, 2);
+
+    // The posts, at the two ends, running from the ground up to the cloth.
+    ctx.fillStyle = skin.shade;
+    ctx.fillRect(px + 1, base - H, 2, H);
+    ctx.fillRect(px + pw - 3, base - H, 2, H);
+
+    // The cloth. Its near edge lands exactly on the tops of the posts.
+    const clothTop = py - H;
+    const clothH = base - py;
+    ctx.fillStyle = "#c9503f"; // the one canvas colour in the game
+    ctx.fillRect(px + 1, clothTop + 1, pw - 2, clothH - 2);
+    ctx.fillStyle = "#efe6cf";
+    for (let i = 1; i < pw - 2; i += 8) {
+      ctx.fillRect(px + 1 + i, clothTop + 1, 4, clothH - 2);
+    }
+    // Outlined round the CLOTH ALONE, where the old code outlined the whole
+    // silhouette as one rectangle — which is what drew the box's front edges and
+    // sold the thing as furniture you could not see past.
+    ctx.fillStyle = "rgba(0,0,0,0.38)";
+    ctx.fillRect(px, clothTop, pw, 1);
+    ctx.fillRect(px, clothTop + clothH - 1, pw, 1);
+    ctx.fillRect(px, clothTop, 1, clothH);
+    ctx.fillRect(px + pw - 1, clothTop, 1, clothH);
+    // A valance along the near edge — the frill a market awning has, and the
+    // detail that stops the sheet reading as a slab.
+    //
+    // FLAT, AND IT STAYS FLAT. A real scalloped hem was drawn here and thrown
+    // out: dipping the edge a pixel every four gave a dark dashed band that read
+    // as a dirty or chewed-up fringe rather than as a frill, and a matching
+    // 2px shade under the far edge (meant to say "this surface leans away")
+    // came out as a muddy grey strip laid across the top of the cloth. Both were
+    // texture the object is too small to hold — restraint over density, again.
+    // What sells the canopy is the stripes and the air underneath it, and neither
+    // needed help.
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.fillRect(px + 1, clothTop + clothH - 2, pw - 2, 1);
   }
 
   /** A lamp: a timber post with a brass head, and the only object in the game

@@ -11263,10 +11263,10 @@ schedule.
 
 ### Decor, and the rule for it
 
-- **An awning over the Counter's door**, and it is the whole of what makes the
+- **An awning over the Counter's window** (moved off the door, 10 Aug 2026 — see
+  §The awning had no air under it below), and it is the whole of what makes the
   shop read as a shop from across the square. One striped canopy says "you buy
-  things here" faster than a name board could. Walk-through, so it hangs over the
-  doorstep rather than blocking it — which is what an awning does.
+  things here" faster than a name board could.
 - **Two crates against the Facility's wall.** Two and not six: the joke is that a
   shed with a heap in it is being called a facility, and a heap you have to
   squeeze past stops being funny and starts being an obstacle.
@@ -11670,6 +11670,67 @@ flag agrees with the grass rather than with the rain that does not fall.
 The charge is a carrot, in the crop table's own `ripeColor` so the thing on the
 flag and the thing in your field cannot drift apart. The town has put a root
 vegetable on its flag and is completely serious about it.
+
+## The awning had no air under it (10 Aug 2026)
+
+Reported from the square: the Counter's doorway was visually blocked. The cause
+was not placement, or not only placement — **the awning was drawing itself as a
+solid box with a striped lid.**
+
+`drawFurniturePiece`'s generic path fills a near face for every piece that is not
+`flat`, then outlines the whole silhouette as one rectangle. The `awning` case
+then painted stripes on the top surface and two posts on the face — onto a slab
+of whitewash that had already been laid down underneath them. The posts were
+decoration on a wall.
+
+Nobody caught it for a year because a stall is what it looked like, and at
+Derek's it sits behind his counter with nothing behind it to hide, so the solid
+front was doing an honest job as the back of the stall. Put the same piece in
+front of a door and the door is not shaded, it is bricked up. It was
+**walk-through in the sim and solid to the eye**, which is the worst of both: the
+game let you walk through something the picture called a wall.
+
+**So the awning leaves the generic path, exactly as the lamp does.** The lamp's
+argument is that the generic silhouette is a box and a lamp is a post; an awning
+is a box with the front taken out, which the generic path cannot express at all.
+`drawAwning` draws the cloth, two posts and the shadow the posts throw, and
+nothing between them.
+
+**And it moved off the door onto the glass.** It sat at x 10..11, which is the
+door column plus the east window. A canopy is drawn on the row IN FRONT of the
+wall it belongs to and stands `height` px proud of a 24px storey, so it covers
+the bottom 14px of whatever is behind it — always, by projection, and no amount
+of tuning removes that. Which means the fix is never "raise it", it is "do not
+park one in front of a door". At x 8..9 the same overlap is the point instead of
+the bug: it shades the shopfront, which is what an awning is for, and the east
+window stays clear so the glass is still glass. The crate went with it, from x 12
+(immediately east of the doorstep, so the entrance was bracketed on both sides)
+to x 7. The street face now reads west to east as crate, canopy, glass, door.
+
+**Two details drawn and thrown out the same hour**, both by looking:
+
+- A **scalloped valance** — dipping the hem a pixel every four — came out as a
+  dark dashed band that read as a chewed or dirty fringe, not a frill. It is the
+  flag's crenellation lesson from earlier the same day, arriving again on a
+  static edge.
+- A **2px shade under the far edge**, meant to say "this surface leans away from
+  you", came out as a muddy grey strip laid across the top of the cloth.
+
+Both were texture the object is too small to hold. What sells the canopy is the
+stripes and the air underneath it, and neither needed help.
+
+**The seed stall got better for free**, which is the check that mattered most
+after the change: it now reads as a proper market stall, canopy on two visible
+posts with the counter on its own legs in front, where before the canopy was a
+pale slab.
+
+### Loose end
+
+`furnitureThumb`'s fallback draws its own generic box for any piece without art,
+and its docblock's claim — "the fallback box IS what that piece looks like in the
+room today" — is now a little less true for the awning than it was. It never had
+the stripes either, so this is a widened gap and not a new one. Fixing it means a
+second draw path for one piece; noted rather than built.
 
 ## Known gaps and loose ends
 
