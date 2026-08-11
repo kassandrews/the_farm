@@ -10,6 +10,25 @@ has shipped passed the suite and was obvious within a second of looking at a
 screenshot — striped ground, a roof tiled into boxes, a fen 1.3% under water
 while claiming 10%, seas aligned on a lattice diagonal. **Look at it.**
 
+## The contact sheets come first
+
+Dev-only pages on the same server, each drawing a whole TABLE at once through
+the real renderer. If the change is to a content table, shoot the sheet rather
+than driving the game — it answers in one screenshot, and half the judgements
+are relative anyway (is this building grander than that one, is this region too
+dark against its neighbour).
+
+| page | shows | source |
+| --- | --- | --- |
+| `/buildings.html` | every town building, façade on | `src/content/town.ts` |
+| `/biomes.html` | every region, with a strip of what grows there | `src/content/biomes.ts` |
+| `/looks.html` | every villager look | `src/content/looks.ts` |
+| `/trees.html` | every tree and bush | `src/content/flora.ts` |
+| `/tents.html` | the tents | — |
+
+They cannot walk through a door, open a roof cutaway, or tell you a doorstep is
+blocked. That is what the driver below is for.
+
 ## Launching
 
 ```bash

@@ -11558,6 +11558,37 @@ stopped. away.ts's own house rule says he may never overwrite "a crop, a plank
 or a building"; the build layer is where the last of those lives. It surfaced
 only because the barn's new footprint reshuffled the scatter onto (8,17).
 
+### /buildings.html — the town as a contact sheet
+
+Six cards, every building drawn by the real renderer out of a real `newWorld`,
+at a fixed summer midday on a fixed seed. The sibling of `/biomes.html` and
+`/looks.html`, and it exists for their reason: checking one façade meant
+drive.mjs, a seeded save, a parked player, a screenshot and a crop, and the
+answer came back as a picture of ONE building. Half the questions about a town
+are relative.
+
+Three things it had to solve, all about aiming a camera that only follows a
+player:
+
+- **Stand on the doorstep.** Inside the room opens the roof cutaway, which is
+  the one thing a façade sheet must not do. Off the bottom of the canvas is past
+  `panLimit`, so the pan clamps and the building drifts off centre. The doorstep
+  is outside the room, paved, walkable (the town's own tests guarantee it), and
+  it puts one creature of known size at every front door — the page's only scale
+  reference.
+- **Take the FURTHEST rung of the zoom ladder.** Step 0 aims for an eleven-tile
+  view whatever the canvas is, so the museum came out framed on its own door.
+  The card's CSS box is `span × 16 × 2`, and the rung whose scale is 2 gives back
+  exactly that span.
+- **Pan up three quarters of a tile.** A roof is drawn a storey above the cells
+  it covers, so a building's visual mass sits above its footprint's centre.
+
+BARE ON PURPOSE — no time, zoom or seed controls. A region IS its light and its
+month, which is why that page needs them; a building is a shape with a face on
+it, and the fastest sheet is the one already showing you the thing when the
+reload lands. It does not replace drive.mjs: it cannot walk through a door, open
+a cutaway, or tell you a doorstep is blocked.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
@@ -11876,7 +11907,7 @@ you trip over them:
   not heal itself: with a stale worker installed you open `/biomes.html`, it
   serves what it cached, and nothing there asks the network again. The cure was
   to go and load the GAME first, which nobody would ever guess. `src/tools/no-sw.ts`
-  is imported by all three previews; verified in a real browser by installing a
+  is imported by every preview page; verified in a real browser by installing a
   worker at scope `/` and watching one reload of `/biomes.html` drop it.
 
   **If a tool page looks stale, the other suspect is that there is no dev server.**

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Farm — buildings</title>
+    <!-- Dev-only contact sheet for src/content/town.ts. Not part of the game
+         build; it exists so the town's buildings can be judged as a SET while
+         they are being edited, which is the one thing seven separate
+         screenshots cannot do and half the decisions here are relative. -->
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #efe9dc;
+        --panel: #2b2540;
+        --bg: #1d1930;
+      }
+      body {
+        margin: 0;
+        padding: 16px 20px 40px;
+        background: var(--bg);
+        color: var(--ink);
+        font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      h1 {
+        font-size: 15px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+      p.blurb {
+        margin: 0 0 16px;
+        opacity: 0.6;
+        max-width: 62ch;
+      }
+      #sheet {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 22px;
+        align-items: flex-start;
+      }
+      .card {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      /* Pixel art, never resampled: the canvas is upscaled by a whole number and
+         nothing here is allowed to smooth it (CLAUDE.md §Sprite rendering). */
+      canvas.shot {
+        image-rendering: pixelated;
+        border-radius: 8px;
+        display: block;
+        background: var(--panel);
+      }
+      figcaption {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+      }
+      /* WIDTH 0 PLUS MIN-WIDTH 100%: the caption takes the card's width without
+         contributing to it. A card is sized by its canvas, and a long line of
+         text would push it wider and break the row the canvas sizes were
+         chosen for. */
+      .lines,
+      figcaption {
+        width: 0;
+        min-width: 100%;
+      }
+      .lines {
+        display: flex;
+        flex-direction: column;
+        font-size: 12px;
+      }
+      .note {
+        opacity: 0.45;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>The Farm — buildings</h1>
+    <p class="blurb">
+      Every building in town at once, drawn by the game's own renderer out of a
+      real world. Edit <code>src/content/town.ts</code> and save; this reloads.
+      Fixed at a summer midday on one seed, so the picture changes when the town
+      changes and at no other time.
+    </p>
+    <div id="sheet"></div>
+    <script type="module" src="/src/tools/building-preview.ts"></script>
+  </body>
+</html>
