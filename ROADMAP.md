@@ -11771,6 +11771,53 @@ whitewashed shopfront came with green (`#35705a`, bottle green, kept dark and
 saturated so it is never the hall's pale sage and never sinks into the turf).
 Anything unlisted falls back to the market red.
 
+### An awning is laid a cell at a time, and they join (11 Aug 2026)
+
+**The width was the wrong kind of question.** It was two cells, then briefly
+three, and both were wrong the same way: a fixed-width canopy fits exactly one
+building. At two it stopped halfway along The Counter's three-cell shopfront and
+read as an awning that did not fit. At three it hung a cell past Derek's two-cell
+stall and read as a canopy sliding off — and there is no symmetric answer at tile
+resolution, because three over two overhangs on one side or the other. Looking for
+a third number that suited both was the mistake.
+
+So the awning is **1×1 and adjacent ones draw as a single sheet** — the rule walls,
+fences and window sashes already follow. The shop lays three, Derek lays two,
+neither is a special case, and how wide an awning is becomes a question about what
+you are covering rather than a constant somebody had to guess. Cost went to the
+cell (2 wood, 1 cloth).
+
+Three things the join has to get right, all of them the same rule:
+
+- **Stripes step off the WORLD, not the cell.** Stepped from the cell, every cell
+  gets an identical little flag and a three-cell canopy is three two-stripe panels
+  butted together, with the repeat landing exactly on the tile grid. Anchored to
+  the world the courses run unbroken and no stripe ends on a cell boundary except
+  by coincidence. This is the band rule stated in its original form.
+- **The vertical outline is drawn only where the run STOPS.** Per cell it rules a
+  seam down one sheet of canvas every 16px. Top and bottom carry the full width so
+  they continue across the join; the ends are compared against the neighbour.
+  Same for the 1px inset that makes room for that outline.
+- **Posts go at the ends of the RUN.** A post per cell is a colonnade under a
+  single sheet — the band rule again, arriving as furniture instead of as a bevel.
+
+**And mountedness belongs to the run, not the cell.** Asked per cell, a canopy
+running two cells along a wall and one past its corner would hang at two heights
+and tear down the middle. A sheet of cloth is one object: if the building holds
+any of it up, it holds all of it up.
+
+**Posts are dropped entirely when it is mounted**, which is the same fact as the
+height said the other way. A canopy bolted to the top of a wall is cantilevered —
+the building holds it. Legs on the pavement under something already fixed to the
+wall above them is a stall's anatomy on a shopfront. `wallBehind` decides the
+height and the posts together, so the two can never disagree.
+
+**Watch out for this one:** `materials.test.ts`'s "two floors laid on different
+days differ" failed when the stall got wider, because its `grassAt` fixture picks
+a cell near town furniture and then builds on `x + 1`. It is fragile to any change
+in what the town occupies, and it fails looking like a finish bug rather than a
+placement one.
+
 ### Loose end
 
 `furnitureThumb`'s fallback draws its own generic box for any piece without art,

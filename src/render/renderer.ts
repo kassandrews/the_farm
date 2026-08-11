@@ -4611,15 +4611,8 @@ export class Renderer {
       // drawn on the row in front of what it belongs to (§drawAwning), so the
       // wall it hangs on is the one behind it. Either cell is enough — an awning
       // at the end of a run still has a wall to be fixed to.
-      // `joinsWallRun` rather than `id === "wall"`, because the thing an awning
-      // is most often fixed above is a WINDOW, and a shopfront's door is part of
-      // the same run. It is the predicate that already means "this reads as
-      // continuous wall" everywhere else.
-      const wallBehind = [...Array(w)].some((_, i) => {
-        const b = world.build[tileKey(ax + i, ay - 1)];
-        return b !== undefined && joinsWallRun(b.id);
-      });
-      this.drawAwning(px, py, base, pw, wallBehind ? STOREY : H, skin);
+      const run = this.awningRun(world, ax, ay);
+      this.drawAwning(px, py, base, pw, run.mounted ? STOREY : H, skin, ax, run);
       ctx.globalAlpha = prev;
       return;
     }
@@ -4836,6 +4829,43 @@ export class Renderer {
    *  fix — it is what an awning DOES to the window it shades. It is also why one
    *  must never be parked in front of a door: see content/town.ts §The Counter,
    *  where that was the whole mistake. */
+  /** What an awning's neighbours make of it: where its run ends, and whether the
+   *  run as a whole is fixed to a wall.
+   *
+   *  MOUNTEDNESS IS A PROPERTY OF THE RUN, NOT OF THE CELL, and that is the one
+   *  part of this worth arguing. Asked per cell, a canopy that ran two cells along
+   *  a wall and one cell past its corner would hang at two different heights and
+   *  tear down the middle. A sheet of cloth is one object: if the building holds
+   *  any of it up, it holds all of it up. */
+  private awningRun(
+    world: WorldState,
+    ax: number,
+    ay: number,
+  ): { west: boolean; east: boolean; mounted: boolean } {
+    const isAwning = (x: number) => world.furniture[tileKey(x, ay)]?.id === "awning";
+    // `joinsWallRun` rather than `id === "wall"`, because the thing an awning is
+    // most often fixed above is a WINDOW, and a shopfront's door is part of the
+    // same run. It is the predicate that already means "this reads as continuous
+    // wall" everywhere else.
+    const walled = (x: number) => {
+      const b = world.build[tileKey(x, ay - 1)];
+      return b !== undefined && joinsWallRun(b.id);
+    };
+
+    let mounted = walled(ax);
+    let lo = ax;
+    while (isAwning(lo - 1)) {
+      lo--;
+      if (walled(lo)) mounted = true;
+    }
+    let hi = ax;
+    while (isAwning(hi + 1)) {
+      hi++;
+      if (walled(hi)) mounted = true;
+    }
+    return { west: lo < ax, east: hi > ax, mounted };
+  }
+
   private drawAwning(
     px: number,
     py: number,
@@ -4843,37 +4873,89 @@ export class Renderer {
     pw: number,
     H: number,
     skin: SkinDef,
+    ax: number,
+    run: { west: boolean; east: boolean; mounted: boolean },
   ): void {
     const ctx = this.ctx;
-    // The posts' feet, and nothing wider. The generic path lays a shadow the full
-    // width of the footprint, which under a canopy is a slab of shade with
-    // daylight visible above it — the shadow of the box this no longer is.
-    ctx.fillStyle = "rgba(0,0,0,0.16)";
-    ctx.fillRect(px + 1, base - 1, 3, 2);
-    ctx.fillRect(px + pw - 4, base - 1, 3, 2);
+    const mounted = run.mounted;
 
-    // The posts, at the two ends, running from the ground up to the cloth.
-    ctx.fillStyle = skin.shade;
-    ctx.fillRect(px + 1, base - H, 2, H);
-    ctx.fillRect(px + pw - 3, base - H, 2, H);
+    // NO POSTS ON A MOUNTED ONE, and this is not a preference — it is the same
+    // fact as the height, said in the other direction. A canopy bolted to the top
+    // of a wall is CANTILEVERED; it is held up by the building. Posts under it
+    // are a stall's posts, and drawing them on a shopfront put two legs down onto
+    // the pavement holding up something that was already attached to the wall
+    // above them.
+    //
+    // Which leaves the free-standing case with them, because a stall in an open
+    // square has nothing else to be held up by. One derivation, two objects,
+    // exactly as with the height: `wallBehind` decides both, and it cannot get
+    // them out of step.
+    // AND ONLY AT THE ENDS OF THE RUN. A post per cell would stand a leg every
+    // sixteen pixels under one continuous sheet, which is a colonnade, and the
+    // cloth would stop reading as one piece — the per-cell edges band rule
+    // (CLAUDE.md) arriving as furniture rather than as a bevel. A stall has a post
+    // at each end of its canopy however long the canopy is.
+    if (!mounted) {
+      ctx.fillStyle = "rgba(0,0,0,0.16)";
+      ctx.fillStyle = skin.shade;
+      if (!run.west) {
+        // The post's foot, and nothing wider. The generic path lays a shadow the
+        // full width of the footprint, which under a canopy is a slab of shade
+        // with daylight above it — the shadow of the box this no longer is.
+        ctx.fillStyle = "rgba(0,0,0,0.16)";
+        ctx.fillRect(px + 1, base - 1, 3, 2);
+        ctx.fillStyle = skin.shade;
+        ctx.fillRect(px + 1, base - H, 2, H);
+      }
+      if (!run.east) {
+        ctx.fillStyle = "rgba(0,0,0,0.16)";
+        ctx.fillRect(px + pw - 4, base - 1, 3, 2);
+        ctx.fillStyle = skin.shade;
+        ctx.fillRect(px + pw - 3, base - H, 2, H);
+      }
+    }
 
     // The cloth. Its near edge lands exactly on the tops of the posts.
+    //
+    // The 1px inset that makes room for the outline is applied ONLY where the run
+    // actually ends. Inset on every cell would leave a hairline of roof showing
+    // between neighbours and then outline both sides of it, which is a seam ruled
+    // down a single sheet of canvas every sixteen pixels.
     const clothTop = py - H;
     const clothH = base - py;
+    const x0 = px + (run.west ? 0 : 1);
+    const x1 = px + pw - (run.east ? 0 : 1);
     ctx.fillStyle = CANOPY[skin.id] ?? CANOPY_DEFAULT;
-    ctx.fillRect(px + 1, clothTop + 1, pw - 2, clothH - 2);
+    ctx.fillRect(x0, clothTop + 1, x1 - x0, clothH - 2);
+
+    // THE STRIPES ARE STEPPED OFF THE WORLD, not off the cell. This is the whole
+    // of what makes a joined run read as one awning: stepping them from `px` gives
+    // every cell an identical little flag, so a three-cell canopy comes out as
+    // three two-stripe panels butted together and the repeat lands exactly on the
+    // tile grid — the thing CLAUDE.md's band rule exists to forbid. Anchored to
+    // the world, the courses run unbroken across the whole sheet and no stripe
+    // ever ends on a cell boundary except by coincidence.
     ctx.fillStyle = CANOPY_STRIPE;
-    for (let i = 1; i < pw - 2; i += 8) {
-      ctx.fillRect(px + 1 + i, clothTop + 1, 4, clothH - 2);
+    const worldX = ax * TILE;
+    for (let i = -(((worldX % 8) + 8) % 8); i < pw; i += 8) {
+      const s = Math.max(x0, px + i);
+      const e = Math.min(x1, px + i + 4);
+      if (e > s) ctx.fillRect(s, clothTop + 1, e - s, clothH - 2);
     }
+
     // Outlined round the CLOTH ALONE, where the old code outlined the whole
     // silhouette as one rectangle — which is what drew the box's front edges and
     // sold the thing as furniture you could not see past.
+    //
+    // Top and bottom run the full cell width so they carry across the join; the
+    // two vertical ends are drawn ONLY where the run stops, which is the same
+    // sentence the wall faces, the ground bevel and the roof courses all obey —
+    // the edge belongs where the surface ends, never on every cell of it.
     ctx.fillStyle = "rgba(0,0,0,0.38)";
     ctx.fillRect(px, clothTop, pw, 1);
     ctx.fillRect(px, clothTop + clothH - 1, pw, 1);
-    ctx.fillRect(px, clothTop, 1, clothH);
-    ctx.fillRect(px + pw - 1, clothTop, 1, clothH);
+    if (!run.west) ctx.fillRect(px, clothTop, 1, clothH);
+    if (!run.east) ctx.fillRect(px + pw - 1, clothTop, 1, clothH);
     // A valance along the near edge — the frill a market awning has, and the
     // detail that stops the sheet reading as a slab.
     //
@@ -4886,7 +4968,7 @@ export class Renderer {
     // What sells the canopy is the stripes and the air underneath it, and neither
     // needed help.
     ctx.fillStyle = "rgba(0,0,0,0.25)";
-    ctx.fillRect(px + 1, clothTop + clothH - 2, pw - 2, 1);
+    ctx.fillRect(x0, clothTop + clothH - 2, x1 - x0, 1);
   }
 
   /** A lamp: a timber post with a brass head, and the only object in the game

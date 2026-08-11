@@ -494,8 +494,24 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   awning: {
     id: "awning",
     name: "Awning",
-    cost: { wood: 4, cloth: 2 },
-    w: 2,
+    // TWO WOOD AND ONE CLOTH, per cell — you buy an awning by the yard now.
+    cost: { wood: 2, cloth: 1 },
+    // ONE CELL, AND THEY JOIN — the windows' rule, not the beds'.
+    //
+    // It was two, then briefly three, and both were wrong in the same way: a
+    // fixed-width canopy fits exactly one building. At two it stopped halfway
+    // along The Counter's three-cell shopfront and read as an awning that did not
+    // fit; at three it hung a cell past Derek's two-cell stall and read as a
+    // canopy sliding off. There is no third number that is right for both, and
+    // looking for one was the mistake.
+    //
+    // So the width is the PLAYER'S, laid a cell at a time, and adjacent awnings
+    // draw as one continuous sheet — the same answer walls, fences and window
+    // sashes already give. That makes "how wide is an awning" a question about
+    // the thing you are covering rather than a constant somebody has to guess,
+    // and it is why the shop's spans three and Derek's spans two without either
+    // being a special case.
+    w: 1,
     h: 1,
     solid: false,
     // THE FREE-STANDING HEIGHT — the head of a stall's own posts. An awning with

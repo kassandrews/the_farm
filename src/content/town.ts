@@ -1030,7 +1030,12 @@ export const TOWN_FIXTURES: TownFixture[] = [
   // shades its display window and leaves its door clear, and now this one does.
   // The east window at x 10 stays open, so the glass is still glass — you are
   // meant to be able to see the stock (§shop windows).
+  // Three cells, one per window, laid as a run — they draw as one sheet
+  // (§drawAwning). The glass is x 8..10 and the door is at 11, so the canopy
+  // spans exactly the shopfront and stops where the way in begins.
   { x: 8, y: 3, id: "awning", facing: "s", finish: "whitewash" },
+  { x: 9, y: 3, id: "awning", facing: "s", finish: "whitewash" },
+  { x: 10, y: 3, id: "awning", facing: "s", finish: "whitewash" },
   // And a crate, because a shop has stock that did not fit.
   //
   // AT THE WEST END, off the doorstep. It was at x 12, immediately east of the
@@ -1074,7 +1079,12 @@ export const TOWN_FIXTURES: TownFixture[] = [
   // drawn a row earlier, so the counter and whoever is standing at it are drawn
   // over it rather than under it. That is the Blessed Carrot rule, and it is why
   // the awning is not simply on top of the counter cell.
+  // Two cells, exactly the width of the counter below them, and they draw as one
+  // sheet for the same reason the shop's three do. This is what awnings being
+  // laid a cell at a time bought: the stall and the shopfront are the same object
+  // at the two widths each of them actually wants, and neither is a special case.
   { x: -5, y: 4, id: "awning", facing: "s", finish: "pine" },
+  { x: -4, y: 4, id: "awning", facing: "s", finish: "pine" },
   { x: -5, y: 5, id: "table", facing: "s", finish: "pine", counter: "seedstall" },
   // A bench, mid-east plaza, facing the square. It exists so that sitting
   // down together (sim/play.ts `sittingAt`) is reachable before the player
