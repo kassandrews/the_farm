@@ -11812,6 +11812,33 @@ the building holds it. Legs on the pavement under something already fixed to the
 wall above them is a stall's anatomy on a shopfront. `wallBehind` decides the
 height and the posts together, so the two can never disagree.
 
+### v48, and the rung that should have shipped four edits ago
+
+Reported from the live game: **one cell of awning at both sites.** Town props are
+written into `furniture` once, at world creation, and nothing revisits them — so a
+deployed town went on holding a single awning anchor at the old address while the
+piece under it shrank from two cells to one. It is v28's lesson at the furniture
+layer: a content change to a STAMPED thing needs a ladder rung, or it only ever
+reaches new towns.
+
+**The rung should have gone in with the FIRST of these edits, not after four of
+them**, and the cost of that shows in its shape. Because none of the intervening
+builds bumped the version, "a v47 save" is not one thing: depending on when it was
+last written it holds the shop's canopy at 10,3 or at 8,3, its crate at 12,3 or at
+7,3, and Derek's at -5,4 or at -6,4. So v48 cannot MOVE a piece — it clears every
+address any of those builds used and lets the stamp lay the current table down
+fresh, which is the only formulation that converges from all of them.
+
+Matched by id, like every rung before it, so a piece the player put on those cells
+themselves stays where it is and the canopy simply stops at it. Verified in the
+browser against a hand-wound v47 save as well as in tests, because the failure
+being reported was one that only a real save could produce.
+
+**The lesson to carry:** editing `content/town.ts` is a save change. It does not
+look like one — there is no field added and no shape altered — but every authored
+prop and wall in a live town was written down at creation, so the table and the
+save can silently disagree forever.
+
 **Watch out for this one:** `materials.test.ts`'s "two floors laid on different
 days differ" failed when the stall got wider, because its `grassAt` fixture picks
 a cell near town furniture and then builds on `x + 1`. It is fragile to any change

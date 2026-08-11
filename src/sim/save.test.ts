@@ -1855,3 +1855,78 @@ describe("v46 → v47: the barn is square and wears false doors", () => {
     expect(m.build[DOOR_WAS]).toMatchObject({ id: "door" });
   });
 });
+
+describe("v47 → v48: the awnings become runs", () => {
+  /** Where the shop's canopy has lived across the builds that all called
+   *  themselves v47 — over the door, then over the glass — and where it lives
+   *  now. The rung has to converge from every one of them, which is the whole
+   *  reason it clears addresses rather than moving a piece. */
+  const SHOP_NOW = ["8,3", "9,3", "10,3"];
+  const STALL_NOW = ["-5,4", "-4,4"];
+  const CRATE_NOW = "7,3";
+
+  /** A v47 save with the town's awnings wound back to one of the old layouts.
+   *  `where` picks which of the two shipped shapes to fake. */
+  function v47Save(where: "door" | "glass", edit?: Record<string, unknown | null>) {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const furniture = { ...(w.furniture as Record<string, unknown>) };
+
+    // Clear whatever the current table stamped, then lay the old single-anchor
+    // props by hand — one awning per site, because that is what a two-wide piece
+    // stored.
+    for (const key of [...SHOP_NOW, ...STALL_NOW, CRATE_NOW]) delete furniture[key];
+    const awning = (finish: string) => ({ id: "awning", facing: "s", finish });
+    furniture[where === "door" ? "10,3" : "8,3"] = awning("whitewash");
+    furniture["-5,4"] = awning("pine");
+    furniture[where === "door" ? "12,3" : "7,3"] = { id: "chest", facing: "s", finish: "whitewash" };
+
+    for (const [key, cell] of Object.entries(edit ?? {})) {
+      if (cell === null) delete furniture[key];
+      else furniture[key] = cell;
+    }
+    return { ...w, schemaVersion: 47, furniture };
+  }
+
+  for (const where of ["door", "glass"] as const) {
+    it(`lays the full run from a save that had it over the ${where}`, () => {
+      // The bug reported from a live town: one anchor, a piece that had shrunk
+      // to a cell under it, and a canopy one cell wide on a three-cell shopfront.
+      const m = migrateSave(v47Save(where))!;
+      for (const key of SHOP_NOW) expect(m.furniture[key], key).toMatchObject({ id: "awning" });
+      for (const key of STALL_NOW) expect(m.furniture[key], key).toMatchObject({ id: "awning" });
+    });
+
+    it(`leaves no awning behind at the old address (${where})`, () => {
+      // A stale anchor outside the new run is a canopy hanging in the street —
+      // and at 10,3 it would have been silently correct, which is worse.
+      const m = migrateSave(v47Save(where))!;
+      expect(m.furniture["-6,4"]).toBeUndefined();
+      if (where === "door") expect(m.furniture["12,3"]).toBeUndefined();
+    });
+  }
+
+  it("puts the crate at the west end and only there", () => {
+    const m = migrateSave(v47Save("door"))!;
+    expect(m.furniture[CRATE_NOW]).toMatchObject({ id: "chest" });
+    expect(m.furniture["12,3"]).toBeUndefined();
+  });
+
+  it("matches a freshly generated town", () => {
+    // The rung's addresses are frozen and the table's are live; a migrated
+    // shopfront and a new one have to be the same shopfront.
+    const fresh = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const m = migrateSave(v47Save("door"))!;
+    for (const key of [...SHOP_NOW, ...STALL_NOW, CRATE_NOW]) {
+      expect(m.furniture[key], key).toEqual((fresh.furniture as Record<string, unknown>)[key]);
+    }
+  });
+
+  it("leaves a piece of the player's own standing, and shortens the run instead", () => {
+    // Matched by id, like every rung before it. A chair on the shopfront is not
+    // an awning, so it stays — and the canopy simply stops at it.
+    const m = migrateSave(v47Save("door", { "9,3": { id: "chair", facing: "s", finish: "pine" } }))!;
+    expect(m.furniture["9,3"]).toMatchObject({ id: "chair" });
+    expect(m.furniture["8,3"]).toMatchObject({ id: "awning" });
+    expect(m.furniture["10,3"]).toMatchObject({ id: "awning" });
+  });
+});

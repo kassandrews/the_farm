@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 47;
+export const SCHEMA_VERSION = 48;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -1925,6 +1925,58 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
       furniture: stamped.furniture,
       finishes: stamped.finishes ?? raw.finishes,
       frozen,
+    };
+  },
+
+  47: (raw) => {
+    // THE AWNINGS MOVED AND THEN BECAME ONE CELL WIDE, and a deployed save cannot
+    // find that out on its own. Town props are written into `furniture` once, at
+    // world creation, and nothing revisits them — so a live town went on holding
+    // a single awning anchor at the old address while the piece under it shrank
+    // from two cells to one, and drew a canopy exactly one cell wide over both
+    // the shop and the stall. This is v28's lesson at the furniture layer: a
+    // content change to a STAMPED thing needs a rung, or it only ever reaches new
+    // towns.
+    //
+    // It is also a rung that should have shipped with the FIRST of these edits
+    // rather than after four of them. Because none of the intervening builds
+    // bumped the version, "a v47 save" is not one thing — depending on when it
+    // was last written it can hold the awning at 10,3 or at 8,3, and the stall's
+    // at -5,4 or at -6,4. So this clears every address any of those builds used
+    // and lets the stamp lay the current table down fresh, which is the only
+    // formulation that converges from all of them.
+    const V48_STALE: { key: string; id: string }[] = [
+      // The Counter's canopy: over the door, then over the glass, then a run.
+      { key: "10,3", id: "awning" },
+      { key: "9,3", id: "awning" },
+      { key: "8,3", id: "awning" },
+      // Its crate: east of the doorstep, then west of the shopfront.
+      { key: "12,3", id: "chest" },
+      { key: "7,3", id: "chest" },
+      // Derek's, which was two cells, briefly three, and is two again.
+      { key: "-6,4", id: "awning" },
+      { key: "-5,4", id: "awning" },
+      { key: "-4,4", id: "awning" },
+    ];
+
+    const furniture = { ...((raw.furniture ?? {}) as Record<string, { id: string }>) };
+    // MATCHED BY ID, so anything the player put on these cells themselves stays
+    // exactly where it is — v47's judgement and not a new one. The stamp then
+    // skips whatever is still standing (`stampFixtures` refuses an occupied
+    // cell), so a player who built on the shopfront keeps their work and simply
+    // gets a shorter awning.
+    for (const f of V48_STALE) {
+      if (furniture[f.key]?.id === f.id) delete furniture[f.key];
+    }
+
+    const stamped = stampInto({ ...raw, furniture });
+    return {
+      ...raw,
+      schemaVersion: 48,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
+      finishes: stamped.finishes ?? raw.finishes,
     };
   },
 };
