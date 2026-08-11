@@ -68,6 +68,31 @@ export interface PieceArt {
    *  stood behind it would be the occlusion machinery firing on the wrong
    *  furniture — roofs are meant to be its first real user. */
   rise?: number;
+  /** A part of the FRONT view that moves.
+   *
+   *  A band of rows, and a list of replacement bands to cycle through — so the
+   *  fireplace's flame can lean and change height without a second copy of the
+   *  thirty rows of masonry around it, which would drift the moment either was
+   *  edited. `row` is where the band starts in the `s` grid, and every frame
+   *  must be exactly as many rows, each the same width as what it replaces.
+   *
+   *  FRONT VIEW ONLY, deliberately: it applies wherever `gridFor` chose `s`,
+   *  which is the front and any facing that falls back to it. A piece whose
+   *  back is authored separately (the fireplace's is a blank slab) keeps a
+   *  still back, which is what it should have — there is no fire to see.
+   *
+   *  Everything else in a furnished room is still. Use this for a thing that is
+   *  ON — a fire, not a chair. */
+  anim?: {
+    /** First row of the band, indexed into `s.rows`. */
+    row: number;
+    /** How long one frame holds. Slow: this is a cycle, not a flicker, and at
+     *  60Hz an un-held frame is noise rather than a flame. */
+    holdMs: number;
+    /** The bands, in order. Frame 0 should be the same art the still grid has,
+     *  so a piece reads identically the instant it is placed. */
+    frames: string[][];
+  };
 }
 
 /** The outline ink, shared with the icons for the same reason they share it:
@@ -88,15 +113,46 @@ const FINISH_KEY: Record<string, keyof Pick<SkinDef, "color" | "top" | "shade">>
  *  Total, never null: `s` is required by the type and every other facing falls
  *  back to it. That is what lets a piece ship one grid and gain the rest later
  *  — a half-authored piece draws as its front view, which is a real chair seen
- *  from the wrong side rather than a hole in the room. */
-export function gridFor(art: PieceArt, facing: Facing): { grid: Grid; mirror: boolean } {
-  if (facing === "s") return { grid: art.s, mirror: false };
-  if (facing === "n") return art.n ? { grid: art.n, mirror: false } : { grid: art.s, mirror: false };
-  if (facing === "e") return art.e ? { grid: art.e, mirror: false } : { grid: art.s, mirror: false };
+ *  from the wrong side rather than a hole in the room.
+ *
+ *  `frame` picks an `anim` band and is ignored by everything without one, which
+ *  is every piece but the fireplace. It only ever reaches the front view — see
+ *  `PieceArt.anim`. */
+export function gridFor(art: PieceArt, facing: Facing, frame = 0): { grid: Grid; mirror: boolean } {
+  const front = animated(art, frame);
+  if (facing === "s") return { grid: front, mirror: false };
+  if (facing === "n") return art.n ? { grid: art.n, mirror: false } : { grid: front, mirror: false };
+  if (facing === "e") return art.e ? { grid: art.e, mirror: false } : { grid: front, mirror: false };
   // West: an explicit grid wins, then the mirrored east view, then south.
   if (art.w) return { grid: art.w, mirror: false };
   if (art.e && art.mirrorW) return { grid: art.e, mirror: true };
-  return { grid: art.s, mirror: false };
+  return { grid: front, mirror: false };
+}
+
+/** Spliced front views, per piece, built once each and then handed back.
+ *
+ *  `gridFor` runs for every piece EVERY FRAME, and the raster cache below only
+ *  saves the fills — a fresh `rows` array per call would allocate a few hundred
+ *  arrays a second for one fireplace. Same argument as the raster cache, one
+ *  step earlier: the frames are a fixed, tiny set, so build them all once. */
+const frameCache = new WeakMap<PieceArt, Grid[]>();
+
+/** The front view at a frame — the still `s` grid for anything unanimated, and
+ *  for a piece with `anim`, that grid with its band swapped out. */
+function animated(art: PieceArt, frame: number): Grid {
+  const anim = art.anim;
+  if (!anim) return art.s;
+
+  let built = frameCache.get(art);
+  if (!built) {
+    built = anim.frames.map((band) => ({
+      ...art.s,
+      rows: art.s.rows.map((row, i) => band[i - anim.row] ?? row),
+    }));
+    frameCache.set(art, built);
+  }
+  // Modulo, not a clamp: the caller counts frames off a clock that never stops.
+  return built[((frame % built.length) + built.length) % built.length];
 }
 
 const cache = new Map<string, HTMLCanvasElement>();

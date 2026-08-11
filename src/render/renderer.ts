@@ -1184,6 +1184,11 @@ export class Renderer {
   private t0 = performance.now();
   /** The `now` the current frame is being drawn at — see draw(). */
   private now = 0;
+  /** Milliseconds since the renderer started, for art that MOVES rather than
+   *  art that has to agree about the date. Off `t0`, not `this.now`: the
+   *  fireplace's flame is animation like the grass sway, not a fact about what
+   *  day it is, and the screenshot harness pins the page clock. */
+  private animMs = 0;
   private canvas: HTMLCanvasElement;
   /** Rebuilt every frame; see the Raised docblock. */
   private raised: Raised[] = [];
@@ -1457,6 +1462,8 @@ export class Renderer {
   draw(world: WorldState, now: number): void {
     const ctx = this.ctx;
     const t = (performance.now() - this.t0) / 1000;
+    // Taken once, so every piece drawn this frame is on the same beat.
+    this.animMs = t * 1000;
     // Smooth camera follow, of the player plus whatever build mode has panned to.
     this.cam.x += (world.player.x + this.pan.x - this.cam.x) * 0.12;
     this.cam.y += (world.player.y + this.pan.y - this.cam.y) * 0.12;
@@ -4287,12 +4294,23 @@ export class Renderer {
     // converted one row at a time rather than all at once.
     const art = FURNITURE_ART[cell.id];
     if (art) {
-      const { grid, mirror } = gridFor(art, cell.facing);
+      // Zero for everything without an `anim` — one fireplace does not put the
+      // rest of the furniture on a clock, and an unanimated piece keeps the one
+      // cache entry it always had.
+      const frame = art.anim ? Math.floor(this.animMs / art.anim.holdMs) : 0;
+      const { grid, mirror } = gridFor(art, cell.facing, frame);
       const rise = art.rise ?? 0;
       // Keyed on the finish as well as the piece and facing: one grid serves
       // thirteen finishes precisely because `c`/`t`/`s` are resolved at raster
       // time, which means a walnut chair and a pine one are different pixels.
-      const raster = pieceCanvas(`${cell.id}:${cell.facing}:${cell.finish}`, grid, skin, mirror);
+      // And on the FRAME, or the first flame drawn would be served forever.
+      const suffix = art.anim ? `:${frame % art.anim.frames.length}` : "";
+      const raster = pieceCanvas(
+        `${cell.id}:${cell.facing}:${cell.finish}${suffix}`,
+        grid,
+        skin,
+        mirror,
+      );
       // Integer coordinates and no scale factor — the grid is authored at scene
       // px, so this is a 1:1 blit. Anything else resamples pixel art off the
       // grid, which CLAUDE.md forbids outright.

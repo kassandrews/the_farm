@@ -1002,9 +1002,13 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   //
   // The fire is drawn as a shape narrowing upward from a bed of embers, not as a
   // gradient: a flame is a silhouette, and at this scale a soft one is a smudge.
-  // It does not animate. Every other light in the game is a steady pool
-  // (§drawLampGlow) and a flickering one here would be the only thing in the
-  // room moving.
+  //
+  // AND IT MOVES — three frames, leaning and changing height (§anim below). This
+  // used to say it deliberately didn't, on the grounds that every other light in
+  // the game is a steady pool (§drawLampGlow) and a moving one here would be the
+  // only thing in the room. That is still true and is now the point: a fire is
+  // the one furnishing that is running rather than sitting there, and a still
+  // one read as a painting of a fire. A lamp stays steady; it is a lamp.
   fireplace: {
     mirrorW: true,
     s: {
@@ -1045,6 +1049,69 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
       // The firebox is sooted, not black: pure black is the outline's colour and
       // an opening painted in it loses its own jambs.
       palette: { k: INK, e: "#241a16", f: "#ffcf7a", o: "#e8912c", g: "#a3552a" },
+    },
+    // The fire, moving. Seven rows starting at 16 — the tip and the body, never
+    // the two ember rows under them, because embers glowing steadily is what
+    // says the fire has been burning a while.
+    //
+    // The cycle is UPRIGHT, LEFT, UPRIGHT, RIGHT, so it passes through centre
+    // between leans. Straight to the other side jumped; through the middle
+    // sways. And the leans differ in HEIGHT as well as direction — a flame that
+    // only rocks side to side is a metronome.
+    //
+    // The band never reaches above row 16. Rows 11 and 12 narrow the opening
+    // with their own jambs, and a tip that got up there would burn through the
+    // masonry.
+    anim: {
+      row: 16,
+      holdMs: 180,
+      frames: [
+        // Upright: the still art, so a fireplace looks the same the moment it
+        // is placed as it does in the build menu's thumbnail.
+        [
+          ".kcccccckeeeeeeeeeeeeeekcccccck.",
+          ".kcccccckeeeeeefeeeeeeekcccccck.",
+          ".kcccccckeeeeeffofeeeeekcccccck.",
+          ".kcccccckeeeefofoofeeeekcccccck.",
+          ".kcccccckeeeffoooooffeekcccccck.",
+          ".kcccccckeefoooooooofeekcccccck.",
+          ".kcccccckeefoooooooofeekcccccck.",
+        ],
+        // Leaning left, and a row taller — a flame that has caught.
+        [
+          ".kcccccckeeeeefeeeeeeeekcccccck.",
+          ".kcccccckeeeefofeeeeeeekcccccck.",
+          ".kcccccckeeeffoofeeeeeekcccccck.",
+          ".kcccccckeeffoooooffeeekcccccck.",
+          ".kcccccckeefooooooofeeekcccccck.",
+          ".kcccccckeefoooooooofeekcccccck.",
+          ".kcccccckeefoooooooofeekcccccck.",
+        ],
+        [
+          ".kcccccckeeeeeeeeeeeeeekcccccck.",
+          ".kcccccckeeeeeefeeeeeeekcccccck.",
+          ".kcccccckeeeeeffofeeeeekcccccck.",
+          ".kcccccckeeeefofoofeeeekcccccck.",
+          ".kcccccckeeeffoooooffeekcccccck.",
+          ".kcccccckeefoooooooofeekcccccck.",
+          ".kcccccckeefoooooooofeekcccccck.",
+        ],
+        // Leaning right, and a row SHORTER — settling back down.
+        //
+        // The lean is one pixel off centre, not three. Drawn further over it
+        // touched the right jamb and went broad at the base, and a flame that
+        // fills the firebox wall to wall is a mound of embers, not a flame. The
+        // base row never moves at all: fire is anchored where the fuel is.
+        [
+          ".kcccccckeeeeeeeeeeeeeekcccccck.",
+          ".kcccccckeeeeeeeeeeeeeekcccccck.",
+          ".kcccccckeeeeeeeefeeeeekcccccck.",
+          ".kcccccckeeeeeeffofeeeekcccccck.",
+          ".kcccccckeeeeffooooofeekcccccck.",
+          ".kcccccckeefoooooooofeekcccccck.",
+          ".kcccccckeefoooooooofeekcccccck.",
+        ],
+      ],
     },
     // Turned away: masonry all the way up, no opening. A fireplace you have
     // spun round should show you its back, not its fire — the wardrobe's

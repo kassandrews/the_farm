@@ -69,6 +69,60 @@ describe("furniture art", () => {
       }
     });
 
+    // A MOVING PIECE has to keep every promise a still one does, in every
+    // frame. The size contract above only ever sees frame 0 — a band a row
+    // short or a character wide would pass it and then, three frames later,
+    // slide the fire off the hearth or draw it in nothing at all.
+    const anim = art.anim;
+    if (anim) {
+      it(`${id} starts on its still art`, () => {
+        // Frame 0 must BE the `s` grid, or the build menu's thumbnail (which
+        // never animates) and the piece the moment it is placed disagree.
+        expect(gridFor(art, "s", 0).grid.rows).toEqual(art.s.rows);
+      });
+
+      it(`${id} cycles`, () => {
+        // Past the end and back to the start: the caller counts frames off a
+        // clock that runs for as long as the game is open.
+        expect(gridFor(art, "s", anim.frames.length).grid.rows).toEqual(art.s.rows);
+        expect(gridFor(art, "s", 1).grid.rows).not.toEqual(art.s.rows);
+      });
+
+      it(`${id} keeps its back and sides still`, () => {
+        // The animation is the front view's alone. A back with no fire in it
+        // has nothing to move, and moving it anyway would be the flame's rows
+        // landing on masonry.
+        for (const facing of FACINGS) {
+          if (facing === "s") continue;
+          const still = gridFor(art, facing, 0).grid.rows;
+          for (let f = 1; f < anim.frames.length; f++) {
+            expect(gridFor(art, facing, f).grid.rows, `${id}/${facing} frame ${f}`).toEqual(still);
+          }
+        }
+      });
+
+      for (let f = 0; f < anim.frames.length; f++) {
+        it(`${id} frame ${f} is the same size and palette as the still art`, () => {
+          const { grid } = gridFor(art, "s", f);
+          const { w } = footprint(def, "s");
+          expect(grid.rows).toHaveLength(art.s.rows.length);
+          for (const row of grid.rows) expect(row).toHaveLength(w * TILE);
+          for (const row of grid.rows) {
+            for (const ch of row) {
+              if (ch === "." || ch === "c" || ch === "t" || ch === "s") continue;
+              expect(grid.palette[ch], `${id} frame ${f} uses "${ch}"`).toBeTruthy();
+            }
+          }
+        });
+      }
+
+      it(`${id} holds each frame long enough to read`, () => {
+        // A cycle, not a flicker: under about a tenth of a second the frames
+        // blur into a bright smear and the silhouette stops being one.
+        expect(anim.holdMs).toBeGreaterThanOrEqual(100);
+      });
+    }
+
     it(`${id} uses the finish somewhere`, () => {
       // A grid painted entirely in literals would ignore the finish the player
       // chose, which is the one thing furniture has always got right.
