@@ -11589,6 +11589,44 @@ it, and the fastest sheet is the one already showing you the thing when the
 reload lands. It does not replace drive.mjs: it cannot walk through a door, open
 a cutaway, or tell you a doorstep is blocked.
 
+### The flag over the town hall
+
+A pole with a small flag on it, on the hall's roof — and it is DERIVED, on the
+chimney's exact argument. You place the fire and the flue comes out over it; the
+town puts its DESK somewhere and the flag flies over that. `flagCell` asks one
+question: is the `hall` counter in this room.
+
+Not `flag: true` on the building. That would have been one line, and it would
+also have been the first PLACED thing on a roof, and it would have gone on
+flying over an empty shell after somebody carried the desk out. This way the
+flag is a fact about what the building is FOR.
+
+Only the hall, because only the hall has that counter. The shop, the museum and
+the Facility have counters too and fly nothing: four flags in a town this size
+is a parade, and those three are a business, a collection and a pile.
+
+It lands on the ridge without being told to — the desk sits on the middle row of
+a five-deep building and `roofPitch` creases a five-deep roof through that same
+row. Move the desk and the flag moves.
+
+**A NOTCH CANNOT SURVIVE A ONE-PIXEL OUTLINE AT THIS SIZE**, which is the
+transferable lesson and took three goes. The flag is 6px tall, so a swallowtail
+is at most 2 deep, and every pixel of a 2-deep notch is within one pixel of the
+fabric above and below it — the outline fills the cut with solid ink and the
+flag comes out with a dark bite in it. (Attempt one cut it with `clearRect`,
+which does not put a hole in the flag: it puts a hole in the WORLD, straight
+through the roof and the ground to the empty page behind.) The fabric is said by
+a slow one-pixel lift instead.
+
+It flies rather than hangs. There is no weather here, so the literal answer was
+a limp flag — which is a vertical smudge that reads as an aerial. The grass
+already sways, so the world has a breeze even though it has no weather, and the
+flag agrees with the grass rather than with the rain that does not fall.
+
+The charge is a carrot, in the crop table's own `ripeColor` so the thing on the
+flag and the thing in your field cannot drift apart. The town has put a root
+vegetable on its flag and is completely serious about it.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

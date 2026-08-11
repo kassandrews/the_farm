@@ -8,7 +8,7 @@
 // needing a wall behind it (sim/furniture.ts §backs).
 
 import { describe, it, expect } from "vitest";
-import { chimneyCell } from "./renderer";
+import { chimneyCell, flagCell } from "./renderer";
 import type { Room } from "../sim/rooms";
 
 /** A rectangular room with the given interior extent. */
@@ -50,5 +50,29 @@ describe("chimneyCell", () => {
     const a = room(4, -2, 7, 6);
     const b = room(4, -2, 7, 6);
     expect(chimneyCell(a, "6,0")).toBe(chimneyCell(b, "6,0"));
+  });
+});
+
+// The flag, which is the same shape of question one storey up: derived, from a
+// thing in the room that MEANS something, and never placed. The pole and the
+// carrot on it are judged on screen; what is testable is the choice.
+describe("flagCell", () => {
+  it("gives a room with no counter in it nothing", () => {
+    // Every building in town has a roof and only one has the town's business on
+    // it. This is the museum's lesson from the chimney above, at flag height:
+    // a rule that fires on size, or on "is an institution", flies four flags.
+    expect(flagCell(room(0, 0, 3, 3), null)).toBeNull();
+    expect(flagCell(room(0, 0, 12, 12), null)).toBeNull();
+  });
+
+  it("flies it over the desk", () => {
+    const r = room(-3, -9, 6, 3);
+    expect(flagCell(r, "-1,-8")).toBe("-1,-8");
+  });
+
+  it("never flies one outside the room", () => {
+    // A pole on a cell the roof does not cover is a flag in somebody's garden.
+    const r = room(0, 0, 4, 4);
+    expect(flagCell(r, "9,9")).toBeNull();
   });
 });

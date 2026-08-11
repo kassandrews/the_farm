@@ -12,7 +12,7 @@
 import type { WorldState, Villager, Player, BuildCell, FurnitureCell, Layer } from "../sim/types";
 import { tileAt, playerTile, actionTarget } from "../sim/game";
 import type { ActionTarget } from "../sim/game";
-import { cropDef, ripeStage } from "../content/crops";
+import { cropDef, ripeStage, CROPS } from "../content/crops";
 import {
   tileDef,
   FLOOR,
@@ -382,6 +382,18 @@ const GLASS_WARM_LIT = "#f6d79b";
  *  entire content is one mark. Off-white — pure `#fff` glares against ox-blood
  *  and comes through the night wash brighter than the lamps do. */
 const BARN_PAINT = "#ece4d4";
+/** The town's flag (§drawFlag). Hardcoded on the same argument the glass and the
+ *  barn's whitewash make: a flag is not the building's material, and a finish
+ *  that recoloured it would make the town's own colours a thing to shop for.
+ *
+ *  The carrot is the CROP's ripe colour, read from the table rather than typed
+ *  again here — the thing on the flag and the thing in your field have to be the
+ *  same carrot, and two hexes for one vegetable is how they stop being. */
+const FLAG_POLE = "#7d6a4a";
+const FLAG_FIELD = "#f2ece0";
+const FLAG_INK = "#2b2540";
+const CARROT = CROPS.carrot.ripeColor;
+const CARROT_TOP = "#5aa03c";
 /** How far a rake of light travels across the glass before it starts again, in
  *  WORLD px. Coprime with the 16px tile and much longer than it, for the reason
  *  grain.ts is entirely about — a highlight whose period divides the tile is a
@@ -1082,6 +1094,43 @@ export const MOTE_MAX = 0.4;
  *  first and the second fire simply shares a flue. Nobody has built two yet.
  *
  *  Exported for its test — that it lands on the fire, and inside the room. */
+/** Which roof cell flies the flag. DERIVED, on the chimney's own argument.
+ *
+ *  IT IS THE CELL THE TOWN HALL'S COUNTER STANDS ON. You do not place a flag any
+ *  more than you place a roof or a chimney — you place, or in this case the town
+ *  places, the DESK THAT DOES THE TOWN'S BUSINESS, and the flag flies over it.
+ *  The Tired Office Creature's counter is the thing in this world that most means
+ *  "municipal", so it is the thing this asks about.
+ *
+ *  NOT A FIELD ON THE BUILDING. `flag: true` in content/town.ts would have been
+ *  one line and would also have been the first PLACED thing on a roof, and it
+ *  would have flown over an empty shell after somebody carried the desk out.
+ *  This way the flag is a fact about what the building is FOR, which is what a
+ *  municipal flag is.
+ *
+ *  ONLY THE HALL, and only because only the hall has that counter. The shop, the
+ *  museum and the Facility have counters too and fly nothing — four flags in a
+ *  town this size is a parade, and three of those counters are a business, a
+ *  collection and a pile respectively. None of them is the town.
+ *
+ *  IT LANDS ON THE RIDGE BY ITSELF, which is the part worth not congratulating
+ *  ourselves for. The hall's counter sits on the middle row of a five-deep
+ *  building, and `roofPitch` creases a five-deep roof through the middle of that
+ *  same row — so the pole stands on the crease because the desk is in the middle
+ *  of the room, not because anything here nudged it there. Move the desk and the
+ *  flag moves, which is honest and is also the chimney's exact bargain.
+ *
+ *  `counter` is passed rather than looked up, so this stays a pure function of
+ *  the room — the caller is already walking the room's furniture for the lamp
+ *  and the hearth, so the answer costs nothing.
+ *
+ *  Exported for its test, like `chimneyCell`: that it lands on the desk, and
+ *  inside the room. */
+export function flagCell(room: Room, counter: string | null): string | null {
+  if (!counter) return null;
+  return room.interior.has(counter) ? counter : null;
+}
+
 export function chimneyCell(room: Room, hearth: string | null): string | null {
   if (!hearth) return null;
   // The fire has to be IN this room. It always is, since the caller only ever
@@ -1262,6 +1311,9 @@ export class Renderer {
    *  chimney comes out of a specific object, it is that object's masonry coming
    *  up through the roof, which is what a chimney IS. */
   private chimney = new Map<string, { cell: string; finish: SkinId } | null>();
+  /** Room id → the roof cell flying its flag, for the one room that has one.
+   *  Derived with the rest of the roof, off the same walk — see `flagCell`. */
+  private flag = new Map<string, string | null>();
   /** Room id → every cell it roofs, for drawing edges only where a roof ends. */
   private roofCover = new Map<string, Set<string>>();
   /** Room id → what its roof is MADE of. See `roofFinish`. */
@@ -2265,6 +2317,7 @@ export class Renderer {
                   // hand-edited save is a missing skylight rather than a
                   // hole through the masonry).
                   world.build[key]?.id === "skylight" && roofRoom.interior.has(key),
+                  this.flag.get(roofRoom.id) === tileKey(x, y),
                 ),
             });
           }
@@ -3458,11 +3511,22 @@ export class Renderer {
         // and a hearth is not the only lamp.
         let hearth: string | null = null;
         let hearthFinish: SkinId = FLOOR_DEFAULT_FINISH;
+        // And whether the town's own business is done in here, which is the
+        // flag's whole question — same walk again, and the same shape of answer:
+        // a cell, or null.
+        let counter: string | null = null;
         for (const key of room.interior) {
           const piece = world.furniture[key];
           if (!piece) continue;
           const def = furnitureDef(piece.id);
           if (def.light) lit = true;
+          // The furniture map is keyed by ANCHOR and so is the counter map, so
+          // this key is the anchor of whatever piece is standing here and the
+          // two agree by construction.
+          if (!counter) {
+            const [cx, cy] = key.split(",").map(Number);
+            if (counterIdAtAnchor(cx, cy) === "hall") counter = key;
+          }
           // The ANCHOR cell, which for a 2x1 fireplace is its west half. The
           // stack goes over that one rather than over the middle of the piece —
           // a chimney sits at one end of a breast, and the anchor is the cell
@@ -3471,11 +3535,12 @@ export class Renderer {
             hearth = key;
             hearthFinish = piece.finish;
           }
-          if (lit && hearth) break;
+          if (lit && hearth && counter) break;
         }
         this.roomLit.set(room.id, lit);
         const stack = chimneyCell(room, hearth);
         this.chimney.set(room.id, stack ? { cell: stack, finish: hearthFinish } : null);
+        this.flag.set(room.id, flagCell(room, counter));
         for (const key of covered) this.roofIndex.set(key, room);
       }
       // Forget fade state for rooms that no longer exist, so the map doesn't
@@ -3844,6 +3909,7 @@ export class Renderer {
     alpha: number,
     chimney: SkinId | null = null,
     skylight = false,
+    flag = false,
   ): void {
     const ctx = this.ctx;
     // The whole ROOM's material, decided once by `roofFinish`, not read off the
@@ -4046,8 +4112,103 @@ export class Renderer {
     // mark centred in its own cell is what it should be. The band rule is about
     // surfaces, and this is emphatically not one.
     if (skylight) this.drawSkylight(world, tx, ty, px, py, fall);
+    // LAST, and taller than anything else up here. The pole leaves its own cell
+    // and stands over the roof to the north of it, which is safe because the
+    // raised pass sorts by y: the cells it overlaps were drawn before this one.
+    if (flag) this.drawFlag(px, py);
 
     ctx.globalAlpha = prev;
+  }
+
+  /** The town's flag, over the desk that does the town's business.
+   *
+   *  WHICH IS THE ONLY REASON IT IS ANYWHERE — see `flagCell`. Nothing here
+   *  decides where it goes; this method is handed a cell and draws a pole on it.
+   *
+   *  IT FLIES, rather than hanging. There is no weather in this world
+   *  (content/biomes.ts §what is absent), so a limp flag would have been the
+   *  literal answer — and a limp flag is a vertical smudge on a pole, which
+   *  reads as an aerial. The grass already sways, so the world does have a
+   *  breeze in it even though it has no weather, and the flag agrees with the
+   *  grass rather than with the rain that does not fall.
+   *
+   *  A CARROT ON A PALE FIELD. The game's own mark (scripts/icons.mjs) and the
+   *  first crop in the table, and the joke is that the town has put a root
+   *  vegetable on its flag and is completely serious about it. In the CROP's own
+   *  ripe colour rather than a fresh orange, so the thing on the flag and the
+   *  thing in your field are the same carrot.
+   *
+   *  Pale field, whatever the hall is painted. The roof under it takes the
+   *  building's finish, and a flag in that finish is a flag you cannot see —
+   *  the chimney's lesson (§drawChimney: one step apart on the same ramp is
+   *  invisible), which cost a magenta test block to find once already. */
+  private drawFlag(px: number, py: number): void {
+    const ctx = this.ctx;
+    // Stood at the cell's middle, on the ridge the desk happens to sit under.
+    const x = px + 7;
+    const foot = py + 12;
+    const top = py - 13;
+
+    // THE HALYARD SIDE FIRST, so the flag is drawn over its own pole and the
+    // pole does not show through the fabric.
+    ctx.fillStyle = FLAG_POLE;
+    ctx.fillRect(x, top, 1, foot - top);
+    // A finial, because a bare pole end reads as a snapped one. One row: at
+    // two it stopped being a knob on a pole and became a lump on a stick.
+    ctx.fillRect(x - 1, top, 3, 1);
+    // And the shadow the pole throws on the roof, two pixels, the same ink every
+    // other contact shadow in the game uses. Without it the pole is printed on
+    // the surface rather than standing on it.
+    ctx.fillStyle = "rgba(0,0,0,0.16)";
+    ctx.fillRect(x + 1, foot - 2, 3, 2);
+
+    // The fly, east of the pole. Two frames, slow: the fabric lifts and settles
+    // by a pixel at the outer end, which is enough to say cloth and little
+    // enough that a town square with a flag in it is not a town square with
+    // something flashing in it. Off the same clock as the fireplace.
+    const lift = Math.floor(this.animMs / 900) % 2;
+    const fx = x + 1;
+    // Three pixels below the pole's top, so the finial and a little halyard show
+    // above the fabric. Hard against it the flag reads as a sign screwed to the
+    // end of a post.
+    const fy = top + 4 - lift;
+    const fw = 9;
+    const fh = 6;
+
+    // A RECTANGLE, AND NO SWALLOWTAIL, which took three goes to arrive at and is
+    // worth writing down: A NOTCH CANNOT SURVIVE A ONE-PIXEL OUTLINE AT THIS
+    // SIZE. The flag is six pixels tall, so any cut into its fly end is at most
+    // two deep — and every pixel of a two-deep notch is within one pixel of the
+    // fabric above and below it, so the outline fills the notch in solid ink and
+    // the flag comes out with a dark bite in it instead of a fork.
+    //
+    // (The first attempt cut it with `clearRect`, which does not put a hole in
+    // the flag: it puts a hole in the WORLD. It punched through the roof, the
+    // ground and the sky and left a navy rectangle of empty page floating in the
+    // middle of the fabric.)
+    //
+    // So the fabric is said by the LIFT instead, and the outline is kept —
+    // against a sage roof one step off the flagpole's own brown, the outline is
+    // what makes a flag out of a pale smudge. Restraint over texture: the notch
+    // was a detail this size cannot hold.
+    ctx.fillStyle = FLAG_INK;
+    ctx.fillRect(fx - 1, fy - 1, fw + 2, fh + 2);
+    ctx.fillStyle = FLAG_FIELD;
+    ctx.fillRect(fx, fy, fw, fh);
+
+    // The carrot: a taper, two pixels wide at the shoulder and one at the tip,
+    // with a leaf over it. It is legible ONLY if it tapers — the app icon was
+    // drawn 8 by 6 without a taper and read as a pumpkin at four times this
+    // size (ROADMAP §PWA icon).
+    // Toward the HALYARD rather than centred on the field, because the fly end
+    // is where the notch is and a charge in the middle of a swallowtail sits in
+    // the part of the flag that is missing.
+    ctx.fillStyle = CARROT;
+    ctx.fillRect(fx + 3, fy + 2, 2, 1);
+    ctx.fillRect(fx + 3, fy + 3, 2, 1);
+    ctx.fillRect(fx + 3, fy + 4, 1, 1);
+    ctx.fillStyle = CARROT_TOP;
+    ctx.fillRect(fx + 3, fy + 1, 2, 1);
   }
 
   /** A skylight: a hole cut in a roof that arrived on its own.
