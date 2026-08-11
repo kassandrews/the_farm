@@ -1642,10 +1642,16 @@ describe("v44 → v45: the town gets its windows", () => {
     }
   });
 
+  // NOTE, because these two have now moved once and will again: `migrateSave`
+  // climbs the WHOLE ladder, so what a v44 save comes out as is the CURRENT
+  // museum and not the v45 one. They assert the end state. When the table's
+  // glazing or roof lights move, a rung moves them for live saves and these
+  // move with it — that is the pair agreeing, not a regression.
   it("upgrades the museum's plain sashes rather than adding more", () => {
     const m = migrateSave(v44Save())!;
     for (const p of TOWN_BUILDINGS.museum.windows!) {
-      expect(m.build[`${p.x},${p.y}`]).toMatchObject({ id: "window_paned" });
+      // Plate since v49: a gallery's specification is light (content/town.ts).
+      expect(m.build[`${p.x},${p.y}`]).toMatchObject({ id: "window_plate" });
     }
   });
 
@@ -1655,7 +1661,8 @@ describe("v44 → v45: the town gets its windows", () => {
       .filter(([, c]) => c.id === "skylight")
       .map(([k]) => k)
       .sort();
-    expect(lit).toEqual(["-10,-10", "-10,-12", "-10,-8"]);
+    // A cell west of the door's column since v49, off the roof's own crease.
+    expect(lit).toEqual(["-11,-10", "-11,-12", "-11,-8"]);
   });
 
   it("leaves a wall alone if the player repainted it", () => {
@@ -1928,5 +1935,61 @@ describe("v47 → v48: the awnings become runs", () => {
     expect(m.furniture["9,3"]).toMatchObject({ id: "chair" });
     expect(m.furniture["8,3"]).toMatchObject({ id: "awning" });
     expect(m.furniture["10,3"]).toMatchObject({ id: "awning" });
+  });
+});
+
+describe("v48 → v49: the museum's glass goes undivided", () => {
+  const SASHES = ["-12,-6", "-11,-6", "-9,-6", "-8,-6"];
+  const SKY_WAS = ["-10,-12", "-10,-10", "-10,-8"];
+  const SKY_NOW = ["-11,-12", "-11,-10", "-11,-8"];
+
+  /** A v48 save: the town as it stands, with the museum wound back to paned
+   *  sashes and roof lights on the door's column. */
+  function v48Save(edit?: Record<string, unknown | null>) {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const build = { ...(w.build as Record<string, { id: string; finish: string }>) };
+    // WHITEWASH, not marble: the museum's WALLS are marble but its joinery takes
+    // `finish`, and a sash is joinery (sim/town.ts §stampBuilding). Getting this
+    // wrong in the fixture makes the rung look like it drops the finish, because
+    // it edits rather than re-stamps and so faithfully preserves whatever was
+    // there — including a value no real save ever held.
+    for (const key of SASHES) build[key] = { id: "window_paned", finish: "whitewash" };
+    for (const key of SKY_NOW) delete build[key];
+    for (const key of SKY_WAS) build[key] = { id: "skylight", finish: "whitewash" };
+    for (const [key, cell] of Object.entries(edit ?? {})) {
+      if (cell === null) delete build[key];
+      else build[key] = cell as { id: string; finish: string };
+    }
+    return { ...w, schemaVersion: 48, build };
+  }
+
+  it("swaps the paned sashes for plate glass", () => {
+    const m = migrateSave(v48Save())!;
+    for (const key of SASHES) expect(m.build[key], key).toMatchObject({ id: "window_plate" });
+  });
+
+  it("moves the roof lights a cell west and leaves none behind", () => {
+    // A stale skylight is a hole in the roof of a room that no longer has one
+    // under it, and the stamp cannot clear it — an occupied cell is skipped.
+    const m = migrateSave(v48Save())!;
+    for (const key of SKY_NOW) expect(m.build[key], key).toMatchObject({ id: "skylight" });
+    for (const key of SKY_WAS) expect(m.build[key], key).not.toMatchObject({ id: "skylight" });
+  });
+
+  it("edits a sash rather than re-stamping it, so a walled-up window stays walled up", () => {
+    // v28's distinction. A window the player knocked out is a decision; putting
+    // the museum's glass back into a hole they filled would be the town undoing
+    // their work.
+    const m = migrateSave(v48Save({ "-11,-6": { id: "wall", finish: "marble" } }))!;
+    expect(m.build["-11,-6"]).toMatchObject({ id: "wall" });
+    expect(m.build["-12,-6"]).toMatchObject({ id: "window_plate" });
+  });
+
+  it("matches a freshly generated museum", () => {
+    const fresh = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const m = migrateSave(v48Save())!;
+    for (const key of [...SASHES, ...SKY_NOW]) {
+      expect(m.build[key], key).toEqual((fresh.build as Record<string, unknown>)[key]);
+    }
   });
 });

@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 48;
+export const SCHEMA_VERSION = 49;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -1978,6 +1978,55 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
       furniture: stamped.furniture,
       finishes: stamped.finishes ?? raw.finishes,
     };
+  },
+
+  48: (raw) => {
+    // THE MUSEUM'S GLASS GOES UNDIVIDED, and its roof lights move a cell west.
+    // Both live in `build`, both were written there at world creation, and the
+    // stamp will not touch a cell that already holds something — so without a
+    // rung a deployed gallery keeps its paned sashes and its old skylights for
+    // ever. Same lesson as v48, one layer over.
+    //
+    // The sashes are EDITED rather than cleared, which is v28's distinction and
+    // matters here: a window the player has knocked out is a window they decided
+    // about, and re-stamping it would put the museum's glass back into a hole
+    // they had deliberately walled up. Changing the id of a sash that is still
+    // standing changes only what we drew wrong.
+    const V49_SASHES = ["-12,-6", "-11,-6", "-9,-6", "-8,-6"];
+    /** Where the roof lights were, and where they go. Both written by hand, and
+     *  the reason is worth recording because it caught this rung out: THE STAMP
+     *  CANNOT HELP HERE. `stampBuilding` refuses a building outright if any cell
+     *  of its footprint is occupied (an all-or-nothing guard, v37's judgement),
+     *  and in a live save the museum's own walls occupy it — so clearing the old
+     *  skylights and calling the stamp deletes three roof lights and puts none
+     *  back. Which is v28's rule arriving from the other direction: a change to
+     *  an already-stamped building is an EDIT, always, and the stamp is only ever
+     *  for things that are not there yet. */
+    const V49_SKY_WAS = ["-10,-12", "-10,-10", "-10,-8"];
+    const V49_SKY_NOW = ["-11,-12", "-11,-10", "-11,-8"];
+    /** The museum's joinery finish, frozen at the value it had when this rung was
+     *  written. A rung may not read the live table — the table moves and a rung,
+     *  once anything has climbed it, may not. */
+    const V49_MUSEUM_JOINERY = "whitewash";
+
+    const build = { ...((raw.build ?? {}) as Record<string, { id: string; finish: string }>) };
+    for (const key of V49_SASHES) {
+      if (build[key]?.id === "window_paned") build[key] = { ...build[key], id: "window_plate" };
+    }
+    // Matched by id, so a skylight the player cut themselves elsewhere is theirs.
+    // Old ones out first, in case a new address collides with an old one.
+    for (const key of V49_SKY_WAS) {
+      if (build[key]?.id === "skylight") delete build[key];
+    }
+    for (const key of V49_SKY_NOW) {
+      // Never over something the player has built on that cell. The interior is
+      // theirs to fill, and a hole cut in the roof above a wall they raised would
+      // be the town editing their room.
+      if (build[key]) continue;
+      build[key] = { id: "skylight", finish: V49_MUSEUM_JOINERY };
+    }
+
+    return { ...raw, schemaVersion: 49, build };
   },
 };
 

@@ -765,18 +765,30 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // building reads as a shed with the walls missing; a corner of plain masonry
     // is what says the thing is holding itself up. Same instinct as leaving the
     // sill in: the openings have to be set INTO something.
-    // PANED SINCE THE SASHES ARRIVED. The geometry is unchanged and the argument
-    // above still holds; what changed is that "the plain one" stopped being the
-    // only one there was. A museum and a town hall are the two buildings here
-    // that were glazed by somebody following a specification, and the glazing
-    // bars are the cheapest way to say so — the shop's shopfront and this are
-    // now visibly different KINDS of window rather than the same window in
-    // different quantities.
+    // PLATE GLASS, which reverses the paned call and keeps its reasoning. That
+    // note said the museum and the hall are the two buildings glazed by somebody
+    // following a specification, and that bars were the cheapest way to say so.
+    // Both halves survive; only the conclusion moves. A gallery IS built to a
+    // specification, and the specification a gallery is built to is LIGHT — the
+    // whole discipline of the building is getting as much of it onto the exhibits
+    // as the walls will allow, which is also why this is the one building in the
+    // world with roof lights. Muntins are what you fit when the glass is small
+    // and the joinery has to hold it; a room designed around daylight takes them
+    // out.
+    //
+    // It still reads as a different KIND of window from the shop's, which is what
+    // the paned note was protecting. More so, in fact: the shop's plain sashes
+    // post a mullion at every cell they merge across, so its shopfront is three
+    // panes in a frame, and this is one sheet of glass two cells long with
+    // nothing crossing it at all.
+    //
+    // The town hall keeps its paned sashes and should. Symmetry and glazing bars
+    // are what a municipal building is; it was never trying to be a lantern.
     windows: [
-      { x: -12, y: FRONT_N, sash: "window_paned" },
-      { x: -11, y: FRONT_N, sash: "window_paned" },
-      { x: -9, y: FRONT_N, sash: "window_paned" },
-      { x: -8, y: FRONT_N, sash: "window_paned" },
+      { x: -12, y: FRONT_N, sash: "window_plate" },
+      { x: -11, y: FRONT_N, sash: "window_plate" },
+      { x: -9, y: FRONT_N, sash: "window_plate" },
+      { x: -8, y: FRONT_N, sash: "window_plate" },
     ],
     // THREE SKYLIGHTS, UP THE MIDDLE OF THE GALLERY, and the museum is the only
     // building in the world with any.
@@ -788,10 +800,19 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // than derived in the renderer — a skylight is PLACED (structures.ts), so
     // where it goes is a decision somebody makes, not a fact about a room.
     //
-    // ON THE AISLES AND NOT THE CASES. The plinth rows are -13, -11, -9 and -7,
+    // ON THE AISLES AND NOT THE CASES. The plinth ROWS are -13, -11, -9 and -7,
     // so -12, -10 and -8 are the walkways you actually stand in, and a gallery
-    // lights the floor you walk on rather than the top of a display case. On the
-    // door's own column (-10) so the three of them line up with the way in.
+    // lights the floor you walk on rather than the top of a display case. That
+    // rule is about y and this column is about x, so the two never argue.
+    //
+    // AT x -11, WHICH IS OFF THE DOOR'S COLUMN. They sat at -10, lined up with
+    // the way in, and the alignment was worth less than it sounds: the roof's
+    // ridge falls on the boundary between -10 and -9 (the building is eight
+    // cells across, so `roofPitch` creases it exactly down the middle), and a
+    // roof light sitting hard against the crease reads as part of the ridge
+    // rather than as a hole in the slope. One cell west puts them on open slope
+    // with shingle either side, which is where a roof light goes and where you
+    // can see it is one.
     //
     // Three and not six. Two abreast would have put a skylight in every other
     // cell of a six-wide roof, which is the per-cell edges rule waiting to
@@ -799,9 +820,9 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // features start agreeing with the tile grid. One per aisle, two cells
     // apart, reads as a row of lights.
     skylights: [
-      { x: -10, y: -12 },
-      { x: -10, y: -10 },
-      { x: -10, y: -8 },
+      { x: -11, y: -12 },
+      { x: -11, y: -10 },
+      { x: -11, y: -8 },
     ],
     furniture: [
       // Corrigal's desk, in the lobby by the door rather than at the far end.

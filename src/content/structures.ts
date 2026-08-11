@@ -39,6 +39,7 @@ export type StructureId =
   | "window_paned"
   | "window_transom"
   | "window_narrow"
+  | "window_plate"
   /** Wall with a pair of barn doors PAINTED on it. Not a sash and not a door:
    *  nothing opens and nothing is glazed. See its row. */
   | "barn_doors"
@@ -198,6 +199,30 @@ export const STRUCTURES: Record<StructureId, StructureDef> = {
     name: "Narrow window",
     // The transom's price, turned ninety degrees. Same argument.
     cost: 2,
+    solid: true,
+    encloses: true,
+    finishes: [],
+  },
+  window_plate: {
+    id: "window_plate",
+    name: "Plate glass",
+    // A window's price, exactly as the paned sash is. The muntin rule read the
+    // other way round: if dividing an opening may not cost extra, then NOT
+    // dividing it may not either. What you are buying is the hole in the wall,
+    // and all four of these are the same hole.
+    //
+    // WHAT MAKES IT ITS OWN ROW is the one thing no other sash can do — it drops
+    // the MULLION as well as the muntins, so a run of them is a single unbroken
+    // sheet of glass rather than a row of panes sharing a frame. Every other
+    // window in the game posts a bar at each cell boundary it merges across,
+    // which is right for joinery and wrong for a shopfront or a gallery: those
+    // are one piece of glass that happens to be four cells long, and the whole
+    // point of them is that nothing interrupts it.
+    //
+    // It is not the plain window with a flag on it for the same reason the paned
+    // sash isn't: the player is choosing between two pictures, and a picture you
+    // cannot pick from the menu is not a choice.
+    cost: 4,
     solid: true,
     encloses: true,
     finishes: [],

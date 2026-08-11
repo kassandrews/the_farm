@@ -259,6 +259,11 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
   { id: "window_paned", icon: "window_paned", label: "Paned window", hint: "The same opening, divided into lights. Side by side, they join up.", group: "structure" },
   { id: "window_transom", icon: "window_transom", label: "Transom", hint: "A band of glass up high — above the furniture, and above eye level.", group: "structure" },
   { id: "window_narrow", icon: "window_narrow", label: "Narrow window", hint: "A tall slit. These don't join up: two side by side are two windows.", group: "structure" },
+  // The plate's hint has to carry the thing that is invisible until you place
+  // TWO — every other sash leaves a bar where it joins its neighbour, and this
+  // one doesn't. "One sheet of glass" is the promise; "no bars anywhere" is what
+  // distinguishes it from the plain window sitting three rows up.
+  { id: "window_plate", icon: "window_plate", label: "Plate glass", hint: "One sheet of glass, no bars anywhere. A run of them joins with nothing in between.", group: "structure" },
   // NOT BESIDE THE SASHES, because it is not one, and the hint has to carry the
   // whole of what makes it different: you place it from inside, on the floor,
   // and it turns up in the roof. There is no way to guess that from an icon.

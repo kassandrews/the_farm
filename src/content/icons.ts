@@ -490,6 +490,27 @@ const FARM_ICONS = {
     ],
     palette: { k: K, d: WOOD, g: GLASS },
   },
+  // ONE LIGHT, AND THE ABSENCE IS THE GLYPH. Beside the paned sash's grid of
+  // four this reads immediately as the undivided one — which is the only thing a
+  // player needs to tell them apart, and the only thing the renderer does
+  // differently. Same frame, same proportions, nothing crossing it.
+  window_plate: {
+    rows: [
+      "............",
+      ".kkkkkkkkkk.",
+      ".kdddddddddk",
+      ".kdgggggggdk",
+      ".kdgggggggdk",
+      ".kdgggggggdk",
+      ".kdgggggggdk",
+      ".kdgggggggdk",
+      ".kdgggggggdk",
+      ".kdddddddddk",
+      ".kkkkkkkkkk.",
+      "..kkkkkkkk..",
+    ],
+    palette: { k: K, d: WOOD, g: GLASS },
+  },
   // HIGH IN THE CELL, and the empty rows underneath are the icon. A transom is
   // defined by what is below it — wall — so an icon that filled its 12px would
   // have been the plain window with less glass in it. This is the one place the

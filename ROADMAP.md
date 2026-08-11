@@ -11853,6 +11853,86 @@ room today" — is now a little less true for the awning than it was. It never h
 the stripes either, so this is a widened gap and not a new one. Fixing it means a
 second draw path for one piece; noted rather than built.
 
+## The museum's glass goes undivided (11 Aug 2026)
+
+### A fifth sash: plate glass
+
+`window_plate` — one sheet, no bars anywhere. What earns it its own row is the
+one thing no other sash can do: **it drops the MULLION as well as the muntins.**
+Every other window posts a bar at each cell boundary it merges across, which is
+right for joinery and wrong for a gallery or a shopfront, where what you are
+looking at is one piece of glass that happens to be several cells long. The head,
+the sill and the drip course still run the full length, so a plate run is one long
+opening with a frame round the outside and nothing crossing it.
+
+A window's price, exactly as the paned sash is — the muntin rule read backwards:
+if dividing an opening may not cost extra, then not dividing it may not either.
+What you buy is the hole in the wall, and all five are the same hole.
+
+**Not the plain window with a flag on it**, for the reason the paned sash isn't:
+the player is choosing between two pictures, and a picture you cannot pick from
+the menu is not a choice.
+
+### The museum takes it, and the hall does not
+
+The paned call is reversed and its reasoning kept. That note said the museum and
+the hall are the two buildings glazed by somebody following a specification, and
+that bars were the cheapest way to say so. Both halves survive; only the
+conclusion moves. **A gallery is built to a specification and the specification is
+LIGHT** — which is also why it is the one building in the world with roof lights.
+Muntins are what you fit when the glass is small and the joinery has to hold it.
+
+It still reads as a different KIND of window from the shop's, which is what the
+paned note was protecting — more so, in fact, since the shop's plain sashes post a
+mullion at every join and this does not. **The town hall keeps its bars**: symmetry
+and glazing bars are what a municipal building is, and it was never trying to be a
+lantern.
+
+### The roof lights: one pane, and a cell west
+
+**It took TWO removals to get one pane, and the second is the transferable bit.**
+The glazing bar went first, for the consistency above. But that left the light
+still reading as two panes, because the sky was painted over the up-slope HALF of
+the glass — a hard vertical edge exactly down the middle. *A hard edge down the
+middle of a rectangle is a glazing bar whether or not you drew one;* taking the
+muntin out had only changed its colour. So the sky is a **rake** now, the same
+diagonal streak the sashes carry, which is a reflection lying across one sheet and
+cannot be read as a division. It also makes the roof lights and the windows catch
+the light the same way, which is what says it is all the same glass.
+
+**Moved from x -10 to x -11.** They sat on the door's column, and the alignment was
+worth less than it sounded: the building is eight cells across, so `roofPitch`
+creases the ridge exactly on the -10/-9 boundary, and a roof light hard against
+the crease reads as part of the ridge rather than as a hole in the slope. A cell
+west puts them on open shingle with slope either side. The "on the aisles, not the
+cases" rule is about **y** and this is **x**, so the two never argue.
+
+### v49, and a trap in the ladder
+
+Museum glass and roof lights both live in `build`, both written at world creation
+— so a rung, on the lesson from v48 one layer down.
+
+**`stampBuilding` REFUSES a building whose footprint is occupied** (all-or-nothing,
+v37's judgement), and in a live save the museum's own walls occupy it. So the
+first draft — clear the old skylights, call the stamp — deleted three roof lights
+and put none back. An existing test caught it. Which is v28's rule arriving from
+the other side: **a change to an already-stamped building is an EDIT, always, and
+the stamp is only ever for things that are not there yet.** The rung writes the new
+cells itself, off a frozen finish, because a rung may not read a table that moves.
+
+Sashes are edited rather than cleared, so a window the player walled up stays
+walled up. Skylights are matched by id and never written over anything already
+standing.
+
+**Two existing tests moved with it**, and the note is now in the file: `migrateSave`
+climbs the WHOLE ladder, so what a v44 save comes out as is the CURRENT museum,
+not the v45 one. Those assertions describe the end state and will move again.
+
+**And a fixture trap worth knowing:** the museum's walls are marble but its joinery
+takes `finish`, which is whitewash. A test fixture that builds a sash in marble
+makes the rung look like it drops the finish — it edits rather than re-stamps, so
+it faithfully preserves a value no real save ever held.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

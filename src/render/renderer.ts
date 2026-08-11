@@ -4389,19 +4389,31 @@ export class Renderer {
     ctx.fillRect(x, y, w, h);
     ctx.fillStyle = lit ? GLASS_WARM : GLASS;
     ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
-    // ONE BAR ACROSS THE SHORT WAY, which is a glazing bar and is also the whole
-    // of what stops a small blue rectangle reading as a puddle. Across the SHORT
-    // axis so it divides the long dimension, which is what a real one does.
-    ctx.fillStyle = leaf.shade;
-    if (longNS) ctx.fillRect(x + 1, y + Math.floor(h / 2), w - 2, 1);
-    else ctx.fillRect(x + Math.floor(w / 2), y + 1, 1, h - 2);
-    // The sky caught in it, on the up-slope half only — one flat pane of glass
-    // tilted at the sky is brightest where it faces the light, and filling the
-    // whole light evenly is what made the first version look like a hole rather
-    // than a window.
+    // NO GLAZING BAR, AND NO HALF-FILL EITHER — one pane, and it took both
+    // removals to actually get one.
+    //
+    // The bar went first: the museum's sashes are plate glass now
+    // (§window_plate), and a gallery that takes the bars out of its windows and
+    // leaves one in every roof light has made two decisions instead of one.
+    //
+    // But taking the bar out left the light still reading as TWO PANES, which is
+    // the part worth writing down. The sky used to be painted over the up-slope
+    // HALF of the glass — a hard vertical edge exactly down the middle — and a
+    // hard edge down the middle of a rectangle is a glazing bar whether or not
+    // you drew one. Removing the muntin just changed its colour.
+    //
+    // So the sky is a RAKE now: the same diagonal streak the sashes carry
+    // (§drawWindow), which is a reflection lying across one sheet and cannot be
+    // mistaken for a division. It also makes the roof lights and the windows
+    // agree — this building's glass all catches the light the same way, which is
+    // what says it is all the same glass.
     ctx.fillStyle = lit ? GLASS_WARM_LIT : GLASS_LIT;
-    if (longNS) ctx.fillRect(x + 1, y + 1, w - 2, Math.floor(h / 2) - 1);
-    else ctx.fillRect(x + 1, y + 1, Math.floor(w / 2) - 1, h - 2);
+    const iw = w - 2;
+    const ih = h - 2;
+    for (let i = 0; i < iw; i++) {
+      const t = iw > 1 ? i / (iw - 1) : 0;
+      ctx.fillRect(x + 1 + i, y + 1 + Math.round(t * (ih - 2)), 1, 2);
+    }
   }
 
   /** The stack, and what comes out of it.
@@ -5641,6 +5653,12 @@ export class Renderer {
     const narrow = sash === "window_narrow";
     const paned = sash === "window_paned";
     const transom = sash === "window_transom";
+    // PLATE GLASS DROPS THE MULLION TOO, which is the only thing that separates
+    // it from the plain window and is the whole reason it exists. Every other
+    // sash posts a bar at each cell boundary it merges across — correct for
+    // joinery, wrong for a gallery, where what you are looking at is one sheet of
+    // glass that happens to be four cells long.
+    const plate = sash === "window_plate";
     const mergesWith = (dx: number) =>
       !narrow && world.build[tileKey(tx + dx, ty)]?.id === sash;
 
@@ -5773,7 +5791,12 @@ export class Renderer {
     // The mullion between two panes. Drawn on the WEST edge only, so a shared
     // boundary gets exactly one bar rather than two cells each drawing their own
     // and doubling it into a post.
-    if (openW) {
+    //
+    // And never on plate glass, which is the sash's entire definition. Note what
+    // this leaves behind: the head, the sill and the drip course still run the
+    // full length uninterrupted, so a plate run is one long opening with a frame
+    // round the outside and nothing at all crossing it.
+    if (openW && !plate) {
       ctx.fillStyle = leaf.shade;
       ctx.fillRect(px, y0, 1, y1 - y0);
     }

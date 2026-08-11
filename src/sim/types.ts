@@ -532,10 +532,11 @@ export type BuildTool =
   | "wall"
   | "door"
   | "window"
-  /** The other three sashes (content/structures.ts §StructureId). */
+  /** The other four sashes (content/structures.ts §StructureId). */
   | "window_paned"
   | "window_transom"
   | "window_narrow"
+  | "window_plate"
   /** The hole in the roof, placed on the floor under it. */
   | "skylight"
   /** Wall with a pair of doors painted on it — the only marking in the build
