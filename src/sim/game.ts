@@ -1851,7 +1851,17 @@ function placeOrRemove(
   if (isFurnitureTool(tool)) {
     const def = furnitureDef(tool);
     if (!placeFurniture(world, x, y, tool, facing, finish, layer)) {
-      return { changed: false, message: `The ${def.name.toLowerCase()} won't fit there.`, broke: false };
+      // "Won't fit" is the honest answer for every piece in the table except the
+      // one that can be refused on a cell with nothing in it. A fireplace needs a
+      // wall behind it (content/furniture.ts §backs), and a refusal that talks
+      // about FITTING when you are pointing at bare floor reads as the game being
+      // broken — which is the exact failure the painting's hint was written to
+      // avoid, arriving one object later at the message instead.
+      const why =
+        def.backs === "wall"
+          ? `The ${def.name.toLowerCase()} needs a wall behind it.`
+          : `The ${def.name.toLowerCase()} won't fit there.`;
+      return { changed: false, message: why, broke: false };
     }
     spend(world.inventory, cost);
     // Present-only underground, for the reason mining and carving are (4b): the
@@ -1975,6 +1985,11 @@ function furnitureFlavour(id: FurnitureId, layer: Layer): string {
       return "A dresser. Drawers, stacked, which is the whole of the idea.";
     case "painting":
       return "A painting. The wall has stopped being just a wall.";
+    // About the object and not about you (§Tone), and about the one thing this
+    // piece does that no other does: it appears on the OUTSIDE of the building,
+    // on a roof you never asked for and cannot place.
+    case "fireplace":
+      return "A fireplace. A chimney turns up on the roof, which is how those work.";
     case "desklamp":
       return layer === "under"
         ? "A desk lamp, in the rock. Small, and enough."

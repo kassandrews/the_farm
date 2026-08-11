@@ -289,6 +289,12 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
   { id: "dresser", icon: "dresser", label: "Dresser", hint: "Three drawers, two tiles wide. Press R to turn it.", group: "storage" },
   { id: "chest", icon: "chest", label: "Chest", hint: "A box. Shut. It came that way.", group: "storage" },
 
+  // FIRST IN DECOR, ahead of the lamps, because it is the biggest thing in the
+  // wing and the only one that changes the OUTSIDE of the building. The hint has
+  // to carry two facts no icon can: that it needs a wall behind it (a tool that
+  // refuses everywhere you point it reads as broken long before it reads as
+  // specific — the painting's lesson), and that a chimney is what you get.
+  { id: "fireplace", icon: "fireplace", label: "Fireplace", hint: "Costs stone. Put it against a wall — a chimney comes out on the roof.", group: "decor" },
   { id: "lamp", icon: "lamp", label: "Floor lamp", hint: "Costs ore. Give the dark something to argue with.", group: "decor" },
   { id: "desklamp", icon: "desklamp", label: "Desk lamp", hint: "Costs ore. Half a lamp, for one corner.", group: "decor" },
   { id: "rug", icon: "rug", label: "Rug", hint: "Costs cloth. Walk right over it.", group: "decor" },

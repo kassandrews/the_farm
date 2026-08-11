@@ -560,9 +560,26 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       // house, and she'd snap home every night instead of walking in.
       { x: 5, y: 9, id: "table", facing: "s" },
       { x: 6, y: 8, id: "chair", facing: "s" },
-      // North wall, at the far end from the bed — see the note on the footprint
-      // for why the cells between them are deliberately left empty.
-      { x: 7, y: 7, id: "shelf", facing: "s" },
+      // THE HEARTH, and it is the reason this house has the only chimney in the
+      // town (render/renderer.ts §chimneyCell). Two cells wide, against the
+      // north wall — which is not a choice: a fireplace needs a wall behind it
+      // (content/furniture.ts §backs), so the back row is the only row it can
+      // stand on.
+      //
+      // Beside her bed rather than across the room from it, because this is one
+      // room and always was. A cottage does not have a parlour.
+      // EAST END OF THE BACK WALL, and that is not arbitrary. It sat at (6,7)
+      // first, which put the chair at (6,8) directly in front of it — and a
+      // piece one row south draws OVER the piece behind it, so the fire was
+      // half-hidden behind a chair back. Caught by looking, which is the only
+      // way it could have been: every test still passed and the room was still
+      // walkable. The bed keeps the west end, the fire takes the east, and the
+      // chair sits between them in front of the shelf.
+      { x: 7, y: 7, id: "fireplace", facing: "s" },
+      // The shelf moved west one to make room. It was at (7,7), which is now the
+      // hearth's west half — and the back row is the only row a fireplace can
+      // stand on (§backs), so the shelf is the piece that had to move.
+      { x: 6, y: 7, id: "shelf", facing: "s" },
     ],
   },
 

@@ -9,6 +9,7 @@ import { STARTING_SEED } from "./seeds";
 import { STARTING_CROP } from "../content/crops";
 import { STAGE } from "../content/festivals";
 import { CAST } from "../content/cast";
+import { skinDef } from "../content/skins";
 import { ARRIVALS } from "../content/arrivals";
 import { befriend } from "./friendship";
 import { invite } from "./company";
@@ -1672,5 +1673,82 @@ describe("v44 → v45: the town gets its windows", () => {
     const key = "-10,-10";
     const m = migrateSave(v44Save({ [key]: { id: "wall", finish: "pine" } }))!;
     expect(m.build[key]).toMatchObject({ id: "wall", finish: "pine" });
+  });
+});
+
+describe("v45 → v46: a chimney comes out of a fireplace", () => {
+  const HEARTH = "7,7";
+  const SHELF_WAS = "7,7";
+  const SHELF_NOW = "6,7";
+
+  /** A v45 save: the town as it stands, wound back to before the hearth — no
+   *  fireplace, and the shelf still standing where it goes. */
+  function v45Save(edit?: Record<string, unknown | null>) {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const furniture = { ...(w.furniture as Record<string, unknown>) };
+    delete furniture[HEARTH];
+    delete furniture[SHELF_NOW];
+    furniture[SHELF_WAS] = { id: "shelf", facing: "s", finish: "pine" };
+    for (const [key, cell] of Object.entries(edit ?? {})) {
+      if (cell === null) delete furniture[key];
+      else furniture[key] = cell;
+    }
+    return { ...w, schemaVersion: 45, furniture };
+  }
+
+  it("stands a fireplace on her back wall and moves the shelf aside", () => {
+    // HEARTH and SHELF_WAS are the SAME cell — the fireplace takes over exactly
+    // where the shelf stood, which is why the shelf had to move at all.
+    const m = migrateSave(v45Save())!;
+    expect(HEARTH).toBe(SHELF_WAS);
+    expect(m.furniture[HEARTH]).toMatchObject({ id: "fireplace" });
+    expect(m.furniture[SHELF_NOW]).toMatchObject({ id: "shelf" });
+  });
+
+  it("builds it out of stone, not out of her pine", () => {
+    // A fireplace is `finishes: ["stone"]`. Handing it the house's joinery finish
+    // would be a fire burning in a stack of planks, and nothing in the types
+    // objects — pine is a perfectly good SkinId.
+    const m = migrateSave(v45Save())!;
+    const finish = (m.furniture[HEARTH] as { finish: string }).finish;
+    expect(skinDef(finish as never).applies).toBe("stone");
+  });
+
+  it("agrees with what a fresh world stamps", () => {
+    // The rung's coordinates are frozen and the table's are live; a migrated
+    // cottage and a new one have to be the same cottage.
+    const fresh = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const m = migrateSave(v45Save())!;
+    for (const key of [HEARTH, SHELF_NOW, SHELF_WAS]) {
+      expect(m.furniture[key], key).toEqual((fresh.furniture as Record<string, unknown>)[key]);
+    }
+  });
+
+  const CHAIR = { id: "chair", facing: "s", finish: "pine" };
+
+  it("leaves the room alone if the shelf is not the town's any more", () => {
+    // The ladder's standing trade. Half this edit would be worse than none — a
+    // fireplace stamped through somebody's own furniture — so the whole thing is
+    // conditional on the room being as the town left it.
+    const m = migrateSave(v45Save({ [SHELF_WAS]: CHAIR }))!;
+    expect(m.furniture[SHELF_WAS]).toMatchObject({ id: "chair" });
+    expect(m.furniture[SHELF_NOW]).toBeUndefined();
+  });
+
+  it("leaves it alone if the shelf's new cell is taken", () => {
+    const m = migrateSave(v45Save({ [SHELF_NOW]: CHAIR }))!;
+    expect(m.furniture[SHELF_NOW]).toMatchObject({ id: "chair" });
+    expect(m.furniture[SHELF_WAS]).toMatchObject({ id: "shelf" });
+  });
+
+  it("leaves it alone if the hearth's EAST half is taken", () => {
+    // The one a per-anchor check waves through. A 2x1 piece is stored once at
+    // its anchor, so nothing about the anchor cell says (8,7) is spoken for —
+    // and this rung writes the furniture map directly rather than going through
+    // `canPlaceFurniture`, which is the only thing that would have noticed.
+    const m = migrateSave(v45Save({ "8,7": CHAIR }))!;
+    expect(m.furniture["8,7"]).toMatchObject({ id: "chair" });
+    expect(m.furniture[SHELF_WAS]).toMatchObject({ id: "shelf" });
+    expect(m.furniture[SHELF_NOW]).toBeUndefined();
   });
 });

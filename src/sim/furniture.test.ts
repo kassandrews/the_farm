@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { newWorld, buildAt, buildCost, loadedFinish } from "./game";
 import { setTile, isWalkable, tileKey } from "./world";
+import { FLOOR } from "../content/tiles";
 import { GRASS } from "../content/tiles";
-import { placeStructure, buildRevision } from "./structures";
+import { placeStructure, removeStructure, buildRevision } from "./structures";
 import {
   placeFurniture,
   removeFurnitureAt,
@@ -226,5 +227,75 @@ describe("a painting hangs on a wall", () => {
     placeFurniture(w, 1, 2, "painting", "s", "pine");
     expect(furnitureBlocks(w, 1, 2)).toBe(false);
     expect(isWalkable(w, 1, 2)).toBe(false); // the wall, still
+  });
+});
+
+describe("a fireplace needs something behind it", () => {
+  /** A room: walls round a rectangle, door on the south wall. Interior is the
+   *  inside of the given outer bounds. */
+  function roomAt(w: ReturnType<typeof world>, x0: number, y0: number, x1: number, y1: number) {
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        if (x !== x0 && x !== x1 && y !== y0 && y !== y1) continue;
+        setTile(w, x, y, FLOOR);
+        placeStructure(w, x, y, "wall", "pine");
+      }
+    }
+    for (let y = y0 + 1; y < y1; y++) for (let x = x0 + 1; x < x1; x++) setTile(w, x, y, FLOOR);
+    placeStructure(w, x0 + 1, y1, "door", "pine");
+  }
+
+  it("goes against the back wall and nowhere else", () => {
+    const w = world();
+    roomAt(w, 40, 40, 46, 46);
+    // Back row: the wall at y=40 is directly north of y=41.
+    expect(canPlaceFurniture(w, 42, 41, "fireplace", "s")).toBe(true);
+    // One row in, with open floor behind it. A chimney over the middle of a room
+    // is a stack standing on nothing.
+    expect(canPlaceFurniture(w, 42, 42, "fireplace", "s")).toBe(false);
+  });
+
+  it("needs a wall behind BOTH halves, not just its anchor", () => {
+    // It is 2x1. Half of it backing onto a wall and half onto open floor is the
+    // case a per-anchor check would wave through, and it is the one that looks
+    // wrong — a breast with one end in mid-air.
+    const w = world();
+    roomAt(w, 60, 40, 66, 46);
+    // Knock the wall out above the fireplace's east half.
+    removeStructure(w, 63, 40);
+    expect(canPlaceFurniture(w, 62, 41, "fireplace", "s")).toBe(false);
+    // And it is fine one cell west, where both halves still have wall behind.
+    expect(canPlaceFurniture(w, 61, 41, "fireplace", "s")).toBe(true);
+  });
+
+  it("says WHY, rather than claiming it does not fit", () => {
+    // "Won't fit there" is the honest answer for every other piece, and a lie
+    // for this one: the cell is empty and the problem is behind it. A refusal
+    // that describes the wrong thing reads as the game being broken.
+    const w = world();
+    roomAt(w, 100, 40, 106, 46);
+    w.inventory.stone = 50;
+    const mid = buildAt(w, "fireplace", 102, 43, Date.now());
+    expect(mid.changed).toBe(false);
+    expect(mid.message).toMatch(/wall behind it/);
+    const back = buildAt(w, "fireplace", 102, 41, Date.now());
+    expect(back.changed).toBe(true);
+    // And it cost STONE — the first piece of furniture in the game that does.
+    expect(w.inventory.stone).toBe(50 - 8);
+  });
+
+  it("will not back onto a doorway or a window", () => {
+    // Backing a chimney breast onto the door would stand the tallest solid piece
+    // in the game across the one cell you walk through — the painting's rule,
+    // one object along. A window is refused for the mirror reason: you would be
+    // blocking your own glass.
+    const w = world();
+    roomAt(w, 80, 40, 86, 46);
+    placeStructure(w, 82, 40, "door", "pine");
+    expect(canPlaceFurniture(w, 81, 41, "fireplace", "s")).toBe(false);
+    placeStructure(w, 82, 40, "window", "pine");
+    expect(canPlaceFurniture(w, 81, 41, "fireplace", "s")).toBe(false);
+    placeStructure(w, 82, 40, "wall", "pine");
+    expect(canPlaceFurniture(w, 81, 41, "fireplace", "s")).toBe(true);
   });
 });

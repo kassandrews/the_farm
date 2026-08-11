@@ -103,8 +103,19 @@ describe("ore is an alternative, never a requirement", () => {
     expect(bed).toBeDefined();
     const before = qualify(w, bed.x, bed.y);
     add(w.inventory, "ore", 4);
-    // Beside the bed, inside the same room.
-    expect(buildAt(w, "lamp", bed.x + 1, bed.y, Date.now()).changed).toBe(true);
+    // SOMEWHERE FREE IN THE SAME ROOM, found rather than assumed.
+    //
+    // This was `bed.x + 1, bed.y` — the cell beside the bed — which held until a
+    // fireplace was authored into that exact cell. A test that pins a coordinate
+    // inside an AUTHORED room is really asserting how somebody's house is
+    // furnished, and it fails on a change that has nothing to do with what it is
+    // about. What it needs is any empty cell under the same roof.
+    expect(before.ok).toBe(true);
+    const spot = [...(before.ok ? before.room.interior : [])]
+      .map((k) => k.split(",").map(Number))
+      .find(([x, y]) => canPlaceFurniture(w, x, y, "lamp", "s"));
+    expect(spot, "her house has nowhere to stand a lamp").toBeDefined();
+    expect(buildAt(w, "lamp", spot![0], spot![1], Date.now()).changed).toBe(true);
     const after = qualify(w, bed.x, bed.y);
     expect(after.ok).toBe(before.ok);
     expect(after.ok && before.ok && after.room.interior.size).toBe(

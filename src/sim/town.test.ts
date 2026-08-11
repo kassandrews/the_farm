@@ -37,6 +37,8 @@ import {
 import { structureDef } from "../content/structures";
 import { AUDIENCE } from "../content/festivals";
 import { cellsFor, furnitureAt } from "./furniture";
+import { furnitureDef, footprint } from "../content/furniture";
+import { skinDef } from "../content/skins";
 import { stopTarget } from "./housing";
 import { CAST } from "../content/cast";
 import type { HomesteadSpot } from "./types";
@@ -169,11 +171,11 @@ describe("the town's own buildings", () => {
     }
   });
 
-  it("gives a chimney only to the one building anybody sleeps in", () => {
-    // The chimney is derived from a BED (render/renderer.ts §chimneyCell), and
-    // this is the town-shaped statement of that rule: exactly one building here
-    // is somebody's home, so exactly one gets a stack. It used to be a floor
-    // area, which every building in town cleared.
+  it("houses exactly one resident, and only that building has a bed", () => {
+    // Not the chimney rule — that moved to the fireplace (see §the hearth) —
+    // but the fact underneath both: one building in this town is somebody's
+    // home. The square is for institutions, and a bed is what makes the
+    // difference observable.
     const homes = allTownBuildings().filter((b) => b.furniture.some((f) => f.id === "bed"));
     expect(homes.map((b) => b.id)).toEqual(["margfrom_house"]);
   });
@@ -1064,5 +1066,65 @@ describe("the seed stall is a stall", () => {
     const counter = TOWN_FIXTURES.find((f) => f.counter === "seedstall")!;
     expect(Math.abs(derek.x - counter.x) + Math.abs(derek.y - counter.y)).toBeLessThanOrEqual(3);
     expect(isWalkable(w, Math.round(derek.x), Math.round(derek.y))).toBe(true);
+  });
+});
+
+describe("the hearth", () => {
+  it("gives exactly one building in town a fireplace", () => {
+    // The chimney is derived from a fireplace (render/renderer.ts §chimneyCell),
+    // so this is the town-shaped statement of "one stack in town". It has been
+    // a floor area and then a bed; both were proxies, and the museum had a
+    // chimney under the first one.
+    const lit = allTownBuildings().filter((b) => b.furniture.some((f) => f.id === "fireplace"));
+    expect(lit.map((b) => b.id)).toEqual(["margfrom_house"]);
+  });
+
+  it("stands it on stone, not on the building's own timber", () => {
+    // A fireplace is `finishes: ["stone"]` and her house is pine. The stamp used
+    // to hand every piece the building's finish outright, which would have built
+    // her a fire in a stack of planks — and nothing in the types objects, since
+    // pine is a perfectly good SkinId.
+    const w = world();
+    const hearth = TOWN_BUILDINGS.margfrom_house.furniture.find((f) => f.id === "fireplace")!;
+    const placed = w.furniture[tileKey(hearth.x, hearth.y)]!;
+    expect(placed.id).toBe("fireplace");
+    expect(skinDef(placed.finish).applies).toBe("stone");
+  });
+
+  it("backs every authored fireplace onto a wall", () => {
+    // `canPlaceFurniture` refuses one without a wall behind it, and the stamp
+    // does NOT go through that check — it writes the furniture map directly. So
+    // a coordinate in the table that the player could not legally have chosen
+    // would stamp anyway, and the only symptom would be a chimney floating over
+    // open floor.
+    for (const b of allTownBuildings()) {
+      for (const f of b.furniture) {
+        if (!furnitureDef(f.id).backs) continue;
+        const { w: fw } = footprint(furnitureDef(f.id), f.facing);
+        for (let dx = 0; dx < fw; dx++) {
+          expect(
+            isPerimeter(b, f.x + dx, f.y - 1),
+            `${b.id} ${f.id} at ${f.x + dx},${f.y} has no wall behind it`,
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("never lets the hearth seal her in", () => {
+    // A fireplace is SOLID and two cells wide, which makes it the largest
+    // obstruction in the smallest room in town. She has to be able to reach both
+    // her bed and her own front door past it.
+    const w = world();
+    const house = TOWN_BUILDINGS.margfrom_house;
+    const step = { x: house.door.x, y: house.door.y - 1 };
+    expect(isWalkable(w, step.x, step.y), "her doorstep is blocked from inside").toBe(true);
+    const bed = house.furniture.find((f) => f.id === "bed")!;
+    const beside = [
+      { x: bed.x + 1, y: bed.y },
+      { x: bed.x + 1, y: bed.y + 1 },
+      { x: bed.x, y: bed.y + 2 },
+    ].some((c) => isWalkable(w, c.x, c.y) && findPath(w, step, c) !== null);
+    expect(beside, "she cannot reach her own bed").toBe(true);
   });
 });

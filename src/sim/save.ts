@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 45;
+export const SCHEMA_VERSION = 46;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -1770,6 +1770,67 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
     }
 
     return { ...raw, schemaVersion: 45, build };
+  },
+
+  /** v46 — a chimney comes out of a FIREPLACE.
+   *
+   *  v45 made a stack mean "somebody sleeps here" by testing for a bed. This
+   *  makes it mean what it actually means: a chimney is the top of a flue, and a
+   *  flue starts at a hearth. So there is a fireplace now, and it is the only
+   *  thing `chimneyCell` asks about — including WHERE, since the stack comes out
+   *  above the fire rather than at a hashed cell in the room's back third.
+   *
+   *  Nothing about a chimney is stored, so the RULE lands in every save for
+   *  free, exactly as v45's did. What this rung has to do is put the object in
+   *  the one house that is supposed to have one, which is two moves in Prudence's
+   *  cottage: stand a fireplace on her back wall, and shift the shelf that was
+   *  standing where it goes.
+   *
+   *  A HOUSE THE PLAYER BUILT GETS NOTHING, and that is deliberate rather than
+   *  an omission. Anyone who had a bed in a room had a chimney under v45 and does
+   *  not now; the fix is one build action, and the alternative is this ladder
+   *  reaching into somebody's house and placing furniture in it — which is the
+   *  one thing every rung here has refused to do since v7.
+   *
+   *  Frozen literals, per the standing note. */
+  45: (raw) => {
+    /** Where the shelf stood at v45, and where it goes. Both inside the cottage
+     *  at x 4..9, y 6..10 — the shelf is on the back row either way, it just
+     *  moves two cells east of the hearth instead of sitting in it. */
+    const V46_SHELF_WAS = "7,7";
+    const V46_SHELF_NOW = "6,7";
+    /** The hearth's ANCHOR — its west half. It is 2x1, so it also covers (8,7).
+     *  (7,7) is where the shelf stood, which is exactly why the shelf moves. */
+    const V46_HEARTH = "7,7";
+    /** Its EAST half. A 2x1 piece is stored once at its anchor, so nothing about
+     *  `V46_HEARTH` says this cell is spoken for — and a rung that checked only
+     *  the anchor would stamp a fireplace straight over whatever the player had
+     *  put here. It is the covered-cell trap that sim/furniture.ts warns about,
+     *  in the one place that writes the furniture map without going through it. */
+    const V46_HEARTH_E = "8,7";
+    /** Her joinery finish. The fireplace is stone-only, so it wears the town's
+     *  masonry default rather than her pine — the same split a door already
+     *  makes between a leaf and the wall it is set into. */
+    const V46_HEARTH_FINISH = "granite";
+
+    const furniture = {
+      ...((raw.furniture ?? {}) as Record<string, { id: string; facing: string; finish: string }>),
+    };
+
+    // ONLY IF THE SHELF IS STILL THE TOWN'S. A player who took it down and put a
+    // chair there keeps the chair, and then there is nowhere for the hearth to
+    // go — so the whole edit is conditional on the room being as the town left
+    // it. Half a change here would be a fireplace standing inside a bookcase.
+    const shelf = furniture[V46_SHELF_WAS];
+    const clear =
+      shelf?.id === "shelf" && !furniture[V46_SHELF_NOW] && !furniture[V46_HEARTH_E];
+    if (clear) {
+      delete furniture[V46_SHELF_WAS];
+      furniture[V46_SHELF_NOW] = shelf;
+      furniture[V46_HEARTH] = { id: "fireplace", facing: "s", finish: V46_HEARTH_FINISH };
+    }
+
+    return { ...raw, schemaVersion: 46, furniture };
   },
 };
 

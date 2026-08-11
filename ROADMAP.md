@@ -11382,10 +11382,89 @@ It is `isTownShell()` in `sim/town.ts` now, in one place. Four migration tests
 caught it, which is exactly what they are for. **If you add a structure the town
 stamps, put it in that function.**
 
+## The chimney gets something to come out of (10 Aug 2026)
+
+A fireplace, which is the object a chimney is the top of. The rule that had been
+wrong twice in one day is now right for a reason rather than by coincidence.
+
+### The rule had been a proxy twice
+
+1. **Floor area** — twelve interior cells. Every building in town clears twelve,
+   so the shop, the salvage shed, the barn and the museum all had stacks.
+2. **A bed** — better, because a bed at least means somebody lives here, and
+   still a proxy: a bed is where you sleep and a chimney is the top of a flue.
+
+It asks for a **fireplace** now, and the improvement is not only the test. The
+old `chimneyCell` hashed a cell out of the room's back third and its own
+docblock apologised for it. The stack sits **on the fire**, so the hash is gone
+and the function is four lines. You still never place the chimney; you place
+the hearth.
+
+Settled, don't relitigate:
+
+- **A fireplace needs a wall behind it** (`backs: "wall"` — north of its
+  northernmost row, checked per column, not per anchor). Two reasons and both
+  matter: a flue has to go up through something, and it is what keeps the stack
+  off the front eave, where it reads as a crate on the gutter. That constraint
+  used to live in the renderer as the back-third bias; moving it to placement
+  says the same thing once, at the moment the player can still act on it.
+- **Not a door and not a window.** Backing a chimney breast onto a doorway puts
+  the tallest solid piece in the game across the one cell you walk through.
+- **The stack wears the HEARTH's finish, not the roof's.** It used to take the
+  roof's material because that was the only material available when it was
+  derived from nothing — which meant a timber chimney, a flue made of the one
+  substance a flue may not be made of.
+- **First stone furniture in the game.** Every other row is wood or cloth, so
+  stone had no made object to its name. `cost: 8` as a bare number, so it
+  resolves against the finish's own material.
+- **It burns** (`light: true`), so a room with a fire in it reads as occupied
+  from the street through its own windows. Free — the window glow already did
+  this for lamps.
+- **A house the player built loses its chimney** until a fireplace goes in.
+  There is no honest migration: placing furniture inside somebody's house is the
+  one thing this ladder has refused to do since v7. One build action to fix.
+
+### Two things only looking could have found
+
+- The hearth was at **(6,7)** in Prudence's cottage first, which put the chair at
+  (6,8) directly in front of it — and a piece one row south draws over the piece
+  behind it, so the fire was half-hidden by a chair back. Every test passed and
+  the room was still walkable. It is at (7,7) now, bed west, fire east.
+- **`stampBuilding` handed every piece the building's `finish`.** Fine while the
+  whole table was timber; her pine would have stamped a wooden fireplace, and
+  nothing in the types objects because pine is a perfectly good `SkinId`. It
+  falls back to the piece's own class default now, the same guard `loadedFinish`
+  applies to a stale selection.
+
+### Found while verifying, NOT fixed
+
+**A multi-tile piece taller than 8px pokes through the roof of its northern
+row.** Furniture sorts on its SOUTHERN row (so a bed's far end can't draw in
+front of its near end), which means the roof cell over its northern row has
+already been drawn by the time the piece goes down. Prudence's bed shows two
+pixels of headboard through her roof, and has since beds and roofs coexisted.
+
+A 1×1 piece is fine (it sorts on its own row, and the roof there draws after it
+at `BIAS_ROOF`), and so is the 2×1 fireplace. The fix is a change to the raised
+pass's sort key, which is load-bearing — see §Known gaps.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
 you trip over them:
+
+- **Tall multi-tile furniture pokes through its own roof.** Furniture is pushed
+  into the raised pass at `y = ay + h - 1` — its SOUTHERN row — so a bed's far
+  end can't sort in front of its near end. The roof cell over its NORTHERN row
+  is at `y = ay`, and `BIAS_ROOF` only outranks `BIAS_TERRAIN` *within the same
+  y*, so that roof cell has already drawn. Anything more than 8px tall spanning
+  more than one row therefore shows a sliver: Prudence's bed leaks two pixels of
+  headboard, and always has. 1×1 pieces are safe at any height (the shelf is
+  18px and fine), and so is the 2×1 fireplace.
+  The fix is a second sort key or a per-room roof pass, and it touches the sort
+  every raised object in the game goes through — worth doing deliberately, not
+  as a side-quest. Found by looking at a chimney (§The chimney gets something to
+  come out of).
 
 - **Seventeen regions still draw one tree.** `crownAlt` exists and the pines use
   it; nothing else does, which is deliberate — the mechanism was proved on one

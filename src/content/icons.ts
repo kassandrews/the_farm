@@ -398,6 +398,31 @@ const FARM_ICONS = {
     ],
     palette: { k: K, b: BRASS, f: FLAME, d: WOOD },
   },
+  // A hearth: mantel, opening, fire. STONE rather than the shared WOOD, because
+  // it is the one piece of furniture in the game that is masonry and the icon
+  // row should say so before the price does — every other chip in Decor is a
+  // timber object.
+  //
+  // The flame reuses the lamp's FLAME, which is the same argument the glass hex
+  // makes one icon over: a lamp and a fire are the same substance and a set that
+  // disagreed about that would look like two people drew it.
+  fireplace: {
+    rows: [
+      "............",
+      ".kkkkkkkkkk.",
+      ".kwwwwwwwwk.",
+      ".kwwwwwwwwk.",
+      ".kkkkkkkkkk.",
+      ".kmmmmmmmmk.",
+      ".kmkkkkkkmk.",
+      ".kmkeefekmk.",
+      ".kmkefffkmk.",
+      ".kmkffffkmk.",
+      ".kmkkkkkkmk.",
+      ".kmmmmmmmmk.",
+    ],
+    palette: { k: K, w: "#c8c4bc", m: "#9c968c", e: "#241a16", f: FLAME },
+  },
   // A framed landscape. The frame is WOOD and the picture is not — same split
   // the world art makes, so the icon and the object agree about what a finish
   // would repaint.

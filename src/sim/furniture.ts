@@ -130,6 +130,24 @@ export function canPlaceFurniture(
     const built = world.build[key];
     if (built && !overhead(built.id)) return false;
   }
+  // AND WHAT IS BEHIND IT, for the one piece that needs something there.
+  //
+  // Asked AFTER the footprint rather than inside the loop, because it is a
+  // question about the piece's northernmost ROW and not about each cell: a 2x1
+  // fireplace needs a wall behind both halves, and a cell in the middle of a
+  // taller footprint has its own piece behind it, not a wall.
+  //
+  // A DOOR IS NOT A WALL, on the painting's argument one object along — backing
+  // a fireplace onto the doorway would stand a chimney breast across the one
+  // cell you walk through. A window is not a wall either: you would be blocking
+  // your own glass with the only piece in the game tall enough to do it.
+  if (furnitureDef(id).backs === "wall") {
+    if (layer !== "surface") return false; // no chimneys in the rock
+    const { w } = footprint(furnitureDef(id), facing);
+    for (let dx = 0; dx < w; dx++) {
+      if (world.build[tileKey(ax + dx, ay - 1)]?.id !== "wall") return false;
+    }
+  }
   return true;
 }
 

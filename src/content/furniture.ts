@@ -46,6 +46,7 @@ export type FurnitureId =
   | "dresser"
   | "desklamp"
   | "painting"
+  | "fireplace"
   | "noticeboard"
   | "stage"
   /** The seed stall's canopy — see the row for why a stall is furniture and not
@@ -112,6 +113,33 @@ export interface FurnitureDef {
    *  the pathfinder and the room fill a second kind of thing to have an opinion
    *  about, which is the argument the notice board already settled. */
   mount?: "wall";
+  /** What it must have BEHIND it — north of its own northernmost row.
+   *
+   *  `"wall"` is the fireplace, and it is a placement rule with a rendering
+   *  reason rather than a taste. A hearth carries a chimney (see `hearth`), the
+   *  chimney is drawn on the roof cell directly above it, and a stack on the
+   *  roof's near edge stands in front of its own eave and reads as a crate
+   *  sitting on the gutter. Backed against a wall, a fireplace can only stand on
+   *  a room's back row, so the stack always breaks the silhouette where the roof
+   *  meets the sky — which is where a chimney is legible.
+   *
+   *  It is also just what a fireplace is. The flue has to go up through
+   *  something.
+   *
+   *  Distinct from `mount: "wall"`, which puts a piece IN the wall cell. This
+   *  one stands on the floor in front of one. */
+  backs?: "wall";
+  /** Does a chimney come out of the roof over it?
+   *
+   *  A FIELD rather than `id === "fireplace"` in the renderer, which is the
+   *  argument `light` already made one light too late. It is also what the
+   *  chimney is derived FROM now: `chimneyCell` used to hash a cell out of the
+   *  room's back third, with its own docblock apologising that a chimney you
+   *  positioned by hand would be the first placed thing on a roof. A hearth
+   *  settles that — you do not place the chimney, you place the FIRE, and the
+   *  flue comes out above it. Same relationship the roof itself has with the
+   *  walls that hold it up. */
+  hearth?: boolean;
 }
 
 export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
@@ -214,6 +242,41 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   // The head is brass in every town: a finish that cost ore would break the
   // free-appearance axis, and a metal finish class is the tempting-and-wrong
   // version of this whole feature (ROADMAP §"Ore's sink").
+  // THE FIRST THING IN THIS TABLE MADE OF STONE, and that is worth stating: every
+  // other row is wood or cloth, so stone has been a wall-and-floor material with
+  // no made object to its name since it was gatherable. A hearth is the obvious
+  // one. It also gives the drystone finishes somewhere to go that is not a
+  // paddock.
+  fireplace: {
+    id: "fireplace",
+    name: "Fireplace",
+    // A BARE NUMBER, so it resolves against the finish's own material — eight
+    // STONE, because `finishes` is stone-only. That is the cost-follows-material
+    // rule (DESIGN §Materials) rather than a literal price, and it is the right
+    // shape here even though there is only one class to resolve against: the
+    // next masonry finish inherits the price without an edit.
+    //
+    // Eight, which is a rock and a half and more than any other single piece.
+    // A fireplace should be the thing you decide to build, not something you put
+    // in because you had the stone spare.
+    cost: 8,
+    w: 2,
+    h: 1,
+    solid: true,
+    // Taller than a dresser (12) and deliberately UNDER the wardrobe's 20, which
+    // the wardrobe's own note claims as "the tallest thing you can put in a
+    // room". A mantel is chest height; the breast above it reads as going up
+    // into the wall rather than as a second object.
+    height: 16,
+    finishes: ["stone"],
+    // It burns. So a room with a fire in it reads as occupied from the street at
+    // night through its own windows (render/renderer.ts §drawWindowGlow) — which
+    // costs nothing to add here and is most of what a hearth is FOR in a game
+    // with no temperature.
+    light: true,
+    backs: "wall",
+    hearth: true,
+  },
   lamp: {
     id: "lamp",
     // "Floor lamp" now that a desk one exists. The ID stays `lamp` — it is

@@ -33,6 +33,8 @@ import {
   TOWN_FIXTURES,
 } from "../content/town";
 import { tileKey } from "./world";
+import { furnitureDef } from "../content/furniture";
+import { skinDef, defaultSkin } from "../content/skins";
 
 /** Answers what generation would put at a tile, before any edits. Both callers
  *  can supply one — a live world knows its own, and a save being migrated still
@@ -154,7 +156,23 @@ export function stampBuilding(t: StampTarget, b: TownBuilding, probe?: TerrainPr
   }
 
   for (const f of b.furniture) {
-    t.furniture[tileKey(f.x, f.y)] = { id: f.id, facing: f.facing, finish: b.finish };
+    // The building's joinery finish, UNLESS the piece cannot wear it.
+    //
+    // Every row in the furniture table was timber (or cloth, which nothing here
+    // places) until the fireplace, and a building's `finish` could be handed
+    // straight to all of them. A hearth is masonry — `finishes: ["stone"]` — so
+    // Prudence's pine would have stamped a wooden fireplace, which is not a
+    // strictness the types catch: `finish` is a SkinId and pine is a perfectly
+    // good one. It just renders a fire burning in a stack of planks.
+    //
+    // Falling back to the class default rather than refusing, which is the same
+    // guard `loadedFinish` applies to a stale selection and the same reason: a
+    // wrong colour is recoverable and a hard failure at world creation is not.
+    const classes = furnitureDef(f.id).finishes;
+    const finish = classes.includes(skinDef(b.finish).applies)
+      ? b.finish
+      : defaultSkin(classes[0] ?? "wood");
+    t.furniture[tileKey(f.x, f.y)] = { id: f.id, facing: f.facing, finish };
   }
 
   return true;

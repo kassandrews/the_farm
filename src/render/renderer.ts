@@ -1041,50 +1041,48 @@ export const MOTE_MAX = 0.4;
 
 /** Which roof cell carries the stack. DERIVED, like the roof itself.
  *
- *  Roofs are derived and never placed (DESIGN §Structures), and a chimney you
- *  positioned by hand would be the first placed thing on one — so it is a total
- *  function of the room, on the room's own stable id. Extend the house and it
- *  may move, which is correct rather than unfortunate: a building has no
- *  identity in this game (DESIGN §"A place keeps a history"), rooms are derived
- *  from whatever walls are standing, and nothing is stored that could disagree.
+ *  IT IS THE CELL THE FIREPLACE STANDS ON, and that is the whole function now.
  *
- *  BIASED TO THE BACK HALF. A stack on the near edge stands in front of the
- *  roof's own eave and reads as a crate sitting on the gutter; against the far
- *  edge it breaks the silhouette where the roof meets the sky, which is where a
- *  chimney is legible. Same reason the door cue moved to a roof notch.
+ *  Roofs are derived and never placed (DESIGN §Structures), and this used to
+ *  apologise for that in a docblock: a chimney you positioned by hand would be
+ *  the first placed thing on a roof, so it hashed a cell out of the room's back
+ *  third and hoped. A hearth settles it properly. You still do not place the
+ *  chimney — you place the FIRE, and the flue comes out over it. The stack is as
+ *  derived as it ever was and it is now derived from something that means
+ *  anything.
  *
- *  A HEARTH IS A BED, and that is the whole of the test now.
+ *  THE TEST WAS TWO WRONG THINGS BEFORE THIS. First a floor area — twelve
+ *  interior cells — which every building in town clears, so the shop, the
+ *  salvage shed, the barn and the MUSEUM all grew stacks. Then a BED, which is
+ *  at least a thing that means somebody lives here, and is still a proxy: a bed
+ *  is where you sleep and a chimney is the top of a flue. The object a chimney
+ *  actually comes out of is a fireplace, so there is one now
+ *  (content/furniture.ts §fireplace), and it is the only thing this asks about.
  *
- *  It used to be a floor area — twelve interior cells or more — on the reasoning
- *  that a shed is not a house. The reasoning was right and the measurement was a
- *  proxy that fails on its own terms: every building in the town clears twelve,
- *  so the shop, the salvage shed, the barn and the MUSEUM all grew stacks, and a
- *  chimney on everything says exactly nothing. The point of one is that somebody
- *  lives under it, so the thing to ask is whether anybody does — and the game
- *  already has an object that means "somebody lives here". Prudence's is the one
- *  bed in the town, so hers is the one chimney; put a bed in a house you built
- *  and it grows one, which is a better moment than clearing a square footage.
+ *  BACK-HALF BIAS IS GONE FROM HERE and lives in the fireplace's placement rule
+ *  instead (§backs). A stack on the near edge reads as a crate on the gutter, so
+ *  something has to keep it off the front eave — but "nudge the chimney
+ *  backwards" was the renderer quietly disagreeing with where the player put
+ *  their fire. Requiring a wall behind a fireplace says the same thing once, at
+ *  the moment it can still be acted on, and leaves this function honest.
  *
  *  `hearth` is passed rather than looked up so this stays a pure function of the
- *  room, which is what its test is for. The caller has already walked the
- *  room's furniture for the lamp check, so the answer costs nothing.
+ *  room, which is what its test is for. The caller has already walked the room's
+ *  furniture for the lamp check, so the answer costs nothing.
  *
- *  Exported for its test — the choice has to be stable and inside the room, and
- *  neither is visible in a screenshot of one house. */
-export function chimneyCell(room: Room, hearth: boolean): string | null {
+ *  A ROOM WITH TWO FIREPLACES GETS ONE STACK, from whichever the walk reached
+ *  first. Two chimneys is the honest picture and this cannot draw it — the
+ *  per-room map holds one cell — and rather than pretend, the caller takes the
+ *  first and the second fire simply shares a flue. Nobody has built two yet.
+ *
+ *  Exported for its test — that it lands on the fire, and inside the room. */
+export function chimneyCell(room: Room, hearth: string | null): string | null {
   if (!hearth) return null;
-  const cells = [...room.interior].map((k) => k.split(",").map(Number));
-  const ys = cells.map((c) => c[1]);
-  const y0 = Math.min(...ys);
-  const y1 = Math.max(...ys);
-  const back = y0 + Math.floor((y1 - y0) / 3);
-  // Sorted so the choice cannot depend on Set iteration order, which is stable
-  // in practice and not something to build a look on.
-  const cand = cells.filter((c) => c[1] <= back).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  if (!cand.length) return null;
-  const h = hash2(y0, y1, room.id.length * 2654435761) / 4294967296;
-  const pick = cand[Math.min(cand.length - 1, Math.floor(h * cand.length))];
-  return tileKey(pick[0], pick[1]);
+  // The fire has to be IN this room. It always is, since the caller only ever
+  // walks its own interior — but this function is exported and tested, and a
+  // stack on a cell the roof does not cover would be a chimney standing on
+  // somebody's lawn.
+  return room.interior.has(hearth) ? hearth : null;
 }
 
 /** What the FLAT layer actually paints for a tile id. Resource nodes stand up
@@ -1242,10 +1240,17 @@ export class Renderer {
   private roomsRef: Room[] | null = null;
   /** Cell key → the room whose roof covers it. */
   private roofIndex = new Map<string, Room>();
-  /** Room id → the roof cell carrying its chimney, or null for rooms too small
-   *  to have one. Derived with the rest of the roof, so it is recomputed only
-   *  when the sim hands back a different rooms array. */
-  private chimney = new Map<string, string | null>();
+  /** Room id → the roof cell carrying its chimney and WHAT THE STACK IS MADE OF,
+   *  or null for a room with no fire in it. Derived with the rest of the roof, so
+   *  it is recomputed only when the sim hands back a different rooms array.
+   *
+   *  The finish is the FIREPLACE's, not the roof's. A stack used to take the
+   *  roof's material, which was the only material available when it was derived
+   *  from nothing — and it meant a timber chimney on a timber house, which is a
+   *  flue made of the one substance a flue may not be made of. Now that a
+   *  chimney comes out of a specific object, it is that object's masonry coming
+   *  up through the roof, which is what a chimney IS. */
+  private chimney = new Map<string, { cell: string; finish: SkinId } | null>();
   /** Room id → every cell it roofs, for drawing edges only where a roof ends. */
   private roofCover = new Map<string, Set<string>>();
   /** Room id → what its roof is MADE of. See `roofFinish`. */
@@ -2236,7 +2241,9 @@ export class Renderer {
                   roofing,
                   fall,
                   alpha,
-                  this.chimney.get(roofRoom.id) === tileKey(x, y),
+                  this.chimney.get(roofRoom.id)?.cell === tileKey(x, y)
+                    ? this.chimney.get(roofRoom.id)!.finish
+                    : null,
                   // The one roof feature that is PLACED, read straight off the
                   // build layer at the cell the roof is covering. Interior only
                   // — `roofRoom` also covers the shell, and a skylight stamped
@@ -3418,22 +3425,33 @@ export class Renderer {
         // Interior only: a lamp standing in the wall is not a thing, and a lamp
         // OUTSIDE a lit window is the street lighting the room, backwards.
         let lit = false;
-        // And does anybody LIVE here, which is the chimney's question. Same walk
-        // — the furniture is already in hand — and no early exit until both are
-        // settled, because a room can answer them in either order.
-        let hearth = false;
+        // And WHERE THE FIRE IS, which is the chimney's whole question. Same
+        // walk — the furniture is already in hand — and no early exit until both
+        // are settled, because a room can answer them in either order.
+        //
+        // A fireplace is a light too, so most rooms that have one answer both on
+        // the same piece; the two are kept apart because a lamp is not a hearth
+        // and a hearth is not the only lamp.
+        let hearth: string | null = null;
+        let hearthFinish: SkinId = FLOOR_DEFAULT_FINISH;
         for (const key of room.interior) {
           const piece = world.furniture[key];
           if (!piece) continue;
-          if (furnitureDef(piece.id).light) lit = true;
-          // A BED AND NOT A COT. A cot is canvas slung on a frame — the thing
-          // you sleep on when you have not settled anywhere yet — and a stack
-          // over one would say the opposite of what the cot is for.
-          if (piece.id === "bed") hearth = true;
+          const def = furnitureDef(piece.id);
+          if (def.light) lit = true;
+          // The ANCHOR cell, which for a 2x1 fireplace is its west half. The
+          // stack goes over that one rather than over the middle of the piece —
+          // a chimney sits at one end of a breast, and the anchor is the cell
+          // the sim already calls "where this piece is".
+          if (def.hearth && !hearth) {
+            hearth = key;
+            hearthFinish = piece.finish;
+          }
           if (lit && hearth) break;
         }
         this.roomLit.set(room.id, lit);
-        this.chimney.set(room.id, chimneyCell(room, hearth));
+        const stack = chimneyCell(room, hearth);
+        this.chimney.set(room.id, stack ? { cell: stack, finish: hearthFinish } : null);
         for (const key of covered) this.roofIndex.set(key, room);
       }
       // Forget fade state for rooms that no longer exist, so the map doesn't
@@ -3800,7 +3818,7 @@ export class Renderer {
     roofing: SkinId,
     fall: RoofPitch,
     alpha: number,
-    chimney = false,
+    chimney: SkinId | null = null,
     skylight = false,
   ): void {
     const ctx = this.ctx;
@@ -3983,7 +4001,10 @@ export class Renderer {
     // the ground. Subtracting it again here put the stack a storey above its own
     // roof, where the next row north painted straight over it and the whole
     // thing read as not having been drawn at all.
-    if (chimney) this.drawChimney(px, py, skin);
+    // IN THE HEARTH'S OWN MASONRY, not the roof's. See §chimney on the map this
+    // comes from — the short version is that a flue is the fireplace coming up
+    // through the roof, so it wears what the fireplace is built of.
+    if (chimney) this.drawChimney(px, py, skinDef(chimney));
     // AFTER THE EAVES AND THE CHIMNEY, because a skylight is a hole in the plane
     // and everything above draws the plane. It is also the only thing here that
     // sits INSIDE one cell rather than at a boundary — the eaves and the courses

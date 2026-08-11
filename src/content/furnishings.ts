@@ -993,6 +993,156 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
 
   // Three drawers, six pulls, stubby feet. Reads against the desk by
   // being solid all the way down — no kneehole, no gap.
+  // THE FIREPLACE. Masonry, so `c`/`t`/`s` resolve to whichever stone finish it
+  // was built in and the fire is the only literal palette on it.
+  //
+  // The mantel OVERHANGS the breast by a pixel either side, which is the one
+  // line that makes it a shelf rather than a step in a slab — the same trick the
+  // dresser's top uses, and the reason this piece reads at 32px at all.
+  //
+  // The fire is drawn as a shape narrowing upward from a bed of embers, not as a
+  // gradient: a flame is a silhouette, and at this scale a soft one is a smudge.
+  // It does not animate. Every other light in the game is a steady pool
+  // (§drawLampGlow) and a flickering one here would be the only thing in the
+  // room moving.
+  fireplace: {
+    mirrorW: true,
+    s: {
+      rows: [
+        "................................",
+        "................................",
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ".kttttttttttttttttttttttttttttk.",
+        ".kttttttttttttttttttttttttttttk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kcccccckkkeeeeeeeeeekkkcccccck.",
+        ".kcccccckkeeeeeeeeeeeekkcccccck.",
+        ".kcccccckeeeeeeeeeeeeeekcccccck.",
+        ".kcccccckeeeeeeeeeeeeeekcccccck.",
+        ".kcccccckeeeeeeeeeeeeeekcccccck.",
+        ".kcccccckeeeeeeeeeeeeeekcccccck.",
+        ".kcccccckeeeeeefeeeeeeekcccccck.",
+        ".kcccccckeeeeeffofeeeeekcccccck.",
+        ".kcccccckeeeefofoofeeeekcccccck.",
+        ".kcccccckeeeffoooooffeekcccccck.",
+        ".kcccccckeefoooooooofeekcccccck.",
+        ".kcccccckeefoooooooofeekcccccck.",
+        ".kcccccckeegggggggggeeekcccccck.",
+        ".kcccccckeggggggggggggekcccccck.",
+        ".kccccccksssssssssssssskcccccck.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+      ],
+      // The firebox is sooted, not black: pure black is the outline's colour and
+      // an opening painted in it loses its own jambs.
+      palette: { k: INK, e: "#241a16", f: "#ffcf7a", o: "#e8912c", g: "#a3552a" },
+    },
+    // Turned away: masonry all the way up, no opening. A fireplace you have
+    // spun round should show you its back, not its fire — the wardrobe's
+    // argument, and this piece needs it more, since the fire is the one part
+    // anybody looks at.
+    n: {
+      rows: [
+        "................................",
+        "................................",
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ".kttttttttttttttttttttttttttttk.",
+        ".kttttttttttttttttttttttttttttk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+        "..kssssssssssssssssssssssssssk..",
+        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+      ],
+      palette: { k: INK },
+    },
+    // From the side it is a slab two deep with the mantel edge on top. Same
+    // grid serves west, mirrored.
+    e: {
+      rows: [
+        "................",
+        "................",
+        "..kkkkkkkkkkkk..",
+        ".kttttttttttttk.",
+        ".kttttttttttttk.",
+        ".kssssssssssssk.",
+        ".kkkkkkkkkkkkkk.",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        ".kkkkkkkkkkkkkk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kkkkkkkkkkkkkk.",
+      ],
+      palette: { k: INK },
+    },
+  },
   dresser: {
     mirrorW: true,
     s: {
