@@ -11605,9 +11605,25 @@ Only the hall, because only the hall has that counter. The shop, the museum and
 the Facility have counters too and fly nothing: four flags in a town this size
 is a parade, and those three are a business, a collection and a pile.
 
-It lands on the ridge without being told to — the desk sits on the middle row of
-a five-deep building and `roofPitch` creases a five-deep roof through that same
-row. Move the desk and the flag moves.
+It lands on the ridge without being told to — the middle row of a five-deep
+building is where `roofPitch` creases a five-deep roof.
+
+**The desk decides WHETHER; the roof decides WHERE** (amended 10 Aug 2026). It
+first stood on the counter cell itself, which on the hall is one column west of
+the building's own centreline — the desk is at x -1 of a building running x -3..3
+— so the flag flew off to one side of the one facade in town that is drawn
+symmetrically on purpose (§townhall: "Symmetry is the point and it is the ONE
+building here that gets it"). A municipal flag hung off-centre reads as an aerial
+somebody screwed on, which is the same failure the limp-flag version had.
+
+So `flagCell` still asks the desk whether, and then answers with the middle of
+the room. This is the one place the flag parts company with the chimney, and the
+reason is that they are different objects: a flue IS the fire coming up through
+the roof and belongs over it and nowhere else, while a flagpole is not the desk
+coming up through the roof — it is a thing the building wears, and a building
+wears its flag on the middle of its ridge. Carry the desk out and the flag still
+goes, which was always the load-bearing half. An L-shaped room whose bounding-box
+centre falls outside itself falls back to the counter cell.
 
 **A NOTCH CANNOT SURVIVE A ONE-PIXEL OUTLINE AT THIS SIZE**, which is the
 transferable lesson and took three goes. The flag is 6px tall, so a swallowtail
@@ -11617,6 +11633,34 @@ flag comes out with a dark bite in it. (Attempt one cut it with `clearRect`,
 which does not put a hole in the flag: it puts a hole in the WORLD, straight
 through the roof and the ground to the empty page behind.) The fabric is said by
 a slow one-pixel lift instead.
+
+**It ripples rather than bouncing** (amended 10 Aug 2026), which is the
+difference between cloth and a sign on a hinge. The whole rectangle used to shift
+up a pixel and back on one clock, so the flag slid up and down its own pole as a
+rigid block; cloth is HELD at the halyard and free at the fly, so the shape has
+to vary ALONG its length. Each column now carries its own one-pixel offset and
+the offsets travel outward. Amplitude and cycle are unchanged at 1px and 1800ms —
+what was wrong was the SHAPE, not the tempo.
+
+Two things only looking could have found, both on the first attempt at it:
+
+- **ONE BUMP, NOT A SQUARE WAVE.** Alternating two columns up and two down along
+  the fly is two full cycles of crenellation on a nine-pixel flag, and the
+  silhouette came out castellated: the flag read as TORN rather than as moving.
+  This is the per-cell edges band rule at the smallest scale it has ever come up
+  — a repeating edge across a surface stops the surface reading as a surface. The
+  lift is now a single three-pixel bump on a period longer than the flag itself,
+  so at any instant there is exactly one departure from flat.
+- **A CHARGE PRINTED ACROSS A FOLD TEARS.** The carrot is two pixels wide, and
+  when the fold passed between its columns the one-pixel shear did not read as
+  cloth flexing — it read as the carrot breaking in half, leaf adrift above the
+  root. Its two columns now always move together, which costs a two-pixel flat
+  spot in a three-pixel bump and is invisible.
+
+Note what the per-column draw does NOT do: it never puts ink BETWEEN two columns.
+A per-column left-and-right edge would rule a line down every column of a single
+piece of cloth, which is the venetian-blind failure again. Ink goes where the
+fabric ENDS — above it, below it, and at the two ends.
 
 It flies rather than hangs. There is no weather here, so the literal answer was
 a limp flag — which is a vertical smudge that reads as an aerial. The grass

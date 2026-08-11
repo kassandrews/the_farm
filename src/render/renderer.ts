@@ -1113,22 +1113,51 @@ export const MOTE_MAX = 0.4;
  *  town this size is a parade, and three of those counters are a business, a
  *  collection and a pile respectively. None of them is the town.
  *
- *  IT LANDS ON THE RIDGE BY ITSELF, which is the part worth not congratulating
- *  ourselves for. The hall's counter sits on the middle row of a five-deep
- *  building, and `roofPitch` creases a five-deep roof through the middle of that
- *  same row — so the pole stands on the crease because the desk is in the middle
- *  of the room, not because anything here nudged it there. Move the desk and the
- *  flag moves, which is honest and is also the chimney's exact bargain.
+ *  THE DESK DECIDES WHETHER; THE ROOF DECIDES WHERE. This is the one place the
+ *  flag parts company with the chimney, and the reason is that they are different
+ *  objects. A flue is the fire coming up through the roof, so it belongs directly
+ *  over the fire and nowhere else. A flagpole is not the desk coming up through
+ *  the roof — it is a thing the building wears, and a building wears its flag on
+ *  its ridge, in the middle, because that is where you put a flagpole.
+ *
+ *  It used to stand on the counter cell itself, and on the hall that is one
+ *  column west of the building's own centreline (the desk is at x -1 of a
+ *  building running x -3..3), so the flag flew off to one side of a facade whose
+ *  entire point is that it is the one symmetrical building in town (content/town.ts
+ *  §townhall: "Symmetry is the point and it is the ONE building here that gets
+ *  it"). A municipal flag hung off-centre reads as an aerial somebody screwed on,
+ *  which is the same failure mode the limp-flag version had.
+ *
+ *  So the CENTRE of the room, and the ridge comes along for free exactly as it
+ *  did before: `roofPitch` creases a five-deep roof through the middle row, and
+ *  the middle row is what a centre is. Carry the desk out and the flag still goes
+ *  — nothing here places one, and that was always the load-bearing half.
  *
  *  `counter` is passed rather than looked up, so this stays a pure function of
  *  the room — the caller is already walking the room's furniture for the lamp
  *  and the hearth, so the answer costs nothing.
  *
- *  Exported for its test, like `chimneyCell`: that it lands on the desk, and
- *  inside the room. */
+ *  Exported for its test, like `chimneyCell`: that it needs the desk, that it
+ *  lands in the middle, and that it stays inside the room. */
 export function flagCell(room: Room, counter: string | null): string | null {
-  if (!counter) return null;
-  return room.interior.has(counter) ? counter : null;
+  if (!counter || !room.interior.has(counter)) return null;
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const key of room.interior) {
+    const [x, y] = key.split(",").map(Number);
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  }
+  const mid = tileKey(Math.round((minX + maxX) / 2), Math.round((minY + maxY) / 2));
+  // An L-shaped room's middle can be outside itself, and a pole on a cell the
+  // roof does not cover is a flag in somebody's garden. The desk is the fallback
+  // because it is the one cell we know is both inside and meaningful.
+  return room.interior.has(mid) ? mid : counter;
 }
 
 export function chimneyCell(room: Room, hearth: string | null): string | null {
@@ -4162,18 +4191,56 @@ export class Renderer {
     ctx.fillStyle = "rgba(0,0,0,0.16)";
     ctx.fillRect(x + 1, foot - 2, 3, 2);
 
-    // The fly, east of the pole. Two frames, slow: the fabric lifts and settles
-    // by a pixel at the outer end, which is enough to say cloth and little
-    // enough that a town square with a flag in it is not a town square with
-    // something flashing in it. Off the same clock as the fireplace.
-    const lift = Math.floor(this.animMs / 900) % 2;
+    // The fly, east of the pole. IT RIPPLES RATHER THAN BOUNCING, which is the
+    // difference between cloth and a sign on a hinge: the whole rectangle used to
+    // shift up a pixel and back on one clock, so the flag slid up and down its
+    // own pole as a rigid block. Cloth does not do that. Cloth is HELD at the
+    // halyard and free at the fly, so the shape has to vary ALONG its length.
+    //
+    // So each column carries its own one-pixel offset, and the offsets travel
+    // outward — a lift that starts near the pole and runs off the fly end. Two
+    // columns nearest the halyard never move at all, because that is the edge
+    // that is tied to something.
+    //
+    // The amplitude stays one pixel and the cycle stays 1800ms, both unchanged
+    // from the bounce: what was wrong with it was the SHAPE, not the tempo, and a
+    // town square with a flag in it must not be a town square with something
+    // flashing in it. Off the same clock as the fireplace.
+    const step = Math.floor(this.animMs / 450) % 4;
     const fx = x + 1;
     // Three pixels below the pole's top, so the finial and a little halyard show
     // above the fabric. Hard against it the flag reads as a sign screwed to the
     // end of a post.
-    const fy = top + 4 - lift;
+    const fy = top + 4;
     const fw = 9;
     const fh = 6;
+
+    // ONE BUMP, NOT A SQUARE WAVE, and this is the whole of what the ripple got
+    // wrong on the first pass. The first version alternated two columns up and
+    // two down along the whole fly, which at one pixel of amplitude on a
+    // nine-pixel flag is two full cycles of crenellation: the silhouette came out
+    // castellated and the flag read as TORN rather than as moving. This is the
+    // band rule's own lesson at the smallest scale it has ever come up — a
+    // repeating edge across a surface stops the surface reading as a surface.
+    //
+    // So the lift is a single three-pixel bump travelling from the halyard out to
+    // the fly, on a period longer than the flag itself. At any instant the
+    // silhouette has ONE departure from flat in it, which is a ripple passing
+    // under cloth; the eye tracks it along and the flag stays a flag.
+    const raw = (i: number): number => {
+      if (i < 2) return 0; // tied to the pole, never moves
+      const phase = (((i - step * 2) % 8) + 8) % 8;
+      return phase >= 2 && phase <= 4 ? -1 : 0;
+    };
+    /** How far column `i` of the fabric is lifted, in pixels: 0 or -1.
+     *
+     *  THE CHARGE'S TWO COLUMNS ALWAYS MOVE TOGETHER. A carrot two pixels wide
+     *  printed across a fold gets sheared by a pixel when the fold passes between
+     *  them, and at this size a one-pixel shear does not read as cloth flexing —
+     *  it reads as the carrot BREAKING IN HALF, leaf adrift above the root. So
+     *  column 4 takes column 3's answer, which costs a two-pixel flat spot in a
+     *  bump three pixels long and nobody will ever find it. */
+    const lift = (i: number): number => raw(i === 4 ? 3 : i);
 
     // A RECTANGLE, AND NO SWALLOWTAIL, which took three goes to arrive at and is
     // worth writing down: A NOTCH CANNOT SURVIVE A ONE-PIXEL OUTLINE AT THIS
@@ -4191,10 +4258,29 @@ export class Renderer {
     // against a sage roof one step off the flagpole's own brown, the outline is
     // what makes a flag out of a pale smudge. Restraint over texture: the notch
     // was a detail this size cannot hold.
+    //
+    // DRAWN A COLUMN AT A TIME, which is what the ripple costs and it is cheap.
+    // The outline cannot be one rectangle round a shape that is no longer a
+    // rectangle, so each column lays its own pixel of ink above and below its own
+    // fabric. Note what this does NOT do: it never draws ink BETWEEN two columns.
+    // A per-column left-and-right edge would rule a vertical line down every
+    // column of a surface that is one piece of cloth, which is the venetian-blind
+    // failure the band rule is named for (CLAUDE.md §per-cell edges) at a scale of
+    // one pixel. The ink goes where the fabric ENDS: above it, below it, and at
+    // the two ends.
+    for (let i = 0; i < fw; i++) {
+      const cy = fy + lift(i);
+      ctx.fillStyle = FLAG_INK;
+      ctx.fillRect(fx + i, cy - 1, 1, 1);
+      ctx.fillRect(fx + i, cy + fh, 1, 1);
+      ctx.fillStyle = FLAG_FIELD;
+      ctx.fillRect(fx + i, cy, 1, fh);
+    }
+    // The two ends. The halyard edge is pinned with the columns it is tied to;
+    // the fly edge rides whatever the last column is doing.
     ctx.fillStyle = FLAG_INK;
-    ctx.fillRect(fx - 1, fy - 1, fw + 2, fh + 2);
-    ctx.fillStyle = FLAG_FIELD;
-    ctx.fillRect(fx, fy, fw, fh);
+    ctx.fillRect(fx - 1, fy - 1, 1, fh + 2);
+    ctx.fillRect(fx + fw, fy + lift(fw - 1) - 1, 1, fh + 2);
 
     // The carrot: a taper, two pixels wide at the shoulder and one at the tip,
     // with a leaf over it. It is legible ONLY if it tapers — the app icon was
@@ -4203,12 +4289,21 @@ export class Renderer {
     // Toward the HALYARD rather than centred on the field, because the fly end
     // is where the notch is and a charge in the middle of a swallowtail sits in
     // the part of the flag that is missing.
-    ctx.fillStyle = CARROT;
-    ctx.fillRect(fx + 3, fy + 2, 2, 1);
-    ctx.fillRect(fx + 3, fy + 3, 2, 1);
-    ctx.fillRect(fx + 3, fy + 4, 1, 1);
-    ctx.fillStyle = CARROT_TOP;
-    ctx.fillRect(fx + 3, fy + 1, 2, 1);
+    //
+    // It rides the fabric COLUMN BY COLUMN, like everything else printed on
+    // cloth. Its two columns can be a pixel apart mid-ripple, which shears the
+    // carrot by one pixel and is correct: a charge that stayed rigid while the
+    // field moved under it would be painted on the air in front of the flag.
+    for (const [i, top, rows] of [
+      [3, 1, 3],
+      [4, 1, 2],
+    ] as const) {
+      const cy = fy + lift(i);
+      ctx.fillStyle = CARROT_TOP;
+      ctx.fillRect(fx + i, cy + top, 1, 1);
+      ctx.fillStyle = CARROT;
+      ctx.fillRect(fx + i, cy + top + 1, 1, rows);
+    }
   }
 
   /** A skylight: a hole cut in a roof that arrived on its own.
