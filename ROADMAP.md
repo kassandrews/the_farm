@@ -11468,6 +11468,12 @@ object still never floats — the lee half is always there.
 Applied to the mushroom's own one-row shadow too, which had the same bug at a
 fifth of the size and its own copy of the arithmetic.
 
+**Dawn had it mirrored** — the stub pointed east, at the rising sun — and the
+same fix covers it, because it keys off the SIGN of `rake` rather than off the
+phase (`rakeAt` gives `-RAKE_MAX` at dawn against `+RAKE_MAX` at dusk).
+Verified on screen at 05:00, not just reasoned about. Night returns `0`: no sun,
+so the puddle stays symmetric, which is correct.
+
 ### The diagnosis was wrong the first time, and worth recording why
 
 The first pass reproduced a *different* picture — two trees one cell apart, where
@@ -11497,8 +11503,10 @@ you trip over them:
   The candidate fix is a dark rim along a crown's top edge **only where another
   tree stands behind it** — tested against the neighbour, which is what the band
   rule prescribes — rather than outlining every crown, which would restyle the
-  woods. Not done: the trees are drawn as soft masses on purpose and this is a
-  taste call worth making deliberately.
+  woods.
+  **ACCEPTED FOR NOW, don't "fix" it on sight** (owner's call, 10 Aug 2026): the
+  spare shadow implies another tree, and another tree is what is actually there.
+  Revisit only if it starts reading as a bug in play.
 - **Tall multi-tile furniture pokes through its own roof.** Furniture is pushed
   into the raised pass at `y = ay + h - 1` — its SOUTHERN row — so a bed's far
   end can't sort in front of its near end. The roof cell over its NORTHERN row
@@ -11511,6 +11519,8 @@ you trip over them:
   every raised object in the game goes through — worth doing deliberately, not
   as a side-quest. Found by looking at a chimney (§The chimney gets something to
   come out of).
+  **Queued behind the town rework** (owner's call, 10 Aug 2026): furniture gets
+  its own sitting once the town is done, and this goes in it.
 
 - **Seventeen regions still draw one tree.** `crownAlt` exists and the pines use
   it; nothing else does, which is deliberate — the mechanism was proved on one
