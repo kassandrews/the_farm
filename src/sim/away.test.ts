@@ -149,6 +149,24 @@ describe("away simulation", () => {
     }
   });
 
+  it("never leaves anything inside something that is standing there", () => {
+    // The other half of the rule above, and the half that was NOT true by
+    // construction. The tile test alone reads a house as FLOOR and stops — but a
+    // fence and a wall run across the grass stand ON grass, so junk could be
+    // dropped into the plot's own fence line. Gather answers to the structure
+    // rather than the tile, so it could never be picked up, and it counted
+    // against the scatter cap forever: the cap silts up and the deliveries stop.
+    //
+    // Found when a change to the barn's footprint reshuffled the scatter onto
+    // (8,17), which is the plot's east fence.
+    const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 12 });
+    for (let i = 0; i < 40; i++) simulateAway(w, 72 * HOUR, Date.now(), makeRng(i));
+    for (const [key, id] of Object.entries(w.overrides)) {
+      if (id !== JUNK_PILE && id !== MUSHROOM) continue;
+      expect(w.build[key], `${id === JUNK_PILE ? "junk" : "mushroom"} at ${key}`).toBeUndefined();
+    }
+  });
+
   it("the curator revises a donated exhibit, and remembers doing it", () => {
     const w = newWorld({ name: "Me", form: "dog", spot: "forest", seed: 4 });
     // Give her something to be wrong about, twice over.

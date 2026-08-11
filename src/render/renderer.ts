@@ -376,6 +376,12 @@ const GLASS = "#7fa8cc";
 const GLASS_LIT = "#a9cbe4";
 const GLASS_WARM = "#e0a860";
 const GLASS_WARM_LIT = "#f6d79b";
+/** The whitewash a barn's doors are picked out in (§drawBarnDoors). Hardcoded on
+ *  glass's own argument: paint is not the wall's material, and a finish that
+ *  recoloured it would make the marks a second thing to choose on a piece whose
+ *  entire content is one mark. Off-white — pure `#fff` glares against ox-blood
+ *  and comes through the night wash brighter than the lamps do. */
+const BARN_PAINT = "#ece4d4";
 /** How far a rake of light travels across the glass before it starts again, in
  *  WORLD px. Coprime with the 16px tile and much longer than it, for the reason
  *  grain.ts is entirely about — a highlight whose period divides the tile is a
@@ -3906,6 +3912,16 @@ export class Renderer {
     // lines run unbroken across the whole roof instead of restarting per tile —
     // this is banding on purpose, the way the tent's canvas is striped, and it
     // is the difference between a roof and a brown lid.
+    //
+    // ALWAYS EAST-WEST, INCLUDING ON A ROOF THAT FALLS THAT WAY, and that is a
+    // decision rather than an oversight. Strictly a course lies along the eave,
+    // so a north-south ridge should carry them vertically — it was tried, on the
+    // barn, and the barn stopped being a barn: the wall under it is planking
+    // stood on end, and roof stripes in the same direction ran straight into the
+    // wall stripes and made the whole building one tall striped slab. Two
+    // surfaces meeting need their textures to CROSS or they read as one surface.
+    // The pitch ramp is what says which way this roof falls; the courses only
+    // have to say "roof", and they say it best across the grain of the wall.
     ctx.fillStyle = "rgba(0,0,0,0.11)";
     for (let i = 0; i < TILE; i++) {
       if ((ty * TILE + i) % 4 === 0) ctx.fillRect(px, py + i, TILE, 1);
@@ -4949,6 +4965,8 @@ export class Renderer {
       this.drawWindow(world, tx, ty, px, top, base, sideOn, leaf, skin, cell.id);
     }
 
+    if (cell.id === "barn_doors") this.drawBarnDoors(px, top, base, sideOn);
+
     if (cell.id === "door") {
       // The frame first, in the DOOR's own finish, then the opening cut out of
       // it. This is what keeps a door's finish meaningful now that the shell
@@ -5034,6 +5052,76 @@ export class Renderer {
       ctx.fillRect(w.gx, w.gy, w.gw, w.gh);
     }
     ctx.globalCompositeOperation = prev;
+  }
+
+  /** A pair of barn doors PAINTED on a wall — an outlined panel with a batten
+   *  cross through it (content/structures.ts §barn_doors).
+   *
+   *  NOTHING IS CUT. This runs AFTER the wall face is drawn and adds marks on top
+   *  of it, which is the whole difference between this and every other thing in
+   *  a wall: a door is a hole with a frame, a sash is a hole with glass, and this
+   *  is paint. So it takes no finish of its own and asks nothing of the shell —
+   *  the ox-blood runs straight under it, which is what makes it read as the
+   *  barn's own face rather than as a panel screwed to it.
+   *
+   *  Two of these side by side are two doors, not one wide one: the merge rule
+   *  that runs a gallery's sashes together is exactly wrong here, and the reason
+   *  a barn's front reads as leaves. So there is no neighbour test in this
+   *  method at all.
+   *
+   *  ONE PIXEL, LIME-WHITE, AND NOT PURE WHITE. `#fff` against ox-blood glares at
+   *  midday and at night comes through the wash brighter than the lamps, which
+   *  makes a painted line read as a light source. This is whitewash, which is
+   *  what the marks would actually be. */
+  private drawBarnDoors(px: number, top: number, base: number, sideOn: boolean): void {
+    const ctx = this.ctx;
+    ctx.fillStyle = BARN_PAINT;
+
+    if (sideOn) {
+      // A SIDE RUN HAS NO FACE, and unlike a window there is no opening here to
+      // suggest — what you are looking at is the top of a wall with paint on the
+      // far side of it. So: the head of the doors seen from above, one line
+      // inset in the run's band, and no cross. Drawing the X up here would paint
+      // it on the roof of the wall, which is where it is not.
+      ctx.fillRect(px + 3, top + 5, TILE - 6, 1);
+      ctx.fillRect(px + 3, top + TILE - 6, TILE - 6, 1);
+      return;
+    }
+
+    // The panel: most of the face, held off the wall's own corners so the
+    // masonry reads as continuing past it rather than being framed by it.
+    const x0 = px + 2;
+    const y0 = top + WALL_CAP + 2;
+    const w = TILE - 4;
+    const h = base - 1 - y0;
+    ctx.fillRect(x0, y0, w, 1);
+    ctx.fillRect(x0, y0 + h - 1, w, 1);
+    ctx.fillRect(x0, y0, 1, h);
+    ctx.fillRect(x0 + w - 1, y0, 1, h);
+
+    // THE X, stepped a pixel at a time rather than drawn with a rotation. A
+    // transform here would resample the wall's own pixels off the grid, which
+    // CLAUDE.md forbids outright — and at this size a stepped diagonal IS the
+    // line, since the alternative is an anti-aliased smear two pixels wide.
+    //
+    // ONE PIXEL PER ROW, walked down the LONGER axis. Stepping the short axis
+    // instead — or rounding a t that does not start at 0 — puts two pixels side
+    // by side on some rows and none on others, and the batten comes out as a
+    // stroke with a kink in it. It was drawn that way first and photographed as
+    // a bowtie: vertical stubs at the top, a chunky knot in the middle.
+    //
+    // Inset TWO from the panel, so the ends stop a clear pixel inside the
+    // outline. Landing on it would thicken the corners and read as a frame with
+    // something wrong with it rather than as boards nailed across a door.
+    const ix = x0 + 2;
+    const iy = y0 + 2;
+    const iw = w - 4;
+    const ih = h - 4;
+    for (let j = 0; j < ih; j++) {
+      const dx = Math.round((j * (iw - 1)) / (ih - 1));
+      ctx.fillRect(ix + dx, iy + j, 1, 1);
+      ctx.fillRect(ix + iw - 1 - dx, iy + j, 1, 1);
+    }
   }
 
   /** A window: an opening cut into a wall face, with glass in it.

@@ -1752,3 +1752,106 @@ describe("v45 → v46: a chimney comes out of a fireplace", () => {
     expect(m.furniture[SHELF_NOW]).toBeUndefined();
   });
 });
+
+describe("v46 → v47: the barn is square and wears false doors", () => {
+  /** The barn as it stood at v46: six wide, glazed, door at (-4,17). */
+  const WAS = { x0: -7, y0: 13, x1: -2, y1: 17 };
+  /** The column it lost — the whole of the shape change, and the cells that
+   *  would be left standing in the grass by a stamp that did not demolish. */
+  const LOST = ["-2,13", "-2,14", "-2,15", "-2,16", "-2,17"];
+  const DOOR_WAS = "-4,17";
+  const DOOR_NOW = "-5,17";
+  const PANELS = ["-6,17", "-4,17"];
+  const SHELF_WAS = "-3,14";
+  const SHELF_NOW = "-4,14";
+
+  /** A v46 save: the town as it stands, with the barn wound back to its old
+   *  footprint — six columns of wall, a transom band, a slit, a door one cell
+   *  east, and the shelf against what used to be the east wall. */
+  function v46Save(edit?: Record<string, unknown | null>) {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const build = { ...(w.build as Record<string, unknown>) };
+    const furniture = { ...(w.furniture as Record<string, unknown>) };
+    const overrides = { ...(w.overrides as Record<string, number>) };
+    const WALL = { id: "wall", finish: "oxblood" };
+
+    // Wipe whatever the current table stamped and lay the old barn by hand.
+    for (let y = WAS.y0; y <= WAS.y1; y++) {
+      for (let x = WAS.x0; x <= WAS.x1; x++) delete build[`${x},${y}`];
+    }
+    delete furniture[SHELF_NOW];
+    for (let y = WAS.y0; y <= WAS.y1; y++) {
+      for (let x = WAS.x0; x <= WAS.x1; x++) {
+        const key = `${x},${y}`;
+        overrides[key] = FLOOR;
+        const perimeter = x === WAS.x0 || x === WAS.x1 || y === WAS.y0 || y === WAS.y1;
+        if (perimeter) build[key] = { ...WALL };
+      }
+    }
+    build[DOOR_WAS] = { id: "door", finish: "oxblood" };
+    build["-6,17"] = { id: "window_transom", finish: "oxblood" };
+    build["-5,17"] = { id: "window_transom", finish: "oxblood" };
+    build["-3,17"] = { id: "window_narrow", finish: "oxblood" };
+    furniture[SHELF_WAS] = { id: "shelf", facing: "s", finish: "oxblood" };
+
+    for (const [key, cell] of Object.entries(edit ?? {})) {
+      if (cell === null) delete furniture[key];
+      else furniture[key] = cell;
+    }
+    return { ...w, schemaVersion: 46, build, furniture, overrides };
+  }
+
+  it("takes the lost column down rather than leaving it in the grass", () => {
+    // The thing a stamp alone cannot do, and the reason this rung exists: five
+    // cells of ox-blood wall a tile east of the new one, roofless, walkable and
+    // still counting as occupied against the re-stamp.
+    const m = migrateSave(v46Save())!;
+    for (const key of LOST) {
+      expect(m.build[key], key).toBeUndefined();
+      // And the plank floor with them, or the barn leaves a strip of decking.
+      expect(m.overrides[key], key).not.toBe(FLOOR);
+    }
+  });
+
+  it("centres the door and paints a false one either side of it", () => {
+    const m = migrateSave(v46Save())!;
+    expect(m.build[DOOR_NOW]).toMatchObject({ id: "door" });
+    for (const key of PANELS) expect(m.build[key], key).toMatchObject({ id: "barn_doors" });
+  });
+
+  it("takes the glass out", () => {
+    // A barn full of hay with a sitting-room sash in it. The old cells are a
+    // door and a panel now, and neither is glazed.
+    const m = migrateSave(v46Save())!;
+    for (const key of ["-6,17", "-5,17", "-3,17"]) {
+      expect(String((m.build[key] as { id?: string } | undefined)?.id ?? "")).not.toMatch(/^window/);
+    }
+  });
+
+  it("moves the shelf off the new east wall", () => {
+    const m = migrateSave(v46Save())!;
+    expect(m.furniture[SHELF_WAS]).toBeUndefined();
+    expect(m.furniture[SHELF_NOW]).toMatchObject({ id: "shelf" });
+  });
+
+  it("agrees with what a fresh world stamps", () => {
+    // The rung's rectangles are frozen and the table's are live; a migrated barn
+    // and a new one have to be the same barn.
+    const fresh = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const m = migrateSave(v46Save())!;
+    for (const c of footprintCells(TOWN_BUILDINGS.barn)) {
+      const key = `${c.x},${c.y}`;
+      expect(m.build[key], key).toEqual((fresh.build as Record<string, unknown>)[key]);
+    }
+  });
+
+  it("leaves the barn alone if the player has put something of their own in it", () => {
+    // The ladder's standing trade (§v37). If the stamp is going to refuse the
+    // footprint anyway, demolishing first costs them a building and gives
+    // nothing back.
+    const m = migrateSave(v46Save({ "-5,15": { id: "chair", facing: "s", finish: "pine" } }))!;
+    expect(m.furniture["-5,15"]).toMatchObject({ id: "chair" });
+    expect(m.furniture[SHELF_WAS]).toMatchObject({ id: "shelf" });
+    expect(m.build[DOOR_WAS]).toMatchObject({ id: "door" });
+  });
+});

@@ -11490,6 +11490,74 @@ detour.
 (The two-tree overlap remains unfixed and is genuinely arguable — see
 §Known gaps.)
 
+## The fire moves, and the barn turns to face you (10 Aug 2026)
+
+Two pieces, one sitting: an animated fireplace, and a barn rebuilt around its
+own front.
+
+### Furniture can animate now, in bands
+
+`PieceArt.anim` — a band of rows in the front view plus a list of replacement
+bands, cycled off the renderer's elapsed clock. NOT four whole grids: the
+fireplace is thirty rows of masonry around eight rows of fire, and four copies
+of the masonry is four things to edit and three of them to forget. Spliced
+grids are built once per piece and cached; the raster key gains the frame, so a
+moving fireplace costs four canvases rather than a rasterization a frame, and
+anything without an `anim` — everything else — keeps the single entry it had.
+
+Front view only. The fireplace's back is a blank slab and has no fire to move.
+
+The old note said the fire deliberately did NOT animate, on the grounds that
+every other light in the game is a steady pool and a moving one would be the
+only thing in the room. Still true, and now the point: a fire is the one
+furnishing that is running rather than sitting there. A lamp stays steady.
+
+The cycle is upright / left+taller / upright / right+lower, so it sways through
+centre instead of jumping side to side, and the leans differ in HEIGHT as well
+as direction — a flame that only rocks is a metronome. The two ember rows never
+move. First draft of the right lean touched the jamb and read as a mound; a
+pixel back toward centre fixed it. Only looking found that.
+
+### Settled here, don't relitigate
+
+- **A square room ridges NORTH-SOUTH.** `roofPitch` ties used to go east-west.
+  A square has no longer side, so the tie was always free, and gable-front is
+  the only silhouette this view can show a whole triangle of. Nothing the town
+  builds is square, so this reaches player-built square rooms and nothing else.
+- **The barn is 5x5, and the square is load-bearing.** A gable over the doors
+  needs a north-south ridge, and the barn could not simply be made deeper: the
+  plot is rows 13..18, the yard has 18, the north fence has 12, and the plot
+  cannot grow (HOME_REGION_REACH). Square was the only shape that flips the
+  ridge AND leaves the south wall a middle cell for the door.
+- **`barn_doors` is a MARKING, not an opening.** Wall in every structural
+  sense — solid, encloses, joins the run, wears the wall's own finish — with a
+  panel and a batten cross painted on the face. The first decorative structure.
+  Costs 3: over a wall, under a door, because nothing about it opens.
+- **The barn has no glass at all.** It wore a transom band and a slit; both are
+  gone. Glass on a hay barn says somebody works at a desk in there. The town
+  test that used to demand a window per façade now demands a FACE — windows or
+  panels — which is what it was always about.
+
+### Roof courses stay east-west, even on a north-south roof
+
+Strictly a shingle course lies along the eave, so a north-south ridge should
+carry them vertically. It was tried. The barn stopped being a barn: the wall
+under it is planking stood on end, and roof stripes in the same direction ran
+into the wall stripes and made the building one tall striped slab. **Two
+surfaces meeting need their textures to cross, or they read as one surface.**
+The pitch ramp already says which way the roof falls; the courses only have to
+say "roof".
+
+### A bug the reshuffle fell over
+
+The Gremlin could drop junk INSIDE the plot's fence. `isBareGround` checked the
+crop map and the tile, and a fence stands on grass — so the junk landed in a
+cell where gather answers to the structure, could never be picked up, and
+counted against `SCATTER_CAP` forever, silting the cap up until the deliveries
+stopped. away.ts's own house rule says he may never overwrite "a crop, a plank
+or a building"; the build layer is where the last of those lives. It surfaced
+only because the barn's new footprint reshuffled the scatter onto (8,17).
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

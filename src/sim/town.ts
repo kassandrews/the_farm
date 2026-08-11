@@ -99,7 +99,14 @@ function occupied(t: StampTarget, x: number, y: number): boolean {
  *  A rug the player laid inside the shop is not part of the shop — furniture is
  *  never this function's business, and neither is a fence. */
 export function isTownShell(id: string): boolean {
-  return id === "wall" || id === "door" || id === "skylight" || id === "window" || id.startsWith("window_");
+  return (
+    id === "wall" ||
+    id === "door" ||
+    id === "skylight" ||
+    id === "barn_doors" ||
+    id === "window" ||
+    id.startsWith("window_")
+  );
 }
 
 /** Stamp one building. Returns false without touching anything when the player
@@ -124,6 +131,11 @@ export function stampBuilding(t: StampTarget, b: TownBuilding, probe?: TerrainPr
     const isDoor = c.x === b.door.x && c.y === b.door.y;
     const win = isDoor ? undefined : (b.windows ?? []).find((w) => w.x === c.x && w.y === c.y);
     const isWindow = win !== undefined;
+    // A painted panel is WALL, so it is checked after the two openings and takes
+    // the wall's finish below rather than the joinery's — see content/town.ts
+    // §panels for why it is not simply another sash.
+    const isPanel =
+      !isDoor && !isWindow && (b.panels ?? []).some((p) => p.x === c.x && p.y === c.y);
     // The door keeps `finish` while the walls may take `walls`: a leaf is
     // joinery and joinery is wood, even in a stone building. The door's SHELL —
     // the frame around the opening — picks the masonry up from its neighbouring
@@ -136,7 +148,7 @@ export function stampBuilding(t: StampTarget, b: TownBuilding, probe?: TerrainPr
       // The sash the table asked for, or the plain one — `sash` is optional
       // precisely so the five buildings that want the ordinary window do not
       // have to name it (content/town.ts §windows).
-      id: isDoor ? "door" : win ? (win.sash ?? "window") : "wall",
+      id: isDoor ? "door" : win ? (win.sash ?? "window") : isPanel ? "barn_doors" : "wall",
       finish: joinery ? b.finish : (b.walls ?? b.finish),
     };
   }

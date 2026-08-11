@@ -120,6 +120,10 @@ describe("the town's own buildings", () => {
       // there being four is that the stamp writes the one named, and `sash` is
       // optional so the default has to be checked too.
       const glazed = new Map((b.windows ?? []).map((p) => [`${p.x},${p.y}`, p.sash ?? "window"]));
+      // And the painted panels, which are wall in every structural sense and a
+      // different id all the same — a barn door stamped as plain wall is the
+      // barn losing its face, silently (content/town.ts §panels).
+      for (const p of b.panels ?? []) glazed.set(`${p.x},${p.y}`, "barn_doors");
       const lit = new Set((b.skylights ?? []).map((p) => `${p.x},${p.y}`));
       for (const c of footprintCells(b)) {
         const cell = w.build[tileKey(c.x, c.y)];
@@ -153,7 +157,20 @@ describe("the town's own buildings", () => {
     }
   });
 
-  it("glazes every building, on a wall you can see the glass in", () => {
+  it("puts every authored panel ON the wall ring, and never on the door", () => {
+    // The windows' own rule, for the same reason: `stampBuilding` writes ring
+    // cells only, so a panel off the perimeter is silently dropped and reads as
+    // the table being ignored. And a panel ON the door would overwrite the one
+    // way in with a door that does not open.
+    for (const b of allTownBuildings()) {
+      for (const p of b.panels ?? []) {
+        expect(isPerimeter(b, p.x, p.y), `${b.id} panel ${p.x},${p.y}`).toBe(true);
+        expect(p.x === b.door.x && p.y === b.door.y).toBe(false);
+      }
+    }
+  });
+
+  it("gives every building a face, on a wall you can see it from the street", () => {
     // The town used to be one museum with windows and five blank boxes. A
     // building with no opening but its door reads as a shed whatever it is for,
     // which is how the museum ended up looking like a jail and the hall like a
@@ -165,9 +182,15 @@ describe("the town's own buildings", () => {
     // and its window renders as a thin band on the wall's top surface — legal,
     // and invisible from the street. A window nobody can see is the same as no
     // window, so it does not count toward the first assertion either.
+    //
+    // WINDOWS OR PANELS, since the barn was reglazed in paint. It is the only
+    // building here with no glass at all, and deliberately — you do not put a
+    // sitting-room sash in a building full of hay — but its façade is not blank:
+    // two false doors flank the real one. What the test is actually about is a
+    // frontage with something on it, and that is what it now asks.
     for (const b of allTownBuildings()) {
-      const facing = (b.windows ?? []).filter((p) => p.y === b.y1);
-      expect(facing.length, `${b.id} has no window on its façade`).toBeGreaterThan(0);
+      const facing = [...(b.windows ?? []), ...(b.panels ?? [])].filter((p) => p.y === b.y1);
+      expect(facing.length, `${b.id} has a blank façade`).toBeGreaterThan(0);
     }
   });
 

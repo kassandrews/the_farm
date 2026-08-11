@@ -93,13 +93,21 @@ describe("a roof falls two ways from a ridge", () => {
     return into;
   }
 
-  it("the ridge runs along the longer side, and ties go east-west", () => {
+  it("the ridge runs along the longer side", () => {
     // What houses do — the ridge parallels the front — and it agrees with the
     // light this renderer draws by, which comes from the north-west: an
     // east-west ridge lights its north slope and shades its south.
     expect(roofPitch(cover(0, 0, 9, 4)).axis).toBe("ew");
     expect(roofPitch(cover(0, 0, 4, 9)).axis).toBe("ns");
-    expect(roofPitch(cover(0, 0, 6, 6)).axis).toBe("ew");
+  });
+
+  it("a square room gables to the south", () => {
+    // No longer side, so the tie is free, and a gable end over the door is what
+    // the barn wants and the only whole triangle this view can show. One cell
+    // either way settles it the ordinary way.
+    expect(roofPitch(cover(0, 0, 6, 6)).axis).toBe("ns");
+    expect(roofPitch(cover(0, 0, 7, 6)).axis).toBe("ew");
+    expect(roofPitch(cover(0, 0, 6, 7)).axis).toBe("ns");
   });
 
   it("the crease sits in the middle, in tile space", () => {

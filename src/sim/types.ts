@@ -538,6 +538,10 @@ export type BuildTool =
   | "window_narrow"
   /** The hole in the roof, placed on the floor under it. */
   | "skylight"
+  /** Wall with a pair of doors painted on it — the only marking in the build
+   *  bar, and the only piece here that is not an opening, a surface or a plant
+   *  (content/structures.ts §barn_doors). */
+  | "barn_doors"
   /** Posts and rails, and pointedly NOT a short wall — see
    *  content/structures.ts §fence for why it does not enclose. */
   | "fence"

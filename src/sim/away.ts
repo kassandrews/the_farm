@@ -68,6 +68,17 @@ function overrideTiles(world: WorldState): [number, number, number][] {
 /** Is this tile free for scenery? Plain ground, nothing growing, nothing built. */
 function isBareGround(world: WorldState, x: number, y: number): boolean {
   if (world.crops[tileKey(x, y)]) return false;
+  // AND NOTHING STANDING ON IT. The tile test alone reads a building as a FLOOR
+  // and stops there, which is true of a house and false of the two things that
+  // stand on open ground: a fence, and a wall somebody has run across the grass.
+  // The Gremlin dropped a piece of junk into the plot's east fence, where it
+  // could never be picked up — gather answers to the structure, not the tile —
+  // and it counted against SCATTER_CAP forever, which is the cap silting up
+  // until he stops delivering at all.
+  //
+  // This file's own rule at the top says he may never overwrite "a crop, a plank
+  // or a building". The build layer is where the last of those actually lives.
+  if (world.build[tileKey(x, y)]) return false;
   const t = tileAt(world, x, y);
   return t === GRASS || t === DIRT;
 }

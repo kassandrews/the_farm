@@ -39,6 +39,9 @@ export type StructureId =
   | "window_paned"
   | "window_transom"
   | "window_narrow"
+  /** Wall with a pair of barn doors PAINTED on it. Not a sash and not a door:
+   *  nothing opens and nothing is glazed. See its row. */
+  | "barn_doors"
   /** The one structure that is not in a wall. See its row. */
   | "skylight"
   | "fence";
@@ -199,6 +202,34 @@ export const STRUCTURES: Record<StructureId, StructureDef> = {
     encloses: true,
     finishes: [],
   },
+  barn_doors: {
+    id: "barn_doors",
+    name: "Barn doors",
+    // WALL, WITH DOORS PAINTED ON IT. Not a door (nothing opens, nothing walks
+    // through) and not a sash (no glass, no hole) — which is why it is neither
+    // of those rows with a flag on it. It is the one piece in the table whose
+    // whole content is a MARKING: the barn's big sliding doors, boarded shut and
+    // battened with an X, as a face on a wall you cannot use.
+    //
+    // Decoration is a real category here and this is the first of it. The
+    // argument for allowing it at all is the same one the finishes make — a look
+    // is free, and a building's face is the part you actually live with.
+    //
+    // Three: over a wall, under a door. More than wall because it is boards
+    // nailed on and paint, less than a door because nothing about it opens, and
+    // charging a door's price for something that does not let you through would
+    // be the table telling a lie about what you just bought.
+    cost: 3,
+    // A wall in every structural respect, and that is the point of the row.
+    solid: true,
+    encloses: true,
+    // THE WALL'S OWN MATERIAL, unlike every other opening in this table. A sash
+    // and a door are made objects SET INTO somebody else's wall, so they carry
+    // their own timber and let the masonry stop at the frame; this is the wall,
+    // painted. Give it its own finish and a run of barn doors would be a stripe
+    // of pine across an ox-blood barn.
+    finishes: ["wood", "stone"],
+  },
   skylight: {
     id: "skylight",
     name: "Skylight",
@@ -271,7 +302,7 @@ export function structureDef(id: StructureId): StructureDef {
  *  each other. So does a window, for the same reason and more strongly — you can
  *  see straight through the fact that a window is still wall. */
 export function joinsWallRun(id: StructureId): boolean {
-  return id === "wall" || id === "door" || isWindow(id);
+  return id === "wall" || id === "door" || id === "barn_doors" || isWindow(id);
 }
 
 /** Does this join a FENCE run? Fences only, and the exclusion is the point: a

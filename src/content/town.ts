@@ -392,6 +392,15 @@ export interface TownBuilding {
    *  wide shopfront, the salvage shed has mean little slits, and the barn has a
    *  band up under its gable. Omitted means the plain one. */
   windows?: { x: number; y: number; sash?: StructureId }[];
+  /** Cells on the wall ring that are a PAINTED MARKING rather than plain wall —
+   *  today only the barn's false doors (content/structures.ts §barn_doors).
+   *
+   *  Its own field rather than another `sash` in `windows`, because a marking is
+   *  not an opening: nothing is glazed, nothing is cut, and the run of masonry
+   *  passes straight through it. Filed under windows it would have inherited the
+   *  joinery finish and the merge rule, and both are wrong — a run of these is
+   *  two doors side by side, which is a barn, not one wide door. */
+  panels?: { x: number; y: number }[];
   /** Holes cut in the roof, placed on the INTERIOR cells they hang over.
    *
    *  Only the museum has any, and that is the shape of the thing rather than a
@@ -873,18 +882,29 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
   // DESIGN spends a whole invariant forbidding that shape. Use it or don't.
   //
   // ON THE WEST SIDE with the field east of the lane, so the road runs between
-  // them and you pass the barn's gable coming in. Its door is on the south wall
-  // like every other door in the game (§The street plan), so what you see from
-  // the gate is its back — which is what you see of a real barn from a farm road,
-  // and the yard you walk round to is the front.
+  // them and you pass the barn's long slope coming in. Its door is on the south
+  // wall like every other door in the game (§The street plan), so what you see
+  // from the gate is its back — which is what you see of a real barn from a farm
+  // road, and the yard you walk round to is the front.
+  //
+  // FIVE BY FIVE, and the square is load-bearing rather than tidy. Two things
+  // needed it. A gable end over the doors means the ridge must run north-south,
+  // and the roof takes its axis from the room's own shape (render/roof.ts): the
+  // old 6x5 was wider than deep and so ridged east-west, and it could not simply
+  // be made deeper — the plot is rows 13..18, the yard has 18, and the north
+  // fence has 12, so five is the most depth there is. A square has no longer
+  // side, and that tie now goes north-south. Second, the door: the south wall
+  // runs x -7..-3 with corners at each end, which leaves three cells and
+  // therefore a MIDDLE one. Six cells had no middle, and a barn door off-centre
+  // under a gable is a barn with something wrong with it.
   barn: {
     id: "barn",
     name: "The Barn",
     x0: -7,
     y0: 13,
-    x1: -2,
+    x1: -3,
     y1: 17,
-    door: { x: -4, y: 17 },
+    door: { x: -5, y: 17 },
     // OX-BLOOD, and it is the only painted building in the world. Every other
     // finish in town is a material — pine, ash, whitewash, marble — and this one
     // is a TIN OF PAINT somebody opened, which is the difference between a
@@ -897,20 +917,22 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // a feature — the Gremlin has the tins, and now there is a reason to want
     // one. Same shape of hook as the museum's marble.
     finish: "oxblood",
-    // A BAND UP HIGH AND ONE SLIT, which is how a barn is glazed: you do not put
-    // a sitting-room window in a building full of hay. The south wall runs
-    // x -7..-2 with the door at -4 and the corners at -7 and -2, so -6/-5 merge
-    // into one two-cell transom over the yard, and -3 is the single cell on the
-    // far side of the door.
+    // NO WINDOWS AT ALL, which is how a barn is glazed: you do not put a
+    // sitting-room window in a building full of hay. It wore a transom band and
+    // a slit, and they were the wrong furniture on the right building — glass
+    // says somebody works at a desk in there.
     //
-    // The transom is the reason that sash exists at all. A barn's windows are
-    // over your head — above the doors, above whatever is stacked against the
-    // wall — and every other opening in this game sits at eye level, so there
-    // was no shape in the table that could say "high up" until there was one.
-    windows: [
-      { x: -6, y: 17, sash: "window_transom" },
-      { x: -5, y: 17, sash: "window_transom" },
-      { x: -3, y: 17, sash: "window_narrow" },
+    // WHAT IT HAS INSTEAD is a false door either side of the real one, boarded
+    // and battened with a white X. Every cell of the south wall that is not a
+    // corner is a door of some kind, which is what the front of a barn IS: the
+    // whole gable end opens, and one of the leaves happens to be the one you use.
+    //
+    // The two are NOT adjacent and must not be — the real door is between them,
+    // which is what stops the wall reading as one enormous doorway painted
+    // across the building.
+    panels: [
+      { x: -6, y: 17 },
+      { x: -4, y: 17 },
     ],
     furniture: [
       // What the last occupant left. Set dressing and nothing more: the actual
@@ -925,7 +947,9 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       // quietly restock itself with boulders forever.
       { x: -6, y: 14, id: "chest", facing: "s" },
       { x: -5, y: 14, id: "chest", facing: "s" },
-      { x: -3, y: 14, id: "shelf", facing: "s" },
+      // Against the back wall with the chests — the interior is x -6..-4 now,
+      // and the shelf's old cell at -3 is the east wall of a narrower barn.
+      { x: -4, y: 14, id: "shelf", facing: "s" },
     ],
   },
 };

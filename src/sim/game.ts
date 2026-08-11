@@ -637,7 +637,11 @@ export function loadedFinish(world: WorldState, tool: BuildTool): SkinId {
  *  because erase refunds. */
 function existingFinish(world: WorldState, tool: BuildTool, x: number, y: number): SkinId | null {
   if (tool === "floor") return tileAt(world, x, y) === FLOOR ? floorFinish(world, x, y) : null;
-  if (tool === "wall" || tool === "door") {
+  // Barn doors belong with the two SURFACES and not with the sashes: the piece
+  // wears the wall's own material (content/structures.ts §barn_doors), so
+  // tapping one in a different finish is a repaint like any other wall, and the
+  // sashes are only excluded because they have no finish to change.
+  if (tool === "wall" || tool === "door" || tool === "barn_doors") {
     const cell = world.build[tileKey(x, y)];
     return cell && cell.id === tool ? cell.finish : null;
   }
@@ -1913,6 +1917,9 @@ function buildFlavour(tool: StructureId): string {
   // the rest of them look at the town, and this one looks at the weather there
   // isn't any of (§Absent by design).
   if (tool === "skylight") return "A skylight. Now the room has an opinion about the sky.";
+  // The only piece in the bar that is a MARKING, so the line has to say the
+  // thing you would otherwise find out by walking at it.
+  if (tool === "barn_doors") return "Barn doors, in paint. They do not open, and were never going to.";
   if (tool === "window_transom") return "A transom. High enough that it's only for the light.";
   if (tool === "window_narrow") return "A narrow window. A tall thin slice of outside.";
   if (tool === "window_paned") return "A paned window. The same view, filed into squares.";

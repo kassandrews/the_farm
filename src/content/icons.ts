@@ -532,6 +532,28 @@ const FARM_ICONS = {
     ],
     palette: { k: K, d: WOOD, g: GLASS },
   },
+  // BARN DOORS, painted on. The glyph has to say wall-with-a-mark rather than
+  // opening, and the way it does that is the SURFACE: the same courses the wall
+  // icon is made of run behind the panel and out to the cell's edges, where every
+  // sash glyph puts a frame and a hole. Whitewash for the outline and the cross,
+  // which is the one thing on this piece that is not the wall.
+  barn_doors: {
+    rows: [
+      "............",
+      "............",
+      ".kkkkkkkkkk.",
+      ".kppppppppk.",
+      ".kpprrrrppk.",
+      ".kprprrprpk.",
+      ".kprrpprrpk.",
+      ".kprprrprpk.",
+      ".kpprrrrppk.",
+      ".kppppppppk.",
+      ".kkkkkkkkkk.",
+      "............",
+    ],
+    palette: { k: K, r: "#b8563c", p: "#ece4d4" },
+  },
   // A light set into a ROOF, and the shingles round it are what make it a
   // skylight rather than a fifth sash — the frame alone would be a window lying
   // down. The upper half of the glass is the bright one: it is tilted at the

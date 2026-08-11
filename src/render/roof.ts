@@ -112,11 +112,20 @@ const MIN_SPAN = 3;
 
 /** Read a room's covered cells as a pitched roof.
  *
- *  THE RIDGE RUNS ALONG THE LONGER SIDE, and ties go east-west. That is what
- *  houses do — the ridge parallels the front — and it agrees with the light
- *  this renderer already draws by, which comes from the north-west: with an
- *  east-west ridge the north slope faces the light and the south slope is the
- *  lee, which is the asymmetry the drawing then leans on. */
+ *  THE RIDGE RUNS ALONG THE LONGER SIDE. That is what houses do — the ridge
+ *  parallels the front — and it agrees with the light this renderer already
+ *  draws by, which comes from the north-west: with an east-west ridge the north
+ *  slope faces the light and the south slope is the lee, which is the asymmetry
+ *  the drawing then leans on.
+ *
+ *  A SQUARE ROOM HAS NO LONGER SIDE, so the tie is a free choice and it goes
+ *  NORTH-SOUTH — the gable end faces south, over the door. Gable-front is a real
+ *  vernacular for a square building, it is the only silhouette this view can
+ *  show you a whole triangle of, and it is what makes the barn a barn: the doors
+ *  are under the gable, the way they are on every barn anyone has drawn.
+ *
+ *  It used to go east-west, and the barn is why it does not. Nothing the town
+ *  builds is square, so this reaches only rooms the player made square. */
 export function roofPitch(cover: Set<string>): RoofPitch {
   let minX = Infinity;
   let maxX = -Infinity;
@@ -129,7 +138,8 @@ export function roofPitch(cover: Set<string>): RoofPitch {
     if (y < minY) minY = y;
     if (y > maxY) maxY = y;
   }
-  const axis: "ew" | "ns" = maxX - minX >= maxY - minY ? "ew" : "ns";
+  // Strictly greater: a tie is a square room and goes north-south, per above.
+  const axis: "ew" | "ns" = maxX - minX > maxY - minY ? "ew" : "ns";
 
   // One span per column (or per row), measured min-to-max. A room shaped like a
   // U has a column that leaves the building and comes back; spanning the gap

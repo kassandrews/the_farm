@@ -263,6 +263,10 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
   // whole of what makes it different: you place it from inside, on the floor,
   // and it turns up in the roof. There is no way to guess that from an icon.
   { id: "skylight", icon: "skylight", label: "Skylight", hint: "Point it at a floor with a roof over it. The hole appears up top.", group: "structure" },
+  // NOT AN OPENING, and the hint has to say so before the player places one
+  // expecting to walk through it. It is wall — the only piece here whose whole
+  // content is a marking painted on the face of one.
+  { id: "barn_doors", icon: "barn_doors", label: "Barn doors", hint: "Painted on, not cut in — nothing opens. Two side by side are two doors.", group: "structure" },
   // AFTER the openings and before erase, which is reading order and also the
   // order you reach for them: walls, then the holes in walls, then the thing
   // that is not a wall at all. The hint says the one fact the icon cannot —

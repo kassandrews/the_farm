@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 46;
+export const SCHEMA_VERSION = 47;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -1831,6 +1831,101 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
     }
 
     return { ...raw, schemaVersion: 46, furniture };
+  },
+
+  /** v47 — the barn is square, gable-front, and wears false doors
+   *  (content/town.ts §barn).
+   *
+   *  It lost its east column and its glass. Six by five ridged east-west, which
+   *  showed the yard a long flat slope; five by five has no longer side, and
+   *  that tie now goes north-south (render/roof.ts), so the gable end stands over
+   *  the doors the way it does on every barn. The transom band and the slit are
+   *  gone — glass on a hay barn says somebody works at a desk in there — and the
+   *  two cells either side of the door are painted barn doors instead.
+   *
+   *  A SHAPE CHANGE, so it is v37's problem and takes v37's answer: a stamp alone
+   *  would leave the old east wall standing in the grass a cell east of the new
+   *  one, roofless and walkable, and the re-stamp would refuse the new footprint
+   *  because those cells read as occupied. Demolish both rectangles, then stamp.
+   *
+   *  BOTH RECTANGLES ARE FROZEN HERE and neither is read from `TOWN_BUILDINGS` —
+   *  the ladder's own contract (§v27, §v37). A rung that asked the live table
+   *  where the barn "is" would demolish wherever it has been moved to next time
+   *  somebody moves it.
+   *
+   *  The shelf moves with the wall: it stood at (-3,14), which is the EAST WALL
+   *  of the new barn, so leaving it would have put a bookcase inside the masonry.
+   *  It is matched by id, like every other authored piece here, and the stamp
+   *  puts a fresh one at (-4,14). */
+  46: (raw) => {
+    /** The barn as it stood in v46: six wide, glazed, door at (-4,17). */
+    const V46_BARN = { x0: -7, y0: 13, x1: -2, y1: 17 };
+    /** And as it stands after this rung. */
+    const V47_BARN = { x0: -7, y0: 13, x1: -3, y1: 17 };
+    /** Authored furniture, old cells and new. Matched by id, so anything the
+     *  player put in the barn survives — in the open, where they can pick it up
+     *  again, which is v37's judgement and not a new one. */
+    const V47_AUTHORED = [
+      { key: "-6,14", id: "chest" },
+      { key: "-5,14", id: "chest" },
+      { key: "-3,14", id: "shelf" },
+      { key: "-4,14", id: "shelf" },
+    ];
+
+    const overrides = { ...((raw.overrides ?? {}) as Record<string, number>) };
+    const build = { ...((raw.build ?? {}) as Record<string, { id: string; finish: string }>) };
+    const furniture = { ...((raw.furniture ?? {}) as Record<string, { id: string }>) };
+    const crops = (raw.crops ?? {}) as Record<string, unknown>;
+    const frozen = { ...((raw.frozen ?? {}) as Record<string, unknown>) };
+
+    /** Has the player claimed anything in either rectangle? All or nothing per
+     *  building, exactly as v37 argues: if the stamp is going to refuse the new
+     *  footprint anyway, taking the old barn down first costs them a building and
+     *  gives nothing back. */
+    const authored = new Set(V47_AUTHORED.map((f) => `${f.key}:${f.id}`));
+    let playerWork = false;
+    for (const r of [V46_BARN, V47_BARN]) {
+      for (let y = r.y0; y <= r.y1; y++) {
+        for (let x = r.x0; x <= r.x1; x++) {
+          const key = `${x},${y}`;
+          if (key in crops) playerWork = true;
+          const piece = furniture[key];
+          if (piece && !authored.has(`${key}:${piece.id}`)) playerWork = true;
+        }
+      }
+    }
+
+    if (!playerWork) {
+      for (const r of [V46_BARN, V47_BARN]) {
+        for (let y = r.y0; y <= r.y1; y++) {
+          for (let x = r.x0; x <= r.x1; x++) {
+            const key = `${x},${y}`;
+            // The plank floor back to generated ground, or the town leaves a
+            // rectangle of decking where the sixth column was.
+            delete overrides[key];
+            const cell = build[key];
+            if (cell && isTownShell(cell.id)) delete build[key];
+            // A pin on a room that no longer has that shape would keep drawing
+            // the old roof over it; `freezeBuilt` re-runs on load.
+            delete frozen[key];
+          }
+        }
+      }
+      for (const f of V47_AUTHORED) {
+        if (furniture[f.key]?.id === f.id) delete furniture[f.key];
+      }
+    }
+
+    const stamped = stampInto({ ...raw, overrides, build, furniture });
+    return {
+      ...raw,
+      schemaVersion: 47,
+      overrides: stamped.overrides,
+      build: stamped.build,
+      furniture: stamped.furniture,
+      finishes: stamped.finishes ?? raw.finishes,
+      frozen,
+    };
   },
 };
 
