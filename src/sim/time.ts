@@ -163,7 +163,7 @@ export function rakeAt(now: number): number {
  *  become one continuous smear. A true horizon sun throws a shadow many times the
  *  height of what casts it; that is unarguable and unusable, so this is the
  *  longest one that still reads as belonging to its tree. */
-const RAKE_MAX = 0.55;
+export const RAKE_MAX = 0.55;
 
 /** A short "3:42 PM" style label for the HUD clock. */
 export function clockLabel(now: number): string {

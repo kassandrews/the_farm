@@ -11448,11 +11448,57 @@ A 1×1 piece is fine (it sorts on its own row, and the roof there draws after it
 at `BIAS_ROOF`), and so is the 2×1 fireplace. The fix is a change to the raised
 pass's sort key, which is load-bearing — see §Known gaps.
 
+## The contact shadow follows the sun (10 Aug 2026)
+
+At dusk everything with a round foot wore **two shadows**: a long raked one
+leaning east, and a flat symmetric bar under it that had not moved since noon.
+
+`footShadow` drew the rake and then drew its two puddle rows at full width,
+centred on the object, regardless of `rake`. That is the correct shape at noon
+and only at noon — a symmetric puddle is what an overhead sun makes. At sunset
+the same rows were still there, and worse, they stuck out on the **sunward**
+side, which is the one direction a shadow cannot go. One sun, two shadows.
+
+The fix: the sunward half retracts as `|rake|` grows toward `RAKE_MAX`; the lee
+half does not. At `rake` 0 the arithmetic is byte-for-byte the old rectangle, so
+noon is provably unchanged. At the horizon it is a half-puddle tucked under the
+foot on the shaded side, running straight into the rake that leaves it. The
+object still never floats — the lee half is always there.
+
+Applied to the mushroom's own one-row shadow too, which had the same bug at a
+fifth of the size and its own copy of the arithmetic.
+
+### The diagnosis was wrong the first time, and worth recording why
+
+The first pass reproduced a *different* picture — two trees one cell apart, where
+the back tree's trunk is entirely hidden behind the front tree's crown while its
+shadow escapes east. That is real, it is geometrically correct, and it was **not
+what was being reported**. It got built because it explained the screenshot, and
+a plausible explanation for the evidence in hand is not the same as the cause.
+
+The tell was available and went unread: the flat bar extends **west** of the
+trunk at sunset. Nothing casts a shadow toward the sun. One look at which
+direction the extra ink pointed would have settled it without the two-tree
+detour.
+
+(The two-tree overlap remains unfixed and is genuinely arguable — see
+§Known gaps.)
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
 you trip over them:
 
+- **Two trees on the same column read as one tree.** Adjacent same-species
+  crowns merge into a single silhouette with no rim between them, so the back
+  tree's trunk vanishes behind the front tree's crown while its shadow runs out
+  east where nothing covers it — one tree, two shadows, and both of them
+  correct. Only really visible at dusk, when shadows are long enough to escape.
+  The candidate fix is a dark rim along a crown's top edge **only where another
+  tree stands behind it** — tested against the neighbour, which is what the band
+  rule prescribes — rather than outlining every crown, which would restyle the
+  woods. Not done: the trees are drawn as soft masses on purpose and this is a
+  taste call worth making deliberately.
 - **Tall multi-tile furniture pokes through its own roof.** Furniture is pushed
   into the raised pass at `y = ay + h - 1` — its SOUTHERN row — so a bed's far
   end can't sort in front of its near end. The roof cell over its NORTHERN row

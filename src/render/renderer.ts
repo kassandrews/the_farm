@@ -81,7 +81,7 @@ import { plinthRuns } from "../sim/museum";
 import type { PlinthRun } from "../sim/museum";
 import { rooms } from "../sim/rooms";
 import type { Room } from "../sim/rooms";
-import { tintAt, isNight, skyPhaseAt, rakeAt } from "../sim/time";
+import { tintAt, isNight, skyPhaseAt, rakeAt, RAKE_MAX } from "../sim/time";
 import { seasonAt } from "../sim/seasons";
 import {
   scenePalette,
@@ -2886,8 +2886,19 @@ export class Renderer {
       const g = art[state];
       const w = g[0].length;
       const top = y - g.length;
-      ctx.fillStyle = "rgba(0,0,0,0.14)"; // it stands ON the grass
-      ctx.fillRect(x, y, w, 1);
+      // It stands ON the grass — and its contact shadow pulls over with the sun
+      // exactly as every other one does (§footShadow). A mushroom's is one row
+      // where a tree's is two, which is why it cannot simply call that; the
+      // arithmetic is the same and the reason is the same. Without it a cap at
+      // sunset wore a symmetric bar with a wedge coming out of one end.
+      const rake = skin?.rake ?? this.rake;
+      const dir = Math.sign(rake) || 1;
+      const capT = Math.min(1, Math.abs(rake) / RAKE_MAX);
+      const capHalf = w >> 1;
+      const capSun = Math.round(capHalf * (1 - capT));
+      const capLee = w - capHalf;
+      ctx.fillStyle = "rgba(0,0,0,0.14)";
+      ctx.fillRect(dir > 0 ? x + capHalf - capSun : x + capHalf - capLee, y, capSun + capLee, 1);
       // AND IT LEANS AWAY WITH EVERYTHING ELSE, where the region has a low sun
       // (§BiomeDef.rake). This shadow is drawn here rather than through
       // `footShadow` — a mushroom's is one row where every other sprite's is two —
@@ -2897,15 +2908,15 @@ export class Renderer {
       // whole point: the sun is one height for everybody, so a short thing casts
       // a short shadow. That is the physics doing the work rather than a number
       // per sprite.
-      const rake = skin?.rake ?? this.rake;
       if (rake !== 0) {
         // Signed, like everyone else's — a mushroom's shadow leans the way the
-        // trees' do or the cap is standing under a different sun.
+        // trees' do or the cap is standing under a different sun. `dir` is the
+        // same one the puddle above pulled over by, so the two halves of a cap's
+        // shadow can never disagree about where the sun is.
         // The wedge converges toward the far side, so mirroring it is a question
         // of which EDGE is pinned — right at `x + w` going east, left at `x`
         // going west — and not of offsetting the whole row, which would slide the
         // shadow off the cap instead of turning it around.
-        const dir = Math.sign(rake);
         const len = Math.round(g.length * Math.abs(rake));
         for (let i = 1; i <= len; i++) {
           const tw = Math.max(2, w - i);
@@ -5263,12 +5274,37 @@ export class Renderer {
         ctx.fillRect(cx - (tw >> 1) + i * dir, base - 2 + (i >> 1), tw, 1);
       }
     }
-    ctx.fillRect(cx - (w >> 1), base - 2, w, 1);
+    // THE PUDDLE PULLS OVER AS THE SUN DROPS, and this is the fix for the thing
+    // that made a tree at dusk look like it had two shadows.
+    //
+    // These two rows used to be drawn at full width, centred on the stem, no
+    // matter where the sun was. That is the correct shape at NOON and only at
+    // noon: a symmetric puddle is what an overhead sun makes. At sunset the same
+    // rows were still there — a flat bar under the trunk with a long rake coming
+    // out from behind it, and, worse, a bar sticking out on the SUNWARD side,
+    // which is the one direction a shadow cannot go. Two shadows from one sun.
+    //
+    // So the sunward half retracts with the light and the lee half does not. At
+    // `rake` 0 that is exactly the old rectangle, pixel for pixel; at the horizon
+    // it is a half-puddle on the shaded side, tucked under the foot, running
+    // straight into the rake that leaves it. The object still never floats —
+    // whatever the hour, the lee half is always there holding it down.
+    const t = Math.min(1, Math.abs(rake) / RAKE_MAX);
+    const dir = Math.sign(rake) || 1;
+    const puddle = (row: number, width: number): void => {
+      const half = width >> 1;
+      // Rounded, not floored: on a nine-pixel shadow the difference between the
+      // two is whether the last pixel of sunward puddle survives the whole of
+      // the afternoon or vanishes at three o'clock.
+      const sun = Math.round(half * (1 - t));
+      const lee = width - half;
+      ctx.fillRect(dir > 0 ? cx - sun : cx - lee, row, sun + lee, 1);
+    };
+    puddle(base - 2, w);
     // Narrower nearer the viewer, and never below three pixels — a taper that
     // eats a small shadow entirely leaves the object floating, which is the thing
     // a contact shadow exists to prevent.
-    const near = Math.max(3, w - 4);
-    ctx.fillRect(cx - (near >> 1), base - 1, near, 1);
+    puddle(base - 1, Math.max(3, w - 4));
   }
 
   /** A tree: trunk, layered crown, contact shadow. Getting on for two tiles tall,
