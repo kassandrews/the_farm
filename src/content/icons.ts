@@ -511,6 +511,26 @@ const FARM_ICONS = {
     ],
     palette: { k: K, d: WOOD, g: GLASS },
   },
+  // A CLOTH ON A RAIL, and the empty rows under it are as much the glyph as the
+  // cloth is — a banner that reached the bottom of the cell would be a painted
+  // panel, which is the one thing this must not be confused with.
+  banner: {
+    rows: [
+      "............",
+      ".kkkkkkkkkk.",
+      ".kddddddddk.",
+      ".kcccccccdk.",
+      ".kcccccccdk.",
+      ".kcccccccdk.",
+      ".kcccccccdk.",
+      ".kcccccccdk.",
+      ".kcccccccdk.",
+      ".kddddddddk.",
+      ".kkkkkkkkkk.",
+      "............",
+    ],
+    palette: { k: K, c: "#b2564a", d: "#8e4239" },
+  },
   // HIGH IN THE CELL, and the empty rows underneath are the icon. A transom is
   // defined by what is below it — wall — so an icon that filled its 12px would
   // have been the plain window with less glass in it. This is the one place the

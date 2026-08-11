@@ -124,6 +124,11 @@ describe("the town's own buildings", () => {
       // different id all the same — a barn door stamped as plain wall is the
       // barn losing its face, silently (content/town.ts §panels).
       for (const p of b.panels ?? []) glazed.set(`${p.x},${p.y}`, "barn_doors");
+      // And the hung cloths, which are the same kind of thing: a marking on a
+      // ring cell that is still structurally a wall (content/structures.ts
+      // §banner). Stamped as plain wall they would be the museum losing its
+      // banners silently, which is the barn's own lesson one row down.
+      for (const p of b.banners ?? []) glazed.set(`${p.x},${p.y}`, "banner");
       const lit = new Set((b.skylights ?? []).map((p) => `${p.x},${p.y}`));
       for (const c of footprintCells(b)) {
         const cell = w.build[tileKey(c.x, c.y)];
@@ -196,8 +201,16 @@ describe("the town's own buildings", () => {
     // sitting-room sash in a building full of hay — but its façade is not blank:
     // two false doors flank the real one. What the test is actually about is a
     // frontage with something on it, and that is what it now asks.
+    //
+    // OR BANNERS, which is the museum joining the barn as a building with no
+    // glass on purpose. It is top-lit through its roof — the only room in town
+    // that is — and a gallery's walls are blank because daylight at eye level is
+    // what you cannot hang a picture opposite (content/town.ts §museum). Its
+    // frontage is a doorway and two hung cloths, which is emphatically something.
     for (const b of allTownBuildings()) {
-      const facing = [...(b.windows ?? []), ...(b.panels ?? [])].filter((p) => p.y === b.y1);
+      const facing = [...(b.windows ?? []), ...(b.panels ?? []), ...(b.banners ?? [])].filter(
+        (p) => p.y === b.y1,
+      );
       expect(facing.length, `${b.id} has a blank façade`).toBeGreaterThan(0);
     }
   });
@@ -250,11 +263,20 @@ describe("the town's own buildings", () => {
     // The whole difference from a door. If a window ever stopped enclosing, the
     // museum would silently lose its roof; if it stopped being solid, the
     // façade would become four more front doors.
+    // ASKED OF WHICHEVER BUILDING STILL HAS GLASS, rather than of the museum by
+    // name. It used to name the museum, which was the building with the most
+    // windows right up until it became the building with none — it is top-lit
+    // now (content/town.ts §museum). The property under test is about sashes and
+    // not about that building, so it goes looking for one.
     const w = world();
-    const museum = allTownBuildings().find((b) => b.id === "museum")!;
-    const pane = museum.windows![0];
-    expect(structureDef(w.build[tileKey(pane.x, pane.y)]!.id).encloses).toBe(true);
-    expect(isWalkable(w, pane.x, pane.y)).toBe(false);
+    const glazed = allTownBuildings().flatMap((b) => b.windows ?? []);
+    expect(glazed.length, "no building in town has a window").toBeGreaterThan(0);
+    for (const pane of glazed) {
+      const cell = w.build[tileKey(pane.x, pane.y)]!;
+      const at = `${pane.x},${pane.y}`;
+      expect(structureDef(cell.id).encloses, at).toBe(true);
+      expect(isWalkable(w, pane.x, pane.y), at).toBe(false);
+    }
   });
 
   it("can be walked into through the door and not through the walls", () => {

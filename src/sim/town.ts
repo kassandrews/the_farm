@@ -104,6 +104,7 @@ export function isTownShell(id: string): boolean {
     id === "door" ||
     id === "skylight" ||
     id === "barn_doors" ||
+    id === "banner" ||
     id === "window" ||
     id.startsWith("window_")
   );
@@ -141,6 +142,8 @@ export function stampBuilding(t: StampTarget, b: TownBuilding, probe?: TerrainPr
     // §panels for why it is not simply another sash.
     const isPanel =
       !isDoor && !isWindow && (b.panels ?? []).some((p) => p.x === c.x && p.y === c.y);
+    const isBanner =
+      !isDoor && !isWindow && (b.banners ?? []).some((p) => p.x === c.x && p.y === c.y);
     // The door keeps `finish` while the walls may take `walls`: a leaf is
     // joinery and joinery is wood, even in a stone building. The door's SHELL —
     // the frame around the opening — picks the masonry up from its neighbouring
@@ -153,7 +156,15 @@ export function stampBuilding(t: StampTarget, b: TownBuilding, probe?: TerrainPr
       // The sash the table asked for, or the plain one — `sash` is optional
       // precisely so the five buildings that want the ordinary window do not
       // have to name it (content/town.ts §windows).
-      id: isDoor ? "door" : win ? (win.sash ?? "window") : isPanel ? "barn_doors" : "wall",
+      id: isDoor
+        ? "door"
+        : win
+          ? (win.sash ?? "window")
+          : isPanel
+            ? "barn_doors"
+            : isBanner
+              ? "banner"
+              : "wall",
       finish: joinery ? b.finish : (b.walls ?? b.finish),
     };
   }

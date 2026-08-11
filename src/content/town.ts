@@ -438,6 +438,11 @@ export interface TownBuilding {
    *  joinery finish and the merge rule, and both are wrong — a run of these is
    *  two doors side by side, which is a barn, not one wide door. */
   panels?: { x: number; y: number }[];
+  /** Wall cells that carry a hung cloth (content/structures.ts §banner). Its own
+   *  list rather than a field on `panels`, on that field's own logic: a painted
+   *  barn door and a hung banner are two different markings, not one marking in
+   *  two colours. Only the museum has any. */
+  banners?: { x: number; y: number }[];
   /** Holes cut in the roof, placed on the INTERIOR cells they hang over.
    *
    *  Only the museum has any, and that is the shape of the thing rather than a
@@ -816,35 +821,48 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // building reads as a shed with the walls missing; a corner of plain masonry
     // is what says the thing is holding itself up. Same instinct as leaving the
     // sill in: the openings have to be set INTO something.
-    // PLATE GLASS, which reverses the paned call and keeps its reasoning. That
-    // note said the museum and the hall are the two buildings glazed by somebody
-    // following a specification, and that bars were the cheapest way to say so.
-    // Both halves survive; only the conclusion moves. A gallery IS built to a
-    // specification, and the specification a gallery is built to is LIGHT — the
-    // whole discipline of the building is getting as much of it onto the exhibits
-    // as the walls will allow, which is also why this is the one building in the
-    // world with roof lights. Muntins are what you fit when the glass is small
-    // and the joinery has to hold it; a room designed around daylight takes them
-    // out.
+    // NO WINDOWS AT ALL, which is the end of a long argument and reverses two
+    // earlier ones (plain sashes, then paned, then plate). The whole time, the
+    // thing being protected was the museum's identity as the building made for
+    // LIGHT — and the glass turned out to be the wrong place to keep it.
     //
-    // It still reads as a different KIND of window from the shop's, which is what
-    // the paned note was protecting. More so, in fact: the shop's plain sashes
-    // post a mullion at every cell they merge across, so its shopfront is three
-    // panes in a frame, and this is one sheet of glass two cells long with
-    // nothing crossing it at all.
+    // THE LIGHT COMES FROM THE ROOF. This is the only building in the world with
+    // roof lights, and it has them because it is the only room too deep to light
+    // from its own walls. That is exactly how a gallery works and why: daylight
+    // through a window at eye level is the one thing you cannot hang a picture
+    // opposite, so galleries are top-lit and their walls are blank. A blank front
+    // is not the museum giving up on light, it is the museum committing to it —
+    // and it makes the roof lights load-bearing rather than decorative, which is
+    // a better story than four panes ever told.
     //
-    // The town hall keeps its paned sashes and should. Symmetry and glazing bars
-    // are what a municipal building is; it was never trying to be a lantern.
+    // It is also the only version of this façade that READS. Eight cells will not
+    // hold corners, two-cell glass, banners and a two-cell doorway at once, and
+    // every arrangement that tried paid somewhere visible: glass to the edge took
+    // the corners away and the building stopped looking like it held up its own
+    // roof; single-cell glass looked like a house; slits at four pixels wide
+    // vanished at any distance and competed with the banners for the same job.
+    // With no openings there is nothing to push around, the marble reads as one
+    // material instead of as infill between holes, and the banners carry the
+    // colour on their own.
     //
-    // The east pair moved one cell out (-9/-8 became -8/-7) when the doorway
-    // widened onto -9. Both pairs are now two cells of glass with one cell of
-    // masonry outboard of them, which is the symmetry the corners note above was
-    // always asking for and never quite had.
-    windows: [
-      { x: -12, y: FRONT_N, sash: "window_plate" },
-      { x: -11, y: FRONT_N, sash: "window_plate" },
-      { x: -8, y: FRONT_N, sash: "window_plate" },
-      { x: -7, y: FRONT_N, sash: "window_plate" },
+    // The corner note above survives all of this and is why the earlier attempts
+    // failed: a corner of plain masonry is what says the thing is holding itself
+    // up. This façade is nothing but that.
+    //
+    // The town hall keeps its paned sashes and its symmetry. It was never trying
+    // to be a lantern, and two blank institutions facing each other across the
+    // square would be a category rather than two buildings.
+    windows: [],
+    // A BANNER EITHER SIDE OF THE DOORWAY, on the two cells the glass gave up.
+    // Eight cells is eight cells: corners, glass, banners and a two-cell doorway
+    // do not all fit, so something had to move. The glass halved rather than the
+    // corners opening up, because glazing to the edge of a building reads as a
+    // shed with the walls missing (see the corners note above) — and that note is
+    // older than this one and about the building standing up, which outranks a
+    // note about what is hung on it.
+    banners: [
+      { x: -11, y: FRONT_N },
+      { x: -8, y: FRONT_N },
     ],
     // THREE SKYLIGHTS, UP THE MIDDLE OF THE GALLERY, and the museum is the only
     // building in the world with any.

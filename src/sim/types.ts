@@ -537,6 +537,8 @@ export type BuildTool =
   | "window_transom"
   | "window_narrow"
   | "window_plate"
+  /** A cloth hung on a wall — a marking, like the barn's painted doors. */
+  | "banner"
   /** The hole in the roof, placed on the floor under it. */
   | "skylight"
   /** Wall with a pair of doors painted on it — the only marking in the build

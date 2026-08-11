@@ -382,6 +382,17 @@ const GLASS_WARM_LIT = "#f6d79b";
  *  entire content is one mark. Off-white — pure `#fff` glares against ox-blood
  *  and comes through the night wash brighter than the lamps do. */
 const BARN_PAINT = "#ece4d4";
+/** A hung banner (§drawBanner). Hardcoded on the flag's own argument two lines
+ *  down: cloth is not the building's material, and letting a finish recolour it
+ *  would make a banner a thing you shop for rather than a thing you hang.
+ *
+ *  MADDER, which is the cloth the game already has (content/skins.ts §madder) —
+ *  the one strong colour in the palette that is a DYE rather than a paint, and
+ *  the colour a banner outside a museum has been in every town that ever had
+ *  one. Read as a hex rather than through `skinDef` because a banner is not
+ *  wearing a finish; it IS this cloth. */
+const BANNER_CLOTH = "#b2564a";
+const BANNER_SHADE = "#8e4239";
 /** The town's flag (§drawFlag). Hardcoded on the same argument the glass and the
  *  barn's whitewash make: a flag is not the building's material, and a finish
  *  that recoloured it would make the town's own colours a thing to shop for.
@@ -5448,6 +5459,7 @@ export class Renderer {
     }
 
     if (cell.id === "barn_doors") this.drawBarnDoors(px, top, base, sideOn);
+    if (cell.id === "banner") this.drawBanner(px, top, base, sideOn);
 
     if (cell.id === "door") {
       // The frame first, in the DOOR's own finish, then the opening cut out of
@@ -5602,6 +5614,62 @@ export class Renderer {
    *  midday and at night comes through the wash brighter than the lamps, which
    *  makes a painted line read as a light source. This is whitewash, which is
    *  what the marks would actually be. */
+  /** A cloth banner hung flat on a wall.
+   *
+   *  THE SECOND MARKING IN THE GAME, after the barn's painted doors, and it obeys
+   *  that piece's rules: the wall behind it is untouched, nothing opens, and the
+   *  masonry reads as continuing past it rather than being framed by it.
+   *
+   *  HUNG FROM A RAIL AND SHORT OF THE GROUND, which is the whole of what makes
+   *  it cloth rather than a painted panel. A rectangle running the full height of
+   *  the face is a door or a sign; a banner starts under the wall's cap and stops
+   *  well above the sill, so there is wall visible above and below it and it
+   *  reads as something somebody hung there this morning.
+   *
+   *  NO LETTERING, NO DEVICE. At eleven pixels wide any mark is three pixels of
+   *  mud, and the town's one heraldic object is the flag over the hall — which
+   *  earned its carrot by being the thing the whole town is filed under. A museum
+   *  banner is a colour, and the colour is the announcement. */
+  private drawBanner(px: number, top: number, base: number, sideOn: boolean): void {
+    const ctx = this.ctx;
+    if (sideOn) {
+      // A side run shows the top of the wall, so what is visible of a banner
+      // hung on its far face is the rail it hangs from. One line, like the barn
+      // doors' head, and for the identical reason: the cloth itself is on a face
+      // that is not in view, and drawing it up here would lay it on the roof of
+      // the wall.
+      ctx.fillStyle = BANNER_SHADE;
+      ctx.fillRect(px + 4, top + 5, TILE - 8, 1);
+      return;
+    }
+
+    // NARROW, AND THAT IS THE WHOLE OF WHETHER THIS READS AS A BANNER. At ten
+    // pixels wide on a face only twenty-odd tall it came out very nearly square,
+    // and a square of cloth on a wall is a SIGN. A hanging is longer than it is
+    // wide — that proportion is the object. Six pixels against a drop of about
+    // fourteen is the tallest it can be made without leaving the cell.
+    const x0 = px + 5;
+    const w = TILE - 10;
+    const y0 = top + WALL_CAP + 1;
+    const h = base - 4 - y0;
+
+    // The rail, in the shade so it reads as the thing carrying the weight, and
+    // proud of the cloth at both ends the way a real one is.
+    ctx.fillStyle = BANNER_SHADE;
+    ctx.fillRect(x0 - 2, y0, w + 4, 1);
+    // The cloth.
+    ctx.fillStyle = BANNER_CLOTH;
+    ctx.fillRect(x0, y0 + 1, w, h);
+    // AND NOTHING PRINTED ON IT. A fold was drawn down one side first — one pixel
+    // of shade, meant to stop a flat rectangle reading as a painted patch — and
+    // at this width it did not read as a crease, it cut the cloth into two
+    // panels and made each banner look like a little flag on a pole. Restraint
+    // over texture: six pixels of colour cannot carry a detail, and it does not
+    // need one. The rail above it and the hem below are what say cloth.
+    ctx.fillStyle = BANNER_SHADE;
+    ctx.fillRect(x0, y0 + h, w, 1);
+  }
+
   private drawBarnDoors(px: number, top: number, base: number, sideOn: boolean): void {
     const ctx = this.ctx;
     ctx.fillStyle = BARN_PAINT;

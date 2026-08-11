@@ -12007,6 +12007,86 @@ the entrance we had just centred. At -6 it pairs with the rim's western tree at
 equal distance. Nothing was ever blocked — the apron protects x -11..-8 — it stood
 in the way of LOOKING.
 
+## The museum stops having windows (11 Aug 2026)
+
+**A banner**, and then the façade argument it settled.
+
+### `banner` — the second marking in the table
+
+A cloth hung on a wall. Like the barn's painted doors it is a MARKING: nothing
+opens, nothing is glazed, and the wall behind it is doing every structural job it
+did before. It costs **cloth and nothing else**, which makes it the first
+buildable you have to have bartered for — a good thing for a decoration to be and
+a bad thing for a wall to be. An explicit `{ cloth: 2 }`, because a bare number
+means "N of the chosen finish's material" and this row has no finishes, so it
+would have quietly resolved to wood.
+
+**Narrow, and that is the whole of whether it reads.** At ten pixels wide on a
+face twenty-odd tall it came out very nearly square, and a square of cloth on a
+wall is a SIGN. A hanging is longer than it is wide; that proportion IS the
+object. Six pixels, rail proud at both ends, and **nothing printed on it** — a
+one-pixel fold meant to read as a crease instead cut the cloth into two panels and
+made each banner look like a little flag on a pole.
+
+### ADDING A STRUCTURE ROW IS NEVER JUST A ROW
+
+The transferable lesson, and it cost two silent bugs and four failing tests:
+
+- **`isTownShell`** — omitted, and the ladder's demolition left orphaned banner
+  cells standing, which blocks an all-or-nothing re-stamp, so the whole museum
+  failed to come back with no error and no roof. That function's own comment
+  warns this "cost four failing migration tests to find"; it cost the same four
+  again.
+- **`joinsWallRun`** — omitted, and the wall run broke at every banner: hard
+  vertical seams the full height of the face on both sides, so the façade read as
+  five slabs butted together. Reported from a screenshot as "a mix of wooden and
+  stone walls", which is what a broken course looks like next to cream joinery.
+- **`structureFlavour`** — omitted, and a banner announced itself with the
+  window's line. It ends in a `return` rather than a switch, so nothing told us.
+
+**None of these enumerations is exhaustive over `StructureId`, so the compiler
+cannot help.** The way to find them is `grep -n '"barn_doors"'` — the other
+marking — and check every hit.
+
+### And then: no windows at all
+
+This reverses three earlier calls in a row (plain sashes → paned → plate). What
+was being protected each time was the museum's identity as the building made for
+LIGHT, and **the glass was the wrong place to keep it.**
+
+**The light comes from the roof.** It is the only building in the world with roof
+lights, because it is the only room too deep to light from its walls — which is
+exactly how a gallery works and why: daylight at eye level is the one thing you
+cannot hang a picture opposite, so galleries are top-lit and their walls are
+blank. A blank front is the museum committing to light rather than giving up on
+it, and it makes the roof lights load-bearing rather than decorative.
+
+**It is also the only arrangement that reads.** Eight cells will not hold corners,
+two-cell glass, banners and a two-cell doorway at once, and every attempt paid
+somewhere visible:
+
+| tried | what it cost |
+| --- | --- |
+| glass to the edge | the corners — the building stopped looking like it held up its own roof |
+| single-cell glass | the gallery — it read as a house |
+| slits | nothing gained; four pixels vanishes at any distance and competes with the banners |
+| banners at the corners | the entrance — they became bookends |
+
+With no openings there is nothing to push around: the marble reads as one material
+instead of as infill between holes, and the banners carry the colour alone. The
+corner note survives all of it and is *why* the others failed — a corner of plain
+masonry is what says the thing is holding itself up, and this façade is nothing
+but that.
+
+**The town hall keeps its sashes.** Two blank institutions facing each other
+across the square would be a category rather than two buildings.
+
+Two town tests moved with it, both honestly: the "no blank façade" rule now counts
+banners (its own comment already said it was about "a frontage with something on
+it"), and the window-seals-its-room test no longer names the museum — it goes
+looking for whichever building still has glass, since the museum was the one with
+the most right up until it had none.
+
 ## The ladder is no longer kept in step with the town (11 Aug 2026)
 
 **The game has no players.** Breaking existing sessions is acceptable, stated by

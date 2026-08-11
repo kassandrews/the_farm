@@ -40,6 +40,7 @@ export type StructureId =
   | "window_transom"
   | "window_narrow"
   | "window_plate"
+  | "banner"
   /** Wall with a pair of barn doors PAINTED on it. Not a sash and not a door:
    *  nothing opens and nothing is glazed. See its row. */
   | "barn_doors"
@@ -227,6 +228,34 @@ export const STRUCTURES: Record<StructureId, StructureDef> = {
     encloses: true,
     finishes: [],
   },
+  banner: {
+    id: "banner",
+    name: "Banner",
+    // A WALL WITH A CLOTH HUNG ON IT, and the second marking in the table after
+    // the barn's painted doors — same category and the same argument. Nothing
+    // opens, nothing is glazed, nothing walks through: it is a face on a wall,
+    // and the wall behind it is doing every structural job it did before.
+    //
+    // A door's price and not a wall's, because what you are paying for is the
+    // cloth. It is the one buildable that is made of something you cannot gather
+    // (DESIGN §Materials — soft goods are the Menace's counter's whole reason to
+    // exist), so it costs cloth and nothing else. That also makes it the first
+    // thing in the build bar you have to have BARTERED for, which is a good
+    // thing for a decoration to be and a bad thing for a wall to be.
+    //
+    // AN EXPLICIT PRICE, not a bare number. A bare `2` means "two of whatever the
+    // chosen finish is made of" (§BuildPrice), and this row has no finishes to
+    // choose from — so it would have quietly resolved to wood, and a cloth banner
+    // costing timber is the kind of thing nobody notices until they read it.
+    cost: { cloth: 2 },
+    solid: true,
+    encloses: true,
+    // None. Same sentence as the door and the sashes: a banner is a made object
+    // hung on somebody else's wall, and the masonry runs up to it and stops —
+    // `shellFinish` is what lets the museum's marble meet it without either one
+    // repainting the other.
+    finishes: [],
+  },
   barn_doors: {
     id: "barn_doors",
     name: "Barn doors",
@@ -327,7 +356,17 @@ export function structureDef(id: StructureId): StructureDef {
  *  each other. So does a window, for the same reason and more strongly — you can
  *  see straight through the fact that a window is still wall. */
 export function joinsWallRun(id: StructureId): boolean {
-  return id === "wall" || id === "door" || id === "barn_doors" || isWindow(id);
+  // `banner` is here for the barn doors' exact reason: it is a MARKING on a wall,
+  // and the wall is still there behind it. Left out, the run breaks at every
+  // banner — the coursing restarts, and a hard vertical seam appears the full
+  // height of the face on both sides of it, so a façade with two banners in it
+  // reads as five separate pieces of walling butted together. It is the per-cell
+  // edges rule (CLAUDE.md) arriving through a predicate rather than through a
+  // draw call, and it is the second thing adding one structure to the table
+  // broke by omission — see `isTownShell`, which had the same gap.
+  return (
+    id === "wall" || id === "door" || id === "barn_doors" || id === "banner" || isWindow(id)
+  );
 }
 
 /** Does this join a FENCE run? Fences only, and the exclusion is the point: a

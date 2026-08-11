@@ -264,6 +264,11 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
   // one doesn't. "One sheet of glass" is the promise; "no bars anywhere" is what
   // distinguishes it from the plain window sitting three rows up.
   { id: "window_plate", icon: "window_plate", label: "Plate glass", hint: "One sheet of glass, no bars anywhere. A run of them joins with nothing in between.", group: "structure" },
+  // Beside the sashes because it goes on a wall like they do, and last because it
+  // is the only one that is not an opening. The hint has to say the two things an
+  // icon cannot: that the wall is still a wall behind it, and that it is the one
+  // buildable you cannot gather your way to.
+  { id: "banner", icon: "banner", label: "Banner", hint: "A cloth hung on a wall. Still a wall — and it costs cloth, so you'll be seeing Arabella.", group: "structure" },
   // NOT BESIDE THE SASHES, because it is not one, and the hint has to carry the
   // whole of what makes it different: you place it from inside, on the floor,
   // and it turns up in the roof. There is no way to guess that from an icon.

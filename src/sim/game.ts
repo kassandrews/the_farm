@@ -1920,6 +1920,12 @@ function buildFlavour(tool: StructureId): string {
   // The only piece in the bar that is a MARKING, so the line has to say the
   // thing you would otherwise find out by walking at it.
   if (tool === "barn_doors") return "Barn doors, in paint. They do not open, and were never going to.";
+  // The second marking, and the line has to carry what the icon cannot: that the
+  // wall is untouched, and that this one is deliberately blank. Without a case
+  // here it fell through to the window's line, which is the hazard of a function
+  // that ends in a default rather than a switch — the compiler cannot tell you
+  // about the row nobody thought about.
+  if (tool === "banner") return "A banner. It announces nothing, in a colour that suggests otherwise.";
   if (tool === "window_transom") return "A transom. High enough that it's only for the light.";
   if (tool === "window_narrow") return "A narrow window. A tall thin slice of outside.";
   if (tool === "window_paned") return "A paned window. The same view, filed into squares.";
