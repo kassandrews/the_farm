@@ -498,6 +498,11 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     w: 2,
     h: 1,
     solid: false,
+    // THE FREE-STANDING HEIGHT — the head of a stall's own posts. An awning with
+    // a wall behind it ignores this and hangs from the top of that wall instead,
+    // which the renderer derives rather than the table declaring (§drawAwning's
+    // call site). Two numbers, because they are two objects: a market stall and a
+    // shopfront awning are not the same height off the ground and never were.
     height: 14,
     finishes: ["wood"],
   },

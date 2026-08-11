@@ -11273,10 +11273,12 @@ schedule.
 - **Two bushes down Prudence's east side**, so the one house in town looks lived
   in from outside rather than merely occupied.
 
-**Both awnings are red-and-white striped and that is deliberate.** The canopy
+~~**Both awnings are red-and-white striped and that is deliberate.** The canopy
 colour is the piece's, not the finish's, because canvas is canvas — a market
 stall and a shopfront are the same object doing the same job, and giving them
-different stripes would have been variety for its own sake.
+different stripes would have been variety for its own sake.~~ — **reversed 11 Aug
+2026.** Right about the object, wrong about the two places; the canopy colour is
+the finish's now, and the shop's is green. See §It hangs from the wall below.
 
 ### Still owed
 
@@ -11723,6 +11725,51 @@ stripes and the air underneath it, and neither needed help.
 after the change: it now reads as a proper market stall, canopy on two visible
 posts with the counter on its own legs in front, where before the canopy was a
 pale slab.
+
+### It hangs from the wall, and the wall is what says so (11 Aug 2026)
+
+Two more passes the day after, both from looking at it in the square.
+
+**The cloth's top now lands on the top of the wall.** At the stall's height of 14
+it sat ten pixels below the wall's top edge, hanging across the middle of the
+shopfront like a banner tied on rather than like an awning fixed above a window.
+The arithmetic is worth keeping because it is not obvious: the piece is drawn on
+the row IN FRONT of its wall, so its cloth spans `py - height` to `base - height`,
+while the wall's face spans `base_wall - STOREY` to `base_wall` — and `base_wall`
+IS this row's `py`, because one row down is one row's base. The two tops meet
+exactly when `height == STOREY`. At 24 the cloth covers the top 16px of a 24px
+wall and leaves the bottom 8, so the sill still shows underneath, which is what
+says the glass carries on behind the cloth.
+
+**But one number cannot serve both awnings, so it is DERIVED.** Setting the table
+to 24 put Derek's stall up on stilts with a storey of daylight between his
+counter and his roof. They are two different objects: an awning with a wall
+behind it is FIXED TO that wall and hangs from its top; an awning standing in the
+open is a stall and sits at the head of its own posts. So the renderer asks the
+row north of the piece whether anything there `joinsWallRun` — that predicate
+rather than `id === "wall"`, because what an awning is most often fixed above is a
+window, and a shopfront's door is part of the same run. The table keeps the
+free-standing 14 and the wall case overrides it. Nothing declares which kind of
+awning it is; put one against your house and it mounts, put one in your field and
+it is a stall.
+
+**And the canopy colour comes off the finish.** The old rule here — "both awnings
+are red-and-white striped and that is deliberate, canvas is canvas" — was right
+about the object and wrong about the two PLACES. Derek's is a stall pitched at the
+edge of the square; Arabella's is the town's one commercial building, and the
+whole reason it has an awning is to say from across the plaza that this is where
+you buy things. Two institutions reading identically at a glance costs more than a
+second hex.
+
+Keyed on the FINISH and not on the instance, which is what stops it being item
+sprawl: DESIGN §Materials says appearance is a free axis and a look is never a
+different item, so a second `shopawning` row would be exactly the materials × looks
+the inventory rule forbids — two entries in the build menu differing only in
+colour. An awning is sold as one made thing, frame and canvas together, and its
+finish names the whole livery: the pine stall came with red canvas, the
+whitewashed shopfront came with green (`#35705a`, bottle green, kept dark and
+saturated so it is never the hall's pale sage and never sinks into the turf).
+Anything unlisted falls back to the market red.
 
 ### Loose end
 

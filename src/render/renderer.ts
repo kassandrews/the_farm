@@ -117,7 +117,7 @@ import {
   type MoteKit,
   type Tint,
 } from "../content/biomes";
-import { isWindow, overhead, type StructureId } from "../content/structures";
+import { isWindow, joinsWallRun, overhead, type StructureId } from "../content/structures";
 import { FLORA } from "../content/flora";
 import { growthStage, fruitReady } from "../sim/garden";
 import { present } from "../sim/presence";
@@ -394,6 +394,38 @@ const FLAG_FIELD = "#f2ece0";
 const FLAG_INK = "#2b2540";
 const CARROT = CROPS.carrot.ripeColor;
 const CARROT_TOP = "#5aa03c";
+
+/** An awning's canvas, keyed by the finish its frame wears (§drawAwning).
+ *
+ *  IT USED TO BE ONE HEX FOR BOTH AWNINGS, argued as "canvas is canvas — a market
+ *  stall and a shopfront are the same object doing the same job, and giving them
+ *  different stripes would be variety for its own sake". That was right about the
+ *  object and wrong about the two PLACES. Derek's is a stall pitched at the edge
+ *  of the square; Arabella's is a shopfront on the town's one commercial building,
+ *  and the reason she has an awning at all is to say from across the plaza that
+ *  this is where you buy things. Two institutions reading identically at a glance
+ *  is the cost, and it is a higher one than a second hex.
+ *
+ *  KEYED ON THE FINISH RATHER THAN ON THE INSTANCE, which is what keeps this from
+ *  becoming item sprawl. DESIGN §Materials is explicit that appearance is a free
+ *  axis and that a look is never a different item — a second `shopawning` row
+ *  would be exactly the "materials × looks" the inventory rule forbids, and it
+ *  would put two awnings in the build menu that differ only in colour. An awning
+ *  is sold as one made thing, frame and canvas together, so its finish names the
+ *  whole livery: the pine stall came with red canvas and the whitewashed
+ *  shopfront came with green.
+ *
+ *  Anything not listed falls back to the market red, so placing one in walnut is
+ *  never a piece with no canvas. */
+const CANOPY: Partial<Record<SkinId, string>> = {
+  // Bottle green, which is what a shopfront awning is in every town that has
+  // one. Far enough from the hall's sage (#8a9c7e) to never be confused with it
+  // — that is a pale grey-green and this is a dark saturated one — and much
+  // darker in value than the turf, so it does not sink into the grass behind.
+  whitewash: "#35705a",
+};
+const CANOPY_DEFAULT = "#c9503f"; // the market red, and the one canvas colour there was
+const CANOPY_STRIPE = "#efe6cf";
 /** How far a rake of light travels across the glass before it starts again, in
  *  WORLD px. Coprime with the 16px tile and much longer than it, for the reason
  *  grain.ts is entirely about — a highlight whose period divides the tile is a
@@ -2297,7 +2329,7 @@ export class Renderer {
           this.raised.push({
             y: ay + span.h - 1,
             bias: BIAS_TERRAIN,
-            draw: () => this.drawFurniture(ax, ay, piece),
+            draw: () => this.drawFurniture(world, ax, ay, piece),
           });
           // A lamp under a SOLID roof lights the room, not the street. Its
           // pool and its flame are both drawn after the night wash, so an
@@ -3168,7 +3200,7 @@ export class Renderer {
       this.raised.push({
         y: ay + span.h - 1,
         bias: BIAS_TERRAIN,
-        draw: () => this.drawFurniture(ax, ay, piece),
+        draw: () => this.drawFurniture(world, ax, ay, piece),
       });
       if (furnitureDef(piece.id).light) this.litLamps.push({ x: tx, y: ty });
     }
@@ -4471,8 +4503,8 @@ export class Renderer {
    *  has four exits — the lamp leaves early, a wall-mounted piece leaves early,
    *  the art path returns after its blit, and the fallback runs to the end. A
    *  mark added at "the end" would have been drawn for exactly one of them. */
-  private drawFurniture(ax: number, ay: number, cell: FurnitureCell): void {
-    this.drawFurniturePiece(ax, ay, cell);
+  private drawFurniture(world: WorldState, ax: number, ay: number, cell: FurnitureCell): void {
+    this.drawFurniturePiece(world, ax, ay, cell);
     const counter = counterIdAtAnchor(ax, ay);
     if (counter) this.drawCounterMark(ax, ay, cell, counter);
   }
@@ -4514,7 +4546,12 @@ export class Renderer {
     ctx.globalAlpha = prev;
   }
 
-  private drawFurniturePiece(ax: number, ay: number, cell: FurnitureCell): void {
+  private drawFurniturePiece(
+    world: WorldState,
+    ax: number,
+    ay: number,
+    cell: FurnitureCell,
+  ): void {
     const ctx = this.ctx;
     const def = furnitureDef(cell.id);
     const { w, h } = footprint(def, cell.facing);
@@ -4559,7 +4596,30 @@ export class Renderer {
     // the worst of both — the game let you walk through something the picture
     // said was a wall.
     if (cell.id === "awning") {
-      this.drawAwning(px, py, base, pw, H, skin);
+      // MOUNTED OR FREE-STANDING, and it is derived rather than declared — the
+      // chimney's argument again. An awning with a wall behind it is fixed to
+      // that wall, so its cloth hangs from the TOP of it; an awning standing in
+      // the open is a stall, and its cloth sits at the head of its own posts.
+      //
+      // One number for both was tried and only one place can be right. At the
+      // stall's 14 the shop's canopy hung across the middle of the shopfront like
+      // a banner tied on; at the wall's 24 Derek's stall went up on stilts with a
+      // storey of daylight between his counter and his roof. They are two
+      // different objects and the wall is what tells them apart.
+      //
+      // Asked of the row NORTH of the piece, across its whole width: a canopy is
+      // drawn on the row in front of what it belongs to (§drawAwning), so the
+      // wall it hangs on is the one behind it. Either cell is enough — an awning
+      // at the end of a run still has a wall to be fixed to.
+      // `joinsWallRun` rather than `id === "wall"`, because the thing an awning
+      // is most often fixed above is a WINDOW, and a shopfront's door is part of
+      // the same run. It is the predicate that already means "this reads as
+      // continuous wall" everywhere else.
+      const wallBehind = [...Array(w)].some((_, i) => {
+        const b = world.build[tileKey(ax + i, ay - 1)];
+        return b !== undefined && joinsWallRun(b.id);
+      });
+      this.drawAwning(px, py, base, pw, wallBehind ? STOREY : H, skin);
       ctx.globalAlpha = prev;
       return;
     }
@@ -4800,9 +4860,9 @@ export class Renderer {
     // The cloth. Its near edge lands exactly on the tops of the posts.
     const clothTop = py - H;
     const clothH = base - py;
-    ctx.fillStyle = "#c9503f"; // the one canvas colour in the game
+    ctx.fillStyle = CANOPY[skin.id] ?? CANOPY_DEFAULT;
     ctx.fillRect(px + 1, clothTop + 1, pw - 2, clothH - 2);
-    ctx.fillStyle = "#efe6cf";
+    ctx.fillStyle = CANOPY_STRIPE;
     for (let i = 1; i < pw - 2; i += 8) {
       ctx.fillRect(px + 1 + i, clothTop + 1, 4, clothH - 2);
     }
