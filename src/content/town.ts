@@ -528,6 +528,15 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       { x: 2, y: FRONT_N, sash: "window_paned" },
     ],
     furniture: [
+      // ALL FOUR SASHES GET A BOX, which is the joke and also the rule. The hall
+      // is the one building drawn symmetrically on purpose (§windows), so three
+      // would be a mistake and two would be a decision; four is somebody working
+      // through a list. An institution that has been issued geraniums and is
+      // maintaining them to standard is exactly this town.
+      { x: -2, y: FRONT_N, id: "windowbox", facing: "s" },
+      { x: -1, y: FRONT_N, id: "windowbox", facing: "s" },
+      { x: 1, y: FRONT_N, id: "windowbox", facing: "s" },
+      { x: 2, y: FRONT_N, id: "windowbox", facing: "s" },
       // The desk he is permanently "at the desk" at, immediately behind him.
       { x: -1, y: -8, id: "table", facing: "s", counter: "hall" },
       { x: 1, y: -8, id: "chair", facing: "s" },
@@ -605,6 +614,16 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
       // (sim/housing.ts picks a walkable neighbour), not authored. Wall the bed
       // in differently and her side of it moves; the coordinate here is where
       // the bed starts, not where she stands.
+      // WINDOW BOXES on the two plain sashes, and this is the house that should
+      // have them. Its whole job on the sheet is to be the one building somebody
+      // LIVES in rather than works in, which the chimney says at roof height and
+      // nothing said at eye height. Flowers on a sill are the shortest sentence
+      // for "somebody is here on purpose".
+      //
+      // Not on the narrow sash at 8,10 — that one is a slit round a corner, and a
+      // trough on it would be a box hung on a wall with a crack in it.
+      { x: 5, y: 10, id: "windowbox", facing: "s" },
+      { x: 6, y: 10, id: "windowbox", facing: "s" },
       { x: 5, y: 7, id: "bed", facing: "s" },
       // The table is along the south-west, deliberately clear of the doorway:
       // solid furniture in front of the door would seal her out of her own
@@ -1125,6 +1144,31 @@ export const TOWN_FIXTURES: TownFixture[] = [
   // 2x2 slab with board lines on it read as a sheet of paper lying in the
   // square, which is not the joke. A stage is made of ordinary boards.
   { x: STAGE.x, y: STAGE.y, id: "stage", facing: "s", finish: "pine", counter: "stage" },
+  // LAMPS EITHER SIDE OF THE TWO CIVIC DOORS — the hall's and the museum's, and
+  // nowhere else. They are the two buildings the town does its business in, and
+  // a lit entrance is what says a place is open to the public rather than merely
+  // unlocked.
+  //
+  // THIS IS THE ONE ADDITION HERE THAT PAYS AT NIGHT. Everything else on these
+  // façades — flag, awning, banners, boxes — is a daylight mark. After dark the
+  // town is currently lit windows on dark shapes, and the lamp is already built,
+  // already pools warm light, and was only ever installed in tunnels and on your
+  // own land. Two posts per doorway make the evening square the best hour to walk
+  // through instead of the dimmest.
+  //
+  // CLEAR OF EVERY APRON. `clearApron` protects the doorstep and a cell either
+  // side of it, and a lamp standing in that is a post in the doorway — walkable,
+  // since a lamp is never solid, but visually planted in the way in. The hall's
+  // apron is x -1..1 and the museum's is x -11..-8, so these sit outboard of
+  // both, level with the outermost sash on each front.
+  // The hall's pair stand at its CORNERS rather than beside its sashes, because
+  // the errands board already holds (2,-5) — east of the doorway, where it has
+  // always been. Outboard at -3 and 3 they are symmetric about the door, clear
+  // of the board, and clear of the apron.
+  { x: -3, y: -5, id: "lamp", facing: "s", finish: "sage" },
+  { x: 3, y: -5, id: "lamp", facing: "s", finish: "sage" },
+  { x: -12, y: -5, id: "lamp", facing: "s", finish: "whitewash" },
+  { x: -7, y: -5, id: "lamp", facing: "s", finish: "whitewash" },
   // AN AWNING OVER THE SHOP'S WINDOW, and it is the whole of what makes the
   // Counter read as a shop from across the square. A building's identity is not
   // its signage — DESIGN's tone note would rather the world showed you than told

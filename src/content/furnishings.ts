@@ -1661,6 +1661,43 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // touches a floor. Frame in the finish, picture in literals: a walnut frame
   // should not repaint the hills inside it, which is the bookshelf's rule about
   // its own books and the lamp's about its brass.
+  // A TROUGH ON A SILL, and the nine blank rows above it are load-bearing. A
+  // wall-mounted piece is hung from under the wall's cap and drawn downward
+  // (render/renderer.ts §mount), so a short grid puts the box at head height.
+  // These rows walk it down the face until it meets the sash's sill, which
+  // `drawWindow` puts five pixels off the ground.
+  //
+  // THE FLOWERS SPILL OVER THE RIM rather than sitting inside it. A row of
+  // colour contained by the trough reads as a box with paint in it; a few
+  // pixels breaking the line above and hanging past it below is what says
+  // "growing". Three blossom colours and no more — this is 12px of planting and
+  // a fourth hue turns it to confetti.
+  windowbox: {
+    s: {
+      rows: [
+        ...Array<string>(8).fill("................"),
+        "......p...y.....",
+        "...p.gpg.ygg.p..",
+        "..gpggggggggggg.",
+        ".ggggwggggwggggg",
+        ".kkkkkkkkkkkkkk.",
+        ".kttttttttttttk.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kssssssssssssk.",
+        ".kkkkkkkkkkkkkk.",
+        "..dddddddddddd..",
+      ],
+      palette: {
+        k: INK,
+        g: "#5d9a37",
+        p: "#d9698f",
+        y: "#e8c65a",
+        w: "#e8eaf0",
+        d: "rgba(0,0,0,0.20)",
+      },
+    },
+  },
   painting: {
     s: {
       rows: [

@@ -1400,6 +1400,8 @@ export class Renderer {
    *  it shows you the light of the room behind it, and every window in that room
    *  shows the same one. */
   private roomLit = new Map<string, boolean>();
+  /** Door cells with somebody standing in them right now (§draw). */
+  private doorBusy = new Set<string>();
   /** How dark the night wash is about to be, read at the top of the frame. */
   private darkness = 0;
   /** How long a shadow the sun is throwing this frame (sim/time.ts §rakeAt).
@@ -1610,6 +1612,31 @@ export class Renderer {
     // being drawn — so the value has to exist before the pass that needs it,
     // not after. Taking it from the same `now` as everything else keeps the one
     // clock this file argues so hard for.
+    // WHO IS STANDING IN A DOORWAY, this frame. Recomputed here rather than in
+    // `syncRoofs`, which is cached on the room list and only reruns when a wall
+    // moves — occupancy changes every frame by definition.
+    //
+    // It exists so that a door DOES something when it is used. Every other mark
+    // on these façades is static; the one thing a building does dozens of times
+    // a day is let somebody in and out, and until now the dark opening simply
+    // swallowed them. Warmth in the doorway as somebody passes is the whole
+    // effect, and it is derived from position — nothing is stored, nothing is
+    // scheduled, and it lasts exactly as long as they are in it.
+    this.doorBusy.clear();
+    const inDoorway = (x: number, y: number) => {
+      const key = tileKey(Math.round(x), Math.round(y));
+      if (world.build[key]?.id === "door") this.doorBusy.add(key);
+    };
+    inDoorway(world.player.x, world.player.y);
+    for (const v of world.villagers) {
+      if ((v.layer ?? "surface") !== "surface") continue;
+      // The same presence test the draw pass takes. A Ghost who is not out
+      // tonight still has coordinates, and without this she would light the
+      // museum's doorway from wherever she is not.
+      if (!present(v, now)) continue;
+      inDoorway(v.x, v.y);
+    }
+
     this.darkness = tintAt(now).darkness;
     this.rake = rakeAt(now);
     const phase = skyPhaseAt(now);
@@ -5520,7 +5547,13 @@ export class Renderer {
         ctx.fillRect(x0 - (openW ? 0 : 1), y0 - 1, x1 - x0 + (openW ? 0 : 1) + (openE ? 0 : 1), h + 2);
         ctx.fillStyle = leaf.top;
         ctx.fillRect(x0 - (openW ? 0 : 1), y0 - 1, x1 - x0 + (openW ? 0 : 1) + (openE ? 0 : 1), 1);
-        ctx.fillStyle = "#3a2620";
+        // THE OPENING WARMS WHEN SOMEBODY IS IN IT. A doorway is a hole, and a
+        // hole is drawn dark; but a hole with a creature in it is a hole with
+        // the inside of a room behind them, and the inside of a room is lit.
+        // One colour, no animation and no state — it is true while they are
+        // there and false the moment they step off, so it reads as the door
+        // being USED rather than as a light being switched on.
+        ctx.fillStyle = this.doorBusy.has(tileKey(tx, ty)) ? "#6b4a33" : "#3a2620";
         ctx.fillRect(x0, y0, x1 - x0, h);
         // A MEETING STILE down the middle of a merged pair, and it has to be a
         // POST rather than a line. This is the one thing that keeps a wide

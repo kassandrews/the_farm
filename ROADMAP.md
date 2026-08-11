@@ -12109,6 +12109,74 @@ stale stamp. Two mechanics behind that: `stampFixtures` skips an occupied cell,
 and `stampBuilding` refuses a building outright if any footprint cell is occupied,
 so an already-standing building can only ever be EDITED, never re-stamped.
 
+## Three things to make the town look lived in (11 Aug 2026)
+
+The one-mark-per-building programme is complete — flag, awning, banners, painted
+doors, chimney, heap — and it is what makes the contact sheet read as a town. So
+none of this adds a seventh mark. It adds the things a town has that a set of
+buildings does not.
+
+### Window boxes
+
+A trough of flowers on a sill, on Prudence's two sashes and on **all four** of the
+hall's. Four and not two, because the hall is the one building drawn symmetrically
+on purpose: three would be a mistake and two a decision, and four is somebody
+working through a list. An institution issued geraniums and maintaining them to
+standard is exactly this town.
+
+**Wall-mounted furniture, like the painting** — which is what lets it share a cell
+with the window it sits under. `build` and `furniture` are separate maps, so the
+sash occupies the wall and the box occupies the same coordinate in the other
+layer. Anything else needed two structures per cell, which nothing supports.
+
+Two things the art had to get right: **nine blank rows above it**, because a
+mounted piece is hung from under the wall's cap and drawn downward, so a short
+grid would have put a trough of flowers level with the lintel; and **the flowers
+spill over the rim**, since colour contained by the trough reads as a box with
+paint in it.
+
+### Lamps at the two civic doors
+
+The hall's and the museum's, and nowhere else — the two buildings the town does
+its business in. **This is the only one of the three that pays at night.** Every
+other mark on these façades is a daylight mark, and after dark the town was lit
+windows on dark shapes. The lamp was already built and had only ever been
+installed in tunnels and on your own land.
+
+The hall's pair stand at its **corners** rather than beside its sashes, because
+the errands board already holds (2,-5). All four are outboard of `clearApron`,
+which protects the doorstep and a cell either side: a lamp in that is a post in
+the doorway.
+
+### A door that knows it is being used
+
+The most "engaging" gap was not decoration — it was that a building is **inert
+when used**. A villager walked into the hall and the dark opening swallowed them.
+
+The opening now **warms while somebody is standing in it**. Derived from position,
+recomputed per frame in `draw` (not `syncRoofs`, which is cached on the room list
+and only reruns when a wall moves). Nothing stored, nothing scheduled, no
+animation — true while they are there and false the moment they step off, so it
+reads as the door being USED rather than as a light being switched on. It takes
+the same presence test the draw pass does, or a Ghost who is not out tonight would
+light the museum's doorway from wherever she is not.
+
+### Three tests moved, and one of them was fragile
+
+- **"never stands its own furniture in a wall"** now skips `mount: "wall"` pieces.
+  A window box hanging in a wall cell is the piece working, not the bug that test
+  was written for.
+- **"no blank façade"** — unchanged here, but see the museum entry.
+- **`save.test.ts` looked up `margfrom_house.furniture[0]`** and expected a bed.
+  That coupled an assertion to the order somebody happened to author a room in,
+  and it broke the moment a window box went in above it. It finds the bed by id
+  now.
+
+And the compiler earned its keep: `furnitureFlavour` is exhaustive over
+`FurnitureId`, so adding a row failed the build until it had a line — which is
+exactly what its own comment promised, and the opposite of the structures table,
+where three separate hand-written predicates stayed silent.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

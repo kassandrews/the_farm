@@ -317,6 +317,12 @@ describe("the town's own buildings", () => {
     // check and it looks at one cell; this looks at every cell of every piece.
     for (const b of allTownBuildings()) {
       for (const f of b.furniture) {
+        // EXCEPT A WALL-MOUNTED PIECE, which inverts this rule rather than
+        // breaking it: a painting or a window box hangs on the FACE of a wall
+        // cell and has no footprint on the floor at all (content/furniture.ts
+        // §mount). Asked of one of those, "is this standing in a wall" has the
+        // answer yes, and that is the piece working.
+        if (furnitureDef(f.id).mount === "wall") continue;
         for (const [x, y] of cellsFor(f.x, f.y, f.id, f.facing)) {
           expect(
             isPerimeter(b, x, y),

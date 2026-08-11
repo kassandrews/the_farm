@@ -167,7 +167,10 @@ describe("migrations", () => {
     const hall = TOWN_BUILDINGS.townhall;
     expect(migrated.build[tileKey(hall.x0, hall.y0)]).toMatchObject({ id: "wall" });
     expect(migrated.build[tileKey(hall.door.x, hall.door.y)]).toMatchObject({ id: "door" });
-    const bed = TOWN_BUILDINGS.margfrom_house.furniture[0];
+    // BY ID, not by index. It was `furniture[0]`, which meant the assertion
+    // depended on the order somebody happened to author her room in — and it
+    // broke the moment a window box was added above the bed in that list.
+    const bed = TOWN_BUILDINGS.margfrom_house.furniture.find((f) => f.id === "bed")!;
     expect(migrated.furniture[tileKey(bed.x, bed.y)]).toMatchObject({ id: "bed" });
   });
 

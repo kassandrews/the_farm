@@ -51,7 +51,8 @@ export type FurnitureId =
   | "stage"
   /** The seed stall's canopy — see the row for why a stall is furniture and not
    *  a building. */
-  | "awning";
+  | "awning"
+  | "windowbox";
 
 /** Which way a piece is turned. "s" is the default — facing the camera. */
 export type Facing = "n" | "e" | "s" | "w";
@@ -460,6 +461,30 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // face's twenty-one usable pixels, so it hangs clear of the cap above and
     // the skirting below rather than filling the wall like a poster.
     height: 14,
+    finishes: ["wood"],
+    mount: "wall",
+  },
+  windowbox: {
+    id: "windowbox",
+    name: "Window box",
+    // A trough of flowers on a sill. WALL-MOUNTED, like the painting, which is
+    // what lets it share a cell with the window it sits under: `build` and
+    // `furniture` are separate maps, so the sash occupies the wall and the box
+    // occupies the same coordinate in the other layer. Anything else would have
+    // needed a second structure per cell, which nothing here supports.
+    //
+    // Cheap, and wood only. The flowers are not a material and are not bought —
+    // they are what a window box HAS, the way a painting has a picture
+    // (§painting: "the frame is the only part anybody makes").
+    cost: { wood: 2 },
+    w: 1,
+    h: 1,
+    solid: false,
+    // The art's own height. A mounted piece is hung from under the wall's cap
+    // and drawn downward, so the grid has to be tall enough to REACH the sill —
+    // nine blank rows and then the box. Hanging it high like a painting would
+    // have put a trough of geraniums level with the lintel.
+    height: 19,
     finishes: ["wood"],
     mount: "wall",
   },
