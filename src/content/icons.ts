@@ -418,25 +418,115 @@ const FARM_ICONS = {
     ],
     palette: { k: K, d: WOOD, a: "#a8cfe8", m: "#8fb87a", b: "#6f9e5c" },
   },
-  // Two panes with a mullion between them, because a run of windows joins into
-  // one window and the icon should say so before the hint has to. Deep sill,
-  // which is the one line that reads as "set into something thick" at 12px.
+  // THE FOUR SASHES, and they have to be told apart at 12px in a row of chips —
+  // which is what set each one's single distinguishing move. Same frame, same
+  // glass, same deep sill on all four (the sill is the one line that reads as
+  // "set into something thick" at this size); what differs is the SHAPE OF THE
+  // HOLE, because that is what differs in the world too.
+  //
+  // Two lights with a mullion between them, because a run of windows joins into
+  // one window and the icon should say so before the hint has to. It carried a
+  // horizontal bar as well until the paned sash arrived and needed that bar to
+  // be the thing it alone had.
   window: {
     rows: [
       "............",
       ".kkkkkkkkkk.",
       ".kdddddddddk",
-      ".kdggkggggdk",
-      ".kdggkggggdk",
-      ".kdggkggggdk",
-      ".kdddkddddek",
-      ".kdggkggggdk",
-      ".kdggkggggdk",
+      ".kdgggkgggdk",
+      ".kdgggkgggdk",
+      ".kdgggkgggdk",
+      ".kdgggkgggdk",
+      ".kdgggkgggdk",
+      ".kdgggkgggdk",
       ".kdddddddddk",
       ".kkkkkkkkkk.",
       "..kkkkkkkk..",
     ],
-    palette: { k: K, d: WOOD, g: GLASS, e: "#a9cbe4" },
+    palette: { k: K, d: WOOD, g: GLASS },
+  },
+  // The same opening, filed into four. The bar sits ABOVE centre so the lower
+  // lights are the taller pair, which is what the renderer draws and what a
+  // sash window actually does.
+  window_paned: {
+    rows: [
+      "............",
+      ".kkkkkkkkkk.",
+      ".kdddddddddk",
+      ".kdgggkgggdk",
+      ".kdgggkgggdk",
+      ".kdgggkgggdk",
+      ".kdddddddddk",
+      ".kdgggkgggdk",
+      ".kdgggkgggdk",
+      ".kdddddddddk",
+      ".kkkkkkkkkk.",
+      "..kkkkkkkk..",
+    ],
+    palette: { k: K, d: WOOD, g: GLASS },
+  },
+  // HIGH IN THE CELL, and the empty rows underneath are the icon. A transom is
+  // defined by what is below it — wall — so an icon that filled its 12px would
+  // have been the plain window with less glass in it. This is the one place the
+  // file's own "fill the cell" rule is broken on purpose, and the reason is that
+  // the glyph's meaning is its POSITION.
+  window_transom: {
+    rows: [
+      "............",
+      "............",
+      ".kkkkkkkkkk.",
+      ".kdddddddddk",
+      ".kdgggkgggdk",
+      ".kdgggkgggdk",
+      ".kdddddddddk",
+      ".kkkkkkkkkk.",
+      "..kkkkkkkk..",
+      "............",
+      "............",
+      "............",
+    ],
+    palette: { k: K, d: WOOD, g: GLASS },
+  },
+  // The transom turned ninety degrees, and it fills its rows the ordinary way —
+  // a narrow window's whole claim is about width, so the height is free to obey
+  // the house rule.
+  window_narrow: {
+    rows: [
+      "............",
+      "...kkkkkk...",
+      "...kddddk...",
+      "...kdggdk...",
+      "...kdggdk...",
+      "...kdggdk...",
+      "...kdggdk...",
+      "...kdggdk...",
+      "...kdggdk...",
+      "...kddddk...",
+      "...kkkkkk...",
+      "..kkkkkkkk..",
+    ],
+    palette: { k: K, d: WOOD, g: GLASS },
+  },
+  // A light set into a ROOF, and the shingles round it are what make it a
+  // skylight rather than a fifth sash — the frame alone would be a window lying
+  // down. The upper half of the glass is the bright one: it is tilted at the
+  // sky, and the sky is where the light is.
+  skylight: {
+    rows: [
+      "............",
+      ".kkkkkkkkkk.",
+      ".krrrrrrrrk.",
+      ".krrrrrrrrk.",
+      ".krkkkkkkrk.",
+      ".krkeeeekrk.",
+      ".krkggggkrk.",
+      ".krkkkkkkrk.",
+      ".krkggggkrk.",
+      ".krkkkkkkrk.",
+      ".krrrrrrrrk.",
+      ".kkkkkkkkkk.",
+    ],
+    palette: { k: K, r: WOOD_DARK, g: GLASS, e: "#a9cbe4" },
   },
   bed: {
     rows: [

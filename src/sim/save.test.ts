@@ -1589,3 +1589,88 @@ describe("v41 → v42: a home comes off the square", () => {
     expect(m.build[corner]).toMatchObject({ finish: "oxblood" });
   });
 });
+
+describe("v44 → v45: the town gets its windows", () => {
+  /** A v44 save: the town as it stands today, wound back to before any of it was
+   *  glazed — every authored sash back to plain wall, the museum's four back to
+   *  the plain window they were, and the skylights taken out of the roof. */
+  function v44Save(edit?: Record<string, { id: string; finish: string } | null>) {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const build = { ...(w.build as Record<string, { id: string; finish: string }>) };
+    for (const b of Object.values(TOWN_BUILDINGS)) {
+      for (const p of b.windows ?? []) {
+        // The museum's were already windows at v44; everything else was wall.
+        build[`${p.x},${p.y}`] =
+          b.id === "museum"
+            ? { id: "window", finish: b.finish }
+            : { id: "wall", finish: b.walls ?? b.finish };
+      }
+      for (const p of b.skylights ?? []) delete build[`${p.x},${p.y}`];
+    }
+    for (const [key, cell] of Object.entries(edit ?? {})) {
+      if (cell === null) delete build[key];
+      else build[key] = cell;
+    }
+    return { ...w, schemaVersion: 44, build };
+  }
+
+  it("cuts every authored window into the wall it belongs in", () => {
+    const m = migrateSave(v44Save())!;
+    for (const b of Object.values(TOWN_BUILDINGS)) {
+      for (const p of b.windows ?? []) {
+        expect(m.build[`${p.x},${p.y}`], `${b.id} ${p.x},${p.y}`).toMatchObject({
+          id: p.sash ?? "window",
+        });
+      }
+    }
+  });
+
+  it("agrees with what a fresh world stamps, cell for cell", () => {
+    // The rung's coordinates are frozen literals and the table's are live, so
+    // this is the one test that can catch them drifting apart — a migrated town
+    // and a new town have to be the same town.
+    const fresh = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    const m = migrateSave(v44Save())!;
+    for (const b of Object.values(TOWN_BUILDINGS)) {
+      for (const p of [...(b.windows ?? []), ...(b.skylights ?? [])]) {
+        const key = `${p.x},${p.y}`;
+        expect(m.build[key], `${b.id} ${key}`).toEqual(
+          (fresh.build as Record<string, unknown>)[key],
+        );
+      }
+    }
+  });
+
+  it("upgrades the museum's plain sashes rather than adding more", () => {
+    const m = migrateSave(v44Save())!;
+    for (const p of TOWN_BUILDINGS.museum.windows!) {
+      expect(m.build[`${p.x},${p.y}`]).toMatchObject({ id: "window_paned" });
+    }
+  });
+
+  it("cuts three skylights into the museum and nothing anywhere else", () => {
+    const m = migrateSave(v44Save())!;
+    const lit = Object.entries(m.build as Record<string, { id: string }>)
+      .filter(([, c]) => c.id === "skylight")
+      .map(([k]) => k)
+      .sort();
+    expect(lit).toEqual(["-10,-10", "-10,-12", "-10,-8"]);
+  });
+
+  it("leaves a wall alone if the player repainted it", () => {
+    // The ladder's standing trade: a wall somebody chose the colour of outranks
+    // a window the town would rather put in it.
+    const key = "8,2"; // the shop's shopfront, middle cell
+    const m = migrateSave(v44Save({ [key]: { id: "wall", finish: "oxblood" } }))!;
+    expect(m.build[key]).toMatchObject({ id: "wall", finish: "oxblood" });
+  });
+
+  it("never puts a skylight through something the player left in the aisle", () => {
+    // The gallery's aisles are walkable floor, so anything standing there is
+    // theirs. A skylight is not solid, so this would not even block them — it
+    // would just be a hole in the roof over somebody's wall.
+    const key = "-10,-10";
+    const m = migrateSave(v44Save({ [key]: { id: "wall", finish: "pine" } }))!;
+    expect(m.build[key]).toMatchObject({ id: "wall", finish: "pine" });
+  });
+});

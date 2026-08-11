@@ -114,15 +114,24 @@ describe("the town's own buildings", () => {
   it("place a wall on every perimeter cell except the doorway and the windows", () => {
     const w = world();
     for (const b of allTownBuildings()) {
-      const glazed = new Set((b.windows ?? []).map((p) => `${p.x},${p.y}`));
+      // The SASH the table asked for, not merely "a window" — the whole point of
+      // there being four is that the stamp writes the one named, and `sash` is
+      // optional so the default has to be checked too.
+      const glazed = new Map((b.windows ?? []).map((p) => [`${p.x},${p.y}`, p.sash ?? "window"]));
+      const lit = new Set((b.skylights ?? []).map((p) => `${p.x},${p.y}`));
       for (const c of footprintCells(b)) {
         const cell = w.build[tileKey(c.x, c.y)];
+        const at = `${c.x},${c.y}`;
         if (!isPerimeter(b, c.x, c.y)) {
-          expect(cell).toBeUndefined(); // interiors stay clear
+          // Interiors stay clear — EXCEPT for a skylight, which is the one thing
+          // the stamp puts inside the ring. It is over your head, not in your
+          // way (content/structures.ts §skylight).
+          if (lit.has(at)) expect(cell).toMatchObject({ id: "skylight" });
+          else expect(cell).toBeUndefined();
         } else if (c.x === b.door.x && c.y === b.door.y) {
           expect(cell).toMatchObject({ id: "door" });
-        } else if (glazed.has(`${c.x},${c.y}`)) {
-          expect(cell).toMatchObject({ id: "window" });
+        } else if (glazed.has(at)) {
+          expect(cell, `${b.id} ${at}`).toMatchObject({ id: glazed.get(at) });
         } else {
           expect(cell).toMatchObject({ id: "wall" });
         }
@@ -139,6 +148,68 @@ describe("the town's own buildings", () => {
         expect(isPerimeter(b, p.x, p.y), `${b.id} window ${p.x},${p.y}`).toBe(true);
         expect(p.x === b.door.x && p.y === b.door.y).toBe(false);
       }
+    }
+  });
+
+  it("glazes every building, on a wall you can see the glass in", () => {
+    // The town used to be one museum with windows and five blank boxes. A
+    // building with no opening but its door reads as a shed whatever it is for,
+    // which is how the museum ended up looking like a jail and the hall like a
+    // slab — so "has at least one window" is now a property of the town rather
+    // than of one building that happened to get some.
+    //
+    // ON THE SOUTH WALL, and that is the half of this test that can actually
+    // regress. A run travelling north–south is seen edge-on (DESIGN §Structures)
+    // and its window renders as a thin band on the wall's top surface — legal,
+    // and invisible from the street. A window nobody can see is the same as no
+    // window, so it does not count toward the first assertion either.
+    for (const b of allTownBuildings()) {
+      const facing = (b.windows ?? []).filter((p) => p.y === b.y1);
+      expect(facing.length, `${b.id} has no window on its façade`).toBeGreaterThan(0);
+    }
+  });
+
+  it("gives a chimney only to the one building anybody sleeps in", () => {
+    // The chimney is derived from a BED (render/renderer.ts §chimneyCell), and
+    // this is the town-shaped statement of that rule: exactly one building here
+    // is somebody's home, so exactly one gets a stack. It used to be a floor
+    // area, which every building in town cleared.
+    const homes = allTownBuildings().filter((b) => b.furniture.some((f) => f.id === "bed"));
+    expect(homes.map((b) => b.id)).toEqual(["margfrom_house"]);
+  });
+
+  it("puts every skylight INSIDE the ring, clear of the furniture", () => {
+    // Off the ring because a skylight over a wall is a hole cut in the eave —
+    // `stampBuilding` drops those, so a bad coordinate here would be a silent
+    // no-op. Clear of the furniture because the stamp writes both maps and the
+    // renderer draws a skylight a storey above the cell: a shelf under one is
+    // fine and a shelf ON one is two things claiming the same anchor.
+    for (const b of allTownBuildings()) {
+      for (const p of b.skylights ?? []) {
+        expect(isPerimeter(b, p.x, p.y), `${b.id} skylight ${p.x},${p.y} on the ring`).toBe(false);
+        const inside =
+          p.x > b.x0 && p.x < b.x1 && p.y > b.y0 && p.y < b.y1;
+        expect(inside, `${b.id} skylight ${p.x},${p.y} outside`).toBe(true);
+        expect(
+          b.furniture.some((f) => f.x === p.x && f.y === p.y),
+          `${b.id} skylight ${p.x},${p.y} on furniture`,
+        ).toBe(false);
+      }
+    }
+  });
+
+  it("stamps a skylight you can stand under", () => {
+    // The one structure that does not block the cell it occupies. If it ever
+    // started to, the museum's gallery would grow three bollards down its aisle
+    // and Corrigal could not walk the length of her own building.
+    const w = world();
+    const museum = allTownBuildings().find((b) => b.id === "museum")!;
+    for (const p of museum.skylights ?? []) {
+      const cell = w.build[tileKey(p.x, p.y)]!;
+      expect(cell.id).toBe("skylight");
+      expect(structureDef(cell.id).solid).toBe(false);
+      expect(structureDef(cell.id).encloses).toBe(false); // or it would halve the room
+      expect(isWalkable(w, p.x, p.y)).toBe(true);
     }
   });
 

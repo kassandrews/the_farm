@@ -38,7 +38,7 @@ import {
   tileSpeed,
 } from "./world";
 import { placeStructure, removeStructure, structureAt } from "./structures";
-import { rooms } from "./rooms";
+import { rooms, roomAt } from "./rooms";
 import { freezeBuilt } from "./freeze";
 import { roomRemembers, historyLine } from "./history";
 import { stampTown, ensureFixedCast } from "./town";
@@ -51,7 +51,7 @@ import { playerHome } from "./assign";
 import { placeFurniture, removeFurnitureAt } from "./furniture";
 import { FURNITURE, furnitureDef } from "../content/furniture";
 import type { FurnitureId, Facing } from "../content/furniture";
-import { structureDef } from "../content/structures";
+import { structureDef, type StructureId } from "../content/structures";
 import {
   GRASS,
   DIRT,
@@ -1864,6 +1864,19 @@ function placeOrRemove(
     return { changed: true, message: furnitureFlavour(tool, layer), broke: false };
   }
 
+  // A SKYLIGHT NEEDS A ROOF OVER IT, and that test lives here rather than in
+  // `canPlaceStructure` because it is the one placement question that depends on
+  // ROOMS. sim/rooms.ts already imports sim/structures.ts for `structureAt`, so
+  // asking the other way round would put a cycle between them for one predicate.
+  // This function is the single build action and already holds `rooms`.
+  //
+  // INTERIOR ONLY, not `roofRoomAt`, which also answers yes over the walls: the
+  // shell is roofed, and a skylight in the shell would be a hole cut over solid
+  // masonry at the eave. You put one over the floor you are standing on.
+  if (tool === "skylight" && !roomAt(world, x, y)) {
+    return { changed: false, message: "A skylight wants a roof to go in.", broke: false };
+  }
+
   const roomsBefore = rooms(world).length;
   if (!placeStructure(world, x, y, tool, finish)) {
     return { changed: false, message: `Can't put a ${structureDef(tool).name.toLowerCase()} there.`, broke: false };
@@ -1879,13 +1892,20 @@ function placeOrRemove(
   return { changed: true, message: buildFlavour(tool), broke: false };
 }
 
-function buildFlavour(tool: "wall" | "door" | "window" | "fence"): string {
+function buildFlavour(tool: StructureId): string {
   if (tool === "wall") return "A wall goes up. It holds.";
   // About the boundary, not about ownership — nothing in this game enforces one
   // (DESIGN: land you own, not a job you have). A fence says where a thing is,
   // and everybody can still walk round it.
   if (tool === "fence") return "A fence. Now the ground on this side is a place.";
   if (tool === "door") return "A door. Now it's somewhere you go into.";
+  // The one opening that faces UP, and the line says the thing the others can't:
+  // the rest of them look at the town, and this one looks at the weather there
+  // isn't any of (§Absent by design).
+  if (tool === "skylight") return "A skylight. Now the room has an opinion about the sky.";
+  if (tool === "window_transom") return "A transom. High enough that it's only for the light.";
+  if (tool === "window_narrow") return "A narrow window. A tall thin slice of outside.";
+  if (tool === "window_paned") return "A paned window. The same view, filed into squares.";
   // About the object, not about you (§Tone), and about the one thing a window
   // does that a wall doesn't — which is not "let light in" but "let the room be
   // seen having light in it".

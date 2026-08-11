@@ -11285,6 +11285,103 @@ building in town), and the barn needs nothing (ox-blood does it in one field).
 What has no identity yet is **Prudence's house** — it is pine, like a default,
 and "the one where somebody lives" is currently carried by two bushes.
 
+*Answered by the section below:* her house is the only one in town with a
+chimney, which is precisely "the one where somebody lives" said in one mark.
+
+## Four sashes, one chimney, and a hole in the roof (10 Aug 2026)
+
+Every building in town is glazed, exactly one has a stack, and the museum has
+skylights. Three changes that turned out to be one change: the town's six
+buildings were telling each other apart by material alone, and openings are the
+other half of what a façade is.
+
+### A chimney is a BED, not a floor area
+
+`chimneyCell` gave a stack to any room of twelve interior cells or more. The
+reasoning in its docblock was right — "the point of one is that somebody lives
+under it" — and the measurement was a proxy that failed on its own terms: every
+building in town clears twelve, so the shop, the salvage shed, the barn and the
+**museum** all had chimneys. A chimney on everything says nothing.
+
+It asks for a bed now. Prudence's is the one bed in the town, so hers is the one
+chimney; a house you built grows one when you put a bed in it, which is a better
+moment than clearing a square footage. A **cot** deliberately does not count —
+it is what you sleep on before you have settled anywhere.
+
+No migration: a stack is derived and nothing about one is stored, so the rule
+changed in every live save at once. That is what deriving it bought.
+
+### Four sashes, not one sash with a style field
+
+`window`, `window_paned`, `window_transom`, `window_narrow` — four rows in
+`content/structures.ts`, four chips in the build bar. A style field on
+`BuildCell` was the alternative and lost for the reason `fence` is not a short
+wall: a transom is a different opening, not a different colour. It would also
+have needed a save field, a migration, and a second axis bolted onto the swatch
+level, which is typed to `SkinId` end to end. Four ids need **no migration at
+all** — an id is a string in a union and no save contained them yet.
+
+Settled, don't relitigate:
+
+- **A run merges with its own kind only.** A paned sash beside a plain one is
+  two windows, because that is what the player asked for by placing two things.
+  Matching on "is a window" ran muntins into a plain opening and stopped them in
+  mid-air at the cell boundary.
+- **The narrow sash never merges**, and that is the whole of what makes it
+  narrow. Two side by side are a colonnade; merging them would produce a plain
+  window spread over two cells and quietly delete the tool.
+- **Muntins step off the WORLD column**, at 8px — the glass rake's argument at a
+  different period. Bars measured from the cell edge would put one at the same
+  offset in every cell, which is the per-cell edges rule in the disguise it
+  wears best.
+- **Side-on, all four draw the same band.** There is no face and therefore no
+  shape to tell apart; four different bands would invent a distinction the
+  geometry does not have.
+
+Who wears what, and it is most of what tells the six apart now: hall and museum
+**paned** (institutions are glazed to a specification), shop one three-cell
+**shopfront** (you are meant to see the stock from the square), Facility two
+**slits** (a facility that let you see in would not be one), barn a **transom**
+band and a slit, Prudence a plain cottage window and a slit.
+
+### A skylight is PLACED, on the floor under it
+
+DESIGN says roofs are derived and never placed. A skylight does not break that,
+it threads it: you still do not build the roof, you cut a hole in the one that
+turned up. So it is the first structure that lives on an **interior** cell — you
+place it on the floor you are standing on, and it draws a storey above in the
+roof pass.
+
+- Not solid and does not enclose. Both are the same fact told to two systems: you
+  walk under it, and the room fill must flood through it or a skylight would
+  halve its own room and un-roof the house.
+- `mount: "roof"` on the def, mirroring the painting's `mount: "wall"`, so
+  everything that reads the build layer as "something is in the way" asks first.
+  Without it you could not put a table under your own skylight.
+- The roofed test lives in `sim/game.ts` and not `canPlaceStructure`, because
+  `sim/rooms.ts` already imports `sim/structures.ts` — asking the other way round
+  would put a cycle between them for one predicate.
+- Interior only, never the shell: one over a wall is a hole cut in the eave.
+
+The museum gets three, up the middle of the gallery on the aisle rows, on the
+door's own column. It is the only room in town too deep to light from its own
+walls. **Three and not six** — two abreast would put a skylight in every other
+cell of a six-wide roof, which is the band rule waiting to happen.
+
+### The ladder had a stale filter in five places
+
+Every rung that moves a building demolishes its old footprint with
+`id === "wall" || "door" || "window"` and then re-stamps from the **live** table.
+The coordinates are history; the **vocabulary is current**, and nobody had said
+so. The moment the table grew three sashes, each of those rungs left a window
+standing on an old footprint — and `stampBuilding` is all-or-nothing on an
+occupied cell, so one orphaned sash blocked the re-stamp and the building did
+not come back. No error, no roof, furniture missing.
+
+It is `isTownShell()` in `sim/town.ts` now, in one place. Four migration tests
+caught it, which is exactly what they are for. **If you add a structure the town
+stamps, put it in that function.**
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

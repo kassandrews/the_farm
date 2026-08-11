@@ -532,6 +532,12 @@ export type BuildTool =
   | "wall"
   | "door"
   | "window"
+  /** The other three sashes (content/structures.ts §StructureId). */
+  | "window_paned"
+  | "window_transom"
+  | "window_narrow"
+  /** The hole in the roof, placed on the floor under it. */
+  | "skylight"
   /** Posts and rails, and pointedly NOT a short wall — see
    *  content/structures.ts §fence for why it does not enclose. */
   | "fence"

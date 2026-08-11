@@ -22,7 +22,37 @@
 import type { BuildPrice } from "./items";
 import type { SkinClass } from "./skins";
 
-export type StructureId = "wall" | "door" | "window" | "fence";
+export type StructureId =
+  | "wall"
+  | "door"
+  /** The four sashes. FOUR ROWS AND NOT ONE ROW WITH A STYLE FIELD, which is the
+   *  same call `fence` made against being a short wall: a transom and a tall
+   *  sash are two different openings, not one opening in two colours. A style
+   *  field would also have had to live on BuildCell — a save field, a migration,
+   *  and a second axis of choice bolted onto the swatch level, which is typed to
+   *  finishes end to end.
+   *
+   *  Four ids cost four table rows and four build chips and need NO migration at
+   *  all: an id is a string in a union, and no save in the world contains these
+   *  yet. */
+  | "window"
+  | "window_paned"
+  | "window_transom"
+  | "window_narrow"
+  /** The one structure that is not in a wall. See its row. */
+  | "skylight"
+  | "fence";
+
+/** Is this one of the sashes? Asked in five places — the wall run, the shell
+ *  finish, the renderer's dispatch, the merge test and the town stamp — and
+ *  every one of them wants "an opening in a wall", not a particular sash.
+ *
+ *  A prefix test rather than a set literal, so the next sash is one table row
+ *  and nothing else. The ids are save keys and therefore frozen, which is what
+ *  makes leaning on their spelling safe here and nowhere else. */
+export function isWindow(id: StructureId): boolean {
+  return id === "window" || id.startsWith("window_");
+}
 
 export interface StructureDef {
   id: StructureId;
@@ -49,6 +79,22 @@ export interface StructureDef {
    *  unwearable by anything in the game. They were obtainable and had nowhere
    *  to go. */
   finishes: SkinClass[];
+  /** Where it sits, when that is not "standing on this cell".
+   *
+   *  `"roof"` is the skylight and is the only value, and it exists for the same
+   *  reason `mount: "wall"` exists on the painting: the piece occupies a cell in
+   *  the layer without occupying the GROUND of that cell. Everything that reads
+   *  the build layer as "something is in the way here" — furniture placement,
+   *  the raised draw pass — has to ask this before it assumes a wall.
+   *
+   *  Omitted on every other row, which is the honest default: a wall is on the
+   *  ground and a fence is on the ground. */
+  mount?: "roof";
+}
+
+/** Does this piece live a storey up, over a cell rather than on it? */
+export function overhead(id: StructureId): boolean {
+  return STRUCTURES[id].mount === "roof";
 }
 
 export const STRUCTURES: Record<StructureId, StructureDef> = {
@@ -120,6 +166,69 @@ export const STRUCTURES: Record<StructureId, StructureDef> = {
     // meets a wooden window and no further.
     finishes: [],
   },
+  window_paned: {
+    id: "window_paned",
+    name: "Paned window",
+    // A window's price and not a penny more. The muntins are the SAME opening
+    // divided up — no more glass, no more hole in the wall — and charging for
+    // them would be charging for a pattern, which is the finish rule (a look is
+    // free) wearing a different hat.
+    cost: 4,
+    solid: true,
+    encloses: true,
+    finishes: [],
+  },
+  window_transom: {
+    id: "window_transom",
+    name: "Transom",
+    // HALF A WINDOW'S PRICE, because it is half a window: a band of glass high
+    // in the wall, over your head. That is the one place a cost may follow a
+    // shape rather than a material, and it does it honestly — you get less
+    // opening and you pay less for it.
+    cost: 2,
+    solid: true,
+    encloses: true,
+    finishes: [],
+  },
+  window_narrow: {
+    id: "window_narrow",
+    name: "Narrow window",
+    // The transom's price, turned ninety degrees. Same argument.
+    cost: 2,
+    solid: true,
+    encloses: true,
+    finishes: [],
+  },
+  skylight: {
+    id: "skylight",
+    name: "Skylight",
+    // THE ONE STRUCTURE THAT IS NOT IN A WALL, and the reason it is a structure
+    // at all rather than a derived roof feature like the chimney.
+    //
+    // DESIGN's rule is that roofs are DERIVED AND NEVER PLACED, and it means it:
+    // you close a shape and the roof arrives, you never buy one. A skylight does
+    // not break that rule, it threads it — you still do not build the roof, you
+    // cut a hole in the one that turned up. So it is placed on an INTERIOR cell,
+    // the floor you are standing on when you look up, and it draws a storey
+    // above that cell in the roof pass. Knock a wall through and the roof goes;
+    // the skylight stays in the build layer, unbuilt-over and undrawn, and comes
+    // back the moment the room closes again. That is the same relationship the
+    // roof itself has with the walls.
+    //
+    // A window's price, because it is a window. It is only the sky it faces that
+    // makes it a different object.
+    cost: 4,
+    // NOT SOLID and it DOES NOT ENCLOSE, and both are the same fact stated to
+    // two different systems. It is over your head: you walk under it, and the
+    // room fill has to flood straight through the cell it occupies or a skylight
+    // would cut its own room in half and un-roof the house it is set into.
+    solid: false,
+    encloses: false,
+    // Joinery, like a door and like a sash. The frame is timber and the hole is
+    // in somebody else's roof.
+    finishes: [],
+    mount: "roof",
+  },
   fence: {
     id: "fence",
     name: "Fence",
@@ -162,7 +271,7 @@ export function structureDef(id: StructureId): StructureDef {
  *  each other. So does a window, for the same reason and more strongly — you can
  *  see straight through the fact that a window is still wall. */
 export function joinsWallRun(id: StructureId): boolean {
-  return id === "wall" || id === "door" || id === "window";
+  return id === "wall" || id === "door" || isWindow(id);
 }
 
 /** Does this join a FENCE run? Fences only, and the exclusion is the point: a

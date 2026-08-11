@@ -18,6 +18,7 @@
 // sim/world.ts (PLAZA spans x -5..5, y -5..3).
 
 import type { SkinId } from "./skins";
+import type { StructureId } from "./structures";
 import type { FurnitureId, Facing } from "./furniture";
 import type { CounterId } from "./counters";
 import type { CharId } from "./cast";
@@ -382,8 +383,26 @@ export interface TownBuilding {
    *  Put them on a SOUTH wall, like doors, and for the same reason: a run
    *  travelling north–south is seen edge-on and has no face to cut an opening
    *  into. A window on a side wall renders as a thin bright band, which is the
-   *  honest amount of nothing there is to show. */
-  windows?: { x: number; y: number }[];
+   *  honest amount of nothing there is to show.
+   *
+   *  WHICH SASH is the building's, not the town's. There are four
+   *  (content/structures.ts §StructureId) and they carry most of what tells
+   *  these six apart now that they all have glass: the hall and the museum wear
+   *  paned sashes because institutions are glazed properly, the shop has one
+   *  wide shopfront, the salvage shed has mean little slits, and the barn has a
+   *  band up under its gable. Omitted means the plain one. */
+  windows?: { x: number; y: number; sash?: StructureId }[];
+  /** Holes cut in the roof, placed on the INTERIOR cells they hang over.
+   *
+   *  Only the museum has any, and that is the shape of the thing rather than a
+   *  shortage of ambition: a skylight is for a room too deep to light from its
+   *  own walls, and the museum is the only room in town that is. Everything else
+   *  here is four or five cells from a window.
+   *
+   *  Interior, never the wall ring — a skylight over the shell is a hole cut in
+   *  the eave. `stampBuilding` refuses to place one anywhere else, so a mistake
+   *  in this table is a missing skylight rather than a broken roof. */
+  skylights?: { x: number; y: number }[];
   /** Who the town housed here when you arrived, if anyone. This is the ONLY
    *  authored link between a person and a place, and it is a starting
    *  condition, not a fact: the villager claims this building's bed once, at
@@ -442,6 +461,21 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // The museum is built of stone to last; the town hall was painted, once, by
     // somebody following a schedule.
     finish: "sage",
+    // PANED, and flanking the door in matching pairs — which is the whole of what
+    // makes a building look official at this scale. The south wall runs x -3..3
+    // with the door at 0; -2/-1 and 1/2 each merge into one two-cell sash, and
+    // the corners at -3 and 3 stay solid masonry (see the museum's note: glazing
+    // to the corner reads as a shed with the walls missing).
+    //
+    // Symmetry is the point and it is the ONE building here that gets it. A town
+    // hall is a building that was drawn before it was built; the shed, the barn
+    // and the cottage all put their glass wherever it happened to be wanted.
+    windows: [
+      { x: -2, y: FRONT_N, sash: "window_paned" },
+      { x: -1, y: FRONT_N, sash: "window_paned" },
+      { x: 1, y: FRONT_N, sash: "window_paned" },
+      { x: 2, y: FRONT_N, sash: "window_paned" },
+    ],
     furniture: [
       // The desk he is permanently "at the desk" at, immediately behind him.
       { x: -1, y: -8, id: "table", facing: "s", counter: "hall" },
@@ -499,6 +533,20 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // across the doorstep.
     door: { x: 7, y: 10 },
     finish: "pine",
+    // A COTTAGE WINDOW AND A SLIT, which is what a house looks like when nobody
+    // designed it. The south wall runs x 4..9 with the door at 7 and the corners
+    // at 4 and 9: 5/6 merge into one two-cell window looking out over the lane —
+    // the one she sits at — and 8 is the single cell left between the door and
+    // the corner, which is exactly the shape a narrow sash is for.
+    //
+    // Plain glass, not paned. She is the only building on this street that is
+    // somebody's home rather than somebody's job, and the sash is where that
+    // shows: the hall and the museum are glazed properly and this is glazed.
+    windows: [
+      { x: 5, y: 10 },
+      { x: 6, y: 10 },
+      { x: 8, y: 10, sash: "window_narrow" },
+    ],
     resident: "resident1",
     furniture: [
       // A 1x2 bed along the west wall. Its anchor is what her home resolves to,
@@ -538,6 +586,19 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // for and exactly the one a layout written by eye produces.
     door: { x: 11, y: FRONT_S },
     finish: "whitewash",
+    // ONE SHOPFRONT, three cells wide, and it is the longest run of glass in the
+    // town. The south wall runs x 7..12 with the door at the east end (11) and
+    // the corners at 7 and 12, which leaves 8/9/10 — a single unbroken window,
+    // because that is the difference between a shop and a house with a counter
+    // in it. You are meant to be able to see the stock from the square.
+    //
+    // Which is also why it is plain and not paned: glazing bars are what you put
+    // in when you are not trying to be looked through.
+    windows: [
+      { x: 8, y: FRONT_S },
+      { x: 9, y: FRONT_S },
+      { x: 10, y: FRONT_S },
+    ],
     furniture: [
       // The counter: one 2x1 table across the west half, with her BESIDE its
       // east end at (10,-2) — not behind it, which is where she used to stand
@@ -577,6 +638,19 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // the heap were both ash, which made the town's two most different errands
     // look like the same building at a distance.
     finish: "salvage",
+    // TWO SLITS, one either side of the door, and they do the same joke the
+    // salvage boards do. The south wall runs x 6..10 with the door at 8 and the
+    // corners at 6 and 10, so 7 and 9 are the only cells there are — and a
+    // narrow sash is the right thing in them twice over: it fits, and a facility
+    // that let you see in properly would not be a facility.
+    //
+    // Deliberately NOT merged, which is the narrow sash's own rule doing the
+    // work here rather than a spacing decision (see structures.ts): these are two
+    // windows, symmetric about the door, and the wall between them is the point.
+    windows: [
+      { x: 7, y: FRONT_N, sash: "window_narrow" },
+      { x: 9, y: FRONT_N, sash: "window_narrow" },
+    ],
     furniture: [
       // Shelves he refers to as "the system". He stands beside the counter, at
       // (9,-8).
@@ -665,11 +739,43 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // building reads as a shed with the walls missing; a corner of plain masonry
     // is what says the thing is holding itself up. Same instinct as leaving the
     // sill in: the openings have to be set INTO something.
+    // PANED SINCE THE SASHES ARRIVED. The geometry is unchanged and the argument
+    // above still holds; what changed is that "the plain one" stopped being the
+    // only one there was. A museum and a town hall are the two buildings here
+    // that were glazed by somebody following a specification, and the glazing
+    // bars are the cheapest way to say so — the shop's shopfront and this are
+    // now visibly different KINDS of window rather than the same window in
+    // different quantities.
     windows: [
-      { x: -12, y: FRONT_N },
-      { x: -11, y: FRONT_N },
-      { x: -9, y: FRONT_N },
-      { x: -8, y: FRONT_N },
+      { x: -12, y: FRONT_N, sash: "window_paned" },
+      { x: -11, y: FRONT_N, sash: "window_paned" },
+      { x: -9, y: FRONT_N, sash: "window_paned" },
+      { x: -8, y: FRONT_N, sash: "window_paned" },
+    ],
+    // THREE SKYLIGHTS, UP THE MIDDLE OF THE GALLERY, and the museum is the only
+    // building in the world with any.
+    //
+    // A skylight is for a room too deep to light from its own walls, and this is
+    // the only one that is: the interior runs x -12..-7 by y -14..-7, so the far
+    // end is eight cells from the façade and its glass. Everything else in town
+    // is four or five cells from a window. That is the rule, stated here rather
+    // than derived in the renderer — a skylight is PLACED (structures.ts), so
+    // where it goes is a decision somebody makes, not a fact about a room.
+    //
+    // ON THE AISLES AND NOT THE CASES. The plinth rows are -13, -11, -9 and -7,
+    // so -12, -10 and -8 are the walkways you actually stand in, and a gallery
+    // lights the floor you walk on rather than the top of a display case. On the
+    // door's own column (-10) so the three of them line up with the way in.
+    //
+    // Three and not six. Two abreast would have put a skylight in every other
+    // cell of a six-wide roof, which is the per-cell edges rule waiting to
+    // happen (CLAUDE.md) — a roof stops reading as a roof the moment its
+    // features start agreeing with the tile grid. One per aisle, two cells
+    // apart, reads as a row of lights.
+    skylights: [
+      { x: -10, y: -12 },
+      { x: -10, y: -10 },
+      { x: -10, y: -8 },
     ],
     furniture: [
       // Corrigal's desk, in the lobby by the door rather than at the far end.
@@ -774,6 +880,21 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // a feature — the Gremlin has the tins, and now there is a reason to want
     // one. Same shape of hook as the museum's marble.
     finish: "oxblood",
+    // A BAND UP HIGH AND ONE SLIT, which is how a barn is glazed: you do not put
+    // a sitting-room window in a building full of hay. The south wall runs
+    // x -7..-2 with the door at -4 and the corners at -7 and -2, so -6/-5 merge
+    // into one two-cell transom over the yard, and -3 is the single cell on the
+    // far side of the door.
+    //
+    // The transom is the reason that sash exists at all. A barn's windows are
+    // over your head — above the doors, above whatever is stacked against the
+    // wall — and every other opening in this game sits at eye level, so there
+    // was no shape in the table that could say "high up" until there was one.
+    windows: [
+      { x: -6, y: 17, sash: "window_transom" },
+      { x: -5, y: 17, sash: "window_transom" },
+      { x: -3, y: 17, sash: "window_narrow" },
+    ],
     furniture: [
       // What the last occupant left. Set dressing and nothing more: the actual
       // wood and stone are in your pockets at world creation (sim/game.ts), NOT

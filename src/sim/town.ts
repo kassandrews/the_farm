@@ -74,6 +74,32 @@ function occupied(t: StampTarget, x: number, y: number): boolean {
   return key in t.build || key in t.furniture || key in t.crops;
 }
 
+/** Is this a piece the TOWN put up as part of a building's shell?
+ *
+ *  Exists for the migration ladder, and it is the one thing in that ladder that
+ *  is deliberately NOT frozen. A rung that moves a building demolishes its old
+ *  footprint and then re-stamps from the live table, so the demolition has to
+ *  know every id the live table can produce — the COORDINATES are history and
+ *  stay written down in the rung, the VOCABULARY is current.
+ *
+ *  Those rungs each carried their own `wall || door || window` test, and the
+ *  moment the table grew three more sashes and a skylight, every one of them
+ *  quietly left a window standing on an old footprint. That is not a cosmetic
+ *  leftover: `stampBuilding` is all-or-nothing on an occupied cell, so one
+ *  orphaned sash blocks the re-stamp and the building simply does not come back
+ *  — no error, no roof, and its furniture missing. It cost four failing
+ *  migration tests to find, which is exactly what those tests are for.
+ *
+ *  Widening it is safe for real old saves, which cannot contain an id that did
+ *  not exist when they were written; it only ever matches more in a save that
+ *  passes through after the table changed, which is the case it is for.
+ *
+ *  A rug the player laid inside the shop is not part of the shop — furniture is
+ *  never this function's business, and neither is a fence. */
+export function isTownShell(id: string): boolean {
+  return id === "wall" || id === "door" || id === "skylight" || id === "window" || id.startsWith("window_");
+}
+
 /** Stamp one building. Returns false without touching anything when the player
  *  has built or planted anywhere in its footprint.
  *
@@ -94,7 +120,8 @@ export function stampBuilding(t: StampTarget, b: TownBuilding, probe?: TerrainPr
   for (const c of cells) {
     if (!isPerimeter(b, c.x, c.y)) continue;
     const isDoor = c.x === b.door.x && c.y === b.door.y;
-    const isWindow = !isDoor && (b.windows ?? []).some((w) => w.x === c.x && w.y === c.y);
+    const win = isDoor ? undefined : (b.windows ?? []).find((w) => w.x === c.x && w.y === c.y);
+    const isWindow = win !== undefined;
     // The door keeps `finish` while the walls may take `walls`: a leaf is
     // joinery and joinery is wood, even in a stone building. The door's SHELL —
     // the frame around the opening — picks the masonry up from its neighbouring
@@ -104,9 +131,26 @@ export function stampBuilding(t: StampTarget, b: TownBuilding, probe?: TerrainPr
     // openings take `finish` and only plain wall takes `walls`.
     const joinery = isDoor || isWindow;
     t.build[tileKey(c.x, c.y)] = {
-      id: isDoor ? "door" : isWindow ? "window" : "wall",
+      // The sash the table asked for, or the plain one — `sash` is optional
+      // precisely so the five buildings that want the ordinary window do not
+      // have to name it (content/town.ts §windows).
+      id: isDoor ? "door" : win ? (win.sash ?? "window") : "wall",
       finish: joinery ? b.finish : (b.walls ?? b.finish),
     };
+  }
+
+  // Skylights, on INTERIOR cells and never on the ring. The filter is not
+  // belt-and-braces: a skylight is drawn a storey up over the cell it names, so
+  // one on the wall ring would be a hole cut in the eave, and the renderer's own
+  // interior test would then silently drop it — a build cell that exists, costs
+  // a save entry and draws nothing. Refusing it here is where it can be noticed.
+  //
+  // No finish decision to make: a skylight is joinery like a door and a sash, so
+  // it takes `finish` and never `walls`. The masonry it is set into is the ROOF,
+  // which takes its own material from the walls at draw time (render/roof.ts).
+  for (const s of b.skylights ?? []) {
+    if (isPerimeter(b, s.x, s.y)) continue;
+    t.build[tileKey(s.x, s.y)] = { id: "skylight", finish: b.finish };
   }
 
   for (const f of b.furniture) {

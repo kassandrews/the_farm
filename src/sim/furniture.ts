@@ -32,6 +32,7 @@ import { furnitureDef, footprint, covers, MAX_SPAN } from "../content/furniture"
 import type { SkinId } from "../content/skins";
 import { tileAt, tileKey, refusesConstruction, refusesFooting } from "./world";
 import { touchBuild } from "./structures";
+import { overhead } from "../content/structures";
 import { tileDef } from "../content/tiles";
 
 export interface PlacedFurniture {
@@ -120,7 +121,14 @@ export function canPlaceFurniture(
     if (refusesFooting(world, x, y)) return false; // nothing stands in the shallows
     if (refusesConstruction(world, x, y)) return false; // her trees' ground
     if (world.crops[key]) return false;
-    if (world.build[key]) return false; // no furniture inside a wall
+    // No furniture inside a wall — but a SKYLIGHT is not in the way of
+    // anything. It is a hole in the roof a storey above this cell, and the cell
+    // itself is open floor you can stand on; refusing a table under one would
+    // mean the one structure you place from inside a room made the room's floor
+    // unusable. Asked as "does it stand up" rather than by naming the skylight,
+    // so anything else overhead inherits the right answer.
+    const built = world.build[key];
+    if (built && !overhead(built.id)) return false;
   }
   return true;
 }

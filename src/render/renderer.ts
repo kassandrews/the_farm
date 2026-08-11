@@ -56,6 +56,7 @@ import {
   floorFinish,
   townMown,
   PLAZA,
+  FLOOR_DEFAULT_FINISH,
 } from "../sim/world";
 import { dayNumber } from "../sim/found";
 import { letterFor } from "../content/found";
@@ -116,6 +117,7 @@ import {
   type MoteKit,
   type Tint,
 } from "../content/biomes";
+import { isWindow, overhead, type StructureId } from "../content/structures";
 import { FLORA } from "../content/flora";
 import { growthStage, fruitReady } from "../sim/garden";
 import { present } from "../sim/presence";
@@ -379,6 +381,11 @@ const GLASS_WARM_LIT = "#f6d79b";
  *  grain.ts is entirely about — a highlight whose period divides the tile is a
  *  per-cell mark wearing a diagonal. */
 const GLASS_RAKE = 40;
+/** How often a paned sash puts a glazing bar up, in WORLD px — the rake's own
+ *  argument at a different period (see drawWindow §muntins). Half a tile, so an
+ *  unmerged sash gets one bar and two lights, which is what the build icon
+ *  promises, and a long run gets them evenly across its mullions. */
+const MUNTIN = 8;
 const DOOR_JAMB = 3;
 /** How far the roof is pulled back over a side doorway. */
 const DOOR_NOTCH = 4;
@@ -1020,13 +1027,6 @@ function rockIdOf(id: number): number {
   return id === ORE_VEIN ? BEDROCK : id;
 }
 
-/** The smallest room that gets a chimney, in interior cells.
- *
- *  A shed is not a house. Without a floor here every four-tile store cupboard in
- *  the town grows a stack, and a chimney on everything says nothing — the point
- *  of one is that somebody lives under it. Twelve is about a room you could put
- *  a bed and a table in. */
-const CHIMNEY_MIN = 12;
 
 /** The most any region's air may be. `drawMotes` early-outs on this before it
  *  asks which region a cell is in — the field costs nine sites and almost no
@@ -1053,10 +1053,26 @@ export const MOTE_MAX = 0.4;
  *  edge it breaks the silhouette where the roof meets the sky, which is where a
  *  chimney is legible. Same reason the door cue moved to a roof notch.
  *
+ *  A HEARTH IS A BED, and that is the whole of the test now.
+ *
+ *  It used to be a floor area — twelve interior cells or more — on the reasoning
+ *  that a shed is not a house. The reasoning was right and the measurement was a
+ *  proxy that fails on its own terms: every building in the town clears twelve,
+ *  so the shop, the salvage shed, the barn and the MUSEUM all grew stacks, and a
+ *  chimney on everything says exactly nothing. The point of one is that somebody
+ *  lives under it, so the thing to ask is whether anybody does — and the game
+ *  already has an object that means "somebody lives here". Prudence's is the one
+ *  bed in the town, so hers is the one chimney; put a bed in a house you built
+ *  and it grows one, which is a better moment than clearing a square footage.
+ *
+ *  `hearth` is passed rather than looked up so this stays a pure function of the
+ *  room, which is what its test is for. The caller has already walked the
+ *  room's furniture for the lamp check, so the answer costs nothing.
+ *
  *  Exported for its test — the choice has to be stable and inside the room, and
  *  neither is visible in a screenshot of one house. */
-export function chimneyCell(room: Room): string | null {
-  if (room.interior.size < CHIMNEY_MIN) return null;
+export function chimneyCell(room: Room, hearth: boolean): string | null {
+  if (!hearth) return null;
   const cells = [...room.interior].map((k) => k.split(",").map(Number));
   const ys = cells.map((c) => c[1]);
   const y0 = Math.min(...ys);
@@ -2149,7 +2165,10 @@ export class Renderer {
         // not by how much the player has ever built.
         const key = tileKey(tx, ty);
         const built = world.build[key];
-        if (built) {
+        // OVERHEAD PIECES ARE NOT IN THIS PASS. A skylight lives a storey up and
+        // is drawn by the roof, over the same cell (see drawRoofCell); reaching
+        // it here would stand it on the floor as a wall.
+        if (built && !overhead(built.id)) {
           const x = tx;
           const y = ty;
           this.raised.push({
@@ -2218,6 +2237,14 @@ export class Renderer {
                   fall,
                   alpha,
                   this.chimney.get(roofRoom.id) === tileKey(x, y),
+                  // The one roof feature that is PLACED, read straight off the
+                  // build layer at the cell the roof is covering. Interior only
+                  // — `roofRoom` also covers the shell, and a skylight stamped
+                  // over a wall is a hole cut in the eave (sim/game.ts refuses
+                  // to place one there; this refuses to draw one, so a
+                  // hand-edited save is a missing skylight rather than a
+                  // hole through the masonry).
+                  world.build[key]?.id === "skylight" && roofRoom.interior.has(key),
                 ),
             });
           }
@@ -3391,15 +3418,22 @@ export class Renderer {
         // Interior only: a lamp standing in the wall is not a thing, and a lamp
         // OUTSIDE a lit window is the street lighting the room, backwards.
         let lit = false;
+        // And does anybody LIVE here, which is the chimney's question. Same walk
+        // — the furniture is already in hand — and no early exit until both are
+        // settled, because a room can answer them in either order.
+        let hearth = false;
         for (const key of room.interior) {
           const piece = world.furniture[key];
-          if (piece && furnitureDef(piece.id).light) {
-            lit = true;
-            break;
-          }
+          if (!piece) continue;
+          if (furnitureDef(piece.id).light) lit = true;
+          // A BED AND NOT A COT. A cot is canvas slung on a frame — the thing
+          // you sleep on when you have not settled anywhere yet — and a stack
+          // over one would say the opposite of what the cot is for.
+          if (piece.id === "bed") hearth = true;
+          if (lit && hearth) break;
         }
         this.roomLit.set(room.id, lit);
-        this.chimney.set(room.id, chimneyCell(room));
+        this.chimney.set(room.id, chimneyCell(room, hearth));
         for (const key of covered) this.roofIndex.set(key, room);
       }
       // Forget fade state for rooms that no longer exist, so the map doesn't
@@ -3767,6 +3801,7 @@ export class Renderer {
     fall: RoofPitch,
     alpha: number,
     chimney = false,
+    skylight = false,
   ): void {
     const ctx = this.ctx;
     // The whole ROOM's material, decided once by `roofFinish`, not read off the
@@ -3949,8 +3984,81 @@ export class Renderer {
     // roof, where the next row north painted straight over it and the whole
     // thing read as not having been drawn at all.
     if (chimney) this.drawChimney(px, py, skin);
+    // AFTER THE EAVES AND THE CHIMNEY, because a skylight is a hole in the plane
+    // and everything above draws the plane. It is also the only thing here that
+    // sits INSIDE one cell rather than at a boundary — the eaves and the courses
+    // are all edge-or-world-stepped, and a skylight is a discrete object, so a
+    // mark centred in its own cell is what it should be. The band rule is about
+    // surfaces, and this is emphatically not one.
+    if (skylight) this.drawSkylight(world, tx, ty, px, py, fall);
 
     ctx.globalAlpha = prev;
+  }
+
+  /** A skylight: a hole cut in a roof that arrived on its own.
+   *
+   *  Drawn on the ROOF plane, at the cell it was placed on a storey below — see
+   *  content/structures.ts §skylight for why it is placed from inside the room
+   *  and not on the roof itself.
+   *
+   *  ALIGNED TO THE FALL. A skylight is set into a slope, so it is longer along
+   *  the direction the roof falls than across it — that is the one line that
+   *  makes it read as being IN the roof rather than lying on top of it, and
+   *  `fall.axis` already knows which way the ridge runs. Square, it photographed
+   *  as a crate.
+   */
+  private drawSkylight(
+    world: WorldState,
+    tx: number,
+    ty: number,
+    px: number,
+    py: number,
+    fall: RoofPitch,
+  ): void {
+    const ctx = this.ctx;
+    const cell = world.build[tileKey(tx, ty)];
+    const leaf = skinDef(cell?.finish ?? FLOOR_DEFAULT_FINISH);
+    // Warm when there is a lamp burning under it and dark enough outside to
+    // tell — the same pair of tests the sashes take, for the same reason. A
+    // skylight glowing at noon is orange paint on a roof.
+    const room = this.roofIndex.get(tileKey(tx, ty));
+    const lit = Boolean(room && this.roomLit.get(room.id)) && this.darkness > 0.12;
+
+    // Four px of roof all round on the short axis, two on the long one. The
+    // margin is what says "set into" — a light running to the cell edge would
+    // meet its neighbours' and tile the roof, which is the failure the display
+    // cases and the shingles both had.
+    const longNS = fall.axis === "ew";
+    const mx = longNS ? 4 : 2;
+    const my = longNS ? 2 : 4;
+    const w = TILE - mx * 2;
+    const h = TILE - my * 2;
+    const x = px + mx;
+    const y = py + my;
+
+    // The kerb it stands on, throwing a shadow onto the shingles below it. Drawn
+    // first and one px proud on the south and east, which is the same light this
+    // whole renderer works in — key from the north-west.
+    ctx.fillStyle = "rgba(0,0,0,0.28)";
+    ctx.fillRect(x, y + 1, w + 1, h + 1);
+
+    ctx.fillStyle = leaf.color;
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = lit ? GLASS_WARM : GLASS;
+    ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+    // ONE BAR ACROSS THE SHORT WAY, which is a glazing bar and is also the whole
+    // of what stops a small blue rectangle reading as a puddle. Across the SHORT
+    // axis so it divides the long dimension, which is what a real one does.
+    ctx.fillStyle = leaf.shade;
+    if (longNS) ctx.fillRect(x + 1, y + Math.floor(h / 2), w - 2, 1);
+    else ctx.fillRect(x + Math.floor(w / 2), y + 1, 1, h - 2);
+    // The sky caught in it, on the up-slope half only — one flat pane of glass
+    // tilted at the sky is brightest where it faces the light, and filling the
+    // whole light evenly is what made the first version look like a hole rather
+    // than a window.
+    ctx.fillStyle = lit ? GLASS_WARM_LIT : GLASS_LIT;
+    if (longNS) ctx.fillRect(x + 1, y + 1, w - 2, Math.floor(h / 2) - 1);
+    else ctx.fillRect(x + 1, y + 1, Math.floor(w / 2) - 1, h - 2);
   }
 
   /** The stack, and what comes out of it.
@@ -4787,8 +4895,8 @@ export class Renderer {
       if (!(mask & CONNECT_S)) ctx.fillRect(px, base - 1, TILE, 1);
     }
 
-    if (cell.id === "window") {
-      this.drawWindow(world, tx, ty, px, top, base, sideOn, leaf, skin);
+    if (isWindow(cell.id)) {
+      this.drawWindow(world, tx, ty, px, top, base, sideOn, leaf, skin, cell.id);
     }
 
     if (cell.id === "door") {
@@ -4890,6 +4998,13 @@ export class Renderer {
    *  The same answer `content/town.ts` already gives for the museum's display
    *  cases ("cells in the same ROW render as one continuous case"), which is the
    *  nearest thing in the codebase to this problem.
+   *
+   *  ONE METHOD FOR FOUR SASHES, and the four differ in exactly two numbers —
+   *  where the opening starts and where it stops — plus whether they merge and
+   *  whether they carry muntins. Everything else about a window is the same
+   *  window: the glass, the rake, the frame, the sill, the drip course, the lit
+   *  pane pushed to the glow pass. Four copies of that would be four places to
+   *  fix the next thing a screenshot finds, and it has already found five.
    */
   private drawWindow(
     world: WorldState,
@@ -4901,10 +5016,25 @@ export class Renderer {
     sideOn: boolean,
     leaf: SkinDef,
     shell: SkinDef,
+    sash: StructureId,
   ): void {
     const ctx = this.ctx;
-    const isWindow = (dx: number, dy: number) =>
-      world.build[tileKey(tx + dx, ty + dy)]?.id === "window";
+    // MERGES WITH ITS OWN KIND ONLY. A run of transoms is one long transom, and
+    // a paned sash beside a plain one is two windows that happen to be adjacent
+    // — which is true, and is what the player asked for by placing two different
+    // things. Matching on "is a window" instead would have run a plain opening
+    // straight into a paned one and left the muntins stopping in mid-air at the
+    // cell boundary.
+    //
+    // A NARROW SASH NEVER MERGES, and that is the whole of what makes it narrow.
+    // Two side by side are two slits with wall between them — a colonnade, which
+    // is the shape you reach for one for. Merging them would produce a plain
+    // window spread over two cells and quietly delete the tool.
+    const narrow = sash === "window_narrow";
+    const paned = sash === "window_paned";
+    const transom = sash === "window_transom";
+    const mergesWith = (dx: number) =>
+      !narrow && world.build[tileKey(tx + dx, ty)]?.id === sash;
 
     // Is the room behind this glass lit, and is it dark enough outside to tell?
     // Both, or the pane stays sky-coloured: a warm window at noon reads as
@@ -4919,6 +5049,12 @@ export class Renderer {
       // because you have to walk through it, and a window must not be mistaken
       // for one. A thin bright band inset in the run's top surface says "there
       // is an opening here" without saying "come in".
+      //
+      // ALL FOUR SASHES GET THE SAME BAND, which is not laziness. Side-on there
+      // is no face and therefore no shape to tell apart: what you are looking at
+      // is the top of a wall with a gap in it, and a transom and a tall sash
+      // present the same gap from above. Drawing four different bands here would
+      // be inventing a distinction the geometry does not have.
       ctx.fillStyle = lit ? GLASS_WARM : GLASS;
       ctx.fillRect(px + 3, top + 5, TILE - 6, TILE - 10);
       ctx.fillStyle = leaf.color;
@@ -4930,12 +5066,22 @@ export class Renderer {
     // The opening runs to the cell edge wherever a window continues, and stops
     // short of it wherever the run ends. That single pair of booleans is what
     // merges neighbours into one window.
-    const openW = isWindow(-1, 0);
-    const openE = isWindow(1, 0);
-    const x0 = px + (openW ? 0 : 3);
-    const x1 = px + TILE - (openE ? 0 : 3);
+    const openW = mergesWith(-1);
+    const openE = mergesWith(1);
+    // A narrow sash is inset to a SLIT — six px of masonry either side of a four
+    // px opening on a sixteen px cell. Wider than that and it is just a window
+    // that forgot to merge; narrower and the frame has nothing to hold.
+    const inset = narrow ? 6 : 3;
+    const x0 = px + (openW ? 0 : inset);
+    const x1 = px + TILE - (openE ? 0 : inset);
+    // A TRANSOM STOPS HIGH. Its whole claim is that it is above eye level — a
+    // band of light over a door or a shelf, not something you look out of — so
+    // it keeps the head where every other sash has it and brings the sill up to
+    // just under a third of the way down the face. Five px of glass: enough to
+    // read as an opening at this scale, little enough that it never reads as a
+    // window somebody built badly.
     const y0 = top + WALL_CAP + 3;
-    const y1 = base - 5;
+    const y1 = transom ? y0 + 5 : base - 5;
 
     // The glass. Cool and sky-coloured by day — a window you cannot see through
     // reads as a hole, and one you CAN see through would need an interior, so
@@ -4975,6 +5121,36 @@ export class Renderer {
       // `paneH - 2` keeps the 2px-tall mark off the sill at the bottom of its
       // travel; without it the last column of each rake paints over the ledge.
       ctx.fillRect(x0 + i, y0 + Math.floor(t * (paneH - 2)), 1, 2);
+    }
+
+    // THE MUNTINS, which are the whole of what a paned sash is: the same opening,
+    // divided.
+    //
+    // Stepped off the WORLD column exactly as the rake is, and for the identical
+    // reason — bars measured from the cell edge would put one at the same offset
+    // in every cell, which is the per-cell edges rule in the disguise it wears
+    // best. Eight world px is half a tile, so an unmerged sash carries one bar
+    // and a long run carries them evenly straight across the mullions.
+    //
+    // Skipped on the transom, which is five px of glass and would come out as a
+    // row of dots, and on the narrow sash, which is four px wide and is already
+    // one pane.
+    if (paned) {
+      ctx.fillStyle = leaf.shade;
+      for (let i = 0; i < x1 - x0; i++) {
+        const wx = tx * TILE + (x0 + i - px);
+        // Never on the very edge of the opening: a bar hard against the jamb is
+        // a thick frame, not a division, and at the merged edge it would double
+        // the mullion the run already draws.
+        if ((((wx % MUNTIN) + MUNTIN) % MUNTIN) !== 0) continue;
+        if (x0 + i <= x0 || x0 + i >= x1 - 1) continue;
+        ctx.fillRect(x0 + i, y0, 1, paneH);
+      }
+      // And one across, at the height a sash bar actually sits — above centre,
+      // so the lower lights are the tall ones. Drawn as a single rect over the
+      // whole opening rather than per column, so it runs unbroken through the
+      // mullions of a merged run.
+      ctx.fillRect(x0, y0 + Math.round(paneH * 0.42), x1 - x0, 1);
     }
 
     // The frame, in the WINDOW's own finish — the same division of labour a door

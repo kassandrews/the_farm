@@ -9,7 +9,7 @@ import { starterSkins, defaultSkin } from "../content/skins";
 import { STARTING_CROP } from "../content/crops";
 import { STARTING_SEED } from "./seeds";
 import { newErrands } from "./errands";
-import { stampTown, ensureFixedCast } from "./town";
+import { stampTown, ensureFixedCast, isTownShell } from "./town";
 import type { StampTarget } from "./town";
 import { generatedTile, homesteadOrigin, tileKey, RECLAIM_MS } from "./world";
 import { DIRT } from "../content/tiles";
@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 44;
+export const SCHEMA_VERSION = 45;
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -1079,7 +1079,7 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
           // Only STRUCTURE comes down. A rug the player laid inside the shop is
           // not part of the shop.
           const cell = build[key];
-          if (cell && (cell.id === "wall" || cell.id === "door" || cell.id === "window")) {
+          if (cell && isTownShell(cell.id)) {
             delete build[key];
           }
           // The freeze pins a built room's shape; a pin on a room that no longer
@@ -1200,7 +1200,7 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
             const key = `${x},${y}`;
             delete overrides[key];
             const cell = build[key];
-            if (cell && (cell.id === "wall" || cell.id === "door" || cell.id === "window")) {
+            if (cell && isTownShell(cell.id)) {
               delete build[key];
             }
             delete frozen[key];
@@ -1380,7 +1380,7 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
             const key = `${x},${y}`;
             delete overrides[key];
             const cell = build[key];
-            if (cell && (cell.id === "wall" || cell.id === "door" || cell.id === "window")) {
+            if (cell && isTownShell(cell.id)) {
               delete build[key];
             }
             delete frozen[key];
@@ -1466,7 +1466,7 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
           delete overrides[key];
           delete finishes[key];
           const cell = build[key];
-          if (cell && (cell.id === "wall" || cell.id === "door" || cell.id === "window")) {
+          if (cell && isTownShell(cell.id)) {
             delete build[key];
           }
           delete frozen[key];
@@ -1581,7 +1581,7 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
           delete overrides[key];
           delete finishes[key];
           const cell = build[key];
-          if (cell && (cell.id === "wall" || cell.id === "door" || cell.id === "window")) {
+          if (cell && isTownShell(cell.id)) {
             delete build[key];
           }
           delete frozen[key];
@@ -1688,6 +1688,88 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
       finishes: stamped.finishes ?? raw.finishes,
       garden: stamped.garden ?? raw.garden,
     };
+  },
+
+  /** v45 — the town gets its windows, and only one house keeps its chimney.
+   *
+   *  Three edits, all on cells the town itself put down, and none of them moves
+   *  a building. The chimneys are not here at all: a stack is DERIVED from the
+   *  room (render/renderer.ts §chimneyCell) and nothing about one is stored, so
+   *  changing the rule from "twelve interior cells" to "somebody sleeps here"
+   *  takes effect on the next frame in every save at once. That is what deriving
+   *  it bought.
+   *
+   *  A RE-STAMP WOULD NOT DO. `stampBuilding` is all-or-nothing on an occupied
+   *  cell, and every one of these buildings is fully built in every live save,
+   *  so a stamp would decline all six and change nothing. The edit has to be
+   *  cell by cell.
+   *
+   *  And each cell only where it is STILL WEARING WHAT THE TOWN GAVE IT, which
+   *  is v44's rule restated: a player who knocked the hall's façade through and
+   *  put their own wall there keeps it, and a repainted shop does not get four
+   *  new windows in a colour it no longer wears. The finish is checked as well
+   *  as the id for exactly that reason.
+   *
+   *  Frozen literals throughout, per the standing note. These happen to agree
+   *  with content/town.ts today, which is the point — they are the coordinates
+   *  this rung is about, and they must not follow the table if it moves again. */
+  44: (raw) => {
+    /** Wall → sash. `finish` is what the WALL must still be wearing for the cell
+     *  to count as the town's; the sash is written in the building's joinery
+     *  finish, which is what `stampBuilding` would have written. */
+    const V45_GLAZE: { key: string; wall: string; sash: string; joinery: string }[] = [
+      // The hall, paned, flanking the door at (0,-6). Sage walls, sage joinery.
+      { key: "-2,-6", wall: "sage", sash: "window_paned", joinery: "sage" },
+      { key: "-1,-6", wall: "sage", sash: "window_paned", joinery: "sage" },
+      { key: "1,-6", wall: "sage", sash: "window_paned", joinery: "sage" },
+      { key: "2,-6", wall: "sage", sash: "window_paned", joinery: "sage" },
+      // Prudence's, on the lane: a two-cell window and a slit past the door.
+      { key: "5,10", wall: "pine", sash: "window", joinery: "pine" },
+      { key: "6,10", wall: "pine", sash: "window", joinery: "pine" },
+      { key: "8,10", wall: "pine", sash: "window_narrow", joinery: "pine" },
+      // The shop's three-cell shopfront, west of its door at (11,2).
+      { key: "8,2", wall: "whitewash", sash: "window", joinery: "whitewash" },
+      { key: "9,2", wall: "whitewash", sash: "window", joinery: "whitewash" },
+      { key: "10,2", wall: "whitewash", sash: "window", joinery: "whitewash" },
+      // The Facility's two slits, either side of its door at (8,-6).
+      { key: "7,-6", wall: "salvage", sash: "window_narrow", joinery: "salvage" },
+      { key: "9,-6", wall: "salvage", sash: "window_narrow", joinery: "salvage" },
+      // The barn: a transom band and one slit, either side of its door at
+      // (-4,17). Ox-blood walls, ox-blood joinery.
+      { key: "-6,17", wall: "oxblood", sash: "window_transom", joinery: "oxblood" },
+      { key: "-5,17", wall: "oxblood", sash: "window_transom", joinery: "oxblood" },
+      { key: "-3,17", wall: "oxblood", sash: "window_narrow", joinery: "oxblood" },
+    ];
+    /** The museum's four, which have been PLAIN windows since v28 and become
+     *  paned. A different edit from the fourteen above — the cell is already an
+     *  opening, so what changes is which sash is in it. */
+    const V45_REGLAZE = ["-12,-6", "-11,-6", "-9,-6", "-8,-6"];
+    const V45_MUSEUM_SASH = "whitewash";
+    /** And the three holes in its roof, on the gallery aisles. Placed only onto
+     *  EMPTY cells: the aisle is walkable floor, so anything standing there is
+     *  the player's — a rug, a chair they pulled up, a wall they ran across the
+     *  gallery — and none of that should acquire a skylight. */
+    const V45_SKYLIGHTS = ["-10,-12", "-10,-10", "-10,-8"];
+
+    const build = { ...((raw.build ?? {}) as Record<string, { id: string; finish: string }>) };
+    const furniture = (raw.furniture ?? {}) as Record<string, unknown>;
+
+    for (const g of V45_GLAZE) {
+      const cell = build[g.key];
+      if (!cell || cell.id !== "wall" || cell.finish !== g.wall) continue;
+      build[g.key] = { id: g.sash, finish: g.joinery };
+    }
+    for (const key of V45_REGLAZE) {
+      const cell = build[key];
+      if (!cell || cell.id !== "window" || cell.finish !== V45_MUSEUM_SASH) continue;
+      build[key] = { id: "window_paned", finish: V45_MUSEUM_SASH };
+    }
+    for (const key of V45_SKYLIGHTS) {
+      if (key in build || key in furniture) continue;
+      build[key] = { id: "skylight", finish: V45_MUSEUM_SASH };
+    }
+
+    return { ...raw, schemaVersion: 45, build };
   },
 };
 

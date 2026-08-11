@@ -247,6 +247,22 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
   // against each other. The hint says the thing you cannot see from the icon:
   // a window is still wall, and a row of them is one window.
   { id: "window", icon: "window", label: "Window", hint: "Still a wall — you just see through it. Side by side, they join up.", group: "structure" },
+  // THE OTHER THREE SASHES, in a row after the plain one. Four chips rather than
+  // a swatch level under one chip, and content/structures.ts §StructureId argues
+  // that call — the short version is that a transom is a different opening, not
+  // a different colour, and the level is typed to finishes end to end.
+  //
+  // Each hint says the one thing its icon cannot. "They join up" is the plain
+  // window's fact and the paned one inherits it; the transom's is that it is
+  // over your head; the narrow one's is that it stays single, which is exactly
+  // the thing a player will otherwise discover by placing two and being puzzled.
+  { id: "window_paned", icon: "window_paned", label: "Paned window", hint: "The same opening, divided into lights. Side by side, they join up.", group: "structure" },
+  { id: "window_transom", icon: "window_transom", label: "Transom", hint: "A band of glass up high — above the furniture, and above eye level.", group: "structure" },
+  { id: "window_narrow", icon: "window_narrow", label: "Narrow window", hint: "A tall slit. These don't join up: two side by side are two windows.", group: "structure" },
+  // NOT BESIDE THE SASHES, because it is not one, and the hint has to carry the
+  // whole of what makes it different: you place it from inside, on the floor,
+  // and it turns up in the roof. There is no way to guess that from an icon.
+  { id: "skylight", icon: "skylight", label: "Skylight", hint: "Point it at a floor with a roof over it. The hole appears up top.", group: "structure" },
   // AFTER the openings and before erase, which is reading order and also the
   // order you reach for them: walls, then the holes in walls, then the thing
   // that is not a wall at all. The hint says the one fact the icon cannot —
