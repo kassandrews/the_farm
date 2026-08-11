@@ -128,7 +128,12 @@ export function stampBuilding(t: StampTarget, b: TownBuilding, probe?: TerrainPr
 
   for (const c of cells) {
     if (!isPerimeter(b, c.x, c.y)) continue;
-    const isDoor = c.x === b.door.x && c.y === b.door.y;
+    // The doorway may be more than one cell wide (content/town.ts §doorW), and
+    // every cell of it is a real door — an opening you walk through, not one
+    // door beside a decorative panel. `encloses` is true on all of them, so a
+    // wide doorway still closes a room.
+    const isDoor =
+      c.y === b.door.y && c.x >= b.door.x && c.x < b.door.x + (b.doorW ?? 1);
     const win = isDoor ? undefined : (b.windows ?? []).find((w) => w.x === c.x && w.y === c.y);
     const isWindow = win !== undefined;
     // A painted panel is WALL, so it is checked after the two openings and takes
@@ -205,7 +210,9 @@ export function stampBuilding(t: StampTarget, b: TownBuilding, probe?: TerrainPr
 function clearApron(t: StampTarget, b: TownBuilding, probe?: TerrainProbe): void {
   if (!probe) return;
   for (let d = 1; d <= APRON_D; d++) {
-    for (let dx = -APRON_W; dx <= APRON_W; dx++) {
+    // Swept across the whole doorway, not just its west cell: a two-cell entrance
+    // has two cells of doorstep and a tree in front of either half seals it.
+    for (let dx = -APRON_W; dx <= APRON_W + (b.doorW ?? 1) - 1; dx++) {
       const x = b.door.x + dx;
       const y = b.door.y + d; // doors face south, so "out" is +y
       const key = tileKey(x, y);

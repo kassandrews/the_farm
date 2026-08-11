@@ -134,8 +134,16 @@ describe("the town's own buildings", () => {
           // way (content/structures.ts §skylight).
           if (lit.has(at)) expect(cell).toMatchObject({ id: "skylight" });
           else expect(cell).toBeUndefined();
-        } else if (c.x === b.door.x && c.y === b.door.y) {
-          expect(cell).toMatchObject({ id: "door" });
+        } else if (
+          c.y === b.door.y &&
+          c.x >= b.door.x &&
+          c.x < b.door.x + (b.doorW ?? 1)
+        ) {
+          // EVERY cell of the doorway, not just its west one. The museum's is two
+          // wide (content/town.ts §doorW) and both cells are real doors — a door
+          // beside a decorative panel would be a doorway you can only half walk
+          // through.
+          expect(cell, `${b.id} ${at}`).toMatchObject({ id: "door" });
         } else if (glazed.has(at)) {
           expect(cell, `${b.id} ${at}`).toMatchObject({ id: glazed.get(at) });
         } else {
@@ -327,7 +335,13 @@ describe("the town's own buildings", () => {
         if (!isWalkable(w, c.x, c.y)) continue; // solid furniture is allowed to be solid
         const legs = findPath(w, outside, c);
         expect(legs, `interior cell ${c.x},${c.y} of ${b.id} is cut off`).not.toBeNull();
-        expect(legs!.some((p) => p.x === b.door.x && p.y === b.door.y)).toBe(true);
+        // Through SOME cell of the doorway. A two-cell entrance has two ways in
+        // and the pathfinder will take whichever is shorter, so pinning this to
+        // the west cell would fail on the museum for no reason worth having.
+        const through = legs!.some(
+          (p) => p.y === b.door.y && p.x >= b.door.x && p.x < b.door.x + (b.doorW ?? 1),
+        );
+        expect(through, `${b.id} was entered somewhere other than its doorway`).toBe(true);
       }
     }
   });

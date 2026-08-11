@@ -11933,6 +11933,102 @@ takes `finish`, which is whitewash. A test fixture that builds a sash in marble
 makes the rung look like it drops the finish — it edits rather than re-stamps, so
 it faithfully preserves a value no real save ever held.
 
+## The museum gets a middle (11 Aug 2026)
+
+**Three complaints, one cause: the building is eight cells wide, and eight is
+even, so nothing can be centred on it.** The wall runs x -13..-6, and the
+centreline of an even run falls on a cell BOUNDARY — so a one-cell door could not
+be centred at any column, and the seven cells left over could not be split evenly
+either, which is why the façade carried one blank cell west of the door and two
+east. The same arithmetic hit the roof: the ridge creases on that boundary,
+leaving two 4-cell slopes, and a 4-cell slope has no middle column for a roof
+light to sit in.
+
+### A doorway may be more than one cell
+
+`TownBuilding.doorW`, defaulting to 1. At two cells the museum's façade is wall,
+glass, glass, DOORWAY, glass, glass, wall — three cells a side, and the opening's
+own centre lands on the centreline, which is also where the ridge creases. **The
+parity problem disappears rather than being decorated around.**
+
+Chosen over shrinking to an odd seven, which was the other way to get a centre
+column: that costs a plinth column, and antiquities holds twelve exhibits in
+exactly twelve slots. It cannot grow west either — the river is there.
+
+**Adjacent door cells merge**, like sashes, or a two-cell doorway is two little
+doors with eight pixels of frame between them.
+
+### And then it looked ominous, which is worth recording
+
+Every door in this game is a **dark opening** — a hole, not a leaf. At one cell
+that is ~8px of near-black and reads as a doorway. At two it was 24px of
+near-black in the middle of the palest building in town, with nothing else dark on
+it anywhere. A cave mouth. Two fixes:
+
+- **A meeting POST, not a meeting line.** The 1px stile drawn first did nothing to
+  break up the mass. Two pixels of lit timber straddling the boundary splits one
+  wide hole into two openings.
+- **A wider jamb on a wide doorway** — 6px instead of 4, bringing each leaf back
+  to about the width every other door has. The entrance is grander because there
+  are TWO of them, not because the hole is enormous. This did most of the work.
+
+**What was tried and rejected: drawing the leaves as closed timber.** The obvious
+way to make an entrance friendly, and it fails here — the museum's joinery finish
+is whitewash, so the leaves come out almost exactly the colour of the marble
+around them and the doorway vanishes. Same trap as the chimney drawn in its
+roof's own material. Dark openings exist for a reason; the fix had to be about
+AREA, not colour.
+
+### Roof lights on both slopes
+
+Two columns at x -11 and -8, 1.5 cells either side of the ridge — **symmetric as a
+PAIR, which is the only kind of centred an even roof allows.** They were at -12
+and -7 first: same symmetry, but they read as two rows up the OUTSIDE of the roof
+rather than as one arrangement about its middle, and the eaves crowded them.
+
+This reverses "three and not six" and keeps its reasoning. That note refused two
+abreast because it would put a light in every other cell — true of the spacing it
+imagined, false here: the roof reads blank, blank, LIGHT, blank, blank, LIGHT,
+blank, blank. **The rule was never "no more than three", it was "nothing that
+lines up with the grid".**
+
+### The park already planted this frontage
+
+A pair of ornamental trees was added at the façade's corners and then taken back
+out. Two things: the first row chosen was the street, and `stampPlantings` only
+takes GRASS or DIRT, so they silently did not appear (that function's own comment
+warns about exactly this, and it has now caught two people). And once on grass,
+the real finding — the frontage IS planted, as the park's north rim, and one
+chosen cell already held a tree.
+
+So nothing was added. **One thing moved:** the rim's lone birch was at x -9, the
+column of the new east door leaf, and the only thing interrupting the approach to
+the entrance we had just centred. At -6 it pairs with the rim's western tree at
+equal distance. Nothing was ever blocked — the apron protects x -11..-8 — it stood
+in the way of LOOKING.
+
+## The ladder is no longer kept in step with the town (11 Aug 2026)
+
+**The game has no players.** Breaking existing sessions is acceptable, stated by
+the owner. So:
+
+- `SCHEMA_VERSION` went back to **47**, and the v48 and v49 rungs written earlier
+  the same day were deleted with their tests. A town-table change now just changes
+  the content; an old save is expected to disagree.
+- The **`v44 → v45` test block was removed**, and this is a real loss worth
+  knowing about. Its load-bearing test asserted that a migrated town and a newly
+  generated town are identical cell for cell — the rung's coordinates being frozen
+  literals and the table's being live. That is the only thing that ever caught the
+  ladder drifting from the table, and it is the first thing to restore if this
+  ever ships to anyone. A note to that effect sits where the block was.
+
+**What is still true, and still bites:** authored props and walls are stamped into
+`build` / `furniture` once, at world creation, and nothing revisits them. After a
+town-table edit, verify on a FRESH world — an unchanged screenshot may just be a
+stale stamp. Two mechanics behind that: `stampFixtures` skips an occupied cell,
+and `stampBuilding` refuses a building outright if any footprint cell is occupied,
+so an already-standing building can only ever be EDITED, never re-stamped.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

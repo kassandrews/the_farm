@@ -295,7 +295,21 @@ export const TOWN_PLANTINGS: { x: number; y: number; id: FloraId }[] = [
   { x: -13, y: -3, id: "broadleaf" },
   { x: -13, y: 1, id: "broadleaf" },
   { x: -12, y: -3, id: "bush" },
-  { x: -9, y: -3, id: "birch" },
+  // THE BIRCH MOVED OUT OF THE DOORWAY, from x -9 to x -6. The park's rim was
+  // planted when the museum's entrance was one cell at -10 and half a cell west
+  // of centre; now that it is two cells centred on -9.5, a tree at -9 stands in
+  // the column of the east leaf and is the only thing interrupting the approach
+  // to the one door in town worth approaching. Nothing was blocked — the apron
+  // protects x -11..-8 — it simply stood in the way of looking.
+  //
+  // At -6 it is 3.5 cells east of the centreline, which is where the rim's other
+  // outer tree already stands on the west (-13). So the frontage now frames the
+  // façade instead of interrupting it, and the approach is open.
+  //
+  // A broadleaf west and a birch east, and that stays: a park rim is a mixture,
+  // not a colonnade. Matching them would make this an avenue, which is the
+  // lane's job (§THE AVENUE) and not a park's.
+  { x: -6, y: -3, id: "birch" },
   { x: -13, y: -1, id: "hydrangea" },
   // Two by the benches, because the one thing a park bench wants behind it is a
   // tree, and because they close the amphitheatre's back without walling it.
@@ -350,10 +364,33 @@ export interface TownBuilding {
   y0: number;
   x1: number;
   y1: number;
-  /** The one doorway, which must sit ON the wall ring. Buildings ship with
-   *  exactly one: a resident who can't find the door is a bug you only notice
-   *  at 3am game-time, and one door makes "did they use it" observable. */
+  /** The doorway's WEST cell, which must sit ON the wall ring. Buildings ship
+   *  with exactly one doorway: a resident who can't find the door is a bug you
+   *  only notice at 3am game-time, and one door makes "did they use it"
+   *  observable. */
   door: { x: number; y: number };
+  /** How many cells wide that doorway is, running EAST from `door`. Defaults to
+   *  one, which is every building but the museum.
+   *
+   *  IT EXISTS TO SOLVE A PARITY PROBLEM, not to make grand entrances, and the
+   *  arithmetic is the whole argument. A wall run of EVEN width has no centre
+   *  column — its centreline falls on a cell boundary — so a one-cell doorway in
+   *  an eight-cell façade can never be centred, and the seven remaining cells
+   *  cannot be split evenly either, so one side always carries a blank the other
+   *  does not. The museum had exactly that: half a cell west of centre, with one
+   *  blank cell to the west and two to the east.
+   *
+   *  A two-cell doorway takes the parity out. Eight less two is six, three a
+   *  side, and the doorway's own centre lands on the building's centreline —
+   *  which is also where `roofPitch` creases the ridge, so the entrance sits
+   *  under the ridge as well. No footprint change and no plinth lost, which is
+   *  what the alternative (shrinking to an odd seven) would have cost: the
+   *  antiquities wing holds twelve exhibits in exactly twelve slots.
+   *
+   *  Adjacent door cells draw as ONE opening (§drawWall), the way sashes already
+   *  merge, or a two-cell doorway would be two little doors with a post between
+   *  them. */
+  doorW?: number;
   /** Finish for the building's JOINERY — the door leaf and the furniture — and
    *  for the walls too unless `walls` overrides them. Per-cell since v5, so the
    *  town's buildings can differ from each other and from yours. */
@@ -729,6 +766,20 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // South wall, like every door in the town — a wall running away from the
     // camera has no face to draw a doorway on (see margfrom_house).
     door: { x: -10, y: FRONT_N },
+    // TWO CELLS, and it is the only doorway in town that is. See §doorW for the
+    // arithmetic; the short version is that an eight-cell façade has no centre
+    // column, so a one-cell door could not be centred and the seven cells left
+    // over could not be split evenly. It sat half a cell west of centre with one
+    // blank cell to its west and two to its east.
+    //
+    // At two cells the façade is wall, glass, glass, DOORWAY, glass, glass, wall
+    // — three cells either side, symmetric, and the opening's own centre lands on
+    // the building's centreline, which is where the ridge creases. The entrance
+    // is under the ridge and the roof lights sit either side of it.
+    //
+    // It also happens to be right: the grandest doorway in town belongs to the
+    // only marble building, and nothing else here should get one.
+    doorW: 2,
     finish: "whitewash",
     // THE ONLY MASONRY BUILDING IN TOWN, and that is the whole of its identity.
     //
@@ -784,11 +835,16 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     //
     // The town hall keeps its paned sashes and should. Symmetry and glazing bars
     // are what a municipal building is; it was never trying to be a lantern.
+    //
+    // The east pair moved one cell out (-9/-8 became -8/-7) when the doorway
+    // widened onto -9. Both pairs are now two cells of glass with one cell of
+    // masonry outboard of them, which is the symmetry the corners note above was
+    // always asking for and never quite had.
     windows: [
       { x: -12, y: FRONT_N, sash: "window_plate" },
       { x: -11, y: FRONT_N, sash: "window_plate" },
-      { x: -9, y: FRONT_N, sash: "window_plate" },
       { x: -8, y: FRONT_N, sash: "window_plate" },
+      { x: -7, y: FRONT_N, sash: "window_plate" },
     ],
     // THREE SKYLIGHTS, UP THE MIDDLE OF THE GALLERY, and the museum is the only
     // building in the world with any.
@@ -805,14 +861,30 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // lights the floor you walk on rather than the top of a display case. That
     // rule is about y and this column is about x, so the two never argue.
     //
-    // AT x -11, WHICH IS OFF THE DOOR'S COLUMN. They sat at -10, lined up with
-    // the way in, and the alignment was worth less than it sounds: the roof's
-    // ridge falls on the boundary between -10 and -9 (the building is eight
-    // cells across, so `roofPitch` creases it exactly down the middle), and a
-    // roof light sitting hard against the crease reads as part of the ridge
-    // rather than as a hole in the slope. One cell west puts them on open slope
-    // with shingle either side, which is where a roof light goes and where you
-    // can see it is one.
+    // TWO COLUMNS, ONE PER SLOPE, at x -11 and x -8. The ridge creases on the
+    // -10/-9 boundary (eight cells across, so `roofPitch` halves it exactly), and
+    // those two columns sit 1.5 cells either side of it — symmetric as a PAIR,
+    // which is the only kind of centred an even-width roof allows. Neither column
+    // can be centred on its own slope, because each slope is four cells and four
+    // cells have no middle one; a pair straddling the ridge sidesteps the parity
+    // entirely, the same way the doorway does.
+    //
+    // THIS REVERSES "THREE AND NOT SIX" and keeps its reasoning. That note
+    // refused two abreast because it would have put a light in every other cell
+    // of the roof — the per-cell edges rule waiting to happen. True of the
+    // spacing it was imagining, and not of this one: at -11 and -8 the roof reads
+    // blank, blank, LIGHT, blank, blank, LIGHT, blank, blank across its eight
+    // columns, which agrees with nothing. The rule was never "no more than
+    // three", it was "nothing that lines up with the grid".
+    //
+    // They were at -12 and -7 first, a cell further out. Same symmetry, and the
+    // pair read as two rows of lights up the OUTSIDE of the roof rather than as
+    // one arrangement about its middle — the eaves are close enough out there to
+    // crowd them.
+    //
+    // And a symmetric roof over a symmetric façade is what makes a building read
+    // as institutional, which this one is. One row up one slope read as a
+    // workshop — which is a real building, just not this one.
     //
     // Three and not six. Two abreast would have put a skylight in every other
     // cell of a six-wide roof, which is the per-cell edges rule waiting to
@@ -821,8 +893,11 @@ export const TOWN_BUILDINGS: Record<TownBuildingId, TownBuilding> = {
     // apart, reads as a row of lights.
     skylights: [
       { x: -11, y: -12 },
+      { x: -8, y: -12 },
       { x: -11, y: -10 },
+      { x: -8, y: -10 },
       { x: -11, y: -8 },
+      { x: -8, y: -8 },
     ],
     furniture: [
       // Corrigal's desk, in the lobby by the door rather than at the far end.

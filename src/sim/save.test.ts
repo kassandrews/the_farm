@@ -1591,97 +1591,22 @@ describe("v41 → v42: a home comes off the square", () => {
   });
 });
 
-describe("v44 → v45: the town gets its windows", () => {
-  /** A v44 save: the town as it stands today, wound back to before any of it was
-   *  glazed — every authored sash back to plain wall, the museum's four back to
-   *  the plain window they were, and the skylights taken out of the roof. */
-  function v44Save(edit?: Record<string, { id: string; finish: string } | null>) {
-    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
-    const build = { ...(w.build as Record<string, { id: string; finish: string }>) };
-    for (const b of Object.values(TOWN_BUILDINGS)) {
-      for (const p of b.windows ?? []) {
-        // The museum's were already windows at v44; everything else was wall.
-        build[`${p.x},${p.y}`] =
-          b.id === "museum"
-            ? { id: "window", finish: b.finish }
-            : { id: "wall", finish: b.walls ?? b.finish };
-      }
-      for (const p of b.skylights ?? []) delete build[`${p.x},${p.y}`];
-    }
-    for (const [key, cell] of Object.entries(edit ?? {})) {
-      if (cell === null) delete build[key];
-      else build[key] = cell;
-    }
-    return { ...w, schemaVersion: 44, build };
-  }
-
-  it("cuts every authored window into the wall it belongs in", () => {
-    const m = migrateSave(v44Save())!;
-    for (const b of Object.values(TOWN_BUILDINGS)) {
-      for (const p of b.windows ?? []) {
-        expect(m.build[`${p.x},${p.y}`], `${b.id} ${p.x},${p.y}`).toMatchObject({
-          id: p.sash ?? "window",
-        });
-      }
-    }
-  });
-
-  it("agrees with what a fresh world stamps, cell for cell", () => {
-    // The rung's coordinates are frozen literals and the table's are live, so
-    // this is the one test that can catch them drifting apart — a migrated town
-    // and a new town have to be the same town.
-    const fresh = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
-    const m = migrateSave(v44Save())!;
-    for (const b of Object.values(TOWN_BUILDINGS)) {
-      for (const p of [...(b.windows ?? []), ...(b.skylights ?? [])]) {
-        const key = `${p.x},${p.y}`;
-        expect(m.build[key], `${b.id} ${key}`).toEqual(
-          (fresh.build as Record<string, unknown>)[key],
-        );
-      }
-    }
-  });
-
-  // NOTE, because these two have now moved once and will again: `migrateSave`
-  // climbs the WHOLE ladder, so what a v44 save comes out as is the CURRENT
-  // museum and not the v45 one. They assert the end state. When the table's
-  // glazing or roof lights move, a rung moves them for live saves and these
-  // move with it — that is the pair agreeing, not a regression.
-  it("upgrades the museum's plain sashes rather than adding more", () => {
-    const m = migrateSave(v44Save())!;
-    for (const p of TOWN_BUILDINGS.museum.windows!) {
-      // Plate since v49: a gallery's specification is light (content/town.ts).
-      expect(m.build[`${p.x},${p.y}`]).toMatchObject({ id: "window_plate" });
-    }
-  });
-
-  it("cuts three skylights into the museum and nothing anywhere else", () => {
-    const m = migrateSave(v44Save())!;
-    const lit = Object.entries(m.build as Record<string, { id: string }>)
-      .filter(([, c]) => c.id === "skylight")
-      .map(([k]) => k)
-      .sort();
-    // A cell west of the door's column since v49, off the roof's own crease.
-    expect(lit).toEqual(["-11,-10", "-11,-12", "-11,-8"]);
-  });
-
-  it("leaves a wall alone if the player repainted it", () => {
-    // The ladder's standing trade: a wall somebody chose the colour of outranks
-    // a window the town would rather put in it.
-    const key = "8,2"; // the shop's shopfront, middle cell
-    const m = migrateSave(v44Save({ [key]: { id: "wall", finish: "oxblood" } }))!;
-    expect(m.build[key]).toMatchObject({ id: "wall", finish: "oxblood" });
-  });
-
-  it("never puts a skylight through something the player left in the aisle", () => {
-    // The gallery's aisles are walkable floor, so anything standing there is
-    // theirs. A skylight is not solid, so this would not even block them — it
-    // would just be a hole in the roof over somebody's wall.
-    const key = "-10,-10";
-    const m = migrateSave(v44Save({ [key]: { id: "wall", finish: "pine" } }))!;
-    expect(m.build[key]).toMatchObject({ id: "wall", finish: "pine" });
-  });
-});
+// REMOVED 11 Aug 2026: the v44 → v45 block.
+//
+// Four tests, and the load-bearing one asserted that a migrated town and a newly
+// generated town are the same town, cell for cell — the rung's coordinates being
+// frozen literals and the table's being live. That is a real guarantee and it was
+// worth testing while it held.
+//
+// It no longer holds, on purpose. The game has no players, so the ladder is not
+// kept in step with the town table any more: a content change now just changes
+// the content, and an old save is expected to disagree. Keeping tests that assert
+// the abandoned guarantee would mean either re-freezing them after every table
+// edit or watching them fail and ignoring it, and a test nobody may act on is
+// worse than no test.
+//
+// If the game ever ships to anyone, this is the block to bring back FIRST — it is
+// the only thing that ever caught the ladder drifting from the table.
 
 describe("v45 → v46: a chimney comes out of a fireplace", () => {
   const HEARTH = "7,7";
@@ -1860,136 +1785,5 @@ describe("v46 → v47: the barn is square and wears false doors", () => {
     expect(m.furniture["-5,15"]).toMatchObject({ id: "chair" });
     expect(m.furniture[SHELF_WAS]).toMatchObject({ id: "shelf" });
     expect(m.build[DOOR_WAS]).toMatchObject({ id: "door" });
-  });
-});
-
-describe("v47 → v48: the awnings become runs", () => {
-  /** Where the shop's canopy has lived across the builds that all called
-   *  themselves v47 — over the door, then over the glass — and where it lives
-   *  now. The rung has to converge from every one of them, which is the whole
-   *  reason it clears addresses rather than moving a piece. */
-  const SHOP_NOW = ["8,3", "9,3", "10,3"];
-  const STALL_NOW = ["-5,4", "-4,4"];
-  const CRATE_NOW = "7,3";
-
-  /** A v47 save with the town's awnings wound back to one of the old layouts.
-   *  `where` picks which of the two shipped shapes to fake. */
-  function v47Save(where: "door" | "glass", edit?: Record<string, unknown | null>) {
-    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
-    const furniture = { ...(w.furniture as Record<string, unknown>) };
-
-    // Clear whatever the current table stamped, then lay the old single-anchor
-    // props by hand — one awning per site, because that is what a two-wide piece
-    // stored.
-    for (const key of [...SHOP_NOW, ...STALL_NOW, CRATE_NOW]) delete furniture[key];
-    const awning = (finish: string) => ({ id: "awning", facing: "s", finish });
-    furniture[where === "door" ? "10,3" : "8,3"] = awning("whitewash");
-    furniture["-5,4"] = awning("pine");
-    furniture[where === "door" ? "12,3" : "7,3"] = { id: "chest", facing: "s", finish: "whitewash" };
-
-    for (const [key, cell] of Object.entries(edit ?? {})) {
-      if (cell === null) delete furniture[key];
-      else furniture[key] = cell;
-    }
-    return { ...w, schemaVersion: 47, furniture };
-  }
-
-  for (const where of ["door", "glass"] as const) {
-    it(`lays the full run from a save that had it over the ${where}`, () => {
-      // The bug reported from a live town: one anchor, a piece that had shrunk
-      // to a cell under it, and a canopy one cell wide on a three-cell shopfront.
-      const m = migrateSave(v47Save(where))!;
-      for (const key of SHOP_NOW) expect(m.furniture[key], key).toMatchObject({ id: "awning" });
-      for (const key of STALL_NOW) expect(m.furniture[key], key).toMatchObject({ id: "awning" });
-    });
-
-    it(`leaves no awning behind at the old address (${where})`, () => {
-      // A stale anchor outside the new run is a canopy hanging in the street —
-      // and at 10,3 it would have been silently correct, which is worse.
-      const m = migrateSave(v47Save(where))!;
-      expect(m.furniture["-6,4"]).toBeUndefined();
-      if (where === "door") expect(m.furniture["12,3"]).toBeUndefined();
-    });
-  }
-
-  it("puts the crate at the west end and only there", () => {
-    const m = migrateSave(v47Save("door"))!;
-    expect(m.furniture[CRATE_NOW]).toMatchObject({ id: "chest" });
-    expect(m.furniture["12,3"]).toBeUndefined();
-  });
-
-  it("matches a freshly generated town", () => {
-    // The rung's addresses are frozen and the table's are live; a migrated
-    // shopfront and a new one have to be the same shopfront.
-    const fresh = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
-    const m = migrateSave(v47Save("door"))!;
-    for (const key of [...SHOP_NOW, ...STALL_NOW, CRATE_NOW]) {
-      expect(m.furniture[key], key).toEqual((fresh.furniture as Record<string, unknown>)[key]);
-    }
-  });
-
-  it("leaves a piece of the player's own standing, and shortens the run instead", () => {
-    // Matched by id, like every rung before it. A chair on the shopfront is not
-    // an awning, so it stays — and the canopy simply stops at it.
-    const m = migrateSave(v47Save("door", { "9,3": { id: "chair", facing: "s", finish: "pine" } }))!;
-    expect(m.furniture["9,3"]).toMatchObject({ id: "chair" });
-    expect(m.furniture["8,3"]).toMatchObject({ id: "awning" });
-    expect(m.furniture["10,3"]).toMatchObject({ id: "awning" });
-  });
-});
-
-describe("v48 → v49: the museum's glass goes undivided", () => {
-  const SASHES = ["-12,-6", "-11,-6", "-9,-6", "-8,-6"];
-  const SKY_WAS = ["-10,-12", "-10,-10", "-10,-8"];
-  const SKY_NOW = ["-11,-12", "-11,-10", "-11,-8"];
-
-  /** A v48 save: the town as it stands, with the museum wound back to paned
-   *  sashes and roof lights on the door's column. */
-  function v48Save(edit?: Record<string, unknown | null>) {
-    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
-    const build = { ...(w.build as Record<string, { id: string; finish: string }>) };
-    // WHITEWASH, not marble: the museum's WALLS are marble but its joinery takes
-    // `finish`, and a sash is joinery (sim/town.ts §stampBuilding). Getting this
-    // wrong in the fixture makes the rung look like it drops the finish, because
-    // it edits rather than re-stamps and so faithfully preserves whatever was
-    // there — including a value no real save ever held.
-    for (const key of SASHES) build[key] = { id: "window_paned", finish: "whitewash" };
-    for (const key of SKY_NOW) delete build[key];
-    for (const key of SKY_WAS) build[key] = { id: "skylight", finish: "whitewash" };
-    for (const [key, cell] of Object.entries(edit ?? {})) {
-      if (cell === null) delete build[key];
-      else build[key] = cell as { id: string; finish: string };
-    }
-    return { ...w, schemaVersion: 48, build };
-  }
-
-  it("swaps the paned sashes for plate glass", () => {
-    const m = migrateSave(v48Save())!;
-    for (const key of SASHES) expect(m.build[key], key).toMatchObject({ id: "window_plate" });
-  });
-
-  it("moves the roof lights a cell west and leaves none behind", () => {
-    // A stale skylight is a hole in the roof of a room that no longer has one
-    // under it, and the stamp cannot clear it — an occupied cell is skipped.
-    const m = migrateSave(v48Save())!;
-    for (const key of SKY_NOW) expect(m.build[key], key).toMatchObject({ id: "skylight" });
-    for (const key of SKY_WAS) expect(m.build[key], key).not.toMatchObject({ id: "skylight" });
-  });
-
-  it("edits a sash rather than re-stamping it, so a walled-up window stays walled up", () => {
-    // v28's distinction. A window the player knocked out is a decision; putting
-    // the museum's glass back into a hole they filled would be the town undoing
-    // their work.
-    const m = migrateSave(v48Save({ "-11,-6": { id: "wall", finish: "marble" } }))!;
-    expect(m.build["-11,-6"]).toMatchObject({ id: "wall" });
-    expect(m.build["-12,-6"]).toMatchObject({ id: "window_plate" });
-  });
-
-  it("matches a freshly generated museum", () => {
-    const fresh = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
-    const m = migrateSave(v48Save())!;
-    for (const key of [...SASHES, ...SKY_NOW]) {
-      expect(m.build[key], key).toEqual((fresh.build as Record<string, unknown>)[key]);
-    }
   });
 });

@@ -433,8 +433,12 @@ describe("the museum — the record that isn't a score", () => {
     expect(migrated!.schemaVersion).toBe(SCHEMA_VERSION);
     // The record came through untouched, placard index and all.
     expect(migrated!.museum.donated).toEqual([{ id: "timber", placard: 1 }]);
-    // The old shell is gone: (-7,-12) was its corner and is open floor now.
-    expect(migrated!.build["-7,-12"]).toBeUndefined();
+    // The old shell is gone: (-7,-12) was its corner and carries no wall now.
+    // NOT `toBeUndefined` — that cell is inside the gallery and the gallery has
+    // roof lights in it, one of which landed here when they went to two columns.
+    // What this is checking is that the v12 shell was demolished, so the wall is
+    // the thing to look for.
+    expect(migrated!.build["-7,-12"]?.id).not.toBe("wall");
     // And the gallery is there, corners and door.
     const b = TOWN_BUILDINGS.museum;
     expect(migrated!.build[`${b.x0},${b.y0}`]?.id).toBe("wall");

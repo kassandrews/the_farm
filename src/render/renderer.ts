@@ -5481,7 +5481,54 @@ export class Renderer {
       } else {
         // A hole in the wall, with the wall carried over it as a lintel — so a
         // doorway reads as cut INTO a run rather than as a gap in it.
-        frame(px + 4, top + WALL_CAP + 3, TILE - 8, STOREY - WALL_CAP - 3);
+        //
+        // ADJACENT DOORS MERGE, exactly as sashes do (§drawWindow) and for the
+        // identical reason: two cells each drawing their own jambs is two little
+        // doorways with eight pixels of frame between them, which is a pair of
+        // doors and not an entrance. The museum's is two cells wide
+        // (content/town.ts §doorW) and has to read as one opening.
+        const merges = (dx: number) => world.build[tileKey(tx + dx, ty)]?.id === "door";
+        const openW = merges(-1);
+        const openE = merges(1);
+        // A WIDER JAMB ON A WIDE DOORWAY. A single door is inset 4px in its cell,
+        // which leaves 8px of opening — and two cells at that inset leave 24,
+        // which is three times the dark on a façade that has nothing else dark on
+        // it at all. Six pixels of jamb brings each leaf back to about the width
+        // every other door in town has, so the entrance is grander because there
+        // are TWO of them rather than because the hole is enormous.
+        const jamb = openW || openE ? 6 : 4;
+        const x0 = px + (openW ? 0 : jamb);
+        const x1 = px + TILE - (openE ? 0 : jamb);
+        const y0 = top + WALL_CAP + 3;
+        const h = STOREY - WALL_CAP - 3;
+        // The frame, drawn only where the opening actually ends — the same
+        // compare-against-the-neighbour rule the whole renderer runs on. The head
+        // carries straight across the join; the stiles stop at the run's ends.
+        ctx.fillStyle = leaf.color;
+        ctx.fillRect(x0 - (openW ? 0 : 1), y0 - 1, x1 - x0 + (openW ? 0 : 1) + (openE ? 0 : 1), h + 2);
+        ctx.fillStyle = leaf.top;
+        ctx.fillRect(x0 - (openW ? 0 : 1), y0 - 1, x1 - x0 + (openW ? 0 : 1) + (openE ? 0 : 1), 1);
+        ctx.fillStyle = "#3a2620";
+        ctx.fillRect(x0, y0, x1 - x0, h);
+        // A MEETING STILE down the middle of a merged pair, and it has to be a
+        // POST rather than a line. This is the one thing that keeps a wide
+        // doorway from going ominous, which is exactly what a 1px version of it
+        // did: every door in this game is drawn as a dark opening, which reads as
+        // a doorway at one cell wide and as a CAVE MOUTH at two — 24px of
+        // near-black on a pale marble front, with a hairline down it that did
+        // nothing to break up the mass.
+        //
+        // Two pixels of lit timber, straddling the boundary, splits it into two
+        // openings of about the width every other door in town has. Nothing else
+        // changed: the leaves are still holes, the head and jambs still run
+        // round the outside, and a museum still has the biggest entrance here.
+        // It just stops looking like something is going to come out of it.
+        if (openW) {
+          ctx.fillStyle = leaf.color;
+          ctx.fillRect(px - 1, y0, 2, h);
+          ctx.fillStyle = leaf.top; // the light down its west face, as everywhere
+          ctx.fillRect(px - 1, y0, 1, h);
+        }
       }
     }
 
