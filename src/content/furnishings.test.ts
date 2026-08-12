@@ -132,6 +132,64 @@ describe("furniture art", () => {
   }
 });
 
+// --- joining pieces -----------------------------------------------------------
+// A joining form's `mid` and `end` are grids the facing-based suite above never
+// looks at, because `gridFor` never returns them. Unguarded they are exactly the
+// kind of art that goes one row wrong and slides a worktop a pixel off the run
+// it is supposed to be continuous with.
+describe("joining art", () => {
+  for (const id of ids) {
+    const art = FURNITURE_ART[id]!;
+    const joins = art.joins;
+    if (!joins) continue;
+    const def = FURNITURE[id];
+    const rise = art.rise ?? 0;
+
+    for (const [name, grid] of [
+      ["mid", joins.mid],
+      ["end", joins.end],
+    ] as const) {
+      it(`${id} ${name} matches the standalone box`, () => {
+        // The SAME box as `s`, or the run would step where it joined.
+        expect(grid.rows).toHaveLength(rise + def.h * TILE + def.height);
+        for (const row of grid.rows) expect(row).toHaveLength(def.w * TILE);
+      });
+    }
+
+    // A row that is ENTIRELY ink is a horizontal rule running the length of the
+    // surface — a worktop's front edge, a door rail — and it is supposed to reach
+    // both cell boundaries so it continues into the next cell. What must not
+    // appear is a VERTICAL side outline, which is an ink char at the end of a row
+    // that has actual content in it. That distinction is the whole test.
+    const bodyRows = (rows: readonly string[]): string[] =>
+      rows.filter((r) => r.trim() !== "" && [...r].some((ch) => ch !== "k" && ch !== "."));
+
+    it(`${id} mid draws no side outline`, () => {
+      // The per-cell edges rule in assertion form: if the middle of a run returns
+      // its own edges, the run is a row of boxes instead of a counter.
+      for (const row of bodyRows(joins.mid.rows)) {
+        expect(row[0], `mid row "${row}" starts in ink`).not.toBe("k");
+        expect(row[row.length - 1], `mid row "${row}" ends in ink`).not.toBe("k");
+      }
+    });
+
+    it(`${id} end returns its left side only`, () => {
+      // Authored as the LEFT end — the run continues to its right — and mirrored
+      // for the other one, so authoring both would be a second chance to get one
+      // of them wrong.
+      const rows = bodyRows(joins.end.rows);
+      expect(rows.length).toBeGreaterThan(0);
+      for (const row of rows) {
+        // The outline may sit at column 0 or 1 — the standalone view is inset a
+        // pixel each side and the returned end keeps that inset, so requiring
+        // column 0 exactly would fail correct art.
+        expect(row.slice(0, 2), `end row "${row}" should return its left`).toContain("k");
+        expect(row[row.length - 1], `end row "${row}" should stay open`).not.toBe("k");
+      }
+    });
+  }
+});
+
 // --- gridSource ---------------------------------------------------------------
 // `gridSource` names the branch `gridFor` takes, and /furniture.html prints that
 // name under every view. The two are separate functions over the same rule, so

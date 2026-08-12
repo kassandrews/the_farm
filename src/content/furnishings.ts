@@ -1417,6 +1417,93 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
   },
 
+  // THE JOINING ONE. Three drawings, and which one a cell uses depends on what is
+  // beside it (render/furnishings.ts §joins, §runGridFor).
+  //
+  // WHAT DIFFERS BETWEEN THEM IS ONLY THE OUTLINE. `s` returns both ends, `end`
+  // returns one, `mid` returns neither and runs its worktop to both edges of the
+  // cell. Everything else — the courses, the door rail, the handle — is identical,
+  // because the run has to read as one cabinet with doors in it rather than as a
+  // row of cabinets. That is the per-cell edges rule (CLAUDE.md) obeyed by its own
+  // prescription: the edge is drawn only where the surface actually ends.
+  //
+  // The handle repeats per cell and that is FINE — it is a feature, not an edge.
+  // What stripes a surface is a light line meeting a dark line at the seam, and a
+  // handle in the middle of a door is neither.
+  counter: {
+    s: {
+      rows: [
+        "................",
+        "................",
+        "..kkkkkkkkkkkk..",
+        ".kttttttttttttk.",
+        ".kttttttttttttk.",
+        ".kssssssssssssk.",
+        ".kkkkkkkkkkkkkk.",
+        ".kcccccccccccck.",
+        ".kckkkkkkkkkkck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kccccckkccccck.",
+        ...Array<string>(13).fill(".kcccccccccccck."),
+        ".kckkkkkkkkkkck.",
+        ".kcccccccccccck.",
+        ".kkkkkkkkkkkkkk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+      ],
+      palette: { k: INK },
+    },
+    joins: {
+      mid: {
+        rows: [
+          "................",
+          "................",
+          "kkkkkkkkkkkkkkkk",
+          "tttttttttttttttt",
+          "tttttttttttttttt",
+          "ssssssssssssssss",
+          "kkkkkkkkkkkkkkkk",
+          "cccccccccccccccc",
+          "kkkkkkkkkkkkkkkk",
+          "cccccccccccccccc",
+          "cccccccccccccccc",
+          "ccccccckkccccccc",
+          ...Array<string>(13).fill("cccccccccccccccc"),
+          "kkkkkkkkkkkkkkkk",
+          "cccccccccccccccc",
+          "kkkkkkkkkkkkkkkk",
+          "ssssssssssssssss",
+          "ssssssssssssssss",
+        ],
+        palette: { k: INK },
+      },
+      end: {
+        rows: [
+          "................",
+          "................",
+          ".kkkkkkkkkkkkkkk",
+          ".ktttttttttttttt",
+          ".ktttttttttttttt",
+          ".kssssssssssssss",
+          ".kkkkkkkkkkkkkkk",
+          ".kcccccccccccccc",
+          ".kkkkkkkkkkkkkkk",
+          ".kcccccccccccccc",
+          ".kcccccccccccccc",
+          ".kcccccckkcccccc",
+          ...Array<string>(13).fill(".kcccccccccccccc"),
+          ".kkkkkkkkkkkkkkk",
+          ".kcccccccccccccc",
+          ".kkkkkkkkkkkkkkk",
+          ".kssssssssssssss",
+          ".kssssssssssssss",
+        ],
+        palette: { k: INK },
+      },
+    },
+  },
+
   // Basin sunk into a top, cabinet under, tap standing at the back. The bowl is
   // `s` inside a `t` rim, which is the same trick the bath uses and is what says
   // "this is a hollow" without a single new colour.

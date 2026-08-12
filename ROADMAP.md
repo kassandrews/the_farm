@@ -12534,8 +12534,65 @@ entry. A fixture is glazed, not quarried.
   an inside. Worth remembering before redrawing something: check what finish it
   was being judged in.
 
+### The counter run, and how a joining form fits the doctrine
+
+`counter` — 1×1, laid a cell at a time, adjacent counters drawing as one
+continuous surface. The awning's rule brought indoors, and the answer to the
+Minecraft half of the brief ("I furnish my kitchen with slabs and signs").
+
+- **A JOINING PIECE CANNOT BE ONE FIXED GRID**, and that is the whole design
+  problem. The worktop must run unbroken between neighbours — the per-cell edges
+  rule, and a counter is the textbook case for it, because a light edge meeting a
+  dark edge at every seam turns a kitchen into a row of crates — while still
+  returning its edge where the run actually ENDS.
+- **Three grids, and the game picks: `s`, `joins.mid`, `joins.end`.** The
+  alternative was the awning's route, a bespoke draw path doing neighbour lookups
+  in renderer.ts — and it was rejected on DOCTRINE, not on effort: DESIGN §The
+  catalog says a set restyles a form by supplying a DRAWING, and a set cannot
+  reskin a hardcoded draw path. So a joining form supplies three drawings, which
+  is exactly what walls already do with face, side and corner. `end` is authored
+  as the left end and mirrored, the economy `mirrorW` already buys.
+- **A neighbour has to match on everything visible** — form, set, finish, facing.
+  Merging across any of them would run one worktop over two different objects; a
+  pine counter butted against a walnut one is two counters, and a single slab
+  with a colour change down the middle is worse than an honest seam. Verified in
+  a real kitchen: the pine pair merges, the walnut pair beside it does not.
+- **The raster cache key needed the joint in it.** Same class of bug as the set
+  key: without it the first counter rasterized is served to every cell in the run
+  and the whole kitchen wears one cell's end caps.
+- **Height 14, matching the stove exactly** so a worktop and a cooktop are one
+  level. A run that stepped where the appliances stand is a detail nobody praises
+  and everybody sees.
+- **EAST–WEST ONLY, and that is a real limit.** An L-shaped kitchen's north–south
+  leg does not join yet; closing it means a second pair of grids for the turned
+  run. Written on the row rather than pretended away.
+- **The test for `mid` had to learn what a side outline IS.** The first version
+  asserted no row of `mid` starts or ends in ink, and failed on its own correct
+  art: a row that is ENTIRELY ink is a horizontal rule — a worktop's front edge, a
+  door rail — and is supposed to reach both cell boundaries so it continues. What
+  must not appear is ink at the end of a row that has content in it. The
+  distinction is the test.
+
 **Left open:**
 
+- **The two-material counter** — a wooden cabinet under a stone worktop — which is
+  what the owner asked for and what this does NOT do. One `finish` per cell buys
+  one material, so today's counter is butcher block or solid stone, both real
+  kitchens, with the worktop in the finish's `t` tone. The general fix is the
+  SECOND VARIANT AXIS already queued as step 4, and the counter is its best
+  customer; it also upgrades the sofa (frame + upholstery), the lamp (post +
+  head), the bed (frame + linen) and the dresser (handles), all of which fake it
+  with literals today.
+
+  **8f's rejection of a `paint` axis does not bind it**, and the distinction is
+  the test to apply: paint on a floor was REDUNDANT — one surface, and the finish
+  already named its material. A counter is two surfaces of two materials and no
+  single finish can be both. **And 8f's costed objection, "a second swatch row",
+  dissolves**: `finishes` already spans classes and `availableSkinsForClasses`
+  never asks the player to pick a category, so a two-axis piece can show ONE row —
+  wood swatches then stone swatches — and the CLASS of the swatch you tap decides
+  which part of the piece it lands on. The classes are disjoint, so the tap is
+  never ambiguous.
 - **The lamp should follow the metal class** (owner's suggestion, and right). Its
   head has been a hardcoded brass literal since Phase 5a and a finish class makes
   that carve-out unnecessary. It is a REDRAW plus a renderer change rather than a

@@ -1988,6 +1988,8 @@ function furnitureFlavour(id: FurnitureId, layer: Layer): string {
       return "A coffee table. Too low to eat at, too large for nothing. Correct.";
     case "desk":
       return "A desk. Paperwork will find it. Paperwork finds everything.";
+    case "counter":
+      return "A counter. It continues, which is the whole idea of a counter.";
     case "stove":
       return "A stove. Four rings, one door, and the bearing of something load-bearing.";
     case "fridge":

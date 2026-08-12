@@ -60,6 +60,7 @@ export type FurnitureId =
   | "stove"
   | "fridge"
   | "sink"
+  | "counter"
   | "toilet"
   | "tub"
   | "painting"
@@ -558,6 +559,36 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // choose a category first (skins.ts §availableSkinsForClasses). The one row
     // in the table that uses that on purpose rather than by inheritance.
     finishes: ["ceramic", "metal"],
+  },
+
+  // THE ONE THAT JOINS. Laid a cell at a time and adjacent counters draw as one
+  // continuous run — the awning's rule brought indoors, and the answer to the
+  // Minecraft complaint that furnishing a kitchen means slabs and signs.
+  //
+  // ITS WIDTH IS YOURS. Same argument the awning's row makes at length: a
+  // fixed-width counter fits exactly one room, and there is no second number that
+  // is right for both a galley and a back wall. So the run is as long as you laid
+  // it, and `render/furnishings.ts §joins` is how the drawing keeps up.
+  //
+  // FACING-AGNOSTIC, like the rug: it joins EAST-WEST only, so all four facings
+  // draw the same. That is a real limit rather than a subtlety — an L-shaped
+  // kitchen's north-south leg does not yet join, and closing it means a second
+  // pair of grids for the turned run. Recorded in ROADMAP rather than pretended
+  // away.
+  counter: {
+    id: "counter",
+    form: true,
+    name: "Counter",
+    cost: { wood: 3 },
+    w: 1,
+    h: 1,
+    solid: true,
+    // EXACTLY THE STOVE'S 14, so a worktop and a cooktop are one level. A run
+    // that stepped up or down where the appliances stand would read as somebody
+    // having fitted the kitchen badly, which is a detail nobody would praise and
+    // everybody would see.
+    height: 14,
+    finishes: ["wood"],
   },
 
   // --- The bathroom -----------------------------------------------------------

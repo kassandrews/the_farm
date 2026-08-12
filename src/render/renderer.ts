@@ -98,7 +98,7 @@ import {
 import { zoomLadder } from "./zoom";
 import { forEachGrainMark, GRAIN } from "./grain";
 import { roofFinish, roofPitch, type RoofPitch } from "./roof";
-import { gridFor, pieceCanvas } from "./furnishings";
+import { gridFor, runGridFor, pieceCanvas } from "./furnishings";
 import { artFor } from "../content/sets";
 import { COUNTER_MARKS } from "../content/countermarks";
 import { counterIdAtAnchor } from "../sim/counters";
@@ -4635,6 +4635,37 @@ export class Renderer {
     ctx.globalAlpha = prev;
   }
 
+  /** Does this joining piece's run carry on to either side of it?
+   *
+   *  EAST-WEST ONLY, which is the counter's documented limit (content/furniture.ts
+   *  §counter) rather than an accident here.
+   *
+   *  A NEIGHBOUR HAS TO MATCH ON EVERYTHING VISIBLE — same form, same set, same
+   *  finish. Merging across any of those would run one continuous worktop over two
+   *  different objects: a pine counter and a walnut one butted together are two
+   *  counters, and drawing them as one slab with a colour change down the middle
+   *  is worse than drawing the seam. Facing is in the comparison too, cheaply, so
+   *  that the day a turned run gets its own grids this does not silently merge
+   *  across the corner. */
+  private runNeighbours(
+    world: WorldState,
+    ax: number,
+    ay: number,
+    cell: FurnitureCell,
+  ): { left: boolean; right: boolean } {
+    const same = (x: number): boolean => {
+      const other = world.furniture[tileKey(x, ay)];
+      return (
+        other !== undefined &&
+        other.id === cell.id &&
+        other.set === cell.set &&
+        other.finish === cell.finish &&
+        other.facing === cell.facing
+      );
+    };
+    return { left: same(ax - 1), right: same(ax + 1) };
+  }
+
   private drawFurniturePiece(
     world: WorldState,
     ax: number,
@@ -4747,15 +4778,25 @@ export class Renderer {
       // rest of the furniture on a clock, and an unanimated piece keeps the one
       // cache entry it always had.
       const frame = art.anim ? Math.floor(this.animMs / art.anim.holdMs) : 0;
-      const { grid, mirror } = gridFor(art, cell.facing, frame);
+      // A JOINING PIECE ASKS ITS NEIGHBOURS FIRST. Which of the three drawings a
+      // counter cell uses is a fact about the run it is in, not about its facing,
+      // so this branch replaces `gridFor` rather than feeding it.
+      const run = art.joins ? this.runNeighbours(world, ax, ay, cell) : null;
+      const { grid, mirror } = run
+        ? runGridFor(art, run.left, run.right)
+        : gridFor(art, cell.facing, frame);
       const rise = art.rise ?? 0;
       // Keyed on the finish as well as the piece and facing: one grid serves
       // thirteen finishes precisely because `c`/`t`/`s` are resolved at raster
       // time, which means a walnut chair and a pine one are different pixels.
       // And on the FRAME, or the first flame drawn would be served forever.
       const suffix = art.anim ? `:${frame % art.anim.frames.length}` : "";
+      // And on WHICH END OF ITS RUN, or the first counter rasterized would be
+      // served to every cell in the kitchen and the whole run would wear one
+      // cell's end caps.
+      const joint = run ? `:${run.left ? "l" : ""}${run.right ? "r" : ""}` : "";
       const raster = pieceCanvas(
-        `${cell.id}:${cell.set}:${cell.facing}:${cell.finish}${suffix}`,
+        `${cell.id}:${cell.set}:${cell.facing}:${cell.finish}${suffix}${joint}`,
         grid,
         skin,
         mirror,

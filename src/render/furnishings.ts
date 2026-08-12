@@ -68,6 +68,27 @@ export interface PieceArt {
    *  stood behind it would be the occlusion machinery firing on the wrong
    *  furniture — roofs are meant to be its first real user. */
   rise?: number;
+  /** A piece that JOINS ITS NEIGHBOURS, drawn as one continuous surface.
+   *
+   *  `s` is the standalone view — one counter on its own, both ends returned.
+   *  `mid` is what a cell draws when the run continues on BOTH sides, and `end`
+   *  when it continues on one; `end` is authored as the LEFT end and mirrored for
+   *  the right, the same economy `mirrorW` buys for side views.
+   *
+   *  THIS EXISTS BECAUSE OF THE PER-CELL EDGES RULE (CLAUDE.md), which a counter
+   *  run is the textbook case for: a worktop is one continuous slab, and drawing
+   *  each cell's own left and right outline pairs a light edge against a dark one
+   *  at every seam and turns a kitchen counter into a row of crates. The rule's
+   *  prescribed fix is to draw the edge only where the surface actually ends and
+   *  compare against the neighbour — which is what picking between these does.
+   *
+   *  GRIDS RATHER THAN A BESPOKE DRAW PATH, and that is a doctrine call. The
+   *  awning solves the same problem in renderer.ts with neighbour lookups and
+   *  literal colours, and a set cannot reskin that: DESIGN §The catalog says a
+   *  set restyles a form by supplying a DRAWING. So a joining form supplies three
+   *  drawings and the game picks, which is exactly what walls already do with
+   *  face, side and corner. */
+  joins?: { mid: Grid; end: Grid };
   /** A part of the FRONT view that moves.
    *
    *  A band of rows, and a list of replacement bands to cycle through — so the
@@ -156,6 +177,28 @@ export function gridFor(art: PieceArt, facing: Facing, frame = 0): { grid: Grid;
   if (art.w) return { grid: art.w, mirror: false };
   if (art.e && art.mirrorW) return { grid: art.e, mirror: true };
   return { grid: front, mirror: false };
+}
+
+/** Which drawing a joining piece uses, given whether the run carries on to
+ *  either side of it. See `PieceArt.joins`.
+ *
+ *  PURE, and taking two booleans rather than a world, so the choice is testable
+ *  without a map and the renderer keeps the job of knowing what a neighbour is.
+ *
+ *  `end` is authored as the LEFT end — the run continues to its right — and
+ *  mirrored for the other one. A piece alone in the world falls back to `s`,
+ *  which is the only view with both of its ends returned. */
+export function runGridFor(
+  art: PieceArt,
+  left: boolean,
+  right: boolean,
+): { grid: Grid; mirror: boolean } {
+  const j = art.joins;
+  if (!j) return { grid: art.s, mirror: false };
+  if (left && right) return { grid: j.mid, mirror: false };
+  if (right) return { grid: j.end, mirror: false };
+  if (left) return { grid: j.end, mirror: true };
+  return { grid: art.s, mirror: false };
 }
 
 /** WHICH of `gridFor`'s branches a facing takes — the same decision, named
