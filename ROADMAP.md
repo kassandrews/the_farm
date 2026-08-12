@@ -12385,11 +12385,8 @@ colour lattice. The doctrine is that the lattice has no holes, enforced by test.
 
 **Build order:**
 
-1. **PNG → grid pipeline.** Draw pieces in a real pixel editor; a script maps a
-   reserved palette to `c`/`t`/`s`/`k` and literals pass through. Six sets ×
-   twenty-two forms is unauthorable as typed char grids; this is what makes the
-   doctrine feasible, and it makes the design pass cheaper too, which is why it
-   goes first.
+1. ~~**PNG → grid pipeline.**~~ **Built 11 Aug 2026** —
+   `scripts/grid-from-png.mts`. See §The importer below.
 2. **Schema (`set` on the cell) + the completeness test**, while breaking saves
    is free.
 3. **The Set One design pass** — per item, on /furniture.html, owner reviewing
@@ -12403,6 +12400,41 @@ colour lattice. The doctrine is that the lattice has no holes, enforced by test.
 Surface clutter (agenda item 4) stays behind all of this — it multiplies rooms,
 not the catalog. The in-game mail-order catalog surface is parked in DESIGN
 §Open questions; the phrase to keep is "arrives by post."
+
+### The importer — `scripts/grid-from-png.mts` (step 1, built)
+
+`npx tsx scripts/grid-from-png.mts <piece> <facing> <file.png> [--finish pine]`
+prints the `rows` + `palette` block to paste into `content/furnishings.ts`.
+
+- **The format did not change; only how it is produced.** Grids stay char grids —
+  they diff, they are testable, content is data. What changed is that seventy
+  rows of `".kccccccck."` are now drawn instead of counted.
+- **YOU DRAW IN THE FINISH'S OWN COLOURS, not in sentinels**, so the canvas looks
+  like the game. `color`→`c`, `top`→`t`, `shade`→`s`, `#2b2540`→`k`, transparent
+  →`.`, anything else→a literal reported with its hex. Those colours are READ
+  FROM `content/skins.ts` at run time and never copied into the script — the
+  argument `shot-biomes.mts` makes about importing the real `biomeAt`, one file
+  over. A second opinion about what pale pine is would be one too many.
+- **It checks the size contract, which is the bug this format is most prone to.**
+  Width must be exact. Height DECIDES the rise rather than being checked against
+  it — anything above the footprint plus the piece's height IS the rise, so the
+  script reports the number to put in the row. It also enforces the two rules the
+  test suite holds: a wall-mounted piece's grid is exactly its `height` (no tile
+  depth, no rise), and a rise must stay under half a tile or `hides()` starts
+  fading furniture that was never meant to occlude.
+- **Round-tripped against all 80 authored grids** — rasterize the existing art to
+  PNG, import it back, compare. All 80 identical, wall-mounted pieces included,
+  comparing the PARTITION of pixels rather than the char names (the importer
+  cannot know the author called a colour `q`; it hands out chars in first-seen
+  order and the docblock says to rename them).
+- **A low pixel count is not the anti-aliasing signal.** The first version warned
+  on any literal under five pixels and immediately cried wolf on the desk's
+  three-pixel brass drawer pull. What anti-aliasing actually looks like is a
+  CROWD of near-identical colours, so the warning is on the count of distinct
+  literals instead.
+- **No new dependency.** 8-bit non-interlaced PNG is a header, an inflate and
+  five filter cases; the project has four devDependencies and none of them read
+  images. Writing the Paeth predictor beat adding a package to the tree.
 
 ## Known gaps and loose ends
 
