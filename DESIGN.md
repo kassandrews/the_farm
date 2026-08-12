@@ -1467,6 +1467,76 @@ with a walk cycle. What you would build is the place for one — the fence,
 the coop, the pond — and the animal is met in the world, like everything
 else here worth having.
 
+## The catalog
+
+Furnishing is the other half of home building, and the catalog is designed
+against one specific failure, because every inspiration commits it
+somewhere: you reach for a piece and it does not exist. A whole style
+missing (the Sims has no mid-century); a form that only exists with a
+style baked into it (Stardew's big table comes decorated for a holiday or
+not at all); a set that cannot finish a room (Animal Crossing's kitchens
+run out of matching cabinets). Three frustrations, one shape: a hole at
+the intersection of *form × set × colour*. So the catalog is not a list,
+it is a **lattice, and the lattice has no holes.**
+
+**Forms are what a room needs.** Seat, stool, bench, sofa, table, long
+table, low table, desk, bed, cot, nightstand, wardrobe, dresser, chest,
+shelf, counter run, rug, cushion, standing light, table light, wall piece,
+hearth — the checklist a furnisher reaches for, not a taxonomy. A form
+owns everything the sim cares about: footprint, solidity, facing, what it
+costs, whether it burns. Adding a form is deliberately expensive — every
+set that exists owes it a silhouette the day it lands — which is the
+discipline that keeps the checklist honest: a form earns its slot by
+someone reaching for it and finding nothing, never by seeming like a nice
+idea.
+
+**Sets are complete reskins of the checklist, and a set ships whole or
+not at all.** The style axis is the silhouette: a set's chair is a
+different drawing — different back, different legs — never the core chair
+recoloured. Every set covers every form; that rule, enforced and not
+promised (a test walks the lattice, a hole fails the build), is the whole
+answer to the unfinishable kitchen. Style is never baked into a form: a
+themed or seasonal piece is a *set*, so the plain table always exists in
+every other set, undecorated, forever. Sets may carry a signature extra
+or two beyond the checklist — that is where a set's personality lives —
+but extras are never how a set meets its obligations. The furniture that
+exists today is not separate from this scheme: it is **Set One**, the
+starter set, and it defines the checklist by having a piece in every
+slot.
+
+**Colours ride free, because the grids never contained them.** A piece's
+art asks the finish (§Materials) rather than naming colours, so every
+set arrives in every finish of its material class the day it is drawn —
+the wooden pieces in all the woods, the soft ones in all the cloths. And
+because footprints belong to forms, two sets' chairs occupy a cell
+identically, which buys the catalog's quietest good idea: **restyle in
+place.** A furnished room can change sets without moving one thing — the
+finish swatch's delight, one level up. Collecting a set is never
+"rebuild your house"; it is "look at it again."
+
+**Sets unlock the way finishes unlock, through the same three doors.**
+Set One is had from the outset, like the starter finishes — furnishing
+must look good on hour one. Beyond it: a set may be **seen** (met in the
+world, the garden's seeing-rule — a place's own furniture joins your
+catalog because you stood in the place and saw it); **given** (a friend
+warm enough tells you their source — taste lives in people here, and a
+villager's home can be where a style is met); or **taught** (a skill
+handed over, which is how the heap's keeper contributes without his
+counter ever selling furniture — the knowledge is the gift, the pieces
+still cost wood, and §Materials' junk rule does not move). A set is
+knowledge, weightless and free to apply, which is why it may sit behind
+friendship and discovery: it is the one reward class that can never
+gate. And the catalog never says what is missing — no greyed slots, no
+counts, the same rule the garden palette and every secret already obey.
+It is simply bigger than it was yesterday.
+
+**Taste stays delight.** No commission, acceptance test, or villager
+requirement may ever name a set, a form beyond a bed, or a finish.
+Furnishing to someone's taste is noticed, remembered, and rewarded —
+never demanded. The lattice exists so the player can finish the room in
+their head; the moment it becomes a checklist with a grade on it, the
+whole apparatus has failed at its one job.
+
 ## Time and the away simulation
 
 - **Real clock, real calendar.** Day/night follows the actual clock; seasons
@@ -1655,6 +1725,9 @@ with commissioned housing, the first flagship.
 ## Open questions (decide later, don't block)
 
 - Fishing? (Probably yes eventually; it's the coziest verb not yet listed.)
+- An in-game mail-order catalog — the browsable surface for §The catalog,
+  arriving by post with deadpan institutional copy. Cute enough to hold on
+  to, big enough (mail as a system) not to block on.
 - Multiplayer: likely never real-time; maybe async postcards between towns.
 - ~~Decorating interiors vs. exteriors-only~~ — settled: both, continuously.
   Interiors are the same world with the roof faded off (see Structures).

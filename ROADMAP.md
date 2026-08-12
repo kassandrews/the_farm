@@ -12346,6 +12346,64 @@ which the sheet is what found.
   It keeps two horizontals (the top's edge, the plinth's) for SHELF_BACK's
   reason: strip every line off a carcass and the piece loses its proportion.
 
+## The catalog doctrine (11 Aug 2026) — designed, not yet built
+
+DESIGN §The catalog is the source of truth; this records the decisions and the
+build order so neither gets relitigated. The prompt was the owner's, and it was
+specific: not "more furniture" but *never reaching for a piece that doesn't
+exist* — the Sims' missing mid-century, Stardew's big table that only comes
+decorated, AC's unfinishable kitchen. All one bug: a hole in the form × set ×
+colour lattice. The doctrine is that the lattice has no holes, enforced by test.
+
+**Settled while designing it:**
+
+- **The current furniture is Set One**, not a thing sets are added beside. The
+  per-item design pass (already called before this doctrine existed) is
+  therefore *defining Set One's standard*, and comes before any second set.
+- **Forms own the sim facts** (footprint, solidity, facing, cost); sets own
+  silhouettes only. This is what makes restyle-in-place free, and it means a
+  set can NEVER change a footprint — a set that wants a wider sofa is asking
+  for a new form, and forms are deliberately expensive (every set owes every
+  form a drawing).
+- **`set` will be a field on FurnitureCell beside `finish`**, not a family of
+  new ids. No players yet, so the schema change is free NOW — this is why the
+  schema step is early in the order below.
+- **Unlock channels are the finishes' three, reused**: starter (Set One),
+  seen (the garden's seeing-rule — candidate: a retro set met in the Static),
+  given (`given: {who, tier}` — candidate: mid-century through Prudence at
+  close), taught (candidate: a DIY set from Nub). The Nub one THREADS A SETTLED
+  CALL rather than breaking it: heap.test.ts's "he never gives furniture, no
+  furniture row ever costs junk" stands untouched, because a set is knowledge
+  arriving through friendship, not goods across his counter — the same reward
+  class as a finish by that rule's own reasoning (weightless, free to apply,
+  gates nothing). The named sets are candidates, not commitments; the channels
+  are the settled part.
+- **Joining pieces are forms too.** The counter run is on the checklist —
+  laid by the yard, adjacent cells drawing as one, the awning's rule indoors.
+  This is the Minecraft answer ("I build my kitchen from slabs and signs")
+  expressed as furniture.
+
+**Build order:**
+
+1. **PNG → grid pipeline.** Draw pieces in a real pixel editor; a script maps a
+   reserved palette to `c`/`t`/`s`/`k` and literals pass through. Six sets ×
+   twenty-two forms is unauthorable as typed char grids; this is what makes the
+   doctrine feasible, and it makes the design pass cheaper too, which is why it
+   goes first.
+2. **Schema (`set` on the cell) + the completeness test**, while breaking saves
+   is free.
+3. **The Set One design pass** — per item, on /furniture.html, owner reviewing
+   renders (the visual-tuning rule). Includes the checklist gaps: long table,
+   counter run. First question on the list: should the cot have a head?
+4. **The second variant axis** — cloth patterns (`p` = ask the pattern), which
+   multiplies every soft piece and gives the Menace's counter more to be the
+   sole source of.
+5. **Sets, one at a time, each complete on day one.**
+
+Surface clutter (agenda item 4) stays behind all of this — it multiplies rooms,
+not the catalog. The in-game mail-order catalog surface is parked in DESIGN
+§Open questions; the phrase to keep is "arrives by post."
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
