@@ -297,7 +297,14 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
   { id: "desk", icon: "desk", label: "Desk", hint: "Drawers one end, room for your knees the other.", group: "surface" },
   { id: "nightstand", icon: "nightstand", label: "Nightstand", hint: "Small. Goes beside a bed, holds a lamp.", group: "surface" },
 
-  { id: "bed", icon: "bed", label: "Bed", hint: "A bed makes a room somewhere to live.", group: "sleep" },
+  { id: "bed", icon: "bed", label: "Single bed", hint: "A bed makes a room somewhere to live.", group: "sleep" },
+  {
+    id: "doublebed",
+    icon: "bed",
+    label: "Double bed",
+    hint: "Twice the floor. Still one resident.",
+    group: "sleep",
+  },
   { id: "cot", icon: "cot", label: "Cot", hint: "Cheap, and it shows. Costs a little cloth.", group: "sleep" },
 
   { id: "shelf", icon: "shelf", label: "Bookshelf", hint: "Place a bookshelf. Press R to turn it.", group: "storage" },

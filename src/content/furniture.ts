@@ -44,6 +44,7 @@ export type FurnitureId =
   | "wardrobe"
   | "chest"
   | "dresser"
+  | "doublebed"
   | "desklamp"
   // --- The kitchen and the bathroom -------------------------------------------
   // Two rooms the catalogue could not furnish at all. Audit the forms by room and
@@ -153,6 +154,19 @@ export interface FurnitureDef {
    *  Distinct from `mount: "wall"`, which puts a piece IN the wall cell. This
    *  one stands on the floor in front of one. */
   backs?: "wall";
+  /** Somebody can live in a room that has one.
+   *
+   *  A FIELD rather than `id === "bed"`, which is what it was in SEVEN places
+   *  across `assign`, `home` and `housing` until a second bed existed. That is
+   *  the third time this table has learned the same lesson — `light` learned it
+   *  one lamp too late and `hearth` one fireplace too late — so it is written
+   *  down here rather than discovered again.
+   *
+   *  A QUALIFIER, NOT A CAPACITY. A double bed houses one villager exactly as a
+   *  single does; DESIGN does not take marriage, and a bed that slept two would
+   *  be a relationship system arriving through the furniture table. */
+  sleeps?: boolean;
+
   /** A SECOND finish, for the piece's other material.
    *
    *  Which classes the trim may wear. Absent means the piece is one material and
@@ -206,7 +220,8 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   bed: {
     id: "bed",
     form: true,
-    name: "Bed",
+    sleeps: true,
+    name: "Single bed",
     // NO CLOTH, AND THAT IS A RULE RATHER THAN A PRICE. A bed is what `qualify()`
     // requires of a room, so anything a bed costs is a gate on housing somebody —
     // which is exactly what ROADMAP §Ore's sink forbids in the case it names:
@@ -457,9 +472,17 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   },
 
   // --- Sleeping --------------------------------------------------------------
+  // NOT A FORM, and that is the point of it. A cot is a FLAVOUR of bed rather
+  // than something a room needs — a bed is that — so making every set that ever
+  // ships owe a cot drawing would be an obligation nobody wants (a mid-century
+  // cot is a silly thing to be required to draw). It is core's first EXTRA
+  // instead, which is the slot DESIGN §The catalog keeps for exactly this and
+  // which nothing had used yet. A cabin or camping set gets its own.
+  //
+  // Nothing changes mechanically: `sleeps` is what housing looks for, and a cot
+  // never had it.
   cot: {
     id: "cot",
-    form: true,
     name: "Cot",
     // Cheap, and cheap is the whole character of it: a bed costs 6 wood, this
     // costs 2 and 2. It is what you put in a room you have only just walled in.
@@ -476,6 +499,31 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   },
 
   // --- Storage ---------------------------------------------------------------
+  // TWICE THE BED AND NOT TWICE THE FORM. 2x2 against the single's 1x2, which is
+  // a footprint and therefore a form of its own — forms own footprints, sets own
+  // silhouettes, and "how much floor does this take" is the question a room's
+  // plan is made of.
+  //
+  // Two pillows is the whole of what says "double" at this size. The frame, the
+  // height and the blanket are the single's; widen it and put a second pillow in
+  // and the eye needs nothing else.
+  doublebed: {
+    id: "doublebed",
+    form: true,
+    sleeps: true,
+    name: "Double bed",
+    // Half again the single's six rather than double it: the frame is wider, not
+    // twice the object, and a bed is the one piece housing REQUIRES — pricing it
+    // steeply is a tax on giving somebody a home.
+    cost: { wood: 9 },
+    w: 2,
+    h: 2,
+    solid: true,
+    height: 10,
+    finishes: ["wood"],
+    trim: ["cloth"],
+  },
+
   wardrobe: {
     id: "wardrobe",
     form: true,

@@ -12597,6 +12597,34 @@ been: a north–south run was laid with the east–west art and photographed fir
   silently go wrong: `y.mid`'s first sixteen rows must be uniform, and `y.end` must
   differ from `y.mid` in its top row and nowhere else.
 
+### A double bed, and the cot stops being an obligation (12 Aug 2026)
+
+Owner's call, and the two halves pull opposite ways: one ADDS a form, the other
+REMOVES one. Checklist stays at 26.
+
+- **Single and double are two FORMS, not one form in two styles**, because 1×2
+  and 2×2 is a footprint and forms own footprints. "How much floor does this
+  take" is the question a room's plan is made of.
+- **`sleeps` REPLACES SEVEN `id === "bed"` CHECKS** across `assign`, `home` and
+  `housing`. That is the third time this table has learned the same lesson: the
+  `light` field's own docblock says it was `id === "lamp"` "until a second light
+  existed", `hearth` says the same one fireplace later. A second bed was
+  literally unbuildable without it — you could have placed a double, furnished a
+  room with it, and housed nobody, silently. There is now a test that houses
+  somebody in one, because nothing else would have caught that.
+- **It is a QUALIFIER, NOT A CAPACITY.** A double sleeps one villager exactly as
+  a single does. DESIGN does not take marriage, and a bed that slept two would be
+  a relationship system arriving through the furniture table.
+- **THE COT IS CORE'S FIRST EXTRA.** A cot is a flavour of bed rather than
+  something a room needs, so leaving it a form would oblige every set that ever
+  ships to draw one — and a mid-century cot is a silly thing to be required to
+  draw. Demoting it exercises the extras slot DESIGN keeps for exactly this,
+  which nothing had used. It stays placeable; nothing changes mechanically,
+  because housing looks for `sleeps` and a cot never had it. A cabin or camping
+  set gets its own.
+- **Two pillows is the whole of what says "double"** at this size. The frame,
+  height and blanket are the single's, widened.
+
 ### The second axis — built (12 Aug 2026)
 
 `trim`: a second finish per piece, resolved from uppercase `C`/`T`/`S` in the

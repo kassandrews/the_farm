@@ -70,6 +70,18 @@ describe("qualifying a room as somewhere to live", () => {
     if (v.ok) expect(v.room.interior.size).toBe(9);
   });
 
+  it("takes a double bed as readily as a single", () => {
+    // THE POINT OF `sleeps`. Housing asked `id === "bed"` in seven places, so a
+    // second bed form would have been invisible to every one of them — a double
+    // bed you could place, furnish a room with, and never house anybody in. The
+    // field is what makes this pass; the id check is what made it necessary.
+    const w = world();
+    const bed = house(w, 120, 120, { bed: false });
+    void bed;
+    buildAt(w, "doublebed", 121, 121, NOW, "s");
+    expect(qualify(w, 121, 121).ok).toBe(true);
+  });
+
   it("says which thing is missing, rather than just no", () => {
     const w = world();
 

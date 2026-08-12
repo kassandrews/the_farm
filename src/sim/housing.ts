@@ -1,3 +1,4 @@
+import { furnitureDef } from "../content/furniture";
 // Where a villager lives — resolved, never authored.
 //
 // The verb is "give them a home", not "build them a house" (DESIGN §"what none
@@ -68,7 +69,7 @@ const LANDING: [number, number][] = [
 export function claimedBed(world: WorldState, v: Villager): { x: number; y: number } | null {
   if (!v.homeBed) return null;
   const cell = world.furniture[v.homeBed];
-  if (!cell || cell.id !== "bed") return null;
+  if (!cell || !furnitureDef(cell.id).sleeps) return null;
   return parseTileKey(v.homeBed);
 }
 
@@ -221,7 +222,8 @@ export function claimAuthoredBeds(world: WorldState): void {
     const bed = authoredBed(v.id);
     if (!bed) continue;
     const key = tileKey(bed.x, bed.y);
-    if (world.furniture[key]?.id === "bed") v.homeBed = key;
+    const at = world.furniture[key];
+    if (at && furnitureDef(at.id).sleeps) v.homeBed = key;
   }
 }
 

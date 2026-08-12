@@ -1,3 +1,4 @@
+import { furnitureDef } from "../content/furniture";
 // Giving someone a home — the acceptance test, written once and used twice.
 //
 // The verb is "give them a home", not "build them a house" (ROADMAP §Housing).
@@ -82,7 +83,7 @@ export const DISQUALIFIER_TEXT: Record<Disqualifier, string> = {
  *  caller do it. */
 export function qualify(world: WorldState, x: number, y: number): Verdict {
   const found = furnitureAt(world, x, y);
-  if (!found || found.cell.id !== "bed") return { ok: false, why: "no-bed" };
+  if (!found || !furnitureDef(found.cell.id).sleeps) return { ok: false, why: "no-bed" };
 
   // A bed is solid, so the room is the space AROUND it — asking roomAt on the
   // bed's own cell would ask which room contains a wall. Any covered cell's
@@ -164,7 +165,7 @@ export function playerHome(world: WorldState): { x: number; y: number } | null {
 export function beds(world: WorldState): { x: number; y: number; verdict: Verdict }[] {
   const out: { x: number; y: number; verdict: Verdict }[] = [];
   for (const [key, cell] of Object.entries(world.furniture)) {
-    if (cell.id !== "bed") continue;
+    if (!furnitureDef(cell.id).sleeps) continue;
     const at = parseTileKey(key);
     if (!at) continue;
     out.push({ x: at.x, y: at.y, verdict: qualify(world, at.x, at.y) });
@@ -302,7 +303,7 @@ export function pendingRehome(world: WorldState): CharId | null {
 export function bedKeys(world: WorldState): Set<string> {
   const out = new Set<string>();
   for (const [key, cell] of Object.entries(world.furniture)) {
-    if (cell.id === "bed") out.add(key);
+    if (furnitureDef(cell.id).sleeps) out.add(key);
   }
   return out;
 }

@@ -111,7 +111,9 @@ export function describeHome(world: WorldState, v: Villager): HomeNote[] {
   const room = verdict.room;
   const notes: HomeNote[] = [];
 
-  const others = furnitureIn(world, room.interior).filter((id) => id !== "bed");
+  // Anything you SLEEP in, not the id "bed": a room furnished with a double is
+  // exactly as bare as one furnished with a single (§sleeps).
+  const others = furnitureIn(world, room.interior).filter((id) => !furnitureDef(id).sleeps);
   if (others.length === 0) notes.push({ kind: "bare", value: "" });
 
   const size = room.interior.size;

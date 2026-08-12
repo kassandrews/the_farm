@@ -1959,6 +1959,8 @@ function buildFlavour(tool: StructureId): string {
 /** Deadpan, brief, and about the object rather than about you (§Tone). */
 function furnitureFlavour(id: FurnitureId, layer: Layer): string {
   switch (id) {
+    case "doublebed":
+      return "A double bed. Twice the bed. Precisely twice, in fact.";
     case "bed":
       return "A bed. The correct number of beds is now one.";
     case "table":

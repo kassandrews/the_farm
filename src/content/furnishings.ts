@@ -926,6 +926,50 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
   },
 
+  // The single widened, with a second pillow. See the row in furniture.ts for
+  // why that is the whole trick.
+  doublebed: {
+    mirrorW: true,
+    s: {
+      rows: [
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ".kttttttttttttttttttttttttttttk.",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ...Array<string>(6).fill(".kpppppppppppppCCpppppppppppppk."),
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ...Array<string>(20).fill(".kCCCCCCCCCCCCCCCCCCCCCCCCCCCCk."),
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ...Array<string>(5).fill("..kk........................kk.."),
+      ],
+      palette: { k: INK, p: "#f2ece0" },
+    },
+    n: {
+      rows: [
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ...Array<string>(20).fill(".kCCCCCCCCCCCCCCCCCCCCCCCCCCCCk."),
+        ...Array<string>(6).fill(".kpppppppppppppCCpppppppppppppk."),
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ".kttttttttttttttttttttttttttttk.",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ...Array<string>(5).fill("..kk........................kk.."),
+      ],
+      palette: { k: INK, p: "#f2ece0" },
+    },
+  },
+
   // The tallest thing you can put in a room, so it gets a CORNICE — the
   // four rows of overhang the `rise` buys. A tall box Cith a lid reads as furniture;
   // a tall box does not. TCo doors, a centre stile, tCo knobs.
