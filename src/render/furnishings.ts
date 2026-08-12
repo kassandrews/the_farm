@@ -152,6 +152,19 @@ const FINISH_KEY: Record<string, keyof Pick<SkinDef, "color" | "top" | "shade">>
   s: "shade",
 };
 
+/** The SECOND finish, in capitals — a piece's trim (content/furniture.ts §trim).
+ *
+ *  Uppercase because it reads as "the same question, asked of the other
+ *  material": `c` is the body's colour and `C` the trim's, and a grid stays
+ *  scannable at a glance instead of growing a second alphabet. A piece with no
+ *  trim draws these as nothing, exactly like an undeclared literal, so a stray
+ *  capital is invisible rather than wrong-coloured. */
+const TRIM_KEY: Record<string, keyof Pick<SkinDef, "color" | "top" | "shade">> = {
+  C: "color",
+  T: "top",
+  S: "shade",
+};
+
 /** How dark a piece's outline is, as a fraction of its own shade. */
 const OUTLINE_MIX = 0.52;
 
@@ -297,7 +310,13 @@ const cache = new Map<string, HTMLCanvasElement>();
  *  facing and the FINISH — or a walnut chair gets served the pine one. That is
  *  the whole reason this cache is keyed on three things and the icon cache on
  *  one: an icon has no finish to vary by. */
-export function pieceCanvas(key: string, grid: Grid, skin: SkinDef, mirror: boolean): HTMLCanvasElement {
+export function pieceCanvas(
+  key: string,
+  grid: Grid,
+  skin: SkinDef,
+  mirror: boolean,
+  trim?: SkinDef,
+): HTMLCanvasElement {
   const hit = cache.get(key);
   if (hit) return hit;
 
@@ -318,7 +337,15 @@ export function pieceCanvas(key: string, grid: Grid, skin: SkinDef, mirror: bool
       // documentation of intent rather than the value used; every piece wants an
       // outline and this is what an outline is made of.
       const finishKey = FINISH_KEY[ch];
-      const color = ch === "k" ? outlineFor(skin) : finishKey ? skin[finishKey] : grid.palette[ch];
+      const trimKey = TRIM_KEY[ch];
+      const color =
+        ch === "k"
+          ? outlineFor(skin)
+          : finishKey
+            ? skin[finishKey]
+            : trimKey
+              ? trim?.[trimKey]
+              : grid.palette[ch];
       if (!color) continue; // undeclared chars are transparent, like "."
       ctx.fillStyle = color;
       ctx.fillRect(mirror ? w - 1 - x : x, y, 1, 1);

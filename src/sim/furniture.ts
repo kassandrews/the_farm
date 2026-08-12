@@ -30,6 +30,7 @@ import type { WorldState, FurnitureCell, Layer } from "./types";
 import type { FurnitureId, Facing } from "../content/furniture";
 import { furnitureDef, footprint, covers, MAX_SPAN } from "../content/furniture";
 import type { SkinId } from "../content/skins";
+import { defaultSkin } from "../content/skins";
 import type { SetId } from "../content/sets";
 import { tileAt, tileKey, refusesConstruction, refusesFooting } from "./world";
 import { touchBuild } from "./structures";
@@ -167,9 +168,10 @@ export function placeFurniture(
    *  otherwise. */
   set: SetId = "core",
   layer: Layer = "surface",
+  trim?: SkinId,
 ): boolean {
   if (!canPlaceFurniture(world, ax, ay, id, facing, layer)) return false;
-  furnitureFor(world, layer)[tileKey(ax, ay)] = { id, facing, finish, set };
+  furnitureFor(world, layer)[tileKey(ax, ay)] = { id, facing, finish, set, ...(trim ? { trim } : {}) };
   touchBuild(world); // the standing things moved — see structures.ts
   return true;
 }
@@ -187,6 +189,15 @@ export function removeFurnitureAt(
   delete furnitureFor(world, layer)[tileKey(found.ax, found.ay)];
   touchBuild(world); // the standing things moved — see structures.ts
   return found.cell;
+}
+
+/** The finish a piece's TRIM is drawn in — its own, or the default for its
+ *  class. THE ONE PLACE that fallback lives, so a cell written before trim
+ *  existed and a cell whose trim was never chosen resolve identically. */
+export function trimOf(cell: FurnitureCell): SkinId | undefined {
+  const classes = furnitureDef(cell.id).trim;
+  if (!classes?.length) return undefined;
+  return cell.trim ?? defaultSkin(classes[0]);
 }
 
 /** Is this cell blocked by furniture standing on it? */

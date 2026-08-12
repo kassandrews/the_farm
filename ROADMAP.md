@@ -12597,6 +12597,37 @@ been: a north–south run was laid with the east–west art and photographed fir
   silently go wrong: `y.mid`'s first sixteen rows must be uniform, and `y.end` must
   differ from `y.mid` in its top row and nowhere else.
 
+### The second axis — built (12 Aug 2026)
+
+`trim`: a second finish per piece, resolved from uppercase `C`/`T`/`S` in the
+grids exactly as `c`/`t`/`s` resolve the first. Four pieces have one — the
+counter's worktop, the bed's blanket, and the sofa's and cot's wooden frames.
+
+- **NO MIGRATION, and that is a property of the design rather than luck.** The
+  cell's `trim` is optional and absent means "this piece's default", not "no
+  trim" — so every cell written before the field existed resolves to exactly what
+  it was already being drawn with. `trimOf()` is the single place that fallback
+  lives.
+- **ONE SWATCH ROW, and the tap is routed by the CLASS of the swatch.** Wood
+  dresses the cabinet, stone or steel dresses the worktop. This is what §8f
+  costed when it killed the `paint` axis ("a second swatch row") and it turns out
+  not to be needed: `availableSkinsForClasses` already spans classes without
+  asking which category you mean, and SKINS' declaration order groups the chips
+  for free.
+- **WHICH MAKES DISJOINTNESS LOAD-BEARING**, so `furniture.test.ts` asserts it: a
+  class in both a piece's `finishes` and its `trim` would make the tap ambiguous
+  and force the second row back. It cost the butcher-block counter — an all-wood
+  worktop is out, because wood is the cabinet's — and that is the right trade at
+  one row versus two.
+- **A capital on a piece with no trim draws NOTHING**, which is a silent hole
+  rather than a wrong colour, so a test walks every grid a piece owns (joining
+  ones included, where a stray capital is least likely to be looked at) and
+  requires `trim` to be declared if any capital appears.
+- **The sofa and cot's frames were the surprise.** Their finish class is cloth, so
+  the trim is the WOOD — the opposite of the intuition that a soft piece's second
+  material is its softness. Read `finishes` before deciding which half of a piece
+  is fixed.
+
 ### The second axis — scope, settled before it was built (12 Aug 2026)
 
 Owner's call, and it is a scoping rule rather than a mechanism: **a second
@@ -12657,8 +12688,8 @@ the costs against the art:
   worktop, which is correct and reads as continuous, but it has none of the front
   edge the east–west run gets. Worth a look once the second axis lands, because a
   stone top over a wood cabinet may supply the contrast for free.
-- **The two-material counter** — a wooden cabinet under a stone worktop — which is
-  what the owner asked for and what this does NOT do. One `finish` per cell buys
+- ~~**The two-material counter**~~ — **built**; see §The second axis, below.
+  What follows is the argument as it stood before it was: One `finish` per cell buys
   one material, so today's counter is butcher block or solid stone, both real
   kitchens, with the worktop in the finish's `t` tone. The general fix is the
   SECOND VARIANT AXIS already queued as step 4, and the counter is its best

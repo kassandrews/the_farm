@@ -153,6 +153,25 @@ export interface FurnitureDef {
    *  Distinct from `mount: "wall"`, which puts a piece IN the wall cell. This
    *  one stands on the floor in front of one. */
   backs?: "wall";
+  /** A SECOND finish, for the piece's other material.
+   *
+   *  Which classes the trim may wear. Absent means the piece is one material and
+   *  whatever accents it has stay literals — a dresser's brass handle, a lamp's
+   *  brass head. This slot is for the substantial second material only: the
+   *  upholstery on a frame, the bedding on a bed, the worktop on a cabinet.
+   *
+   *  MUST BE DISJOINT FROM `finishes`, and `furniture.test.ts` says so. The build
+   *  bar shows ONE row of swatches and routes a tap by the class of the swatch
+   *  tapped — a stone swatch dresses the worktop, a wood one dresses the cabinet —
+   *  which is what lets a two-material piece avoid a second swatch row and the
+   *  "which part did you mean" question DESIGN §Materials forbids. Overlap the
+   *  lists and that tap becomes ambiguous.
+   *
+   *  It is a LOOK, so it is free (§Materials). The bed's blanket is choosable
+   *  without the bed costing a bolt, which is what let the housing rule and a
+   *  choosable blanket both be true. */
+  trim?: SkinClass[];
+
   /** Is this a CATALOG FORM — one of the slots every set must cover?
    *
    *  DESIGN §The catalog: a form is what a room needs, and the guarantee being
@@ -202,6 +221,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     solid: true,
     height: 10,
     finishes: ["wood"],
+    trim: ["cloth"],
   },
   table: {
     id: "table",
@@ -395,6 +415,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // argument (see skins/BRASS): a thing made of two materials wears the one
     // you would actually choose, and the other stays itself.
     finishes: ["cloth"],
+    trim: ["wood"],
   },
 
   // --- Tables and surfaces ---------------------------------------------------
@@ -451,6 +472,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     solid: false,
     height: 6,
     finishes: ["cloth"],
+    trim: ["wood"],
   },
 
   // --- Storage ---------------------------------------------------------------
@@ -597,6 +619,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // everybody would see.
     height: 14,
     finishes: ["wood"],
+    trim: ["stone", "metal"],
   },
 
   // --- The bathroom -----------------------------------------------------------

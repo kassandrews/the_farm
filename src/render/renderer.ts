@@ -72,6 +72,7 @@ import {
   CONNECT_W,
 } from "../sim/structures";
 import { furnitureDef, footprint } from "../content/furniture";
+import { trimOf } from "../sim/furniture";
 import { TENTS } from "../content/tents";
 import type { TentDef } from "../content/tents";
 import { drawTent } from "./tent";
@@ -4683,6 +4684,8 @@ export class Renderer {
     const def = furnitureDef(cell.id);
     const { w, h } = footprint(def, cell.facing);
     const skin = skinDef(cell.finish);
+    const trimId = trimOf(cell);
+    const trim = trimId ? skinDef(trimId) : undefined;
     const px = Math.round(this.sceneX(ax) - TILE / 2);
     const py = Math.round(this.sceneY(ay) - TILE / 2);
     const base = Math.round(this.sceneY(ay + h - 1) + TILE / 2);
@@ -4766,7 +4769,13 @@ export class Renderer {
     if (def.mount === "wall") {
       if (mounted) {
         const { grid, mirror } = gridFor(mounted, cell.facing);
-        const raster = pieceCanvas(`${cell.id}:${cell.set}:${cell.facing}:${cell.finish}`, grid, skin, mirror);
+        const raster = pieceCanvas(
+          `${cell.id}:${cell.set}:${cell.facing}:${cell.finish}:${trimId ?? "-"}`,
+          grid,
+          skin,
+          mirror,
+          trim,
+        );
         // The wall's own datum, not the furniture one: `base` here is the floor
         // line of the cell, and a wall's face runs from a storey above it.
         ctx.drawImage(raster, px, base - STOREY + WALL_CAP + 2);
@@ -4803,10 +4812,11 @@ export class Renderer {
       // cell's end caps.
       const joint = run ? `:${run.axis}${run.before ? "b" : ""}${run.after ? "a" : ""}` : "";
       const raster = pieceCanvas(
-        `${cell.id}:${cell.set}:${cell.facing}:${cell.finish}${suffix}${joint}`,
+        `${cell.id}:${cell.set}:${cell.facing}:${cell.finish}:${trimId ?? "-"}${suffix}${joint}`,
         grid,
         skin,
         mirror,
+        trim,
       );
       // Integer coordinates and no scale factor — the grid is authored at scene
       // px, so this is a 1:1 blit. Anything else resamples pixel art off the

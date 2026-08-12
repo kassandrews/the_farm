@@ -48,18 +48,39 @@ describe("furniture art", () => {
     });
 
     it(`${id} declares every colour it uses`, () => {
-      // `c`, `t` and `s` are the finish and are resolved at raster time; `.` is
-      // transparent; `k` must be the shared ink. Anything else has to be in the
-      // piece's own palette or it silently draws nothing.
+      // `c`, `t` and `s` are the finish and `C`, `T`, `S` the trim; both are
+      // resolved at raster time. `.` is transparent; `k` must be the shared ink.
+      // Anything else has to be in the piece's own palette or it silently draws
+      // nothing.
       for (const facing of FACINGS) {
         const { grid } = gridFor(art, facing);
         for (const row of grid.rows) {
           for (const ch of row) {
-            if (ch === "." || ch === "c" || ch === "t" || ch === "s") continue;
+            if (ch === "." || "cts".includes(ch) || "CTS".includes(ch)) continue;
             expect(grid.palette[ch], `${id}/${facing} uses "${ch}"`).toBeTruthy();
           }
         }
       }
+    });
+
+    it(`${id} only asks for a trim it actually has`, () => {
+      // A capital resolves against the piece's SECOND finish, so one on a piece
+      // with no `trim` declared draws nothing at all — a silent hole in the art
+      // rather than a wrong colour, which is the worst kind. Checks every grid a
+      // piece owns, joining ones included, since those are where a stray capital
+      // is least likely to be looked at.
+      const grids = [
+        art.s,
+        art.n,
+        art.e,
+        art.w,
+        art.joins?.x.mid,
+        art.joins?.x.end,
+        art.joins?.y?.mid,
+        art.joins?.y?.end,
+      ].filter((g): g is NonNullable<typeof g> => g !== undefined);
+      const usesTrim = grids.some((g) => /[CTS]/.test(g.rows.join("")));
+      if (usesTrim) expect(def.trim?.length, `${id} draws trim but declares none`).toBeTruthy();
     });
 
     it(`${id} outlines in the shared ink`, () => {

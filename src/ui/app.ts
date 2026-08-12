@@ -28,6 +28,8 @@ import {
   toolAllowedOn,
   playerTile,
   toolFinishes,
+  toolTrim,
+  loadedTrim,
   loadedFinish,
 } from "../sim/game";
 import { nodeAt } from "../sim/gather";
@@ -3458,7 +3460,22 @@ export class App {
     }
 
     const world = this.world;
-    const options = availableSkinsForClasses(world.skins.unlocked, toolFinishes(tool));
+    // BOTH SLOTS IN ONE ROW. A piece with a trim (a counter's worktop, a bed's
+    // blanket) offers its second finish here rather than in a row of its own,
+    // and the tap knows which slot you meant from the CLASS of the chip tapped —
+    // wood dresses the cabinet, stone dresses the worktop. The two class lists
+    // are required to be disjoint (`furniture.test.ts`), which is what makes that
+    // unambiguous, and table order groups them for free: SKINS is declared wood,
+    // then stone, then cloth, then metal, then ceramic.
+    //
+    // A second row was the obvious alternative and is what ROADMAP §8f costed
+    // when it killed the `paint` axis. This avoids it, and avoids asking the
+    // player which part they mean — the menu DESIGN §Materials forbids.
+    const trimClasses = toolTrim(tool);
+    const options = availableSkinsForClasses(world.skins.unlocked, [
+      ...toolFinishes(tool),
+      ...trimClasses,
+    ]);
     // Erase wears nothing, and a tool with exactly one unlocked finish is not a
     // choice — a lone chip you cannot deselect is furniture, not a control. Both
     // collapse the row to nothing, which the bottom-anchored layout absorbs
@@ -3469,8 +3486,10 @@ export class App {
     }
 
     const held = loadedFinish(world, tool);
+    const heldTrim = loadedTrim(world, tool);
     const chips = options.map((id) => {
       const skin = skinDef(id);
+      const isTrim = trimClasses.includes(skin.applies);
       const chip = el("button", { class: "finish-chip", ariaLabel: skin.name }, [
         // The finish's own colour, so you see what you are about to lay rather
         // than reading its name and guessing. Swatch AND label, because "Ash"
@@ -3480,9 +3499,13 @@ export class App {
       ]);
       const swatch = chip.firstElementChild as HTMLElement;
       swatch.style.background = skin.color;
-      chip.classList.toggle("chosen", id === held);
+      chip.classList.toggle("chosen", id === (isTrim ? heldTrim : held));
       chip.addEventListener("click", () => {
-        world.skins.selected[tool] = id;
+        if (isTrim) {
+          world.skins.trim = { ...world.skins.trim, [tool]: id };
+        } else {
+          world.skins.selected[tool] = id;
+        }
         saveWorld(world);
         this.syncFinishUi();
         // And the catalogue, which is drawn IN the finish — picking ash and

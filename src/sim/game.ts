@@ -603,6 +603,27 @@ export function toolFinishes(tool: BuildTool): SkinClass[] {
   return structureDef(tool).finishes;
 }
 
+/** Which classes a tool's TRIM may wear, or empty for a one-material tool. */
+export function toolTrim(tool: BuildTool): SkinClass[] {
+  return isFurnitureTool(tool) ? (furnitureDef(tool).trim ?? []) : [];
+}
+
+/** The trim a tool is loaded with, or undefined for a tool that has none.
+ *  Guarded exactly as `loadedFinish` is, and for its reasons. */
+export function loadedTrim(world: WorldState, tool: BuildTool): SkinId | undefined {
+  const classes = toolTrim(tool);
+  if (!classes.length) return undefined;
+  const chosen = world.skins.trim?.[tool];
+  if (
+    chosen &&
+    classes.includes(skinDef(chosen).applies) &&
+    world.skins.unlocked.includes(chosen)
+  ) {
+    return chosen;
+  }
+  return defaultSkin(classes[0]);
+}
+
 /** The finish a tool is currently loaded with, guarded.
  *
  *  Guarded because `world.skins.selected` is a Partial keyed by tool and can go
@@ -1854,7 +1875,7 @@ function placeOrRemove(
 
   if (isFurnitureTool(tool)) {
     const def = furnitureDef(tool);
-    if (!placeFurniture(world, x, y, tool, facing, finish, "core", layer)) {
+    if (!placeFurniture(world, x, y, tool, facing, finish, "core", layer, loadedTrim(world, tool))) {
       // "Won't fit" is the honest answer for every piece in the table except the
       // one that can be refused on a cell with nothing in it. A fireplace needs a
       // wall behind it (content/furniture.ts §backs), and a refusal that talks

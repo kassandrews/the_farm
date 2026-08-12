@@ -143,6 +143,13 @@ export interface FurnitureCell {
    *  furnished room in place possible at all — the alternative, an id per set
    *  per form, would make every such change a demolition. */
   set: SetId;
+  /** The piece's SECOND finish, where it has one (content/furniture.ts §trim).
+   *
+   *  Optional, and absent means "the default for this piece's trim class" rather
+   *  than "no trim" — which is why adding it needed no migration: every cell
+   *  written before it existed resolves to exactly what it was already drawn
+   *  with. `trimOf()` is the one place that fallback lives. */
+  trim?: SkinId;
 }
 
 export interface Villager {
@@ -415,6 +422,10 @@ export interface WorldState {
   skins: {
     unlocked: SkinId[];
     selected: Partial<Record<BuildTool, SkinId>>;
+    /** The second finish per tool, for the pieces that have one. Optional the
+     *  whole way down, so a save written before trim existed simply resolves to
+     *  each piece's default — see `loadedTrim`. */
+    trim?: Partial<Record<BuildTool, SkinId>>;
   };
 
   /** Farming's free axis, and deliberately the same shape as `skins` above.
