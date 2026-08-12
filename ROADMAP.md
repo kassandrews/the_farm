@@ -12315,6 +12315,37 @@ sheet exactly: real renderer, real world, fixed clock, fixed seed, no controls.
 sheet — drive.mjs stays the instrument for glow), and the roof sliver, which is a
 sort between a roof and the furniture under it and needs a real house.
 
+### The three missing north grids turn out to be two (agenda item 2)
+
+`desk` and `dresser` have `n` grids now. **`cot` does not, and should not** —
+which the sheet is what found.
+
+- **The cot's fallback was already correct.** Its front view is symmetric end to
+  end: identical rails at head and foot, no pillow, no headboard, and the legs
+  drawn only at the near end — which is right from either direction, because
+  whichever end is nearest is the one whose legs you can see. A camp cot has no
+  front. An `n` grid would have been a byte-for-byte duplicate of `s`, and the
+  note above `WARDROBE_BACK` already says what that costs: "three chances to typo
+  the same picture". *Whether a cot should HAVE a head — a pillow, a raised end —
+  is a live question, but it is a redesign of the front view and belongs to the
+  per-item design pass, not here.*
+- **A DESK IS TWO OBJECTS AND THEY TURN DIFFERENTLY**, which is the lesson worth
+  keeping. The pedestal is asymmetric: it changes sides on a half turn, and the
+  face you then see is its back — no pulls, no seams, shade all the way up, the
+  wardrobe's rule. The DESKTOP is a symmetric slab, so the edge facing the camera
+  is the same piece of wood at either facing and keeps its `t` surface and `c`
+  face exactly.
+
+  The first attempt shaded the whole piece, wardrobe-style, and the north desk
+  came out a dark lump. That was not a taste call gone wrong, it was **a wrong
+  claim about what rotating a box does**: nothing about that surface moved.
+  Before authoring another back, ask which parts of the piece actually turned.
+- **The dresser is the same rule with nothing to swap.** Symmetric across its
+  width, so the whole difference is what stops being drawn — six pulls and the
+  seams between three drawers. Top slab untouched; only the carcass is in shade.
+  It keeps two horizontals (the top's edge, the plinth's) for SHELF_BACK's
+  reason: strip every line off a carcass and the piece loses its proportion.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
@@ -12357,8 +12388,9 @@ you trip over them:
   The meadow has since been paired too (§The meadow's second tree), so the count
   is sixteen; it was the one row that needed its own sitting.
 
-- **Three pieces still borrow their north view from their front, and two read
-  as blocks turned sideways.** **`/furniture.html` is the tool now** (§Phase 19) —
+- **Two pieces read as blocks turned sideways.** (Was "three pieces still borrow
+  their north view" as well; that half is **done** — item 2 below.)
+  **`/furniture.html` is the tool now** (§Phase 19) —
   every piece facing all four ways, hot-reloading, with each view labelled with
   where its art came from, so these three read straight off the page.
   `scripts/shot-rotations.mjs` still takes the record shots. What they found, in
@@ -12369,10 +12401,10 @@ you trip over them:
      with `mirrorW`, because at one tile wide a box's side IS its back. Painted
      in the finish's shade rather than its colour; see the comment above
      `WARDROBE_BACK` in `content/furnishings.ts` before authoring another.
-  2. **`desk`, `dresser` and `cot` have no `n` grid**, so a desk pushed against
-     the top wall still shows the camera its drawers and its kneehole. Same
-     shape of fix as the three above, but these are 2×1 and the back is not the
-     side, so it is a real second grid rather than a shared panel.
+  2. ~~**`desk`, `dresser` and `cot` have no `n` grid**, so a desk pushed against
+     the top wall still shows the camera its drawers and its kneehole.~~
+     **Done 11 Aug 2026 — but as TWO grids, not three.** See below; the cot was
+     the interesting one.
   3. **`sofa` and `bench` turned east or west collapse into a tall block.** The
      arms-and-back reading that carries the front view has nowhere to live in a
      one-tile width. This one is a redraw, not a missing grid.

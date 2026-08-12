@@ -733,6 +733,36 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
       ],
       palette: { k: INK, d: "#9c7a2c" },
     },
+    // THE PEDESTAL CHANGES SIDES, AND THE TOP DOES NOT CHANGE AT ALL.
+    //
+    // A desk is two objects and they turn differently. The pedestal is
+    // asymmetric: what was on your right is on your left after a half turn, and
+    // the face you now see is its back — no pulls, no drawer seams, `s` (shade)
+    // all the way up, which is WARDROBE_BACK's rule and for its reason. The leg
+    // stub swaps with it.
+    //
+    // The desktop is a SYMMETRIC SLAB, so the edge facing the camera is the same
+    // piece of wood at either facing, lit the same way. It keeps its front
+    // view's `t` surface and `c` face exactly. Shading it too was the first
+    // attempt and it turned the north desk into a dark lump — a real mistake
+    // about what rotating a box does, not a taste call: nothing about that
+    // surface moved.
+    n: {
+      rows: [
+        "................................",
+        "................................",
+        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+        ".kttttttttttttttttttttttttttttk.",
+        ...Array<string>(8).fill(".kcccccccccccccccccccccccccccck."),
+        ...Array<string>(2).fill(".kssssssssssssssssssssssssssssk."),
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        "...kkkkkkkkkkkkkk...............",
+        ...Array<string>(10).fill("...kssssssssssssk..............."),
+        "...kkkkkkkkkkkkkk.........ksk...",
+        "...kkk....................kkk...",
+      ],
+      palette: { k: INK },
+    },
     e: {
       rows: [
         "................",
@@ -1244,6 +1274,37 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "...kk......................kk...",
       ],
       palette: { k: INK, d: "#9c7a2c" },
+    },
+    // Three drawers become one panel. Unlike the desk there is nothing to swap
+    // sides — a dresser is symmetric across its width — so the whole of the
+    // difference is what STOPS being drawn: six pulls and the seams between the
+    // drawers.
+    //
+    // The top slab is untouched, for the reason spelled out on the desk's `n`:
+    // it is symmetric front to back, so turning the piece does not turn it. Only
+    // the CARCASS has a face that changed, and that is the part in shade.
+    //
+    // THE TWO LINES THAT STAY are the top's edge and the plinth's, and they are
+    // the reason this is not a slab. It is SHELF_BACK's lesson: strip every
+    // horizontal off a carcass and the piece loses the proportion its front view
+    // had, so the back keeps the two that are structure rather than joinery.
+    n: {
+      rows: [
+        "................................",
+        "................................",
+        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+        ".kttttttttttttttttttttttttttttk.",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ...Array<string>(11).fill(".kssssssssssssssssssssssssssssk."),
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ...Array<string>(3).fill(".kssssssssssssssssssssssssssssk."),
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ...Array<string>(4).fill("...kk......................kk..."),
+      ],
+      palette: { k: INK },
     },
     e: {
       rows: [
