@@ -381,6 +381,18 @@ const GLASS_WARM_LIT = "#f6d79b";
  *  recoloured it would make the marks a second thing to choose on a piece whose
  *  entire content is one mark. Off-white — pure `#fff` glares against ox-blood
  *  and comes through the night wash brighter than the lamps do. */
+
+/** Rough perceptual lightness of a `#rrggbb`, 0..1. Used to keep the shingle
+ *  courses equally visible on a dark roof and a pale one (§drawRoofCell). Rough
+ *  is the point: it decides an alpha, not a colour. */
+function roofLum(hex: string): number {
+  const n = parseInt(hex.slice(1), 16);
+  if (!Number.isFinite(n)) return 0.5;
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
 const BARN_PAINT = "#ece4d4";
 /** A hung banner (§drawBanner). Hardcoded on the flag's own argument two lines
  *  down: cloth is not the building's material, and letting a finish recolour it
@@ -4067,9 +4079,24 @@ export class Renderer {
       const local = slope.ridge - base;
       if (local >= 0 && local < 1) {
         const i = Math.round(local * TILE);
-        ctx.fillStyle = skin.top;
-        if (fall.axis === "ew") ctx.fillRect(px, py + i, TILE, 1);
-        else ctx.fillRect(px + i, py, 1, TILE);
+        // A RIDGE CAP rather than a highlight. It was one lit pixel, which says
+        // "the plane folds here" and nothing else; a real roof carries a course
+        // of capping tiles over the join, and that course is the one piece of
+        // roof detail you can see from across a square. Three pixels: a lit top,
+        // the cap itself in the roofing's own colour, and a shadow under it so
+        // the cap stands on the slope rather than being painted along it.
+        //
+        // Still not per-cell banding — a roof has exactly one of these and it is
+        // drawn where the surface actually folds, which is the same test the eave
+        // lines pass.
+        const band = (o: number, style: string) => {
+          ctx.fillStyle = style;
+          if (fall.axis === "ew") ctx.fillRect(px, py + i + o, TILE, 1);
+          else ctx.fillRect(px + i + o, py, 1, TILE);
+        };
+        band(-1, skin.top);
+        band(0, skin.color);
+        band(1, "rgba(0,0,0,0.18)");
       }
     }
 
@@ -4087,7 +4114,14 @@ export class Renderer {
     // surfaces meeting need their textures to CROSS or they read as one surface.
     // The pitch ramp is what says which way this roof falls; the courses only
     // have to say "roof", and they say it best across the grain of the wall.
-    ctx.fillStyle = "rgba(0,0,0,0.11)";
+    // COURSE CONTRAST FOLLOWS THE ROOFING'S OWN LIGHTNESS. A flat 11% black is a
+    // different amount of texture depending on what it is laid over: on the
+    // barn's ox-blood it reads as courses, and on the museum's marble it very
+    // nearly disappears, which is why the biggest roof in town was also the
+    // blankest. Scaling by luminance gives every roof about the same amount of
+    // visible course, which is what "they are all shingled" should mean.
+    const lum = roofLum(skin.color);
+    ctx.fillStyle = `rgba(0,0,0,${(0.075 + 0.13 * lum).toFixed(3)})`;
     for (let i = 0; i < TILE; i++) {
       if ((ty * TILE + i) % 4 === 0) ctx.fillRect(px, py + i, TILE, 1);
     }
@@ -4662,7 +4696,17 @@ export class Renderer {
       // wall it hangs on is the one behind it. Either cell is enough — an awning
       // at the end of a run still has a wall to be fixed to.
       const run = this.awningRun(world, ax, ay);
-      this.drawAwning(px, py, base, pw, run.mounted ? STOREY : H, skin, ax, run);
+      // MOUNTED CLEARS THE EAVE. A wall's top is not the top of what you can see
+      // of the building — the roof hangs `EAVE` pixels past it — so an awning
+      // hung at exactly STOREY has its rail underneath the overhang, jammed
+      // against the fascia with no daylight between them. On the shop that put
+      // the canopy's dark top edge, the eave's shadow and the roof's lit lip in
+      // three touching bands, and the awning stopped being a separate object.
+      //
+      // Dropping it by the eave's depth is also what a real one does: an awning
+      // is fixed to the wall BELOW the eaves, because the eaves are what it is
+      // being an eave instead of.
+      this.drawAwning(px, py, base, pw, run.mounted ? STOREY - EAVE : H, skin, ax, run);
       ctx.globalAlpha = prev;
       return;
     }
@@ -4972,7 +5016,14 @@ export class Renderer {
     // between neighbours and then outline both sides of it, which is a seam ruled
     // down a single sheet of canvas every sixteen pixels.
     const clothTop = py - H;
-    const clothH = base - py;
+    // SHORTER WHEN MOUNTED, not lower. The first attempt at clearing the eave
+    // simply dropped the whole canopy by its depth, which bought the gap at the
+    // top and spent the window: the cloth's lower edge came down over the glass
+    // and covered all of it, so the shop lost the thing the awning was there to
+    // frame. Trimming the same three pixels off the cloth's DEPTH instead moves
+    // the top edge out from under the overhang and leaves the bottom edge
+    // exactly where it was — the glass shows the same sliver it always did.
+    const clothH = base - py - (mounted ? EAVE : 0);
     const x0 = px + (run.west ? 0 : 1);
     const x1 = px + pw - (run.east ? 0 : 1);
     ctx.fillStyle = CANOPY[skin.id] ?? CANOPY_DEFAULT;

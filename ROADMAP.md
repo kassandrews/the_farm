@@ -12177,6 +12177,66 @@ And the compiler earned its keep: `furnitureFlavour` is exhaustive over
 exactly what its own comment promised, and the opposite of the structures table,
 where three separate hand-written predicates stayed silent.
 
+## Outlines, roofs, and the awning under the eave (11 Aug 2026)
+
+### Furniture outlines come off the material
+
+**`k` used to resolve to flat INK**, and that one fact is why this furniture read
+heavier than the pixel art it is modelled on. A saturated navy laid round every
+edge of every piece is a LINE somebody drew; the same edge in a dark version of
+the object's own timber is a SHADOW, and a shadow is what an edge actually is. It
+is the difference between a sticker and a thing standing in a room.
+
+`pieceCanvas` now resolves `k` from the skin — `shade` multiplied down — the same
+way `c`/`t`/`s` already resolve. So a walnut chair outlines in dark walnut and a
+pine one in dark pine with nobody keeping thirteen extra hexes in step, and the
+stone fireplace stops looking appliquéd onto the wall. One change, every piece in
+the game.
+
+**The UI icons are deliberately NOT touched.** `content/icons.ts` requires a
+shared outline ink so a row of glyphs reads as one set, and an icon outlined in
+its own material looks pasted in from elsewhere. That rule is about 12px glyphs on
+a bar; this is about objects in a lit room, and they want opposite things.
+
+### Roofs: what worked and what didn't
+
+- **Ridge caps — kept.** The fold was one lit pixel, which says "the plane bends
+  here" and nothing else. Three pixels — lit top, cap in the roofing's colour,
+  shadow under — give a roof a spine and make it read as two planes meeting
+  rather than one plane vignetting toward its edges.
+- **Course depth by roof size — TRIED AND WRONG, and worth recording why.** The
+  idea was that the museum's eighty cells and the barn's twenty-five wear the same
+  shingle, so the big building reads as the small one enlarged. The reasoning was
+  backwards: texture density is a scale cue, so FEWER repetitions read as a
+  smaller object blown up. Coarsening the big roof made it emptier, which is the
+  opposite of the intent.
+- **Course contrast by roofing luminance — kept, and it was the real bug.** The
+  courses were a flat 11% black on every roof, which is a completely different
+  amount of texture depending on what it is laid over: on ox-blood it reads as
+  courses, on marble it very nearly vanishes. So the biggest roof in town was also
+  the blankest and its SIZE had nothing to do with it. Scaling the alpha by
+  luminance gives every roof about the same visible course.
+
+**This devalues the roof-materials proposal**, which was the option that would
+have broken the derived-roof rule. What made roofs look unfinished was mostly
+invisible texture — a bug in how the texture was applied, not a shortage of
+materials. Parked rather than argued.
+
+### An awning hangs BELOW the eaves
+
+A wall's top is not the top of what you can see of a building: the roof hangs
+`EAVE` past it. A mounted awning hung at exactly `STOREY` therefore had its rail
+underneath the overhang, putting the fascia's shadow, the roof's lit lip and the
+canopy's dark top edge in three touching bands, and the awning stopped reading as
+a separate object.
+
+**Shortened, not lowered** — and the difference is the whole note. Dropping the
+canopy by the eave's depth bought the gap at the top and spent the window: the
+lower edge came down over the glass and covered all of it, so the shop lost the
+thing the awning is there to frame. Trimming the same three pixels off the cloth's
+DEPTH moves the top edge clear of the overhang and leaves the bottom edge exactly
+where it was.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

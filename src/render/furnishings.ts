@@ -108,6 +108,35 @@ const FINISH_KEY: Record<string, keyof Pick<SkinDef, "color" | "top" | "shade">>
   s: "shade",
 };
 
+/** How dark a piece's outline is, as a fraction of its own shade. */
+const OUTLINE_MIX = 0.52;
+
+/** The outline colour for a piece in this finish.
+ *
+ *  `k` USED TO BE FLAT INK, and that is the single reason this furniture read
+ *  heavier than the pixel art it is modelled on. A saturated navy laid round
+ *  every edge of every piece is a LINE somebody drew; the same edge in a dark
+ *  version of the object's own timber is a SHADOW, and a shadow is what an edge
+ *  actually is. It is the difference between a sticker and a thing in a room.
+ *
+ *  Derived from `shade` rather than authored per finish, so a walnut chair
+ *  outlines in dark walnut and a pine one in dark pine without anybody keeping
+ *  thirteen extra hexes in step — the same argument `c`/`t`/`s` already make.
+ *
+ *  THE UI ICONS ARE NOT TOUCHED and must not be: `content/icons.ts` requires a
+ *  shared outline ink precisely so a row of them reads as one set, and an icon
+ *  that outlined in its own material would look pasted in from elsewhere. That
+ *  rule is about a strip of 12px glyphs on a bar; this is about objects standing
+ *  in a lit room, and they want opposite things. */
+function outlineFor(skin: SkinDef): string {
+  const n = parseInt(skin.shade.slice(1), 16);
+  if (!Number.isFinite(n)) return skin.shade;
+  const r = Math.round(((n >> 16) & 255) * OUTLINE_MIX);
+  const g = Math.round(((n >> 8) & 255) * OUTLINE_MIX);
+  const b = Math.round((n & 255) * OUTLINE_MIX);
+  return `rgb(${r},${g},${b})`;
+}
+
 /** Which grid to draw, and whether to flip it.
  *
  *  Total, never null: `s` is required by the type and every other facing falls
@@ -179,8 +208,12 @@ export function pieceCanvas(key: string, grid: Grid, skin: SkinDef, mirror: bool
     for (let x = 0; x < row.length; x++) {
       const ch = row[x];
       if (ch === ".") continue;
+      // `k` is resolved from the SKIN, not from the grid's palette — see
+      // `outlineFor`. The palettes still declare `k: INK`, which is now
+      // documentation of intent rather than the value used; every piece wants an
+      // outline and this is what an outline is made of.
       const finishKey = FINISH_KEY[ch];
-      const color = finishKey ? skin[finishKey] : grid.palette[ch];
+      const color = ch === "k" ? outlineFor(skin) : finishKey ? skin[finishKey] : grid.palette[ch];
       if (!color) continue; // undeclared chars are transparent, like "."
       ctx.fillStyle = color;
       ctx.fillRect(mirror ? w - 1 - x : x, y, 1, 1);
