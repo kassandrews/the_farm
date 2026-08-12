@@ -99,6 +99,7 @@ import { zoomLadder } from "./zoom";
 import { forEachGrainMark, GRAIN } from "./grain";
 import { roofFinish, roofPitch, type RoofPitch } from "./roof";
 import { gridFor, runGridFor, pieceCanvas } from "./furnishings";
+import type { RunAxis } from "./furnishings";
 import { artFor } from "../content/sets";
 import { COUNTER_MARKS } from "../content/countermarks";
 import { counterIdAtAnchor } from "../sim/counters";
@@ -4652,9 +4653,13 @@ export class Renderer {
     ax: number,
     ay: number,
     cell: FurnitureCell,
-  ): { left: boolean; right: boolean } {
-    const same = (x: number): boolean => {
-      const other = world.furniture[tileKey(x, ay)];
+  ): { axis: RunAxis; before: boolean; after: boolean } {
+    // The FACING picks the axis: turned east or west, a counter runs away from
+    // the camera instead of across it, and those are two different drawings
+    // (render/furnishings.ts §RunAxis) rather than one rotated.
+    const axis: RunAxis = cell.facing === "e" || cell.facing === "w" ? "y" : "x";
+    const same = (x: number, y: number): boolean => {
+      const other = world.furniture[tileKey(x, y)];
       return (
         other !== undefined &&
         other.id === cell.id &&
@@ -4663,7 +4668,9 @@ export class Renderer {
         other.facing === cell.facing
       );
     };
-    return { left: same(ax - 1), right: same(ax + 1) };
+    return axis === "x"
+      ? { axis, before: same(ax - 1, ay), after: same(ax + 1, ay) }
+      : { axis, before: same(ax, ay - 1), after: same(ax, ay + 1) };
   }
 
   private drawFurniturePiece(
@@ -4783,7 +4790,7 @@ export class Renderer {
       // so this branch replaces `gridFor` rather than feeding it.
       const run = art.joins ? this.runNeighbours(world, ax, ay, cell) : null;
       const { grid, mirror } = run
-        ? runGridFor(art, run.left, run.right)
+        ? runGridFor(art, run.axis, run.before, run.after)
         : gridFor(art, cell.facing, frame);
       const rise = art.rise ?? 0;
       // Keyed on the finish as well as the piece and facing: one grid serves
@@ -4794,7 +4801,7 @@ export class Renderer {
       // And on WHICH END OF ITS RUN, or the first counter rasterized would be
       // served to every cell in the kitchen and the whole run would wear one
       // cell's end caps.
-      const joint = run ? `:${run.left ? "l" : ""}${run.right ? "r" : ""}` : "";
+      const joint = run ? `:${run.axis}${run.before ? "b" : ""}${run.after ? "a" : ""}` : "";
       const raster = pieceCanvas(
         `${cell.id}:${cell.set}:${cell.facing}:${cell.finish}${suffix}${joint}`,
         grid,

@@ -1455,8 +1455,11 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
       palette: { k: INK },
     },
     joins: {
-      mid: {
-        rows: [
+      // ACROSS the camera. Neighbouring cells sit side by side and hide nothing
+      // of each other, so all that changes between these is the SIDE outline.
+      x: {
+        mid: {
+          rows: [
           "................",
           "................",
           "kkkkkkkkkkkkkkkk",
@@ -1475,11 +1478,11 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           "kkkkkkkkkkkkkkkk",
           "ssssssssssssssss",
           "ssssssssssssssss",
-        ],
-        palette: { k: INK },
-      },
-      end: {
-        rows: [
+          ],
+          palette: { k: INK },
+        },
+        end: {
+          rows: [
           "................",
           "................",
           ".kkkkkkkkkkkkkkk",
@@ -1498,8 +1501,58 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           ".kkkkkkkkkkkkkkk",
           ".kssssssssssssss",
           ".kssssssssssssss",
-        ],
-        palette: { k: INK },
+          ],
+          palette: { k: INK },
+        },
+      },
+      // AWAY FROM the camera, and a different drawing rather than the same one
+      // turned — see §RunAxis. Each cell is drawn 16px lower than the one behind
+      // and covers its bottom 14 rows, so:
+      //
+      //   * the worktop is a FULL 16-ROW BAND, which is the cell pitch exactly
+      //     and therefore tiles into the cell behind with no seam. Nothing may
+      //     interrupt it — a lip or a front edge inside that band would draw a
+      //     line every 16px down the run, which is the per-cell edges rule in
+      //     its most literal form.
+      //   * the cabinet face sits in the rows that get overdrawn, so it shows on
+      //     the cell nearest the camera and on no other. The middle of the run
+      //     and its near end are therefore THE SAME DRAWING.
+      //
+      // Only the far end differs, and only by closing the top.
+      y: {
+        mid: {
+          rows: [
+          ...Array<string>(16).fill("kttttttttttttttk"),
+          "kkkkkkkkkkkkkkkk",
+          "kcccccccccccccck",
+          "kcccccccccccccck",
+          "kcccccccccccccck",
+          "kcccccccccccccck",
+          "kcccccccccccccck",
+          "kcccccckkcccccck",
+          ...Array<string>(5).fill("kcccccccccccccck"),
+          "kkkkkkkkkkkkkkkk",
+          "kssssssssssssssk",
+          ],
+          palette: { k: INK },
+        },
+        end: {
+          rows: [
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(15).fill("kttttttttttttttk"),
+          "kkkkkkkkkkkkkkkk",
+          "kcccccccccccccck",
+          "kcccccccccccccck",
+          "kcccccccccccccck",
+          "kcccccccccccccck",
+          "kcccccccccccccck",
+          "kcccccckkcccccck",
+          ...Array<string>(5).fill("kcccccccccccccck"),
+          "kkkkkkkkkkkkkkkk",
+          "kssssssssssssssk",
+          ],
+          palette: { k: INK },
+        },
       },
     },
   },

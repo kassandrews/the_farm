@@ -49,6 +49,29 @@ export interface Grid {
  *  says the west view is the east view flipped, which is true of anything whose
  *  silhouette is symmetric about the axis it faces along — most things — and
  *  saves authoring a second grid that would be the first one backwards. */
+/** The two extra drawings a run needs on one axis: `mid` for a cell with the run
+ *  carrying on past it, `end` for the one that closes it. */
+export interface RunGrids {
+  mid: Grid;
+  end: Grid;
+}
+
+/** Which way a run of joining pieces travels.
+ *
+ *  "x" is east–west, across the camera, and "y" is north–south, away from it.
+ *  They are NOT the same drawing rotated, and finding that out is worth writing
+ *  down: an east–west run's cells sit side by side and hide nothing of each
+ *  other, while a north–south run's cells OVERLAP — each is drawn 16px lower than
+ *  the one behind and covers its bottom 14 rows.
+ *
+ *  So a receding run's worktop has to occupy a full 16-row band, which is the
+ *  cell pitch and therefore tiles seamlessly into the cell behind, and the
+ *  cabinet face goes in the rows that get overdrawn — visible only on the cell
+ *  nearest the camera, which is the only one whose face you should see. Repeating
+ *  the front view instead draws a worktop and a cabinet every 16px down the run
+ *  and reads as a stack of drawers. It was tried; that is exactly what it did. */
+export type RunAxis = "x" | "y";
+
 export interface PieceArt {
   s: Grid;
   n?: Grid;
@@ -88,7 +111,7 @@ export interface PieceArt {
    *  set restyles a form by supplying a DRAWING. So a joining form supplies three
    *  drawings and the game picks, which is exactly what walls already do with
    *  face, side and corner. */
-  joins?: { mid: Grid; end: Grid };
+  joins?: { x: RunGrids; y?: RunGrids };
   /** A part of the FRONT view that moves.
    *
    *  A band of rows, and a list of replacement bands to cycle through — so the
@@ -190,14 +213,29 @@ export function gridFor(art: PieceArt, facing: Facing, frame = 0): { grid: Grid;
  *  which is the only view with both of its ends returned. */
 export function runGridFor(
   art: PieceArt,
-  left: boolean,
-  right: boolean,
+  axis: RunAxis,
+  before: boolean,
+  after: boolean,
 ): { grid: Grid; mirror: boolean } {
   const j = art.joins;
   if (!j) return { grid: art.s, mirror: false };
-  if (left && right) return { grid: j.mid, mirror: false };
-  if (right) return { grid: j.end, mirror: false };
-  if (left) return { grid: j.end, mirror: true };
+  if (axis === "y") {
+    const y = j.y;
+    // A form may join on one axis only — the run simply doesn't form on the
+    // other, which is a limit worth having plainly rather than a wrong drawing.
+    if (!y) return { grid: art.s, mirror: false };
+    if (!before && !after) return { grid: art.s, mirror: false };
+    // ONLY THE FAR END DIFFERS, and that falls out of the overlap: a cell with
+    // something behind it needs no top edge, and a cell with something in FRONT
+    // of it has its face covered by that cell anyway. So "is anything north of
+    // me" is the entire question, and the near end and the middle share a
+    // drawing.
+    return { grid: before ? y.mid : y.end, mirror: false };
+  }
+  const x = j.x;
+  if (before && after) return { grid: x.mid, mirror: false };
+  if (after) return { grid: x.end, mirror: false };
+  if (before) return { grid: x.end, mirror: true };
   return { grid: art.s, mirror: false };
 }
 

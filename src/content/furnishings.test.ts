@@ -144,16 +144,24 @@ describe("joining art", () => {
     if (!joins) continue;
     const def = FURNITURE[id];
     const rise = art.rise ?? 0;
+    const box = rise + def.h * TILE + def.height;
 
-    for (const [name, grid] of [
-      ["mid", joins.mid],
-      ["end", joins.end],
-    ] as const) {
-      it(`${id} ${name} matches the standalone box`, () => {
-        // The SAME box as `s`, or the run would step where it joined.
-        expect(grid.rows).toHaveLength(rise + def.h * TILE + def.height);
-        for (const row of grid.rows) expect(row).toHaveLength(def.w * TILE);
-      });
+    const axes = [
+      ["x", joins.x],
+      ...(joins.y ? ([["y", joins.y]] as const) : []),
+    ] as const;
+
+    for (const [axis, grids] of axes) {
+      for (const [name, grid] of [
+        ["mid", grids.mid],
+        ["end", grids.end],
+      ] as const) {
+        it(`${id} ${axis}.${name} matches the standalone box`, () => {
+          // The SAME box as `s`, or the run would step where it joined.
+          expect(grid.rows).toHaveLength(box);
+          for (const row of grid.rows) expect(row).toHaveLength(def.w * TILE);
+        });
+      }
     }
 
     // A row that is ENTIRELY ink is a horizontal rule running the length of the
@@ -164,20 +172,20 @@ describe("joining art", () => {
     const bodyRows = (rows: readonly string[]): string[] =>
       rows.filter((r) => r.trim() !== "" && [...r].some((ch) => ch !== "k" && ch !== "."));
 
-    it(`${id} mid draws no side outline`, () => {
+    it(`${id} x.mid draws no side outline`, () => {
       // The per-cell edges rule in assertion form: if the middle of a run returns
       // its own edges, the run is a row of boxes instead of a counter.
-      for (const row of bodyRows(joins.mid.rows)) {
-        expect(row[0], `mid row "${row}" starts in ink`).not.toBe("k");
-        expect(row[row.length - 1], `mid row "${row}" ends in ink`).not.toBe("k");
+      for (const row of bodyRows(joins.x.mid.rows)) {
+        expect(row[0], `x.mid row "${row}" starts in ink`).not.toBe("k");
+        expect(row[row.length - 1], `x.mid row "${row}" ends in ink`).not.toBe("k");
       }
     });
 
-    it(`${id} end returns its left side only`, () => {
+    it(`${id} x.end returns its left side only`, () => {
       // Authored as the LEFT end — the run continues to its right — and mirrored
       // for the other one, so authoring both would be a second chance to get one
       // of them wrong.
-      const rows = bodyRows(joins.end.rows);
+      const rows = bodyRows(joins.x.end.rows);
       expect(rows.length).toBeGreaterThan(0);
       for (const row of rows) {
         // The outline may sit at column 0 or 1 — the standalone view is inset a
@@ -187,6 +195,25 @@ describe("joining art", () => {
         expect(row[row.length - 1], `end row "${row}" should stay open`).not.toBe("k");
       }
     });
+
+    const y = joins.y;
+    if (y) {
+      // THE TILING BAND is what makes a receding run one surface, and it is the
+      // one thing about the y axis that can silently go wrong: the top TILE rows
+      // are what the cell behind butts against, so a single interrupting row
+      // there draws a line every 16px down the run.
+      it(`${id} y.mid tiles its top band without interruption`, () => {
+        const band = y.mid.rows.slice(0, TILE);
+        expect(new Set(band).size, `y.mid's first ${TILE} rows are not uniform`).toBe(1);
+      });
+
+      it(`${id} y.end closes the far end and otherwise matches y.mid`, () => {
+        // Only the top edge may differ. Anything else and the run would change
+        // where it ends, which is not what an end cap is.
+        expect(y.end.rows[0]).not.toEqual(y.mid.rows[0]);
+        expect(y.end.rows.slice(1)).toEqual(y.mid.rows.slice(1));
+      });
+    }
   }
 });
 

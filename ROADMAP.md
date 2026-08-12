@@ -12563,9 +12563,7 @@ Minecraft half of the brief ("I furnish my kitchen with slabs and signs").
 - **Height 14, matching the stove exactly** so a worktop and a cooktop are one
   level. A run that stepped where the appliances stand is a detail nobody praises
   and everybody sees.
-- **EAST–WEST ONLY, and that is a real limit.** An L-shaped kitchen's north–south
-  leg does not join yet; closing it means a second pair of grids for the turned
-  run. Written on the row rather than pretended away.
+- ~~**EAST–WEST ONLY**~~ — **both axes now**; see §The turned run below.
 - **The test for `mid` had to learn what a side outline IS.** The first version
   asserted no row of `mid` starts or ends in ink, and failed on its own correct
   art: a row that is ENTIRELY ink is a horizontal rule — a worktop's front edge, a
@@ -12573,8 +12571,38 @@ Minecraft half of the brief ("I furnish my kitchen with slabs and signs").
   must not appear is ink at the end of a row that has content in it. The
   distinction is the test.
 
+### The turned run — a receding counter is a different drawing
+
+`joins` is axis-keyed now (`{ x, y }`), and the two axes are NOT one drawing
+rotated. **This was settled by looking**, which is the only way it could have
+been: a north–south run was laid with the east–west art and photographed first.
+
+- **What the photograph showed.** Cells in an east–west run sit side by side and
+  hide nothing of each other. Cells in a north–south run OVERLAP — each is drawn
+  16px lower than the one behind and covers exactly its bottom 14 rows — so
+  repeating the front view leaves every cell's worktop AND its upper cabinet
+  visible, and the run reads as a **stack of drawers** receding into the distance.
+  It is the per-cell edges rule again, in the one direction the first pass did not
+  think about.
+- **The fix falls out of the pitch.** A receding run's worktop must occupy a FULL
+  16-ROW BAND — the cell pitch exactly — so it tiles into the cell behind with no
+  seam, and nothing may interrupt that band: a lip or a front edge inside it draws
+  a line every 16px down the run. The cabinet face then goes in the rows that get
+  overdrawn, so it shows on the cell nearest the camera and on no other.
+- **So the middle of a run and its NEAR end are the same drawing**, and only the
+  far end differs, by closing its top edge. Two grids on this axis as well, but
+  for a completely different reason than on the other one — on `x` the question is
+  "which of my sides continue", on `y` it is only "is anything behind me".
+- **The tiling band is what a test can protect**, and it is the thing that would
+  silently go wrong: `y.mid`'s first sixteen rows must be uniform, and `y.end` must
+  differ from `y.mid` in its top row and nowhere else.
+
 **Left open:**
 
+- **The turned run has no depth cue.** Seen end-on it is an honest flat band of
+  worktop, which is correct and reads as continuous, but it has none of the front
+  edge the east–west run gets. Worth a look once the second axis lands, because a
+  stone top over a wood cabinet may supply the contrast for free.
 - **The two-material counter** — a wooden cabinet under a stone worktop — which is
   what the owner asked for and what this does NOT do. One `finish` per cell buys
   one material, so today's counter is butcher block or solid stone, both real
