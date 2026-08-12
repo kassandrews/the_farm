@@ -29,11 +29,11 @@ import type { CharId } from "./cast";
  *  colours are then free, exactly like wood — the scarce thing is the stuff,
  *  never the look. That is the whole rule of this file, applied to a material
  *  that happens to arrive by barter instead of by axe. */
-export type SkinClass = "wood" | "stone" | "cloth";
+export type SkinClass = "wood" | "stone" | "cloth" | "metal";
 
 /** Every class, in picker order. A list rather than four call sites writing
  *  `["wood", "stone"]` and one of them forgetting to grow. */
-export const SKIN_CLASSES: SkinClass[] = ["wood", "stone", "cloth"];
+export const SKIN_CLASSES: SkinClass[] = ["wood", "stone", "cloth", "metal"];
 
 /** Display names for the classes. A table rather than a ternary at the one call
  *  site that labels them — the ternary said "Wood" or "Stone", so the day cloth
@@ -42,6 +42,7 @@ export const SKIN_CLASS_NAMES: Record<SkinClass, string> = {
   wood: "Wood",
   stone: "Stone",
   cloth: "Cloth",
+  metal: "Metal",
 };
 
 export type SkinId =
@@ -62,7 +63,11 @@ export type SkinId =
   | "marble"
   // Cloth
   | "undyed"
-  | "madder";
+  | "madder"
+  // Metal
+  | "steel"
+  | "brass"
+  | "blackiron";
 
 export interface SkinDef {
   id: SkinId;
@@ -325,6 +330,58 @@ export const SKINS: Record<SkinId, SkinDef> = {
     shade: "#8e4239",
     starter: true,
   },
+
+  // --- Metal ---------------------------------------------------------------
+  // The fourth class, and the one the ore note (ROADMAP §Ore's sink) appears to
+  // forbid. It doesn't, and the distinction is worth stating because it is easy
+  // to read the old note as closing this off.
+  //
+  // What that note rejected was a finish you BUY WITH ORE: "a finish that cost
+  // ore would break the rule that keeps the item table at three." The rule being
+  // protected is DESIGN §Materials' — THE SCARCE THING IS THE STUFF, NEVER THE
+  // LOOK. These are free, exactly like every other finish, unlocked through the
+  // same doors, and so they uphold that rule rather than bending it. Still true
+  // and still tested: no furniture row but the lamp may cost ore.
+  //
+  // COST DOES NOT FOLLOW MATERIAL HERE, and this is the one class where it
+  // cannot. The fireplace's row explains itself as "stone, because `finishes` is
+  // stone-only", which works for the three classes whose material you may spend.
+  // Ore is reserved, so a metal-finished piece is priced in stone instead — the
+  // look and the cost part company on purpose, once, here.
+  //
+  // Three, because they are the three metals a room reads as: bright, warm,
+  // dark. A fourth would be a shade of one of them.
+  steel: {
+    id: "steel",
+    name: "Stainless",
+    applies: "metal",
+    color: "#b9bec6",
+    top: "#d2d6dc",
+    shade: "#8f959e",
+    starter: true,
+  },
+  brass: {
+    id: "brass",
+    name: "Brass",
+    applies: "metal",
+    // The lamp's head has been this colour in every town since Phase 5a, as a
+    // hardcoded literal. Now that metal is a class, that carve-out is a finish
+    // like any other — see ROADMAP for the lamp's own conversion, which is a
+    // redraw and not a table row.
+    color: "#c2a24e",
+    top: "#d8b95f",
+    shade: "#967c39",
+    starter: true,
+  },
+  blackiron: {
+    id: "blackiron",
+    name: "Black iron",
+    applies: "metal",
+    color: "#4a4550",
+    top: "#5d5764",
+    shade: "#332f3a",
+    starter: true,
+  },
 };
 
 export function skinDef(id: SkinId): SkinDef {
@@ -366,5 +423,6 @@ export function availableSkinsForClasses(
 export function defaultSkin(applies: SkinClass): SkinId {
   if (applies === "wood") return "pine";
   if (applies === "stone") return "granite";
+  if (applies === "metal") return "steel";
   return "undyed";
 }

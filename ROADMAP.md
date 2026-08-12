@@ -12467,6 +12467,57 @@ prints the `rows` + `palette` block to paste into `content/furnishings.ts`.
 - One save test asserted `toEqual` on a migrated cell and became a tripwire for
   schema growth it has no opinion about; it is `toMatchObject` now.
 
+### The kitchen and the bathroom, and a fourth finish class (11 Aug 2026)
+
+Five forms — `stove`, `fridge`, `sink`, `toilet`, `tub` — taking the checklist
+from 20 to 25, plus a `metal` finish class. Owner's call, and the audit that
+justifies it is **by room**: bedroom, living room and study were covered while
+the kitchen and bathroom had NOTHING in them. Two rooms you could not furnish
+at all, which is the doctrine's own complaint found inside its own list.
+
+- **A METAL FINISH CLASS DOES NOT BREAK §Ore's sink, and it is worth knowing
+  why, because it reads like it does.** That note rejected "a metal FINISH" — but
+  its stated reason is *"a finish that COST ore would break the rule that keeps
+  the item table at three."* The rule protected is DESIGN §Materials': the scarce
+  thing is the stuff, never the look. These finishes are FREE, unlocked through
+  the ordinary doors, so they uphold that rule rather than bending it. Untouched
+  and still tested: no furniture row but the lamp may cost ore.
+- **So cost and appearance part company, once, here.** The fireplace's row says
+  "stone, because `finishes` is stone-only" — cost follows material. That works
+  for the three classes whose material you may spend. Ore is reserved, so a
+  metal-finished piece is priced in STONE, and `priceMaterial()` in items.ts is
+  that rule written down rather than left in a comment.
+- **The class made the drawings better, which is the part worth noticing.** The
+  plan before it was a white enamel literal with a wooden trim, because a fridge
+  in pale pine is absurd. With metal, the body is `c`/`t`/`s` and a stainless
+  fridge and a brass one are ONE drawing. Same for the bathroom in stone: `bone`
+  and `marble` were already in the table and are exactly porcelain.
+- **The stove has no `light` and no `hearth`, both deliberate.** A lit stove
+  would pool warm light for four stone and quietly undercut the one object ore
+  exists to buy. A hearth would give a kitchen with a fireplace in it two claims
+  on the room's single chimney. Both are revisitable; neither was worth a silent
+  bug.
+- **`furnitureFlavour` is exhaustive over `FurnitureId` and that is how it told
+  us**, exactly as its own comment promises. Five new rows, five compiler errors,
+  five lines of voice.
+- **A 2×1 piece cannot fall back for its east view.** The bath's front grid is
+  32px wide and its east footprint is 16, so `gridFor`'s fallback fails the size
+  contract — four test failures at once, which is the suite doing its job. Every
+  multi-tile form needs its `e` grid authored.
+
+**Left open, both worth a look on screen before deciding:**
+
+- **Bathroom fixtures default to GRANITE**, because `defaultSkin` is per CLASS
+  and granite is the stone default. Porcelain wants `bone` or `marble`, so the
+  first impression of a toilet is a grey stone one. The fix is a per-piece
+  default finish on the row, which is a small honest field and touches the
+  picker; it was not worth bundling into this change.
+- **The lamp should follow the metal class** (owner's suggestion, and right). Its
+  head has been a hardcoded brass literal since Phase 5a and a finish class makes
+  that carve-out unnecessary. It is a REDRAW plus a renderer change rather than a
+  table row — the floor lamp has no art row at all — so it belongs in the Set One
+  design pass with the pieces, not here.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

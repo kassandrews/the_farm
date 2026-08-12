@@ -72,7 +72,7 @@ import { digWithFind, carveWithFind, findLine } from "./junk";
 import { emptyInventory, canAfford, spend, refund, shortfall } from "./inventory";
 import { gain } from "./met";
 import type { Cost } from "./inventory";
-import { itemLabel, priceItems } from "../content/items";
+import { itemLabel, priceItems, priceMaterial } from "../content/items";
 import type { ItemId } from "../content/items";
 import { gather, nodeAt, nodeNear, updateRegrowth, updateReclaim } from "./gather";
 import { uprootAt, noticeFlora, gardenFruitNear, pickFruit } from "./garden";
@@ -689,7 +689,7 @@ export function buildCost(tool: BuildTool, finish: SkinId): Cost {
       : isFurnitureTool(tool)
         ? furnitureDef(tool).cost
         : structureDef(tool).cost;
-  return priceItems(price, skinDef(finish).applies);
+  return priceItems(price, priceMaterial(skinDef(finish).applies));
 }
 
 export type ActionKind =
@@ -1988,6 +1988,16 @@ function furnitureFlavour(id: FurnitureId, layer: Layer): string {
       return "A coffee table. Too low to eat at, too large for nothing. Correct.";
     case "desk":
       return "A desk. Paperwork will find it. Paperwork finds everything.";
+    case "stove":
+      return "A stove. Four rings, one door, and the bearing of something load-bearing.";
+    case "fridge":
+      return "A fridge. It hums. Nobody has asked it to and nobody is going to.";
+    case "sink":
+      return "A sink. A basin with plumbing's full confidence behind it.";
+    case "toilet":
+      return "A toilet. The room is now, formally, that kind of room.";
+    case "tub":
+      return "A bath. Deep enough to be taken seriously, and it intends to be.";
     case "nightstand":
       return "A nightstand. For whatever has to be within reach of unconscious.";
     case "cot":

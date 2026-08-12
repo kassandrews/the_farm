@@ -1479,16 +1479,29 @@ run out of matching cabinets). Three frustrations, one shape: a hole at
 the intersection of *form × set × colour*. So the catalog is not a list,
 it is a **lattice, and the lattice has no holes.**
 
-**Forms are what a room needs.** Seat, stool, bench, sofa, table, long
-table, low table, desk, bed, cot, nightstand, wardrobe, dresser, chest,
-shelf, counter run, rug, cushion, standing light, table light, wall piece,
-hearth — the checklist a furnisher reaches for, not a taxonomy. A form
-owns everything the sim cares about: footprint, solidity, facing, what it
-costs, whether it burns. Adding a form is deliberately expensive — every
-set that exists owes it a silhouette the day it lands — which is the
+**Forms are what a room needs, and the audit is BY ROOM.** Listing
+furniture gets you a pile; listing rooms gets you the holes. Bedroom: bed,
+cot, nightstand, wardrobe, dresser, chest. Living room: chair, stool,
+bench, sofa, cushion, table, long table, low table, rug, standing light,
+wall piece, hearth. Study: desk, shelf, table light. Kitchen: counter run,
+stove, fridge, sink. Bathroom: toilet, sink, bath. That is the checklist a
+furnisher reaches for, and the two rooms at the end of it were entirely
+empty until somebody counted — which is this section's own complaint,
+found in its own list.
+
+A form owns everything the sim cares about: footprint, solidity, facing,
+what it costs, whether it burns. Adding a form is deliberately expensive —
+every set that exists owes it a silhouette the day it lands — which is the
 discipline that keeps the checklist honest: a form earns its slot by
 someone reaching for it and finding nothing, never by seeming like a nice
 idea.
+
+**The kitchen and the bathroom are DECORATION.** No cooking, no plumbing,
+no needs — there are no meters in this game to hang them on, and a stove
+that demanded feeding would be the chore this whole design refuses. If
+cooking ever arrives it attaches to the range already standing in every
+kitchen; nothing about these forms forecloses it, and nothing about them
+promises it either.
 
 **Sets are complete reskins of the checklist, and a set ships whole or
 not at all.** The style axis is the silhouette: a set's chair is a

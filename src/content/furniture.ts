@@ -45,6 +45,23 @@ export type FurnitureId =
   | "chest"
   | "dresser"
   | "desklamp"
+  // --- The kitchen and the bathroom -------------------------------------------
+  // Two rooms the catalogue could not furnish at all. Audit the forms by room and
+  // the bedroom, the living room and the study were covered while these had
+  // NOTHING in them, which is DESIGN §The catalog's own complaint — reaching for
+  // a piece and finding a hole where a room should be — in its purest form.
+  //
+  // DECORATION, AND THE DOOR LEFT OPEN. None of these carry a verb: there is no
+  // cooking, no plumbing, no needs, and there are no meters in this game to hang
+  // them on. Phase 5a rejected a stove as ore's sink because "it smuggles in
+  // cooking, which is a system, not a row" — that argument is about a functional
+  // appliance justified by a material, and it stands. If cooking ever arrives it
+  // attaches to the range already standing in every kitchen.
+  | "stove"
+  | "fridge"
+  | "sink"
+  | "toilet"
+  | "tub"
   | "painting"
   | "fireplace"
   | "noticeboard"
@@ -479,6 +496,88 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     height: 9,
     finishes: ["wood"],
     light: true,
+  },
+
+  // --- The kitchen ------------------------------------------------------------
+  // METAL, which is a finish class now (content/skins.ts §Metal) — so a fridge is
+  // stainless or brass or black iron because you said so, rather than being a
+  // white literal with a wooden handle, which was the alternative and was worse.
+  //
+  // PRICED IN STONE, not in ore. Ore is reserved for the lamp and the test says
+  // so; a stove that cost it would gate a kitchen behind digging. Stone is the
+  // heavy mineral thing you can actually go and get, and it is what these are.
+  stove: {
+    id: "stove",
+    form: true,
+    name: "Stove",
+    cost: { stone: 4 },
+    w: 1,
+    h: 1,
+    solid: true,
+    height: 14,
+    finishes: ["metal"],
+    // NO `light`, and NOT an oversight. A lit stove would pool warm light for
+    // four stone, which quietly undercuts the one object ore exists to buy
+    // (ROADMAP §Ore's sink — "ore buys an object", and the object is a light).
+    // NO `hearth` either, for a duller reason: the renderer keeps one chimney per
+    // room, so a kitchen with a stove and a fireplace in it would have two
+    // claims on it. Both are worth revisiting; neither is worth a silent bug.
+  },
+  fridge: {
+    id: "fridge",
+    form: true,
+    name: "Fridge",
+    cost: { stone: 5 },
+    w: 1,
+    h: 1,
+    solid: true,
+    // The second-tallest thing in a room after the wardrobe, and it should read
+    // that way: a fridge you look over is a cupboard.
+    height: 24,
+    finishes: ["metal"],
+  },
+  sink: {
+    id: "sink",
+    form: true,
+    name: "Sink",
+    // STONE, because `finishes` is stone-only — the fireplace's cost-follows-
+    // material rule, which holds everywhere except metal. `bone` and `marble`
+    // were already in the stone table and are exactly what porcelain looks like.
+    cost: { stone: 3 },
+    w: 1,
+    h: 1,
+    solid: true,
+    height: 12,
+    finishes: ["stone"],
+  },
+
+  // --- The bathroom -----------------------------------------------------------
+  // Porcelain, so stone, so the whole room finishes in bone or marble and stops
+  // being a hole in the catalogue. No plumbing, no needs — see the union above.
+  toilet: {
+    id: "toilet",
+    form: true,
+    name: "Toilet",
+    cost: { stone: 3 },
+    w: 1,
+    h: 1,
+    solid: true,
+    height: 14,
+    finishes: ["stone"],
+  },
+  tub: {
+    id: "tub",
+    form: true,
+    name: "Bath",
+    cost: { stone: 5 },
+    w: 2,
+    h: 1,
+    solid: true,
+    // LOW, and lower than it looks like it should be. A bath is something you
+    // look down into, so the silhouette wants to be mostly rim and inside —
+    // at chest height it reads as a stone trough standing against a wall.
+    height: 10,
+    finishes: ["stone"],
   },
 
   painting: {

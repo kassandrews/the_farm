@@ -8,6 +8,7 @@
 // eating, gifting, and the museum rather than construction.
 
 import type { IconName } from "./icons";
+import type { SkinClass } from "./skins";
 
 export type ItemId =
   | "wood"
@@ -253,6 +254,19 @@ export type BuildPrice = number | Partial<Record<ItemId, number>>;
  *  also the reason to never rename one without renaming the other. */
 export function priceItems(cost: BuildPrice, material: ItemId): Partial<Record<ItemId, number>> {
   return typeof cost === "number" ? { [material]: cost } : cost;
+}
+
+/** Which material a BARE-NUMBER price is paid in, for a piece wearing this
+ *  finish class. Identity for the three classes whose material you can spend.
+ *
+ *  METAL MAPS TO STONE, and that is the whole reason this function exists rather
+ *  than the class being used directly as an item id. Ore is reserved — no
+ *  furniture row but the lamp may cost it (ROADMAP §Ore's sink, held by
+ *  lamp.test.ts) — so a metal-finished piece is priced in the heavy material it
+ *  most resembles. It is the one place appearance and cost part company, and it
+ *  is deliberate; see content/skins.ts §Metal. */
+export function priceMaterial(applies: SkinClass): ItemId {
+  return applies === "metal" ? "stone" : applies;
 }
 
 export function itemDef(id: ItemId): ItemDef {

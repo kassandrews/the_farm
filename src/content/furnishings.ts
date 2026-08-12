@@ -1357,6 +1357,172 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
   },
 
+  // --- The kitchen and the bathroom ------------------------------------------
+  // The five that made two whole rooms furnishable. All of them take their body
+  // from the FINISH — `c`/`t`/`s` — because metal and stone are both finish
+  // classes, so a stainless stove and a brass one are one drawing, and so are a
+  // bone bath and a marble one. The only literals in here are the two things
+  // that are genuinely not the object's material: the hob plate and the tap.
+
+  // Hob on top, oven under it. The plate is dark in every kitchen — a cooktop
+  // rendered in the body's own metal disappears into it, and then the piece is a
+  // cabinet with a handle. Same carve-out as the notice board's paper.
+  stove: {
+    s: {
+      rows: [
+        "................",
+        "................",
+        "..kkkkkkkkkkkk..",
+        ".kmmmmmmmmmmmmk.",
+        ".kmggmmmmmmggmk.",
+        ".kmmmmmmmmmmmmk.",
+        ".kmggmmmmmmggmk.",
+        ".kmmmmmmmmmmmmk.",
+        ".kkkkkkkkkkkkkk.",
+        ".kcccccccccccck.",
+        ".kcssssssssssck.",
+        ".kckkkkkkkkkkck.",
+        ...Array<string>(10).fill(".kcssssssssssck."),
+        ".kcccccccccccck.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kkkkkkkkkkkkkk.",
+        ...Array<string>(4).fill("...kk......kk..."),
+      ],
+      palette: { k: INK, m: "#4a4550", g: "#332f3a" },
+    },
+  },
+
+  // A tall box, and the door split is the whole of what makes it a fridge rather
+  // than a wardrobe: two doors, one handle line down the right of each.
+  fridge: {
+    s: {
+      rows: [
+        "................",
+        "................",
+        "..kkkkkkkkkkkk..",
+        ".kttttttttttttk.",
+        ".kkkkkkkkkkkkkk.",
+        ...Array<string>(4).fill(".kcccccccccccck."),
+        ...Array<string>(5).fill(".kccccccccckcck."),
+        ...Array<string>(4).fill(".kcccccccccccck."),
+        ".kckkkkkkkkkkck.",
+        ...Array<string>(3).fill(".kcccccccccccck."),
+        ...Array<string>(5).fill(".kccccccccckcck."),
+        ...Array<string>(9).fill(".kcccccccccccck."),
+        ".kkkkkkkkkkkkkk.",
+        ...Array<string>(3).fill("...kk......kk..."),
+      ],
+      palette: { k: INK },
+    },
+  },
+
+  // Basin sunk into a top, cabinet under, tap standing at the back. The bowl is
+  // `s` inside a `t` rim, which is the same trick the bath uses and is what says
+  // "this is a hollow" without a single new colour.
+  sink: {
+    s: {
+      rows: [
+        "................",
+        "................",
+        "......kkkk......",
+        "......kmmk......",
+        "......kmmk......",
+        "..kkkkkmmkkkkk..",
+        ".kttttttttttttk.",
+        ".ktsssssssssstk.",
+        ".ktsssssssssstk.",
+        ".kttttttttttttk.",
+        ".kkkkkkkkkkkkkk.",
+        ".kcccccccccccck.",
+        ".kckkkkkkkkkkck.",
+        ...Array<string>(9).fill(".kcccccccccccck."),
+        ".kckkkkkkkkkkck.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kkkkkkkkkkkkkk.",
+        ...Array<string>(2).fill("...kk......kk..."),
+      ],
+      palette: { k: INK, m: "#8f959e" },
+    },
+  },
+
+  // Cistern, seat, bowl, foot. It narrows twice on the way down, which is what
+  // keeps it from reading as a small white fridge.
+  toilet: {
+    s: {
+      rows: [
+        "................",
+        "................",
+        "...kkkkkkkkkk...",
+        ...Array<string>(4).fill("...kcccccccck..."),
+        "...kkkkkkkkkk...",
+        "..kkkkkkkkkkkk..",
+        ".kttttttttttttk.",
+        ".kcccccccccccck.",
+        ".kkkkkkkkkkkkkk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "...kssssssssk...",
+        "...kssssssssk...",
+        "....kssssssk....",
+        "....kssssssk....",
+        "....kssssssk....",
+        "....kkkkkkkk....",
+        "...kkkkkkkkkk...",
+        ...Array<string>(6).fill("...kssssssssk..."),
+        "...kkkkkkkkkk...",
+      ],
+      palette: { k: INK },
+    },
+  },
+
+  // Two tiles of rim with a hollow in it. Mostly INSIDE, deliberately: a bath is
+  // a thing you look down into, and the low `height` on the row is what buys the
+  // room for that rather than a tall slab seen from the side.
+  tub: {
+    s: {
+      rows: [
+        "................................",
+        "................................",
+        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+        ".kttttttttttttttttttttttttttttk.",
+        ...Array<string>(6).fill(".ktsssssssssssssssssssssssssstk."),
+        ".kttttttttttttttttttttttttttttk.",
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ...Array<string>(8).fill(".kcccccccccccccccccccccccccccck."),
+        ...Array<string>(2).fill(".kssssssssssssssssssssssssssssk."),
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ...Array<string>(3).fill("...kk......................kk..."),
+      ],
+      palette: { k: INK },
+    },
+    // TURNED, A BATH IS NOT A SHORTER BATH — it is the same tub seen end-on, so
+    // the hollow runs away from the camera for two tiles instead of across one.
+    // A multi-tile piece has to author this: the front view is 32px wide and the
+    // east footprint is 16, so `gridFor`'s fallback cannot satisfy the size
+    // contract, and furnishings.test.ts says so in four failures at once.
+    mirrorW: true,
+    e: {
+      rows: [
+        "................",
+        "................",
+        "..kkkkkkkkkkkk..",
+        ".kttttttttttttk.",
+        ...Array<string>(28).fill(".ktsssssssssstk."),
+        ".kttttttttttttk.",
+        ".kkkkkkkkkkkkkk.",
+        ...Array<string>(5).fill(".kcccccccccccck."),
+        ".kssssssssssssk.",
+        ".kkkkkkkkkkkkkk.",
+        "...kk......kk...",
+      ],
+      palette: { k: INK },
+    },
+  },
+
   // Mostly empty grid, and deliberately: the art box is as tall as the
   // tile is deep, and a small object should sit in the bottom of it rather than being
   // stretched to fill it. Brass shade over a lit throat, a thin post, a round foot.

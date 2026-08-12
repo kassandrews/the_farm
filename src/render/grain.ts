@@ -69,6 +69,12 @@ export const GRAIN = {
   // read as two rugs — the pieces that wear cloth get their pattern from their
   // own draw path (drawFurniture), not from this.
   cloth: null,
+  // Metal has no grain either, and for a sharper reason than cloth's. Grain is
+  // COURSES — boards and blocks, things laid up out of units — and a metal
+  // object is pressed or cast in one piece. Ruling a joint across a fridge door
+  // would be the per-cell edges rule (CLAUDE.md) arriving as masonry: a surface
+  // that is one surface, drawn as though it were several.
+  metal: null,
 } as const;
 
 /** What a mark is FOR, so the caller picks the ink. A seam is the gap between
