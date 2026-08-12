@@ -158,6 +158,30 @@ export function gridFor(art: PieceArt, facing: Facing, frame = 0): { grid: Grid;
   return { grid: front, mirror: false };
 }
 
+/** WHICH of `gridFor`'s branches a facing takes — the same decision, named
+ *  rather than resolved.
+ *
+ *  It exists for /furniture.html, which labels every view with where its art
+ *  came from, and the labelling is the whole point of that page: rotation is
+ *  opt-in per piece, so "this north is really the front" is a fact about the
+ *  catalogue that you otherwise only learn by reading this file.
+ *
+ *  BESIDE `gridFor` AND NOT IN THE PAGE, because a copy of these four branches
+ *  living in a tool would be a second statement of the fallback rule, free to
+ *  drift from the real one — and it would drift silently, since a wrong label
+ *  looks exactly like a right one. Here, one test walks every piece and asserts
+ *  the two agree (furnishings.test.ts §gridSource). */
+export type GridSource = "front" | "own" | "mirrored-e";
+
+export function gridSource(art: PieceArt, facing: Facing): GridSource {
+  if (facing === "s") return "front";
+  if (facing === "n") return art.n ? "own" : "front";
+  if (facing === "e") return art.e ? "own" : "front";
+  if (art.w) return "own";
+  if (art.e && art.mirrorW) return "mirrored-e";
+  return "front";
+}
+
 /** Spliced front views, per piece, built once each and then handed back.
  *
  *  `gridFor` runs for every piece EVERY FRAME, and the raster cache below only

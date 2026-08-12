@@ -12252,6 +12252,69 @@ thing the awning is there to frame. Trimming the same three pixels off the cloth
 DEPTH moves the top edge clear of the overhang and leaves the bottom edge exactly
 where it was.
 
+## Phase 19 — the furniture project opens with a sheet (11 Aug 2026)
+
+The parked furniture project (memory: "furniture is its own project", 3 Aug) was
+queued behind the town rework, and the town is done. Its agenda is five items:
+the roof sliver, the three missing north grids, the sofa/bench sideways redraw,
+surface clutter, and fruit-shaped unlocks. Four of those are *look at a piece,
+judge it, redraw it, look again* — so the first thing built is the instrument for
+looking, not a fix.
+
+### /furniture.html — every piece, turned all four ways
+
+`src/tools/furniture-preview.ts`, the fifth tool page, following the buildings
+sheet exactly: real renderer, real world, fixed clock, fixed seed, no controls.
+24 pieces × 4 facings = 96 cards.
+
+- **It replaces a script with a page**, which is the argument `building-preview.ts`
+  already made and won. `shot-rotations.mjs` answers the same question by seeding
+  a save, driving a browser and cropping PNGs — about a minute a run, no hot
+  reload, and most of its source is tile arithmetic (column/row spacing, a
+  headroom fudge for the wardrobe, hand-computed crop rectangles). None of that
+  survives here: every view is its own canvas aiming its own camera, and CSS does
+  the layout. The scripts stay for record shots.
+- **EVERY PIECE STANDS AT THE SAME COORDINATE.** Each card gets its own world —
+  one piece, its wall if it needs one, floor — rather than a shallow copy of the
+  base. That is why there are no spacing constants: no card can catch its
+  neighbour's art, because no card has a neighbour. It also skips 96 flood fills
+  of the town's build map in `rooms()` for scenery never in frame.
+- **The captions name where each view's art came from** — *own grid*, *mirrored
+  e*, *front view* — which is the whole reason the page exists. Rotation is opt-in
+  per piece, so a fallback is a fact about the catalogue and not a defect;
+  finding it out used to mean reading `furnishings.ts`. Deliberately NOT flagged
+  loudly (tinted cards, a to-do list you can see across the room was considered
+  and rejected, owner's call): the sheet is a reference, and dressing a settled
+  design call up as a defect would relitigate it every time anybody opened it.
+- **`gridSource()` lives in `render/furnishings.ts`, beside the `gridFor()` it
+  describes**, not in the tool. Two statements of the fallback rule would drift,
+  and *a wrong label looks exactly like a right one* — there is no visual
+  symptom. One test walks every piece and facing and asserts the name matches the
+  grid identity that actually comes back.
+- **It shows the three wall pieces the script skips.** `shot-rotations.mjs` has no
+  `painting`, `fireplace` or `windowbox` because seeding a wall through the driver
+  is awkward; a page that builds its own world stamps a three-cell run for free
+  (never one cell — walls draw against their neighbours, and a lone one is a
+  post). The window box gets an actual sash under it, which is what its row is
+  for. Never enclosed, so `rooms()` finds nothing and no roof is derived.
+- **Box size comes off the ART, not the footprint.** A constant margin was wrong
+  in both directions at once: four tiles left the chair swimming and was still
+  only just enough for the wardrobe, whose art starts 1.6 tiles above its anchor.
+  It is now `max(w, h) + 2 + ceil(height / TILE)`, with the camera lifted half
+  the rise, and the sheet got about 40% shorter.
+- **Still cards are drawn for one second and then left alone.** 96 canvases
+  redrawn every frame ran at **20fps**; only the fireplace animates, and there is
+  no grass, no weather, no villagers and no player in frame, so a chair drawn
+  twice is the same chair. Drawing only `anim` pieces after a 60-frame settle
+  (lazy chunk generation means the first frame can land before the ground does)
+  took it to 90+. Nothing invalidates a settled card: the canvases are sized in
+  fixed px, so no resize can restage one.
+
+**What it deliberately cannot show**, both written into its docblock: lights unlit
+(`lamp`, `desklamp`, `fireplace` do their work after dark, and this is a midday
+sheet — drive.mjs stays the instrument for glow), and the roof sliver, which is a
+sort between a roof and the furniture under it and needs a real house.
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before
@@ -12295,9 +12358,11 @@ you trip over them:
   is sixteen; it was the one row that needed its own sitting.
 
 - **Three pieces still borrow their north view from their front, and two read
-  as blocks turned sideways.** `scripts/shot-rotations.mjs` photographs every
-  piece facing all four ways — run it, look at it, that is the whole tool. What
-  it found, in the order worth fixing:
+  as blocks turned sideways.** **`/furniture.html` is the tool now** (§Phase 19) —
+  every piece facing all four ways, hot-reloading, with each view labelled with
+  where its art came from, so these three read straight off the page.
+  `scripts/shot-rotations.mjs` still takes the record shots. What they found, in
+  the order worth fixing:
 
   1. ~~Wardrobe, shelf and chest showed their doors, books and clasp from every
      angle.~~ **Fixed 1 Aug 2026** — one back panel each, used for `n` AND `e`

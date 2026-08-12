@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { FURNITURE, footprint } from "./furniture";
 import type { FurnitureId, Facing } from "./furniture";
 import { FURNITURE_ART } from "./furnishings";
-import { gridFor, INK } from "../render/furnishings";
+import { gridFor, gridSource, INK } from "../render/furnishings";
 
 const TILE = 16; // renderer.ts's scene tile, and the unit these grids are in.
 const FACINGS: Facing[] = ["s", "n", "e", "w"];
@@ -129,5 +129,42 @@ describe("furniture art", () => {
       const { grid } = gridFor(art, "s");
       expect(grid.rows.join("")).toMatch(/[cts]/);
     });
+  }
+});
+
+// --- gridSource ---------------------------------------------------------------
+// `gridSource` names the branch `gridFor` takes, and /furniture.html prints that
+// name under every view. The two are separate functions over the same rule, so
+// they can disagree — and a wrong label is invisible, because it looks exactly
+// like a right one. This is the thing that stops them drifting: the name is
+// checked against the grid that actually comes back.
+describe("gridSource agrees with gridFor", () => {
+  for (const id of ids) {
+    const art = FURNITURE_ART[id]!;
+
+    for (const facing of FACINGS) {
+      it(`${id} facing ${facing}`, () => {
+        const { grid, mirror } = gridFor(art, facing);
+        const front = gridFor(art, "s").grid;
+
+        switch (gridSource(art, facing)) {
+          case "front":
+            // The fallback. Identity, not deep equality: the claim is that this
+            // facing draws THE FRONT GRID, not one that happens to look like it.
+            expect(grid).toBe(front);
+            expect(mirror).toBe(false);
+            break;
+          case "own":
+            expect(grid).toBe(art[facing]);
+            expect(mirror).toBe(false);
+            break;
+          case "mirrored-e":
+            expect(facing).toBe("w");
+            expect(grid).toBe(art.e);
+            expect(mirror).toBe(true);
+            break;
+        }
+      });
+    }
   }
 });

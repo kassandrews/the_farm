@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Farm — furniture</title>
+    <!-- Dev-only contact sheet for src/content/furniture.ts. Not part of the
+         game build; it exists so a piece can be judged while it is being
+         turned, which is the question the catalogue's open gaps are all about.
+         See src/tools/furniture-preview.ts for what it deliberately cannot
+         show. -->
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #efe9dc;
+        --panel: #2b2540;
+        --bg: #1d1930;
+      }
+      body {
+        margin: 0;
+        padding: 16px 20px 40px;
+        background: var(--bg);
+        color: var(--ink);
+        font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      h1 {
+        font-size: 15px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+      p.blurb {
+        margin: 0 0 20px;
+        opacity: 0.6;
+        max-width: 68ch;
+      }
+      #sheet {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px 26px;
+        align-items: flex-start;
+      }
+      .piece {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+      }
+      /* WIDTH 0 PLUS MIN-WIDTH 100%: the caption takes the piece's width without
+         contributing to it. A piece is sized by its row of canvases, and a long
+         line of text would push it wider and break the grid the canvas sizes
+         were chosen for. Same trick as buildings.html. */
+      .head,
+      .lines {
+        width: 0;
+        min-width: 100%;
+      }
+      .lines {
+        display: flex;
+        flex-direction: column;
+        font-size: 12px;
+        margin-bottom: 6px;
+      }
+      .row {
+        display: flex;
+        gap: 6px;
+        align-items: flex-start;
+      }
+      .view {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      /* Pixel art, never resampled: the canvas is upscaled by a whole number and
+         nothing here is allowed to smooth it (CLAUDE.md §Sprite rendering). */
+      canvas.shot {
+        image-rendering: pixelated;
+        border-radius: 6px;
+        display: block;
+        background: var(--panel);
+      }
+      .facing {
+        display: flex;
+        gap: 6px;
+        align-items: baseline;
+        font-size: 11px;
+        width: 0;
+        min-width: 100%;
+      }
+      .letter {
+        font-weight: 600;
+      }
+      /* The source label is the reason the page exists, but it is a REFERENCE
+         and not an alarm: rotation is opt-in per piece, so a borrowed view is a
+         fact about the catalogue rather than a defect in it. Same weight as
+         every other note on the sheet, deliberately. */
+      .src,
+      .note {
+        opacity: 0.45;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>The Farm — furniture</h1>
+    <p class="blurb">
+      Every piece in <code>src/content/furniture.ts</code>, turned all four ways,
+      drawn by the game's own renderer out of a real world. Each view names where
+      its art comes from — <em>own grid</em>, <em>mirrored e</em>, or
+      <em>front view</em> where a piece falls back to its front. Fixed at a
+      summer midday, each piece in its default finish, so the picture changes
+      when the furniture changes and at no other time.
+    </p>
+    <div id="sheet"></div>
+    <script type="module" src="/src/tools/furniture-preview.ts"></script>
+  </body>
+</html>
