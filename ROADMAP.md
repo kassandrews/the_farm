@@ -12597,6 +12597,41 @@ been: a north–south run was laid with the east–west art and photographed fir
   silently go wrong: `y.mid`'s first sixteen rows must be uniform, and `y.end` must
   differ from `y.mid` in its top row and nowhere else.
 
+### The second axis — scope, settled before it was built (12 Aug 2026)
+
+Owner's call, and it is a scoping rule rather than a mechanism: **a second
+material earns a second COST only when it is a substantial part of the object.**
+A worktop, upholstery and linens are; a drawer handle and a lamp's head are not.
+So the counter becomes wood + stone, and the dresser stays all wood and the lamp
+stays one ore however brass their details are.
+
+**The table already agrees with the rule, which is the argument for it.** Walking
+the costs against the art:
+
+| piece | cost today | second material drawn as | verdict |
+|---|---|---|---|
+| sofa | wood 3, **cloth 4** | literal `w` | pays for it already |
+| cot | wood 2, **cloth 2** | literal `w` | pays for it already |
+| bed | wood 6 | literals `p`/`q` (bedding) | **pays for nothing** |
+| counter | wood 3 | — | wants stone |
+| dresser | wood 4 | literal `d` (brass) | detail; stays |
+| desk | wood 5 | literal `d` (pull) | detail; stays |
+| lamp / desklamp | ore | literals | detail; stays |
+
+- **THE SOFA AND THE COT ALREADY PAY FOR CLOTH AND CANNOT CHOOSE ITS COLOUR.**
+  That is the finding, and it means the second finish axis is not only a feature —
+  it repairs a live inconsistency with DESIGN §Materials' own rule, *the scarce
+  thing is the stuff, never the look*. Those two rows charge you for the stuff AND
+  hand you a fixed look.
+- **The bed is the one row the rule catches out.** It draws bedding and pays no
+  cloth, while the cot pays cloth for exactly the same thing. Either the bed gains
+  a cloth cost or the cot loses one; they cannot both be right.
+- **The trim slot takes CLASSES, and the cost stays fixed.** Settled with the
+  butcher-block question: locking a worktop to stone guarantees two materials but
+  forbids an all-wood counter, and a counter is a counter — so the slot allows
+  wood, stone and metal, the price stays wood 2 + stone 1, and honesty about the
+  bill loses to range on purpose.
+
 **Left open:**
 
 - **The turned run has no depth cue.** Seen end-on it is an honest flat band of
