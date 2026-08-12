@@ -12222,6 +12222,21 @@ have broken the derived-roof rule. What made roofs look unfinished was mostly
 invisible texture — a bug in how the texture was applied, not a shortage of
 materials. Parked rather than argued.
 
+### A lamp stands in the middle of its cell
+
+Everything else in this game stands on its cell's SOUTHERN edge, and that is
+right for everything else: a table, a bed and a chest all have a FOOTPRINT, and
+the near edge is where the front of that footprint is.
+
+**A lamp has no footprint.** It is a post — the same fact that took it off the
+generic draw path in the first place — so the near edge is not the front of
+anything, it is half a tile of daylight between the post and whatever it is meant
+to be standing beside. On the square that read as the pair by each civic door
+standing out in the street rather than at the building.
+
+Half a tile north, and **the glow pool takes the same lift**, or a lamp lights the
+ground half a tile in front of its own flame.
+
 ### An awning hangs BELOW the eaves
 
 A wall's top is not the top of what you can see of a building: the roof hangs

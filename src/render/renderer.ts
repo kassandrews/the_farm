@@ -393,6 +393,8 @@ function roofLum(hex: string): number {
   const b = n & 255;
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 }
+/** How far a lamp stands north of its cell's near edge — see `drawLamp`. */
+const LAMP_LIFT = TILE / 2;
 const BARN_PAINT = "#ece4d4";
 /** A hung banner (§drawBanner). Hardcoded on the flag's own argument two lines
  *  down: cloth is not the building's material, and letting a finish recolour it
@@ -3457,7 +3459,10 @@ export class Renderer {
       // middle is under the object making it reads as a stain. `+ TILE / 2` is
       // the step from the cell's centre to its southern edge, which is the datum
       // the art uses (see LAMP_HEAD_H).
-      const cy = this.sceneY(l.y) + TILE / 2 - LAMP_HEAD_H;
+      // MINUS THE SAME LIFT the art takes (§drawLamp), or the pool stays on the
+      // cell's near edge while the flame throwing it has moved north, and a lamp
+      // lights the ground half a tile in front of its own head.
+      const cy = this.sceneY(l.y) + TILE / 2 - LAMP_LIFT - LAMP_HEAD_H;
       // ORANGE, not cream. Additive light adds its green channel to grass that is
       // already saturated green, so a pale warm-white pool came out milky — lit
       // lawn that read as bleached lawn. Dropping the green and blue makes the
@@ -5084,9 +5089,23 @@ export class Renderer {
    *  Narrow on purpose. It is standing in a corridor a single tile wide, so the
    *  cell it occupies has to still read as floor you walk over — which it is,
    *  since a lamp is never solid (content/furniture.ts). */
-  private drawLamp(px: number, base: number, pw: number, skin: SkinDef): void {
+  private drawLamp(px: number, baseEdge: number, pw: number, skin: SkinDef): void {
     const ctx = this.ctx;
     const cx = px + Math.floor(pw / 2);
+    // STOOD IN THE MIDDLE OF ITS CELL, not on the near edge of it.
+    //
+    // Everything else in this game stands on the cell's southern edge, and that
+    // is right for everything else: a table, a bed, a chest all have a FOOTPRINT,
+    // and the near edge is where the front of that footprint is. A lamp has no
+    // footprint — it is a post, which is the same fact that took it off the
+    // generic path in the first place — so the cell's near edge is not the front
+    // of anything, it is just half a tile of daylight between the post and
+    // whatever it is meant to be standing beside.
+    //
+    // On the square that read as the pair by each civic door standing out in the
+    // street rather than at the building. Half a tile north puts them where a
+    // lamp post goes.
+    const base = baseEdge - LAMP_LIFT;
     const headY = base - LAMP_HEAD_H - 4;
 
     ctx.fillStyle = "rgba(0,0,0,0.18)"; // a small foot's worth of shadow
