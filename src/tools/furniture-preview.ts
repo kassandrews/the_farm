@@ -296,7 +296,7 @@ function card(
     ...base,
     overrides,
     build: backing(def),
-    furniture: { [tileKey(ORIGIN.x, ORIGIN.y)]: { id: def.id, facing, finish } },
+    furniture: { [tileKey(ORIGIN.x, ORIGIN.y)]: { id: def.id, facing, finish, set: "core" } },
     underFurniture: {},
     finishes: {},
     crops: {},

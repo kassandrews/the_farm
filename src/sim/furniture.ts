@@ -30,6 +30,7 @@ import type { WorldState, FurnitureCell, Layer } from "./types";
 import type { FurnitureId, Facing } from "../content/furniture";
 import { furnitureDef, footprint, covers, MAX_SPAN } from "../content/furniture";
 import type { SkinId } from "../content/skins";
+import type { SetId } from "../content/sets";
 import { tileAt, tileKey, refusesConstruction, refusesFooting } from "./world";
 import { touchBuild } from "./structures";
 import { overhead } from "../content/structures";
@@ -160,10 +161,15 @@ export function placeFurniture(
   id: FurnitureId,
   facing: Facing,
   finish: SkinId,
+  /** Which set's drawing. Beside `finish` because they are the two style axes,
+   *  and defaulted to the starter set for the same reason `layer` defaults to
+   *  the surface: it is the answer in every case but the one that says
+   *  otherwise. */
+  set: SetId = "core",
   layer: Layer = "surface",
 ): boolean {
   if (!canPlaceFurniture(world, ax, ay, id, facing, layer)) return false;
-  furnitureFor(world, layer)[tileKey(ax, ay)] = { id, facing, finish };
+  furnitureFor(world, layer)[tileKey(ax, ay)] = { id, facing, finish, set };
   touchBuild(world); // the standing things moved — see structures.ts
   return true;
 }

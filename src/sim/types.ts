@@ -5,6 +5,7 @@
 import type { TileId } from "../content/tiles";
 import type { CropId } from "../content/crops";
 import type { FloraId } from "../content/flora";
+import type { SetId } from "../content/sets";
 import type { AdultForm } from "../content/canon/forms";
 import type { CharId, NewcomerId } from "../content/cast";
 import type { MemoryLog } from "./memory";
@@ -134,6 +135,14 @@ export interface FurnitureCell {
   id: FurnitureId;
   facing: Facing;
   finish: SkinId;
+  /** Which set's drawing of this form (DESIGN §The catalog, content/sets.ts).
+   *
+   *  Beside `finish` and not folded into `id`, because a set is a STYLE and not
+   *  a different object: forms own the footprint, the solidity and the cost, so
+   *  two sets' chairs occupy a cell identically. That is what makes restyling a
+   *  furnished room in place possible at all — the alternative, an id per set
+   *  per form, would make every such change a demolition. */
+  set: SetId;
 }
 
 export interface Villager {

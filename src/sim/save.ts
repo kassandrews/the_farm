@@ -20,7 +20,19 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 47;
+export const SCHEMA_VERSION = 48;
+
+// 48 gives every piece of furniture a SET (content/sets.ts — DESIGN §The
+// catalog). Additive, one legal value, and the rung stamps `core` on both
+// layers; see it at the foot of MIGRATIONS for why it exists at all when the
+// game has no players to protect.
+//
+// The alternative considered and rejected was a DELIBERATE GAP — bump, ship no
+// rung, let `migrateSave`'s `if (!migrate) return null` refuse every older save
+// so the world regenerates. That reads well and is wrong twice: it takes the
+// whole of save.test.ts down with it, and "no players" is a reason not to spend
+// thought on a migration, never a reason to leave a hole in a ladder that other
+// tests walk end to end.
 
 // It went to 24 at Phase 9a (`places`), 25 at 9b (`filings`), 26 at 9c
 // (`notebook`) and 27 for per-tile floor finishes — genuinely new stored fields,
@@ -1928,6 +1940,33 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
     };
   },
 
+  /** v48 — furniture carries a SET (content/sets.ts, DESIGN §The catalog).
+   *
+   *  Everything that existed before this is Set One, so the whole rung is
+   *  stamping `core` onto both furniture layers. There is nothing to decide: the
+   *  core set IS the drawings these saves were already being shown.
+   *
+   *  WRITTEN EVEN THOUGH THE GAME HAS NO PLAYERS, which is worth a sentence
+   *  because the standing rule is not to bother. The rule is about not letting
+   *  migration cost shape a design call, and it earns its keep on rungs that
+   *  cost real thought — v37's shape change, v40's stall. This one is a field
+   *  with one legal value, and the alternative was a deliberate gap in the
+   *  ladder that would have refused every save in `save.test.ts` and taken 115
+   *  passing tests down with it. Nine lines beats that. */
+  47: (raw) => {
+    const stamp = (layer: unknown): Record<string, unknown> => {
+      const cells = (layer ?? {}) as Record<string, Record<string, unknown>>;
+      return Object.fromEntries(
+        Object.entries(cells).map(([key, cell]) => [key, { ...cell, set: "core" }]),
+      );
+    };
+    return {
+      ...raw,
+      schemaVersion: 48,
+      furniture: stamp(raw.furniture),
+      underFurniture: stamp(raw.underFurniture),
+    };
+  },
 };
 
 /** The name the tables now give an authored character, or null for anyone the

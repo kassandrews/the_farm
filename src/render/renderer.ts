@@ -99,7 +99,7 @@ import { zoomLadder } from "./zoom";
 import { forEachGrainMark, GRAIN } from "./grain";
 import { roofFinish, roofPitch, type RoofPitch } from "./roof";
 import { gridFor, pieceCanvas } from "./furnishings";
-import { FURNITURE_ART } from "../content/furnishings";
+import { artFor } from "../content/sets";
 import { COUNTER_MARKS } from "../content/countermarks";
 import { counterIdAtAnchor } from "../sim/counters";
 import type { CounterId } from "../content/counters";
@@ -4724,11 +4724,11 @@ export class Renderer {
     // It sorts at the same y and bias as its own wall and is pushed after it, so
     // a stable sort draws the wall and then the picture on it. That is the whole
     // of the layering, and it is why this needs no new pass.
-    const mounted = FURNITURE_ART[cell.id];
+    const mounted = artFor(cell.id, cell.set);
     if (def.mount === "wall") {
       if (mounted) {
         const { grid, mirror } = gridFor(mounted, cell.facing);
-        const raster = pieceCanvas(`${cell.id}:${cell.facing}:${cell.finish}`, grid, skin, mirror);
+        const raster = pieceCanvas(`${cell.id}:${cell.set}:${cell.facing}:${cell.finish}`, grid, skin, mirror);
         // The wall's own datum, not the furniture one: `base` here is the floor
         // line of the cell, and a wall's face runs from a storey above it.
         ctx.drawImage(raster, px, base - STOREY + WALL_CAP + 2);
@@ -4741,7 +4741,7 @@ export class Renderer {
     // the fallback below draws — `pw` by `h * TILE + H` — plus its own `rise`,
     // so the two paths are interchangeable per piece and the table can be
     // converted one row at a time rather than all at once.
-    const art = FURNITURE_ART[cell.id];
+    const art = artFor(cell.id, cell.set);
     if (art) {
       // Zero for everything without an `anim` — one fireplace does not put the
       // rest of the furniture on a clock, and an unanimated piece keeps the one
@@ -4755,7 +4755,7 @@ export class Renderer {
       // And on the FRAME, or the first flame drawn would be served forever.
       const suffix = art.anim ? `:${frame % art.anim.frames.length}` : "";
       const raster = pieceCanvas(
-        `${cell.id}:${cell.facing}:${cell.finish}${suffix}`,
+        `${cell.id}:${cell.set}:${cell.facing}:${cell.finish}${suffix}`,
         grid,
         skin,
         mirror,

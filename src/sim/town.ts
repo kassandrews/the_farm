@@ -200,7 +200,7 @@ export function stampBuilding(t: StampTarget, b: TownBuilding, probe?: TerrainPr
     const finish = classes.includes(skinDef(b.finish).applies)
       ? b.finish
       : defaultSkin(classes[0] ?? "wood");
-    t.furniture[tileKey(f.x, f.y)] = { id: f.id, facing: f.facing, finish };
+    t.furniture[tileKey(f.x, f.y)] = { id: f.id, facing: f.facing, finish, set: "core" };
   }
 
   return true;
@@ -250,7 +250,7 @@ export function stampFixtures(t: StampTarget): string[] {
   const placed: string[] = [];
   for (const f of TOWN_FIXTURES) {
     if (occupied(t, f.x, f.y)) continue;
-    t.furniture[tileKey(f.x, f.y)] = { id: f.id, facing: f.facing, finish: f.finish };
+    t.furniture[tileKey(f.x, f.y)] = { id: f.id, facing: f.facing, finish: f.finish, set: "core" };
     placed.push(f.id);
   }
   return placed;

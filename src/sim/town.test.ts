@@ -470,6 +470,7 @@ describe("stamping", () => {
       id: "chair",
       facing: "s",
       finish: "pine",
+      set: "core",
     };
     expect(stampBuilding(withFurniture, b)).toBe(false);
 

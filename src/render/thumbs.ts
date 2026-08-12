@@ -25,7 +25,8 @@
 // row. A stool therefore looks small and a wardrobe looks big, which is the
 // truth about them.
 
-import { FURNITURE_ART } from "../content/furnishings";
+import { SET_ART, artFor } from "../content/sets";
+import type { SetId } from "../content/sets";
 import { FURNITURE, furnitureDef, type FurnitureId, type Facing } from "../content/furniture";
 import { skinDef, type SkinId } from "../content/skins";
 import { gridFor, pieceCanvas } from "./furnishings";
@@ -68,13 +69,19 @@ const urls = new Map<string, string>();
  *  way the rotate button says. A tile showing the front of a wardrobe you are
  *  about to put against the north wall is a small lie of exactly the kind this
  *  module exists to stop. */
-export function furnitureThumb(id: FurnitureId, facing: Facing, finish: SkinId, scale: number): string {
-  const key = `${id}:${facing}:${finish}@${scale}`;
+export function furnitureThumb(
+  id: FurnitureId,
+  facing: Facing,
+  finish: SkinId,
+  scale: number,
+  set: SetId = "core",
+): string {
+  const key = `${id}:${set}:${facing}:${finish}@${scale}`;
   const hit = urls.get(key);
   if (hit) return hit;
 
   const def = furnitureDef(id);
-  const art = FURNITURE_ART[id];
+  const art = artFor(id, set);
   const canvas = document.createElement("canvas");
 
   // The box the world would give this piece: its footprint, plus how far it
@@ -224,16 +231,23 @@ export function thumbBox(scale: number): { w: number; h: number } {
   let h = 0;
   for (const id of Object.keys(FURNITURE) as FurnitureId[]) {
     const def = FURNITURE[id];
-    const art = FURNITURE_ART[id];
-    for (const facing of ["s", "n", "e", "w"] as Facing[]) {
-      if (art) {
-        const { grid } = gridFor(art, facing);
-        w = Math.max(w, grid.rows.reduce((m, r) => Math.max(m, r.length), 0));
-        h = Math.max(h, grid.rows.length);
-      } else {
-        const turned = facing === "e" || facing === "w";
-        w = Math.max(w, (turned ? def.h : def.w) * TILE);
-        h = Math.max(h, (turned ? def.w : def.h) * TILE + def.height);
+    // EVERY SET, and not only core. The tile has to clear the biggest drawing in
+    // the whole catalogue, and a set is a free hand at the silhouette — the day
+    // one of them draws a taller wardrobe, the HUD grows to fit it without
+    // anybody remembering to, which is this function's whole argument one axis
+    // further out.
+    for (const table of Object.values(SET_ART)) {
+      const art = table[id];
+      for (const facing of ["s", "n", "e", "w"] as Facing[]) {
+        if (art) {
+          const { grid } = gridFor(art, facing);
+          w = Math.max(w, grid.rows.reduce((m, r) => Math.max(m, r.length), 0));
+          h = Math.max(h, grid.rows.length);
+        } else {
+          const turned = facing === "e" || facing === "w";
+          w = Math.max(w, (turned ? def.h : def.w) * TILE);
+          h = Math.max(h, (turned ? def.w : def.h) * TILE + def.height);
+        }
       }
     }
   }

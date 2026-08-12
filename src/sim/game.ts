@@ -1854,7 +1854,7 @@ function placeOrRemove(
 
   if (isFurnitureTool(tool)) {
     const def = furnitureDef(tool);
-    if (!placeFurniture(world, x, y, tool, facing, finish, layer)) {
+    if (!placeFurniture(world, x, y, tool, facing, finish, "core", layer)) {
       // "Won't fit" is the honest answer for every piece in the table except the
       // one that can be refused on a cell with nothing in it. A fireplace needs a
       // wall behind it (content/furniture.ts §backs), and a refusal that talks

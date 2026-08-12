@@ -130,6 +130,23 @@ export interface FurnitureDef {
    *  Distinct from `mount: "wall"`, which puts a piece IN the wall cell. This
    *  one stands on the floor in front of one. */
   backs?: "wall";
+  /** Is this a CATALOG FORM — one of the slots every set must cover?
+   *
+   *  DESIGN §The catalog: a form is what a room needs, and the guarantee being
+   *  made is that any form × any set you have × any finish you have exists. So
+   *  this flag is an obligation, not a label: setting it on a row means every
+   *  set that ever ships owes that row a drawing, which is why forms are
+   *  deliberately expensive and a new one has to be reached for and found
+   *  missing rather than merely sound like a good idea.
+   *
+   *  Absent means no set reskins it, and there are two ways to be absent. The
+   *  notice board and the stage are the TOWN'S — nothing sells them, nobody
+   *  places them. The awning and the window box belong to the BUILDING rather
+   *  than to the room: you fit them to a shopfront or a sill, and a suite of
+   *  furniture has no opinion about either. Both kinds are still perfectly
+   *  ordinary furniture rows; they simply sit outside the lattice. */
+  form?: boolean;
+
   /** Does a chimney come out of the roof over it?
    *
    *  A FIELD rather than `id === "fireplace"` in the renderer, which is the
@@ -146,6 +163,7 @@ export interface FurnitureDef {
 export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   bed: {
     id: "bed",
+    form: true,
     name: "Bed",
     cost: { wood: 6 },
     w: 1,
@@ -156,6 +174,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   },
   table: {
     id: "table",
+    form: true,
     name: "Table",
     cost: { wood: 4 },
     w: 2,
@@ -166,6 +185,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   },
   chair: {
     id: "chair",
+    form: true,
     name: "Chair",
     cost: { wood: 2 },
     w: 1,
@@ -177,6 +197,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   },
   shelf: {
     id: "shelf",
+    form: true,
     name: "Shelf",
     cost: { wood: 3 },
     w: 1,
@@ -192,6 +213,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   // things whose whole job is to make a floor feel lived on.
   cushion: {
     id: "cushion",
+    form: true,
     name: "Cushion",
     cost: { cloth: 2 },
     w: 1,
@@ -202,6 +224,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   },
   rug: {
     id: "rug",
+    form: true,
     name: "Rug",
     cost: { cloth: 4 },
     w: 2,
@@ -250,6 +273,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   // paddock.
   fireplace: {
     id: "fireplace",
+    form: true,
     name: "Fireplace",
     // A BARE NUMBER, so it resolves against the finish's own material — eight
     // STONE, because `finishes` is stone-only. That is the cost-follows-material
@@ -280,6 +304,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   },
   lamp: {
     id: "lamp",
+    form: true,
     // "Floor lamp" now that a desk one exists. The ID stays `lamp` — it is
     // written into every save that has ever placed one, and a name is not an id.
     name: "Floor lamp",
@@ -299,6 +324,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   // over a sofa, and one is never the only way across a room.
   stool: {
     id: "stool",
+    form: true,
     name: "Stool",
     cost: { wood: 2 },
     w: 1,
@@ -312,6 +338,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   },
   bench: {
     id: "bench",
+    form: true,
     name: "Bench",
     cost: { wood: 3 },
     w: 2,
@@ -322,6 +349,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   },
   sofa: {
     id: "sofa",
+    form: true,
     name: "Sofa",
     // The one row that costs two materials, and the only place the frame and
     // the covering are priced separately. A sofa is genuinely both, and the
@@ -341,6 +369,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   // --- Tables and surfaces ---------------------------------------------------
   coffeetable: {
     id: "coffeetable",
+    form: true,
     name: "Coffee table",
     cost: { wood: 3 },
     w: 2,
@@ -354,6 +383,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   },
   desk: {
     id: "desk",
+    form: true,
     name: "Desk",
     cost: { wood: 5 },
     w: 2,
@@ -364,6 +394,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   },
   nightstand: {
     id: "nightstand",
+    form: true,
     name: "Nightstand",
     cost: { wood: 2 },
     w: 1,
@@ -376,6 +407,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   // --- Sleeping --------------------------------------------------------------
   cot: {
     id: "cot",
+    form: true,
     name: "Cot",
     // Cheap, and cheap is the whole character of it: a bed costs 6 wood, this
     // costs 2 and 2. It is what you put in a room you have only just walled in.
@@ -393,6 +425,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   // --- Storage ---------------------------------------------------------------
   wardrobe: {
     id: "wardrobe",
+    form: true,
     name: "Wardrobe",
     cost: { wood: 6 },
     w: 1,
@@ -406,6 +439,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   },
   chest: {
     id: "chest",
+    form: true,
     name: "Chest",
     cost: { wood: 3 },
     w: 1,
@@ -416,6 +450,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   },
   dresser: {
     id: "dresser",
+    form: true,
     name: "Dresser",
     cost: { wood: 4 },
     w: 2,
@@ -429,6 +464,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   // The lamp above is the FLOOR lamp; this is the one that stands on a desk.
   desklamp: {
     id: "desklamp",
+    form: true,
     name: "Desk lamp",
     // Half the floor lamp's ore, because it is half the lamp. Ore alone is
     // allowed for a placement cost — see the long note on `lamp`, which is
@@ -447,6 +483,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
 
   painting: {
     id: "painting",
+    form: true,
     name: "Painting",
     // The frame is the only part anybody makes; the picture is the picture.
     cost: { wood: 2 },

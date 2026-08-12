@@ -149,7 +149,7 @@ describe("the shortcut, and that he notices", () => {
     shortcutTo(w);
     expect(MOLE_SHALLOW).toContain(speak(w, m, makeRng(1), Date.now()).text);
 
-    w.underFurniture[`${c.x + 2},${c.y}`] = { id: "lamp", facing: "s", finish: "pine" };
+    w.underFurniture[`${c.x + 2},${c.y}`] = { id: "lamp", facing: "s", finish: "pine", set: "core" };
     expect(moleLamplit(w)).toBe(true);
     expect(MOLE_LIT).toContain(speak(w, m, makeRng(1), Date.now()).text);
   });
@@ -159,7 +159,7 @@ describe("the shortcut, and that he notices", () => {
     // is not a light in his corridor.
     const w = freshWorld();
     const c = standInChamber(w);
-    w.underFurniture[`${c.x + 40},${c.y}`] = { id: "lamp", facing: "s", finish: "pine" };
+    w.underFurniture[`${c.x + 40},${c.y}`] = { id: "lamp", facing: "s", finish: "pine", set: "core" };
     expect(moleLamplit(w)).toBe(false);
   });
 

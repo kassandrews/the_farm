@@ -664,7 +664,11 @@ describe("v20 → v21: furniture can stand in the rock", () => {
   it("keeps what's already down there, if a save somehow has it", () => {
     const lamp = { "3,4": { id: "lamp", facing: "s", finish: "pine" } };
     const migrated = migrateSave(v20Save({ underFurniture: lamp }))!;
-    expect(migrated.underFurniture).toEqual(lamp);
+    // MATCH, not equal: the claim is that the lamp survives the ladder, not that
+    // no later rung may ever add a field to it. v48 gives every piece a `set`,
+    // and asserting on the whole object made this test a tripwire for schema
+    // growth it has no opinion about.
+    expect(migrated.underFurniture).toMatchObject(lamp);
   });
 });
 
