@@ -104,11 +104,16 @@ export interface FurnitureDef {
    *  just has no top. */
   flat?: boolean;
 
-  /** Which finish classes it may wear. A list to match structures, though every
-   *  row here is single-class and probably always will be: a piece of furniture
-   *  is a made object, and unlike a floor or a wall it is not a surface you
-   *  could plausibly render in either timber or stone. The list buys one code
-   *  path in the picker, not an open axis. */
+  /** Which finish classes it may wear. A list to match structures.
+   *
+   *  It was single-class on every row for a long time, with a note here saying it
+   *  probably always would be: a piece of furniture is a made object, and unlike
+   *  a floor it is not a surface you could plausibly render in either timber or
+   *  stone. THE SINK IS THE EXCEPTION and it is a real one rather than a lapse —
+   *  a sink is honestly porcelain or stainless, both are what sinks are, and
+   *  `availableSkinsForClasses` already spans classes without asking the player
+   *  to pick a category first. The list was built for exactly this and waited
+   *  twenty-odd rows to be used. */
   finishes: SkinClass[];
   /** Does it burn? A FIELD rather than `id === "lamp"` in the renderer, which is
    *  what it was until a second light existed. Lit pieces pool warm light at
@@ -548,7 +553,11 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: true,
     height: 12,
-    finishes: ["stone"],
+    // PORCELAIN OR STAINLESS, because a sink is honestly either one, and the
+    // picker has always been able to span classes without asking the player to
+    // choose a category first (skins.ts §availableSkinsForClasses). The one row
+    // in the table that uses that on purpose rather than by inheritance.
+    finishes: ["ceramic", "metal"],
   },
 
   // --- The bathroom -----------------------------------------------------------
@@ -563,7 +572,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: true,
     height: 14,
-    finishes: ["stone"],
+    finishes: ["ceramic"],
   },
   tub: {
     id: "tub",
@@ -577,7 +586,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // look down into, so the silhouette wants to be mostly rim and inside —
     // at chest height it reads as a stone trough standing against a wall.
     height: 10,
-    finishes: ["stone"],
+    finishes: ["ceramic"],
   },
 
   painting: {

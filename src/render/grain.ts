@@ -75,6 +75,9 @@ export const GRAIN = {
   // would be the per-cell edges rule (CLAUDE.md) arriving as masonry: a surface
   // that is one surface, drawn as though it were several.
   metal: null,
+  // Nor ceramic, and for metal's reason: a glazed fixture is one poured surface.
+  // A joint ruled across a bath would be a bath built out of tiles.
+  ceramic: null,
 } as const;
 
 /** What a mark is FOR, so the caller picks the ink. A seam is the gap between

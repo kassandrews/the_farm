@@ -266,7 +266,7 @@ export function priceItems(cost: BuildPrice, material: ItemId): Partial<Record<I
  *  most resembles. It is the one place appearance and cost part company, and it
  *  is deliberate; see content/skins.ts §Metal. */
 export function priceMaterial(applies: SkinClass): ItemId {
-  return applies === "metal" ? "stone" : applies;
+  return applies === "metal" || applies === "ceramic" ? "stone" : applies;
 }
 
 export function itemDef(id: ItemId): ItemDef {

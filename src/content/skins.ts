@@ -29,11 +29,11 @@ import type { CharId } from "./cast";
  *  colours are then free, exactly like wood — the scarce thing is the stuff,
  *  never the look. That is the whole rule of this file, applied to a material
  *  that happens to arrive by barter instead of by axe. */
-export type SkinClass = "wood" | "stone" | "cloth" | "metal";
+export type SkinClass = "wood" | "stone" | "cloth" | "metal" | "ceramic";
 
 /** Every class, in picker order. A list rather than four call sites writing
  *  `["wood", "stone"]` and one of them forgetting to grow. */
-export const SKIN_CLASSES: SkinClass[] = ["wood", "stone", "cloth", "metal"];
+export const SKIN_CLASSES: SkinClass[] = ["wood", "stone", "cloth", "metal", "ceramic"];
 
 /** Display names for the classes. A table rather than a ternary at the one call
  *  site that labels them — the ternary said "Wood" or "Stone", so the day cloth
@@ -43,6 +43,7 @@ export const SKIN_CLASS_NAMES: Record<SkinClass, string> = {
   stone: "Stone",
   cloth: "Cloth",
   metal: "Metal",
+  ceramic: "Ceramic",
 };
 
 export type SkinId =
@@ -67,7 +68,11 @@ export type SkinId =
   // Metal
   | "steel"
   | "brass"
-  | "blackiron";
+  | "blackiron"
+  // Ceramic
+  | "porcelain"
+  | "cream"
+  | "seafoam";
 
 export interface SkinDef {
   id: SkinId;
@@ -382,6 +387,49 @@ export const SKINS: Record<SkinId, SkinDef> = {
     shade: "#332f3a",
     starter: true,
   },
+
+  // --- Ceramic -------------------------------------------------------------
+  // The fifth class, and it exists because `finishes: ["stone"]` was the WRONG
+  // RANGE for a bathroom rather than merely the wrong default. Stone put a
+  // toilet in granite to start with, which was the visible symptom — but it also
+  // offered a COBBLESTONE one and a SLATE one, and no per-piece default would
+  // have taken those away. A fixture is glazed, not quarried.
+  //
+  // Free and all three starters, which is what makes a fifth class legal at all:
+  // DESIGN §Materials' three GATHERED classes are untouched (wood, stone, ore),
+  // because a finish is a look and the look is never the scarce thing. Priced in
+  // stone, like metal — see `priceMaterial`.
+  //
+  // Three, and the third is the interesting one. White and cream are what a
+  // fixture is; `seafoam` is what a fixture was for about fifteen years, and a
+  // pale green bathroom is a period joke told without comment (§Tone).
+  porcelain: {
+    id: "porcelain",
+    name: "Porcelain",
+    applies: "ceramic",
+    color: "#e5e2da",
+    top: "#f2f0ea",
+    shade: "#c0bcb2",
+    starter: true,
+  },
+  cream: {
+    id: "cream",
+    name: "Cream",
+    applies: "ceramic",
+    color: "#e2d5bc",
+    top: "#efe4ce",
+    shade: "#bcae94",
+    starter: true,
+  },
+  seafoam: {
+    id: "seafoam",
+    name: "Seafoam",
+    applies: "ceramic",
+    color: "#b3cdc2",
+    top: "#c7dcd3",
+    shade: "#8ea99e",
+    starter: true,
+  },
 };
 
 export function skinDef(id: SkinId): SkinDef {
@@ -424,5 +472,6 @@ export function defaultSkin(applies: SkinClass): SkinId {
   if (applies === "wood") return "pine";
   if (applies === "stone") return "granite";
   if (applies === "metal") return "steel";
+  if (applies === "ceramic") return "porcelain";
   return "undyed";
 }

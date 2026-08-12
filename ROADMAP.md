@@ -12505,13 +12505,37 @@ at all, which is the doctrine's own complaint found inside its own list.
   contract — four test failures at once, which is the suite doing its job. Every
   multi-tile form needs its `e` grid authored.
 
-**Left open, both worth a look on screen before deciding:**
+### Ceramic, and why it beat a per-piece default finish
 
-- **Bathroom fixtures default to GRANITE**, because `defaultSkin` is per CLASS
-  and granite is the stone default. Porcelain wants `bone` or `marble`, so the
-  first impression of a toilet is a grey stone one. The fix is a per-piece
-  default finish on the row, which is a small honest field and touches the
-  picker; it was not worth bundling into this change.
+The bathroom shipped in `["stone"]` and defaulted to granite, and the first fix
+proposed was a per-piece default finish field. **The owner's call was a fifth
+finish class instead, and it is the better fix** — because the default was a
+SYMPTOM. `stone` did not merely start a toilet on granite; it offered a
+**cobblestone** one and a **slate** one, and a per-piece default would have left
+both sitting in the picker. The class was the wrong RANGE, not the wrong first
+entry. A fixture is glazed, not quarried.
+
+- **Porcelain, Cream, Seafoam**, all free starters. Legal for the same reason
+  metal is: DESIGN §Materials' three GATHERED classes are untouched, and a look is
+  never the scarce thing. Priced in stone via `priceMaterial`.
+- **The word "material" is worth being careful with here.** The request was for "a
+  new material"; what it means in this codebase is an `ItemId` you gather and
+  spend, and there are three of those forever. This is a `SkinClass`. The
+  "available by default" half of the request is precisely what keeps the two from
+  colliding.
+- **The sink is the first row to use TWO classes**, `["ceramic", "metal"]` —
+  porcelain or stainless, both of which are honestly what sinks are. The
+  `finishes` list has been able to span classes since it was written (structures
+  needed it for floors) and `availableSkinsForClasses` never asks the player to
+  choose a category first, so this cost nothing. The docblock that promised
+  furniture would always be single-class has been corrected rather than left.
+- **It fixed the art without touching the art.** The bath's hollow was called out
+  as reading like a low cabinet in granite; in porcelain the inside band reads as
+  an inside. Worth remembering before redrawing something: check what finish it
+  was being judged in.
+
+**Left open:**
+
 - **The lamp should follow the metal class** (owner's suggestion, and right). Its
   head has been a hardcoded brass literal since Phase 5a and a finish class makes
   that carve-out unnecessary. It is a REDRAW plus a renderer change rather than a
