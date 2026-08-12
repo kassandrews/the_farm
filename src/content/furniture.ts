@@ -188,6 +188,14 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     id: "bed",
     form: true,
     name: "Bed",
+    // NO CLOTH, AND THAT IS A RULE RATHER THAN A PRICE. A bed is what `qualify()`
+    // requires of a room, so anything a bed costs is a gate on housing somebody —
+    // which is exactly what ROADMAP §Ore's sink forbids in the case it names:
+    // "a wall or a bed that did would gate housing behind digging". Cloth is the
+    // same shape of gate one material over, because it means a walk to a counter.
+    //
+    // The bedding is still choosable — see `trim`. A finish is free, so the
+    // blanket can be yours without the bed costing a thing more.
     cost: { wood: 6 },
     w: 1,
     h: 2,
@@ -238,7 +246,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     id: "cushion",
     form: true,
     name: "Cushion",
-    cost: { cloth: 2 },
+    cost: { cloth: 1 },
     w: 1,
     h: 1,
     solid: false,
@@ -249,7 +257,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     id: "rug",
     form: true,
     name: "Rug",
-    cost: { cloth: 4 },
+    cost: { cloth: 2 },
     w: 2,
     h: 2,
     solid: false,
@@ -377,7 +385,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // The one row that costs two materials, and the only place the frame and
     // the covering are priced separately. A sofa is genuinely both, and the
     // cloth half keeps it behind the Menace's counter where soft goods belong.
-    cost: { wood: 3, cloth: 4 },
+    cost: { wood: 3, cloth: 1 },
     w: 2,
     h: 1,
     solid: true,
@@ -434,7 +442,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     name: "Cot",
     // Cheap, and cheap is the whole character of it: a bed costs 6 wood, this
     // costs 2 and 2. It is what you put in a room you have only just walled in.
-    cost: { wood: 2, cloth: 2 },
+    cost: { wood: 2, cloth: 1 },
     w: 1,
     h: 2,
     // NOT SOLID, unlike a bed. A cot is canvas slung on a frame at shin height,
@@ -579,7 +587,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     id: "counter",
     form: true,
     name: "Counter",
-    cost: { wood: 3 },
+    cost: { wood: 2, stone: 1 },
     w: 1,
     h: 1,
     solid: true,

@@ -12608,24 +12608,43 @@ stays one ore however brass their details are.
 **The table already agrees with the rule, which is the argument for it.** Walking
 the costs against the art:
 
-| piece | cost today | second material drawn as | verdict |
+| piece | cost | its finish chooses | fixed literal |
 |---|---|---|---|
-| sofa | wood 3, **cloth 4** | literal `w` | pays for it already |
-| cot | wood 2, **cloth 2** | literal `w` | pays for it already |
-| bed | wood 6 | literals `p`/`q` (bedding) | **pays for nothing** |
-| counter | wood 3 | — | wants stone |
-| dresser | wood 4 | literal `d` (brass) | detail; stays |
-| desk | wood 5 | literal `d` (pull) | detail; stays |
-| lamp / desklamp | ore | literals | detail; stays |
+| sofa | wood 3, cloth 1 | the **upholstery** | the wood frame |
+| cot | wood 2, cloth 1 | the **mattress** | the wood rails |
+| bed | wood 6, **no cloth** | the **frame** | white sheet, blue blanket |
+| counter | wood 2, stone 1 | the **cabinet** | — |
+| dresser | wood 4 | the carcass | brass handle — detail, stays |
+| lamp | ore 2 | the post | brass head — detail, stays |
 
-- **THE SOFA AND THE COT ALREADY PAY FOR CLOTH AND CANNOT CHOOSE ITS COLOUR.**
-  That is the finding, and it means the second finish axis is not only a feature —
-  it repairs a live inconsistency with DESIGN §Materials' own rule, *the scarce
-  thing is the stuff, never the look*. Those two rows charge you for the stuff AND
-  hand you a fixed look.
-- **The bed is the one row the rule catches out.** It draws bedding and pays no
-  cloth, while the cot pays cloth for exactly the same thing. Either the bed gains
-  a cloth cost or the cot loses one; they cannot both be right.
+- **A CORRECTION, made before it became load-bearing.** This table first said the
+  sofa and cot "pay for cloth and cannot choose its colour", which is backwards:
+  their finish class IS cloth, so the upholstery has always been choosable and
+  the fixed part is the WOOD. Read `finishes` before claiming what a piece can
+  wear — the preview sheet prints it under every card and would have said so.
+- **THE BED IS THE ONE THAT PAYS FOR NOTHING.** Six wood, no cloth, and bedding
+  drawn in two hardcoded literals — a white sheet and a blue blanket that are the
+  same in every town. Of the four it is the piece the second axis most obviously
+  repairs.
+- **THE BED MAY NOT COST CLOTH, and the suite said so within a minute.** Charging
+  it one bolt broke thirty-nine tests across `assign` and `housing`, because a bed
+  is what `qualify()` requires of a room — so anything a bed costs is a gate on
+  housing somebody. §Ore's sink already ruled on this in the case it names: "a
+  wall or a bed that did would gate housing behind digging." Cloth is the same
+  shape of gate one material over, since it means a walk to a counter. The bed
+  keeps wood 6 and gains a choosable blanket anyway, because a FINISH IS FREE —
+  which is the neatest possible resolution and was sitting there the whole time.
+- **Trim is 1, flat** (owner's call): a substantial second material earns a cost
+  and that cost is always one. So counter wood 2 + stone 1, and cloth drops to 1
+  everywhere it is trim. Pieces made ENTIRELY of the soft material are priced on
+  their own terms instead — cushion 1, rug 2.
+- **Why cloth moved at all.** A furnished room's soft goods came to ~12 cloth,
+  which at the counter's rates is about 64 wood — eight trees, and more than twice
+  what the room's actual wooden furniture costs. The friction was never scarcity,
+  it was TRIPS: cloth is the one material you have to walk to a person for, and
+  being one bolt short mid-decorating is "stopped", which DESIGN forbids. Her
+  counter keeps its role as junk's ongoing sink because the RATE TABLE is
+  untouched; a trip simply goes further.
 - **The trim slot takes CLASSES, and the cost stays fixed.** Settled with the
   butcher-block question: locking a worktop to stone guarantees two materials but
   forbids an all-wood counter, and a counter is a counter — so the slot allows
