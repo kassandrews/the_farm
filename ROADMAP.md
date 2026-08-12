@@ -12387,8 +12387,8 @@ colour lattice. The doctrine is that the lattice has no holes, enforced by test.
 
 1. ~~**PNG → grid pipeline.**~~ **Built 11 Aug 2026** —
    `scripts/grid-from-png.mts`. See §The importer below.
-2. **Schema (`set` on the cell) + the completeness test**, while breaking saves
-   is free.
+2. ~~**Schema (`set` on the cell) + the completeness test.**~~ **Built 11 Aug
+   2026** — see §The lattice below.
 3. **The Set One design pass** — per item, on /furniture.html, owner reviewing
    renders (the visual-tuning rule). Includes the checklist gaps: long table,
    counter run. First question on the list: should the cot have a head?
@@ -12435,6 +12435,37 @@ prints the `rows` + `palette` block to paste into `content/furnishings.ts`.
 - **No new dependency.** 8-bit non-interlaced PNG is a header, an inflate and
   five filter cases; the project has four devDependencies and none of them read
   images. Writing the Paeth predictor beat adding a package to the tree.
+
+### The lattice — `content/sets.ts` + `sets.test.ts` (step 2, built)
+
+`SetId`, the `SETS` table, `SET_ART` keyed by set, `artFor()`, and
+`CATALOG_FORMS`. `FurnitureCell` gains `set` beside `finish`. Schema 48.
+
+- **Twenty forms**, derived by filtering a `form` flag on the furniture rows
+  rather than written out as a second list — two lists would be two opinions
+  about what a chair is. Outside the lattice: the notice board and stage (the
+  town's, nothing sells them) and the awning and window box (they belong to the
+  BUILDING, not the room — you fit them to a shopfront or a sill). The flag is an
+  OBLIGATION, not a label: setting it means every set that ever ships owes that
+  row a drawing, which is what keeps forms expensive.
+- **`artFor()` has no fallback to core, deliberately.** A set-to-core fallback
+  would let an incomplete set ship looking half moderne and half pine — the exact
+  failure the completeness rule exists to catch, hidden instead of reported.
+- **The raster cache keys had to grow the set**, or two sets' chairs would share
+  one cached drawing. Easy to miss, invisible until a second set exists.
+- **The test was checked for vacuity** by deleting the bed's art and watching
+  `core covers bed` fail. A completeness suite that goes green by checking air is
+  the obvious way for this to be worthless, and `CATALOG_FORMS` is a filter —
+  hence the guard asserting it found forms at all.
+- **Schema 48 ships a rung even though the game has no players.** The tempting
+  move was a DELIBERATE GAP: bump, write nothing, and let `migrateSave`'s
+  `if (!migrate) return null` refuse older saves so the world regenerates —
+  which reads well, was tried, and took **115 passing migration tests** with it.
+  The no-players rule means *don't spend thought on a migration*; it does not
+  mean *leave a hole in a ladder that other tests walk end to end*. The rung is
+  nine lines and stamps `core` on both furniture layers.
+- One save test asserted `toEqual` on a migrated cell and became a tripwire for
+  schema growth it has no opinion about; it is `toMatchObject` now.
 
 ## Known gaps and loose ends
 
