@@ -13009,6 +13009,58 @@ could not. Two taps: one on the piece, one on where it goes.
 - **Allowed underground**, where it moves the one thing that is down there.
 
 
+## The lamp splits in two (13 Aug 2026)
+
+Owner, with two photographs of floor lamps: *I think I want something that looks
+more like a generic floor lamp? an outdoor light might need to be different
+something?* Both halves of that turned out to be one fact.
+
+**THE FLOOR LAMP WAS DRAWN AS A STREET LAMP** — a brass lantern with a flame in
+it, hooded against rain, on a post. It is now a cloth shade on a slim post with a
+disc base, which is what the photographs are and what the piece is called.
+
+- **The shade tapers, six across the top to twelve at the foot.** The reference
+  photograph has a straight drum and a straight drum does not read here: a
+  rectangle balanced on a stick is a sign, and the taper is the whole of what
+  makes the silhouette a lamp at sixteen pixels.
+- **The shade is a LITERAL, like the notice board's paper and the barn's paint.**
+  A finish says what a piece is made of, and a walnut floor lamp has a walnut
+  post and a cream shade — letting the finish reach the shade would give you a
+  walnut lampshade, which is a lamp nobody makes.
+- **The disc base is four times the post's width.** Narrower and it reads as a
+  spike driven into the floor; that width is what stops a floor lamp falling
+  over and is therefore what a base looks like.
+
+**AND THAT IS WHAT FOUND THE SECOND FORM.** The town has stood two lamps either
+side of each civic door since the square was built, and while the lamp was a
+lantern that was fine — it WAS a street lamp, and the thing beside your sofa was
+the one telling the lie. Redraw it honestly and four cloth shades are standing
+out in the plaza. One form was doing two jobs and could only ever look right
+doing one of them at a time. So `lamppost` is a form now, and it inherited the
+drawing rather than getting a new one: same light, same cost, taller post, iron
+instead of wood.
+
+- **The town's four wear `blackiron`, not the building's finish.** They were
+  `sage` and `whitewash`, which is right for a shutter and wrong for a lamp post
+  — a lamp post is not trim.
+- **It is placeable, not town-only.** The catalog doctrine dislikes holes, and
+  "a light for outdoors" is a thing a player wants on their own land the first
+  night they stay up. Same ore cost as the floor lamp.
+- **Height 20, short of the wardrobe's "tallest thing you can put in a room".**
+  The real ceiling is the occlusion fade: art overhanging by more than half a
+  tile makes the player see-through behind it, and a post you had to walk around
+  a hole in would be worse than a short post.
+- **An old save keeps its floor lamps in the square.** Stamped props are never
+  revisited (memory: town content is a save change), and this is a content
+  change rather than a schema one — wipe rather than migrate.
+
+**The glow learned which light it is lighting.** `litLamps` carries a `shaded`
+flag now. The hot 4x4 core is a FLAME seen through a lantern's glass; inside a
+cloth shade the same square read as a hole punched in the fabric. A shade gets a
+wide low band at its open foot instead, at half the alpha, because cloth is
+between you and the bulb.
+
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

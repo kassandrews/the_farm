@@ -340,6 +340,7 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
   // specific — the painting's lesson), and that a chimney is what you get.
   { id: "fireplace", icon: "fireplace", label: "Fireplace", hint: "Costs stone. Put it against a wall — a chimney comes out on the roof.", group: "lighting" },
   { id: "lamp", icon: "lamp", label: "Floor lamp", hint: "Costs ore. Give the dark something to argue with.", group: "lighting" },
+  { id: "lamppost", icon: "lamppost", label: "Lamp post", hint: "Costs ore. The same light, made of iron, for out in the weather.", group: "lighting" },
   { id: "desklamp", icon: "desklamp", label: "Desk lamp", hint: "Costs ore. Half a lamp, for one corner.", group: "lighting" },
   { id: "counter", icon: "table", label: "Counter", hint: "Lay them in a row — they join into one worktop.", group: "kitchen" },
   { id: "stove", icon: "chest", label: "Stove", hint: "Four rings and an oven door. It does not cook; it stands there being a stove.", group: "kitchen" },

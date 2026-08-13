@@ -30,6 +30,8 @@ export type FurnitureId =
   | "cushion"
   | "rug"
   | "lamp"
+  /** The lamp for OUTSIDE — see the row for why the two split. */
+  | "lamppost"
   // --- The furnishing pass ---------------------------------------------------
   // Seating, surfaces, storage and light, so a room can be a KIND of room rather
   // than a room with a bed in it. Grouped the way the build bar groups them,
@@ -401,6 +403,40 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     solid: false,
     height: 18,
     finishes: ["wood"],
+    light: true,
+  },
+  // A LAMP FOR OUTSIDE, and it exists because the floor lamp stopped being one.
+  //
+  // The town has stood two lamps either side of each civic door since the square
+  // was built (content/town.ts), and for as long as the floor lamp was drawn as a
+  // brass lantern with a flame in it that was fine — it WAS a street lamp, and
+  // the thing beside your sofa was the one telling the lie. Redrawing the floor
+  // lamp as a floor lamp (a cloth shade on a post) made the four in the square
+  // read as somebody's living room carried out into the street, which is how the
+  // fork got found: one form was doing two jobs and only ever looked right doing
+  // one of them at a time.
+  //
+  // So the lantern moved here rather than being deleted. Same light, same cost,
+  // taller post, and the art is the art the lamp used to have.
+  //
+  // IRON, not wood. Nothing outdoors in this game is made of cloth or timber
+  // where weather can get at it, and a black post is what the eye expects a
+  // street light to be — which is also what stops it reading as a tree.
+  lamppost: {
+    id: "lamppost",
+    form: true,
+    name: "Lamp post",
+    cost: { ore: 2 },
+    w: 1,
+    h: 1,
+    solid: false,
+    // Taller than the floor lamp's 18 and short of the wardrobe's 20, which its
+    // own note calls "the tallest thing you can put in a room". A lamp post is
+    // not in a room, but the occlusion fade is the real ceiling: art overhanging
+    // by more than half a tile makes the player see-through behind it, and a
+    // post you had to walk around a hole in would be worse than a short post.
+    height: 20,
+    finishes: ["metal"],
     light: true,
   },
   // --- Seating ---------------------------------------------------------------

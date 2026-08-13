@@ -2006,6 +2006,12 @@ function furnitureFlavour(id: FurnitureId, layer: Layer): string {
       return layer === "under"
         ? "A lamp, in the rock. The dark gives some ground back."
         : "A lamp. Nothing yet. Ask it again this evening.";
+    // Deliberately not "a lamp post" said twice. The line is about the DIFFERENCE
+    // between this and the floor lamp, which is where it is allowed to stand.
+    case "lamppost":
+      return layer === "under"
+        ? "A lamp post. Underground. Nobody is going to ask."
+        : "A lamp post. It expects weather, and will get some.";
     // The board is town furniture and not for sale (content/furniture.ts), so
     // this line is unreachable in practice — it exists because the switch is
     // exhaustive over FurnitureId and an exhaustive switch is how a new row

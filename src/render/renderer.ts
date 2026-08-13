@@ -339,6 +339,21 @@ const STEP_LIP = "#7d746b";
  *  taken from the piece's finish, for the same reason the notice board's paper is
  *  (see drawLamp): it is its own material, and a metal FINISH would have made
  *  appearance cost ore. */
+/** A LAMPSHADE IS CLOTH, and cloth is not the lamp's material.
+ *
+ *  Literals for the reason the notice board's paper and the barn's paint are:
+ *  a finish says what the piece is MADE of, and a walnut floor lamp has a walnut
+ *  post and a cream shade, exactly as a walnut notice board has a walnut frame
+ *  and white paper on it. Letting the finish reach the shade would give you a
+ *  lamp with a walnut shade, which is a lamp nobody makes.
+ *
+ *  The brass the head used to be drawn in is gone with it: the lamp is a post
+ *  and a shade now, and there is no lantern casing left to be made of anything. */
+const SHADE_CLOTH = "#e8dfc8";
+const SHADE_CLOTH_LIT = "#f6efdf";
+/** The lamp POST's lantern — the casing the floor lamp used to wear, kept where
+ *  it was always right (§drawLampPost). Literals for the shade's reason: a
+ *  lantern's glass and its brass are not what the post is made of. */
 const BRASS_DARK = "#5c4419";
 const BRASS = "#9c7a2c";
 const BRASS_LIT = "#c9a24f";
@@ -1371,7 +1386,7 @@ export class Renderer {
   /** Lamps collected during the flat pass, on whichever layer is being drawn —
    *  the one thing in the game that makes light where it is put (Phase 5a).
    *  Bounded by the screen, exactly like litShafts above. */
-  private litLamps: { x: number; y: number }[] = [];
+  private litLamps: { x: number; y: number; shaded: boolean }[] = [];
   /** Lava cells that have a NON-lava neighbour — the shore of a lava field, and
    *  the only cells that get a halo.
    *
@@ -2437,7 +2452,7 @@ export class Renderer {
           // Keyed on the roof's own fade, so walking inside lights the lamp up
           // as the roof comes off. That is the cutaway already doing the work.
           if (furnitureDef(piece.id).light && !this.underSolidRoof(tx, ty)) {
-            this.litLamps.push({ x: tx, y: ty });
+            this.litLamps.push({ x: tx, y: ty, shaded: piece.id === "lamp" });
           }
         }
         // Roofs are derived, not stored, so they come from the room index
@@ -3298,7 +3313,9 @@ export class Renderer {
         bias: BIAS_TERRAIN,
         draw: () => this.drawFurniture(world, ax, ay, piece),
       });
-      if (furnitureDef(piece.id).light) this.litLamps.push({ x: tx, y: ty });
+      if (furnitureDef(piece.id).light) {
+        this.litLamps.push({ x: tx, y: ty, shaded: piece.id === "lamp" });
+      }
     }
   }
 
@@ -3518,13 +3535,21 @@ export class Renderer {
       ctx.fillStyle = g;
       ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
 
-      // The flame itself, hot. Without this the pool was brighter than the thing
+      // The source itself, hot. Without this the pool was brighter than the thing
       // making it: the day/night wash falls over the lamp's own art, and a soft
       // 4-tile gradient adds almost nothing at its centre — so a lit lamp at
       // midnight had a glowing lawn around a dim beige box. A source has to be
       // the brightest thing in its own light.
-      ctx.fillStyle = `rgba(255,236,190,${(0.55 * strength).toFixed(3)})`;
-      ctx.fillRect(Math.round(cx) - 2, Math.round(cy) - 2, 4, 4);
+      //
+      // ITS SHAPE IS THE SHADE'S. A 4x4 square is a FLAME seen through a
+      // lantern's glass, which is what the lamp post has and what this drew for
+      // both lights — and inside a floor lamp's cloth shade the same square read
+      // as a hole punched in the fabric. A shade glows across its whole width and
+      // brightest at the open foot, so it gets a wide low band instead, and half
+      // the alpha: cloth is between you and the bulb.
+      ctx.fillStyle = `rgba(255,236,190,${((l.shaded ? 0.3 : 0.55) * strength).toFixed(3)})`;
+      if (l.shaded) ctx.fillRect(Math.round(cx) - 4, Math.round(cy), 9, 2);
+      else ctx.fillRect(Math.round(cx) - 2, Math.round(cy) - 2, 4, 4);
     }
     ctx.globalCompositeOperation = prev;
   }
@@ -4758,6 +4783,13 @@ export class Renderer {
       ctx.globalAlpha = prev;
       return;
     }
+    // And the post beside it, off the same path for the same reason — a post is
+    // not a box, whichever of the two lights it happens to be carrying.
+    if (cell.id === "lamppost") {
+      this.drawLampPost(px, base, pw, skin);
+      ctx.globalAlpha = prev;
+      return;
+    }
 
     // AND THE AWNING LEAVES IT TOO, for the same reason one step further on. The
     // lamp's argument is that the generic silhouette is a box and a lamp is a
@@ -5216,22 +5248,90 @@ export class Renderer {
     // street rather than at the building. Half a tile north puts them where a
     // lamp post goes.
     const base = baseEdge - LAMP_LIFT;
+    // THE SHADE IS THE LAMP. Everything below it is a stick holding it up, and at
+    // sixteen pixels a stick reads as a fence post until something on top of it
+    // says otherwise. This used to be a brass lantern with a flame in it, which
+    // is a STREET lamp — right for the four the town stands outside its civic
+    // doors, wrong for the thing you put beside a sofa. See ROADMAP §the lamp.
+    const shadeBottom = base - 13;
+    const shadeTop = shadeBottom - 7;
+
+    ctx.fillStyle = "rgba(0,0,0,0.18)"; // the disc's shadow on the floor
+    ctx.fillRect(cx - 4, base - 1, 9, 2);
+
+    // A DISC, not a plinth: wide and only three deep, which is what stops a
+    // floor lamp falling over and therefore what a base looks like. Wider than
+    // the post by a factor of four, or it reads as a spike driven into the floor.
+    ctx.fillStyle = skin.shade;
+    ctx.fillRect(cx - 4, base - 3, 9, 3);
+    ctx.fillStyle = skin.color;
+    ctx.fillRect(cx - 3, base - 3, 7, 1);
+
+    // The post: two pixels, and one lit column down its left so it has a round
+    // side rather than being a slot cut in the air.
+    ctx.fillStyle = skin.shade;
+    ctx.fillRect(cx - 1, shadeBottom, 2, base - shadeBottom - 3);
+    ctx.fillStyle = skin.color;
+    ctx.fillRect(cx - 1, shadeBottom, 1, base - shadeBottom - 3);
+
+    // THE SHADE TAPERS — six across the top, twelve at the foot. A straight drum
+    // is what the reference photograph has and is not what reads here: a
+    // rectangle balanced on a stick is a sign, and the taper is the whole of
+    // what makes the silhouette a lamp at this size.
+    for (let i = 0; i < 7; i++) {
+      const halfW = 3 + Math.floor(i / 2);
+      const y = shadeTop + i;
+      ctx.fillStyle = SHADE_CLOTH;
+      ctx.fillRect(cx - halfW, y, halfW * 2, 1);
+      // Light from the top left, as everywhere else.
+      ctx.fillStyle = SHADE_CLOTH_LIT;
+      ctx.fillRect(cx - halfW, y, i === 0 ? halfW * 2 : 1, 1);
+    }
+    // The open foot of the shade, which is where the bulb is. Pale warm rather
+    // than an outline: a dark rule under a lampshade closes it, and a shade with
+    // a lid on it is a hat. This is also the row LAMP_HEAD_H points the glow at,
+    // two above — inside the shade, where the light actually comes from.
+    ctx.fillStyle = FLAME_CORE;
+    ctx.fillRect(cx - 6, shadeBottom, 12, 1);
+    ctx.fillStyle = FLAME;
+    ctx.fillRect(cx - 5, shadeBottom + 1, 10, 1);
+  }
+
+  /** The lamp for outside: a lantern on a tall post.
+   *
+   *  THIS IS THE FLOOR LAMP'S OLD ART, and that is the point rather than an
+   *  economy. It was always drawing a street lamp — a brass casing with a flame
+   *  in it, hooded against rain — which is why the four in the town square have
+   *  looked right since the day they went up and why the one beside your sofa
+   *  never quite did. The form split; the drawing stayed with the half it fit.
+   *
+   *  Same datum as the floor lamp so `drawLampGlow` needs to know nothing about
+   *  which of the two it is lighting: both put their light at LAMP_HEAD_H above
+   *  the base, and both stand half a tile north of their cell's near edge, where
+   *  a post goes. */
+  private drawLampPost(px: number, baseEdge: number, pw: number, skin: SkinDef): void {
+    const ctx = this.ctx;
+    const cx = px + Math.floor(pw / 2);
+    const base = baseEdge - LAMP_LIFT;
     const headY = base - LAMP_HEAD_H - 4;
 
-    ctx.fillStyle = "rgba(0,0,0,0.18)"; // a small foot's worth of shadow
+    ctx.fillStyle = "rgba(0,0,0,0.18)";
     ctx.fillRect(cx - 3, base - 1, 6, 2);
 
-    ctx.fillStyle = skin.shade; // base plate, so it isn't a spike in the ground
-    ctx.fillRect(cx - 3, base - 3, 6, 3);
+    // A NARROWER FOOT than the floor lamp's disc, and taller. A floor lamp needs
+    // a wide base because it stands on a floor and can be knocked; a post is set
+    // into the ground, and drawing it a saucer would make it read as portable.
+    ctx.fillStyle = skin.shade;
+    ctx.fillRect(cx - 3, base - 4, 6, 4);
     ctx.fillStyle = skin.top;
-    ctx.fillRect(cx - 3, base - 3, 6, 1);
+    ctx.fillRect(cx - 3, base - 4, 6, 1);
 
     ctx.fillStyle = skin.shade; // the post
-    ctx.fillRect(cx - 1, headY + 5, 2, base - headY - 7);
+    ctx.fillRect(cx - 1, headY + 5, 2, base - headY - 8);
     ctx.fillStyle = skin.color; // one lit edge down it, so it has a round side
-    ctx.fillRect(cx - 1, headY + 5, 1, base - headY - 7);
+    ctx.fillRect(cx - 1, headY + 5, 1, base - headY - 8);
 
-    // The head. Dark casing, warm glass, and a bright core that IS the flame —
+    // The lantern. Dark casing, warm glass, and a bright core that IS the flame —
     // the pool of light in drawLampGlow leaves from this rectangle, which is
     // what LAMP_HEAD_H keeps in step.
     ctx.fillStyle = BRASS_DARK;

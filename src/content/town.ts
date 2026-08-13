@@ -1165,10 +1165,17 @@ export const TOWN_FIXTURES: TownFixture[] = [
   // the errands board already holds (2,-5) — east of the doorway, where it has
   // always been. Outboard at -3 and 3 they are symmetric about the door, clear
   // of the board, and clear of the apron.
-  { x: -3, y: -5, id: "lamp", facing: "s", finish: "sage" },
-  { x: 3, y: -5, id: "lamp", facing: "s", finish: "sage" },
-  { x: -12, y: -5, id: "lamp", facing: "s", finish: "whitewash" },
-  { x: -7, y: -5, id: "lamp", facing: "s", finish: "whitewash" },
+  //
+  // LAMP POSTS, not floor lamps, since the two split (content/furniture.ts
+  // §lamppost). They were floor lamps only because the floor lamp used to be
+  // drawn as a lantern on a post; the moment it was drawn as what it is, four
+  // cloth shades were standing out in the square. Black iron on both façades —
+  // the finish they wore before was the BUILDING's (sage, whitewash), which is
+  // right for a shutter and wrong for a lamp post: a lamp post is not trim.
+  { x: -3, y: -5, id: "lamppost", facing: "s", finish: "blackiron" },
+  { x: 3, y: -5, id: "lamppost", facing: "s", finish: "blackiron" },
+  { x: -12, y: -5, id: "lamppost", facing: "s", finish: "blackiron" },
+  { x: -7, y: -5, id: "lamppost", facing: "s", finish: "blackiron" },
   // AN AWNING OVER THE SHOP'S WINDOW, and it is the whole of what makes the
   // Counter read as a shop from across the square. A building's identity is not
   // its signage — DESIGN's tone note would rather the world showed you than told

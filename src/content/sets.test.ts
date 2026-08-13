@@ -82,5 +82,8 @@ describe("the catalog lattice", () => {
  *  set's row here would have to be written by hand, and writing it is the moment
  *  somebody asks why. */
 const RENDERER_DRAWN: Partial<Record<SetId, FurnitureId[]>> = {
-  core: ["lamp"],
+  // Both lights. A post is not a box, which is what took the lamp off the
+  // generic path in the first place, and the lamp post is the half of that
+  // split which kept the original drawing.
+  core: ["lamp", "lamppost"],
 };

@@ -741,6 +741,28 @@ const FARM_ICONS = {
     ],
     palette: { k: K, y: "#ffd884", w: "#fff7dc", p: "#8a8c9a", m: "#6a6c7a" },
   },
+  // The lamp for outside. Told from the floor lamp above it by the one thing that
+  // tells them apart in the world: a LANTERN, boxed and hooded, on a tall thin
+  // post — where the floor lamp is a soft shade on a short one. The glass is the
+  // same warm yellow, because they are the same light.
+  lamppost: {
+    rows: [
+      "....kkkk....",
+      "...kwwwwk...",
+      "..kkkkkkkk..",
+      "..kyyyyyyk..",
+      "..kywyyyyk..",
+      "..kyyyyyyk..",
+      "..kkkkkkkk..",
+      "....kppk....",
+      "....kppk....",
+      "....kppk....",
+      "..kkkkkkkk..",
+      "..kmmmmmmk..",
+    ],
+    palette: { k: K, y: "#ffd884", w: "#fff7dc", p: "#8a8c9a", m: "#6a6c7a" },
+  },
+
   // "Take back down" — a bulldozer, blade first. It shares the build bar with
   // `undo`, which is why it isn't an arrow of any kind: the two were ↩ and ⟲
   // once, then a lifting arrow and a circular one, and both pairings were two
