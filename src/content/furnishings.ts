@@ -124,6 +124,11 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     // outline, which met as a DOUBLED line where they touched. Same width, one
     // continuous pair of sides, and a single rule between them.
     //
+    // TURNED, THE BACK CROSSES THE SEAT. It used to be a narrow box stacked on
+    // top of a wider one, which is not what a chair does from the side: the post
+    // rises out of the seat's own back edge, so it shares that edge's column and
+    // overlaps the first rows of the surface rather than balancing on them.
+    //
     // Slats are two columns of the OUTLINE INK rather than two of transparency.
     // At this size a 1px gap is a dot, and a back with dots on it reads as a
     // panel somebody has drilled; a 1px line reads as an upright.
@@ -220,25 +225,24 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     e: {
       rows: [
         "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "...kkkk.........",
-        "...kttk.........",
-        "...kcck.........",
-        "...kcck.........",
-        "...kcck.........",
-        "...kcck.........",
-        "...kcck.........",
-        "...kcck.........",
-        "...kcck.........",
-        "...kcck.........",
-        "...kcck.........",
-        "...kcck.........",
-        "...kkkk.........",
-        "..kkkkkkkkkkkk..",
-        "..kttttttttttk..",
+        "..kkkk..........",
+        "..kttk..........",
+        "..kcck..........",
+        "..kcck..........",
+        "..kcck..........",
+        "..kcck..........",
+        "..kcck..........",
+        "..kcck..........",
+        "..kcck..........",
+        "..kcck..........",
+        "..kcck..........",
+        "..kcck..........",
+        "..kcck..........",
+        "..kcck..........",
+        "..kcck..........",
+        "..kcckkkkkkkkk..",
+        "..kccktttttttk..",
+        "..kcckccccccck..",
         "..kcccccccccck..",
         "..kcccccccccck..",
         "..kcccccccccck..",
@@ -248,6 +252,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kssssssssssk..",
         "..kssssssssssk..",
         "..kkkkkkkkkkkk..",
+        "..kck......kck..",
         "..kck......kck..",
         "..kck......kck..",
         "..kck......kck..",
