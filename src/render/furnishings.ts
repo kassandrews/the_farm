@@ -31,7 +31,7 @@
 // hundred thousand fills a second. Same argument grain.ts makes about
 // allocation, one level up.
 
-import type { SkinDef } from "../content/skins";
+import type { SkinDef, SkinClass } from "../content/skins";
 import type { Facing } from "../content/furniture";
 
 /** Rows of single-char palette keys, top to bottom. `.` is transparent, and so
@@ -165,8 +165,26 @@ const TRIM_KEY: Record<string, keyof Pick<SkinDef, "color" | "top" | "shade">> =
   S: "shade",
 };
 
-/** How dark a piece's outline is, as a fraction of its own shade. */
-const OUTLINE_MIX = 0.52;
+/** How dark a piece's outline is, as a fraction of its own shade.
+ *
+ *  PER MATERIAL, because an edge is a property of the thing that has it. Timber,
+ *  stone and metal have edges you could cut yourself on and take the full mix.
+ *  CLOTH does not: it has a fold. At 0.52 the cushion — nine rows of pale linen
+ *  — wore a ring of `rgb(96,90,78)` around a body of `#d8cdb6`, half the
+ *  luminance of the thing it was outlining, and on an object that small the
+ *  outline is most of what you see. It read as a drawn ring rather than as
+ *  stuffing pressing against a seam.
+ *
+ *  The hue was never wrong and this does not change it: the mix is a multiply,
+ *  so every outline is already exactly its own material's colour. It is the
+ *  VALUE that had to give. */
+const OUTLINE_MIX: Record<SkinClass, number> = {
+  wood: 0.52,
+  stone: 0.52,
+  metal: 0.52,
+  ceramic: 0.52,
+  cloth: 0.72,
+};
 
 /** The outline colour for a piece in this finish.
  *
@@ -188,9 +206,10 @@ const OUTLINE_MIX = 0.52;
 function outlineFor(skin: SkinDef): string {
   const n = parseInt(skin.shade.slice(1), 16);
   if (!Number.isFinite(n)) return skin.shade;
-  const r = Math.round(((n >> 16) & 255) * OUTLINE_MIX);
-  const g = Math.round(((n >> 8) & 255) * OUTLINE_MIX);
-  const b = Math.round((n & 255) * OUTLINE_MIX);
+  const mix = OUTLINE_MIX[skin.applies];
+  const r = Math.round(((n >> 16) & 255) * mix);
+  const g = Math.round(((n >> 8) & 255) * mix);
+  const b = Math.round((n & 255) * mix);
   return `rgb(${r},${g},${b})`;
 }
 
