@@ -124,6 +124,11 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     // outline, which met as a DOUBLED line where they touched. Same width, one
     // continuous pair of sides, and a single rule between them.
     //
+    // CLOSED ALL THE WAY ROUND, so the back is a complete shape lying OVER the
+    // seat rather than dissolving into it — an overlap only reads as an overlap
+    // when the thing in front keeps its own edge. And its top lands on the same
+    // row as the front view's, so the two views agree about how tall a chair is.
+    //
     // TURNED, THE BACK CROSSES THE SEAT. It used to be a narrow box stacked on
     // top of a wider one, which is not what a chair does from the side: the post
     // rises out of the seat's own back edge, so it shares that edge's column and
@@ -225,10 +230,12 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     e: {
       rows: [
         "................",
+        "................",
+        "................",
+        "................",
+        "................",
         "..kkkk..........",
         "..kttk..........",
-        "..kcck..........",
-        "..kcck..........",
         "..kcck..........",
         "..kcck..........",
         "..kcck..........",
@@ -243,8 +250,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kcckkkkkkkkk..",
         "..kccktttttttk..",
         "..kcckccccccck..",
-        "..kcccccccccck..",
-        "..kcccccccccck..",
+        "..kkkkccccccck..",
         "..kcccccccccck..",
         "..kcccccccccck..",
         "..kcccccccccck..",
@@ -252,7 +258,6 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kssssssssssk..",
         "..kssssssssssk..",
         "..kkkkkkkkkkkk..",
-        "..kck......kck..",
         "..kck......kck..",
         "..kck......kck..",
         "..kck......kck..",
