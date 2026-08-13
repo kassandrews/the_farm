@@ -130,6 +130,44 @@ const CHEST_BACK: Grid = {
   palette: { k: INK },
 };
 
+const BLANK32 = "................................";
+
+/** The rug itself: border, band, panel, and no fringe on any edge.
+ *
+ *  Twenty-nine rows, and 27 columns starting at column 2 — which leaves two
+ *  spare columns at each side of a 32-wide grid for the fringe to hang in, and
+ *  gives both spans a centre the tassels can be symmetric about. */
+const RUG_BODY = [
+  "..kkkkkkkkkkkkkkkkkkkkkkkkkkk...",
+  "..ktttttttttttttttttttttttttk...",
+  ...Array<string>(7).fill("..kttcccccccccccccccccccccttk..."),
+  ...Array<string>(11).fill("..kttccccsssssssssssssccccttk..."),
+  ...Array<string>(7).fill("..kttcccccccccccccccccccccttk..."),
+  "..ktttttttttttttttttttttttttk...",
+  "..kkkkkkkkkkkkkkkkkkkkkkkkkkk...",
+];
+
+/** The cut warp ends, every other column, fourteen of them across the body. */
+const RUG_FRINGE = "..k.k.k.k.k.k.k.k.k.k.k.k.k.k...";
+
+/** The same tassels turned a quarter: down the left and right edges instead of
+ *  across the near and far ones, on every other ROW of the body.
+ *
+ *  ON THE ODD ROWS, which is what keeps the corners off the rug's own rules. The
+ *  near and far fringe hangs in rows OUTSIDE the body, so a tassel under a
+ *  corner reads as a tassel; a side tassel on the body's top rule is collinear
+ *  with it and just makes that one row four pixels wider than the rug, which
+ *  reads as a bar sticking out of the far edge rather than as thread. Skipping
+ *  the two rule rows leaves fourteen — the same count the near edge has, and
+ *  symmetric about the body's centre row.
+ *
+ *  Derived from the body rather than authored, so the rug turned is provably the
+ *  same rug — the twenty-nine rows cannot drift, and the fringe cannot land on a
+ *  different rhythm from the one the near edge uses. */
+function rugSelvedge(rows: string[]): string[] {
+  return rows.map((row, i) => (i % 2 === 1 ? `kk${row.slice(2, 29)}kk.` : row));
+}
+
 /** The chair's slatted back, drawn ONCE and spread into both views that show it.
  *
  *  It is the same panel from either side and a vertical thing projects to the
@@ -2277,43 +2315,34 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
   },
 
+  // A RUG IS FRINGED ON THE TWO ENDS IT WAS WOVEN OFF, and which two those are
+  // is the only thing turning it changes. Warp threads run the length of the
+  // loom and are cut at the ends; the selvedges down the sides are the weft
+  // turning back on itself and have nothing hanging off them. So `s` fringes the
+  // near and far edges and `e` fringes left and right, and neither ever has all
+  // four — that would be a rug with no selvedge, which is a rug that is
+  // unravelling.
+  //
+  // THE BODY IS 27 COLUMNS, ONE NARROWER THAN IT WAS. The fringe was already
+  // symmetric — fourteen tassels every other column, centred on the body — but
+  // the body ran one column PAST the last of them, so the right-hand corner had
+  // a tassel missing and the whole edge read as slipped. Matching the body to
+  // the fringe rather than the other way round is also what buys the two spare
+  // columns on the right that the side fringe hangs in; the left had them
+  // already.
+  //
+  // Both spans are ODD ON PURPOSE — 27 columns, 29 rows — because an odd span
+  // has a centre, and a fringe of single pixels every other cell can only be
+  // symmetric about a centre that is itself a cell. Across an even span every
+  // tassel lands half a pixel off, which is exactly the miss the near edge had.
   rug: {
+    mirrorW: true,
     s: {
-      rows: [
-        "................................",
-        "................................",
-        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
-        "..kttttttttttttttttttttttttttk..",
-        "..kttccccccccccccccccccccccttk..",
-        "..kttccccccccccccccccccccccttk..",
-        "..kttccccccccccccccccccccccttk..",
-        "..kttccccccccccccccccccccccttk..",
-        "..kttccccccccccccccccccccccttk..",
-        "..kttccccccccccccccccccccccttk..",
-        "..kttccccccccccccccccccccccttk..",
-        "..kttccccssssssssssssssccccttk..",
-        "..kttccccssssssssssssssccccttk..",
-        "..kttccccssssssssssssssccccttk..",
-        "..kttccccssssssssssssssccccttk..",
-        "..kttccccssssssssssssssccccttk..",
-        "..kttccccssssssssssssssccccttk..",
-        "..kttccccssssssssssssssccccttk..",
-        "..kttccccssssssssssssssccccttk..",
-        "..kttccccssssssssssssssccccttk..",
-        "..kttccccssssssssssssssccccttk..",
-        "..kttccccssssssssssssssccccttk..",
-        "..kttccccccccccccccccccccccttk..",
-        "..kttccccccccccccccccccccccttk..",
-        "..kttccccccccccccccccccccccttk..",
-        "..kttccccccccccccccccccccccttk..",
-        "..kttccccccccccccccccccccccttk..",
-        "..kttccccccccccccccccccccccttk..",
-        "..kttccccccccccccccccccccccttk..",
-        "..kttttttttttttttttttttttttttk..",
-        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
-        "..k.k.k.k.k.k.k.k.k.k.k.k.k.k...",
-        "..k.k.k.k.k.k.k.k.k.k.k.k.k.k...",
-      ],
+      rows: [RUG_FRINGE, RUG_FRINGE, ...RUG_BODY, RUG_FRINGE, RUG_FRINGE],
+      palette: { k: INK },
+    },
+    e: {
+      rows: [BLANK32, BLANK32, ...rugSelvedge(RUG_BODY), BLANK32, BLANK32],
       palette: { k: INK },
     },
   },
