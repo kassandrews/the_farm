@@ -333,6 +333,8 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
   { id: "sink", icon: "chest", label: "Sink", hint: "Porcelain or stainless — the one piece that will wear either.", group: "kitchen" },
   { id: "toilet", icon: "chest", label: "Toilet", hint: "The room becomes, formally, that kind of room.", group: "bath" },
   { id: "tub", icon: "bed", label: "Bath", hint: "Two tiles of porcelain. Deep enough to be taken seriously.", group: "bath" },
+  { id: "windowbox", icon: "window", label: "Window box", hint: "Goes on a window. The flowers are yours to keep alive, notionally.", group: "decor" },
+  { id: "awning", icon: "banner", label: "Awning", hint: "Shade over a shopfront. Lay them side by side and they join into one sheet.", group: "decor" },
   { id: "rug", icon: "rug", label: "Rug", hint: "Costs cloth. Walk right over it.", group: "decor" },
   // The one tool that wants a WALL under it rather than a floor, which the hint
   // has to say outright — a tool that refuses everywhere you point it reads as
