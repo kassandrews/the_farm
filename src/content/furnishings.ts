@@ -1836,6 +1836,52 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
       ],
       palette: { k: INK },
     },
+    // A TABLE'S LENGTH IS YOURS, the awning's argument a third time: a fixed
+    // length fits exactly one room, and there is no second number right for both
+    // a breakfast table and a feast. This is what the checklist's "long table"
+    // turned out to be — not another form, but this one laid end to end.
+    //
+    // LEGS NEVER AT A SEAM. Keeping the standalone's pair on every cell would put
+    // two legs six pixels apart at every junction — exactly what a row of
+    // separate tables looks like, and exactly what this is trying not to be. So
+    // the ends keep their outer leg and a mid section carries ONE, at its own
+    // centre, which lands a support every two tiles along a run and none of them
+    // where two cells meet. Dropping mid's legs entirely was the first attempt
+    // and left six tiles of table standing on its two far corners.
+    joins: {
+      x: {
+        mid: {
+          rows: [
+          "................................",
+          "................................",
+          "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+          "tttttttttttttttttttttttttttttttt",
+          ...Array<string>(9).fill("cccccccccccccccccccccccccccccccc"),
+          "ssssssssssssssssssssssssssssssss",
+          "ssssssssssssssssssssssssssssssss",
+          "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+          ...Array<string>(11).fill("..............kck..............."),
+          "..............kkk...............",
+          ],
+          palette: { k: INK },
+        },
+        end: {
+          rows: [
+          "................................",
+          "................................",
+          ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+          ".ktttttttttttttttttttttttttttttt",
+          ...Array<string>(9).fill(".kcccccccccccccccccccccccccccccc"),
+          ".kssssssssssssssssssssssssssssss",
+          ".kssssssssssssssssssssssssssssss",
+          ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+          ...Array<string>(11).fill("...kck.........................."),
+          "...kkk..........................",
+          ],
+          palette: { k: INK },
+        },
+      },
+    },
   },
 
   // Three shelves of books in four spine colours, which are LITERALS — a

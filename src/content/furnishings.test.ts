@@ -208,13 +208,22 @@ describe("joining art", () => {
       // of them wrong.
       const rows = bodyRows(joins.x.end.rows);
       expect(rows.length).toBeGreaterThan(0);
+
+      // STAYING OPEN IS THE STRICT HALF, and it is per row: an ink char at the
+      // last column is a seam the run would wear at every junction, which is the
+      // whole thing this grid exists to avoid.
       for (const row of rows) {
-        // The outline may sit at column 0 or 1 — the standalone view is inset a
-        // pixel each side and the returned end keeps that inset, so requiring
-        // column 0 exactly would fail correct art.
-        expect(row.slice(0, 2), `end row "${row}" should return its left`).toContain("k");
         expect(row[row.length - 1], `end row "${row}" should stay open`).not.toBe("k");
       }
+
+      // RETURNING THE LEFT IS THE LOOSE HALF, and asking it of every row was
+      // wrong. It caught the table, whose legs are inset three pixels and touch
+      // no edge at all — correct art failing a test that had over-generalised
+      // from the counter, where every row happened to reach the outline. What
+      // matters is that the run's end is CLOSED somewhere, not that every row
+      // closes it.
+      const closesLeft = rows.some((r) => r.slice(0, 2).includes("k"));
+      expect(closesLeft, "end never returns its left edge").toBe(true);
     });
 
     const y = joins.y;

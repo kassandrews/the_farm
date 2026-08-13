@@ -1482,7 +1482,7 @@ it is a **lattice, and the lattice has no holes.**
 **Forms are what a room needs, and the audit is BY ROOM.** Listing
 furniture gets you a pile; listing rooms gets you the holes. Bedroom: bed,
 cot, nightstand, wardrobe, dresser, chest. Living room: chair, stool,
-bench, sofa, cushion, table, long table, low table, rug, standing light,
+bench, sofa, cushion, table, low table, rug, standing light,
 wall piece, hearth. Study: desk, shelf, table light. Kitchen: counter run,
 stove, fridge, sink. Bathroom: toilet, sink, bath. That is the checklist a
 furnisher reaches for, and the two rooms at the end of it were entirely
@@ -1495,6 +1495,14 @@ every set that exists owes it a silhouette the day it lands — which is the
 discipline that keeps the checklist honest: a form earns its slot by
 someone reaching for it and finding nothing, never by seeming like a nice
 idea.
+
+**A form may be LAID BY THE YARD instead of being a size.** The counter and
+the table are one tile-pair each and join with their neighbours, so their
+length is the player's rather than a number somebody guessed. That is why
+there is no "long table" on the list above: it is this table, laid end to
+end. A fixed length fits exactly one room, and the same argument applies
+to counters, benches and anything else a room wants a RUN of — so reach
+for joining before reaching for a second form in a bigger size.
 
 **The kitchen and the bathroom are DECORATION.** No cooking, no plumbing,
 no needs — there are no meters in this game to hang them on, and a stove

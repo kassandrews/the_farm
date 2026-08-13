@@ -4669,9 +4669,15 @@ export class Renderer {
         other.facing === cell.facing
       );
     };
+    // STEP BY THE FOOTPRINT, not by one. Every cell in a run is the same form
+    // turned the same way, so its neighbour's ANCHOR is a whole piece away — one
+    // tile for a counter, two for a table. Stepping by one found nothing at all
+    // for the table and quietly drew three separate tables in a row, which is
+    // precisely what a joining piece exists to stop looking like.
+    const { w, h } = footprint(furnitureDef(cell.id), cell.facing);
     return axis === "x"
-      ? { axis, before: same(ax - 1, ay), after: same(ax + 1, ay) }
-      : { axis, before: same(ax, ay - 1), after: same(ax, ay + 1) };
+      ? { axis, before: same(ax - w, ay), after: same(ax + w, ay) }
+      : { axis, before: same(ax, ay - h), after: same(ax, ay + h) };
   }
 
   private drawFurniturePiece(

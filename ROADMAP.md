@@ -12597,6 +12597,33 @@ been: a north–south run was laid with the east–west art and photographed fir
   silently go wrong: `y.mid`'s first sixteen rows must be uniform, and `y.end` must
   differ from `y.mid` in its top row and nowhere else.
 
+### The long table is the table (12 Aug 2026)
+
+Owner's call, and it removes a checklist slot instead of filling one: `table`
+gains `joins.x` and a long table is several laid end to end. The awning's
+argument a third time — a fixed length fits exactly one room — and DESIGN now
+says to reach for joining before reaching for a second form in a bigger size.
+
+- **THE NEIGHBOUR STEP WAS WRONG FOR ANYTHING WIDER THAN ONE TILE.**
+  `runNeighbours` looked at `ax ± 1`, which is correct for a 1×1 counter and
+  finds nothing at all for a 2×1 table, whose neighbour's ANCHOR is two tiles
+  away. Three tables in a row drew as three tables — the exact thing a joining
+  piece exists to prevent, failing silently and looking deliberate. It steps by
+  the footprint now. The counter never exposed it because a counter is one tile
+  wide.
+- **Legs never at a seam.** Keeping the standalone's pair on every cell puts two
+  legs six pixels apart at every junction, which is what a row of pushed-together
+  tables looks like. Dropping them from mid sections entirely was the first fix
+  and left six tiles of table standing on its two far corners. A mid section
+  carries ONE leg at its own centre: a support every two tiles, none of them
+  where two cells meet.
+- **A test had over-generalised from the counter.** "Every body row of `end`
+  returns its left edge" held for the counter, where every row reaches the
+  outline, and failed the table's legs, which are inset three pixels and touch no
+  edge. Staying OPEN on the right is the strict per-row half — an ink char there
+  is a seam at every junction — and closing the left is a property of the grid,
+  not of each row.
+
 ### Two ways to organise a catalogue, and six pieces nobody could reach (12 Aug 2026)
 
 Owner's framing, and it corrects a mistake this file made one section down: the
