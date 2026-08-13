@@ -105,6 +105,25 @@ const CHEST_BACK: Grid = {
   palette: { k: INK },
 };
 
+/** The chair's slatted back, drawn ONCE and spread into both views that show it.
+ *
+ *  It is the same panel from either side and a vertical thing projects to the
+ *  same height whichever way you look at it, so front and north cannot disagree
+ *  about how many rows it is, how many rungs are in it, or that the rungs stop a
+ *  pixel short of the rule at both ends. They did disagree — three times, each
+ *  time because the view was authored as its own block of strings and the rows
+ *  drifted. Sharing them makes the agreement structural rather than remembered.
+ *
+ *  What differs between the views is only WHERE THIS SITS, which is the whole of
+ *  what turning a chair does to it. */
+const CHAIR_BACK = [
+  "..kkkkkkkkkkkk..",
+  "..kttttttttttk..",
+  ...Array<string>(10).fill("..kccckcckccck.."),
+  "..kssssssssssk..",
+  "..kkkkkkkkkkkk..",
+];
+
 export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // A CHAIR IS THE TEST CASE, because it is the piece whose icon and whose world
   // drawing disagreed most. The icon has a back and four legs; the world had a
@@ -146,17 +165,22 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     // columns, are behind the panel too. The seat used to be drawn ABOVE the
     // back, in rows nothing occupies — the back given depth but no height.
     //
-    // What is left of the seat is its REAR RAIL, the two rows above the leg gap.
-    // Nothing is nearer the camera there, so they are drawn as seat rather than
-    // as more slat: a rule under the slats, two rows of surface, and the seat's
-    // own underside rule — a thin box between the back and the legs, which is
-    // the whole of the seat you can see from behind.
+    // What is left of the seat is its REAR RAIL, the thin box under the panel:
+    // two rows of surface between the panel's foot and the seat's own underside
+    // rule, and then the leg gap. Nothing is nearer the camera there, so it is
+    // drawn as seat rather than as more slat — and without it the rungs ran into
+    // the leg tops and the piece read as a panel on stumps.
     //
-    // The back is the SAME FOURTEEN ROWS in both views; only its bottom three
-    // are covered by that rail. So the two views must agree about the inside of
-    // it too: a row of padding above the rungs and a row below, which the front
-    // has and this one had lost — the rungs ran straight into the rule while the
-    // seat rail took their room. Seven rungs with both pads, not eight with one.
+    // The panel stands ON the rail, not in it. Its foot is the seat's TOP
+    // surface; the rail's thickness hangs BELOW that, so nothing of the panel is
+    // covered and it is the same fourteen rows here as in front — see
+    // `CHAIR_BACK`, which both views spread rather than each authoring their
+    // own. Sinking the foot to the underside rule instead cost the panel three
+    // rows, and a back three rows short with two rungs missing out of it does
+    // not read as the same chair turned round. It reads as a different chair.
+    //
+    // So the north view is TALLER THAN ITS SEAT NEEDS, starting three rows above
+    // where the rail does. That is the panel's real height arriving intact.
     //
     // So the north silhouette is TEN ROWS SHORTER than the front one, and that
     // is the projection working rather than the views disagreeing: from the
@@ -180,25 +204,8 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     // they stood under the middle of the seat, which is a stool's geometry.
     s: {
       rows: [
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "..kkkkkkkkkkkk..",
-        "..kttttttttttk..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kssssssssssk..",
-        "..kkkkkkkkkkkk..",
+        ...Array<string>(5).fill("................"),
+        ...CHAIR_BACK,
         "..kttttttttttk..",
         "..kcccccccccck..",
         "..kcccccccccck..",
@@ -221,18 +228,8 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
     n: {
       rows: [
-        ...Array<string>(15).fill("................"),
-        "..kkkkkkkkkkkk..",
-        "..kttttttttttk..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kssssssssssk..",
-        "..kkkkkkkkkkkk..",
+        ...Array<string>(12).fill("................"),
+        ...CHAIR_BACK,
         "..kcccccccccck..",
         "..kssssssssssk..",
         "..kkkkkkkkkkkk..",
