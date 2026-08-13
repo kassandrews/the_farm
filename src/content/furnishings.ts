@@ -124,6 +124,10 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     // outline, which met as a DOUBLED line where they touched. Same width, one
     // continuous pair of sides, and a single rule between them.
     //
+    // A POST THE WIDTH OF A LEG, in the leg's own columns: on a chair the back
+    // stile IS the rear leg carried up, and at four pixels against a three-pixel
+    // leg it read as a plank bolted on behind.
+    //
     // THE BACK RUNS THE FULL DEPTH OF THE SEAT, its two edges carrying on down to
     // the seat's own bottom rule, which closes both at once. Stopping the post
     // partway left a stub sitting on the surface; taken all the way it reads as
@@ -237,29 +241,29 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "................",
         "................",
         "................",
-        "..kkkk..........",
-        "..kttk..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kcckkkkkkkkk..",
-        "..kccktttttttk..",
-        "..kcckccccccck..",
-        "..kcckccccccck..",
-        "..kcckccccccck..",
-        "..kcckccccccck..",
-        "..kcckccccccck..",
-        "..kccksssssssk..",
-        "..kccksssssssk..",
-        "..kccksssssssk..",
+        "..kkk...........",
+        "..ktk...........",
+        "..kck...........",
+        "..kck...........",
+        "..kck...........",
+        "..kck...........",
+        "..kck...........",
+        "..kck...........",
+        "..kck...........",
+        "..kck...........",
+        "..kck...........",
+        "..kck...........",
+        "..kck...........",
+        "..kckkkkkkkkkk..",
+        "..kckttttttttk..",
+        "..kckcccccccck..",
+        "..kckcccccccck..",
+        "..kckcccccccck..",
+        "..kckcccccccck..",
+        "..kckcccccccck..",
+        "..kckssssssssk..",
+        "..kckssssssssk..",
+        "..kckssssssssk..",
         "..kkkkkkkkkkkk..",
         "..kck......kck..",
         "..kck......kck..",
