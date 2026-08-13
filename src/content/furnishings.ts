@@ -119,24 +119,26 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   chair: {
     rise: 6,
     mirrorW: true,
+    // BACK AND SEAT ARE ONE SILHOUETTE. They used to be two stacked boxes of
+    // different widths — a 10-wide back on a 12-wide seat — each carrying its own
+    // outline, which met as a DOUBLED line where they touched. Same width, one
+    // continuous pair of sides, and a single rule between them.
+    //
+    // Legs three rows shorter. At ten they had the chair up on stilts, which is
+    // only visible next to a table you can pull it up to.
     s: {
       rows: [
-        // The back, rising clear of the seat. Slatted rather than solid: two
-        // gaps are what stop a 10x12 panel reading as a headboard, and they are
-        // the same trick the icon uses at a third of the size.
-        "...kkkkkkkkkk...",
-        "...kttttttttk...",
-        "...kcc.cc.cck...",
-        "...kcc.cc.cck...",
-        "...kcc.cc.cck...",
-        "...kcc.cc.cck...",
-        "...kcc.cc.cck...",
-        "...kcc.cc.cck...",
-        "...kcc.cc.cck...",
-        "...kcc.cc.cck...",
-        "...kssssssssk...",
-        "...kkkkkkkkkk...",
-        // The seat, seen from above and wider than the back.
+        "..kkkkkkkkkkkk..",
+        "..kttttttttttk..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
         "..kkkkkkkkkkkk..",
         "..kttttttttttk..",
         "..kcccccccccck..",
@@ -146,17 +148,15 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kcccccccccck..",
         "..kcccccccccck..",
         "..kcccccccccck..",
-        // Its near face — the thickness of the seat you look at edge-on.
+        "..kcccccccccck..",
+        "..kcccccccccck..",
+        "..kcccccccccck..",
+        "..kssssssssssk..",
         "..kssssssssssk..",
         "..kssssssssssk..",
         "..kssssssssssk..",
         "..kssssssssssk..",
         "..kkkkkkkkkkkk..",
-        // Legs, and the floor showing between them. This is the part a box can
-        // never have and the reason the whole module exists.
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
         "...kck....kck...",
         "...kck....kck...",
         "...kck....kck...",
@@ -167,12 +167,6 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
       ],
       palette: { k: INK },
     },
-    // Turned north — away from you — so you are looking at the BACK of the
-    // back, standing at the near edge with the seat behind it. This is the one
-    // facing that cannot fall through to `s`: the fallback puts the backrest at
-    // the far edge, which is what a chair facing you looks like, so a chair
-    // rotated to face away simply never changed. The six rows of `rise` go
-    // unused here, because nothing on this view stands above the seat.
     n: {
       rows: [
         "................",
@@ -181,7 +175,6 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "................",
         "................",
         "................",
-        // The seat, visible over the top of the backrest.
         "..kkkkkkkkkkkk..",
         "..kttttttttttk..",
         "..kcccccccccck..",
@@ -194,20 +187,18 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kcccccccccck..",
         "..kcccccccccck..",
         "..kssssssssssk..",
-        // The backrest, from behind and nearer the camera than the seat.
-        "...kkkkkkkkkk...",
-        "...kttttttttk...",
-        "...kcc.cc.cck...",
-        "...kcc.cc.cck...",
-        "...kcc.cc.cck...",
-        "...kcc.cc.cck...",
-        "...kcc.cc.cck...",
-        "...kcc.cc.cck...",
-        "...kcc.cc.cck...",
-        "...kcc.cc.cck...",
-        "...kssssssssk...",
-        "...kkkkkkkkkk...",
-        // Short legs: the backrest hides most of them from this side.
+        "..kkkkkkkkkkkk..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
+        "..kccc.cc.ccck..",
+        "..kkkkkkkkkkkk..",
+        "...kck....kck...",
         "...kck....kck...",
         "...kck....kck...",
         "...kck....kck...",
@@ -217,9 +208,6 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
       ],
       palette: { k: INK },
     },
-    // Turned east, the back is seen edge-on down the left side and the seat runs
-    // away from it. Same rows, same box — a chair is 1x1 whichever way it faces,
-    // so no dimension changes and `mirrorW` gets the west view for free.
     e: {
       rows: [
         "...kkkk.........",
@@ -232,7 +220,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "...kcck.........",
         "...kcck.........",
         "...kcck.........",
-        "...kssk.........",
+        "...kcck.........",
         "...kkkk.........",
         "..kkkkkkkkkkkk..",
         "..kttttttttttk..",
@@ -243,13 +231,13 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kcccccccccck..",
         "..kcccccccccck..",
         "..kcccccccccck..",
+        "..kcccccccccck..",
+        "..kssssssssssk..",
         "..kssssssssssk..",
         "..kssssssssssk..",
         "..kssssssssssk..",
         "..kssssssssssk..",
         "..kkkkkkkkkkkk..",
-        "...kck....kck...",
-        "...kck....kck...",
         "...kck....kck...",
         "...kck....kck...",
         "...kck....kck...",
