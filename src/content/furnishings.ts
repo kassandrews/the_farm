@@ -316,6 +316,13 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // because the one thing a cushion has to say is that it would give if you sat
   // on it.
   //
+  // THE DENT IS SHADE, not a hole. It was authored as transparent — four cells
+  // of `.` in the middle of the piece — so what showed through the dimple was
+  // the FLOOR, and a brown bar across a cream cushion reads as neither a fold
+  // nor a floor but as a piece drawn out of two materials. A dent is a place
+  // where the surface is further away, which is what `s` is for; the cushion
+  // already uses it for the rows that turn under.
+  //
   // No facings. A cushion has no front, and authoring four identical grids to
   // say so would be four times the chance of them drifting apart.
   cushion: {
@@ -325,7 +332,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "......kkkk......",
         "....kkttttkk....",
         "...kttccccttk...",
-        "...kcc....cck...",
+        "...kccsssscck...",
         "...kcccccccck...",
         "...kssssssssk...",
         "....kksssskk....",
