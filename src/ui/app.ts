@@ -196,7 +196,14 @@ const BUILD_GROUPS = [
   { id: "surface", label: "Tables", tab: true, wing: "furniture" },
   { id: "sleep", label: "Beds", tab: true, wing: "furniture" },
   { id: "storage", label: "Storage", tab: true, wing: "furniture" },
-  { id: "decor", label: "Light", tab: true, wing: "furniture" },
+  // LIGHT AND DECOR WERE ONE BUCKET called `decor` and labelled "Light", which
+  // is the drift itself in one line: the id said one thing, the tab said
+  // another, and it held a lamp, a hearth, a rug and a picture. Lighting is a
+  // category people search BY; decor is what is left when you stop searching.
+  { id: "lighting", label: "Light", tab: true, wing: "furniture" },
+  { id: "kitchen", label: "Kitchen", tab: true, wing: "furniture" },
+  { id: "bath", label: "Bathroom", tab: true, wing: "furniture" },
+  { id: "decor", label: "Decor", tab: true, wing: "furniture" },
   // THE GARDEN WING (DESIGN §The garden) — the same two-level move furniture
   // made, made again: GARDEN is a door in the landing row, and these are what
   // it opens onto. A `wing` field rather than a third level, because the strip
@@ -317,9 +324,15 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
   // to carry two facts no icon can: that it needs a wall behind it (a tool that
   // refuses everywhere you point it reads as broken long before it reads as
   // specific — the painting's lesson), and that a chimney is what you get.
-  { id: "fireplace", icon: "fireplace", label: "Fireplace", hint: "Costs stone. Put it against a wall — a chimney comes out on the roof.", group: "decor" },
-  { id: "lamp", icon: "lamp", label: "Floor lamp", hint: "Costs ore. Give the dark something to argue with.", group: "decor" },
-  { id: "desklamp", icon: "desklamp", label: "Desk lamp", hint: "Costs ore. Half a lamp, for one corner.", group: "decor" },
+  { id: "fireplace", icon: "fireplace", label: "Fireplace", hint: "Costs stone. Put it against a wall — a chimney comes out on the roof.", group: "lighting" },
+  { id: "lamp", icon: "lamp", label: "Floor lamp", hint: "Costs ore. Give the dark something to argue with.", group: "lighting" },
+  { id: "desklamp", icon: "desklamp", label: "Desk lamp", hint: "Costs ore. Half a lamp, for one corner.", group: "lighting" },
+  { id: "counter", icon: "table", label: "Counter", hint: "Lay them in a row — they join into one worktop.", group: "kitchen" },
+  { id: "stove", icon: "chest", label: "Stove", hint: "Four rings and an oven door. It does not cook; it stands there being a stove.", group: "kitchen" },
+  { id: "fridge", icon: "wardrobe", label: "Fridge", hint: "Tall, cold-looking, closed. Stainless, brass or black iron.", group: "kitchen" },
+  { id: "sink", icon: "chest", label: "Sink", hint: "Porcelain or stainless — the one piece that will wear either.", group: "kitchen" },
+  { id: "toilet", icon: "chest", label: "Toilet", hint: "The room becomes, formally, that kind of room.", group: "bath" },
+  { id: "tub", icon: "bed", label: "Bath", hint: "Two tiles of porcelain. Deep enough to be taken seriously.", group: "bath" },
   { id: "rug", icon: "rug", label: "Rug", hint: "Costs cloth. Walk right over it.", group: "decor" },
   // The one tool that wants a WALL under it rather than a floor, which the hint
   // has to say outright — a tool that refuses everywhere you point it reads as

@@ -12597,6 +12597,55 @@ been: a north–south run was laid with the east–west art and photographed fir
   silently go wrong: `y.mid`'s first sixteen rows must be uniform, and `y.end` must
   differ from `y.mid` in its top row and nowhere else.
 
+### Two ways to organise a catalogue, and six pieces nobody could reach (12 Aug 2026)
+
+Owner's framing, and it corrects a mistake this file made one section down: the
+forms-vs-decor argument treated "is it obligated per set?" and "where does your
+thumb go to find it?" as ONE question. They are independent.
+
+- **Obligation** is the lattice: does every set owe this a drawing?
+- **Function** is the menu: seating, tables, beds, storage, light, kitchen,
+  bathroom, decor.
+
+Once separated, a set's own lamp and a set-less painting can share a picker
+without anybody having to rule on whether decor "counts". Which also means the
+proposal to pull `painting` out of the lattice was solving the wrong problem —
+it wanted a shared picker and never needed one. Whether painting is a form is now
+judged on its own merits alone, and is not blocking anything.
+
+**SIX PIECES WERE BUILT THIS SESSION AND NEVER OFFERED.** `stove`, `fridge`,
+`sink`, `counter`, `toilet`, `tub` — drawn, costed, tested, in the lattice, and
+absent from the game, because the build menu is a hand-written list in `ui/app.ts`
+and nothing makes the two agree. The notice board's row has warned about this in
+so many words the whole time: *"a row here is not an offer."* Found by grepping
+the menu for every priced id rather than by playing.
+
+- **The guard is still owed, and the layering is why it is awkward.** The obvious
+  test — "every priced furniture row appears in the menu" — needs `BUILD_TOOLS`,
+  which lives in the UI and cannot move to content: it is typed on `BuildTool`
+  from `sim/types.ts`, and content may not import sim. Moving the table means
+  moving that type first. Worth doing; not worth doing blind at the end of a
+  long sitting.
+- **`decor` was one bucket labelled "Light"**, holding a hearth, two lamps, a rug
+  and a picture — the id said one thing and the tab said another. Now `lighting`
+  (lamp, desk lamp, fireplace) and `decor` (rug, painting), plus `kitchen` and
+  `bathroom` for the two new rooms. Eight furniture tabs, which fit one row.
+- **The tab is "Bathroom", not "Bath"**, because the tub is called Bath and
+  navigating *Bath → Bath* reads as a bug in the menu.
+
+**The by-set browse axis is deliberately NOT built.** It is the other half of the
+owner's idea and the better half — browsing a set whole is what makes it feel
+collected rather than scattered — but with one set it is a screen with one thing
+on it, and the interaction would be guessed rather than tested. It also carries a
+rule that is easy to get subtly wrong in the abstract: a set browser may never
+show what you are missing (§The catalog, and the garden palette's rule before
+it). It waits for a real second set.
+
+**Left open: `awning` and `windowbox` are priced and not offered either.** Unlike
+the six above this may be deliberate — both are stamped by the town onto
+shopfronts and sills, and whether a player hangs their own is a design call
+rather than an oversight. Flagged, not fixed.
+
 ### A double bed, and the cot stops being an obligation (12 Aug 2026)
 
 Owner's call, and the two halves pull opposite ways: one ADDS a form, the other
