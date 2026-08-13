@@ -152,6 +152,12 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     // own underside rule — a thin box between the back and the legs, which is
     // the whole of the seat you can see from behind.
     //
+    // The back is the SAME FOURTEEN ROWS in both views; only its bottom three
+    // are covered by that rail. So the two views must agree about the inside of
+    // it too: a row of padding above the rungs and a row below, which the front
+    // has and this one had lost — the rungs ran straight into the rule while the
+    // seat rail took their room. Seven rungs with both pads, not eight with one.
+    //
     // So the north silhouette is TEN ROWS SHORTER than the front one, and that
     // is the projection working rather than the views disagreeing: from the
     // front the back is the far thing, and its distance is added to its height.
@@ -225,7 +231,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kccckcckccck..",
         "..kccckcckccck..",
         "..kccckcckccck..",
-        "..kccckcckccck..",
+        "..kssssssssssk..",
         "..kkkkkkkkkkkk..",
         "..kcccccccccck..",
         "..kssssssssssk..",
