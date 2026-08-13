@@ -420,8 +420,8 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // The one row that costs two materials, and the only place the frame and
     // the covering are priced separately. A sofa is genuinely both, and the
     // cloth half keeps it behind the Menace's counter where soft goods belong.
-    cost: { wood: 3, cloth: 1 },
-    w: 2,
+    cost: { wood: 4, cloth: 1 },
+    w: 3,
     h: 1,
     solid: true,
     height: 16,
@@ -515,8 +515,8 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // Half again the single's six rather than double it: the frame is wider, not
     // twice the object, and a bed is the one piece housing REQUIRES — pricing it
     // steeply is a tax on giving somebody a home.
-    cost: { wood: 9 },
-    w: 2,
+    cost: { wood: 12 },
+    w: 3,
     h: 2,
     solid: true,
     height: 10,

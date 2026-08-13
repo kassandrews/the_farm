@@ -12624,13 +12624,23 @@ execution was a single number.**
 - **Applied atomically.** Sequential string replacement collapses the toilet,
   whose narrowed rows are other rows' originals.
 
-**Still open: two footprints are wrong against the Stardew reference** the owner
-gave — a full bed and a couch span three cells there, ours span two. The
-fireplace (2), chair (1), nightstand (1), dresser (2) and shelf (1) all already
-agree. Not done because it is a real redraw and carries a play consequence worth
-deciding on purpose: rooms are exactly as big as you build them, so bigger sofas
-and beds push toward bigger rooms. The sofa has a third option — JOIN, like the
-table and counter, so one section is an armchair and three are a three-seater.
+**The two footprints that were wrong are fixed.** Against the Stardew reference
+the owner gave, a full bed and a couch span three cells; ours spanned two.
+Fireplace (2), chair (1), nightstand (1), dresser (2) and shelf (1) already
+agreed. **Sofa is 3×1 and the double bed 3×2** — owner's call, taken over the
+joining alternative (sections laid end to end, one an armchair and three a
+three-seater), which stays available if a loveseat ever wants to exist.
+
+- Three cushions between two arms is what makes the sofa a three-seater rather
+  than a wider two-seater. The bed keeps TWO pillows however wide it gets: a
+  double sleeps two, and `sleeps` is a qualifier and not a capacity.
+- **Both needed a turned view they had never needed before.** A 2×2 bed has the
+  same footprint whichever way it faces, so falling back to the front view was
+  legal; at 3×2 the east footprint is 2×3 and the fallback is the wrong SHAPE.
+  The size contract caught it immediately. Same for the sofa, whose east view
+  gained a tile of depth.
+- The play consequence is accepted deliberately: rooms are exactly as big as you
+  build them, so a three-tile sofa and bed push toward bigger rooms.
 
 ### The long table is the table (12 Aug 2026)
 
