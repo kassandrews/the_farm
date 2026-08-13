@@ -164,6 +164,7 @@ export function newWorld(opts: NewWorldOpts): WorldState {
     build: {},
     furniture: {},
     underFurniture: {},
+    floor: {},
     crops: {},
     garden: { seen: [], plants: {} },
     villagers,

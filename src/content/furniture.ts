@@ -106,6 +106,24 @@ export interface FurnitureDef {
    *  just has no top. */
   flat?: boolean;
 
+  /** LIES ON THE FLOOR, and other furniture may stand on top of it.
+   *
+   *  A rug is not a thing in the room, it is the room's floor being nicer, and
+   *  a rug you cannot put a table on is a rug you can only ever look at from
+   *  across the room. So a floor piece is stored in its OWN record — see
+   *  sim/furniture.ts §floorFor — and the two records do not see each other:
+   *  laying a rug ignores what is standing there, standing something down
+   *  ignores what is laid. Both orders work, which matters, because a player who
+   *  had to furnish a room in the right sequence would be playing a puzzle.
+   *
+   *  NOT the same as `flat`, which is a fact about a piece's geometry (draw the
+   *  face, skip the top). The noticeboard is flat and stands; a rug is neither.
+   *
+   *  It still holds the ground it covers — no crop through a rug, no rug over a
+   *  crop — because a floor covering is still a covering. What it gives up is
+   *  the right to refuse FURNITURE, and nothing else. */
+  floor?: boolean;
+
   /** Which finish classes it may wear. A list to match structures.
    *
    *  It was single-class on every row for a long time, with a note here saying it
@@ -298,6 +316,9 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     solid: false,
     // Almost flat: a rug is a floor that is nicer, not a thing standing on one.
     height: 1,
+    // And therefore THE floor piece — the sentence above, made a rule. Things
+    // stand on it. See `floor` on the interface.
+    floor: true,
     finishes: ["cloth"],
   },
   // --- The one thing made of metal -----------------------------------------

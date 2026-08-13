@@ -26,7 +26,7 @@ import { itemDef } from "../content/items";
 import { GRASS, DIRT, TREE, SHRUB, tileDef } from "../content/tiles";
 import { tileAt, setTile, tileKey, biomeAt, refusesConstruction } from "./world";
 import { structureAt } from "./structures";
-import { furnitureAt } from "./furniture";
+import { anyFurnitureAt } from "./furniture";
 import { add } from "./inventory";
 import { seasonOn } from "./seasons";
 
@@ -77,7 +77,7 @@ export function plantAt(
   if (refusesConstruction(world, x, y, "surface")) {
     return { changed: false, message: "Not on this ground ... The dark trees were here first.", broke: false };
   }
-  if (structureAt(world, x, y) || furnitureAt(world, x, y)) {
+  if (structureAt(world, x, y) || anyFurnitureAt(world, x, y)) {
     return { changed: false, message: "There's something built there.", broke: false };
   }
   // A tree under your own feet would entomb you — the wall gate's rule

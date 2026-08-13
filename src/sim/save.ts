@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 48;
+export const SCHEMA_VERSION = 49;
 
 // 48 gives every piece of furniture a SET (content/sets.ts — DESIGN §The
 // catalog). Additive, one legal value, and the rung stamps `core` on both
@@ -1967,6 +1967,22 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
       underFurniture: stamp(raw.underFurniture),
     };
   },
+  // v48 → v49: rugs lie UNDER the furniture (types.ts §floor). One new record,
+  // empty, and empty is the truthful backfill on v21's exact argument: a v48
+  // save could not have anything in it, because the record did not exist and
+  // every rug such a town owns is standing in `furniture` where it was laid.
+  //
+  // SO THE RUGS ALREADY DOWN STAY WHERE THEY ARE, deliberately, and go on
+  // refusing to have a table put on them until they are picked up and laid
+  // again. Moving them across would be the tidier migration and the wrong one:
+  // a rug and a table can occupy the same cell now, so relocating a rug could
+  // make room for a piece the player never placed there — a migration that
+  // changes what fits in a room. Lifting one rug is a tap.
+  48: (raw) => ({
+    ...raw,
+    schemaVersion: 49,
+    floor: typeof raw.floor === "object" && raw.floor ? raw.floor : {},
+  }),
 };
 
 /** The name the tables now give an authored character, or null for anyone the

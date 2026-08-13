@@ -672,6 +672,34 @@ describe("v20 → v21: furniture can stand in the rock", () => {
   });
 });
 
+describe("v48 → v49: rugs lie under the furniture", () => {
+  function v48Save(extra: Record<string, unknown> = {}): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    delete w.floor;
+    return { ...w, schemaVersion: 48, ...extra };
+  }
+
+  it("backfills an empty record", () => {
+    // Truthful on v21's argument: the record did not exist, so no v48 town has
+    // ever had anything in it.
+    const migrated = migrateSave(v48Save())!;
+    expect(migrated.floor).toEqual({});
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+  });
+
+  it("leaves the rugs already down exactly where they are", () => {
+    // Deliberately NOT moved across. A rug and a table can share a cell now, so
+    // relocating one could make room for a piece the player never put there —
+    // a migration that changes what fits in a room. Lifting a rug is a tap.
+    const before = v48Save();
+    const rugs = Object.entries(before.furniture as Record<string, { id: string }>)
+      .filter(([, c]) => c.id === "rug");
+    const migrated = migrateSave(before)!;
+    expect(migrated.furniture).toEqual(before.furniture);
+    for (const [key] of rugs) expect(migrated.floor[key]).toBeUndefined();
+  });
+});
+
 describe("v21 → v22: dug earth grasses over", () => {
   function v21Save(extra: Record<string, unknown> = {}): Record<string, unknown> {
     const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;

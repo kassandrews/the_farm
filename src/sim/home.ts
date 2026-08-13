@@ -158,7 +158,11 @@ export function describeHome(world: WorldState, v: Villager): HomeNote[] {
  *  is inside — a table half under the wall line is still in the room with you. */
 function furnitureIn(world: WorldState, interior: Set<string>): FurnitureId[] {
   const out: FurnitureId[] = [];
-  for (const [key, cell] of Object.entries(world.furniture)) {
+  // BOTH RECORDS. A rug is furniture in the room whether or not something is
+  // standing on it — a room that stopped being cosy the moment you put the
+  // table back on the carpet would be the layering showing through as a rule.
+  const all = [...Object.entries(world.furniture), ...Object.entries(world.floor)];
+  for (const [key, cell] of all) {
     const at = parseTileKey(key);
     if (!at) continue;
     const inside = cellsFor(at.x, at.y, cell.id, cell.facing).some(([x, y]) =>

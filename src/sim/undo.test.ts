@@ -248,3 +248,46 @@ describe("undoing a re-finish", () => {
     expect(w.finishes[tileKey(31, 31)]).toBeUndefined();
   });
 });
+
+// Undo has to know about the floor record, because a snapshot with one furniture
+// slot in it cannot put back a cell that legitimately held two pieces.
+describe("undoing something laid on the floor", () => {
+  it("takes a rug back up", () => {
+    const w = world();
+    add(w.inventory, "cloth", 20);
+    for (let y = 40; y <= 42; y++) for (let x = 40; x <= 42; x++) clear(w, x, y);
+    stroke(w, "rug", "rug", [[40, 40]]);
+    expect(w.floor[tileKey(40, 40)]?.id).toBe("rug");
+
+    expect(undoStroke(w)).toBe(true);
+    expect(w.floor[tileKey(40, 40)]).toBeUndefined();
+  });
+
+  it("leaves the carpet where it was when the table on it is undone", () => {
+    const w = world();
+    add(w.inventory, "cloth", 20);
+    add(w.inventory, "wood", 200);
+    for (let y = 40; y <= 42; y++) for (let x = 40; x <= 42; x++) clear(w, x, y);
+    stroke(w, "rug", "rug", [[40, 40]]);
+    stroke(w, "table", "table", [[40, 40]]);
+
+    expect(undoStroke(w)).toBe(true);
+    expect(furnitureAt(w, 40, 40)).toBeNull(); // the table went
+    expect(w.floor[tileKey(40, 40)]?.id).toBe("rug"); // the rug did not
+  });
+
+  it("puts an erased rug back under the piece standing on it", () => {
+    const w = world();
+    add(w.inventory, "cloth", 20);
+    add(w.inventory, "wood", 200);
+    for (let y = 40; y <= 42; y++) for (let x = 40; x <= 42; x++) clear(w, x, y);
+    stroke(w, "rug", "rug", [[40, 40]]);
+    stroke(w, "table", "table", [[41, 41]]); // standing on the rug's far corner
+    stroke(w, "erase", "erase", [[40, 40]]); // takes the rug: nothing standing here
+
+    expect(w.floor[tileKey(40, 40)]).toBeUndefined();
+    expect(undoStroke(w)).toBe(true);
+    expect(w.floor[tileKey(40, 40)]?.id).toBe("rug");
+    expect(furnitureAt(w, 41, 41)?.cell.id).toBe("table"); // untouched throughout
+  });
+});

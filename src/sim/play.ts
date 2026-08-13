@@ -57,7 +57,7 @@ import { nodeAt } from "./gather";
 import { structureAt } from "./structures";
 import { structureDef } from "../content/structures";
 import { roofRoomAt } from "./rooms";
-import { furnitureAt, cellsFor } from "./furniture";
+import { furnitureAt, anyFurnitureAt, cellsFor } from "./furniture";
 import type { PlacedFurniture } from "./furniture";
 import type { FurnitureId } from "../content/furniture";
 import { isWalkable, tileAt, groveCentre, cubeSite } from "./world";
@@ -355,7 +355,7 @@ const SPY_RANGE = 8;
 export function spyKindAt(world: WorldState, x: number, y: number): SpyKind | null {
   if (nearSecret(world, x, y)) return null;
   if (world.crops[`${x},${y}`]) return "crop";
-  if (furnitureAt(world, x, y)) return "furniture";
+  if (anyFurnitureAt(world, x, y)) return "furniture";
   const built = structureAt(world, x, y);
   if (built && structureDef(built.id).solid) return "building";
   const node = nodeAt(world, x, y);

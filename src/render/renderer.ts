@@ -1335,6 +1335,15 @@ export class Renderer {
   private canvas: HTMLCanvasElement;
   /** Rebuilt every frame; see the Raised docblock. */
   private raised: Raised[] = [];
+  /** WHAT IS LAID ON THE FLOOR this frame — rugs (sim/types.ts §floor).
+   *
+   *  Its own list, flushed between the terrain and the raised pass, because a
+   *  floor piece is neither. Terrain draws per cell, so a 2x2 rug drawn inside
+   *  that loop would be painted over by the three cells of its own footprint
+   *  that come after it; and `raised` sorts against everything with height,
+   *  where a rug would win against the player standing on it and draw over
+   *  their feet. Between the two is the only place a carpet has ever been. */
+  private laid: Raised[] = [];
   /** Flattened plan view: on while a build tool is held (DESIGN §Structures —
    *  plan view while you build, 3/4 while you live there). */
   private buildView = false;
@@ -1689,12 +1698,17 @@ export class Renderer {
 
     // Flat ground first, then everything with height in one depth-sorted pass.
     this.raised.length = 0;
+    this.laid.length = 0;
     this.blockedSteps.length = 0;
     this.litShafts.length = 0;
     this.litLamps.length = 0;
     this.litWindows.length = 0;
     this.lavaRim.length = 0;
     this.drawTiles(world, t, night, layer);
+    // The carpets go down before anything stands on them, and before the build
+    // grid, which is an overlay and belongs over the floor like everything else
+    // the player is being shown rather than shown a picture of.
+    this.flushLaid();
     if ((this.buildView || this.gridOn) && ground) this.drawBuildGrid();
     if (ground) {
       this.drawCrops(world, now);
@@ -2371,6 +2385,19 @@ export class Renderer {
           if (this.buildView && built.id === "door") {
             for (const step of blockedDoorsteps(world, tx, ty)) this.blockedSteps.push(step);
           }
+        }
+        // What is LAID here, collected at its anchor exactly as the standing
+        // piece below is, into the list that draws before anything stands up.
+        const rug = world.floor[key];
+        if (rug) {
+          const ax = tx;
+          const ay = ty;
+          const span = footprint(furnitureDef(rug.id), rug.facing);
+          this.laid.push({
+            y: ay + span.h - 1,
+            bias: BIAS_TERRAIN,
+            draw: () => this.drawFurniture(world, ax, ay, rug),
+          });
         }
         // Furniture is collected at its ANCHOR only, so a 2-tile piece is drawn
         // once rather than once per cell it covers. Sorted on its SOUTHERN row
@@ -3956,6 +3983,11 @@ export class Renderer {
       if (r <= 0) return p.def.motes;
     }
     return parts[parts.length - 1].def.motes;
+  }
+
+  private flushLaid(): void {
+    this.laid.sort((a, b) => a.y - b.y || a.bias - b.bias);
+    for (const r of this.laid) r.draw();
   }
 
   private flushRaised(): void {

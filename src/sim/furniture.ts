@@ -12,6 +12,13 @@
 // on this cell" searches the handful of cells an anchor could possibly be in —
 // bounded by MAX_SPAN, so it's a fixed four lookups, not a scan.
 //
+// THAT RULE IS ABOUT ONE PIECE, not one cell. A rug and the table standing on
+// it are two pieces sharing a cell, which is the whole point of a rug, and the
+// invariant survives by giving the floor its own record: each record still says
+// "one cell, one piece", and neither can see the other. `floorAt` is the second
+// record's `furnitureAt`; `anyFurnitureAt` is for the few callers that mean "is
+// this cell spoken for at all". See types.ts §floor.
+//
 // There are TWO of those records now, one per layer, and `layer` is the last
 // argument everywhere with "surface" as its default. That is deliberate rather
 // than tidy: furniture is a surface idea in every module that reads it except
@@ -53,6 +60,36 @@ export interface PlacedFurniture {
  *  furniture is a surface idea everywhere except the one tool that isn't. */
 export function furnitureFor(world: WorldState, layer: Layer): Record<string, FurnitureCell> {
   return layer === "under" ? world.underFurniture : world.furniture;
+}
+
+/** What is LAID on this cell, or null — the floor record's `furnitureAt`.
+ *
+ *  A separate function rather than a third value of `layer`, because it is not a
+ *  layer: `layer` picks which WORLD you are in, and both of these are the
+ *  surface. This picks which of two things sharing a cell you mean. Callers that
+ *  want "what is standing here" must not silently start getting rugs.
+ *
+ *  Same bounded search as `furnitureAt`, and for the same reason — a rug is 2x2,
+ *  so the cell you point at may be three cells from the anchor that holds it. */
+export function floorAt(world: WorldState, x: number, y: number): PlacedFurniture | null {
+  for (let ay = y - MAX_SPAN + 1; ay <= y; ay++) {
+    for (let ax = x - MAX_SPAN + 1; ax <= x; ax++) {
+      const cell = world.floor[tileKey(ax, ay)];
+      if (!cell) continue;
+      if (covers(ax, ay, furnitureDef(cell.id), cell.facing, x, y)) return { ax, ay, cell };
+    }
+  }
+  return null;
+}
+
+/** Is anything at all on this cell — standing OR laid?
+ *
+ *  For the callers that mean "is this cell spoken for" rather than "what is
+ *  standing here": siting a commissioned house, stamping the town, and anything
+ *  else that needs a genuinely empty cell. They are the minority, which is why
+ *  this is named and not the default. */
+export function anyFurnitureAt(world: WorldState, x: number, y: number): PlacedFurniture | null {
+  return furnitureAt(world, x, y) ?? floorAt(world, x, y);
 }
 
 /** The piece covering this cell, or null. Searches only the cells an anchor
@@ -112,13 +149,25 @@ export function canPlaceFurniture(
     return furnitureAt(world, ax, ay, layer) === null;
   }
 
+  // A FLOOR PIECE and a standing piece are asked the same questions about the
+  // ground and opposite questions about each other. `laid` decides which record
+  // this placement is checking itself against, and it is the ONLY difference:
+  // everything below — solid ground, shallows, her trees, crops, walls — is
+  // asked of both, because a rug is still something you put down on a floor.
+  const laid = furnitureDef(id).floor === true;
+  if (laid && layer !== "surface") return false; // no rugs in the rock
+
   for (const [x, y] of cellsFor(ax, ay, id, facing)) {
     const key = tileKey(x, y);
     // Solidity on the piece's OWN layer. Underground this is the whole test that
     // matters: it refuses a lamp in rock you haven't cut, which is the rock's
     // version of "no furniture inside a wall".
     if (tileDef(tileAt(world, x, y, layer)).solid) return false;
-    if (furnitureAt(world, x, y, layer)) return false;
+    // Each record refuses ITSELF and ignores the other. A rug goes under a table
+    // and a table goes onto a rug; two rugs still cannot share a cell, because
+    // the thing that makes layering safe is that each record keeps its own "one
+    // cell, one piece" — see types.ts §floor.
+    if (laid ? floorAt(world, x, y) : furnitureAt(world, x, y, layer)) return false;
     if (layer === "under") continue;
     if (refusesFooting(world, x, y)) return false; // nothing stands in the shallows
     if (refusesConstruction(world, x, y)) return false; // her trees' ground
@@ -171,7 +220,8 @@ export function placeFurniture(
   trim?: SkinId,
 ): boolean {
   if (!canPlaceFurniture(world, ax, ay, id, facing, layer)) return false;
-  furnitureFor(world, layer)[tileKey(ax, ay)] = { id, facing, finish, set, ...(trim ? { trim } : {}) };
+  const record = furnitureDef(id).floor ? world.floor : furnitureFor(world, layer);
+  record[tileKey(ax, ay)] = { id, facing, finish, set, ...(trim ? { trim } : {}) };
   touchBuild(world); // the standing things moved — see structures.ts
   return true;
 }
@@ -185,10 +235,25 @@ export function removeFurnitureAt(
   layer: Layer = "surface",
 ): FurnitureCell | null {
   const found = furnitureAt(world, x, y, layer);
-  if (!found) return null;
-  delete furnitureFor(world, layer)[tileKey(found.ax, found.ay)];
-  touchBuild(world); // the standing things moved — see structures.ts
-  return found.cell;
+  if (found) {
+    delete furnitureFor(world, layer)[tileKey(found.ax, found.ay)];
+    touchBuild(world); // the standing things moved — see structures.ts
+    return found.cell;
+  }
+  // TOP DOWN, which is what a finger means. Point at a table standing on a rug
+  // and the table comes up; point again and the rug follows. The other order
+  // would pull the carpet out from under the furniture, which is a joke and not
+  // an interaction — and it would make the rug the only thing in the game you
+  // remove by aiming at something else.
+  //
+  // Surface only, because the floor record is (types.ts §floor). Underground
+  // this is the null it always was.
+  if (layer !== "surface") return null;
+  const laid = floorAt(world, x, y);
+  if (!laid) return null;
+  delete world.floor[tileKey(laid.ax, laid.ay)];
+  touchBuild(world);
+  return laid.cell;
 }
 
 /** The finish a piece's TRIM is drawn in — its own, or the default for its

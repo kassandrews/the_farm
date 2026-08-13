@@ -55,6 +55,11 @@ export interface StampTarget {
   build: Record<string, BuildCell>;
   furniture: Record<string, FurnitureCell>;
   crops: Record<string, unknown>;
+  /** What the player has LAID (sim/types.ts §floor). Read by `occupied` and
+   *  never written: the town puts up notice boards, not rugs. Optional for the
+   *  reason `finishes` and `garden` are — a save partway up the ladder has not
+   *  grown the field yet. */
+  floor?: Record<string, FurnitureCell>;
   /** Per-cell floor finish (world.ts §floorFinish). Optional because a save
    *  being migrated from far enough back may not have grown the field yet, and
    *  the streets are the only thing here that writes one — a building's floor is
@@ -73,7 +78,11 @@ export interface StampTarget {
  *  something the player stood up or planted, which represents real time. */
 function occupied(t: StampTarget, x: number, y: number): boolean {
   const key = tileKey(x, y);
-  return key in t.build || key in t.furniture || key in t.crops;
+  // `floor` too, and that is not theory: a migration rung re-stamps a LIVE save,
+  // where the player may have laid a rug across the spot a fixture goes. Nothing
+  // here ever writes to that record — the town lays no carpets — so it is read
+  // and never touched, which is why it is optional.
+  return key in t.build || key in t.furniture || key in t.crops || key in (t.floor ?? {});
 }
 
 /** Is this a piece the TOWN put up as part of a building's shell?

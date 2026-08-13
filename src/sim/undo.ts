@@ -51,6 +51,14 @@ interface CellSnapshot {
   /** The furniture ANCHOR entry stored at this key, if any. Furniture is stored
    *  once at its anchor (sim/furniture.ts), so this is the only record. */
   furniture: FurnitureCell | null;
+  /** What was LAID at this key (sim/types.ts §floor) — a rug, and one day a
+   *  doormat. Its own field for the same reason it is its own record: a cell can
+   *  hold a rug AND a table, so one furniture slot in a snapshot could not put
+   *  both of them back. Undoing a table laid onto a carpet has to leave the
+   *  carpet exactly where it was.
+   *
+   *  Surface only, like `build` and `garden`: nothing is laid in the rock. */
+  floor: FurnitureCell | null;
   /** The GARDEN entry at this key, if any (WorldState.garden.plants) — a
    *  planted stroke writes a tile override AND a record, and restoring the
    *  tile alone would leave a ghost species entry drawing a tree on open
@@ -142,6 +150,7 @@ export function captureCell(world: WorldState, x: number, y: number): void {
     build: under ? null : (world.build[key] ?? null),
     ground: (under ? world.under[key] : world.overrides[key]) ?? null,
     furniture: furnitureFor(world, stroke.layer)[key] ?? null,
+    floor: under ? null : (world.floor[key] ?? null),
     garden: under ? null : (world.garden.plants[key] ?? null),
     finish: under ? null : (world.finishes[key] ?? null),
   });
@@ -216,6 +225,9 @@ export function undoStroke(world: WorldState): boolean {
 
       if (snap.garden) world.garden.plants[key] = snap.garden;
       else delete world.garden.plants[key];
+
+      if (snap.floor) world.floor[key] = snap.floor;
+      else delete world.floor[key];
     }
 
     if (snap.ground !== null) ground[key] = snap.ground;

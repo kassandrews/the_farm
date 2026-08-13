@@ -29,6 +29,7 @@ import { claimedBed } from "./housing";
 import { makeVillager } from "./villagers";
 import { charDef } from "../content/cast";
 import { isWalkable, tileKey } from "./world";
+import { anyFurnitureAt } from "./furniture";
 import type { SkinId } from "../content/skins";
 import { remember } from "./memory";
 
@@ -167,7 +168,10 @@ export function findTentSpot(world: WorldState): { x: number; y: number } {
         const y = 2 + dy; // just south of the plaza
         const key = tileKey(x, y);
         if (taken.has(key)) continue;
-        if (world.build[key] || world.furniture[key] || world.crops[key]) continue;
+        // ANY furniture, laid as well as standing, and by COVERAGE rather than by
+        // anchor: a tent pitched on somebody's carpet — or on the far half of
+        // their bed — is the same wrong.
+        if (world.build[key] || anyFurnitureAt(world, x, y) || world.crops[key]) continue;
         // The cell in front matters too: the villager stands there, and a tent
         // pitched against a wall with nowhere to stand is the doorstep bug
         // wearing a different hat.

@@ -346,6 +346,27 @@ export interface WorldState {
    *  is somewhere you install a light (ROADMAP §"Ore's sink"). */
   underFurniture: Record<string, FurnitureCell>;
 
+  /** WHAT IS LAID ON THE FLOOR — rugs, and whatever else earns
+   *  `FurnitureDef.floor` later. Keyed by anchor exactly like the two above.
+   *
+   *  A THIRD RECORD, on `underFurniture`'s argument one axis over. The rule that
+   *  furniture is stored once and never twice is about one PIECE being in two
+   *  places; this is two pieces in one place, which is the thing a rug is for.
+   *  Keeping them apart is what lets each record go on saying "one cell, one
+   *  piece" — the invariant the whole module rests on — while a room still gets
+   *  a table standing on a carpet.
+   *
+   *  SURFACE ONLY, and there is no `underFloor` to match. The rock is somewhere
+   *  you install a light, not somewhere you lay a rug, and the tool that goes
+   *  down there is the lamp alone (ROADMAP §"Ore's sink").
+   *
+   *  The modules that walk `furniture` mostly should NOT walk this one: a rug is
+   *  not a bed, a shelf or a notice board. The exceptions are the two that ask
+   *  "is this cell spoken for" — `commission.ts` siting a house, the town
+   *  stamper — and `home.ts`, which asks what is in the room and would otherwise
+   *  decide a rug stopped being cosy the moment you put a table on it. */
+  floor: Record<string, FurnitureCell>;
+
   crops: Record<string, Crop>;
 
   /** THE GARDEN (DESIGN §The garden) — what you have planted, and what you have

@@ -12890,6 +12890,62 @@ the costs against the art:
   table row — the floor lamp has no art row at all — so it belongs in the Set One
   design pass with the pieces, not here.
 
+## Rugs go under the furniture (13 Aug 2026)
+
+Owner, playing with the redrawn pieces: *the rug isn't able to go under anything
+right now.* It could not — `canPlaceFurniture` refused any cell already covered,
+which is the rule that keeps furniture honest and was answering the wrong
+question about a carpet. Schema v49.
+
+**A THIRD RECORD, `world.floor`**, on `underFurniture`'s argument one axis over.
+The one-piece-one-cell rule in `sim/furniture.ts` is about a PIECE being written
+in two places, and it is not negotiable — the module's header spells out what
+drift costs. A rug and the table on it are two pieces in ONE place, which is a
+different thing, and giving the floor its own record lets each record go on
+saying "one cell, one piece" while a room gets a table on a carpet. The two are
+blind to each other: `floorAt` is the second record's `furnitureAt`,
+`anyFurnitureAt` is for the callers that mean "is this cell spoken for at all".
+
+- **`FurnitureDef.floor`, not `id === "rug"`.** Doormats, runners and tatami are
+  the same idea, and the catalog doctrine wants a property. It is NOT `flat`,
+  which is a fact about geometry (draw the face, skip the top) — the notice board
+  is flat and stands.
+- **Both orders work**, which is the whole feature. Rug under an existing table,
+  table onto an existing rug. A player who had to furnish a room in the right
+  sequence would be playing a puzzle.
+- **A rug still holds the ground it covers.** No crop through it, no rug over a
+  crop, no gathering on it, no tree planted in it. What it gives up is the right
+  to refuse FURNITURE and nothing else — `garden.ts`, `gather.ts` and
+  `spyKindAt` all moved to `anyFurnitureAt` rather than losing the check.
+- **Erase is top down.** Table first, rug second, one tap each. The other order
+  pulls the carpet out from under the furniture, which is a joke and not an
+  interaction, and would make the rug the only thing you remove by aiming at
+  something else.
+- **Undo needed its own snapshot field.** `CellSnapshot` had one furniture slot,
+  and a cell that legitimately holds two pieces cannot be restored from one.
+  Undoing a table laid onto a carpet has to leave the carpet exactly where it is.
+- **`home.ts` counts both records.** A room that stopped being cosy the moment
+  you put the table back on the rug would be the layering showing through as a
+  rule the player can feel.
+- **`commission.ts` and the town's `occupied()` see the floor record**, because
+  both site things on a LIVE save — a migration rung re-stamps fixtures into a
+  town somebody has furnished, and a tent pitched on somebody's carpet is the
+  same wrong as one pitched on their bed. Commission siting moved to coverage
+  rather than an anchor lookup while it was there, which also closes a tent
+  pitched on the far half of a bed.
+- **The migration leaves rugs already down where they are** (v48 → v49 backfills
+  `{}`). Moving them across is the tidier rung and the wrong one: a rug and a
+  table can share a cell now, so relocating a rug could make room for a piece the
+  player never placed there — a migration that changes what fits in a room.
+  Lifting one rug is a tap.
+- **Drawn between the terrain and the raised pass**, in its own `laid` list. Not
+  inside the terrain loop, where the three remaining cells of a 2x2 rug would
+  paint over it; not in `raised`, where it sorts against things with height and
+  wins against the player standing on it. Between the two is the only place a
+  carpet has ever been — and that is a latent bug fixed, not just a new feature
+  placed.
+
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

@@ -299,3 +299,68 @@ describe("a fireplace needs something behind it", () => {
     expect(canPlaceFurniture(w, 81, 41, "fireplace", "s")).toBe(true);
   });
 });
+
+// A rug is the floor being nicer, not a thing standing on it (content/furniture.ts
+// §floor). These are the rules that makes true: two records, blind to each other,
+// each still keeping "one cell, one piece" for itself.
+describe("a rug lies under the furniture", () => {
+  it("takes a table on top of it, laid first", () => {
+    const w = world();
+    expect(placeFurniture(w, 20, 20, "rug", "s", "undyed")).toBe(true);
+    expect(placeFurniture(w, 20, 20, "table", "s", "pine")).toBe(true);
+    expect(w.floor[tileKey(20, 20)]?.id).toBe("rug");
+    expect(w.furniture[tileKey(20, 20)]?.id).toBe("table");
+  });
+
+  it("goes under a table that was already there", () => {
+    const w = world();
+    expect(placeFurniture(w, 20, 20, "table", "s", "pine")).toBe(true);
+    expect(placeFurniture(w, 20, 20, "rug", "s", "undyed")).toBe(true);
+    expect(w.floor[tileKey(20, 20)]?.id).toBe("rug");
+  });
+
+  it("still refuses a second rug — each record keeps one cell, one piece", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "rug", "s", "undyed");
+    // Overlapping, not identical: the anchor is clear and the footprint is not,
+    // which is the case a plain key lookup would wave through.
+    expect(canPlaceFurniture(w, 21, 21, "rug", "s")).toBe(false);
+    expect(placeFurniture(w, 21, 21, "rug", "s", "undyed")).toBe(false);
+  });
+
+  it("is never in the standing record, whichever way round it went down", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "rug", "s", "undyed");
+    expect(w.furniture[tileKey(20, 20)]).toBeUndefined();
+    expect(furnitureAt(w, 20, 20)).toBeNull();
+  });
+
+  it("erases top down: the table first, then the rug", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "rug", "s", "undyed");
+    placeFurniture(w, 20, 20, "table", "s", "pine");
+
+    expect(removeFurnitureAt(w, 20, 20)?.id).toBe("table");
+    expect(w.floor[tileKey(20, 20)]?.id).toBe("rug"); // carpet stays put
+    expect(removeFurnitureAt(w, 20, 20)?.id).toBe("rug");
+    expect(w.floor[tileKey(20, 20)]).toBeUndefined();
+    expect(removeFurnitureAt(w, 20, 20)).toBeNull();
+  });
+
+  it("comes up when you point at any cell of it, not just its anchor", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "rug", "s", "undyed");
+    expect(removeFurnitureAt(w, 21, 21)?.id).toBe("rug");
+  });
+
+  it("holds the ground it covers — no crop laid over, no rug over a crop", () => {
+    const w = world();
+    w.crops[tileKey(20, 20)] = { id: "turnip", planted: 0, stage: 0, wateredUntil: 0 } as never;
+    expect(canPlaceFurniture(w, 20, 20, "rug", "s")).toBe(false);
+  });
+
+  it("cannot be laid in the rock", () => {
+    const w = world();
+    expect(canPlaceFurniture(w, 20, 20, "rug", "s", "under")).toBe(false);
+  });
+});

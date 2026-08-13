@@ -25,7 +25,7 @@ import type { ItemId } from "../content/items";
 import { tileAt, setTile, tileKey, healsTo, RECLAIM_MS } from "./world";
 import { GRASS, DIRT } from "../content/tiles";
 import { gain } from "./met";
-import { furnitureAt } from "./furniture";
+import { anyFurnitureAt } from "./furniture";
 
 /** Which node (if any) is standing on this tile right now. */
 export function nodeAt(
@@ -129,7 +129,9 @@ function isClaimed(world: WorldState, x: number, y: number): boolean {
   const key = tileKey(x, y);
   if (world.crops[key]) return true;
   if (world.build[key]) return true;
-  if (furnitureAt(world, x, y)) return true;
+  // ANY furniture, laid as well as standing: a rug is a floor covering, and
+  // ground with a carpet over it is spoken for even though you can walk on it.
+  if (anyFurnitureAt(world, x, y)) return true;
   const t = tileAt(world, x, y);
   return t !== DIRT && t !== GRASS;
 }
