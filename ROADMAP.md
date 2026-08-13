@@ -12627,13 +12627,23 @@ execution was a single number.**
 **The two footprints that were wrong are fixed.** Against the Stardew reference
 the owner gave, a full bed and a couch span three cells; ours spanned two.
 Fireplace (2), chair (1), nightstand (1), dresser (2) and shelf (1) already
-agreed. **Sofa is 3×1 and the double bed 3×2** — owner's call, taken over the
+agreed. **Sofa is 3×1; the double bed went to 3×2 and came back to 2×2** — at three
+tiles it read as municipal furniture rather than a bed, which is the sort of
+thing only the scale strip says out loud. Owner's call both ways, taken over the
 joining alternative (sections laid end to end, one an armchair and three a
 three-seater), which stays available if a loveseat ever wants to exist.
 
 - Three cushions between two arms is what makes the sofa a three-seater rather
-  than a wider two-seater. The bed keeps TWO pillows however wide it gets: a
-  double sleeps two, and `sleeps` is a qualifier and not a capacity.
+  than a wider two-seater. The bed keeps TWO pillows: a double sleeps two, and
+  `sleeps` is a qualifier and not a capacity.
+- **BEDS ARE DRAWN EDGE TO EDGE**, which is the width ladder's "whole cell" rung
+  and a third kind of thing that earns it, beside joining pieces and wardrobes: a
+  bed IS its footprint. Everything else keeps its inset.
+- **A pillow is capped at its ENDS, perpendicular to the way it runs.** Seen from
+  the side it runs down the screen and its caps are horizontal; from the front it
+  runs across and they are vertical. The first attempt outlined it on all four
+  sides in the front view and two in the side, which is the same object described
+  two different ways — invisible in any view but a sheet showing all four.
 - **Both needed a turned view they had never needed before.** A 2×2 bed has the
   same footprint whichever way it faces, so falling back to the front view was
   legal; at 3×2 the east footprint is 2×3 and the fallback is the wrong SHAPE.

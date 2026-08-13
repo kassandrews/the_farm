@@ -515,8 +515,8 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // Half again the single's six rather than double it: the frame is wider, not
     // twice the object, and a bed is the one piece housing REQUIRES — pricing it
     // steeply is a tax on giving somebody a home.
-    cost: { wood: 12 },
-    w: 3,
+    cost: { wood: 9 },
+    w: 2,
     h: 2,
     solid: true,
     height: 10,
