@@ -1496,6 +1496,24 @@ discipline that keeps the checklist honest: a form earns its slot by
 someone reaching for it and finding nothing, never by seeming like a nice
 idea.
 
+**EVERY PIECE IS SIZED AGAINST ITS NEIGHBOURS, not against its cell.** A
+sofa is two or three times an armchair; a dining table is two or three
+times a dining chair; a chair is smaller than a bed; a counter, a stove
+and a fridge are the same width as each other. Footprints carry the big
+relationships, and inside a footprint the drawn width is a LADDER of five
+rungs — tiny, small, medium, large, and the whole cell — so a stool is
+small *because* a chair is medium rather than because somebody eyeballed
+it. Only two kinds of thing earn the whole cell: something that joins
+(its run has to be continuous) and something that genuinely is a wall of
+an object, like a wardrobe.
+
+The failure this exists to prevent is drawing each piece to fill its
+cell, which is what happens when pieces are drawn one at a time and
+nobody looks at two together. It reads as a catalogue where a nightstand,
+a stove, a toilet and a fridge are all the same object. /furniture.html's
+scale strip is the instrument: identical boxes, one grid, ordered by
+drawn width.
+
 **A form may be LAID BY THE YARD instead of being a size.** The counter and
 the table are one tile-pair each and join with their neighbours, so their
 length is the player's rather than a number somebody guessed. That is why

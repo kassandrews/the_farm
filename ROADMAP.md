@@ -12597,6 +12597,41 @@ been: a north–south run was laid with the east–west art and photographed fir
   silently go wrong: `y.mid`'s first sixteen rows must be uniform, and `y.end` must
   differ from `y.mid` in its top row and nowhere else.
 
+### The width ladder (12 Aug 2026)
+
+Owner's principle: furniture is sized in relationship to other furniture — a
+couch two or three times an armchair, a counter the width of the fridge and the
+stove. Measuring first said something precise: **the bones were right and the
+execution was a single number.**
+
+- **The relationships that were NAMED already held**, because footprints carry
+  them: sofa 30px against chair 12px is 2.5×, table the same, bed longer than a
+  chair, counter/stove/fridge all exactly 14.
+- **Everything else was cell-filling.** Almost every 1×1 was drawn 14 of 16px and
+  every 2×1 30 of 32 — so a nightstand, a stove, a toilet, a chest and a fridge
+  were all one object width, the STOOL WAS WIDER THAN THE CHAIR, and the cushion
+  filled its cell entirely while being the smallest thing in the game.
+- **A ladder rather than per-piece taste**: 8 tiny (desk lamp), 10 small (stool,
+  cushion, toilet), 12 medium (chair, nightstand, chest, sink), 14 large (stove,
+  fridge, shelf), 16 the whole cell — and only two kinds of thing earn 16, a
+  joining piece and a wardrobe. A rung is earned by comparison: a stool is small
+  because a chair is medium.
+- **The scale strip is what made it decidable**, and building it was the actual
+  fix. The main sheet sizes every card to its own piece, which is right for
+  judging one and useless for comparing two.
+- **The cushion was redrawn rather than narrowed.** It is round, and shaving
+  columns off a circle gives an oval.
+- **Applied atomically.** Sequential string replacement collapses the toilet,
+  whose narrowed rows are other rows' originals.
+
+**Still open: two footprints are wrong against the Stardew reference** the owner
+gave — a full bed and a couch span three cells there, ours span two. The
+fireplace (2), chair (1), nightstand (1), dresser (2) and shelf (1) all already
+agree. Not done because it is a real redraw and carries a play consequence worth
+deciding on purpose: rooms are exactly as big as you build them, so bigger sofas
+and beds push toward bigger rooms. The sofa has a third option — JOIN, like the
+table and counter, so one section is an armchair and three are a three-seater.
+
 ### The long table is the table (12 Aug 2026)
 
 Owner's call, and it removes a checklist slot instead of filling one: `table`
