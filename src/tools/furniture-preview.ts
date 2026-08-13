@@ -43,7 +43,7 @@
 // Evict a stale service worker before anything else — a tool page has its own
 // entry point, so main.ts's cleanup never runs here. See no-sw.ts.
 import "./no-sw";
-import { FURNITURE, type Facing, type FurnitureDef } from "../content/furniture";
+import { FURNITURE, footprint, type Facing, type FurnitureDef } from "../content/furniture";
 import { FURNITURE_ART } from "../content/furnishings";
 import { defaultSkin, skinDef, type SkinId } from "../content/skins";
 import { FLOOR, type TileId } from "../content/tiles";
@@ -275,6 +275,8 @@ function card(
   rise: number,
   finish: SkinId,
 ): void {
+  // The same aim `panBy` below uses, needed up here for the overlay too.
+  const mid = (Math.max(def.w, def.h) - 1) / 2;
   const view = el("figure", "view");
   const canvas = el("canvas", "shot") as HTMLCanvasElement;
   // The CSS box is what decides the framing: `resize()` reads it and divides by
@@ -285,7 +287,37 @@ function card(
   canvas.style.height = `${span * TILE * 2}px`;
   const cap = el("figcaption", "facing");
   cap.append(el("span", "letter", facing), el("span", "src", source(def, facing)));
-  view.append(canvas, cap);
+
+  // THE GRID THE PIECE ACTUALLY OCCUPIES, laid over the canvas rather than drawn
+  // into the world — the world must keep looking like the game, and a tile grid
+  // ruled onto the floor is the per-cell edges rule committed on purpose.
+  //
+  // The maths is the camera's, run backwards. `card()` aims at the footprint's
+  // centre lifted by half the art's rise, so the anchor tile's top-left sits at
+  // the canvas centre minus that offset, minus half a tile. Everything else
+  // follows at the 32px pitch (TILE at scale 2).
+  const box = span * TILE * 2;
+  const px = TILE * 2;
+  const fp = footprint(def, facing);
+  const ax = box / 2 - mid * px - px / 2;
+  const ay = box / 2 + (rise / 2 - mid) * px - px / 2;
+
+  const plate = el("div", "plate");
+  plate.style.width = `${box}px`;
+  plate.style.height = `${box}px`;
+  const grid = el("div", "grid");
+  // Anchored to the piece's own tile, so the lines land where the game's cells
+  // do rather than wherever the canvas happens to start.
+  grid.style.backgroundSize = `${px}px ${px}px`;
+  grid.style.backgroundPosition = `${ax}px ${ay}px`;
+  const foot = el("div", "foot");
+  foot.style.left = `${ax}px`;
+  foot.style.top = `${ay}px`;
+  foot.style.width = `${fp.w * px}px`;
+  foot.style.height = `${fp.h * px}px`;
+  plate.append(canvas, grid, foot);
+
+  view.append(plate, cap);
 
   // EVERY LAYER REPLACED, not edited. A shallow copy of the base world would
   // carry the whole town's build map, which costs ninety-six flood fills in
@@ -322,7 +354,6 @@ function card(
   // Lifted by half the art's rise, so the piece sits in the middle of the box
   // rather than the tile it stands on doing. Aiming at the footprint leaves a
   // band of empty floor under a tall piece and crops its top.
-  const mid = (Math.max(def.w, def.h) - 1) / 2;
   renderer.panBy(ORIGIN.x + mid - world.player.x, ORIGIN.y + mid - rise / 2 - world.player.y);
   renderer.snapCamera(world);
   cards.push({ world, renderer, live: FURNITURE_ART[def.id]?.anim !== undefined });

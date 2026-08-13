@@ -77,6 +77,36 @@
         flex-direction: column;
         gap: 3px;
       }
+      /* The canvas plus its grid overlay, stacked. */
+      .plate {
+        position: relative;
+        display: block;
+      }
+      .plate > .grid,
+      .plate > .foot {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      /* One-pixel rules at the tile pitch. Faint: this is a ruler laid over the
+         picture, and a grid you notice before the furniture is a grid that has
+         taken over the sheet. */
+      .grid {
+        background-image:
+          linear-gradient(to right, rgba(43, 37, 64, 0.28) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(43, 37, 64, 0.28) 1px, transparent 1px);
+        border-radius: 6px;
+      }
+      /* THE CELLS THE PIECE ACTUALLY OCCUPIES — the thing worth seeing, since a
+         footprint is what a room's plan is made of and it is the one fact the art
+         cannot show you. Brighter than the grid, and inset so it reads as a
+         highlight on the cells rather than an outline around the art. */
+      .foot {
+        inset: auto;
+        outline: 1px solid rgba(255, 214, 130, 0.85);
+        background: rgba(255, 214, 130, 0.1);
+      }
+
       /* Pixel art, never resampled: the canvas is upscaled by a whole number and
          nothing here is allowed to smooth it (CLAUDE.md §Sprite rendering). */
       canvas.shot {
