@@ -136,6 +136,20 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     // Its top lands on the same row as the front view's, so the two views agree
     // about how tall a chair is.
     //
+    // FROM THE NORTH THERE IS NO SEAT, because the back is standing in front of
+    // it. The side view states the two numbers: the seat's top face is ten rows
+    // of depth, and the back rises thirteen above the rear edge it stands on.
+    // Turn the chair around and that foot is the NEAREST thing on screen, the
+    // seat recedes ten rows up from it, and thirteen rows of back cover all ten
+    // and clear the far edge by three. The front legs, ten rows further off and
+    // in the same columns, are behind the panel too. A back and two legs is what
+    // a chair looks like from behind — the seat used to be drawn above it, in
+    // rows nothing occupies, which is the back given depth but no height.
+    //
+    // So the north silhouette is TEN ROWS SHORTER than the front one, and that
+    // is the projection working rather than the views disagreeing: from the
+    // front the back is the far thing, and its distance is added to its height.
+    //
     // TURNED, THE BACK CROSSES THE SEAT. It used to be a narrow box stacked on
     // top of a wider one, which is not what a chair does from the side: the post
     // rises out of the seat's own back edge, so it shares that edge's column and
@@ -195,21 +209,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
     n: {
       rows: [
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "..kkkkkkkkkkkk..",
-        "..kttttttttttk..",
-        "..kcccccccccck..",
-        "..kcccccccccck..",
-        "..kcccccccccck..",
-        "..kcccccccccck..",
-        "..kcccccccccck..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
+        ...Array<string>(15).fill("................"),
         "..kkkkkkkkkkkk..",
         "..kttttttttttk..",
         "..kccckcckccck..",
