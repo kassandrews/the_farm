@@ -143,7 +143,14 @@ const BLANK32 = "................................";
  *
  *  Flush to the edge of the footprint, which is what a hearth wants to be: it is
  *  the one part of the piece that is floor rather than furniture, and two
- *  fireplaces side by side should meet along it. */
+ *  fireplaces side by side should meet along it.
+ *
+ *  ITS TOP RULE IS THE BODY'S BOTTOM ONE. The masonry used to close itself with
+ *  a rule of its own and then the hearth opened with another directly under it,
+ *  which is two lines drawn along one joint: a 2px band, and the lower pixel a
+ *  pixel wider on each side than the one above it. One line, carried the
+ *  hearth's full width, is both the drawing and the joint — the body sits ON
+ *  this, so the line where they meet belongs to the two of them at once. */
 const HEARTH = [
   "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
   "kssssssssssssssssssssssssssssssk",
@@ -1337,7 +1344,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kccccccksssssssssssssskcccccck.",
         ".kssssssssssssssssssssssssssssk.",
         ".kssssssssssssssssssssssssssssk.",
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ".kssssssssssssssssssssssssssssk.",
         ...HEARTH,
       ],
       // The firebox is sooted, not black: pure black is the outline's colour and
@@ -1411,6 +1418,13 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     // spun round should show you its back, not its fire — the wardrobe's
     // argument, and this piece needs it more, since the fire is the one part
     // anybody looks at.
+    //
+    // THE SAME WIDTH AS THE FRONT, which it was not: the breast was 28 against
+    // the front's 30, so the fireplace lost two pixels off its waist when you
+    // walked round it while the mantel above stayed put. That inset is the
+    // WARDROBE's drawing, where a proud cornice sits over a narrower carcass,
+    // and it was copied to a piece whose mantel is flush with its breast. A
+    // chimney breast is one mass; it does not know which side you are on.
     n: {
       rows: [
         "................................",
@@ -1420,28 +1434,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kttttttttttttttttttttttttttttk.",
         ".kssssssssssssssssssssssssssssk.",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kssssssssssssssssssssssssssk..",
+        ...Array<string>(22).fill(".kssssssssssssssssssssssssssssk."),
         ...HEARTH,
       ],
       palette: { k: INK },
