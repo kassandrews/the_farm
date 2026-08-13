@@ -136,15 +136,21 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     // Its top lands on the same row as the front view's, so the two views agree
     // about how tall a chair is.
     //
-    // FROM THE NORTH THERE IS NO SEAT, because the back is standing in front of
-    // it. The side view states the two numbers: the seat's top face is ten rows
-    // of depth, and the back rises thirteen above the rear edge it stands on.
-    // Turn the chair around and that foot is the NEAREST thing on screen, the
-    // seat recedes ten rows up from it, and thirteen rows of back cover all ten
-    // and clear the far edge by three. The front legs, ten rows further off and
-    // in the same columns, are behind the panel too. A back and two legs is what
-    // a chair looks like from behind — the seat used to be drawn above it, in
-    // rows nothing occupies, which is the back given depth but no height.
+    // FROM THE NORTH THE SEAT IS BEHIND THE BACK, which turning the chair moves
+    // to the seat's NEAR edge. The front view states every number: thirteen rows
+    // of back above its foot, a seat plane ten rows deep, six rows of leg. Swing
+    // the back to the near edge and its foot lands on the row the front view
+    // rules the seat's underside on, with the same six rows of leg below it. The
+    // seat plane recedes ten rows up from that foot and the back covers all ten,
+    // clearing its far edge by three; the front legs, ten rows off in the same
+    // columns, are behind the panel too. The seat used to be drawn ABOVE the
+    // back, in rows nothing occupies — the back given depth but no height.
+    //
+    // What is left of the seat is its REAR RAIL, the two rows above the leg gap.
+    // Nothing is nearer the camera there, so they are drawn as seat rather than
+    // as more slat: a rule under the slats, two rows of surface, and the seat's
+    // own underside rule — a thin box between the back and the legs, which is
+    // the whole of the seat you can see from behind.
     //
     // So the north silhouette is TEN ROWS SHORTER than the front one, and that
     // is the projection working rather than the views disagreeing: from the
@@ -220,10 +226,10 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kccckcckccck..",
         "..kccckcckccck..",
         "..kccckcckccck..",
-        "..kccckcckccck..",
-        "..kccckcckccck..",
         "..kkkkkkkkkkkk..",
-        "..kck......kck..",
+        "..kcccccccccck..",
+        "..kssssssssssk..",
+        "..kkkkkkkkkkkk..",
         "..kck......kck..",
         "..kck......kck..",
         "..kck......kck..",
