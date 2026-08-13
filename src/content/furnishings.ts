@@ -67,7 +67,13 @@ const WARDROBE_BACK: Grid = {
 
 /** Bookcase from behind: no books, no shelf edges, but the plinth line stays —
  *  without it the back is one thirty-row slab and the piece loses the
- *  proportion its front view has. */
+ *  proportion its front view has.
+ *
+ *  THE PLINTH IS THE FULL WIDTH, as it is in front. Inset to the carcass's
+ *  twelve it left the fourteen-wide rule above it standing out over a narrower
+ *  box on both sides — a line poking out of the piece with a rectangle hung
+ *  under it, rather than the base the front view has. A plinth is the part that
+ *  is WIDER than what it carries; drawing it narrower says the opposite. */
 const SHELF_BACK: Grid = {
   rows: [
     ".kkkkkkkkkkkkkk.",
@@ -77,7 +83,7 @@ const SHELF_BACK: Grid = {
     ".kkkkkkkkkkkkkk.",
     ...Array<string>(20).fill("..kssssssssssk.."),
     ".kkkkkkkkkkkkkk.",
-    ...Array<string>(8).fill("..kssssssssssk.."),
+    ...Array<string>(8).fill(".kssssssssssssk."),
     ".kkkkkkkkkkkkkk.",
     "...kk......kk...",
     "...kk......kk...",
