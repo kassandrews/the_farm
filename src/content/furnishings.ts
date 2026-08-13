@@ -130,6 +130,7 @@ const CHEST_BACK: Grid = {
   palette: { k: INK },
 };
 
+const BLANK16 = "................";
 const BLANK32 = "................................";
 
 /** The fireplace's hearth, front and back: the slab the masonry stands on.
@@ -192,6 +193,23 @@ const RUG_FRINGE = "..k.k.k.k.k.k.k.k.k.k.k.k.k.k...";
 function rugSelvedge(rows: string[]): string[] {
   return rows.map((row, i) => (i % 2 === 1 ? `kk${row.slice(2, 29)}kk.` : row));
 }
+
+/** The fireplace's mantel shelf, front and back: proud of the breast the way
+ *  the hearth is, and for the same reason. A shelf that stops flush with the
+ *  mass under it is not a shelf, it is a change of colour — there is nowhere to
+ *  stand a candle. One pixel out on either hand, matching the hearth exactly, so
+ *  the piece reads as a mass with a slab over it and a slab under it.
+ *
+ *  The BACK gets the same shelf. The overhang that is visible from behind is the
+ *  side overhang, and a mantel does not stop having sides when you walk round
+ *  it; only its front edge is hidden, and that edge is against the wall. */
+const MANTEL = [
+  "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  "kttttttttttttttttttttttttttttttk",
+  "kttttttttttttttttttttttttttttttk",
+  "kssssssssssssssssssssssssssssssk",
+  "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+];
 
 /** The chair's slatted back, drawn ONCE and spread into both views that show it.
  *
@@ -1316,13 +1334,9 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     mirrorW: true,
     s: {
       rows: [
-        "................................",
-        "................................",
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        ".kttttttttttttttttttttttttttttk.",
-        ".kttttttttttttttttttttttttttttk.",
-        ".kssssssssssssssssssssssssssssk.",
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        BLANK32,
+        BLANK32,
+        ...MANTEL,
         ".kcccccccccccccccccccccccccccck.",
         ".kcccccccccccccccccccccccccccck.",
         ".kcccccccccccccccccccccccccccck.",
@@ -1427,70 +1441,57 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     // chimney breast is one mass; it does not know which side you are on.
     n: {
       rows: [
-        "................................",
-        "................................",
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        ".kttttttttttttttttttttttttttttk.",
-        ".kttttttttttttttttttttttttttttk.",
-        ".kssssssssssssssssssssssssssssk.",
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        BLANK32,
+        BLANK32,
+        ...MANTEL,
         ...Array<string>(22).fill(".kssssssssssssssssssssssssssssk."),
         ...HEARTH,
       ],
       palette: { k: INK },
     },
-    // From the side it is a slab two deep with the mantel edge on top. Same
-    // grid serves west, mirrored.
+    // From the side: the same fireplace, and a mantel running back to the wall.
+    // Same grid serves west, mirrored.
+    //
+    // THE FIREPLACE IS THE FRONT VIEW'S THIRTY ROWS, exactly — mantel edge,
+    // breast, hearth, starting at row 18 and ending on the floor. It used to be
+    // forty-six rows of flat shade, because a piece two tiles DEEP has its depth
+    // projected as vertical extent and the drawing spent all of it on face. Face
+    // is height, so it read as a chimney stack: the same object, a foot and a
+    // half taller, whenever you turned it.
+    //
+    // The depth is still there and still drawn — it is the fifteen rows of TOP
+    // above the mantel's rule, which is the shelf's own surface receding toward
+    // the wall. That is what the extra length of a turned fireplace actually is.
+    // Spending it on top rather than on face is the whole difference between a
+    // deep object and a tall one, and it costs nothing: the footprint is covered
+    // either way.
+    //
+    // FLUSH TO THE BACK OF ITS TILE, because a fireplace backs a wall. Column 0
+    // is the back face, and the piece used to start at column 2 — so a fireplace
+    // set against a wall stood two pixels off it, with the floor showing through
+    // the gap. What is left over is at the FRONT, which is the side of the piece
+    // that is allowed to have room in front of it.
+    //
+    // AND THE OVERHANGS ALL POINT FORWARD. Mantel and hearth used to stand proud
+    // at both ends of this view, which put a shelf and a slab through the wall
+    // the piece is leaning on. They are the same fourteen pixels they were; the
+    // whole of the projection is simply on the room side now, which is where a
+    // mantel projects and where a hearth is laid.
     e: {
       rows: [
-        "................",
-        "................",
-        "..kkkkkkkkkkkk..",
-        ".kttttttttttttk.",
-        ".kttttttttttttk.",
-        ".kssssssssssssk.",
-        ".kkkkkkkkkkkkkk.",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        ".kkkkkkkkkkkkkk.",
-        ".kssssssssssssk.",
-        ".kssssssssssssk.",
-        ".kkkkkkkkkkkkkk.",
+        BLANK16,
+        BLANK16,
+        "kkkkkkkkkkkkkk..",
+        ...Array<string>(15).fill("kttttttttttttk.."),
+        "kkkkkkkkkkkkkk..",
+        "kttttttttttttk..",
+        "kttttttttttttk..",
+        "kssssssssssssk..",
+        "kkkkkkkkkkkkkk..",
+        ...Array<string>(22).fill("kssssssssssk...."),
+        "kkkkkkkkkkkkkk..",
+        "kssssssssssssk..",
+        "kkkkkkkkkkkkkk..",
       ],
       palette: { k: INK },
     },
