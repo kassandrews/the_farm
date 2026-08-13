@@ -124,6 +124,10 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     // outline, which met as a DOUBLED line where they touched. Same width, one
     // continuous pair of sides, and a single rule between them.
     //
+    // Slats are two columns of the OUTLINE INK rather than two of transparency.
+    // At this size a 1px gap is a dot, and a back with dots on it reads as a
+    // panel somebody has drilled; a 1px line reads as an upright.
+    //
     // A TALL BACK OVER A SHALLOW SEAT, which is the proportion a dining chair
     // has and the reverse of what this had: seventeen rows of seat under twelve
     // of back, so it read as a low tub chair with a board behind it. Ten of seat
@@ -133,23 +137,23 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     // they stood under the middle of the seat, which is a stool's geometry.
     s: {
       rows: [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
         "..kkkkkkkkkkkk..",
         "..kttttttttttk..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
         "..kssssssssssk..",
         "..kkkkkkkkkkkk..",
         "..kttttttttttk..",
@@ -174,6 +178,11 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
     n: {
       rows: [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
         "..kkkkkkkkkkkk..",
         "..kttttttttttk..",
         "..kcccccccccck..",
@@ -186,21 +195,16 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kssssssssssk..",
         "..kkkkkkkkkkkk..",
         "..kttttttttttk..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
-        "..kccc.cc.ccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
+        "..kccckcckccck..",
         "..kkkkkkkkkkkk..",
         "..kck......kck..",
         "..kck......kck..",
@@ -215,13 +219,13 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
     e: {
       rows: [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
         "...kkkk.........",
         "...kttk.........",
-        "...kcck.........",
-        "...kcck.........",
-        "...kcck.........",
-        "...kcck.........",
-        "...kcck.........",
         "...kcck.........",
         "...kcck.........",
         "...kcck.........",
