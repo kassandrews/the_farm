@@ -118,6 +118,7 @@ interface Card {
 
 const cards: Card[] = [];
 const sheet = document.getElementById("sheet")!;
+const scale = document.getElementById("scale")!;
 
 function tileKey(x: number, y: number): string {
   return `${x},${y}`;
@@ -212,6 +213,71 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
+/** Tiles across a scale-strip card. One number for every piece, which is the
+ *  whole point — five fits the deepest footprint (2) plus the tallest art (a
+ *  wardrobe reaches about 2.6 tiles) with air around it. */
+const SCALE_BOX = 5;
+
+/** One piece, front-on, in the shared box.
+ *
+ *  AIMED AT THE ANCHOR CELL AND NOT AT THE FOOTPRINT'S CENTRE, and NOT lifted by
+ *  the art's rise — both of which the sheet below does and both of which would
+ *  defeat this. Aiming at a footprint centre puts a 2×2 piece's floor line half a
+ *  tile below a 1×1's, and lifting by rise moves every piece a different amount;
+ *  either way you end up comparing two pictures that were framed differently.
+ *  Anchor-centred, unlifted, one box: the grid lines and the floor land in the
+ *  same place on every card, so a stool really is narrower than a chair or it
+ *  is not. */
+function scaleCard(base: WorldState, overrides: Record<string, TileId>, def: FurnitureDef): void {
+  const card = el("figure", "piece");
+  const box = SCALE_BOX * TILE * 2;
+  const px = TILE * 2;
+
+  const canvas = el("canvas", "shot") as HTMLCanvasElement;
+  canvas.style.width = `${box}px`;
+  canvas.style.height = `${box}px`;
+
+  const plate = el("div", "plate");
+  plate.style.width = `${box}px`;
+  plate.style.height = `${box}px`;
+  const gridEl = el("div", "grid");
+  const ax = box / 2 - px / 2;
+  gridEl.style.backgroundSize = `${px}px ${px}px`;
+  gridEl.style.backgroundPosition = `${ax}px ${ax}px`;
+  const foot = el("div", "foot");
+  foot.style.left = `${ax}px`;
+  foot.style.top = `${ax}px`;
+  foot.style.width = `${def.w * px}px`;
+  foot.style.height = `${def.h * px}px`;
+  plate.append(canvas, gridEl, foot);
+
+  const cap = el("figcaption", "facing");
+  cap.append(el("span", "letter", def.name), el("span", "src", `${def.w}×${def.h}`));
+  card.append(plate, cap);
+  scale.append(card);
+
+  const finish = defaultSkin(def.finishes[0]);
+  const world: WorldState = {
+    ...base,
+    overrides,
+    build: backing(def),
+    furniture: { [tileKey(ORIGIN.x, ORIGIN.y)]: { id: def.id, facing: "s", finish, set: "core" } },
+    underFurniture: {},
+    finishes: {},
+    crops: {},
+    villagers: [],
+    player: { ...base.player, x: ORIGIN.x - PLAYER_WEST, y: ORIGIN.y, target: null },
+  };
+  const renderer = new Renderer(canvas);
+  renderer.setChrome(false);
+  const ladder = zoomLadder(box, TILE);
+  const flat = ladder.lastIndexOf(2);
+  renderer.setZoomStep(flat >= 0 ? flat : ladder.length - 1);
+  renderer.panBy(ORIGIN.x - world.player.x, ORIGIN.y - world.player.y);
+  renderer.snapCamera(world);
+  cards.push({ world, renderer, live: FURNITURE_ART[def.id]?.anim !== undefined });
+}
+
 function build(): void {
   // ONE base world. The chunk generator's cache lives on it, so every card
   // shares the ground under the floor rather than generating it ninety-six
@@ -225,6 +291,29 @@ function build(): void {
   const overrides: Record<string, TileId> = {};
   for (let x = ORIGIN.x - PLOT; x <= ORIGIN.x + PLOT; x++)
     for (let y = ORIGIN.y - PLOT; y <= ORIGIN.y + PLOT; y++) overrides[tileKey(x, y)] = FLOOR;
+
+  // THE SCALE STRIP FIRST, ordered by footprint and then by how wide the piece is
+  // actually drawn — which puts the pieces that ought to be compared next to each
+  // other and is how a stool being wider than a chair becomes visible instead of
+  // being two cards apart.
+  const drawnWidth = (def: FurnitureDef): number => {
+    const rows = FURNITURE_ART[def.id]?.s.rows;
+    if (!rows) return def.w * TILE;
+    let lo = Infinity;
+    let hi = -1;
+    for (const row of rows) {
+      for (let x = 0; x < row.length; x++) {
+        if (row[x] === ".") continue;
+        lo = Math.min(lo, x);
+        hi = Math.max(hi, x);
+      }
+    }
+    return hi < 0 ? 0 : hi - lo + 1;
+  };
+  const byScale = Object.values(FURNITURE)
+    .filter((d) => d.mount !== "wall")
+    .sort((a, b) => a.w * a.h - b.w * b.h || drawnWidth(a) - drawnWidth(b));
+  for (const def of byScale) scaleCard(base, overrides, def);
 
   // Table order, which is the order content/furniture.ts reads in — the file
   // groups the furnishing pass by what a piece is FOR (seating, surfaces,
