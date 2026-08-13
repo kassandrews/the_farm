@@ -12652,6 +12652,25 @@ three-seater), which stays available if a loveseat ever wants to exist.
 - The play consequence is accepted deliberately: rooms are exactly as big as you
   build them, so a three-tile sofa and bed push toward bigger rooms.
 
+### A joining piece was eating its own side view (12 Aug 2026)
+
+`runGridFor` returned the FRONT view whenever a run could not form on the axis
+asked about, which reads as a sensible default and is a bug with a reasonable
+face on it. A table joins east–west, so turning one north–south took the joins
+branch, found no `y` grids, and drew the front view — while the piece's perfectly
+good `e` grid sat there never asked for.
+
+- **Null means "not a run, ask `gridFor`"**, which is the honest answer. The
+  function now returns null in all three of those cases — no `joins` at all, no
+  grids on this axis, and a piece standing alone — and the renderer falls through
+  to the ordinary facing logic.
+- **The counter never showed it** because it has grids on both axes, so its joins
+  branch always had an answer. The table is the first form to join on one axis
+  only, and it exposed the assumption the moment it existed.
+- Caught by the owner looking at the sheet, not by a test: every grid was the
+  right SHAPE, so the size contract had nothing to say. Four facings side by side
+  is what says "that is the front view again".
+
 ### The long table is the table (12 Aug 2026)
 
 Owner's call, and it removes a checklist slot instead of filling one: `table`

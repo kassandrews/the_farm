@@ -229,15 +229,19 @@ export function runGridFor(
   axis: RunAxis,
   before: boolean,
   after: boolean,
-): { grid: Grid; mirror: boolean } {
+): { grid: Grid; mirror: boolean } | null {
   const j = art.joins;
-  if (!j) return { grid: art.s, mirror: false };
+  if (!j) return null;
   if (axis === "y") {
     const y = j.y;
-    // A form may join on one axis only — the run simply doesn't form on the
-    // other, which is a limit worth having plainly rather than a wrong drawing.
-    if (!y) return { grid: art.s, mirror: false };
-    if (!before && !after) return { grid: art.s, mirror: false };
+    // A form may join on ONE AXIS ONLY, and then the other axis is not this
+    // function's business at all. Returning the front view here was a bug with a
+    // reasonable-looking face on it: a table joins east-west, so turning one
+    // north-south took this branch, found no `y`, and drew the FRONT view — the
+    // piece's perfectly good side grid never got asked for. Null means "not a
+    // run, ask `gridFor`", which is the honest answer.
+    if (!y) return null;
+    if (!before && !after) return null;
     // ONLY THE FAR END DIFFERS, and that falls out of the overlap: a cell with
     // something behind it needs no top edge, and a cell with something in FRONT
     // of it has its face covered by that cell anyway. So "is anything north of
@@ -249,7 +253,7 @@ export function runGridFor(
   if (before && after) return { grid: x.mid, mirror: false };
   if (after) return { grid: x.end, mirror: false };
   if (before) return { grid: x.end, mirror: true };
-  return { grid: art.s, mirror: false };
+  return null; // alone: an ordinary piece, drawn the ordinary way
 }
 
 /** WHICH of `gridFor`'s branches a facing takes — the same decision, named

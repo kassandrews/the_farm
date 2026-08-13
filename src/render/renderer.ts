@@ -4804,9 +4804,8 @@ export class Renderer {
       // counter cell uses is a fact about the run it is in, not about its facing,
       // so this branch replaces `gridFor` rather than feeding it.
       const run = art.joins ? this.runNeighbours(world, ax, ay, cell) : null;
-      const { grid, mirror } = run
-        ? runGridFor(art, run.axis, run.before, run.after)
-        : gridFor(art, cell.facing, frame);
+      const joined = run ? runGridFor(art, run.axis, run.before, run.after) : null;
+      const { grid, mirror } = joined ?? gridFor(art, cell.facing, frame);
       const rise = art.rise ?? 0;
       // Keyed on the finish as well as the piece and facing: one grid serves
       // thirteen finishes precisely because `c`/`t`/`s` are resolved at raster
@@ -4816,7 +4815,7 @@ export class Renderer {
       // And on WHICH END OF ITS RUN, or the first counter rasterized would be
       // served to every cell in the kitchen and the whole run would wear one
       // cell's end caps.
-      const joint = run ? `:${run.axis}${run.before ? "b" : ""}${run.after ? "a" : ""}` : "";
+      const joint = joined && run ? `:${run.axis}${run.before ? "b" : ""}${run.after ? "a" : ""}` : "";
       const raster = pieceCanvas(
         `${cell.id}:${cell.set}:${cell.facing}:${cell.finish}:${trimId ?? "-"}${suffix}${joint}`,
         grid,
