@@ -39,6 +39,11 @@ import { INK } from "../render/furnishings";
 // wardrobe IS its back — same width, same panel, same shadow. Authoring three
 // identical grids would be three chances to typo the same picture.
 //
+// The BOOKCASE is the exception, and by one row: its plinth is proud front and
+// back and flush down the sides, which is a rail across two faces rather than a
+// box the carcass stands in. So it gets two grids off one builder — the shared
+// rows stay shared, and the difference is the argument you pass.
+//
 // Painted in the finish's `s` (shade) rather than its `c`, which is what makes
 // the turn legible at a glance. Every one of these pieces already uses `c` for
 // the face that catches the light and `s` for the plinth beneath it; a panel
@@ -65,32 +70,46 @@ const WARDROBE_BACK: Grid = {
   palette: { k: INK },
 };
 
-/** Bookcase from behind: no books, no shelf edges, but the plinth line stays —
+/** Bookcase turned away: no books, no shelf edges, but the plinth line stays —
  *  without it the back is one thirty-row slab and the piece loses the
  *  proportion its front view has.
  *
- *  THE PLINTH IS THE FULL WIDTH, as it is in front. Inset to the carcass's
- *  twelve it left the fourteen-wide rule above it standing out over a narrower
- *  box on both sides — a line poking out of the piece with a rectangle hung
- *  under it, rather than the base the front view has. A plinth is the part that
- *  is WIDER than what it carries; drawing it narrower says the opposite. */
-const SHELF_BACK: Grid = {
-  rows: [
-    ".kkkkkkkkkkkkkk.",
-    ".kttttttttttttk.",
-    ".kssssssssssssk.",
-    ".kssssssssssssk.",
-    ".kkkkkkkkkkkkkk.",
-    ...Array<string>(20).fill("..kssssssssssk.."),
-    ".kkkkkkkkkkkkkk.",
-    ...Array<string>(8).fill(".kssssssssssssk."),
-    ".kkkkkkkkkkkkkk.",
-    "...kk......kk...",
-    "...kk......kk...",
-    "...kk......kk...",
-  ],
-  palette: { k: INK },
-};
+ *  `plinth` is the ONLY row that differs between the two turned views, so it is
+ *  the only thing this takes. Everything else is the same panel and stays that
+ *  way by construction. */
+function shelfTurned(plinth: string): Grid {
+  return {
+    rows: [
+      ".kkkkkkkkkkkkkk.",
+      ".kttttttttttttk.",
+      ".kssssssssssssk.",
+      ".kssssssssssssk.",
+      ".kkkkkkkkkkkkkk.",
+      ...Array<string>(20).fill("..kssssssssssk.."),
+      ".kkkkkkkkkkkkkk.",
+      ...Array<string>(8).fill(plinth),
+      ".kkkkkkkkkkkkkk.",
+      "...kk......kk...",
+      "...kk......kk...",
+      "...kk......kk...",
+    ],
+    palette: { k: INK },
+  };
+}
+
+/** From behind, the plinth is the FULL WIDTH, as it is in front. Inset to the
+ *  carcass's twelve it left the fourteen-wide rule above it standing out over a
+ *  narrower box on both sides — a line poking out of the piece with a rectangle
+ *  hung under it, rather than the base the front view has. */
+const SHELF_BACK = shelfTurned(".kssssssssssssk.");
+
+/** From the side it stays INSET, which is the same plinth and not a second
+ *  opinion about it: the rail runs across the front and the back, and does not
+ *  return down the sides. So the side view shows the carcass reaching the floor
+ *  with the rail's end grain as a line across it, which is what the joint looks
+ *  like — and it is the reading the piece had before the back was corrected,
+ *  which was worth keeping. */
+const SHELF_SIDE = shelfTurned("..kssssssssssk..");
 
 /** Chest from behind. The lid keeps its rim — a lid is a lid from every side,
  *  and it is the rim rather than the clasp that says "this opens". */
@@ -2072,7 +2091,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   shelf: {
     rise: 4,
     n: SHELF_BACK,
-    e: SHELF_BACK,
+    e: SHELF_SIDE,
     mirrorW: true,
     s: {
       rows: [
