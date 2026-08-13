@@ -12,7 +12,15 @@ import { portrait } from "../render/portrait";
 import { lookFor } from "../content/looks";
 import type { IconName } from "../content/icons";
 import { SPOTS } from "../content/spots";
-import type { WorldState, Tool, BuildTool, HomesteadSpot, Layer, Villager } from "../sim/types";
+import type {
+  WorldState,
+  Tool,
+  BuildTool,
+  HomesteadSpot,
+  Layer,
+  Villager,
+  FurnitureCell,
+} from "../sim/types";
 import { FACINGS, FURNITURE, furnitureDef } from "../content/furniture";
 import type { FurnitureId } from "../content/furniture";
 import type { Facing } from "../content/furniture";
@@ -57,6 +65,7 @@ import type { MeadowImport } from "../sim/meadow_import";
 import { recall, remember, hasMemory } from "../sim/memory";
 import { count } from "../sim/inventory";
 import { beginStroke, captureCell, endStroke, undoStroke, canUndo, undoLabel } from "../sim/undo";
+import { furnitureAt, floorAt, moveFurniture, cellsFor } from "../sim/furniture";
 import { plantAt, knownFlora } from "../sim/garden";
 import { floraDef, type FloraId } from "../content/flora";
 import { BIOMES, bloomsOf } from "../content/biomes";
@@ -292,6 +301,11 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
   // that this is the piece which does NOT close a room.
   { id: "fence", icon: "fence", label: "Fence", hint: "Posts and rails. Marks ground out without roofing it — leave a gap for a gate.", group: "structure" },
   { id: "erase", icon: "takedown", label: "Take back down", hint: "Remove what you built here. Materials come back.", group: "structure" },
+  // BESIDE ERASE, because they are the two verbs that act on what is ALREADY
+  // there — every other tool in the bar puts something new down. It follows into
+  // every wing for erase's reason: you rearrange a room where the room's things
+  // are, not a walk away from them.
+  { id: "move", icon: "move", label: "Move", hint: "Tap a piece to pick it up, then tap where it goes. Press R to turn it. Costs nothing.", group: "structure" },
 
   { id: "chair", icon: "chair", label: "Chair", hint: "Place a chair. Press R to turn it.", group: "seating" },
   { id: "stool", icon: "stool", label: "Stool", hint: "A chair with the back question settled.", group: "seating" },
@@ -362,7 +376,7 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
  *  none: a bulldozer that opened a menu of ways to bulldoze would be a joke the
  *  fourth time you used it. */
 function hasStyleLevel(t: BuildTool): boolean {
-  return t !== "erase" && BUILD_TOOLS.find((b) => b.id === t)?.group === "structure";
+  return t !== "erase" && t !== "move" && BUILD_TOOLS.find((b) => b.id === t)?.group === "structure";
 }
 
 /** What the undo control calls the last stroke. A phrase, not a tool name, so it
@@ -382,6 +396,7 @@ function mixHex(base: string, tint: string, amount: number): string {
 
 function buildToolLabel(t: BuildTool): string {
   if (t === "erase") return "taking that down";
+  if (t === "move") return "the move";
   if (t === "flora") return "the planting";
   if (t === "grass") return "the grass";
   const def = BUILD_TOOLS.find((b) => b.id === t);
@@ -409,6 +424,18 @@ export class App {
   /** Non-null means BUILD MODE: the view flattens and canvas taps place instead
    *  of walking. Null means the normal 3/4 living view. */
   private buildTool: BuildTool | null = null;
+  /** The piece the Move tool is carrying, if any: where it still stands, which
+   *  record it came from, and which layer.
+   *
+   *  IT HAS NOT LEFT ITS CELL. A move is all-or-nothing (sim/furniture.ts
+   *  §moveFurniture), so "in hand" is a selection, not a removal — which is what
+   *  makes cancelling free and makes leaving build mode mid-move harmless.
+   *
+   *  `laid` is which of the two records it came out of, and it must be
+   *  remembered rather than re-derived at drop time: point at the anchor of a
+   *  rug with a table on it and a top-down lookup answers "table", so a hold on
+   *  the rug would put the table down instead. */
+  private lifted: { ax: number; ay: number; laid: boolean; layer: Layer } | null = null;
   /** SHAPE mode itself, separate from any held tool (ROADMAP §three doors):
    *  the doors landing holds nothing, so "a tool is in hand" stopped being
    *  usable as the mode flag. */
@@ -2736,6 +2763,17 @@ export class App {
         e.preventDefault();
         return;
       }
+      // CARRYING SOMETHING? Escape puts it down, before it means anything else.
+      // A held piece is the innermost state you can be in inside build mode, and
+      // Escape is a step back out of one rung at a time — walking a rung of the
+      // menu while still holding a chair would be Escape skipping the thing the
+      // player most obviously meant.
+      if (k === "escape" && this.lifted) {
+        this.clearLifted();
+        this.flash("Put it back down.");
+        e.preventDefault();
+        return;
+      }
       // And build mode's. The BUILD button is the pointer door; Escape is the
       // keyboard one, and both go through `toggleBuild` so the pan resets and the
       // view flattens back through one path rather than two.
@@ -2957,6 +2995,7 @@ export class App {
       this.shaping = false;
       this.buildTool = null;
       this.styleLevel = false;
+      this.clearLifted(); // nothing is carried out of build mode
       this.syncToolUi();
       return;
     }
@@ -3007,6 +3046,11 @@ export class App {
       );
       return;
     }
+    // A DIFFERENT TOOL IS PUTTING THE PIECE DOWN. Reaching for the wall while
+    // carrying a chair means you have stopped moving the chair, and a hold that
+    // survived would fire on the next tap of a tool you are no longer holding.
+    // Re-tapping Move itself drops it too, which is the cancel.
+    if (this.buildTool !== t || t === "move") this.clearLifted();
     this.buildTool = t;
     this.shaping = true;
     // DOWN A LEVEL IF THERE IS A CHOICE DOWN THERE, and not otherwise. Two
@@ -3212,7 +3256,7 @@ export class App {
           // erase (DESIGN §The garden), a shelf comes back down where the
           // shelves are, and the one tool that takes things back cannot be a
           // walk away from any wing that places them.
-          (id === "erase" && this.buildGroup !== "structure"));
+          ((id === "erase" || id === "move") && this.buildGroup !== "structure"));
       btn.style.display = inTab && toolAllowedOn(id, this.layer()) ? "" : "none";
     }
     // THE FLATTEN BELONGS TO THE TOOL, NOT THE MODE (DESIGN §Structures): a
@@ -3253,12 +3297,20 @@ export class App {
 
     // Rotation is a furniture idea; showing it for walls would imply walls have
     // a facing, which is exactly the confusion the design avoids.
-    const rotatable = this.buildTool !== null && this.buildTool in FURNITURE;
+    //
+    // A PIECE IN HAND ROTATES TOO. The Move tool is not itself furniture, so the
+    // `in FURNITURE` test says no — but what it is carrying is, and turning a
+    // sofa as you set it down is most of why you are moving it. The button names
+    // the piece it will actually turn, which is the held one when there is one.
+    const held = this.liftedCell();
+    const rotatable = held !== null || (this.buildTool !== null && this.buildTool in FURNITURE);
     this.hud.rotate.style.display = rotatable ? "" : "none";
     this.hud.rotate.replaceChildren(iconEl(FACING_ARROW[this.facing], SCALE.button));
-    this.hud.rotate.title = rotatable
-      ? `${furnitureDef(this.buildTool as never).name} facing ${this.facing.toUpperCase()}`
-      : "Rotate";
+    this.hud.rotate.title = held
+      ? `${furnitureDef(held.id).name} in hand, facing ${this.facing.toUpperCase()}`
+      : rotatable
+        ? `${furnitureDef(this.buildTool as never).name} facing ${this.facing.toUpperCase()}`
+        : "Rotate";
 
     this.syncFinishUi();
     this.syncStyleUi();
@@ -3565,6 +3617,10 @@ export class App {
   private doUndo(): void {
     if (!this.world || this.modalOpen) return;
     if (!undoStroke(this.world)) return;
+    // The world moved under the selection — the piece may be back where it
+    // started, or gone. `syncLifted` re-reads it and forgets a hold whose piece
+    // no longer exists.
+    this.syncLifted();
     audio.play("dig");
     // Deliberately not "the wall, put back" — the label reads fine on a button
     // but the erase case ("taking that down, put back") doesn't survive being
@@ -3573,6 +3629,110 @@ export class App {
     this.flash("Back the way it was.");
     this.persist();
     this.syncUndoUi();
+  }
+
+  /** One tap of the Move tool: pick a piece up, or set the one in hand down.
+   *
+   *  TWO TAPS RATHER THAN A DRAG, because build mode paints on drag and a
+   *  gesture cannot mean two things (ROADMAP §Move). The first tap selects, the
+   *  second commits, and between them the piece has not gone anywhere — see
+   *  `lifted`.
+   *
+   *  Both taps are ordinary build strokes as far as undo is concerned: the drop
+   *  captures the source cell AND the destination before the edit, so one undo
+   *  puts the piece back where it started. */
+  private moveTap(x: number, y: number): void {
+    const world = this.world;
+    if (!world) return;
+    const layer = this.layer();
+
+    if (!this.lifted) {
+      const standing = furnitureAt(world, x, y, layer);
+      const found = standing ?? (layer === "surface" ? floorAt(world, x, y) : null);
+      if (!found) {
+        audio.play("deny");
+        // Naming FURNITURE, because that is the whole of what this tool takes.
+        // A player who taps a wall with it has made a reasonable mistake and
+        // should be told the rule rather than that nothing is there.
+        this.flash("Nothing to move there ... This picks up furniture.");
+        return;
+      }
+      this.lifted = { ax: found.ax, ay: found.ay, laid: standing === null, layer };
+      // Turning starts from how the piece already stands, so tapping R once
+      // turns it once — rather than snapping it to whatever the bar last held.
+      this.facing = found.cell.facing;
+      audio.play("dig");
+      this.flash(`${furnitureDef(found.cell.id).name} in hand ... Tap where it goes.`);
+      this.syncLifted();
+      this.syncToolUi();
+      return;
+    }
+
+    // INSIDE THE STROKE THE GESTURE ALREADY OPENED. pointerdown begins one and
+    // pointerup closes it, so a move needs no bracketing of its own — and a
+    // second `beginStroke` would discard the first, which is the sort of thing
+    // that works until a tool with something in its stroke goes through here.
+    // A pick-up captures nothing, so its stroke is discarded and the undo the
+    // player was saving survives being aimed with.
+    const from = this.lifted;
+    captureCell(world, from.ax, from.ay);
+    captureCell(world, x, y);
+    const ok = moveFurniture(world, from.ax, from.ay, x, y, this.facing, from.layer, from.laid);
+    if (!ok) {
+      audio.play("deny");
+      // STILL IN HAND. Refusing a destination must not drop the piece — the
+      // player aimed badly, they did not change their mind, and making them
+      // pick it up again would punish the miss.
+      this.flash("Won't fit there ... Still in hand.");
+      return;
+    }
+    this.lifted = null;
+    audio.play("place");
+    this.flash("Moved.");
+    this.syncLifted();
+    this.syncToolUi();
+    this.persist(); // the undo button is synced by finishStroke, at pointerup
+  }
+
+  /** The cell record of the piece in hand, or null. One lookup, so the HUD and
+   *  the mark on the world cannot disagree about what is being carried. */
+  private liftedCell(): FurnitureCell | null {
+    const world = this.world;
+    if (!world || !this.lifted) return null;
+    const record = this.lifted.laid
+      ? world.floor
+      : this.lifted.layer === "under"
+        ? world.underFurniture
+        : world.furniture;
+    return record[`${this.lifted.ax},${this.lifted.ay}`] ?? null;
+  }
+
+  /** Put down whatever the Move tool is holding, without moving it. The piece
+   *  never left its cell, so this is only ever forgetting a selection. */
+  private clearLifted(): void {
+    if (!this.lifted) return;
+    this.lifted = null;
+    this.syncLifted();
+  }
+
+  /** Hand the renderer the cells of the piece in hand, so it can mark them. */
+  private syncLifted(): void {
+    const world = this.world;
+    if (!world || !this.lifted) {
+      this.renderer.setLifted([]);
+      return;
+    }
+    const cell = this.liftedCell();
+    if (!cell) {
+      // The piece went out from under the selection — undo, or a stroke that
+      // erased it. Forget it rather than mark a cell that holds nothing.
+      this.lifted = null;
+      this.renderer.setLifted([]);
+      return;
+    }
+    this.renderer.setLifted(
+      cellsFor(this.lifted.ax, this.lifted.ay, cell.id, cell.facing).map(([x, y]) => ({ x, y })),
+    );
   }
 
   /** Apply the held build tool to a tapped tile. Silent on a tile already
@@ -3593,6 +3753,15 @@ export class App {
     // second piece of state to keep in step with it.
     const sweeping = this.painted.size > 0;
     this.painted.add(key);
+
+    // MOVE IS A TAP, NEVER A SWEEP. Every other tool paints along a drag; a
+    // piece flung across the room by a finger that kept going is not a thing
+    // anybody meant, and the second tap of a move is a DESTINATION rather than
+    // one more cell of the same edit.
+    if (this.buildTool === "move") {
+      if (!sweeping) this.moveTap(x, y);
+      return;
+    }
 
     captureCell(this.world, x, y); // before the edit — it snapshots the old state
     // The flora tool routes to the garden and everything else to the build

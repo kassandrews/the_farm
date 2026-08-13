@@ -590,6 +590,14 @@ export type BuildTool =
    *  content/structures.ts §fence for why it does not enclose. */
   | "fence"
   | "erase"
+  /** PICK A PIECE UP AND SET IT DOWN SOMEWHERE ELSE (sim/furniture.ts
+   *  §moveFurniture). Two taps: one on the piece, one on where it goes.
+   *
+   *  A tool rather than a drag, because build mode paints on drag — every
+   *  one-finger sweep with something in hand is a stroke — so a press-and-drag
+   *  gesture would have to mean two things at once. A tool is the grammar the
+   *  mode already has: you hold a verb and tap the world with it. */
+  | "move"
   /** The garden's one tool (DESIGN §The garden). WHICH plant rides beside it
    *  in the UI (ui/app.ts §gardenFlora), the way a finish rides beside a wall
    *  — the tool is the verb, the species is the loaded material. The build

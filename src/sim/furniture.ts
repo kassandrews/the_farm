@@ -132,6 +132,14 @@ export function canPlaceFurniture(
   id: FurnitureId,
   facing: Facing,
   layer: Layer = "surface",
+  /** An anchor to pretend is empty — the piece BEING MOVED (see `moveFurniture`).
+   *
+   *  Without it nothing could ever be nudged one tile: a 2x2 rug shifted east
+   *  overlaps three of its own cells, and the piece would refuse to move on the
+   *  grounds that it is already there. Passing the anchor rather than a flag,
+   *  because "ignore whatever is under me" would also ignore the OTHER piece
+   *  standing on the destination, which is the collision that must still bite. */
+  ignore?: { ax: number; ay: number },
 ): boolean {
   // A WALL-MOUNTED piece inverts every test below rather than skipping them.
   // The floor rows refuse a cell that already holds a wall ("no furniture inside
@@ -146,7 +154,8 @@ export function canPlaceFurniture(
     if (layer !== "surface") return false;
     const cell = world.build[tileKey(ax, ay)];
     if (!cell || cell.id !== "wall") return false;
-    return furnitureAt(world, ax, ay, layer) === null;
+    const hung = furnitureAt(world, ax, ay, layer);
+    return hung === null || (ignore !== undefined && hung.ax === ignore.ax && hung.ay === ignore.ay);
   }
 
   // A FLOOR PIECE and a standing piece are asked the same questions about the
@@ -167,7 +176,8 @@ export function canPlaceFurniture(
     // and a table goes onto a rug; two rugs still cannot share a cell, because
     // the thing that makes layering safe is that each record keeps its own "one
     // cell, one piece" — see types.ts §floor.
-    if (laid ? floorAt(world, x, y) : furnitureAt(world, x, y, layer)) return false;
+    const blocking = laid ? floorAt(world, x, y) : furnitureAt(world, x, y, layer);
+    if (blocking && !(ignore && blocking.ax === ignore.ax && blocking.ay === ignore.ay)) return false;
     if (layer === "under") continue;
     if (refusesFooting(world, x, y)) return false; // nothing stands in the shallows
     if (refusesConstruction(world, x, y)) return false; // her trees' ground
@@ -254,6 +264,64 @@ export function removeFurnitureAt(
   delete world.floor[tileKey(laid.ax, laid.ay)];
   touchBuild(world);
   return laid.cell;
+}
+
+/** Pick a piece up and set it down somewhere else, keeping everything about it
+ *  but where it is — finish, set, trim, and its facing unless you turned it.
+ *
+ *  NOT ERASE-THEN-PLACE, though that is what a player could already do by hand
+ *  at no material cost (erase refunds in full). Three things make it a verb of
+ *  its own:
+ *
+ *    • IT IS ALL OR NOTHING. A move that fails leaves the piece exactly where it
+ *      was, because the destination is tested BEFORE the source is emptied. The
+ *      by-hand version has a window where your sofa is in your pockets and the
+ *      wall you meant to put it against turns out to be one tile short.
+ *    • IT COSTS AND REFUNDS NOTHING. Not "refunds then spends the same" — the
+ *      inventory is never touched, so a move cannot be a way to launder a finish
+ *      you no longer have the materials for, and cannot fail for want of wood.
+ *    • IT KEEPS THE STYLE. The by-hand version re-places whatever the bar is
+ *      loaded with, so moving a walnut chair across a room repaints it pine.
+ *
+ *  `from` is any cell of the piece, not its anchor — you point at the end of the
+ *  bed you can reach. `to` IS an anchor, because that is what the ghost under
+ *  your finger is showing you.
+ *
+ *  Top down, like erase: the table before the rug it stands on. */
+export function moveFurniture(
+  world: WorldState,
+  fromX: number,
+  fromY: number,
+  toAx: number,
+  toAy: number,
+  facing: Facing,
+  layer: Layer = "surface",
+  /** WHICH RECORD to take it out of, when the caller already knows.
+   *
+   *  Undefined means top down, which is what a bare "move whatever is here"
+   *  should do. The UI passes it because it resolved the piece on the FIRST tap
+   *  and must move that one: the anchor of a rug with a table standing on it
+   *  answers "table" to a top-down lookup, so a hold on the rug would otherwise
+   *  put the table down instead. */
+  laid?: boolean,
+): boolean {
+  const standing = laid === true ? null : furnitureAt(world, fromX, fromY, layer);
+  const found =
+    standing ??
+    (layer === "surface" && laid !== false ? floorAt(world, fromX, fromY) : null);
+  if (!found) return false;
+  const record = standing ? furnitureFor(world, layer) : world.floor;
+
+  // Ignoring ITSELF, so a piece can be nudged one tile onto cells it already
+  // occupies — see `canPlaceFurniture`'s `ignore`.
+  if (!canPlaceFurniture(world, toAx, toAy, found.cell.id, facing, layer, found)) return false;
+  // A no-op is a success, not a failure: tapping a piece back down where it
+  // started is a player changing their mind, and refusing it would flash an
+  // error at somebody who did nothing wrong.
+  delete record[tileKey(found.ax, found.ay)];
+  record[tileKey(toAx, toAy)] = { ...found.cell, facing };
+  touchBuild(world); // the standing things moved — see structures.ts
+  return true;
 }
 
 /** The finish a piece's TRIM is drawn in — its own, or the default for its

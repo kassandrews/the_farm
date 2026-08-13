@@ -245,7 +245,10 @@ function standingOn(world: WorldState, x: number, y: number, layer: Layer): bool
  *  answers even though both are furniture. */
 function placingSomethingSolid(tool: BuildTool): boolean {
   if (isFurnitureTool(tool)) return furnitureDef(tool).solid;
-  if (tool === "floor" || tool === "erase" || tool === "grass" || tool === "crop") return false;
+  // MOVE places nothing, so it can never be the thing that walls you in. The
+  // piece it carries may well be solid, but it was already somewhere solid and
+  // the destination is tested by `canPlaceFurniture` like any other placement.
+  if (tool === "floor" || tool === "erase" || tool === "move" || tool === "grass" || tool === "crop") return false;
   // A planted tree IS solid — but plantAt refuses the cell you stand on the
   // same way the wall gate does, from its own ground checks, and the flora
   // tool never reaches the gate this function feeds. Solid-when-grown is the
@@ -599,7 +602,9 @@ export function toolFinishes(tool: BuildTool): SkinClass[] {
   if (tool === "floor") return FLOOR_BUILD.finishes;
   // The garden tools wear no finish: a plant's colours are its species'
   // (content/flora.ts §skin), and grass is grass.
-  if (tool === "erase" || tool === "flora" || tool === "grass" || tool === "crop") return [];
+  // Move wears no finish either: it carries whatever the piece was already
+  // wearing (sim/furniture.ts §moveFurniture keeps the style).
+  if (tool === "erase" || tool === "move" || tool === "flora" || tool === "grass" || tool === "crop") return [];
   if (isFurnitureTool(tool)) return furnitureDef(tool).finishes;
   return structureDef(tool).finishes;
 }
@@ -704,7 +709,9 @@ export function buildCost(tool: BuildTool, finish: SkinId): Cost {
   // The garden is free — you met it, you may plant it (DESIGN §The garden);
   // the space is the cost. Grass likewise: un-digging should not bill you for
   // the lawn you already had.
-  if (tool === "erase" || tool === "flora" || tool === "grass" || tool === "crop") return {};
+  // Move is free, in both directions: it neither spends nor refunds, because it
+  // is the same piece (sim/furniture.ts §moveFurniture).
+  if (tool === "erase" || tool === "move" || tool === "flora" || tool === "grass" || tool === "crop") return {};
   const price =
     tool === "floor"
       ? FLOOR_BUILD.cost
@@ -1577,7 +1584,7 @@ export function isFurnitureTool(tool: BuildTool): tool is FurnitureId {
  *  about what is possible — that is the reticle rule (ROADMAP §"The reticle is
  *  the promise") applied to build mode. ui/app.ts hides the buttons using this
  *  same list; the sim refuses regardless of what the UI shows. */
-export const UNDER_TOOLS: BuildTool[] = ["lamp", "erase"];
+export const UNDER_TOOLS: BuildTool[] = ["lamp", "erase", "move"];
 
 /** And what you may build in the sky: NOTHING. Not a shortened list — the empty
  *  one. You visit; you do not reshape (DESIGN §The sky), and up there that is
@@ -1669,6 +1676,18 @@ function placeOrRemove(
           : "Not down here. There's nothing to put that on but rock.",
       broke: false,
     };
+  }
+  // MOVE NEVER ARRIVES HERE. It takes two taps — one to pick up, one to put
+  // down — and the piece in hand between them is UI state, exactly like the
+  // loaded finish and the facing. So ui/app.ts resolves the pair and calls
+  // `moveFurniture` itself, the way it already calls `plantAt` for the garden.
+  //
+  // The arm exists anyway, and returns the same nothing a refusal does, because
+  // a tool id that falls through this function reaches `structureDef(tool)` and
+  // throws on a table lookup — a crash rather than a message, in a build mode
+  // somebody is holding.
+  if (tool === "move") {
+    return { changed: false, message: "Nothing moved.", broke: false };
   }
   if (tool === "erase") {
     // Furniture comes up FIRST. It sits inside rooms, so if erase preferred the

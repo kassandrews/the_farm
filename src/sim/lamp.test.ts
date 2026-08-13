@@ -14,7 +14,7 @@
 // bedroom.
 
 import { describe, it, expect } from "vitest";
-import { newWorld, buildAt, playerTile, UNDER_TOOLS, buildCost } from "./game";
+import { newWorld, buildAt, playerTile, UNDER_TOOLS, buildCost, isFurnitureTool } from "./game";
 import { defaultSkin } from "../content/skins";
 import { FURNITURE, furnitureDef } from "../content/furniture";
 import { STRUCTURES } from "../content/structures";
@@ -153,9 +153,13 @@ describe("a lamp in the rock is not furniture in a house", () => {
     // stop you — so a solid piece would be invisible to the pathfinder and to
     // the Mole, who walks these corridors. This is the test world.ts's comment
     // points at.
+    // The tools that PLACE something, which is what the claim is about. Named
+    // by what they are rather than by excluding erase: the underground palette
+    // has since grown `move`, which places nothing of its own either, and a list
+    // of exceptions grows a hole every time somebody adds a verb to it.
     for (const t of UNDER_TOOLS) {
-      if (t === "erase") continue;
-      expect(furnitureDef(t as never).solid).toBe(false);
+      if (!isFurnitureTool(t)) continue;
+      expect(furnitureDef(t).solid).toBe(false);
     }
     const w = freshWorld();
     const at = inTunnel(w);

@@ -928,6 +928,28 @@ const FARM_ICONS = {
   // Drawn once and mirrored by hand into the other three. Deliberately not one
   // arrow rotated in code: `ctx.rotate` on pixel art is the thing CLAUDE.md
   // forbids outright, and at this size the mirrors are four lines each.
+  // MOVE — a verb, drawn as a glyph rather than as a thing, on `undo` and the
+  // arrows' argument: there is no object called "move" to draw a picture of, and
+  // a hand at twelve pixels is a smudge. Four ways at once, because the piece
+  // under it can go any of them.
+  move: {
+    rows: [
+      "............",
+      ".....kk.....",
+      "....kkkk....",
+      ".....kk.....",
+      "..k..kk..k..",
+      ".kkkkkkkkkk.",
+      ".kkkkkkkkkk.",
+      "..k..kk..k..",
+      ".....kk.....",
+      "....kkkk....",
+      ".....kk.....",
+      "............",
+    ],
+    palette: { k: K },
+  },
+
   arrow_n: {
     rows: [
       "............",

@@ -11,6 +11,7 @@ import {
   canPlaceFurniture,
   cellsFor,
   furnitureBlocks,
+  moveFurniture,
 } from "./furniture";
 import { footprint, furnitureDef } from "../content/furniture";
 
@@ -362,5 +363,82 @@ describe("a rug lies under the furniture", () => {
   it("cannot be laid in the rock", () => {
     const w = world();
     expect(canPlaceFurniture(w, 20, 20, "rug", "s", "under")).toBe(false);
+  });
+});
+
+// Moving a piece rather than taking it down and putting it back — one verb, so
+// there is never a moment where your sofa is in your pockets.
+describe("moving a piece that is already placed", () => {
+  it("keeps its finish, set and trim, and takes the facing it is given", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "chair", "s", "walnut");
+    expect(moveFurniture(w, 20, 20, 24, 24, "e")).toBe(true);
+    expect(w.furniture[tileKey(20, 20)]).toBeUndefined();
+    expect(w.furniture[tileKey(24, 24)]).toMatchObject({
+      id: "chair",
+      finish: "walnut", // NOT whatever the bar happens to be loaded with
+      facing: "e",
+    });
+  });
+
+  it("can be nudged one tile, onto cells it already occupies", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "bed", "s", "pine"); // multi-tile: overlaps itself
+    expect(moveFurniture(w, 20, 20, 21, 20, "s")).toBe(true);
+    expect(w.furniture[tileKey(21, 20)]?.id).toBe("bed");
+  });
+
+  it("leaves the piece where it was when the destination is taken", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "chair", "s", "pine");
+    placeFurniture(w, 24, 24, "table", "s", "pine");
+    expect(moveFurniture(w, 20, 20, 24, 24, "s")).toBe(false);
+    expect(w.furniture[tileKey(20, 20)]?.id).toBe("chair"); // never left
+  });
+
+  it("is grabbed by any cell of it, not just its anchor", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "bed", "s", "pine");
+    const { h, w: bw } = footprint(furnitureDef("bed"), "s");
+    expect(moveFurniture(w, 20 + bw - 1, 20 + h - 1, 26, 26, "s")).toBe(true);
+    expect(w.furniture[tileKey(26, 26)]?.id).toBe("bed");
+  });
+
+  it("moves the rug and not the table when only the rug is there", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "rug", "s", "undyed");
+    placeFurniture(w, 20, 20, "table", "s", "pine");
+
+    expect(moveFurniture(w, 20, 20, 24, 24, "s")).toBe(true); // top down: the table
+    expect(w.furniture[tileKey(24, 24)]?.id).toBe("table");
+    expect(w.floor[tileKey(20, 20)]?.id).toBe("rug"); // stayed
+
+    expect(moveFurniture(w, 20, 20, 28, 28, "s")).toBe(true); // now the rug
+    expect(w.floor[tileKey(28, 28)]?.id).toBe("rug");
+  });
+
+  it("takes the rug from under a table when told which record to look in", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "rug", "s", "undyed");
+    placeFurniture(w, 20, 20, "table", "s", "pine"); // sitting on the rug's anchor
+
+    // Top down would answer "table" at this cell. The UI resolved the rug on
+    // the first tap and says so, which is the whole reason `laid` exists.
+    expect(moveFurniture(w, 20, 20, 26, 26, "s", "surface", true)).toBe(true);
+    expect(w.floor[tileKey(26, 26)]?.id).toBe("rug");
+    expect(w.furniture[tileKey(20, 20)]?.id).toBe("table"); // stayed exactly put
+  });
+
+  it("costs and refunds nothing", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "chair", "s", "pine");
+    const before = { ...w.inventory };
+    moveFurniture(w, 20, 20, 24, 24, "s");
+    expect(w.inventory).toEqual(before);
+  });
+
+  it("refuses when there is nothing to pick up", () => {
+    const w = world();
+    expect(moveFurniture(w, 20, 20, 24, 24, "s")).toBe(false);
   });
 });

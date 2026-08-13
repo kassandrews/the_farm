@@ -12946,6 +12946,69 @@ blind to each other: `floorAt` is the second record's `furnitureAt`,
   placed.
 
 
+## Move — rearranging without taking down (13 Aug 2026)
+
+Owner, still playing: *while in build mode would it be possible to click on and
+move furniture already placed?* You could already do it by hand — erase refunds
+in full and placing spends the same, so the material cost was already zero — but
+it took four taps, and it repainted the piece in whatever the bar was loaded
+with. A walnut chair crossed the room and arrived pine.
+
+**A TOOL, NOT A DRAG** (owner's call, from three options). Build mode paints on
+drag: every one-finger sweep with something in hand is a stroke, so a
+press-and-drag gesture would have to mean two things at once. A tool is the
+grammar the mode already has — you hold a verb and tap the world with it — and it
+puts the feature in the bar where somebody can find it, which the drag version
+could not. Two taps: one on the piece, one on where it goes.
+
+- **It sits beside Erase and follows into every wing**, because those two are the
+  only verbs that act on what is ALREADY there; everything else in the bar puts
+  something new down. You rearrange a room where the room's things are.
+- **The piece does not leave its cell until the drop succeeds.** `moveFurniture`
+  tests the destination before emptying the source, so a refusal costs nothing
+  and "in hand" is a SELECTION rather than a removal. That is what makes cancel
+  free (Escape, or tapping Move again), makes leaving build mode mid-move
+  harmless, and means a bad aim keeps the piece — *Won't fit there ... Still in
+  hand* — instead of making you pick it up again.
+- **It keeps the style and costs nothing in either direction.** Not "refund then
+  spend the same": the inventory is never touched, so a move cannot launder a
+  finish you no longer have the materials for and cannot fail for want of wood.
+- **`canPlaceFurniture` gained an `ignore` ANCHOR**, not a flag. Without it
+  nothing could ever be nudged one tile — a 2x2 rug shifted east overlaps three
+  of its own cells and would refuse to move on the grounds that it is already
+  there. An anchor rather than "ignore whatever is under me", which would also
+  ignore the other piece standing on the destination.
+- **The hold remembers WHICH RECORD it came out of.** Point at the anchor of a
+  rug with a table on it and a top-down lookup answers "table", so a hold on the
+  rug would put the table down instead. `moveFurniture` takes an optional `laid`
+  selector for exactly this; undefined still means top down, which is right for
+  a bare "move whatever is here".
+- **What is in hand is marked on the piece, not on the cursor.** Build mode has
+  no hover preview anywhere — it paints where you tap, which is the right grammar
+  on a phone — so the ghost-follows-the-pointer version of this feature has
+  nothing to hang on. `setLifted` outlines the piece where it still stands, in a
+  warm pulse rather than the blocked doorstep's orange: that one means "not
+  this", and a lifted piece is the opposite.
+- **Rotation comes free and needed one line.** The rotate button tests
+  `buildTool in FURNITURE`, and Move is not furniture — but what it CARRIES is,
+  and turning a sofa as you set it down is most of why you are moving it. The
+  button now names the held piece. Picking up seeds `facing` from how the piece
+  already stands, so one tap of R turns it once.
+- **It is a tap and never a sweep.** A piece flung across the room by a finger
+  that kept going is not something anybody meant, and the second tap is a
+  DESTINATION rather than one more cell of the same edit.
+- **Undo works without new machinery.** The drop happens inside the stroke
+  pointerdown already opened and captures both cells before editing, so one undo
+  puts the piece back where it started. A pick-up captures nothing, so its stroke
+  is discarded and the undo you were saving survives being aimed with.
+- **`buildAt` has a `move` arm that does nothing**, deliberately. The UI owns the
+  two taps and calls `moveFurniture` itself (as it already calls `plantAt`), but
+  a tool id that falls through that function reaches `structureDef(tool)` and
+  throws on a table lookup — a crash rather than a message, in a mode somebody is
+  holding.
+- **Allowed underground**, where it moves the one thing that is down there.
+
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

@@ -1356,6 +1356,14 @@ export class Renderer {
   private blockedSteps: { x: number; y: number }[] = [];
   /** Beds offered while choosing someone a home — see setHomeCandidates. */
   private homeCandidates: { x: number; y: number; ok: boolean }[] = [];
+  /** The cells of the piece currently IN HAND, while the Move tool carries one.
+   *
+   *  Build mode has no hover preview anywhere — it paints where you tap, which
+   *  is the right grammar on a phone with no cursor — so "what have I picked up"
+   *  cannot be shown by a ghost following the pointer. It is shown on the piece
+   *  itself, which is still standing where it was: a move does not empty the
+   *  source until the destination is known to be good. */
+  private lifted: { x: number; y: number }[] = [];
   /** Shafts collected during the underground flat pass, so the daylight pools
    *  in drawDark cost one entry per VISIBLE hole rather than a scan of every
    *  edit the player has ever made. Same trick as blockedSteps above. */
@@ -1523,6 +1531,11 @@ export class Renderer {
    *  meanings on one affordance is how that rule got broken the first time. */
   setHomeCandidates(cells: { x: number; y: number; ok: boolean }[]): void {
     this.homeCandidates = cells;
+  }
+
+  /** Mark the piece the Move tool is carrying — see `lifted`. */
+  setLifted(cells: { x: number; y: number }[]): void {
+    this.lifted = cells;
   }
 
   constructor(canvas: HTMLCanvasElement) {
@@ -1741,6 +1754,8 @@ export class Renderer {
       this.drawBlockedSteps(t);
       this.drawHomeCandidates(t);
     }
+    // Not gated on `ground`: the lamp is movable and the lamp lives in the rock.
+    this.drawLifted(t);
 
     // Real-clock day/night wash over the whole scene. Not underground: a cave
     // looks the same at 3am as at noon, and the only dark down there that means
@@ -7841,6 +7856,25 @@ export class Renderer {
       ctx.moveTo(px + TILE - 4, py + 3);
       ctx.lineTo(px + 3, py + TILE - 4);
       ctx.stroke();
+    }
+  }
+
+  /** The piece in hand, outlined and breathing.
+   *
+   *  Its own colour and not the blocked step's orange, which means "not this":
+   *  a lifted piece is the opposite, the one thing a tap WILL affect. Brighter
+   *  and slower than the doorstep's pulse, because it is a state you are in
+   *  rather than a warning you should notice and clear. */
+  private drawLifted(t: number): void {
+    if (this.lifted.length === 0) return;
+    const ctx = this.ctx;
+    const pulse = 0.55 + 0.35 * Math.abs(Math.sin(t * 1.6));
+    ctx.strokeStyle = `rgba(255,235,170,${pulse.toFixed(3)})`;
+    ctx.lineWidth = 1;
+    for (const c of this.lifted) {
+      const px = Math.round(this.sceneX(c.x) - TILE / 2) + 0.5;
+      const py = Math.round(this.sceneY(c.y) - TILE / 2) + 0.5;
+      ctx.strokeRect(px, py, TILE - 1, TILE - 1);
     }
   }
 
