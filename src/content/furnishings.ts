@@ -132,6 +132,24 @@ const CHEST_BACK: Grid = {
 
 const BLANK32 = "................................";
 
+/** The fireplace's hearth, front and back: the slab the masonry stands on.
+ *
+ *  PROUD OF THE BODY rather than tucked under it. It used to be 28 against a
+ *  body of 30 — a mass standing on something narrower than itself, which is a
+ *  plinth a stonemason would not have cut and reads as the piece tapering into
+ *  the floor. The side view had it right all along at 14 against a body of 12,
+ *  so the two views were disagreeing about one slab; this is the front and back
+ *  agreeing with the side, a pixel out on either hand.
+ *
+ *  Flush to the edge of the footprint, which is what a hearth wants to be: it is
+ *  the one part of the piece that is floor rather than furniture, and two
+ *  fireplaces side by side should meet along it. */
+const HEARTH = [
+  "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  "kssssssssssssssssssssssssssssssk",
+  "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+];
+
 /** The rug itself: border, band, panel, and no fringe on any edge.
  *
  *  Twenty-nine rows, and 27 columns starting at column 2 — which leaves two
@@ -1320,9 +1338,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kssssssssssssssssssssssssssssk.",
         ".kssssssssssssssssssssssssssssk.",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+        ...HEARTH,
       ],
       // The firebox is sooted, not black: pure black is the outline's colour and
       // an opening painted in it loses its own jambs.
@@ -1426,9 +1442,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kssssssssssssssssssssssssssk..",
         "..kssssssssssssssssssssssssssk..",
         "..kssssssssssssssssssssssssssk..",
-        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+        ...HEARTH,
       ],
       palette: { k: INK },
     },
