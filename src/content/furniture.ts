@@ -481,7 +481,14 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // Lower than a chair (14) because that difference IS the object. A stool is
     // a chair with the back taken off, and if it stood as tall it would just be
     // a chair drawn worse.
-    height: 10,
+    //
+    // SIX, not ten, and the four came off the LEGS rather than the seat. At
+    // eleven rows of leg against the chair's seven, a stool's seat stood four
+    // pixels higher off the floor than a chair's — the opposite of what this
+    // comment claims, in the one measurement anybody could take. The legs match
+    // now (content/furnishings.ts §stool), so the seat height matches, and the
+    // whole of the difference between the two pieces is the back.
+    height: 6,
     finishes: ["wood"],
   },
   bench: {

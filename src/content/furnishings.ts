@@ -423,37 +423,44 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
   },
 
-  // A chair with the back taken off, and drawn as exactly that: the same
-  // seat and legs, nine pixels lower and rounder. If it read as tall as a chair it
-  // would just be a chair drawn worse.
+  // A chair with the back taken off, and drawn as exactly that.
+  //
+  // ITS LEGS ARE THE CHAIR'S, SEVEN ROWS. They were eleven, which made the one
+  // claim the piece exists to make come out backwards: the def calls a stool
+  // "lower than a chair (14) because that difference IS the object", and four
+  // extra rows of leg put its seat FOUR PIXELS HIGHER off the floor than the
+  // chair's. Two seats in the same room disagreeing about how far a seat is off
+  // the ground is the sort of thing you feel before you can name it. Seven now,
+  // measured the same way — from the seat's own bottom rule to the feet — so the
+  // two pieces agree about sitting height and differ only in having a back.
+  //
+  // A ROUND TOP, AND THEREFORE ONE GRID. Every facing falls back to this one,
+  // which is only honest if the piece has no front — the cot's argument
+  // (ROADMAP §the three missing north grids turn out to be two). A circle seen
+  // from any side is the same circle, so the fallback is the drawing rather than
+  // a drawing not done yet. The alternative was a square seat, which would have
+  // needed a turned view: a square is wider across its diagonal than its face,
+  // and one grid for all four facings would then be a lie you could measure.
+  //
+  // It reads round by TAPERING AT BOTH ENDS — 8, 10, 12 and back — rather than
+  // by rounding the corners of a rectangle. What was here before was twelve
+  // straight rows with two rows of easing at each end, which is a rounded square:
+  // the eye reads the long parallel sides and calls it a box. Three rows of
+  // curve against four of straight is what makes it a drum.
   stool: {
     s: {
       rows: [
-        "................",
-        "................",
-        ".....kkkkkk.....",
-        "....kttttttk....",
-        "...kttttttttk...",
-        "...kcccccccck...",
-        "...kcccccccck...",
-        "...kcccccccck...",
-        "...kcccccccck...",
-        "...kcccccccck...",
-        "...kssssssssk...",
-        "...kssssssssk...",
-        "...kssssssssk...",
-        "....kssssssk....",
+        ...Array<string>(6).fill("................"),
         "....kkkkkkkk....",
-        "....kck..kck....",
-        "....kck..kck....",
-        "....kck..kck....",
-        "....kck..kck....",
-        "....kck..kck....",
-        "....kck..kck....",
-        "....kck..kck....",
-        "....kck..kck....",
-        "....kck..kck....",
-        "....kck..kck....",
+        "...kttttttttk...",
+        "..kttttttttttk..",
+        "..kcccccccccck..",
+        "..kcccccccccck..",
+        "..kssssssssssk..",
+        "..kssssssssssk..",
+        "...kssssssssk...",
+        "....kkkkkkkk....",
+        ...Array<string>(6).fill("....kck..kck...."),
         "....kkk..kkk....",
       ],
       palette: { k: INK },
