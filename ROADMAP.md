@@ -13065,8 +13065,13 @@ what a park lamp actually looks like.
   wardrobe's "tallest thing you can put in a room", which is a rule about rooms
   and this is not in one; and a lamp is LIFTED half a tile north of its cell
   (§LAMP_LIFT), so its foot starts eight pixels up the screen and eight pixels of
-  apparent height go with it. Height 34 now, twenty-six rows of post, and it
-  out-tops the wardrobe as a street light should.
+  apparent height go with it.
+- **Then twenty-six rows overshot, and twenty is the answer.** Clearing the
+  wardrobe by a couple of pixels reads as "tall"; clearing it by ten made the
+  square something you looked at AROUND. Three numbers were tried and the third
+  is the one that stops drawing attention to itself, which is the only test
+  available: the scale in this game is frankly warped, so "how many metres is a
+  lamp post" was never going to settle it. Height 28.
 - **The occlusion fade was the reason to stay short and does not apply.**
   `hideFactor` is called by trees, tents, poles, stairs and roofs — never by the
   furniture path. Nothing in this table can make the player see-through, so the

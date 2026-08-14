@@ -1139,7 +1139,7 @@ function lampCore(id: FurnitureId): "flame" | "shade" | "globe" {
  *  the rim; this is the middle of a ball. Both are measured from the same datum
  *  (the piece's southern edge) and both are read by `drawLampGlow`, which is what
  *  keeps a lamp's light leaving from the lamp. */
-const LAMP_POST_HEAD_H = 38;
+const LAMP_POST_HEAD_H = 32;
 
 /** How much the flattened build view knocks back anything standing up, so the
  *  ground plan underneath is legible while you're editing it. */
@@ -5410,20 +5410,22 @@ export class Renderer {
     ctx.fillStyle = skin.color;
     ctx.fillRect(cx - 2, base - 5, 4, 1);
 
-    // The post, and the collar the globe sits in. TWENTY-SIX ROWS OF IT, which
-    // is the number that finally made this a lamp post: at nine it was shorter
-    // on screen than a chair, because a lamp stands half a tile north of its
-    // cell (LAMP_LIFT) and spends that lift on apparent height. A lamp post is
-    // mostly post, and it has to out-top the furniture or it is a table lamp
-    // somebody left in the garden.
+    // The post, and the collar the globe sits in. TWENTY ROWS, which is the
+    // third number tried and the one that stopped drawing attention to itself.
+    // Nine was shorter on screen than a chair — a lamp stands half a tile north
+    // of its cell (LAMP_LIFT) and spends that lift on apparent height — and
+    // twenty-six overcorrected into a thing the town had to be looked at around.
+    // The scale in this game is frankly warped, so the test is not arithmetic
+    // about metres: it is whether the post clears the furniture without becoming
+    // the tallest thing on the square.
     ctx.fillStyle = skin.shade;
-    ctx.fillRect(cx - 1, base - 31, 2, 26);
+    ctx.fillRect(cx - 1, base - 25, 2, 20);
     ctx.fillStyle = skin.color;
-    ctx.fillRect(cx - 1, base - 31, 1, 26);
+    ctx.fillRect(cx - 1, base - 25, 1, 20);
     ctx.fillStyle = skin.shade;
-    ctx.fillRect(cx - 2, base - 33, 4, 2);
+    ctx.fillRect(cx - 2, base - 27, 4, 2);
     ctx.fillStyle = skin.color;
-    ctx.fillRect(cx - 2, base - 33, 4, 1);
+    ctx.fillRect(cx - 2, base - 27, 4, 1);
 
     // THE GLOBE. Eight rows: 4-6-8-8-8-8-6-4, which is what `sqrt(16 - y²)`
     // actually gives for a radius-four circle laid about the line between two

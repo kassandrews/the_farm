@@ -454,7 +454,13 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // `hideFactor` is called by trees, tents, poles and stairs, and never by the
     // furniture path. Nothing here can make the player see-through, so a lamp
     // post may be as tall as a lamp post.
-    height: 34,
+    //
+    // 28 AND NOT 34, which was the overcorrection. Clearing the wardrobe by a
+    // couple of pixels reads as "tall"; clearing it by ten made the square
+    // something you looked at around the lamps. The scale in this game is warped
+    // and the test is not metres — it is whether the post out-tops the furniture
+    // without becoming the tallest thing in town.
+    height: 28,
     finishes: ["metal"],
     light: true,
   },
