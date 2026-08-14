@@ -13070,6 +13070,16 @@ what a park lamp actually looks like.
 - **Pale, not yellow.** The reference is yellow because it was photographed at
   night, and the game supplies its own night. Painting the warmth in would give a
   globe that glows at noon.
+- **AND THEN IT LOOKED WONKY, which was two centres.** A tile is sixteen across,
+  so its centre falls BETWEEN cx-1 and cx: an even-width part laid about that
+  line is centred, an odd one is half a pixel right of it. Both lamps mixed the
+  two — an odd globe and an odd base over an even post — so the post hung half a
+  pixel left of the ball sitting on it. No single rectangle was wrong, which is
+  precisely why it read as *wonky* rather than as broken. Every part of both
+  lamps is even now, spanning cx-halfW to cx+halfW-1, which is what the
+  grid-drawn furniture has always done (a chair is twelve wide in columns 2..13)
+  — the bespoke path catching up rather than a new rule. The three parts still
+  odd are highlights, and a highlight belongs off centre.
 
 **The glow learned what shape each source is.** `litLamps` carries a `core` —
 `flame`, `shade` or `globe`. The hot 4x4 square is a flame seen through glass and

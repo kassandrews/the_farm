@@ -417,6 +417,21 @@ function roofLum(hex: string): number {
 }
 /** How far a lamp stands north of its cell's near edge — see `drawLamp`. */
 const LAMP_LIFT = TILE / 2;
+
+// EVERY PART OF A LAMP IS AN EVEN NUMBER OF PIXELS WIDE, spanning cx-halfW to
+// cx+halfW-1. Both `drawLamp` and `drawLampPost` below hold to it.
+//
+// A tile is sixteen across, so its centre falls BETWEEN cx-1 and cx. An even part
+// laid about that line is centred; an odd one is half a pixel to the right of it.
+// Both lamps used to mix the two — an odd globe and an odd base over an even post
+// — and the post came out hanging half a pixel left of the ball sitting on it.
+// No single rectangle is wrong, which is exactly why it reads as WONKY rather
+// than as broken: the piece has two centres and your eye picks the argument up
+// without being able to name it.
+//
+// The grid-drawn furniture has always worked this way (a chair is twelve wide in
+// columns 2..13), so this is the bespoke path catching up rather than a new rule.
+// A part that has to be odd is a highlight, and a highlight belongs off centre.
 const BARN_PAINT = "#ece4d4";
 /** A hung banner (§drawBanner). Hardcoded on the flag's own argument two lines
  *  down: cloth is not the building's material, and letting a finish recolour it
@@ -3600,13 +3615,13 @@ export class Renderer {
       const iy = Math.round(cy);
       if (l.core === "shade") {
         ctx.fillStyle = hot(0.3);
-        ctx.fillRect(ix - 4, iy, 9, 2);
+        ctx.fillRect(ix - 4, iy, 8, 2);
       } else if (l.core === "globe") {
         ctx.fillStyle = hot(0.55);
         // One row inside the ball's own octagon (§drawLampPost), so the lit part
         // stops short of the outline and the glass keeps an edge.
-        [0, 1, 2, 2, 1, 0].forEach((halfW, i) => {
-          ctx.fillRect(ix - halfW, iy - 3 + i, halfW * 2 + 1, 1);
+        [1, 2, 2, 1].forEach((halfW, i) => {
+          ctx.fillRect(ix - halfW, iy - 2 + i, halfW * 2, 1);
         });
       } else {
         ctx.fillStyle = hot(0.55);
@@ -5319,15 +5334,15 @@ export class Renderer {
     const shadeTop = shadeBottom - 7;
 
     ctx.fillStyle = "rgba(0,0,0,0.18)"; // the disc's shadow on the floor
-    ctx.fillRect(cx - 4, base - 1, 9, 2);
+    ctx.fillRect(cx - 4, base - 1, 8, 2);
 
     // A DISC, not a plinth: wide and only three deep, which is what stops a
     // floor lamp falling over and therefore what a base looks like. Wider than
     // the post by a factor of four, or it reads as a spike driven into the floor.
     ctx.fillStyle = skin.shade;
-    ctx.fillRect(cx - 4, base - 3, 9, 3);
+    ctx.fillRect(cx - 4, base - 3, 8, 3);
     ctx.fillStyle = skin.color;
-    ctx.fillRect(cx - 3, base - 3, 7, 1);
+    ctx.fillRect(cx - 3, base - 3, 6, 1);
 
     // The post: two pixels, and one lit column down its left so it has a round
     // side rather than being a slot cut in the air.
@@ -5378,20 +5393,20 @@ export class Renderer {
     const globeTop = base - LAMP_POST_HEAD_H - 3;
 
     ctx.fillStyle = "rgba(0,0,0,0.18)";
-    ctx.fillRect(cx - 4, base - 1, 9, 2);
+    ctx.fillRect(cx - 4, base - 1, 8, 2);
 
     // A BASE IN TWO STEPS, which is the whole of what makes a post look planted
     // rather than pushed into the ground. One block reads as a plinth; two say
     // the thing was cast in a foundry, and the step is also the only place a lamp
     // post has room for any detail at all below the light.
     ctx.fillStyle = skin.shade;
-    ctx.fillRect(cx - 4, base - 3, 9, 3);
+    ctx.fillRect(cx - 4, base - 3, 8, 3);
     ctx.fillStyle = skin.color;
-    ctx.fillRect(cx - 4, base - 3, 9, 1);
+    ctx.fillRect(cx - 4, base - 3, 8, 1);
     ctx.fillStyle = skin.shade;
-    ctx.fillRect(cx - 2, base - 5, 5, 2);
+    ctx.fillRect(cx - 2, base - 5, 4, 2);
     ctx.fillStyle = skin.color;
-    ctx.fillRect(cx - 2, base - 5, 5, 1);
+    ctx.fillRect(cx - 2, base - 5, 4, 1);
 
     // The post, and the collar the globe sits in. TEN ROWS OF IT, against six of
     // globe: the first pass drew a nine-wide ball on seven of post and the thing
@@ -5406,7 +5421,7 @@ export class Renderer {
     ctx.fillStyle = skin.color;
     ctx.fillRect(cx - 2, base - 15, 4, 1);
 
-    // THE GLOBE. Six rows, widening 3-5-7 and back — an octagon, which at this
+    // THE GLOBE. Six rows, widening 2-4-6 and back — an octagon, which at this
     // size is the roundest a circle gets. A true rasterised circle of this radius
     // comes out with single-pixel caps top and bottom that read as spikes on a
     // ball, so the flat 3-wide cap is the fix rather than a shortcut.
@@ -5414,7 +5429,7 @@ export class Renderer {
     HALF.forEach((halfW, i) => {
       const y = globeTop + i;
       ctx.fillStyle = i === HALF.length - 1 ? GLOBE_SHADE : GLOBE;
-      ctx.fillRect(cx - halfW, y, halfW * 2 + 1, 1);
+      ctx.fillRect(cx - halfW, y, halfW * 2, 1);
     });
     // Light from the top left, and on a sphere that is a SPOT rather than an
     // edge — a lit left-hand column would make it a cylinder.
