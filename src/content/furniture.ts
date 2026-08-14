@@ -402,7 +402,19 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: false,
     height: 18,
-    finishes: ["wood"],
+    // METAL, and it always should have been. A lamp is a made thing with a post
+    // and a fitting, and the three metals a room reads as — bright, warm, dark —
+    // are exactly the three a lamp comes in. Wood was inherited from the days
+    // when this drew a lantern on a timber post, and it survived the redraw by
+    // nobody asking: the cloth shade is a literal (render/renderer.ts
+    // §SHADE_CLOTH), so the finish was only ever colouring the post and the base,
+    // and a pine post under a cream shade is not a lamp anybody sells.
+    //
+    // The stale-selection guard in `loadedFinish` covers a save that has pine
+    // loaded for this tool — the class no longer matches, so it falls back to
+    // the metal default rather than refusing. Placed lamps keep the finish they
+    // were built in; they just cannot be built that way again.
+    finishes: ["metal"],
     light: true,
   },
   // A LAMP FOR OUTSIDE, and it exists because the floor lamp stopped being one.
@@ -635,7 +647,11 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // on a desk (12) it reaches 21, which is about where the floor lamp's head
     // is on its own — two lights at one height, arrived at two ways.
     height: 9,
-    finishes: ["wood"],
+    // METAL too, on the floor lamp's argument one object smaller. Leaving the
+    // third light in timber while its two siblings are steel, brass and iron
+    // would be the same lie in the palette that the lantern was in the drawing:
+    // three lights that are obviously a set, one of them made of something else.
+    finishes: ["metal"],
     light: true,
   },
 
