@@ -71,7 +71,7 @@ import {
   CONNECT_S,
   CONNECT_W,
 } from "../sim/structures";
-import { furnitureDef, footprint } from "../content/furniture";
+import { furnitureDef, footprint, type FurnitureId } from "../content/furniture";
 import { trimOf } from "../sim/furniture";
 import { TENTS } from "../content/tents";
 import type { TentDef } from "../content/tents";
@@ -351,12 +351,17 @@ const STEP_LIP = "#7d746b";
  *  and a shade now, and there is no lantern casing left to be made of anything. */
 const SHADE_CLOTH = "#e8dfc8";
 const SHADE_CLOTH_LIT = "#f6efdf";
-/** The lamp POST's lantern — the casing the floor lamp used to wear, kept where
- *  it was always right (§drawLampPost). Literals for the shade's reason: a
- *  lantern's glass and its brass are not what the post is made of. */
-const BRASS_DARK = "#5c4419";
-const BRASS = "#9c7a2c";
-const BRASS_LIT = "#c9a24f";
+/** The lamp POST's globe. Literals for the shade's reason one object along:
+ *  glass is not what the post is made of, and a brass lamp post should have the
+ *  same white ball on it that a black one does.
+ *
+ *  PALE, NOT YELLOW. The reference photograph is yellow because it was taken at
+ *  night, and this game supplies its own night — the glow adds the warmth after
+ *  dark (§drawLampGlow). Painting the warmth in would give a globe that glows at
+ *  noon, which is the one hour it should not. */
+const GLOBE = "#f0e6cf";
+const GLOBE_LIT = "#fdf8ec";
+const GLOBE_SHADE = "#d3c3a1";
 const FLAME = "#ffcf7a";
 const FLAME_CORE = "#fff3cd";
 /** How far build mode may slide the view off the player, as a multiple of the
@@ -1102,6 +1107,25 @@ const LAVA_GLOW_R = 4.2; // tiles
  *  arithmetic to reach the datum is written once in each. */
 const LAMP_HEAD_H = 15;
 
+/** Which shape a lit piece's hot core takes — see `litLamps`. A table rather
+ *  than a chain of ids at each push site, so the two collectors (surface and
+ *  underground) cannot come to different conclusions about the same lamp. */
+function lampCore(id: FurnitureId): "flame" | "shade" | "globe" {
+  if (id === "lamp") return "shade";
+  if (id === "lamppost") return "globe";
+  return "flame";
+}
+
+/** And where the LAMP POST's is — its globe's centre.
+ *
+ *  Its own number rather than the floor lamp's, because the two lights carry
+ *  their light at different heights and a shared constant would have to be wrong
+ *  for one of them. The floor lamp's 15 is the mouth of its shade, two rows above
+ *  the rim; this is the middle of a ball. Both are measured from the same datum
+ *  (the piece's southern edge) and both are read by `drawLampGlow`, which is what
+ *  keeps a lamp's light leaving from the lamp. */
+const LAMP_POST_HEAD_H = 18;
+
 /** How much the flattened build view knocks back anything standing up, so the
  *  ground plan underneath is legible while you're editing it. */
 const BUILD_VIEW_FADE = 0.3;
@@ -1386,7 +1410,16 @@ export class Renderer {
   /** Lamps collected during the flat pass, on whichever layer is being drawn —
    *  the one thing in the game that makes light where it is put (Phase 5a).
    *  Bounded by the screen, exactly like litShafts above. */
-  private litLamps: { x: number; y: number; shaded: boolean }[] = [];
+  /** Lit lamps this frame. `core` is the SHAPE of the source, because a light
+   *  has to be the brightest thing in its own light and the bright bit has to be
+   *  the shape of the thing making it: a flame behind glass, the open mouth of a
+   *  cloth shade, or a whole glass ball. See `drawLampGlow`. */
+  private litLamps: {
+    x: number;
+    y: number;
+    core: "flame" | "shade" | "globe";
+    headH: number;
+  }[] = [];
   /** Lava cells that have a NON-lava neighbour — the shore of a lava field, and
    *  the only cells that get a halo.
    *
@@ -2452,7 +2485,12 @@ export class Renderer {
           // Keyed on the roof's own fade, so walking inside lights the lamp up
           // as the roof comes off. That is the cutaway already doing the work.
           if (furnitureDef(piece.id).light && !this.underSolidRoof(tx, ty)) {
-            this.litLamps.push({ x: tx, y: ty, shaded: piece.id === "lamp" });
+            this.litLamps.push({
+              x: tx,
+              y: ty,
+              core: lampCore(piece.id),
+              headH: piece.id === "lamppost" ? LAMP_POST_HEAD_H : LAMP_HEAD_H,
+            });
           }
         }
         // Roofs are derived, not stored, so they come from the room index
@@ -3314,7 +3352,12 @@ export class Renderer {
         draw: () => this.drawFurniture(world, ax, ay, piece),
       });
       if (furnitureDef(piece.id).light) {
-        this.litLamps.push({ x: tx, y: ty, shaded: piece.id === "lamp" });
+        this.litLamps.push({
+          x: tx,
+          y: ty,
+          core: lampCore(piece.id),
+          headH: piece.id === "lamppost" ? LAMP_POST_HEAD_H : LAMP_HEAD_H,
+        });
       }
     }
   }
@@ -3523,7 +3566,10 @@ export class Renderer {
       // MINUS THE SAME LIFT the art takes (§drawLamp), or the pool stays on the
       // cell's near edge while the flame throwing it has moved north, and a lamp
       // lights the ground half a tile in front of its own head.
-      const cy = this.sceneY(l.y) + TILE / 2 - LAMP_LIFT - LAMP_HEAD_H;
+      // EACH LAMP'S OWN HEAD HEIGHT, carried on the entry. The floor lamp's is
+      // the mouth of its shade and the post's is the middle of its globe, and one
+      // shared constant would have had to be wrong for one of them.
+      const cy = this.sceneY(l.y) + TILE / 2 - LAMP_LIFT - l.headH;
       // ORANGE, not cream. Additive light adds its green channel to grass that is
       // already saturated green, so a pale warm-white pool came out milky — lit
       // lawn that read as bleached lawn. Dropping the green and blue makes the
@@ -3541,15 +3587,31 @@ export class Renderer {
       // midnight had a glowing lawn around a dim beige box. A source has to be
       // the brightest thing in its own light.
       //
-      // ITS SHAPE IS THE SHADE'S. A 4x4 square is a FLAME seen through a
-      // lantern's glass, which is what the lamp post has and what this drew for
-      // both lights — and inside a floor lamp's cloth shade the same square read
-      // as a hole punched in the fabric. A shade glows across its whole width and
-      // brightest at the open foot, so it gets a wide low band instead, and half
-      // the alpha: cloth is between you and the bulb.
-      ctx.fillStyle = `rgba(255,236,190,${((l.shaded ? 0.3 : 0.55) * strength).toFixed(3)})`;
-      if (l.shaded) ctx.fillRect(Math.round(cx) - 4, Math.round(cy), 9, 2);
-      else ctx.fillRect(Math.round(cx) - 2, Math.round(cy) - 2, 4, 4);
+      // ITS SHAPE IS THE SOURCE'S. A 4x4 square is a FLAME seen through glass,
+      // which is what a desk lamp has; inside a floor lamp's cloth shade the same
+      // square read as a hole punched in the fabric, and inside a lamp post's
+      // glass ball it read as a box someone had left in there. So a shade glows
+      // across a wide low band at its open foot, and a globe glows as a globe.
+      //
+      // The shade takes half the alpha, because cloth is between you and the
+      // bulb. Glass is not, so the globe keeps the flame's.
+      const hot = (a: number) => `rgba(255,236,190,${(a * strength).toFixed(3)})`;
+      const ix = Math.round(cx);
+      const iy = Math.round(cy);
+      if (l.core === "shade") {
+        ctx.fillStyle = hot(0.3);
+        ctx.fillRect(ix - 4, iy, 9, 2);
+      } else if (l.core === "globe") {
+        ctx.fillStyle = hot(0.55);
+        // One row inside the ball's own octagon (§drawLampPost), so the lit part
+        // stops short of the outline and the glass keeps an edge.
+        [0, 1, 2, 2, 1, 0].forEach((halfW, i) => {
+          ctx.fillRect(ix - halfW, iy - 3 + i, halfW * 2 + 1, 1);
+        });
+      } else {
+        ctx.fillStyle = hot(0.55);
+        ctx.fillRect(ix - 2, iy - 2, 4, 4);
+      }
     }
     ctx.globalCompositeOperation = prev;
   }
@@ -5313,37 +5375,52 @@ export class Renderer {
     const ctx = this.ctx;
     const cx = px + Math.floor(pw / 2);
     const base = baseEdge - LAMP_LIFT;
-    const headY = base - LAMP_HEAD_H - 4;
+    const globeTop = base - LAMP_POST_HEAD_H - 3;
 
     ctx.fillStyle = "rgba(0,0,0,0.18)";
-    ctx.fillRect(cx - 3, base - 1, 6, 2);
+    ctx.fillRect(cx - 4, base - 1, 9, 2);
 
-    // A NARROWER FOOT than the floor lamp's disc, and taller. A floor lamp needs
-    // a wide base because it stands on a floor and can be knocked; a post is set
-    // into the ground, and drawing it a saucer would make it read as portable.
+    // A BASE IN TWO STEPS, which is the whole of what makes a post look planted
+    // rather than pushed into the ground. One block reads as a plinth; two say
+    // the thing was cast in a foundry, and the step is also the only place a lamp
+    // post has room for any detail at all below the light.
     ctx.fillStyle = skin.shade;
-    ctx.fillRect(cx - 3, base - 4, 6, 4);
-    ctx.fillStyle = skin.top;
-    ctx.fillRect(cx - 3, base - 4, 6, 1);
+    ctx.fillRect(cx - 4, base - 3, 9, 3);
+    ctx.fillStyle = skin.color;
+    ctx.fillRect(cx - 4, base - 3, 9, 1);
+    ctx.fillStyle = skin.shade;
+    ctx.fillRect(cx - 2, base - 5, 5, 2);
+    ctx.fillStyle = skin.color;
+    ctx.fillRect(cx - 2, base - 5, 5, 1);
 
-    ctx.fillStyle = skin.shade; // the post
-    ctx.fillRect(cx - 1, headY + 5, 2, base - headY - 8);
-    ctx.fillStyle = skin.color; // one lit edge down it, so it has a round side
-    ctx.fillRect(cx - 1, headY + 5, 1, base - headY - 8);
+    // The post, and the collar the globe sits in. TEN ROWS OF IT, against six of
+    // globe: the first pass drew a nine-wide ball on seven of post and the thing
+    // came out a chess pawn. A lamp post is mostly post — that is what the word
+    // says — and the light is small and high up.
+    ctx.fillStyle = skin.shade;
+    ctx.fillRect(cx - 1, base - 14, 2, 9);
+    ctx.fillStyle = skin.color;
+    ctx.fillRect(cx - 1, base - 14, 1, 9);
+    ctx.fillStyle = skin.shade;
+    ctx.fillRect(cx - 2, base - 15, 4, 2);
+    ctx.fillStyle = skin.color;
+    ctx.fillRect(cx - 2, base - 15, 4, 1);
 
-    // The lantern. Dark casing, warm glass, and a bright core that IS the flame —
-    // the pool of light in drawLampGlow leaves from this rectangle, which is
-    // what LAMP_HEAD_H keeps in step.
-    ctx.fillStyle = BRASS_DARK;
-    ctx.fillRect(cx - 4, headY, 8, 7);
-    ctx.fillStyle = BRASS;
-    ctx.fillRect(cx - 3, headY + 1, 6, 5);
-    ctx.fillStyle = FLAME;
-    ctx.fillRect(cx - 2, headY + 2, 4, 3);
-    ctx.fillStyle = FLAME_CORE;
-    ctx.fillRect(cx - 1, headY + 3, 2, 1);
-    ctx.fillStyle = BRASS_LIT; // a hood over the top, catching the light
-    ctx.fillRect(cx - 4, headY - 1, 8, 1);
+    // THE GLOBE. Six rows, widening 3-5-7 and back — an octagon, which at this
+    // size is the roundest a circle gets. A true rasterised circle of this radius
+    // comes out with single-pixel caps top and bottom that read as spikes on a
+    // ball, so the flat 3-wide cap is the fix rather than a shortcut.
+    const HALF = [1, 2, 3, 3, 2, 1];
+    HALF.forEach((halfW, i) => {
+      const y = globeTop + i;
+      ctx.fillStyle = i === HALF.length - 1 ? GLOBE_SHADE : GLOBE;
+      ctx.fillRect(cx - halfW, y, halfW * 2 + 1, 1);
+    });
+    // Light from the top left, and on a sphere that is a SPOT rather than an
+    // edge — a lit left-hand column would make it a cylinder.
+    ctx.fillStyle = GLOBE_LIT;
+    ctx.fillRect(cx - 1, globeTop + 1, 2, 1);
+    ctx.fillRect(cx - 2, globeTop + 2, 2, 1);
   }
 
   /** The step outside a doorway, laid flat on the ground beside it.

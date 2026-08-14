@@ -13054,11 +13054,32 @@ instead of wood.
   revisited (memory: town content is a save change), and this is a content
   change rather than a schema one — wipe rather than migrate.
 
-**The glow learned which light it is lighting.** `litLamps` carries a `shaded`
-flag now. The hot 4x4 core is a FLAME seen through a lantern's glass; inside a
-cloth shade the same square read as a hole punched in the fabric. A shade gets a
-wide low band at its open foot instead, at half the alpha, because cloth is
-between you and the bulb.
+**Then the post got a globe** (owner, with two more photographs): a glass ball on
+a slim post with a stepped foot, which is friendlier than a boxed lantern and is
+what a park lamp actually looks like.
+
+- **A LAMP POST IS MOSTLY POST.** The first pass drew a nine-wide ball on seven
+  rows of post and it came out a chess pawn. Six of globe against ten of post
+  and a five-row base is the proportion in the photograph, and it is what the
+  word says.
+- **The base is two steps.** One block is a plinth; two say the thing was cast in
+  a foundry, and it is the only place below the light with room for any detail.
+- **The globe is an octagon, not a circle.** A true rasterised circle of this
+  radius has single-pixel caps top and bottom, which read as spikes on a ball.
+  The flat three-wide cap is the fix rather than the shortcut.
+- **Pale, not yellow.** The reference is yellow because it was photographed at
+  night, and the game supplies its own night. Painting the warmth in would give a
+  globe that glows at noon.
+
+**The glow learned what shape each source is.** `litLamps` carries a `core` —
+`flame`, `shade` or `globe`. The hot 4x4 square is a flame seen through glass and
+is right for the desk lamp; inside a cloth shade it read as a hole punched in the
+fabric, and inside a glass ball as a box someone had left in there. A shade gets
+a wide low band at its open foot at half the alpha (cloth is between you and the
+bulb); a globe gets the ball's own octagon one row in, so the lit part stops short
+of the outline and the glass keeps an edge. The head HEIGHT went per-form at the
+same time: the floor lamp's 15 is the mouth of its shade, the post's 18 is the
+middle of its globe, and one shared constant had to be wrong for one of them.
 
 
 ## Known gaps and loose ends

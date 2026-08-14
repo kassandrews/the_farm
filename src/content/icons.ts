@@ -742,25 +742,25 @@ const FARM_ICONS = {
     palette: { k: K, y: "#ffd884", w: "#fff7dc", p: "#8a8c9a", m: "#6a6c7a" },
   },
   // The lamp for outside. Told from the floor lamp above it by the one thing that
-  // tells them apart in the world: a LANTERN, boxed and hooded, on a tall thin
-  // post — where the floor lamp is a soft shade on a short one. The glass is the
-  // same warm yellow, because they are the same light.
+  // tells them apart in the world: a GLOBE on a tall post with a stepped foot,
+  // where the floor lamp is a soft shade on a short one. Pale rather than yellow,
+  // like the world art — the warmth is what night does to it.
   lamppost: {
     rows: [
+      ".....kk.....",
+      "...kkwwkk...",
+      "..kwwggggk..",
+      "..kggggggk..",
+      "..kggggggk..",
+      "...kggggk...",
       "....kkkk....",
-      "...kwwwwk...",
-      "..kkkkkkkk..",
-      "..kyyyyyyk..",
-      "..kywyyyyk..",
-      "..kyyyyyyk..",
-      "..kkkkkkkk..",
-      "....kppk....",
-      "....kppk....",
+      ".....pp.....",
+      ".....pp.....",
       "....kppk....",
       "..kkkkkkkk..",
       "..kmmmmmmk..",
     ],
-    palette: { k: K, y: "#ffd884", w: "#fff7dc", p: "#8a8c9a", m: "#6a6c7a" },
+    palette: { k: K, g: "#f0e6cf", w: "#fdf8ec", p: "#8a8c9a", m: "#6a6c7a" },
   },
 
   // "Take back down" — a bulldozer, blade first. It shares the build bar with
