@@ -1139,7 +1139,7 @@ function lampCore(id: FurnitureId): "flame" | "shade" | "globe" {
  *  the rim; this is the middle of a ball. Both are measured from the same datum
  *  (the piece's southern edge) and both are read by `drawLampGlow`, which is what
  *  keeps a lamp's light leaving from the lamp. */
-const LAMP_POST_HEAD_H = 18;
+const LAMP_POST_HEAD_H = 38;
 
 /** How much the flattened build view knocks back anything standing up, so the
  *  ground plan underneath is legible while you're editing it. */
@@ -3620,7 +3620,9 @@ export class Renderer {
         ctx.fillStyle = hot(0.55);
         // One row inside the ball's own octagon (§drawLampPost), so the lit part
         // stops short of the outline and the glass keeps an edge.
-        [1, 2, 2, 1].forEach((halfW, i) => {
+        // globeTop is iy - 3 (§drawLampPost), so these are the ball's rows 1..6
+        // with one pixel taken off each side — the glass keeps an edge.
+        [2, 3, 3, 3, 3, 2].forEach((halfW, i) => {
           ctx.fillRect(ix - halfW, iy - 2 + i, halfW * 2, 1);
         });
       } else {
@@ -5408,24 +5410,30 @@ export class Renderer {
     ctx.fillStyle = skin.color;
     ctx.fillRect(cx - 2, base - 5, 4, 1);
 
-    // The post, and the collar the globe sits in. TEN ROWS OF IT, against six of
-    // globe: the first pass drew a nine-wide ball on seven of post and the thing
-    // came out a chess pawn. A lamp post is mostly post — that is what the word
-    // says — and the light is small and high up.
+    // The post, and the collar the globe sits in. TWENTY-SIX ROWS OF IT, which
+    // is the number that finally made this a lamp post: at nine it was shorter
+    // on screen than a chair, because a lamp stands half a tile north of its
+    // cell (LAMP_LIFT) and spends that lift on apparent height. A lamp post is
+    // mostly post, and it has to out-top the furniture or it is a table lamp
+    // somebody left in the garden.
     ctx.fillStyle = skin.shade;
-    ctx.fillRect(cx - 1, base - 14, 2, 9);
+    ctx.fillRect(cx - 1, base - 31, 2, 26);
     ctx.fillStyle = skin.color;
-    ctx.fillRect(cx - 1, base - 14, 1, 9);
+    ctx.fillRect(cx - 1, base - 31, 1, 26);
     ctx.fillStyle = skin.shade;
-    ctx.fillRect(cx - 2, base - 15, 4, 2);
+    ctx.fillRect(cx - 2, base - 33, 4, 2);
     ctx.fillStyle = skin.color;
-    ctx.fillRect(cx - 2, base - 15, 4, 1);
+    ctx.fillRect(cx - 2, base - 33, 4, 1);
 
-    // THE GLOBE. Six rows, widening 2-4-6 and back — an octagon, which at this
-    // size is the roundest a circle gets. A true rasterised circle of this radius
-    // comes out with single-pixel caps top and bottom that read as spikes on a
-    // ball, so the flat 3-wide cap is the fix rather than a shortcut.
-    const HALF = [1, 2, 3, 3, 2, 1];
+    // THE GLOBE. Eight rows: 4-6-8-8-8-8-6-4, which is what `sqrt(16 - y²)`
+    // actually gives for a radius-four circle laid about the line between two
+    // pixels. Tapering it 2-4-6-8 instead — the obvious diagonal — draws a
+    // LOZENGE: the two-wide caps come to a point and the thing reads as a cut
+    // gem on a stick rather than a ball of glass.
+    //
+    // It grew with the post. Six rows on twenty-six was a pinhead: a globe wants
+    // to be about a fifth of the whole lamp, which is what the photograph has.
+    const HALF = [2, 3, 4, 4, 4, 4, 3, 2];
     HALF.forEach((halfW, i) => {
       const y = globeTop + i;
       ctx.fillStyle = i === HALF.length - 1 ? GLOBE_SHADE : GLOBE;
@@ -5434,8 +5442,8 @@ export class Renderer {
     // Light from the top left, and on a sphere that is a SPOT rather than an
     // edge — a lit left-hand column would make it a cylinder.
     ctx.fillStyle = GLOBE_LIT;
-    ctx.fillRect(cx - 1, globeTop + 1, 2, 1);
-    ctx.fillRect(cx - 2, globeTop + 2, 2, 1);
+    ctx.fillRect(cx - 2, globeTop + 1, 3, 1);
+    ctx.fillRect(cx - 3, globeTop + 2, 2, 1);
   }
 
   /** The step outside a doorway, laid flat on the ground beside it.

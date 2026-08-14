@@ -442,12 +442,19 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     w: 1,
     h: 1,
     solid: false,
-    // Taller than the floor lamp's 18 and short of the wardrobe's 20, which its
-    // own note calls "the tallest thing you can put in a room". A lamp post is
-    // not in a room, but the occlusion fade is the real ceiling: art overhanging
-    // by more than half a tile makes the player see-through behind it, and a
-    // post you had to walk around a hole in would be worse than a short post.
-    height: 20,
+    // TALLER THAN ANYTHING ELSE IN THE TABLE, and it has to be: at 20 it stood
+    // shorter on screen than a CHAIR. Two things conspired. The number was
+    // borrowed from the wardrobe's "tallest thing you can put in a room", which
+    // is a rule about rooms and this is not in one — and a lamp is also LIFTED
+    // half a tile north of its cell's near edge (render/renderer.ts §LAMP_LIFT),
+    // so its foot starts eight pixels up the screen and eight pixels of apparent
+    // height go with it. A chair's 31 pixels of drawing beat the post's 21.
+    //
+    // The occlusion fade was the reason to stay short and turns out not to apply:
+    // `hideFactor` is called by trees, tents, poles and stairs, and never by the
+    // furniture path. Nothing here can make the player see-through, so a lamp
+    // post may be as tall as a lamp post.
+    height: 34,
     finishes: ["metal"],
     light: true,
   },

@@ -13059,14 +13059,25 @@ a slim post with a stepped foot, which is friendlier than a boxed lantern and is
 what a park lamp actually looks like.
 
 - **A LAMP POST IS MOSTLY POST.** The first pass drew a nine-wide ball on seven
-  rows of post and it came out a chess pawn. Six of globe against ten of post
-  and a five-row base is the proportion in the photograph, and it is what the
-  word says.
+  rows of post and it came out a chess pawn. The second was better proportioned
+  and STILL SHORTER ON SCREEN THAN A CHAIR — 21 drawn pixels against a chair's
+  31 — for two compounding reasons: its `height` of 20 was borrowed from the
+  wardrobe's "tallest thing you can put in a room", which is a rule about rooms
+  and this is not in one; and a lamp is LIFTED half a tile north of its cell
+  (§LAMP_LIFT), so its foot starts eight pixels up the screen and eight pixels of
+  apparent height go with it. Height 34 now, twenty-six rows of post, and it
+  out-tops the wardrobe as a street light should.
+- **The occlusion fade was the reason to stay short and does not apply.**
+  `hideFactor` is called by trees, tents, poles, stairs and roofs — never by the
+  furniture path. Nothing in this table can make the player see-through, so the
+  ceiling that was being respected was not there.
 - **The base is two steps.** One block is a plinth; two say the thing was cast in
   a foundry, and it is the only place below the light with room for any detail.
-- **The globe is an octagon, not a circle.** A true rasterised circle of this
-  radius has single-pixel caps top and bottom, which read as spikes on a ball.
-  The flat three-wide cap is the fix rather than the shortcut.
+- **The globe is 4-6-8-8-8-8-6-4**, which is what `sqrt(16 - y²)` gives for a
+  radius-four circle laid about the line between two pixels. Tapering it 2-4-6-8
+  instead — the obvious diagonal — draws a LOZENGE: the two-wide caps come to a
+  point and it reads as a cut gem on a stick rather than a ball of glass. It grew
+  with the post, too; six rows on twenty-six was a pinhead.
 - **Pale, not yellow.** The reference is yellow because it was photographed at
   night, and the game supplies its own night. Painting the warmth in would give a
   globe that glows at noon.
