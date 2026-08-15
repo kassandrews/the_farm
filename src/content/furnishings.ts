@@ -566,44 +566,64 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
       ],
       palette: { k: INK },
     },
+    // TURNED, THE RAIL RUNS THE WHOLE EDGE. It was a stub in the far corner —
+    // four columns of rail hanging over one end of a plain box, which reads as a
+    // chimney on a crate. Seen from the side the rail is the thing that recedes:
+    // it runs the bench's whole length, so it is a band down the entire west
+    // edge, top surface and all, standing the same nine rows above the seat that
+    // `BENCH_BACK` does.
+    //
+    // THE CHAIR'S CONSTRUCTION, PART FOR PART. Its post shares its ink column
+    // with the seat's back edge and carries on down to the seat's own bottom
+    // rule rather than balancing on the surface; so does this. Three columns
+    // wide, not four, because the leg is three and a rail wider than its own
+    // post reads as a plank bolted on behind.
+    //
+    // AND THE REAR LEG FALLS OUT OF IT. The band lands in the columns the near
+    // leg already occupies, so the rail is the leg carried up — which is what
+    // the chair settled and how a bench is actually built. The far pair of legs
+    // is behind the seat and is not drawn.
+    //
+    // The seat's own rows are untouched: the rail eats two columns of surface
+    // and nothing else moves.
     e: {
       rows: [
-        "..kkkk..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kcck..........",
-        "..kkkk..........",
-        ".kkkkkkkkkkkkkk.",
-        ".kttttttttttttk.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kssssssssssssk.",
-        ".kssssssssssssk.",
-        ".kssssssssssssk.",
+        ".kkk............",
+        ".ktk............",
+        ".kck............",
+        ".kck............",
+        ".kck............",
+        ".kck............",
+        ".kck............",
+        ".kck............",
+        ".kck............",
+        ".kckkkkkkkkkkkk.",
+        ".kckttttttttttk.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckcccccccccck.",
+        ".kckssssssssssk.",
+        ".kckssssssssssk.",
+        ".kckssssssssssk.",
         ".kkkkkkkkkkkkkk.",
         ".kck........kck.",
         ".kck........kck.",
