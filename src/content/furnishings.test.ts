@@ -154,12 +154,16 @@ describe("furniture art", () => {
 });
 
 // --- the sofa's arms ----------------------------------------------------------
-// An arm is a separate piece standing on the floor, and the suite above cannot
+// An arm is a separate piece standing on the base, and the suite above cannot
 // tell that from an arm painted inside the seat band — both are legal grids of
-// the right size. What makes it an arm is that its sides are UNBROKEN from its
-// own top rule down to the base: every rule they cross (the back's foot, the
-// seat's, the skirt's) has to stop for them. Draw one of those rules wall to
-// wall and the arm is a box again, which is the state this piece was found in.
+// the right size. What makes it an arm is that its sides run UNBROKEN from its
+// own top rule to the floor, and that the rules it passes stop for it.
+//
+// All but one. The base rail is a single plinth under the whole sofa and its
+// seam crosses the arms, because the arms stand on it; the back's foot and the
+// seat's own do not. So the count is the assertion: exactly one crossing. At
+// zero the sofa comes apart into three objects pushed together, and at two the
+// arm is a box again, which is the state this piece was found in.
 describe("the sofa's arms", () => {
   const rows = FURNITURE_ART.sofa!.s!.rows;
   const EDGES = [5, 42]; // the arms' inner sides, left and right
@@ -174,14 +178,20 @@ describe("the sofa's arms", () => {
     const base = rows.findLastIndex((row) => row.slice(1, 47) === "k".repeat(46));
     expect(base).toBeGreaterThan(top);
 
-    // Ink down both sides, and — the half that actually catches a rule left to
-    // run wall to wall — NO ink between them. A full-width rule passes "the
-    // sides are ink" as well; what it cannot do is leave the arm's face showing.
+    // Ink down both sides the whole way ...
     for (let y = top + 1; y < base; y++) {
       for (const x of EDGES) expect(rows[y][x], `row ${y}, arm side at ${x}`).toBe("k");
-      expect(rows[y].slice(2, 5), `row ${y}, left arm face`).not.toBe("kkk");
-      expect(rows[y].slice(43, 46), `row ${y}, right arm face`).not.toBe("kkk");
     }
+
+    // ... and ink ACROSS an arm's face exactly once, at the base rail's seam.
+    // Counting is what catches a rule left to run wall to wall: such a rule
+    // passes "the sides are ink" too, since it is ink everywhere.
+    const crossed = [];
+    for (let y = top + 1; y < base; y++) {
+      if (rows[y].slice(2, 5) === "kkk" || rows[y].slice(43, 46) === "kkk") crossed.push(y);
+    }
+    expect(crossed, "rules crossing the arms — only the base rail may").toHaveLength(1);
+    expect(rows[crossed[0]].slice(1, 47), "and it runs the whole width").toBe("k".repeat(46));
   });
 
   it("stand in front of the back, not under it", () => {

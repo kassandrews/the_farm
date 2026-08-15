@@ -671,6 +671,43 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // only the merged rule. Its back is the same fifteen rows the front's is —
   // rule, top, eleven of face, shade, rule — so the two views agree about how
   // tall a sofa is.
+  // A SOFA IS FOUR PIECES, and it was drawn as three stacked bands: a back, a
+  // seat, a skirt, each closing itself. Flat, because nothing in it stood in
+  // front of anything else and every plane in it was the same colour.
+  //
+  // ONE RULE WHERE THE BACK MEETS THE SEAT. The back closed with its own rule
+  // and the seat opened with another, so a two-pixel line ran the whole width of
+  // the piece at exactly the height a sofa has no line at all. The bench's fix
+  // and the chair's before it: one shared rule, and the row it saves goes to the
+  // back's face rather than out of the sofa's height.
+  //
+  // THE ARMS ARE A SEPARATE PIECE. They were three columns of cushion inside the
+  // seat band, top and bottom flush with it — an arm exactly as tall as the
+  // thing it is supposed to be holding in. Now they have their own top, five
+  // rows up into the back, their own top surface, and their sides run from there
+  // to the floor. The back's foot rule and the seat's both stop for them.
+  //
+  // BUT THE BASE RAIL DOES NOT, and that is the one rule that runs wall to wall.
+  // The arms stand ON the base; it is a single plinth under the whole piece, so
+  // its seam crosses them. A sofa whose every horizontal stopped at the arms
+  // would be three separate objects pushed together.
+  //
+  // THE SEAT BAND IS THE CUSHION TOPS, which this says out loud for the first
+  // time by drawing them in the top colour rather than the face colour. At this
+  // camera you are looking slightly DOWN at a sofa: the thing filling that band
+  // is horizontal, and it was painted the same tone as the two vertical planes
+  // above and below it, which is most of why the piece read flat.
+  //
+  // AND CUSHIONS HAVE DEPTH — two rows of face colour under the tops, carrying
+  // the same seams, which is the cushions' own front edge turning down to the
+  // base. Two rows and not four: it is an edge, and at four it stops being one
+  // and starts being a second row of cushion.
+  //
+  // FROM THE NORTH the back's rear face covers the arms whole, so that view
+  // keeps its plain panel; it takes the merged rule and the cushion tops, which
+  // are the same tops seen over the back and cannot be a different colour from
+  // this side. No front edge — that edge faces away. Its back is the same
+  // fifteen rows the front's is, so the two views agree about how tall a sofa is.
   sofa: {
     rise: 4,
     mirrorW: true,
@@ -691,17 +728,17 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kccckcccccccccccccccccccccccccccccccccccckccck.",
         ".kcccksssssssssssssssssssssssssssssssssssskccck.",
         ".kccckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
         ".kccckccccccccccckcccccccccccckccccccccccckccck.",
         ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkccck.",
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
         ".kcccksssssssssssssssssssssssssssssssssssskccck.",
         ".kcccksssssssssssssssssssssssssssssssssssskccck.",
         ".kcccksssssssssssssssssssssssssssssssssssskccck.",
@@ -722,16 +759,16 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "................................................",
         "................................................",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kccckccccccccccckcccccccccccckccccccccccckccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
+        ".kcccktttttttttttkttttttttttttktttttttttttkccck.",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
         ".kttttttttttttttttttttttttttttttttttttttttttttk.",
         ".kcccccccccccccccccccccccccccccccccccccccccccck.",
