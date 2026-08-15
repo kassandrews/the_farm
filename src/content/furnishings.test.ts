@@ -159,11 +159,13 @@ describe("furniture art", () => {
 // the right size. What makes it an arm is that its sides run UNBROKEN from its
 // own top rule to the floor, and that the rules it passes stop for it.
 //
-// All but one. The base rail is a single plinth under the whole sofa and its
-// seam crosses the arms, because the arms stand on it; the back's foot and the
-// seat's own do not. So the count is the assertion: exactly one crossing. At
-// zero the sofa comes apart into three objects pushed together, and at two the
-// arm is a box again, which is the state this piece was found in.
+// All but one, and the one is the ARM'S OWN seam — ink across both arms and
+// nothing between them, sitting three rows proud of the cushions' seam so it
+// reads as the arm pad being thicker than the seat. No rule belonging to the
+// body may cross: not the back's foot, not the seat's, not the base rail's.
+// So the count is the assertion: exactly one crossing, and it stops at the
+// cushions. At zero the arm has no seam at all; at two it is a box again,
+// which is the state this piece was found in.
 describe("the sofa's arms", () => {
   const rows = FURNITURE_ART.sofa!.s!.rows;
   const EDGES = [5, 42]; // the arms' inner sides, left and right
@@ -183,15 +185,15 @@ describe("the sofa's arms", () => {
       for (const x of EDGES) expect(rows[y][x], `row ${y}, arm side at ${x}`).toBe("k");
     }
 
-    // ... and ink ACROSS an arm's face exactly once, at the base rail's seam.
-    // Counting is what catches a rule left to run wall to wall: such a rule
+    // ... and ink ACROSS an arm's face exactly once, at the arms' own seam.
+    // Counting is what catches a body rule left to run wall to wall: such a rule
     // passes "the sides are ink" too, since it is ink everywhere.
     const crossed = [];
     for (let y = top + 1; y < base; y++) {
-      if (rows[y].slice(2, 5) === "kkk" || rows[y].slice(43, 46) === "kkk") crossed.push(y);
+      if (rows[y].slice(1, 5) === "kkkk" || rows[y].slice(43, 47) === "kkkk") crossed.push(y);
     }
-    expect(crossed, "rules crossing the arms — only the base rail may").toHaveLength(1);
-    expect(rows[crossed[0]].slice(1, 47), "and it runs the whole width").toBe("k".repeat(46));
+    expect(crossed, "rows crossing the arms — only the arms' own seam may").toHaveLength(1);
+    expect(rows[crossed[0]].slice(6, 42), "and it stops at the cushions").not.toBe("k".repeat(36));
   });
 
   it("stand in front of the back, not under it", () => {
