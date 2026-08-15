@@ -153,6 +153,47 @@ describe("furniture art", () => {
   }
 });
 
+// --- the sofa's arms ----------------------------------------------------------
+// An arm is a separate piece standing on the floor, and the suite above cannot
+// tell that from an arm painted inside the seat band — both are legal grids of
+// the right size. What makes it an arm is that its sides are UNBROKEN from its
+// own top rule down to the base: every rule they cross (the back's foot, the
+// seat's, the skirt's) has to stop for them. Draw one of those rules wall to
+// wall and the arm is a box again, which is the state this piece was found in.
+describe("the sofa's arms", () => {
+  const rows = FURNITURE_ART.sofa!.s!.rows;
+  const EDGES = [5, 42]; // the arms' inner sides, left and right
+
+  it("run unbroken from their tops to the floor", () => {
+    // The arm's top rule is the first row that is ink at an arm's inner side and
+    // NOT ink beside it — which the back's own full-width rules never are.
+    const top = rows.findIndex((row) => row[EDGES[0]] === "k" && row[EDGES[0] + 1] !== "k");
+    expect(top).toBeGreaterThan(0);
+
+    // The base is the last full-width rule; below it there are only feet.
+    const base = rows.findLastIndex((row) => row.slice(1, 47) === "k".repeat(46));
+    expect(base).toBeGreaterThan(top);
+
+    // Ink down both sides, and — the half that actually catches a rule left to
+    // run wall to wall — NO ink between them. A full-width rule passes "the
+    // sides are ink" as well; what it cannot do is leave the arm's face showing.
+    for (let y = top + 1; y < base; y++) {
+      for (const x of EDGES) expect(rows[y][x], `row ${y}, arm side at ${x}`).toBe("k");
+      expect(rows[y].slice(2, 5), `row ${y}, left arm face`).not.toBe("kkk");
+      expect(rows[y].slice(43, 46), `row ${y}, right arm face`).not.toBe("kkk");
+    }
+  });
+
+  it("stand in front of the back, not under it", () => {
+    // Their top is above the seat: the row the back's foot rules on is below the
+    // arm's top, so the arm crosses it. Flush with the seat instead and a sofa
+    // has an arm exactly as tall as the cushion it is holding in.
+    const top = rows.findIndex((row) => row[EDGES[0]] === "k" && row[EDGES[0] + 1] !== "k");
+    const foot = rows.findIndex((row, i) => i > top && row[6] === "k");
+    expect(foot).toBeGreaterThan(top);
+  });
+});
+
 // --- joining pieces -----------------------------------------------------------
 // A joining form's `mid` and `end` are grids the facing-based suite above never
 // looks at, because `gridFor` never returns them. Unguarded they are exactly the

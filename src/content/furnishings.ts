@@ -643,6 +643,34 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // Arms at both ends, a back with a lit top roll, and two seat cushions with
   // a gap between them. The frame and feet are LITERAL timber while the upholstery
   // takes the finish, because a sofa is genuinely two materials and you only choose one.
+  // A SOFA IS FOUR PIECES, and it was drawn as three stacked bands: a back, a
+  // seat, a skirt, each closing itself. Flat, because nothing in it stood in
+  // front of anything else.
+  //
+  // ONE RULE WHERE THE BACK MEETS THE SEAT. The back closed with its own rule
+  // and the seat opened with another, so a two-pixel line ran the whole width of
+  // the piece at exactly the height a sofa has no line at all. The bench's fix
+  // and the chair's before it: one shared rule, and the row it saves goes to the
+  // back's face rather than out of the sofa's height.
+  //
+  // THE ARMS ARE A SEPARATE PIECE, which is the whole of why this reads flat or
+  // does not. They were three columns of cushion inside the seat band, top and
+  // bottom flush with it — an arm exactly as tall as the thing it is supposed to
+  // be holding in. Now they have their own top, five rows up into the back,
+  // their own top surface, and their sides run unbroken from there THROUGH the
+  // seat rule and the skirt to the floor. That is how a sofa is built: the arm
+  // is a panel standing on the ground and the cushions sit between the two of
+  // them.
+  //
+  // So three rules are interrupted rather than run wall to wall — the back's
+  // foot, the seat's own, and the skirt's top. A line drawn across an arm at
+  // seat height makes it a box again.
+  //
+  // FROM THE NORTH none of that shows: the back's rear face is the near surface
+  // and it covers the arms whole, so that view keeps its plain panel and takes
+  // only the merged rule. Its back is the same fifteen rows the front's is —
+  // rule, top, eleven of face, shade, rule — so the two views agree about how
+  // tall a sofa is.
   sofa: {
     rise: 4,
     mirrorW: true,
@@ -658,11 +686,11 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kcccccccccccccccccccccccccccccccccccccccccccck.",
         ".kcccccccccccccccccccccccccccccccccccccccccccck.",
         ".kcccccccccccccccccccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccccccccccccccccccck.",
-        ".kssssssssssssssssssssssssssssssssssssssssssssk.",
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ".kkkkkcccccccccccccccccccccccccccccccccccckkkkk.",
+        ".ktttkccccccccccccccccccccccccccccccccccccktttk.",
+        ".kccckcccccccccccccccccccccccccccccccccccckccck.",
+        ".kcccksssssssssssssssssssssssssssssssssssskccck.",
+        ".kccckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkccck.",
         ".kccckccccccccccckcccccccccccckccccccccccckccck.",
         ".kccckccccccccccckcccccccccccckccccccccccckccck.",
         ".kccckccccccccccckcccccccccccckccccccccccckccck.",
@@ -673,15 +701,15 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kccckccccccccccckcccccccccccckccccccccccckccck.",
         ".kccckccccccccccckcccccccccccckccccccccccckccck.",
         ".kccckccccccccccckcccccccccccckccccccccccckccck.",
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        ".kssssssssssssssssssssssssssssssssssssssssssssk.",
-        ".kssssssssssssssssssssssssssssssssssssssssssssk.",
-        ".kssssssssssssssssssssssssssssssssssssssssssssk.",
-        ".kssssssssssssssssssssssssssssssssssssssssssssk.",
-        ".kssssssssssssssssssssssssssssssssssssssssssssk.",
-        ".kssssssssssssssssssssssssssssssssssssssssssssk.",
-        ".kssssssssssssssssssssssssssssssssssssssssssssk.",
-        ".kssssssssssssssssssssssssssssssssssssssssssssk.",
+        ".kccckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkccck.",
+        ".kcccksssssssssssssssssssssssssssssssssssskccck.",
+        ".kcccksssssssssssssssssssssssssssssssssssskccck.",
+        ".kcccksssssssssssssssssssssssssssssssssssskccck.",
+        ".kcccksssssssssssssssssssssssssssssssssssskccck.",
+        ".kcccksssssssssssssssssssssssssssssssssssskccck.",
+        ".kcccksssssssssssssssssssssssssssssssssssskccck.",
+        ".kcccksssssssssssssssssssssssssssssssssssskccck.",
+        ".kcccksssssssssssssssssssssssssssssssssssskccck.",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
         "...kkk....................................kkk...",
       ],
@@ -705,8 +733,8 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kccckccccccccccckcccccccccccckccccccccccckccck.",
         ".kccckccccccccccckcccccccccccckccccccccccckccck.",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
         ".kttttttttttttttttttttttttttttttttttttttttttttk.",
+        ".kcccccccccccccccccccccccccccccccccccccccccccck.",
         ".kcccccccccccccccccccccccccccccccccccccccccccck.",
         ".kcccccccccccccccccccccccccccccccccccccccccccck.",
         ".kcccccccccccccccccccccccccccccccccccccccccccck.",
@@ -728,6 +756,10 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
       ],
       palette: { k: INK },
     },
+    // Turned, the same doubled rule under the arm's stub, merged the same way.
+    // The stub is the block the bench has just stopped being — a rail drawn at
+    // the far end only, when what recedes from this camera IS the sofa's length.
+    // Its own sitting.
     e: {
       rows: [
         ".kkkkk..........",
@@ -743,7 +775,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kccck..........",
         ".kccck..........",
         ".kccck..........",
-        ".kkkkk..........",
+        ".kccck..........",
         "kkkkkkkkkkkkkkkk",
         "kcccccccccccccck",
         "kcccccccccccccck",
