@@ -245,6 +245,100 @@ const BENCH_BACK = [
   ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
 ];
 
+/** The table's two views, named because the coffee table IS them — see its
+ *  row. They were authored twice and drifted: the table reached its own cells
+ *  edge to edge with legs at the corners, and the copy was inset a pixel all
+ *  round, chamfered along its top rule, and stood on legs pulled three pixels
+ *  further in. Two objects, one of which claimed in its own comment to be the
+ *  other. */
+const TABLE_FRONT = [
+  "................................",
+  "................................",
+  "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  "kttttttttttttttttttttttttttttttk",
+  "kcccccccccccccccccccccccccccccck",
+  "kcccccccccccccccccccccccccccccck",
+  "kcccccccccccccccccccccccccccccck",
+  "kcccccccccccccccccccccccccccccck",
+  "kcccccccccccccccccccccccccccccck",
+  "kcccccccccccccccccccccccccccccck",
+  "kcccccccccccccccccccccccccccccck",
+  "kcccccccccccccccccccccccccccccck",
+  "kcccccccccccccccccccccccccccccck",
+  "kssssssssssssssssssssssssssssssk",
+  "kssssssssssssssssssssssssssssssk",
+  "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  ".kck........................kck.",
+  ".kck........................kck.",
+  ".kck........................kck.",
+  ".kck........................kck.",
+  ".kck........................kck.",
+  ".kck........................kck.",
+  ".kck........................kck.",
+  ".kck........................kck.",
+  ".kck........................kck.",
+  ".kck........................kck.",
+  ".kck........................kck.",
+  ".kkk........................kkk.",
+];
+
+const TABLE_SIDE = [
+  "................",
+  "................",
+  "kkkkkkkkkkkkkkkk",
+  "kttttttttttttttk",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kcccccccccccccck",
+  "kssssssssssssssk",
+  "kssssssssssssssk",
+  "kkkkkkkkkkkkkkkk",
+  "kck..........kck",
+  "kck..........kck",
+  "kck..........kck",
+  "kck..........kck",
+  "kck..........kck",
+  "kck..........kck",
+  "kck..........kck",
+  "kck..........kck",
+  "kck..........kck",
+  "kck..........kck",
+  "kck..........kck",
+  "kck..........kck",
+  "kkk..........kkk",
+];
+
+/** Take rows out of a piece's legs, leaving everything above them alone.
+ *
+ *  The last row is the feet and stays; what goes is shaft, which is why this
+ *  can be a slice rather than a redraw. It is the whole difference between a
+ *  table and a coffee table, so it is written once here instead of being a
+ *  second drawing that has to be kept in step with the first. */
+function shorterLegs(rows: string[], by: number): string[] {
+  return [...rows.slice(0, rows.length - 1 - by), rows[rows.length - 1]];
+}
+
 export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // A CHAIR IS THE TEST CASE, because it is the piece whose icon and whose world
   // drawing disagreed most. The icon has a back and four legs; the world had a
@@ -877,82 +971,25 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
   },
 
-  // The table, seven pixels lower. Nothing else changes, and nothing
-  // else should: it is the same object at the height that makes it a different one.
+  // THE TABLE, FIVE ROWS OF LEG SHORTER, and now literally so. This row already
+  // claimed to be "the table, seven pixels lower — nothing else changes, and
+  // nothing else should", and its art said otherwise: a copy inset a pixel all
+  // round, with a chamfer along its top rule the table has never had, standing
+  // on legs pulled three pixels in from the corners the table stands on. The
+  // same object drawn twice at two different widths, which is this catalogue's
+  // recurring defect wearing the one disguise the comment ruled out.
+  //
+  // Five, not seven: the heights are 12 and 7, and the difference between them
+  // is the number the drawing needs. Seven is what a coffee table IS, not how
+  // far it was lowered — and the old note said both at once.
+  //
+  // Derived rather than authored, `CHAIR_BACK`'s argument: two statements of one
+  // shape drift, and this pair had. Restyle the table and the coffee table
+  // follows for free, which is what a set owes a form.
   coffeetable: {
     mirrorW: true,
-    s: {
-      rows: [
-        "................................",
-        "................................",
-        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
-        ".kttttttttttttttttttttttttttttk.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kssssssssssssssssssssssssssssk.",
-        ".kssssssssssssssssssssssssssssk.",
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kkk....................kkk...",
-      ],
-      palette: { k: INK },
-    },
-    e: {
-      rows: [
-        "................",
-        "................",
-        "..kkkkkkkkkkkk..",
-        ".kttttttttttttk.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kssssssssssssk.",
-        ".kssssssssssssk.",
-        ".kkkkkkkkkkkkkk.",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kkk....kkk...",
-      ],
-      palette: { k: INK },
-    },
+    s: { rows: shorterLegs(TABLE_FRONT, 5), palette: { k: INK } },
+    e: { rows: shorterLegs(TABLE_SIDE, 5), palette: { k: INK } },
   },
 
   // A tabletop with a drawer pedestal under its right half and a KNEEHOLE
@@ -2091,34 +2128,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     mirrorW: true,
     s: {
       rows: [
-        "................................",
-        "................................",
-        "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
-        "kttttttttttttttttttttttttttttttk",
-        "kcccccccccccccccccccccccccccccck",
-        "kcccccccccccccccccccccccccccccck",
-        "kcccccccccccccccccccccccccccccck",
-        "kcccccccccccccccccccccccccccccck",
-        "kcccccccccccccccccccccccccccccck",
-        "kcccccccccccccccccccccccccccccck",
-        "kcccccccccccccccccccccccccccccck",
-        "kcccccccccccccccccccccccccccccck",
-        "kcccccccccccccccccccccccccccccck",
-        "kssssssssssssssssssssssssssssssk",
-        "kssssssssssssssssssssssssssssssk",
-        "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
-        ".kck........................kck.",
-        ".kck........................kck.",
-        ".kck........................kck.",
-        ".kck........................kck.",
-        ".kck........................kck.",
-        ".kck........................kck.",
-        ".kck........................kck.",
-        ".kck........................kck.",
-        ".kck........................kck.",
-        ".kck........................kck.",
-        ".kck........................kck.",
-        ".kkk........................kkk.",
+        ...TABLE_FRONT,
       ],
       palette: { k: INK },
     },
@@ -2142,50 +2152,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     // applies: edge to edge, legs at the corners of its own cells.
     e: {
       rows: [
-        "................",
-        "................",
-        "kkkkkkkkkkkkkkkk",
-        "kttttttttttttttk",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kcccccccccccccck",
-        "kssssssssssssssk",
-        "kssssssssssssssk",
-        "kkkkkkkkkkkkkkkk",
-        "kck..........kck",
-        "kck..........kck",
-        "kck..........kck",
-        "kck..........kck",
-        "kck..........kck",
-        "kck..........kck",
-        "kck..........kck",
-        "kck..........kck",
-        "kck..........kck",
-        "kck..........kck",
-        "kck..........kck",
-        "kck..........kck",
-        "kkk..........kkk",
+        ...TABLE_SIDE,
       ],
       palette: { k: INK },
     },
