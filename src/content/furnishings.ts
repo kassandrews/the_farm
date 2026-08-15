@@ -230,6 +230,21 @@ const CHAIR_BACK = [
   "..kkkkkkkkkkkk..",
 ];
 
+/** The bench's back rail, drawn ONCE and spread into the two views that show it
+ *  flat on — the chair's argument, and the bench had the bug the chair's shared
+ *  panel exists to prevent: nine rows in front, twelve from behind.
+ *
+ *  Its LAST ROW IS THE JOINT, not a rule of its own. The seat below it starts at
+ *  its top surface, so the rail's foot and the seat's top edge are one line of
+ *  ink and the two read as one silhouette. */
+const BENCH_BACK = [
+  ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+  ".kttttttttttttttttttttttttttttk.",
+  ...Array<string>(6).fill(".kcccccccccccccccccccccccccccck."),
+  ".kssssssssssssssssssssssssssssk.",
+  ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+];
+
 export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // A CHAIR IS THE TEST CASE, because it is the piece whose icon and whose world
   // drawing disagreed most. The icon has a back and four legs; the world had a
@@ -467,23 +482,46 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
   },
 
-  // A seat with a rail behind it on posts, which is what stops it being a
-  // long stool. Turned east the rail is seen edge-on down one side.
+  // A SEAT WITH A RAIL BEHIND IT, drawn as one piece of furniture rather than as
+  // a rail parked on a bench. The chair's rule, arrived at the same way and for
+  // the same reasons (see `CHAIR_BACK` and the note above `chair`):
+  //
+  // BACK AND SEAT ARE THE SAME WIDTH, so their sides are one continuous pair.
+  // The back was twenty-eight wide on a thirty-wide seat, which is a smaller box
+  // balanced on a bigger one — the shape of a crate with a lid, not of a bench.
+  //
+  // THEY OVERLAP AT THE OUTLINE. Each used to close itself, so the back's foot
+  // rule and the seat's top rule sat in adjacent rows and met as a DOUBLED line
+  // across the middle of the piece — two pixels of ink saying one joint, which
+  // reads as two objects touching. One rule now, shared: the back's foot IS the
+  // seat's top edge, which is what makes the rail rise out of the seat.
+  //
+  // Merging the two saved a row, and the back takes it — one more row of face
+  // rather than one less row of bench. The piece is the same thirty-one rows it
+  // has always been.
+  //
+  // THE BACK IS DRAWN ONCE AND SPREAD. It was authored twice and the two copies
+  // disagreed: nine rows from the front and twelve from behind, so the bench was
+  // taller seen from the north than from the south. A vertical thing projects to
+  // the same height whichever way you look at it — the defect this catalogue
+  // keeps producing, and the same fix as the chair's back, the bookcase's plinth
+  // and the fireplace's hearth.
+  //
+  // LEGS AT THE SEAT'S CORNERS, their outer column the seat's own outline, which
+  // is where the chair's stand. Inset two they stood under the seat rather than
+  // at its ends, and a long seat on inboard legs reads as a plank on trestles.
+  //
+  // FROM THE NORTH the back is the near thing and the seat is behind it, so the
+  // panel covers the whole receding surface and only the seat's thickness shows
+  // below — the chair's arithmetic exactly: the panel's foot lands at the near
+  // end of the surface, and the eight rows of sky above it are the projection
+  // working, not the two views disagreeing.
   bench: {
     rise: 4,
     mirrorW: true,
     s: {
       rows: [
-        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
-        "..kttttttttttttttttttttttttttk..",
-        "..kcccccccccccccccccccccccccck..",
-        "..kcccccccccccccccccccccccccck..",
-        "..kcccccccccccccccccccccccccck..",
-        "..kcccccccccccccccccccccccccck..",
-        "..kcccccccccccccccccccccccccck..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+        ...BENCH_BACK,
         ".kttttttttttttttttttttttttttttk.",
         ".kcccccccccccccccccccccccccccck.",
         ".kcccccccccccccccccccccccccccck.",
@@ -495,52 +533,36 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kssssssssssssssssssssssssssssk.",
         ".kssssssssssssssssssssssssssssk.",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kkk....................kkk...",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kkk........................kkk.",
       ],
       palette: { k: INK },
     },
     n: {
       rows: [
-        "................................",
-        "................................",
-        "................................",
-        "................................",
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        ".kttttttttttttttttttttttttttttk.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
+        ...Array<string>(8).fill(BLANK32),
+        ...BENCH_BACK,
         ".kcccccccccccccccccccccccccccck.",
         ".kssssssssssssssssssssssssssssk.",
-        ".kssssssssssssssssssssssssssssk.",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
-        "..kttttttttttttttttttttttttttk..",
-        "..kcccccccccccccccccccccccccck..",
-        "..kcccccccccccccccccccccccccck..",
-        "..kcccccccccccccccccccccccccck..",
-        "..kcccccccccccccccccccccccccck..",
-        "..kcccccccccccccccccccccccccck..",
-        "..kssssssssssssssssssssssssssk..",
-        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kck....................kck...",
-        "...kkk....................kkk...",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kck........................kck.",
+        ".kkk........................kkk.",
       ],
       palette: { k: INK },
     },
@@ -583,16 +605,16 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kssssssssssssk.",
         ".kssssssssssssk.",
         ".kkkkkkkkkkkkkk.",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kkk....kkk...",
+        ".kck........kck.",
+        ".kck........kck.",
+        ".kck........kck.",
+        ".kck........kck.",
+        ".kck........kck.",
+        ".kck........kck.",
+        ".kck........kck.",
+        ".kck........kck.",
+        ".kck........kck.",
+        ".kkk........kkk.",
       ],
       palette: { k: INK },
     },
