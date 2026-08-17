@@ -256,6 +256,12 @@ const BENCH_BACK = [
  *  speaks C/T/S. */
 const BRASS = "#9c7a2c";
 
+/** Bed linen. The double bed had these two literals inline and the cot now
+ *  wants the same pillow, and a pillow that is a different white on the bed
+ *  from the cot is two objects' worth of laundry. */
+const LINEN = "#fbf7ef";
+const LINEN_SHADE = "#cfc7b6";
+
 /** The nightstand from behind or from either end: the same carcass with its
  *  drawer seams and pulls not drawn, and its body in shade. Named because two
  *  facings share it and a third mirrors it. */
@@ -1206,7 +1212,29 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   },
 
   // Canvas slung in a frame at shin height. Flat, thin and cheap-looking on
-  // purpose — it should read as the thing you put in a room you only just walled in.
+  // purpose — it should read as the thing you put in a room you only just walled
+  // in. Its finish is the CLOTH and its trim is the frame, which is the whole of
+  // why this row has both.
+  //
+  // ITS LEGS ARE THE FRAME, so they are drawn in the trim like the rails are.
+  // Turned, they always were — three pixels with a wooden core. From the front
+  // they were two bare pixels of the cloth's own outline ink, which on undyed
+  // canvas is pale grey, so a cot changed the material of its legs when you
+  // turned it. Same legs now from every side, at the frame's corners.
+  //
+  // AND IT HAS A HEAD. The pillow is the owner's call and it settles a question
+  // ROADMAP §the three missing north grids left open — which recorded that the
+  // cot's fallback north view was CORRECT because the piece was symmetric end to
+  // end. It is not symmetric any more, so that note is spent and this row now
+  // owes a real `n`: from behind, the head is the NEAR end.
+  //
+  // The pillow is the bed's linen, shared with it rather than restated, and it
+  // lies ON the canvas between two rules — thick enough to read as bedding and
+  // not so thick that a camp cot starts looking made up.
+  //
+  // TURNED, THE HEAD IS ONE END OF THE CANVAS and `mirrorW` is still honest
+  // about it: this asymmetry runs ACROSS the screen, which is the case a mirror
+  // gets right. (The desk one page up is the case it does not.)
   cot: {
     mirrorW: true,
     s: {
@@ -1214,14 +1242,14 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kkkkkkkkkkkkkk.",
         ".kCCCCCCCCCCCCk.",
         ".kkkkkkkkkkkkkk.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
+        ".kgoooooooooogk.",
+        ".kgoooooooooogk.",
+        ".kgoooooooooogk.",
+        ".kgoooooooooogk.",
+        ".kgoooooooooogk.",
+        ".kgoooooooooogk.",
+        ".kgoooooooooogk.",
+        ".kkkkkkkkkkkkkk.",
         ".kcccccccccccck.",
         ".kcccccccccccck.",
         ".kcccccccccccck.",
@@ -1245,39 +1273,82 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kkkkkkkkkkkkkk.",
         ".kCCCCCCCCCCCCk.",
         ".kkkkkkkkkkkkkk.",
-        "..kk........kk..",
-        "..kk........kk..",
-        "..kk........kk..",
-        "..kk........kk..",
+        ".kCk........kCk.",
+        ".kCk........kCk.",
+        ".kCk........kCk.",
+        ".kkk........kkk.",
       ],
-      palette: { k: INK },
+      palette: { k: INK, o: LINEN, g: LINEN_SHADE },
+    },
+    n: {
+      rows: [
+        ".kkkkkkkkkkkkkk.",
+        ".kCCCCCCCCCCCCk.",
+        ".kkkkkkkkkkkkkk.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kkkkkkkkkkkkkk.",
+        ".kgoooooooooogk.",
+        ".kgoooooooooogk.",
+        ".kgoooooooooogk.",
+        ".kgoooooooooogk.",
+        ".kgoooooooooogk.",
+        ".kgoooooooooogk.",
+        ".kgoooooooooogk.",
+        ".kkkkkkkkkkkkkk.",
+        ".kCCCCCCCCCCCCk.",
+        ".kkkkkkkkkkkkkk.",
+        ".kCk........kCk.",
+        ".kCk........kCk.",
+        ".kCk........kCk.",
+        ".kkk........kkk.",
+      ],
+      palette: { k: INK, o: LINEN, g: LINEN_SHADE },
     },
     e: {
       rows: [
         "................................",
         "................................",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
+        ".kgooooooogkcccccccccccccccccck.",
+        ".kgooooooogkcccccccccccccccccck.",
+        ".kgooooooogkcccccccccccccccccck.",
+        ".kgooooooogkcccccccccccccccccck.",
+        ".kgooooooogkcccccccccccccccccck.",
+        ".kgooooooogkcccccccccccccccccck.",
+        ".kgooooooogkcccccccccccccccccck.",
+        ".kgooooooogkcccccccccccccccccck.",
+        ".kgooooooogkcccccccccccccccccck.",
+        ".kgooooooogkcccccccccccccccccck.",
+        ".kgooooooogkcccccccccccccccccck.",
+        ".kgooooooogkcccccccccccccccccck.",
+        ".kgooooooogkcccccccccccccccccck.",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        "...kCk....................kCk...",
-        "...kCk....................kCk...",
-        "...kCk....................kCk...",
-        "...kCk....................kCk...",
-        "...kkk....................kkk...",
+        ".kCk........................kCk.",
+        ".kCk........................kCk.",
+        ".kCk........................kCk.",
+        ".kCk........................kCk.",
+        ".kkk........................kkk.",
       ],
-      palette: { k: INK },
+      palette: { k: INK, o: LINEN, g: LINEN_SHADE },
     },
   },
 
@@ -1331,7 +1402,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kk..........................kk.",
         ".kk..........................kk.",
       ],
-      palette: { k: INK, p: "#f2ece0", o: "#fbf7ef", g: "#cfc7b6" },
+      palette: { k: INK, p: "#f2ece0", o: LINEN, g: LINEN_SHADE },
     },
     // TURNED, following the single bed's script exactly (§bed.e): a board at each
     // end, the bedding draping over the near face in the shade tones, and a rail
@@ -1383,7 +1454,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kk........................kk..",
         "..kk........................kk..",
       ],
-      palette: { k: INK, p: "#f2ece0", o: "#fbf7ef", g: "#cfc7b6" },
+      palette: { k: INK, p: "#f2ece0", o: LINEN, g: LINEN_SHADE },
     },
     n: {
       rows: [
@@ -1430,7 +1501,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kk..........................kk.",
         ".kk..........................kk.",
       ],
-      palette: { k: INK, p: "#f2ece0", o: "#fbf7ef", g: "#cfc7b6" },
+      palette: { k: INK, p: "#f2ece0", o: LINEN, g: LINEN_SHADE },
     },
   },
 
@@ -2389,7 +2460,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kk..........kk.",
         ".kk..........kk.",
       ],
-      palette: { k: INK, p: "#f2ece0", o: "#fbf7ef", g: "#cfc7b6" },
+      palette: { k: INK, p: "#f2ece0", o: LINEN, g: LINEN_SHADE },
     },
     e: {
       rows: [
@@ -2420,7 +2491,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kk........................kk..",
         "..kk........................kk..",
       ],
-      palette: { k: INK, p: "#f2ece0", o: "#fbf7ef", g: "#cfc7b6" },
+      palette: { k: INK, p: "#f2ece0", o: LINEN, g: LINEN_SHADE },
     },
     n: {
       rows: [
@@ -2467,7 +2538,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kk..........kk.",
         ".kk..........kk.",
       ],
-      palette: { k: INK, p: "#f2ece0", o: "#fbf7ef", g: "#cfc7b6" },
+      palette: { k: INK, p: "#f2ece0", o: LINEN, g: LINEN_SHADE },
     },
   },
 

@@ -12320,6 +12320,13 @@ sort between a roof and the furniture under it and needs a real house.
 `desk` and `dresser` have `n` grids now. **`cot` does not, and should not** —
 which the sheet is what found.
 
+- ~~**The cot's fallback was already correct.**~~ **Spent 17 Aug 2026** — the
+  owner asked for a pillow in the cot's own sitting, which is the "live
+  question" this bullet ends by naming. A cot with a head is not symmetric end
+  to end, so the argument below no longer holds and the row has a real `n`: from
+  behind, the head is the NEAR end. The reasoning is kept because it was right
+  until the drawing changed under it, and because it is the test for the NEXT
+  fallback somebody wants to defend.
 - **The cot's fallback was already correct.** Its front view is symmetric end to
   end: identical rails at head and foot, no pillow, no headboard, and the legs
   drawn only at the near end — which is right from either direction, because
