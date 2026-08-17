@@ -251,6 +251,11 @@ const BENCH_BACK = [
  *  round, chamfered along its top rule, and stood on legs pulled three pixels
  *  further in. Two objects, one of which claimed in its own comment to be the
  *  other. */
+/** Brass, for a drawer pull — the one thing on a desk that is not its timber.
+ *  A literal rather than a trim char: `d` is palette-declared, and TRIM_KEY only
+ *  speaks C/T/S. */
+const BRASS = "#9c7a2c";
+
 const TABLE_FRONT = [
   "................................",
   "................................",
@@ -992,122 +997,120 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     e: { rows: shorterLegs(TABLE_SIDE, 5), palette: { k: INK } },
   },
 
-  // A tabletop with a drawer pedestal under its right half and a KNEEHOLE
-  // under the left. That asymmetry is the entire silhouette difference from a table,
+  // A TABLETOP WITH A DRAWER PEDESTAL UNDER ITS RIGHT HALF AND A KNEEHOLE UNDER
+  // THE LEFT. That asymmetry is the entire silhouette difference from a table,
   // and it is the reason a desk is worth being its own row.
+  //
+  // SO IT STANDS ON THE TABLE'S OWN TOP, spread rather than copied. It had been
+  // drawn a pixel narrower than the table with its top rule chamfered a pixel
+  // further in and a slab a row thinner, at the same declared height — the
+  // coffee table's bug in a second place, found the same way, and the same fix.
+  //
+  // THE KNEEHOLE LEG WAS TWO PIXELS TALL. A stub sat on the floor with an
+  // eleven-row gap between it and the underside of the top, so the left half of
+  // the desk floated. It is the table's leg now, full height, in the table's own
+  // columns: a desk is a table with one of its ends boxed in, and the end that
+  // is not boxed in still has to hold the top up.
+  //
+  // THE PEDESTAL HANGS FROM THE TOP AND REACHES THE FLOOR, sharing the slab's
+  // bottom rule rather than opening with one of its own, and its outer side
+  // lands in the leg's outer column so the two supports are inset alike.
+  //
+  // FROM THE NORTH it changes sides and shows its BACK — shade all the way, no
+  // pulls, no drawer seams (ROADMAP §the three missing north grids). It keeps
+  // the two horizontals it is entitled to, and they are the slab's rule above
+  // and its own plinth below, which is `SHELF_BACK`'s rule about a carcass
+  // needing its proportion stated.
+  //
+  // TURNED, THE PEDESTAL IS THE FAR SIDE AND THE LEGS ARE IN FRONT OF IT, which
+  // is the whole of what this view is. Drawn the other way round first — a full
+  // side panel at the near end — and it was a crate: the pedestal is at the desk's
+  // far half, its floor is sixteen rows up the screen from the near one, so it
+  // sits ENTIRELY BEHIND the top and cannot be seen at all.
+  //
+  // So this is the table's side view, legs and all, with five rows of shade
+  // between them: the hint of a mass in the gloom under the desk, which is
+  // exactly how much of a pedestal you get from this angle — RULED OFF AT THE
+  // BOTTOM, because that is where the thing meets the floor and every other edge
+  // in this catalogue is drawn. The rule stops at the legs, which stand in front
+  // of it.
+  //
+  // The old grid drew a drawer pull here, which reads well and is a drawer
+  // fitted to a face the camera never sees.
   desk: {
-    mirrorW: true,
     s: {
       rows: [
-        "................................",
-        "................................",
-        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
-        ".kttttttttttttttttttttttttttttk.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kcccccccccccccccccccccccccccck.",
-        ".kssssssssssssssssssssssssssssk.",
-        ".kssssssssssssssssssssssssssssk.",
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        "...............kkkkkkkkkkkkkk...",
-        "...............kcccccccccccck...",
-        "...............kcccccccccccck...",
-        "...............kcccccccccccck...",
-        "...............kccccdddccccck...",
-        "...............kcccccccccccck...",
-        "...............kcccccccccccck...",
-        "...............kkkkkkkkkkkkkk...",
-        "...............kcccccccccccck...",
-        "...............kcccccccccccck...",
-        "...............kcccccccccccck...",
-        "...kck.........kkkkkkkkkkkkkk...",
-        "...kkk....................kkk...",
+        ...TABLE_FRONT.slice(0, 16),
+        ".kck.............kcccccccccccck.",
+        ".kck.............kcccccccccccck.",
+        ".kck.............kccccddddcccck.",
+        ".kck.............kcccccccccccck.",
+        ".kck.............kcccccccccccck.",
+        ".kck.............kkkkkkkkkkkkkk.",
+        ".kck.............kcccccccccccck.",
+        ".kck.............kcccccccccccck.",
+        ".kck.............kccccddddcccck.",
+        ".kck.............kcccccccccccck.",
+        ".kck.............kcccccccccccck.",
+        ".kkk.............kkkkkkkkkkkkkk.",
       ],
-      palette: { k: INK, d: "#9c7a2c" },
+      palette: { k: INK, d: BRASS },
     },
-    // THE PEDESTAL CHANGES SIDES, AND THE TOP DOES NOT CHANGE AT ALL.
-    //
-    // A desk is two objects and they turn differently. The pedestal is
-    // asymmetric: what was on your right is on your left after a half turn, and
-    // the face you now see is its back — no pulls, no drawer seams, `s` (shade)
-    // all the way up, which is WARDROBE_BACK's rule and for its reason. The leg
-    // stub swaps with it.
-    //
-    // The desktop is a SYMMETRIC SLAB, so the edge facing the camera is the same
-    // piece of wood at either facing, lit the same way. It keeps its front
-    // view's `t` surface and `c` face exactly. Shading it too was the first
-    // attempt and it turned the north desk into a dark lump — a real mistake
-    // about what rotating a box does, not a taste call: nothing about that
-    // surface moved.
     n: {
       rows: [
-        "................................",
-        "................................",
-        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
-        ".kttttttttttttttttttttttttttttk.",
-        ...Array<string>(8).fill(".kcccccccccccccccccccccccccccck."),
-        ...Array<string>(2).fill(".kssssssssssssssssssssssssssssk."),
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        "...kkkkkkkkkkkkkk...............",
-        ...Array<string>(10).fill("...kssssssssssssk..............."),
-        "...kkkkkkkkkkkkkk.........ksk...",
-        "...kkk....................kkk...",
+        ...TABLE_FRONT.slice(0, 16),
+        ".kssssssssssssk.............kck.",
+        ".kssssssssssssk.............kck.",
+        ".kssssssssssssk.............kck.",
+        ".kssssssssssssk.............kck.",
+        ".kssssssssssssk.............kck.",
+        ".kssssssssssssk.............kck.",
+        ".kssssssssssssk.............kck.",
+        ".kssssssssssssk.............kck.",
+        ".kssssssssssssk.............kck.",
+        ".kssssssssssssk.............kck.",
+        ".kssssssssssssk.............kck.",
+        ".kkkkkkkkkkkkkk.............kkk.",
       ],
       palette: { k: INK },
     },
     e: {
       rows: [
-        "................",
-        "................",
-        "..kkkkkkkkkkkk..",
-        ".kttttttttttttk.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kssssssssssssk.",
-        ".kssssssssssssk.",
-        ".kkkkkkkkkkkkkk.",
-        ".kcccccccccccck.",
-        "..kccccddcccck..",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kkkkkkkkkkkkkk.",
-        ".kssssssssssssk.",
-        ".kssssssssssssk.",
-        ".kssssssssssssk.",
-        ".kssssssssssssk.",
-        ".kssssssssssssk.",
-        ".kssssssssssssk.",
-        ".kkkkkkkkkkkkkk.",
-        "...kk......kk...",
+        ...TABLE_SIDE.slice(0, 31),
+        "kcksssssssssskck",
+        "kcksssssssssskck",
+        "kcksssssssssskck",
+        "kcksssssssssskck",
+        "kckkkkkkkkkkkkck",
+        ...TABLE_SIDE.slice(36),
       ],
-      palette: { k: INK, d: "#9c7a2c" },
+      palette: { k: INK },
+    },
+    // AND WEST IS NOT EAST MIRRORED, which is why this piece cannot have
+    // `mirrorW`. Every other asymmetric row in the table is asymmetric ACROSS
+    // the screen, and a mirror is exactly right for those. A desk's asymmetry
+    // runs along its own length, so turning it the other way does not flip the
+    // picture — it swaps which end is NEAREST. From here the pedestal is the near
+    // end: its face fills the view, the legs are behind it, and the shade the
+    // east view hints at is the thing you are now looking straight at.
+    w: {
+      rows: [
+        ...TABLE_SIDE.slice(0, 31),
+        "kcccccccccccccck",
+        "kcccccccccccccck",
+        "kcccccccccccccck",
+        "kcccccccccccccck",
+        "kcccccccccccccck",
+        "kcccccccccccccck",
+        "kcccccccccccccck",
+        "kcccccccccccccck",
+        "kcccccccccccccck",
+        "kcccccccccccccck",
+        "kcccccccccccccck",
+        "kcccccccccccccck",
+        "kkkkkkkkkkkkkkkk",
+      ],
+      palette: { k: INK },
     },
   },
 
