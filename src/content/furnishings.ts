@@ -256,6 +256,38 @@ const BENCH_BACK = [
  *  speaks C/T/S. */
 const BRASS = "#9c7a2c";
 
+/** The nightstand from behind or from either end: the same carcass with its
+ *  drawer seams and pulls not drawn, and its body in shade. Named because two
+ *  facings share it and a third mirrors it. */
+const NIGHTSTAND_BLIND = [
+  "................",
+  "................",
+  "................",
+  "..kkkkkkkkkkkk..",
+  "..kttttttttttk..",
+  "..kcccccccccck..",
+  "..kcccccccccck..",
+  "..kssssssssssk..",
+  "..kkkkkkkkkkkk..",
+  "..kssssssssssk..",
+  "..kssssssssssk..",
+  "..kssssssssssk..",
+  "..kssssssssssk..",
+  "..kssssssssssk..",
+  "..kssssssssssk..",
+  "..kssssssssssk..",
+  "..kssssssssssk..",
+  "..kssssssssssk..",
+  "..kssssssssssk..",
+  "..kssssssssssk..",
+  "..kkkkkkkkkkkk..",
+  "..kck......kck..",
+  "..kck......kck..",
+  "..kck......kck..",
+  "..kck......kck..",
+  "..kkk......kkk..",
+];
+
 const TABLE_FRONT = [
   "................................",
   "................................",
@@ -1114,9 +1146,30 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
   },
 
-  // Two drawers and stubby feet. Small enough that the feet matter:
-  // without them it is a block, and a block beside a bed is a crate.
+  // A LITTLE CHEST OF DRAWERS, and the drawers are the DESK'S — same five-row
+  // fronts, same three-pixel brass pull centred in each, same seam between them.
+  // A nightstand and a desk pedestal are the same object at two sizes, and this
+  // one was drawing its drawers a different way: the pull rows were INSET A
+  // PIXEL EACH SIDE, so the carcass stepped in and out again twice down its own
+  // face. At this scale that is not a moulding, it is a wobble in the outline.
+  //
+  // Legs at the carcass's corners, three wide with their own edges, where they
+  // were two bare pixels of ink with no outline and no foot — the chair's rule,
+  // and the bench's after it.
+  //
+  // BLIND FROM EVERY OTHER SIDE. A box with pulls on all four faces is a box
+  // with pulls on all four faces; from behind and from either end this is a
+  // carcass, so the seams and the brass stop being drawn and the body goes to
+  // shade — the wardrobe's rule (ROADMAP §the three missing north grids). It
+  // keeps the top and the plinth, which is what stops it reading as a block:
+  // strip every line off a carcass and it loses its proportion.
+  //
+  // One grid does both, and `mirrorW` covers the fourth: a nightstand is square
+  // in plan and symmetric across its own face, so its back and its two ends are
+  // the same picture. That is the opposite of the desk one row up, whose
+  // asymmetry runs along its length and which therefore cannot mirror at all.
   nightstand: {
+    mirrorW: true,
     s: {
       rows: [
         "................",
@@ -1129,25 +1182,27 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kssssssssssk..",
         "..kkkkkkkkkkkk..",
         "..kcccccccccck..",
-        "...kcccddccck...",
+        "..kcccccccccck..",
+        "..kcccddddccck..",
+        "..kcccccccccck..",
         "..kcccccccccck..",
         "..kkkkkkkkkkkk..",
         "..kcccccccccck..",
-        "...kcccddccck...",
         "..kcccccccccck..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
+        "..kcccddddccck..",
+        "..kcccccccccck..",
+        "..kcccccccccck..",
         "..kkkkkkkkkkkk..",
-        "....kk....kk....",
-        "....kk....kk....",
-        "....kk....kk....",
-        "....kk....kk....",
+        "..kck......kck..",
+        "..kck......kck..",
+        "..kck......kck..",
+        "..kck......kck..",
+        "..kkk......kkk..",
       ],
-      palette: { k: INK, d: "#9c7a2c" },
+      palette: { k: INK, d: BRASS },
     },
+    n: { rows: NIGHTSTAND_BLIND, palette: { k: INK } },
+    e: { rows: NIGHTSTAND_BLIND, palette: { k: INK } },
   },
 
   // Canvas slung in a frame at shin height. Flat, thin and cheap-looking on
