@@ -5155,6 +5155,16 @@ export class Renderer {
         // only part of a notice board anybody has ever looked at.
         ctx.fillStyle = skin.shade; // a recessed panel, so it reads as framed
         ctx.fillRect(px + 1, face + 1, pw - 2, H - 3);
+        // THE BACK IS BLANK. Turned north, an opaque board was showing its
+        // notices through 22px of pine. The recessed panel stays — a frame has
+        // two sides — but the parchment belongs to the front, and two battens
+        // are what the back of a parish board actually has.
+        if (cell.facing === "n") {
+          ctx.fillStyle = skin.top;
+          ctx.fillRect(px + 2, face + 6, pw - 4, 1);
+          ctx.fillRect(px + 2, face + 14, pw - 4, 1);
+          break;
+        }
         // Three sheets, deliberately misaligned and different sizes. A grid of
         // identical rectangles would read as panelling; the joke is that this
         // has been pinned by six people over several months, none of whom were
@@ -5191,15 +5201,20 @@ export class Renderer {
         // the square — the boards have to be wide enough to be boards.
         ctx.fillStyle = skin.shade;
         for (let y = 8; y < deep - 2; y += 8) ctx.fillRect(px + 2, top + y, pw - 4, 1);
-        // The step, at the near-left corner: a lighter tread over a dark riser,
-        // which is the only way 3px of anything reads as a step rather than as
-        // a smudge. Off-centre on purpose — centred it looked like a plinth
-        // for an object, and the fact worth conveying is that somebody gets up
-        // onto this.
-        ctx.fillStyle = "rgba(0,0,0,0.28)";
-        ctx.fillRect(px + 3, base - 4, 11, 4);
+        // The step, at the near-left corner, and it BREAKS THE SILHOUETTE:
+        // the riser protrudes two pixels south of the footprint, which this
+        // projection already grants to south overhang. Drawn inside the
+        // outline it was the smudge this comment used to claim it wasn't — a
+        // 0.28 riser over a front face that is already skin.shade vanished,
+        // and a skin.top tread directly under the equally light deck edge
+        // merged upward into a notch. A step reads by interrupting the
+        // outline; inside it, it is texture. Off-centre on purpose — centred
+        // it looked like a plinth for an object, and the fact worth conveying
+        // is that somebody gets up onto this.
+        ctx.fillStyle = "rgba(0,0,0,0.45)";
+        ctx.fillRect(px + 3, base - 2, 11, 4);
         ctx.fillStyle = skin.top;
-        ctx.fillRect(px + 4, base - 4, 9, 2);
+        ctx.fillRect(px + 4, base - 2, 9, 2);
         break;
       }
       case "shelf": {
@@ -5371,19 +5386,15 @@ export class Renderer {
     ctx.fillRect(px, clothTop + clothH - 1, pw, 1);
     if (!run.west) ctx.fillRect(px, clothTop, 1, clothH);
     if (!run.east) ctx.fillRect(px + pw - 1, clothTop, 1, clothH);
-    // A valance along the near edge — the frill a market awning has, and the
-    // detail that stops the sheet reading as a slab.
-    //
-    // FLAT, AND IT STAYS FLAT. A real scalloped hem was drawn here and thrown
-    // out: dipping the edge a pixel every four gave a dark dashed band that read
-    // as a dirty or chewed-up fringe rather than as a frill, and a matching
-    // 2px shade under the far edge (meant to say "this surface leans away")
-    // came out as a muddy grey strip laid across the top of the cloth. Both were
-    // texture the object is too small to hold — restraint over density, again.
-    // What sells the canopy is the stripes and the air underneath it, and neither
-    // needed help.
-    ctx.fillStyle = "rgba(0,0,0,0.25)";
-    ctx.fillRect(x0, clothTop + clothH - 2, x1 - x0, 1);
+    // THE VALANCE IS GONE, and the bottom outline is the whole of the hem.
+    // This edge has now shed three dressings: a scalloped hem (dipping the
+    // edge a pixel every four read as a dirty, chewed-up fringe), a 2px shade
+    // under the far edge (a muddy grey strip meant to say "this surface leans
+    // away"), and finally the flat valance itself — which sat directly on the
+    // bottom outline, and two adjacent dark rows on ten of cloth read as a
+    // shadowed underside, a fifth of the sheet spent on hem. Same verdict all
+    // three times: texture the object is too small to hold. What sells the
+    // canopy is the stripes and the air underneath it, and neither needed help.
   }
 
   /** A lamp: a timber post with a brass head, and the only object in the game

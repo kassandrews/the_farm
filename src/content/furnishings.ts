@@ -268,15 +268,19 @@ const HEARTH = [
 
 /** The rug itself: border, band, panel, and no fringe on any edge.
  *
+ *  ONE PANEL, ONE TONE. It had a shade square in its middle — eleven rows of
+ *  `s` — and a floor covering that darkens at its centre reads as a wear-mark:
+ *  the eye goes looking for whatever stood there. Cut rather than lightened,
+ *  which also makes the line above this one true.
+ *
+ *
  *  Twenty-nine rows, and 27 columns starting at column 2 — which leaves two
  *  spare columns at each side of a 32-wide grid for the fringe to hang in, and
  *  gives both spans a centre the tassels can be symmetric about. */
 const RUG_BODY = [
   "..kkkkkkkkkkkkkkkkkkkkkkkkkkk...",
   "..ktttttttttttttttttttttttttk...",
-  ...Array<string>(7).fill("..kttcccccccccccccccccccccttk..."),
-  ...Array<string>(11).fill("..kttccccsssssssssssssccccttk..."),
-  ...Array<string>(7).fill("..kttcccccccccccccccccccccttk..."),
+  ...Array<string>(25).fill("..kttcccccccccccccccccccccttk..."),
   "..ktttttttttttttttttttttttttk...",
   "..kkkkkkkkkkkkkkkkkkkkkkkkkkk...",
 ];
@@ -670,14 +674,14 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     s: {
       rows: [
         ...Array<string>(12).fill("................"),
-        "......kkkk......",
-        "....kkttttkk....",
-        "...kttccccttk...",
-        "...kccsssscck...",
-        "...kcccccccck...",
-        "...kssssssssk...",
-        "....kksssskk....",
-        "......kkkk......",
+        ".....kkkkkk.....",
+        "...kkttttttkk...",
+        "..kttccccccttk..",
+        "..kccsssssscck..",
+        "..kcccccccccck..",
+        "..kssssssssssk..",
+        "...kksssssskk...",
+        ".....kkkkkk.....",
       ],
       palette: { k: INK },
     },
@@ -716,7 +720,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kttttttttttk..",
         "..kcccccccccck..",
         "..kcccccccccck..",
-        "..kssssssssssk..",
+        "..kcccccccccck..",
         "..kssssssssssk..",
         "...kssssssssk...",
         "....kkkkkkkk....",
@@ -957,7 +961,10 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // keeps its plain panel; it takes the merged rule and the cushion tops, which
   // are the same tops seen over the back and cannot be a different colour from
   // this side. No front edge — that edge faces away. Its back is the same
-  // fifteen rows the front's is, so the two views agree about how tall a sofa is.
+  // fifteen rows the front's is, and the view starts eight rows of sky down —
+  // the bench's arithmetic: from the south the back is the far thing and its
+  // distance is added to its height, so turned, the sofa is shorter on screen
+  // by the depth it no longer stands behind.
   sofa: {
     rise: 4,
     mirrorW: true,
@@ -1008,11 +1015,11 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "................................................",
         "................................................",
         "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
         "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
-        "kccccktttttttttttkttttttttttttktttttttttttkcccck",
-        "kccccktttttttttttkttttttttttttktttttttttttkcccck",
-        "kccccktttttttttttkttttttttttttktttttttttttkcccck",
-        "kccccktttttttttttkttttttttttttktttttttttttkcccck",
         "kccccktttttttttttkttttttttttttktttttttttttkcccck",
         "kccccktttttttttttkttttttttttttktttttttttttkcccck",
         "kccccktttttttttttkttttttttttttktttttttttttkcccck",
@@ -1340,6 +1347,11 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // lies ON the canvas between two rules — thick enough to read as bedding and
   // not so thick that a camp cot starts looking made up.
   //
+  // THE CANVAS IS THE CLOTH'S `s`, NOT ITS `c`. Undyed core and the pillow's
+  // linen are a value apart, and at game size the pillow vanished into the
+  // sling — the one authored beat this piece has. Shade under a thing that
+  // lies on the surface is also simply true.
+  //
   // TURNED, THE HEAD IS ONE END OF THE CANVAS and `mirrorW` is still honest
   // about it: this asymmetry runs ACROSS the screen, which is the case a mirror
   // gets right. (The desk one page up is the case it does not.)
@@ -1358,26 +1370,26 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kgoooooooooogk.",
         ".kgoooooooooogk.",
         ".kkkkkkkkkkkkkk.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
         ".kkkkkkkkkkkkkk.",
         ".kCCCCCCCCCCCCk.",
         ".kkkkkkkkkkkkkk.",
@@ -1393,26 +1405,26 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kkkkkkkkkkkkkk.",
         ".kCCCCCCCCCCCCk.",
         ".kkkkkkkkkkkkkk.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
         ".kkkkkkkkkkkkkk.",
         ".kgoooooooooogk.",
         ".kgoooooooooogk.",
@@ -1436,19 +1448,19 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "................................",
         "................................",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        ".kgooooooogkcccccccccccccccccck.",
-        ".kgooooooogkcccccccccccccccccck.",
-        ".kgooooooogkcccccccccccccccccck.",
-        ".kgooooooogkcccccccccccccccccck.",
-        ".kgooooooogkcccccccccccccccccck.",
-        ".kgooooooogkcccccccccccccccccck.",
-        ".kgooooooogkcccccccccccccccccck.",
-        ".kgooooooogkcccccccccccccccccck.",
-        ".kgooooooogkcccccccccccccccccck.",
-        ".kgooooooogkcccccccccccccccccck.",
-        ".kgooooooogkcccccccccccccccccck.",
-        ".kgooooooogkcccccccccccccccccck.",
-        ".kgooooooogkcccccccccccccccccck.",
+        ".kgooooooogkssssssssssssssssssk.",
+        ".kgooooooogkssssssssssssssssssk.",
+        ".kgooooooogkssssssssssssssssssk.",
+        ".kgooooooogkssssssssssssssssssk.",
+        ".kgooooooogkssssssssssssssssssk.",
+        ".kgooooooogkssssssssssssssssssk.",
+        ".kgooooooogkssssssssssssssssssk.",
+        ".kgooooooogkssssssssssssssssssk.",
+        ".kgooooooogkssssssssssssssssssk.",
+        ".kgooooooogkssssssssssssssssssk.",
+        ".kgooooooogkssssssssssssssssssk.",
+        ".kgooooooogkssssssssssssssssssk.",
+        ".kgooooooogkssssssssssssssssssk.",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
         ".kCk........................kCk.",
         ".kCk........................kCk.",
@@ -1630,6 +1642,10 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // for a different reason — they were the drawers' brass bar turned upright and
   // never thinned — and at two they read as luggage tags.
   //
+  // ONE WIDE AND SIX TALL. At four tall a handle came out at two screen pixels
+  // on a 20px piece and the front read as a blank pair of doors on the scale
+  // sheet; six survives the downscale without touching the settled width.
+  //
   // THE SEAM IS WHAT SITS OFF CENTRE, not the carcass. Doors of equal width need
   // an ODD interior and this one is twelve, so something has to give: either the
   // body goes a pixel off centre — which shows, because the plinth then notches
@@ -1663,12 +1679,12 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kcccccckccccck.",
         ".kcccccckccccck.",
         ".kcccccckccccck.",
-        ".kcccccckccccck.",
         ".kccccdckcdccck.",
         ".kccccdckcdccck.",
         ".kccccdckcdccck.",
         ".kccccdckcdccck.",
-        ".kcccccckccccck.",
+        ".kccccdckcdccck.",
+        ".kccccdckcdccck.",
         ".kcccccckccccck.",
         ".kcccccckccccck.",
         ".kcccccckccccck.",
@@ -2203,12 +2219,16 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "kmmggmmmmmmggmmk",
         "kmmmmmmmmmmmmmmk",
         "kkkkkkkkkkkkkkkk",
-        ...Array<string>(9).fill("kssssssssssssssk"),
+        ...Array<string>(11).fill("kssssssssssssssk"),
         // The access panel, in `m` rather than a second char at the same hex: one
         // grid, one name per colour. It is the hob plate's dark because it is the
         // same enamel, which is also why the fridge's coil is that value.
-        ...Array<string>(5).fill("ksssmmmmmmmmsssk"),
-        "kssssssssssssssk",
+        // FLUSH WITH THE BODY'S BOTTOM EDGE, where the fridge keeps its
+        // compressor: the two appliance backs put their machinery in the same
+        // place and stay distinguishable by form — a panel is not a coil.
+        // Centred, it read as a door you were told you should not see from
+        // behind.
+        ...Array<string>(4).fill("ksssmmmmmmmmsssk"),
         "kkkkkkkkkkkkkkkk",
         ...Array<string>(2).fill("kssssssssssssssk"),
         "kkkkkkkkkkkkkkkk",
@@ -2946,18 +2966,23 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
       ],
       palette: { k: INK, m: "#b9bec6" },
     },
+    // FROM BEHIND, THE TAP HAS NO INK. Outlined, it is three dark-ish pixels
+    // wide against porcelain — a smudge, not a fitting — because at this scale
+    // the outline is wider than the thing it outlines. One bare column of `m`
+    // is the whole tap; the e view keeps its ink because there the tap stands
+    // against floor, not against a white box.
     n: {
       rows: [
         "................",
         "................",
-        "......kkk.......",
-        "......kmk.......",
-        "......kmk.......",
+        ".......m........",
+        ".......m........",
+        ".......m........",
         "..kkkkkmkkkkkk..",
-        "..ktttkmkttttk..",
-        "..ktsskmkssstk..",
-        "..ktsskmkssstk..",
-        "..ktttkmkttttk..",
+        "..kttttmtttttk..",
+        "..ktsssmsssstk..",
+        "..ktsssmsssstk..",
+        "..kttttmtttttk..",
         "..kkkkkkkkkkkk..",
         "..kcccccccccck..",
         "..kcccccccccck..",
@@ -3107,10 +3132,16 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "................",
         "kkkkkkkkkkkkkkkk",
         "kttttttttttttttk",
-        ...Array<string>(20).fill("ktsssssssssssstk"),
+        // THIRTEEN ROWS OF WALL, the front view's own count. Drawn at fifteen,
+        // the hollow filled the top cell and the wall the bottom one almost
+        // exactly, so the tone break sat on the tile seam and the turned tub
+        // read as two stacked boxes. An end wall is the same wall the front is;
+        // matching its height gives the two rows to the hollow and slides the
+        // break off the seam.
+        ...Array<string>(22).fill("ktsssssssssssstk"),
         "kttttttttttttttk",
         "kkkkkkkkkkkkkkkk",
-        ...Array<string>(15).fill("kcccccccccccccck"),
+        ...Array<string>(13).fill("kcccccccccccccck"),
         "kkkkkkkkkkkkkkkk",
       ],
       palette: { k: INK },
@@ -3326,6 +3357,11 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // Three shelves of books in four spine colours, which are LITERALS — a
   // bookcase repainted walnut should not repaint its books. That is the same division
   // the lamp makes about brass.
+  //
+  // FOUR, AND LOUD, BY THE OWNER'S CALL. A pass argued this down to three hues
+  // under the window box's confetti rule and it was reverted on the render:
+  // books are the one thing in a room that is ALLOWED to be chaotic, and the
+  // shelf being the most colourful object in the game is what it is for.
   shelf: {
     rise: 4,
     n: SHELF_BACK,
@@ -3565,7 +3601,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..gpggggggggggg.",
         ".ggggwggggwggggg",
         ".kkkkkkkkkkkkkk.",
-        ".kttttttttttttk.",
+        ".ktgttttttttgtk.",
         ".kcccccccccccck.",
         ".kcccccccccccck.",
         ".kssssssssssssk.",
@@ -3587,15 +3623,15 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
       rows: [
         ".kkkkkkkkkkkkkk.",
         ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kccaaaaaaaacck.",
-        ".kccaaaaaaaacck.",
-        ".kccaaaammaacck.",
-        ".kccaammbbmacck.",
-        ".kccambbbbbmcck.",
-        ".kccbbbbbbbbcck.",
-        ".kccbbbbbbbbcck.",
-        ".kcccccccccccck.",
+        ".kcaaaaaaaaaack.",
+        ".kcaaaaaaaaaack.",
+        ".kcaaaaaaaaaack.",
+        ".kcaaaaammaaack.",
+        ".kcaaammbbmaack.",
+        ".kcaambbbbbmack.",
+        ".kcambbbbbbbmck.",
+        ".kcbbbbbbbbbbck.",
+        ".kcbbbbbbbbbbck.",
         ".kcccccccccccck.",
         ".kkkkkkkkkkkkkk.",
         "..dddddddddddd..",
