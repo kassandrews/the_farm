@@ -114,6 +114,11 @@ interface Card {
   /** Does anything in this card MOVE? True for the fireplace and nothing else —
    *  see `frame()`. */
   live: boolean;
+  /** The same shot with no furniture in it — what `maskGrids()` diffs against.
+   *  Same build, same floor, same camera; only the piece is gone. */
+  bare: WorldState;
+  canvas: HTMLCanvasElement;
+  gridEl: HTMLElement;
 }
 
 const cards: Card[] = [];
@@ -275,7 +280,14 @@ function scaleCard(base: WorldState, overrides: Record<string, TileId>, def: Fur
   renderer.setZoomStep(flat >= 0 ? flat : ladder.length - 1);
   renderer.panBy(ORIGIN.x - world.player.x, ORIGIN.y - world.player.y);
   renderer.snapCamera(world);
-  cards.push({ world, renderer, live: FURNITURE_ART[def.id]?.anim !== undefined });
+  cards.push({
+    world,
+    renderer,
+    live: FURNITURE_ART[def.id]?.anim !== undefined,
+    bare: { ...world, furniture: {} },
+    canvas,
+    gridEl,
+  });
 }
 
 function build(): void {
@@ -445,7 +457,14 @@ function card(
   // band of empty floor under a tall piece and crops its top.
   renderer.panBy(ORIGIN.x + mid - world.player.x, ORIGIN.y + mid - rise / 2 - world.player.y);
   renderer.snapCamera(world);
-  cards.push({ world, renderer, live: FURNITURE_ART[def.id]?.anim !== undefined });
+  cards.push({
+    world,
+    renderer,
+    live: FURNITURE_ART[def.id]?.anim !== undefined,
+    bare: { ...world, furniture: {} },
+    canvas,
+    gridEl: grid,
+  });
 }
 
 /** How many frames a still card is drawn for before it is left alone.
@@ -478,7 +497,64 @@ function frame(): void {
     c.renderer.draw(c.world, WHEN);
   }
   drawn++;
+  if (drawn === SETTLE) maskGrids();
   requestAnimationFrame(frame);
+}
+
+/** Clip the grid overlay out of every pixel the piece draws.
+ *
+ *  The grid is a ruler laid OVER the canvas, and for most of a card that is
+ *  fine — but where a piece spans more than one tile, the ruler's lines cross
+ *  its top and paint a phantom seam at exactly the tile pitch. On a 2×1 bath or
+ *  table that is the per-cell edges bug (CLAUDE.md), manufactured by the review
+ *  instrument itself, on the sheet whose job is catching it.
+ *
+ *  The canvas is opaque — the renderer paints the whole world — so "draw the
+ *  grid under the piece" has to be done backwards: draw the same card once with
+ *  no furniture in it, diff the two shots, and mask the grid off every pixel
+ *  that changed. Same renderer, same canvas, same camera, so the mask is
+ *  pixel-exact, shadows included. Bespoke-drawn pieces (lamp post, the board,
+ *  the stage, the awning) fall out for free, because the diff never asks where
+ *  the art came from.
+ *
+ *  Run ONCE, at settle. The one moving piece (the fireplace's flame) gets a
+ *  mask cut from whichever frame settle lands on; the flame band moves inside
+ *  the firebox, which the mask already covers, so the error is nil in practice
+ *  and not worth re-diffing sixty times a second for. */
+function maskGrids(): void {
+  for (const c of cards) {
+    const ctx = c.canvas.getContext("2d")!;
+    const { width: w, height: h } = c.canvas;
+    if (!w || !h) continue;
+    const furnished = ctx.getImageData(0, 0, w, h);
+    c.renderer.snapCamera(c.bare);
+    c.renderer.draw(c.bare, WHEN);
+    const bare = ctx.getImageData(0, 0, w, h);
+    // Put the piece back before anything can paint over the diff — settled
+    // cards are never drawn again (see frame), so a card left bare stays bare.
+    c.renderer.snapCamera(c.world);
+    c.renderer.draw(c.world, WHEN);
+
+    // Opaque where the two shots agree (floor — the grid may show), transparent
+    // where they differ (the piece — the grid may not). Exact equality: the
+    // renderer is pixelated by rule, so there is no antialiasing to fuzz over.
+    const mask = document.createElement("canvas");
+    mask.width = w;
+    mask.height = h;
+    const mctx = mask.getContext("2d")!;
+    const md = mctx.createImageData(w, h);
+    for (let i = 0; i < furnished.data.length; i += 4) {
+      const same =
+        furnished.data[i] === bare.data[i] &&
+        furnished.data[i + 1] === bare.data[i + 1] &&
+        furnished.data[i + 2] === bare.data[i + 2];
+      md.data[i + 3] = same ? 255 : 0;
+    }
+    mctx.putImageData(md, 0, 0);
+    const url = `url(${mask.toDataURL()})`;
+    c.gridEl.style.maskImage = url;
+    c.gridEl.style.maskSize = "100% 100%";
+  }
 }
 
 build();
