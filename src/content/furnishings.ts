@@ -34,10 +34,19 @@ import { INK } from "../render/furnishings";
 // still showed you its doors and its handle — the one place the fallback
 // actively lies, because these are pieces you can walk behind.
 //
-// ONE grid each, used for `n` AND `e` with `mirrorW`, rather than three. That
-// is not laziness about the side view: on a one-tile footprint the side of a
-// wardrobe IS its back — same width, same panel, same shadow. Authoring three
-// identical grids would be three chances to typo the same picture.
+// ONE grid each, used for `n` AND `e` with `mirrorW`, rather than three —
+// authoring three identical grids is three chances to typo the same picture.
+//
+// THE WARDROBE HAS SINCE EARNED A SECOND, and the argument that argued against
+// it is worth keeping because of exactly where it was wrong. It said: on a
+// one-tile footprint the side of a wardrobe IS its back, same width, same
+// panel. Same PANEL, yes. Not the same WIDTH — a wardrobe is about half as deep
+// as it is wide, and drawing sixteen pixels of front as sixteen of depth made
+// the piece a cube from every side. A one-tile footprint is what a piece may
+// occupy, never what it must fill. See `WARDROBE_SIDE`.
+//
+// The bookcase and the chest keep one grid each: both are genuinely about as
+// deep as they are wide, which is why the rule held for them.
 //
 // The BOOKCASE is the exception, and by one row: its plinth is proud front and
 // back and flush down the sides, which is a rail across two faces rather than a
@@ -50,22 +59,107 @@ import { INK } from "../render/furnishings";
 // that is shade all the way up reads as the side of the object that is turned
 // away, without inventing a single new colour.
 
-/** Wardrobe seen from anywhere but the front: cornice, plain panel, feet. */
+/** And from either END. A wardrobe is WIDER THAN IT IS DEEP — about half as
+ *  deep as it is wide, which is what stops a tall box being a tower. Turned, it
+ *  had been drawing its front's full sixteen pixels of width as its depth as
+ *  well, so the piece was a cube from every side.
+ *
+ *  Ten pixels of plinth over eight of carcass, the same one-pixel notch the
+ *  front has, and the same legs at the same corners. Shade throughout, for
+ *  `WARDROBE_BACK`'s reason. */
+const WARDROBE_SIDE: Grid = {
+  rows: [
+    "..kkkkkkkkkkkk..",
+    "..kttttttttttk..",
+    "..kssssssssssk..",
+    "..kkkkkkkkkkkk..",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "...kssssssssk...",
+    "..kkkkkkkkkkkk..",
+    "..kssssssssssk..",
+    "..kssssssssssk..",
+    "..kkkkkkkkkkkk..",
+    "...kck....kck...",
+    "...kck....kck...",
+    "...kck....kck...",
+    "...kkk....kkk...",
+  ],
+  palette: { k: INK },
+};
+
+/** Wardrobe seen from BEHIND: cornice, plain panel, feet. */
 const WARDROBE_BACK: Grid = {
   rows: [
     "kkkkkkkkkkkkkkkk",
     "kttttttttttttttk",
     "kssssssssssssssk",
     "kkkkkkkkkkkkkkkk",
-    ".kkkkkkkkkkkkkk.",
-    ".kttttttttttttk.",
-    ...Array<string>(30).fill("..kssssssssssk.."),
     ".kssssssssssssk.",
-    ".kkkkkkkkkkkkkk.",
-    "...kk......kk...",
-    "...kk......kk...",
-    "...kk......kk...",
-    "...kk......kk...",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    "kkkkkkkkkkkkkkkk",
+    "kssssssssssssssk",
+    "kssssssssssssssk",
+    "kkkkkkkkkkkkkkkk",
+    ".kck........kck.",
+    ".kck........kck.",
+    ".kck........kck.",
+    ".kkk........kkk.",
   ],
   palette: { k: INK },
 };
@@ -1506,13 +1600,36 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   },
 
 
-  // The tallest thing you can put in a room, so it gets a CORNICE — the
-  // four rows of overhang the `rise` buys. A tall box Cith a lid reads as furniture;
-  // a tall box does not. TCo doors, a centre stile, tCo knobs.
+  // The tallest thing you can put in a room, so it gets a CORNICE — the four
+  // rows of overhang the `rise` buys. A tall box with a lid reads as furniture;
+  // a tall box does not. Two doors, a seam, two handles.
+  //
+  // ONE PLINTH TOP AND BOTTOM, matching. It used to wear a cornice AND a second
+  // capping frame under it, two overhangs deep, which is a moulding a cottage
+  // wardrobe would not have and a doubled outline where they met. One band at
+  // each end now — proud of the carcass, lit on top and shaded underneath — and
+  // the doors share their rules rather than opening with their own.
+  //
+  // THE SEAM AND THE HANDLES ARE ONE PIXEL, like every other line in the game.
+  // The seam was two, which is the doubled-outline bug in its usual disguise:
+  // each door closing its own edge where they meet. The handles were two wide
+  // for a different reason — they were the drawers' brass bar turned upright and
+  // never thinned — and at two they read as luggage tags.
+  //
+  // THE SEAM IS WHAT SITS OFF CENTRE, not the carcass. Doors of equal width need
+  // an ODD interior and this one is twelve, so something has to give: either the
+  // body goes a pixel off centre — which shows, because the plinth then notches
+  // in by one on one side and two on the other, and the notch is at the widest
+  // part of the piece where the eye lands — or the seam does, which costs a
+  // pixel of difference between two panels nothing is measuring. So the notches
+  // match at one pixel each and the doors are six and five.
+  //
+  // Legs at the carcass's corners with a foot, front and back, where they were
+  // two bare pixels of ink that stopped without one.
   wardrobe: {
     rise: 6,
     n: WARDROBE_BACK,
-    e: WARDROBE_BACK,
+    e: WARDROBE_SIDE,
     mirrorW: true,
     s: {
       rows: [
@@ -1520,44 +1637,44 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "kttttttttttttttk",
         "kcccccccccccccck",
         "kkkkkkkkkkkkkkkk",
-        ".kkkkkkkkkkkkkk.",
-        ".kttttttttttttk.",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccdkkdccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        "..kcccckkcccck..",
-        ".kssssssssssssk.",
-        ".kkkkkkkkkkkkkk.",
-        "...kk......kk...",
-        "...kk......kk...",
-        "...kk......kk...",
-        "...kk......kk...",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kccccdckcdccck.",
+        ".kccccdckcdccck.",
+        ".kccccdckcdccck.",
+        ".kccccdckcdccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        ".kcccccckccccck.",
+        "kkkkkkkkkkkkkkkk",
+        "kcccccccccccccck",
+        "kssssssssssssssk",
+        "kkkkkkkkkkkkkkkk",
+        ".kck........kck.",
+        ".kck........kck.",
+        ".kck........kck.",
+        ".kkk........kkk.",
       ],
       palette: { k: INK, d: "#9c7a2c" },
     },
