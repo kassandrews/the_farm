@@ -20,7 +20,7 @@ import { CAST, MOLE, GHOST, COSMOS, livesSomewhere } from "../content/cast";
 import { ARRIVALS } from "../content/arrivals";
 import { MUSEUM } from "../content/museum";
 
-export const SCHEMA_VERSION = 49;
+export const SCHEMA_VERSION = 50;
 
 // 48 gives every piece of furniture a SET (content/sets.ts — DESIGN §The
 // catalog). Additive, one legal value, and the rung stamps `core` on both
@@ -1982,6 +1982,16 @@ export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record
     ...raw,
     schemaVersion: 49,
     floor: typeof raw.floor === "object" && raw.floor ? raw.floor : {},
+  }),
+  // v49 → v50: sitters stand ON the furniture (types.ts §atop) — v49's rung one
+  // axis up, and the same empty backfill for the same reason: the record did
+  // not exist, so a v49 save's desk lamps are all standing on the floor in
+  // `furniture`, where they stay until somebody picks one up and puts it where
+  // its row always said it went.
+  49: (raw) => ({
+    ...raw,
+    schemaVersion: 50,
+    atop: typeof raw.atop === "object" && raw.atop ? raw.atop : {},
   }),
 };
 

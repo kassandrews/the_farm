@@ -65,7 +65,8 @@ import type { MeadowImport } from "../sim/meadow_import";
 import { recall, remember, hasMemory } from "../sim/memory";
 import { count } from "../sim/inventory";
 import { beginStroke, captureCell, endStroke, undoStroke, canUndo, undoLabel } from "../sim/undo";
-import { furnitureAt, floorAt, moveFurniture, cellsFor } from "../sim/furniture";
+import { furnitureAt, floorAt, atopAt, moveFurniture, cellsFor } from "../sim/furniture";
+import type { FurnitureRecord } from "../sim/furniture";
 import { plantAt, knownFlora } from "../sim/garden";
 import { floraDef, type FloraId } from "../content/flora";
 import { BIOMES, bloomsOf } from "../content/biomes";
@@ -439,7 +440,7 @@ export class App {
    *  remembered rather than re-derived at drop time: point at the anchor of a
    *  rug with a table on it and a top-down lookup answers "table", so a hold on
    *  the rug would put the table down instead. */
-  private lifted: { ax: number; ay: number; laid: boolean; layer: Layer } | null = null;
+  private lifted: { ax: number; ay: number; rec: FurnitureRecord; layer: Layer } | null = null;
   /** SHAPE mode itself, separate from any held tool (ROADMAP §three doors):
    *  the doors landing holds nothing, so "a tool is in hand" stopped being
    *  usable as the mode flag. */
@@ -3651,8 +3652,13 @@ export class App {
     const layer = this.layer();
 
     if (!this.lifted) {
-      const standing = furnitureAt(world, x, y, layer);
-      const found = standing ?? (layer === "surface" ? floorAt(world, x, y) : null);
+      // TOP DOWN, matching erase: the lamp on the desk, then the desk, then the
+      // rug the desk stands on. Whatever is on top comes first — the owner's
+      // call, and the same thing a finger would take off a real desk.
+      const held = layer === "surface" ? atopAt(world, x, y) : null;
+      const standing = held ? null : furnitureAt(world, x, y, layer);
+      const found =
+        held ?? standing ?? (layer === "surface" ? floorAt(world, x, y) : null);
       if (!found) {
         audio.play("deny");
         // Naming FURNITURE, because that is the whole of what this tool takes.
@@ -3661,7 +3667,12 @@ export class App {
         this.flash("Nothing to move there ... This picks up furniture.");
         return;
       }
-      this.lifted = { ax: found.ax, ay: found.ay, laid: standing === null, layer };
+      this.lifted = {
+        ax: found.ax,
+        ay: found.ay,
+        rec: held ? "atop" : standing ? "standing" : "laid",
+        layer,
+      };
       // Turning starts from how the piece already stands, so tapping R once
       // turns it once — rather than snapping it to whatever the bar last held.
       this.facing = found.cell.facing;
@@ -3681,7 +3692,7 @@ export class App {
     const from = this.lifted;
     captureCell(world, from.ax, from.ay);
     captureCell(world, x, y);
-    const ok = moveFurniture(world, from.ax, from.ay, x, y, this.facing, from.layer, from.laid);
+    const ok = moveFurniture(world, from.ax, from.ay, x, y, this.facing, from.layer, from.rec);
     if (!ok) {
       audio.play("deny");
       // STILL IN HAND. Refusing a destination must not drop the piece — the
@@ -3703,11 +3714,14 @@ export class App {
   private liftedCell(): FurnitureCell | null {
     const world = this.world;
     if (!world || !this.lifted) return null;
-    const record = this.lifted.laid
-      ? world.floor
-      : this.lifted.layer === "under"
-        ? world.underFurniture
-        : world.furniture;
+    const record =
+      this.lifted.rec === "laid"
+        ? world.floor
+        : this.lifted.rec === "atop"
+          ? world.atop
+          : this.lifted.layer === "under"
+            ? world.underFurniture
+            : world.furniture;
     return record[`${this.lifted.ax},${this.lifted.ay}`] ?? null;
   }
 

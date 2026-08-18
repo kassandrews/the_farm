@@ -25,3 +25,28 @@ describe("the trim slot", () => {
     });
   }
 });
+
+// --- sitters and carriers -----------------------------------------------------
+// The atop record (sim/types.ts §atop) is keyed by a single cell, which only
+// stays honest while every sitter occupies exactly one. See the fields' notes.
+describe("sitting on furniture", () => {
+  for (const def of Object.values(FURNITURE)) {
+    if (!def.sits) continue;
+    it(`${def.id} is 1x1, because the atop record keys on one cell`, () => {
+      expect(def.w).toBe(1);
+      expect(def.h).toBe(1);
+    });
+    it(`${def.id} does not itself carry — no towers of furniture`, () => {
+      expect(def.carries).toBeUndefined();
+    });
+  }
+  it("a carrier is never wall-mounted and never a floor piece", () => {
+    // A surface is a thing that STANDS: a painting cannot hold a lamp and a rug
+    // holds things by the other record entirely.
+    for (const def of Object.values(FURNITURE)) {
+      if (!def.carries) continue;
+      expect(def.mount, `${def.id}`).toBeUndefined();
+      expect(def.floor, `${def.id}`).toBeUndefined();
+    }
+  });
+});

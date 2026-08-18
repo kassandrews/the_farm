@@ -423,8 +423,8 @@ describe("moving a piece that is already placed", () => {
     placeFurniture(w, 20, 20, "table", "s", "pine"); // sitting on the rug's anchor
 
     // Top down would answer "table" at this cell. The UI resolved the rug on
-    // the first tap and says so, which is the whole reason `laid` exists.
-    expect(moveFurniture(w, 20, 20, 26, 26, "s", "surface", true)).toBe(true);
+    // the first tap and says so, which is the whole reason `pick` exists.
+    expect(moveFurniture(w, 20, 20, 26, 26, "s", "surface", "laid")).toBe(true);
     expect(w.floor[tileKey(26, 26)]?.id).toBe("rug");
     expect(w.furniture[tileKey(20, 20)]?.id).toBe("table"); // stayed exactly put
   });
@@ -440,5 +440,92 @@ describe("moving a piece that is already placed", () => {
   it("refuses when there is nothing to pick up", () => {
     const w = world();
     expect(moveFurniture(w, 20, 20, 24, 24, "s")).toBe(false);
+  });
+});
+
+describe("a sitter stands on the furniture", () => {
+  // The desk lamp's row said "the light you put ON something" long before the
+  // sim could do it. These are the rules that made the sentence true — see
+  // types.ts §atop for the record and content/furniture.ts §sits/§carries for
+  // who takes part.
+
+  it("goes into the atop record when placed over a carrier", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "desk", "s", "pine"); // 2x1, carries
+    expect(placeFurniture(w, 20, 20, "desklamp", "s", "steel")).toBe(true);
+    expect(w.atop[tileKey(20, 20)]?.id).toBe("desklamp");
+    // Stored ON the desk, not beside it: the standing record still holds only
+    // the desk, at its anchor.
+    expect(Object.keys(w.furniture)).toEqual([tileKey(20, 20)]);
+  });
+
+  it("stands on the floor like anything else when there is no carrier", () => {
+    const w = world();
+    expect(placeFurniture(w, 20, 20, "desklamp", "s", "steel")).toBe(true);
+    expect(w.furniture[tileKey(20, 20)]?.id).toBe("desklamp");
+    expect(w.atop[tileKey(20, 20)]).toBeUndefined();
+  });
+
+  it("refuses a surface that is not a carrier, and a surface already taken", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "shelf", "s", "pine"); // tall, and NOT a carrier
+    expect(canPlaceFurniture(w, 20, 20, "desklamp", "s")).toBe(false);
+    placeFurniture(w, 24, 24, "desk", "s", "pine");
+    placeFurniture(w, 24, 24, "desklamp", "s", "steel");
+    // One cell, one piece — the atop record keeps the invariant of the other two.
+    expect(canPlaceFurniture(w, 24, 24, "desklamp", "s")).toBe(false);
+    // The desk's other cell is its own surface, so the run holds two.
+    expect(canPlaceFurniture(w, 25, 24, "desklamp", "s")).toBe(true);
+  });
+
+  it("only a sitter may sit — a chair aimed at a desk still refuses", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "desk", "s", "pine");
+    expect(canPlaceFurniture(w, 20, 20, "chair", "s")).toBe(false);
+  });
+
+  it("is removed first, top down — the lamp before the desk", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "desk", "s", "pine");
+    placeFurniture(w, 20, 20, "desklamp", "s", "steel");
+    expect(removeFurnitureAt(w, 20, 20)?.id).toBe("desklamp");
+    expect(removeFurnitureAt(w, 20, 20)?.id).toBe("desk");
+    expect(removeFurnitureAt(w, 20, 20)).toBeNull();
+  });
+
+  it("drops to the floor when the desk is taken out from under it", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "desk", "s", "pine");
+    placeFurniture(w, 20, 20, "desklamp", "s", "steel");
+    // Point at the desk's EMPTY half: top down finds no sitter there, so the
+    // desk comes up — and the lamp lands on the floor where it stood, standing
+    // on nothing, which is the honest picture of what just happened.
+    expect(removeFurnitureAt(w, 21, 20)?.id).toBe("desk");
+    expect(w.atop[tileKey(20, 20)]).toBeUndefined();
+    expect(w.furniture[tileKey(20, 20)]?.id).toBe("desklamp");
+  });
+
+  it("rides along when its desk is moved, and turns with it", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "desk", "s", "pine");
+    placeFurniture(w, 21, 20, "desklamp", "s", "steel"); // the EAST end
+    // Moved by its empty half: top down at (20,20) finds no sitter on that
+    // cell, so the desk is what the tap resolves — and the lamp goes with it.
+    expect(moveFurniture(w, 20, 20, 26, 26, "s")).toBe(true);
+    expect(w.furniture[tileKey(26, 26)]?.id).toBe("desk");
+    expect(w.atop[tileKey(27, 26)]?.id).toBe("desklamp"); // still the east end
+    expect(w.atop[tileKey(21, 20)]).toBeUndefined();
+  });
+
+  it("moves between the floor and a surface, switching records both ways", () => {
+    const w = world();
+    placeFurniture(w, 20, 20, "desk", "s", "pine");
+    placeFurniture(w, 24, 24, "desklamp", "s", "steel"); // on the floor
+    expect(moveFurniture(w, 24, 24, 20, 20, "s")).toBe(true); // up it goes
+    expect(w.atop[tileKey(20, 20)]?.id).toBe("desklamp");
+    expect(w.furniture[tileKey(24, 24)]).toBeUndefined();
+    expect(moveFurniture(w, 20, 20, 24, 24, "s")).toBe(true); // and back down
+    expect(w.furniture[tileKey(24, 24)]?.id).toBe("desklamp");
+    expect(w.atop[tileKey(20, 20)]).toBeUndefined();
   });
 });

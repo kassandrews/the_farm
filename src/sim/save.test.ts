@@ -1822,3 +1822,27 @@ describe("v46 → v47: the barn is square and wears false doors", () => {
     expect(m.build[DOOR_WAS]).toMatchObject({ id: "door" });
   });
 });
+
+describe("v49 → v50: sitters stand on the furniture", () => {
+  function v49Save(extra: Record<string, unknown> = {}): Record<string, unknown> {
+    const w = JSON.parse(serialize(freshWorld())) as Record<string, unknown>;
+    delete w.atop;
+    return { ...w, schemaVersion: 49, ...extra };
+  }
+
+  it("backfills an empty record", () => {
+    // v49's rung one axis up, and the same truthful backfill: the record did
+    // not exist, so every desk lamp a v49 town owns is standing on the floor.
+    const migrated = migrateSave(v49Save())!;
+    expect(migrated.atop).toEqual({});
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+  });
+
+  it("leaves the lamps on the floor exactly where they are", () => {
+    // NOT lifted onto whatever they happen to stand beside — a migration that
+    // put a lamp on a desk would be furnishing the player's room for them.
+    const before = v49Save();
+    const migrated = migrateSave(before)!;
+    expect(migrated.furniture).toEqual(before.furniture);
+  });
+});

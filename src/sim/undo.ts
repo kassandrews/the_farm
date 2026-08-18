@@ -59,6 +59,10 @@ interface CellSnapshot {
    *
    *  Surface only, like `build` and `garden`: nothing is laid in the rock. */
   floor: FurnitureCell | null;
+  /** What SAT at this key (sim/types.ts §atop) — the desk lamp on the desk.
+   *  The third furniture slot, on `floor`'s argument one axis up: undoing a
+   *  desk moved out from under its lamp has to put the lamp back on it. */
+  atop: FurnitureCell | null;
   /** The GARDEN entry at this key, if any (WorldState.garden.plants) — a
    *  planted stroke writes a tile override AND a record, and restoring the
    *  tile alone would leave a ghost species entry drawing a tree on open
@@ -151,6 +155,7 @@ export function captureCell(world: WorldState, x: number, y: number): void {
     ground: (under ? world.under[key] : world.overrides[key]) ?? null,
     furniture: furnitureFor(world, stroke.layer)[key] ?? null,
     floor: under ? null : (world.floor[key] ?? null),
+    atop: under ? null : (world.atop[key] ?? null),
     garden: under ? null : (world.garden.plants[key] ?? null),
     finish: under ? null : (world.finishes[key] ?? null),
   });
@@ -228,6 +233,9 @@ export function undoStroke(world: WorldState): boolean {
 
       if (snap.floor) world.floor[key] = snap.floor;
       else delete world.floor[key];
+
+      if (snap.atop) world.atop[key] = snap.atop;
+      else delete world.atop[key];
     }
 
     if (snap.ground !== null) ground[key] = snap.ground;

@@ -13115,6 +13115,45 @@ same time: the floor lamp's 15 is the mouth of its shade, the post's 18 is the
 middle of its globe, and one shared constant had to be wrong for one of them.
 
 
+## Sitters stand on the furniture (18 Aug 2026)
+
+The desk lamp's row had said "the light you put ON something" since the day it
+was written, and the sim had no way to do it — `canPlaceFurniture`'s one cell,
+one standing piece rule refused the desk, so the lamp priced for a desktop
+stood on the floor beside it. Found by the owner trying it in game; the fix is
+the surface-clutter half of the furniture project's agenda item 4, built as a
+mechanic with one sitter. The clutter itself (books, mugs, curios) stays
+future content: rows that say `sits`, when they come, and nothing else.
+
+Settled calls, all the owner's:
+
+- **`sits` and `carries` are flags, not a special case** — the desk lamp sits;
+  the desk, both tables, the nightstand, the dresser and the counter carry.
+  **NOT the shelf**, deliberately: its top is a cornice two tiles up, not a
+  surface anybody reaches.
+- **A fourth record, `world.atop`** (schema v50), on `floor`'s argument one
+  axis UP: two pieces in one place is what a desk with a lamp on it is, and
+  each record keeping its own "one cell, one piece" is what makes the stack
+  safe. Keyed by the CELL, not an anchor — a sitter is 1×1 by test, so a 2×1
+  table carries two, which is what its top looks like it could hold.
+- **May sit, never must**: a sitter aimed at bare floor is furniture like any
+  other. The carrier answers the ground's questions; the sitter answers one —
+  is the surface free.
+- **Top down is now three deep**: erase and Move take the lamp, then the desk,
+  then the rug. Removing a carrier by its empty half **drops its passengers to
+  the floor where they stood** — standing on nothing, looking a little silly,
+  which is the honest picture of what happened. Moving a carrier takes its
+  passengers with it, footprint index to footprint index, so a lamp on the
+  left end stays on the left end through a turn.
+- **The draw is a translate, not a sort key**: a sitter draws after its
+  carrier (same row, bias one past) lifted by the carrier's `height` — an
+  integer translate, so the art never leaves the pixel grid. The glow lifts
+  with it (`headH + lift`), which is how a desk lamp on a desk finally reaches
+  the floor lamp's head height — the equality its row priced in from day one.
+  Deliberately NOT entangled with the roof-poke sort (agenda item 1): same
+  cell means the painter's order already holds.
+
+
 ## Known gaps and loose ends
 
 Small things that are half-built or deliberately stubbed. Worth knowing before

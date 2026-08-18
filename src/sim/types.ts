@@ -367,6 +367,28 @@ export interface WorldState {
    *  decide a rug stopped being cosy the moment you put a table on it. */
   floor: Record<string, FurnitureCell>;
 
+  /** WHAT STANDS ON THE FURNITURE — the desk lamp, and whatever clutter earns
+   *  `FurnitureDef.sits` later. The fourth record, on `floor`'s argument one
+   *  axis UP: two pieces in one place is what a desk with a lamp on it is, and
+   *  each record keeping its own "one cell, one piece" is what makes it safe.
+   *
+   *  KEYED BY THE CELL IT STANDS ON, not by an anchor — a sitter is 1x1
+   *  (furniture.test.ts holds this), so its cell IS its anchor and `atopAt` is
+   *  a single lookup rather than a span search. The cell must hold a standing
+   *  piece whose def says `carries`; placement enforces it, and removal keeps
+   *  it true by dropping a passenger to the floor when its surface is taken
+   *  out from under it (sim/furniture.ts §removeFurnitureAt).
+   *
+   *  SURFACE ONLY, like `floor`, and for the rock's version of the same
+   *  reason: the only piece that goes underground is the lamp, and down there
+   *  it stands on stone you cut, not on furniture you don't have.
+   *
+   *  The modules that walk `furniture` should NOT walk this one — a lamp on a
+   *  desk is not a bed, a counter or a notice board. The renderer is the
+   *  exception twice over: the piece draws lifted by its carrier's height, and
+   *  a room with a lit sitter in it is lit (render/renderer.ts §rooms walk). */
+  atop: Record<string, FurnitureCell>;
+
   crops: Record<string, Crop>;
 
   /** THE GARDEN (DESIGN §The garden) — what you have planted, and what you have

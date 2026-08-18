@@ -176,6 +176,28 @@ export interface FurnitureDef {
    *  Distinct from `mount: "wall"`, which puts a piece IN the wall cell. This
    *  one stands on the floor in front of one. */
   backs?: "wall";
+  /** This piece may stand ON another piece — the desk lamp, and whatever
+   *  clutter earns its way onto a table later.
+   *
+   *  The desk lamp's own row has claimed this for as long as it has existed
+   *  ("the light you put ON something") while the sim had no way to do it: one
+   *  cell, one standing piece, no exceptions. The exception is now a pair of
+   *  flags rather than a special case — a sitter goes into `world.atop` when
+   *  the cell under it holds a `carries` piece, and stands on the floor like
+   *  anything else when it doesn't (see types.ts §atop).
+   *
+   *  A sitter must be 1x1 (furniture.test.ts holds this): the atop record is
+   *  keyed by the single cell the piece occupies, which is what keeps "one
+   *  cell, one piece" true on the third record too. */
+  sits?: boolean;
+  /** Another piece may stand on THIS one — the surfaces.
+   *
+   *  Everything with a flat top at working height: the desk, both tables, the
+   *  nightstand, the dresser and the counter. NOT the shelf, by the owner's
+   *  call — its top is a cornice two tiles up, not a surface anybody reaches.
+   *  One passenger per cell, so a 2x1 table can carry two things, which is
+   *  what its top looks like it could hold. */
+  carries?: boolean;
   /** Somebody can live in a room that has one.
    *
    *  A FIELD rather than `id === "bed"`, which is what it was in SEVEN places
@@ -299,6 +321,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: true,
     height: 12,
+    carries: true,
     finishes: ["wood"],
   },
   chair: {
@@ -567,6 +590,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // rather than against a wall.
     solid: false,
     height: 7,
+    carries: true,
     finishes: ["wood"],
   },
   desk: {
@@ -578,6 +602,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: true,
     height: 12,
+    carries: true,
     finishes: ["wood"],
   },
   nightstand: {
@@ -589,6 +614,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: false,
     height: 10,
+    carries: true,
     finishes: ["wood"],
   },
 
@@ -679,6 +705,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: true,
     height: 12,
+    carries: true,
     finishes: ["wood"],
   },
 
@@ -699,6 +726,11 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // on a desk (12) it reaches 21, which is about where the floor lamp's head
     // is on its own — two lights at one height, arrived at two ways.
     height: 9,
+    // And `sits` is what makes that sentence true rather than aspirational —
+    // for a long time this row said "on a desk" while the sim had no way to put
+    // it there, and the lamp stood on the floor beside the desk it was priced
+    // for. See the field's note for the mechanism.
+    sits: true,
     // METAL too, on the floor lamp's argument one object smaller. Leaving the
     // third light in timber while its two siblings are steel, brass and iron
     // would be the same lie in the palette that the lantern was in the drawing:
@@ -811,6 +843,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // having fitted the kitchen badly, which is a detail nobody would praise and
     // everybody would see.
     height: 14,
+    carries: true,
     finishes: ["wood"],
     trim: ["stone", "metal"],
     // The one that DOES the joining. `fitted` here is what lets it recognise the

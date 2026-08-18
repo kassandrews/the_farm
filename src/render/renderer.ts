@@ -72,7 +72,7 @@ import {
   CONNECT_W,
 } from "../sim/structures";
 import { furnitureDef, footprint, type FurnitureId } from "../content/furniture";
-import { trimOf } from "../sim/furniture";
+import { trimOf, furnitureAt } from "../sim/furniture";
 import { TENTS } from "../content/tents";
 import type { TentDef } from "../content/tents";
 import { drawTent } from "./tent";
@@ -2546,6 +2546,44 @@ export class Renderer {
             });
           }
         }
+        // WHAT SITS ON THE FURNITURE (types.ts §atop), drawn lifted by its
+        // carrier's height — the whole of what "on" means to a renderer. Same
+        // y as the carrier's southern row with a bias one past it, so the
+        // painter's sort puts the lamp after the desk it stands on and before
+        // whatever stands a row south of both. The lift is a plain integer
+        // translate in scene px, so the art never leaves the pixel grid
+        // (CLAUDE.md §Sprite rendering).
+        const sitter = world.atop[key];
+        if (sitter) {
+          const under = furnitureAt(world, tx, ty);
+          const lift = under ? furnitureDef(under.cell.id).height : 0;
+          const sy = under ? under.ay + footprint(furnitureDef(under.cell.id), under.cell.facing).h - 1 : ty;
+          const sx = tx;
+          const syc = ty;
+          this.raised.push({
+            y: sy,
+            bias: BIAS_TERRAIN + 1,
+            draw: () => {
+              const ctx = this.ctx;
+              ctx.save();
+              ctx.translate(0, -lift);
+              this.drawFurniture(world, sx, syc, sitter);
+              ctx.restore();
+            },
+          });
+          // A lit sitter is a lamp wherever it stands — the pool leaves from
+          // the head of the lamp, which is its own height plus the surface
+          // under it.
+          if (furnitureDef(sitter.id).light && !this.underSolidRoof(tx, ty)) {
+            this.litLamps.push({
+              x: tx,
+              y: ty,
+              core: lampCore(sitter.id),
+              headH: lampHeadH(sitter.id) + lift,
+              lift: lampLift(sitter.id),
+            });
+          }
+        }
         // Roofs are derived, not stored, so they come from the room index
         // rather than from the build layer.
         const roofRoom = this.roofIndex.get(key);
@@ -3829,6 +3867,9 @@ export class Renderer {
         // a cell, or null.
         let counter: string | null = null;
         for (const key of room.interior) {
+          // A lit sitter lights the room from the desk it stands on — the one
+          // question this walk asks of the atop record (types.ts §atop).
+          if (world.atop[key] && furnitureDef(world.atop[key].id).light) lit = true;
           const piece = world.furniture[key];
           if (!piece) continue;
           const def = furnitureDef(piece.id);

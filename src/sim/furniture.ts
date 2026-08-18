@@ -82,6 +82,17 @@ export function floorAt(world: WorldState, x: number, y: number): PlacedFurnitur
   return null;
 }
 
+/** What is standing ON the furniture at this cell, or null — the atop record's
+ *  `furnitureAt`, and the third of the trio (see types.ts §atop).
+ *
+ *  A single lookup, no span search: a sitter is 1x1, so the cell you point at
+ *  is the cell it is stored under. Wrapped in the same shape as the other two
+ *  so the callers that walk top-down can treat all three alike. */
+export function atopAt(world: WorldState, x: number, y: number): PlacedFurniture | null {
+  const cell = world.atop[tileKey(x, y)];
+  return cell ? { ax: x, ay: y, cell } : null;
+}
+
 /** Is anything at all on this cell — standing OR laid?
  *
  *  For the callers that mean "is this cell spoken for" rather than "what is
@@ -158,6 +169,20 @@ export function canPlaceFurniture(
     return hung === null || (ignore !== undefined && hung.ax === ignore.ax && hung.ay === ignore.ay);
   }
 
+  // A SITTER over a carrier answers ONE question — is the surface free — and
+  // none of the others, because the carrier already answered them: it stands on
+  // ground that took it, clear of crops and walls and the shallows, or it would
+  // not be there. Only when the cell holds a carrier: a desk lamp aimed at bare
+  // floor falls through and is furniture like any other, which is what keeps
+  // "may sit" from ever meaning "must".
+  if (furnitureDef(id).sits && layer === "surface") {
+    const under = furnitureAt(world, ax, ay);
+    if (under && furnitureDef(under.cell.id).carries) {
+      const held = atopAt(world, ax, ay);
+      return held === null || (ignore !== undefined && held.ax === ignore.ax && held.ay === ignore.ay);
+    }
+  }
+
   // A FLOOR PIECE and a standing piece are asked the same questions about the
   // ground and opposite questions about each other. `laid` decides which record
   // this placement is checking itself against, and it is the ONLY difference:
@@ -230,10 +255,31 @@ export function placeFurniture(
   trim?: SkinId,
 ): boolean {
   if (!canPlaceFurniture(world, ax, ay, id, facing, layer)) return false;
-  const record = furnitureDef(id).floor ? world.floor : furnitureFor(world, layer);
+  const record = recordFor(world, ax, ay, id, layer);
   record[tileKey(ax, ay)] = { id, facing, finish, set, ...(trim ? { trim } : {}) };
   touchBuild(world); // the standing things moved — see structures.ts
   return true;
+}
+
+/** Which of the three records this placement writes — decided ONCE, here, so
+ *  `placeFurniture` and `moveFurniture` cannot disagree about it. The sitter's
+ *  test mirrors `canPlaceFurniture`'s: onto a carrier means atop, onto anything
+ *  else means the piece is standing on the floor like everything that isn't a
+ *  sitter. */
+function recordFor(
+  world: WorldState,
+  ax: number,
+  ay: number,
+  id: FurnitureId,
+  layer: Layer,
+): Record<string, FurnitureCell> {
+  const def = furnitureDef(id);
+  if (def.floor) return world.floor;
+  if (def.sits && layer === "surface") {
+    const under = furnitureAt(world, ax, ay);
+    if (under && furnitureDef(under.cell.id).carries) return world.atop;
+  }
+  return furnitureFor(world, layer);
 }
 
 /** Take back whatever covers this cell — you point at any part of a bed, not
@@ -244,9 +290,36 @@ export function removeFurnitureAt(
   y: number,
   layer: Layer = "surface",
 ): FurnitureCell | null {
+  // TOP DOWN starts at the very top: the lamp before the desk it stands on,
+  // for exactly the reason the table comes before the rug below — the other
+  // order takes the surface out from under the thing you were pointing at.
+  if (layer === "surface") {
+    const held = atopAt(world, x, y);
+    if (held) {
+      delete world.atop[tileKey(x, y)];
+      touchBuild(world);
+      return held.cell;
+    }
+  }
   const found = furnitureAt(world, x, y, layer);
   if (found) {
     delete furnitureFor(world, layer)[tileKey(found.ax, found.ay)];
+    // A CARRIER TAKEN OUT FROM UNDER ITS PASSENGERS drops them to the floor
+    // where they stood, standing on nothing, looking a little silly — which is
+    // the honest picture of what just happened. The 2x1 case is why this can
+    // reach here at all: point at the desk's empty half and the desk comes up
+    // while the lamp was on the other. The cells are free by construction (the
+    // carrier was just deleted from them), so this is a rekey, not a placement
+    // that could fail.
+    if (layer === "surface" && furnitureDef(found.cell.id).carries) {
+      for (const [cx, cy] of cellsFor(found.ax, found.ay, found.cell.id, found.cell.facing)) {
+        const key = tileKey(cx, cy);
+        const passenger = world.atop[key];
+        if (!passenger) continue;
+        delete world.atop[key];
+        world.furniture[key] = passenger;
+      }
+    }
     touchBuild(world); // the standing things moved — see structures.ts
     return found.cell;
   }
@@ -298,31 +371,70 @@ export function moveFurniture(
   layer: Layer = "surface",
   /** WHICH RECORD to take it out of, when the caller already knows.
    *
-   *  Undefined means top down, which is what a bare "move whatever is here"
-   *  should do. The UI passes it because it resolved the piece on the FIRST tap
-   *  and must move that one: the anchor of a rug with a table standing on it
-   *  answers "table" to a top-down lookup, so a hold on the rug would otherwise
-   *  put the table down instead. */
-  laid?: boolean,
+   *  Undefined means top down — atop, then standing, then laid — which is what
+   *  a bare "move whatever is here" should do. The UI passes it because it
+   *  resolved the piece on the FIRST tap and must move that one: the anchor of
+   *  a rug with a table standing on it answers "table" to a top-down lookup,
+   *  so a hold on the rug would otherwise put the table down instead. */
+  pick?: FurnitureRecord,
 ): boolean {
-  const standing = laid === true ? null : furnitureAt(world, fromX, fromY, layer);
+  const held = pick === "atop" || (pick === undefined && layer === "surface")
+    ? atopAt(world, fromX, fromY)
+    : null;
+  const standing =
+    held || pick === "laid" ? null : furnitureAt(world, fromX, fromY, layer);
   const found =
+    held ??
     standing ??
-    (layer === "surface" && laid !== false ? floorAt(world, fromX, fromY) : null);
+    (layer === "surface" && pick !== "standing" && pick !== "atop"
+      ? floorAt(world, fromX, fromY)
+      : null);
+  if (pick === "atop" && !held) return false;
   if (!found) return false;
-  const record = standing ? furnitureFor(world, layer) : world.floor;
+  const from = held ? world.atop : standing ? furnitureFor(world, layer) : world.floor;
 
   // Ignoring ITSELF, so a piece can be nudged one tile onto cells it already
   // occupies — see `canPlaceFurniture`'s `ignore`.
   if (!canPlaceFurniture(world, toAx, toAy, found.cell.id, facing, layer, found)) return false;
+  // The DESTINATION record is asked fresh rather than assumed to be the
+  // source's: a lamp moved from a desk to the floor changes records, and one
+  // moved from the floor onto a desk changes them the other way. `recordFor` is
+  // the one place that decides, asked AFTER the source is emptied so the lookup
+  // sees the world as it will be — and asked for every piece, because for a
+  // non-sitter it answers with the record the piece was already in.
+  delete from[tileKey(found.ax, found.ay)];
+  const to = recordFor(world, toAx, toAy, found.cell.id, layer);
   // A no-op is a success, not a failure: tapping a piece back down where it
   // started is a player changing their mind, and refusing it would flash an
   // error at somebody who did nothing wrong.
-  delete record[tileKey(found.ax, found.ay)];
-  record[tileKey(toAx, toAy)] = { ...found.cell, facing };
+  to[tileKey(toAx, toAy)] = { ...found.cell, facing };
+  // A CARRIER TAKES ITS PASSENGERS WITH IT — you moved the desk, not the lamp's
+  // relationship to it. Each occupied cell maps to the destination cell at the
+  // same footprint index, which is what keeps a lamp on the left end of a desk
+  // on the left end after the move, and puts it on the right end when the turn
+  // means the left end is now the right one.
+  if (standing && furnitureDef(found.cell.id).carries && layer === "surface") {
+    const oldCells = cellsFor(found.ax, found.ay, found.cell.id, found.cell.facing);
+    const newCells = cellsFor(toAx, toAy, found.cell.id, facing);
+    const riders: [string, FurnitureCell][] = [];
+    oldCells.forEach(([cx, cy], i) => {
+      const key = tileKey(cx, cy);
+      const rider = world.atop[key];
+      if (!rider) return;
+      delete world.atop[key];
+      riders.push([tileKey(newCells[i][0], newCells[i][1]), rider]);
+    });
+    // Written after every old key is cleared, so a one-tile nudge cannot read
+    // its own passenger as already seated on the destination.
+    for (const [key, rider] of riders) world.atop[key] = rider;
+  }
   touchBuild(world); // the standing things moved — see structures.ts
   return true;
 }
+
+/** The three records a piece can live in, by name — see types.ts §floor and
+ *  §atop for why they are records and not layers. */
+export type FurnitureRecord = "standing" | "laid" | "atop";
 
 /** The finish a piece's TRIM is drawn in — its own, or the default for its
  *  class. THE ONE PLACE that fallback lives, so a cell written before trim
