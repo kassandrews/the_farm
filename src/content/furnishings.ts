@@ -2388,6 +2388,19 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // is the other half of "one door". Centred, it reads as the meeting point of a
   // pair of doors — which is exactly what the old middle-of-the-face handle was
   // being mistaken for.
+  //
+  // AND THE TWO RAILS CAME OUT WITH IT. There were full-width ink lines above and
+  // below the door area, and they were the OLD door: with nothing but a plain
+  // field and a floating handle, a bar top and bottom was the only thing saying
+  // where the door was. A real panel says it better, so the bars became a second
+  // outline a pixel off the first — a doubled edge above, and below it a doubled
+  // KICK PLATE, because the lower bar sat right on top of the plinth's own line
+  // and the piece looked like it had two of them.
+  //
+  // What replaces them is nothing: three rows of plain carcass above the door and
+  // three below, which is the reveal a fitted unit actually has. One line above
+  // the door (the worktop's underside), one below (the kick plate), and the door
+  // between them.
   counter: {
     s: {
       rows: [
@@ -2398,17 +2411,13 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "kTTTTTTTTTTTTTTk",
         "kSSSSSSSSSSSSSSk",
         "kkkkkkkkkkkkkkkk",
-        "kcccccccccccccck",
-        "kkkkkkkkkkkkkkkk",
-        "kcccccccccccccck",
+        ...Array<string>(3).fill("kcccccccccccccck"),
         "kckkkkkkkkkkkkck",
         "kcksssssssssskck",
         ...Array<string>(4).fill("kcksssssssksskck"),
         ...Array<string>(7).fill("kcksssssssssskck"),
         "kckkkkkkkkkkkkck",
-        "kcccccccccccccck",
-        "kkkkkkkkkkkkkkkk",
-        "kcccccccccccccck",
+        ...Array<string>(3).fill("kcccccccccccccck"),
         "kkkkkkkkkkkkkkkk",
         "kssssssssssssssk",
         "kssssssssssssssk",
@@ -2428,17 +2437,13 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           "TTTTTTTTTTTTTTTT",
           "SSSSSSSSSSSSSSSS",
           "kkkkkkkkkkkkkkkk",
-          "cccccccccccccccc",
-          "kkkkkkkkkkkkkkkk",
-          "cccccccccccccccc",
+          ...Array<string>(3).fill("cccccccccccccccc"),
           "cckkkkkkkkkkkkcc",
           "ccksssssssssskcc",
           ...Array<string>(4).fill("ccksssssssksskcc"),
           ...Array<string>(7).fill("ccksssssssssskcc"),
           "cckkkkkkkkkkkkcc",
-          "cccccccccccccccc",
-          "kkkkkkkkkkkkkkkk",
-          "cccccccccccccccc",
+          ...Array<string>(3).fill("cccccccccccccccc"),
           "kkkkkkkkkkkkkkkk",
           "ssssssssssssssss",
           "ssssssssssssssss",
@@ -2454,17 +2459,13 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           "kTTTTTTTTTTTTTTT",
           "kSSSSSSSSSSSSSSS",
           "kkkkkkkkkkkkkkkk",
-          "kccccccccccccccc",
-          "kkkkkkkkkkkkkkkk",
-          "kccccccccccccccc",
+          ...Array<string>(3).fill("kccccccccccccccc"),
           "kckkkkkkkkkkkkcc",
           "kcksssssssssskcc",
           ...Array<string>(4).fill("kcksssssssksskcc"),
           ...Array<string>(7).fill("kcksssssssssskcc"),
           "kckkkkkkkkkkkkcc",
-          "kccccccccccccccc",
-          "kkkkkkkkkkkkkkkk",
-          "kccccccccccccccc",
+          ...Array<string>(3).fill("kccccccccccccccc"),
           "kkkkkkkkkkkkkkkk",
           "ksssssssssssssss",
           "ksssssssssssssss",
