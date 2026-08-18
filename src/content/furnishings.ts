@@ -2122,7 +2122,34 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // foot with an unchanged body would have dropped the hob two pixels and put it
   // below the counter's worktop. The top of this piece is a line it shares with
   // every cabinet beside it, and that line does not move.
+  //
+  // TURNED, THE HOB STAYS AND THE OVEN GOES. That split is the whole of what
+  // makes these three grids, and it is a fact about which surfaces you can see
+  // rather than a style: the hob is the piece's TOP, so it is in frame from every
+  // angle, while the door, its rail and its handle are all on one face. Serving
+  // the front view for all four (which is what the fallback did) showed you an
+  // oven door from behind the stove.
+  //
+  // AND THE BURNERS TURN WITH IT. Four burners in a square: from the front the
+  // pairs sit wide apart across the plate and close together in depth, because
+  // depth is the foreshortened axis. From the side those two axes swap, so they
+  // cluster toward the middle instead. Leaving the front's spacing on the side
+  // view would be a hob that stayed still while the stove under it rotated —
+  // subtle, and the exact kind of thing that makes a turned piece feel like a
+  // sticker rather than an object.
+  //
+  // A literal 90° rotation does not fit and is not what these draw: the plate is
+  // fourteen across and five deep, so the wide spacing has nowhere to go
+  // vertically. What the side does is swap which spacing is the TIGHT one, which
+  // is the part the eye actually reads.
+  //
+  // THE SIDES ARE PLAIN, on the fridge's argument — an enamelled panel, no
+  // joinery. The BACK gets one thing and one only: an access panel, low, in the
+  // same dark the hob plate and the fridge's coil use. A vent grille was the
+  // other candidate and was dropped for reading too much like the coil one piece
+  // over; two backs in the same room should be distinguishable at a glance.
   stove: {
+    mirrorW: true,
     s: {
       rows: [
         "................",
@@ -2141,6 +2168,49 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "kcccccccccccccck",
         "kssssssssssssssk",
         "kssssssssssssssk",
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(2).fill("..kk........kk.."),
+      ],
+      palette: { k: INK, m: "#4a4550", g: "#332f3a" },
+    },
+    e: {
+      rows: [
+        "................",
+        "................",
+        "kkkkkkkkkkkkkkkk",
+        "kmmmmmmmmmmmmmmk",
+        "kmmmmggmmggmmmmk", // the burners, clustered — see above
+        "kmmmmmmmmmmmmmmk",
+        "kmmmmggmmggmmmmk",
+        "kmmmmmmmmmmmmmmk",
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(15).fill("kssssssssssssssk"),
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(2).fill("kssssssssssssssk"),
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(2).fill("..kk........kk.."),
+      ],
+      palette: { k: INK, m: "#4a4550", g: "#332f3a" },
+    },
+    n: {
+      rows: [
+        "................",
+        "................",
+        "kkkkkkkkkkkkkkkk",
+        "kmmmmmmmmmmmmmmk",
+        "kmmggmmmmmmggmmk", // the front's spacing: same axis, seen from behind
+        "kmmmmmmmmmmmmmmk",
+        "kmmggmmmmmmggmmk",
+        "kmmmmmmmmmmmmmmk",
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(9).fill("kssssssssssssssk"),
+        // The access panel, in `m` rather than a second char at the same hex: one
+        // grid, one name per colour. It is the hob plate's dark because it is the
+        // same enamel, which is also why the fridge's coil is that value.
+        ...Array<string>(5).fill("ksssmmmmmmmmsssk"),
+        "kssssssssssssssk",
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(2).fill("kssssssssssssssk"),
         "kkkkkkkkkkkkkkkk",
         ...Array<string>(2).fill("..kk........kk.."),
       ],
