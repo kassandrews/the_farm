@@ -1743,8 +1743,32 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
   },
 
-  // Three drawers, six pulls, stubby feet. Reads against the desk by
-  // being solid all the way down — no kneehole, no gap.
+  // Three drawers, six pulls. Reads against the desk by being solid all the way
+  // down — no kneehole, no gap.
+  //
+  // THE DRAWERS ARE THE DESK'S AND THE NIGHTSTAND'S: five-row fronts, one seam
+  // between each, a four-pixel brass pull centred in each half. They had been
+  // three rows with the PULL ROWS INSET A PIXEL EACH SIDE, so the carcass
+  // stepped in and out again six times down its own face — the wobble, in its
+  // fourth and last place.
+  //
+  // NO SKIRT. The band of shade under the bottom drawer was doing nothing the
+  // drawers could not do with the same rows, and they are the desk's exact front
+  // now because they got them. What it costs is at the floor: the carcass
+  // reaches so far down that the legs are stubs.
+  //
+  // TURNED, THE SIDE PANEL IS THE FRONT'S CARCASS — eighteen rows, the same
+  // count from the slab's rule to its bottom rule — and the receding depth is
+  // spent on TOP above it. That is the fireplace's rule two rows down in this
+  // file, arrived at there for a chimney breast that read as a stack: face is
+  // height, so a turned piece that spends its depth on face grows taller every
+  // time you turn it. The divide sat nine rows up and the two views disagreed by
+  // half about how deep a dresser is.
+  //
+  // The side panel carries ONE line, where the top meets it, and closes with a
+  // rule at the bottom like the front does. The second line it had was a
+  // leftover rule from the drawer band, and the drawer it used to draw there was
+  // a drawer fitted to a face the camera never sees (§desk).
   // THE FIREPLACE. Masonry, so `c`/`t`/`s` resolve to whichever stone finish it
   // was built in and the fire is the only literal palette on it.
   //
@@ -1933,32 +1957,32 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
       rows: [
         "................................",
         "................................",
-        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
         ".kttttttttttttttttttttttttttttk.",
         ".kcccccccccccccccccccccccccccck.",
         ".kcccccccccccccccccccccccccccck.",
         ".kssssssssssssssssssssssssssssk.",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
         ".kcccccccccccccccccccccccccccck.",
-        "..kccccccdddccccccccdddcccccck..",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kcccccddddccccccccccddddccccck.",
+        ".kcccccccccccccccccccccccccccck.",
         ".kcccccccccccccccccccccccccccck.",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
         ".kcccccccccccccccccccccccccccck.",
-        "..kccccccdddccccccccdddcccccck..",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kcccccddddccccccccccddddccccck.",
+        ".kcccccccccccccccccccccccccccck.",
         ".kcccccccccccccccccccccccccccck.",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
         ".kcccccccccccccccccccccccccccck.",
-        "..kccccccdddccccccccdddcccccck..",
+        ".kcccccccccccccccccccccccccccck.",
+        ".kcccccddddccccccccccddddccccck.",
+        ".kcccccccccccccccccccccccccccck.",
         ".kcccccccccccccccccccccccccccck.",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        ".kssssssssssssssssssssssssssssk.",
-        ".kssssssssssssssssssssssssssssk.",
-        ".kssssssssssssssssssssssssssssk.",
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        "...kk......................kk...",
-        "...kk......................kk...",
-        "...kk......................kk...",
-        "...kk......................kk...",
+        ".kck........................kck.",
+        ".kkk........................kkk.",
       ],
       palette: { k: INK, d: "#9c7a2c" },
     },
@@ -1979,17 +2003,32 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
       rows: [
         "................................",
         "................................",
-        "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
         ".kttttttttttttttttttttttttttttk.",
         ".kcccccccccccccccccccccccccccck.",
         ".kcccccccccccccccccccccccccccck.",
         ".kssssssssssssssssssssssssssssk.",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        ...Array<string>(11).fill(".kssssssssssssssssssssssssssssk."),
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
+        ".kssssssssssssssssssssssssssssk.",
         ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        ...Array<string>(3).fill(".kssssssssssssssssssssssssssssk."),
-        ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
-        ...Array<string>(4).fill("...kk......................kk..."),
+        ".kck........................kck.",
+        ".kkk........................kkk.",
       ],
       palette: { k: INK },
     },
@@ -2017,19 +2056,6 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kcccccccccccck.",
         ".kcccccccccccck.",
         ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kssssssssssssk.",
-        ".kkkkkkkkkkkkkk.",
-        ".kcccccccccccck.",
-        "..kccccddcccck..",
-        ".kcccccccccccck.",
         ".kkkkkkkkkkkkkk.",
         ".kssssssssssssk.",
         ".kssssssssssssk.",
@@ -2037,8 +2063,21 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kssssssssssssk.",
         ".kssssssssssssk.",
         ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
         ".kkkkkkkkkkkkkk.",
-        "...kk......kk...",
+        ".kck........kck.",
+        ".kkk........kkk.",
       ],
       palette: { k: INK, d: "#9c7a2c" },
     },
