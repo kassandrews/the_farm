@@ -2541,6 +2541,140 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
   },
 
+  // THE COUNTER WITH A BOWL IN IT, and that is the brief rather than a shortcut.
+  // Every row it shares with `counter` it shares on purpose: the same worktop
+  // depth, the same carcass, the same door in the same place, the same kick
+  // plate. A sink unit that differed anywhere below the rim would put a step in a
+  // surface whose whole job is to be continuous.
+  //
+  // WHAT MAKES THE JOIN INVISIBLE is that both pieces have `joins`. A fitted
+  // neighbour makes a joining piece stop drawing its end (content/furniture.ts
+  // §fitted), so where two of them meet, BOTH ends come off and there is no line
+  // at all — the counter's worktop and this one's run into each other at the cell
+  // boundary. The cooker keeps its seam because it has no `joins`, which is the
+  // right difference: an appliance is slotted between units, a sink is a hole in
+  // the same slab.
+  //
+  // `rise: 5` IS THE TAP, and it is what the field was added for — five rows of
+  // grid above the box, for a thing that stands proud of the surface it is fixed
+  // to. Comfortably under the half-tile cap (`hides()` fades anything past it,
+  // and a tap that made the player see-through would be the occlusion machinery
+  // firing on plumbing).
+  //
+  // THE BOWL RUNS TO THE BACK EDGE — three rows of `S` under the worktop's own
+  // back outline, with a rim only at the sides and front. Giving it a fourth
+  // outline across the top would have cost a row of the bowl to draw a line
+  // directly beneath a line, and at five rows of worktop there is no row to
+  // spare. It also puts the tap where a tap is: at the back rim, not behind a
+  // strip of spare counter.
+  //
+  // THE TAP AND THE BOWL ARE LITERALS, `m` and `b`. Neither is the carcass's
+  // timber nor the worktop's stone — a tap is chrome and a bowl is steel in a
+  // kitchen finished any way at all, exactly as a lampshade is cloth and a hob
+  // plate is enamel. `m` is the basin's own tap grey, for the reason the two
+  // kitchen darks are one dark.
+  //
+  // THE BOWL IS DARK, AND IT TOOK TWO GOES. First it was drawn in the worktop's
+  // own `S`, the trim's shade, which on most stones is a hair off its `T` — so
+  // the bowl came out as a faintly different rectangle of worktop and the piece
+  // read as a counter with a smudge on it. Then it was `#6e747e`, which is very
+  // nearly slate's `top` exactly, and vanished on the one worktop anybody would
+  // put a steel sink in.
+  //
+  // The lesson is that a hollow cannot be a colour NEAR the surface it is cut
+  // into, because it has thirteen surfaces to be near and it will match one of
+  // them. It has to be darker than all of them: `#3f444e` sits below every stone
+  // and metal `top` in the table, so the bowl reads as a hole against marble,
+  // slate and brass alike, and stays clear of the outline ink that draws its rim.
+  // NO `joins.y`, AND THE TEST IS WHY — a receding run's top band has to be
+  // sixteen identical rows, because that is the cell pitch and it tiles into the
+  // cell behind. A bowl is not identical rows. There is no version of a sink cut
+  // into a north-south worktop that does not interrupt the band it is cut into,
+  // so the honest answer is that this piece joins east-west and says so, rather
+  // than shipping a band with a seam in it every sixteen pixels.
+  //
+  // Turned, it falls back to its front view (render/furnishings.ts §runGridFor
+  // returns null for an axis a form does not join on, which is the branch that
+  // exists for exactly this). A counter beside a turned one still opens its own
+  // end, so the seam there is one pixel rather than two — the same as a cooker's,
+  // which is the right amount for a unit that is not merging.
+  kitchensink: {
+    rise: 5,
+    s: {
+      rows: [
+        "................",
+        "................",
+        "......kkkk......",
+        ...Array<string>(4).fill("......kmmk......"),
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(3).fill("kTTkbbbbbbbbkTTk"),
+        "kTTkkkkkkkkkkTTk",
+        "kbbbbbbbbSSSSSSk",
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(3).fill("kcccccccccccccck"),
+        "kckkkkkkkkkkkkck",
+        ...Array<string>(2).fill("kcksssssssssskck"),
+        ...Array<string>(4).fill("kcksssssssksskck"),
+        ...Array<string>(4).fill("kcksssssssssskck"),
+        "kckkkkkkkkkkkkck",
+        ...Array<string>(3).fill("kcccccccccccccck"),
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(2).fill("kssssssssssssssk"),
+      ],
+      palette: { k: INK, m: "#8f959e", b: "#3f444e" },
+    },
+    joins: {
+      x: {
+        mid: {
+          rows: [
+          "................",
+          "................",
+          "......kkkk......",
+          ...Array<string>(4).fill("......kmmk......"),
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(3).fill("TTTkbbbbbbbbkTTT"),
+          "TTTkkkkkkkkkkTTT",
+          "bbbbbbbbbbbbbbbb",
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(3).fill("cccccccccccccccc"),
+          "cckkkkkkkkkkkkcc",
+          ...Array<string>(2).fill("ccksssssssssskcc"),
+          ...Array<string>(4).fill("ccksssssssksskcc"),
+          ...Array<string>(4).fill("ccksssssssssskcc"),
+          "cckkkkkkkkkkkkcc",
+          ...Array<string>(3).fill("cccccccccccccccc"),
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(2).fill("ssssssssssssssss"),
+          ],
+          palette: { k: INK, m: "#8f959e", b: "#3f444e" },
+        },
+        end: {
+          rows: [
+          "................",
+          "................",
+          "......kkkk......",
+          ...Array<string>(4).fill("......kmmk......"),
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(3).fill("kTTkbbbbbbbbkTTT"),
+          "kTTkkkkkkkkkkTTT",
+          "kbbbbbbbbSSSSSSS",
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(3).fill("kccccccccccccccc"),
+          "kckkkkkkkkkkkkcc",
+          ...Array<string>(2).fill("kcksssssssssskcc"),
+          ...Array<string>(4).fill("kcksssssssksskcc"),
+          ...Array<string>(4).fill("kcksssssssssskcc"),
+          "kckkkkkkkkkkkkcc",
+          ...Array<string>(3).fill("kccccccccccccccc"),
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(2).fill("ksssssssssssssss"),
+          ],
+          palette: { k: INK, m: "#8f959e", b: "#3f444e" },
+        },
+      },
+    },
+  },
+
   // Basin sunk into a top, cabinet under, tap standing at the back. The bowl is
   // `s` inside a `t` rim, which is the same trick the bath uses and is what says
   // "this is a hollow" without a single new colour.

@@ -345,7 +345,10 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
   { id: "counter", icon: "table", label: "Counter", hint: "Lay them in a row — they join into one worktop.", group: "kitchen" },
   { id: "stove", icon: "chest", label: "Stove", hint: "Four rings and an oven door. It does not cook; it stands there being a stove.", group: "kitchen" },
   { id: "fridge", icon: "wardrobe", label: "Fridge", hint: "Tall, cold-looking, closed. Stainless, brass or black iron.", group: "kitchen" },
-  { id: "sink", icon: "chest", label: "Sink", hint: "Porcelain or stainless — the one piece that will wear either.", group: "kitchen" },
+  // THE KITCHEN ONE JOINS THE RUN; the bathroom one stands on its own. Two rows
+  // rather than one because they were never the same object — see furniture.ts.
+  { id: "kitchensink", icon: "table", label: "Sink", hint: "Cut into the worktop. Lay counters either side and the top runs straight through.", group: "kitchen" },
+  { id: "sink", icon: "chest", label: "Basin", hint: "Porcelain or stainless — the one piece that will wear either.", group: "bath" },
   { id: "toilet", icon: "chest", label: "Toilet", hint: "The room becomes, formally, that kind of room.", group: "bath" },
   { id: "tub", icon: "bed", label: "Bath", hint: "Two tiles of porcelain. Deep enough to be taken seriously.", group: "bath" },
   { id: "windowbox", icon: "window", label: "Window box", hint: "Goes on a window. The flowers are yours to keep alive, notionally.", group: "decor" },

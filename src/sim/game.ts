@@ -2044,7 +2044,9 @@ function furnitureFlavour(id: FurnitureId, layer: Layer): string {
     case "fridge":
       return "A fridge. It hums. Nobody has asked it to and nobody is going to.";
     case "sink":
-      return "A sink. A basin with plumbing's full confidence behind it.";
+      return "A basin. Plumbing's full confidence, in a room built around it.";
+    case "kitchensink":
+      return "A sink, cut into the worktop. The surface goes round it and carries on.";
     case "toilet":
       return "A toilet. The room is now, formally, that kind of room.";
     case "tub":

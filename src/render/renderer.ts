@@ -4879,10 +4879,31 @@ export class Renderer {
       other.set === cell.set &&
       other.finish === cell.finish &&
       other.facing === cell.facing;
-    const abuts = (other: FurnitureCell | undefined): boolean =>
-      other !== undefined &&
-      furnitureDef(cell.id).fitted === true &&
-      furnitureDef(other.id).fitted === true;
+    //
+    // AND ONE OF THOSE ABUTMENTS IS SEAMLESS. If the neighbour has `joins` too,
+    // it will open ITS end at this seam just as we open ours, and then there is
+    // no line between us at all — which is exactly what a sink cut into a
+    // worktop should look like, and exactly what two worktops of different
+    // stone must NOT. So a merge that leaves no seam is held to a run partner's
+    // standard: same set, same finish, same trim, or draw the edge and let the
+    // player see where one top stops and the other starts.
+    //
+    // FACING IS NOT IN IT, unlike the partner test. That comparison guards a
+    // future where a turned run has its own grids; this one is about two tops
+    // being the same material, and a fridge turned to the wall is still steel.
+    const seamless = (other: FurnitureCell): boolean =>
+      artFor(other.id, other.set)?.joins !== undefined;
+    const abuts = (other: FurnitureCell | undefined): boolean => {
+      if (other === undefined) return false;
+      if (furnitureDef(cell.id).fitted !== true) return false;
+      if (furnitureDef(other.id).fitted !== true) return false;
+      if (!seamless(other)) return true;
+      return (
+        other.set === cell.set &&
+        other.finish === cell.finish &&
+        trimOf(other) === trimOf(cell)
+      );
+    };
     const same = (x: number, y: number): boolean => {
       const other = world.furniture[tileKey(x, y)];
       return partner(other) || abuts(other);

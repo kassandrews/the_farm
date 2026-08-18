@@ -63,6 +63,8 @@ export type FurnitureId =
   | "stove"
   | "fridge"
   | "sink"
+  /** The kitchen one, which is a different object — see the two rows. */
+  | "kitchensink"
   | "counter"
   | "toilet"
   | "tub"
@@ -745,10 +747,28 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     finishes: ["metal"],
     fitted: true,
   },
+  // THE BATHROOM ONE. It was the kitchen's too, and being both was the whole of
+  // what was wrong with it.
+  //
+  // EVERY COMPLAINT AGAINST IT AS A KITCHEN UNIT IS A VIRTUE HERE, which is why
+  // this costs no pixels. It is inset two each side — a basin IS narrower than a
+  // fitted cabinet. It is two shorter than a worktop — it is not a worktop. It
+  // returns both its ends — it stands on its own against a wall, and a run is
+  // exactly what it is not in. It has a tall tap off the back, which looked odd
+  // between two cupboards and is what a basin has. The drawing was always a
+  // bathroom vanity; only the row it sat in disagreed.
+  //
+  // THE ID IS UNCHANGED, because ids are stored in saves and the rule at the top
+  // of this file has no exceptions. What moved is the NAME and which group of the
+  // build bar it appears under. Anyone who placed one has a basin, and it is
+  // drawn exactly as it was the day they placed it.
+  //
+  // NO `fitted`. That flag is about standing shoulder to shoulder in a run; this
+  // piece is the one that does not.
   sink: {
     id: "sink",
     form: true,
-    name: "Sink",
+    name: "Basin",
     // STONE, because `finishes` is stone-only — the fireplace's cost-follows-
     // material rule, which holds everywhere except metal. `bone` and `marble`
     // were already in the stone table and are exactly what porcelain looks like.
@@ -757,13 +777,6 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: true,
     height: 12,
-    // NO `fitted`, AND ON PURPOSE — it is the one kitchen unit whose drawing has
-    // not been through the run pass. It is inset two pixels each side and two
-    // pixels shorter than everything it stands beside, so telling the counter to
-    // stop drawing its edge here would remove the only line at that seam and
-    // leave the gap wider and barer than before. The flag goes on the day the
-    // art does; until then a visible end is the honest picture of a unit that
-    // does not fit.
     // PORCELAIN OR STAINLESS, because a sink is honestly either one, and the
     // picker has always been able to span classes without asking the player to
     // choose a category first (skins.ts §availableSkinsForClasses). The one row
@@ -803,6 +816,56 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // The one that DOES the joining. `fitted` here is what lets it recognise the
     // appliances back — the flag is symmetric even though the drawing change is
     // not (see the field's note).
+    fitted: true,
+  },
+
+  // THE SINK THAT IS PART OF THE WORKTOP, as against `sink`, which is the basin
+  // in the bathroom. Two forms and not one state of one form: they share a word
+  // and nothing else. One is cut into a slab and joins a run; the other stands
+  // alone against a wall and is narrower and lower on purpose.
+  //
+  // IT IS A COUNTER WITH A BOWL IN IT, deliberately and all the way down — the
+  // same width, the same worktop band, the same carcass, the same door, the same
+  // kick plate, the same `height`. Anything it did differently would be a step in
+  // a surface that is supposed to be continuous, which is the thing this whole
+  // pass has been about.
+  //
+  // SEAMLESS, AND IT FALLS OUT OF `joins` RATHER THAN OUT OF NEW MACHINERY. The
+  // rule is that only a piece with `joins` changes what it draws when it meets a
+  // fitted neighbour. Give this one `joins` and BOTH sides open up at the seam —
+  // no outline at all, both worktops running to the cell boundary — which is what
+  // "cut into the counter" means. The cooker keeps its seam because it has no
+  // `joins`, and that turns out to be the honest distinction rather than an
+  // oversight: a cooker is an appliance slotted between units, a sink is a hole
+  // in the same slab.
+  //
+  // ONE TILE, AND THAT IS A CONSTRAINT RATHER THAN A TASTE. A 2x1 unit with a
+  // bowl and a drainer would have more to look at, but `runNeighbours` finds its
+  // neighbour's anchor by stepping ITS OWN footprint — so a two-wide sink looking
+  // west would step two tiles and sail straight past the one-wide counter beside
+  // it. Mixed footprints in one run need that search rewritten, and that is a
+  // bigger job than a sink is asking for.
+  //
+  // TRIM LIKE THE COUNTER'S, because it is the same worktop. That is also what
+  // makes the finish test in `runNeighbours` matter: two pieces that both open up
+  // are sharing a slab, so a mismatched trim would change its colour mid-run with
+  // no line to explain it.
+  kitchensink: {
+    id: "kitchensink",
+    form: true,
+    name: "Sink",
+    // The counter's price plus the stone the bowl is, which is also the basin's
+    // material. Not the basin's full 3: half of this piece is cabinet.
+    cost: { wood: 2, stone: 2 },
+    w: 1,
+    h: 1,
+    solid: true,
+    // EXACTLY THE COUNTER'S 14, and for once that is not a preference — a sink
+    // whose rim sat above or below the worktop it is cut into would be a hole in
+    // a surface at the wrong height, which is not a thing that can happen.
+    height: 14,
+    finishes: ["wood"],
+    trim: ["stone", "metal"],
     fitted: true,
   },
 
