@@ -880,7 +880,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     w: 1,
     h: 1,
     solid: true,
-    height: 14,
+    height: 12,
     finishes: ["ceramic"],
   },
   tub: {
