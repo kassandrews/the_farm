@@ -2401,21 +2401,39 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // three below, which is the reveal a fitted unit actually has. One line above
   // the door (the worktop's underside), one below (the kick plate), and the door
   // between them.
+  //
+  // THE WORKTOP IS AS DEEP AS THE HOB, five rows where it was three. Both pieces
+  // start their top surface on row 2 and both are one tile deep, so they are the
+  // same plane seen at the same angle and there is no honest reason for one to be
+  // shallower. It ended at row 6 while the stove's ended at row 8, which put a
+  // 2px step in the front edge of the work surface at every cooker — the last
+  // discontinuity in the run after the widths and the feet were fixed, and the
+  // one you would not have been able to name while looking straight at it.
+  //
+  // THE HOB'S BOTTOM OUTLINE STAYS, and this is what it was waiting for. It was
+  // never missing; it was two rows below the counter's. Now they land on the same
+  // row and the line under the work surface runs the length of the kitchen. That
+  // it nearly vanishes against the dark plate and reads strongly against the pale
+  // worktop is correct rather than a flaw — that is what a dark cooktop set into
+  // a light one does.
+  //
+  // The two rows come out of the DOOR (14 to 12), the same trade the stove and
+  // the fridge made with their feet: the box is fixed, and of the things below
+  // the worktop the door is the one with slack in it.
   counter: {
     s: {
       rows: [
         "................",
         "................",
         "kkkkkkkkkkkkkkkk",
-        "kTTTTTTTTTTTTTTk",
-        "kTTTTTTTTTTTTTTk",
+        ...Array<string>(4).fill("kTTTTTTTTTTTTTTk"),
         "kSSSSSSSSSSSSSSk",
         "kkkkkkkkkkkkkkkk",
         ...Array<string>(3).fill("kcccccccccccccck"),
         "kckkkkkkkkkkkkck",
-        "kcksssssssssskck",
+        ...Array<string>(2).fill("kcksssssssssskck"),
         ...Array<string>(4).fill("kcksssssssksskck"),
-        ...Array<string>(7).fill("kcksssssssssskck"),
+        ...Array<string>(4).fill("kcksssssssssskck"),
         "kckkkkkkkkkkkkck",
         ...Array<string>(3).fill("kcccccccccccccck"),
         "kkkkkkkkkkkkkkkk",
@@ -2433,15 +2451,14 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           "................",
           "................",
           "kkkkkkkkkkkkkkkk",
-          "TTTTTTTTTTTTTTTT",
-          "TTTTTTTTTTTTTTTT",
+          ...Array<string>(4).fill("TTTTTTTTTTTTTTTT"),
           "SSSSSSSSSSSSSSSS",
           "kkkkkkkkkkkkkkkk",
           ...Array<string>(3).fill("cccccccccccccccc"),
           "cckkkkkkkkkkkkcc",
-          "ccksssssssssskcc",
+          ...Array<string>(2).fill("ccksssssssssskcc"),
           ...Array<string>(4).fill("ccksssssssksskcc"),
-          ...Array<string>(7).fill("ccksssssssssskcc"),
+          ...Array<string>(4).fill("ccksssssssssskcc"),
           "cckkkkkkkkkkkkcc",
           ...Array<string>(3).fill("cccccccccccccccc"),
           "kkkkkkkkkkkkkkkk",
@@ -2455,15 +2472,14 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           "................",
           "................",
           "kkkkkkkkkkkkkkkk",
-          "kTTTTTTTTTTTTTTT",
-          "kTTTTTTTTTTTTTTT",
+          ...Array<string>(4).fill("kTTTTTTTTTTTTTTT"),
           "kSSSSSSSSSSSSSSS",
           "kkkkkkkkkkkkkkkk",
           ...Array<string>(3).fill("kccccccccccccccc"),
           "kckkkkkkkkkkkkcc",
-          "kcksssssssssskcc",
+          ...Array<string>(2).fill("kcksssssssssskcc"),
           ...Array<string>(4).fill("kcksssssssksskcc"),
-          ...Array<string>(7).fill("kcksssssssssskcc"),
+          ...Array<string>(4).fill("kcksssssssssskcc"),
           "kckkkkkkkkkkkkcc",
           ...Array<string>(3).fill("kccccccccccccccc"),
           "kkkkkkkkkkkkkkkk",
@@ -2494,9 +2510,9 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           "kkkkkkkkkkkkkkkk",
           "kcccccccccccccck",
           "kckkkkkkkkkkkkck",
-          "kcksssssssssskck",
+          ...Array<string>(2).fill("kcksssssssssskck"),
           ...Array<string>(3).fill("kcksssssssksskck"),
-          ...Array<string>(3).fill("kcksssssssssskck"),
+          ...Array<string>(2).fill("kcksssssssssskck"),
           "kckkkkkkkkkkkkck",
           "kcccccccccccccck",
           "kkkkkkkkkkkkkkkk",
@@ -2511,9 +2527,9 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           "kkkkkkkkkkkkkkkk",
           "kcccccccccccccck",
           "kckkkkkkkkkkkkck",
-          "kcksssssssssskck",
+          ...Array<string>(2).fill("kcksssssssssskck"),
           ...Array<string>(3).fill("kcksssssssksskck"),
-          ...Array<string>(3).fill("kcksssssssssskck"),
+          ...Array<string>(2).fill("kcksssssssssskck"),
           "kckkkkkkkkkkkkck",
           "kcccccccccccccck",
           "kkkkkkkkkkkkkkkk",
