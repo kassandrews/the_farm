@@ -2392,8 +2392,64 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // Mostly empty grid, and deliberately: the art box is as tall as the
   // tile is deep, and a small object should sit in the bottom of it rather than being
   // stretched to fill it. Brass shade over a lit throat, a thin post, a round foot.
+  //
+  // TEN PIXELS OF LAMP, and the number is not a taste — it is arithmetic the
+  // row in furniture.ts had already committed to and the drawing was ignoring.
+  // The first version stood nineteen: a five-row shade over a NINE-row post,
+  // which is a vertical stick, and a vertical stick's ink IS its height. That
+  // made the desk lamp exactly as tall as the FLOOR lamp (`height: 18`) while
+  // its row claimed nine — the table and the picture disagreeing, with the
+  // picture winning, because the picture is what you see. Standing on a desk it
+  // would have reached 31, past the wardrobe and most of the way to a lamp post.
+  //
+  // `desklamp`'s own comment says where it was aiming: "standing on a desk (12)
+  // it reaches 21". Twenty-one less twelve is nine, so nine or ten pixels is the
+  // whole lamp, foot to crown. The post is where it comes off — nine rows to
+  // three — because the post is the part that was lying. The shade keeps its
+  // taper (narrow crown, flared lit mouth) at four rows: it is the only part
+  // that says "lamp" rather than "stick", and shrinking it further would leave
+  // a blob on a pin.
+  //
+  // NO `rise` ANY MORE. Rise buys room ABOVE the box for a piece that overhangs
+  // its own footprint, which a chair back needs and a lamp this size cannot use;
+  // six rows of it were six rows of empty grid.
+  //
+  // IT IS THE FLOOR LAMP'S DRAWING, SMALL — and getting it there is most of what
+  // this redraw is. Shortening the post fixed the height and left two lamps that
+  // still disagreed about what a lamp is made of, which is the worse bug of the
+  // two because it is the one you notice with both of them in the room. The
+  // desk lamp had a BRASS head with a lit slot in it; that is the lantern the
+  // floor lamp gave up when the form split (§drawLamp, ROADMAP §the lamp), and
+  // it had been left standing on the desk. So, part for part:
+  //
+  //  - A CLOTH SHADE, `l`/`m`, the floor lamp's own SHADE_CLOTH. Literals, not
+  //    the finish, for the reason that constant gives at length: a shade is its
+  //    own material, and a lamp with a walnut shade is a lamp nobody makes. The
+  //    METAL finish still dresses the post and the foot, so `finishes: ["metal"]`
+  //    is untouched and means what it says.
+  //  - TAPERED, 4 across the crown to 8 at the mouth, lit down its left. Half
+  //    the floor lamp's 6-to-12 over half the rows. The taper is what makes the
+  //    silhouette a lamp rather than a sign on a stick, and it survives being
+  //    halved.
+  //  - AN OPEN MOUTH. Two warm rows, FLAME_CORE over FLAME, and NO outline under
+  //    them. The floor lamp's rule verbatim: a dark rule under a shade closes it,
+  //    and a shade with a lid on it is a hat. The old grid had exactly that lid.
+  //  - NO INK ON THE POST OR THE SHADE, which is the same call. The floor lamp
+  //    draws neither, and an outlined lamp beside an unoutlined one is two
+  //    drawing conventions in one room. A 2px post lit down one column has a
+  //    round side without needing an edge.
+  //  - A DISC, NOT A PLINTH: 6 wide, 3 deep, three times the post — the floor
+  //    lamp's factor of four at this scale — over a 1px contact shadow. The
+  //    shadow is why the foot stops a row short of the box: a small lamp sitting
+  //    ON the floor needs the floor to be under it, and 1px of dark is the whole
+  //    of what says so.
+  //
+  //    FLUSH WITH THE DISC, which is a correction. Drawn 8 wide under a 6-wide
+  //    foot it stood a pixel proud each side and read as a dark mat the lamp was
+  //    standing on rather than as its own shadow — visible at zoom, and the sort
+  //    of thing that looks like a mistake without being nameable. The floor
+  //    lamp's is exactly its disc's width and one row lower, so this is too.
   desklamp: {
-    rise: 6,
     s: {
       rows: [
         "................",
@@ -2407,28 +2463,29 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "................",
         "................",
         "................",
-        ".....kkkkkk.....",
-        ".....kbbbbk.....",
-        "....kbbbbbbk....",
-        "....kffffffk....",
-        "....kkkkkkkk....",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        ".....kkkkkk.....",
-        ".....kttttk.....",
-        ".....kcccck.....",
-        ".....kssssk.....",
-        ".....kkkkkk.....",
         "................",
+        "................",
+        "......mmmm......",
+        ".....mlllll.....",
+        "....mlllllll....",
+        "....FFFFFFFF....",
+        ".....ffffff.....",
+        ".......cs.......",
+        ".......cs.......",
+        ".......cs.......",
+        ".....sccccs.....",
+        ".....ssssss.....",
+        ".....ssssss.....",
+        ".....DDDDDD.....",
       ],
-      palette: { k: INK, b: "#9c7a2c", f: "#ffcf7a" },
+      // `k` is declared by every other piece and this one has none — see above.
+      palette: {
+        l: "#e8dfc8", // SHADE_CLOTH
+        m: "#f6efdf", // SHADE_CLOTH_LIT
+        F: "#fff3cd", // FLAME_CORE
+        f: "#ffcf7a", // FLAME
+        D: "rgba(0,0,0,0.18)", // the contact shadow, drawLamp's own value
+      },
     },
   },
 

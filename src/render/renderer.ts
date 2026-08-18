@@ -1126,9 +1126,44 @@ const LAMP_HEAD_H = 15;
  *  than a chain of ids at each push site, so the two collectors (surface and
  *  underground) cannot come to different conclusions about the same lamp. */
 function lampCore(id: FurnitureId): "flame" | "shade" | "globe" {
-  if (id === "lamp") return "shade";
+  if (id === "lamp" || id === "desklamp") return "shade";
   if (id === "lamppost") return "globe";
   return "flame";
+}
+
+/** And where the DESK LAMP's is. Its own number for LAMP_POST_HEAD_H's reason,
+ *  which turns out to have had a third case in it all along: a shared constant
+ *  has to be wrong for every piece it is not measured on, and 15 is measured on
+ *  the floor lamp. The desk lamp is a third of that piece's height, so its light
+ *  was leaving from eight pixels above its own shade — a pool with nothing in
+ *  the middle of it, the "bright square hovering over it" failure LAMP_HEAD_H's
+ *  docblock records, inverted.
+ *
+ *  Ten: the mouth of its shade is 8 above the base (`furnishings.ts` rows), and
+ *  two rows further up is inside the cloth, which is where a bulb is. Same
+ *  construction as the floor lamp's 15 over a 13px mouth. */
+const DESK_LAMP_HEAD_H = 10;
+
+/** Which of the three a piece's light leaves from. */
+function lampHeadH(id: FurnitureId): number {
+  if (id === "lamppost") return LAMP_POST_HEAD_H;
+  if (id === "desklamp") return DESK_LAMP_HEAD_H;
+  return LAMP_HEAD_H;
+}
+
+/** And how far north of its cell's near edge it stands, which the glow has to
+ *  match or a lamp lights the ground in front of its own head.
+ *
+ *  NOT EVERY LIGHT TAKES THE LIFT, which the glow had been assuming. It is a
+ *  drawing decision belonging to the two PROCEDURAL lamps (§drawLamp: "a lamp
+ *  has no footprint", so the near edge is not the front of anything). A piece
+ *  drawn from a GRID stands where every other grid stands — on the near edge —
+ *  because the art path measures one datum for the whole catalogue and a lamp
+ *  that opted out of it would be a special case in the one path built to have
+ *  none. So the desk lamp's pool had been sitting half a tile north of the desk
+ *  lamp. */
+function lampLift(id: FurnitureId): number {
+  return id === "lamp" || id === "lamppost" ? LAMP_LIFT : 0;
 }
 
 /** And where the LAMP POST's is — its globe's centre.
@@ -1434,6 +1469,8 @@ export class Renderer {
     y: number;
     core: "flame" | "shade" | "globe";
     headH: number;
+    /** How far north of its cell's near edge the piece stands — see `lampLift`. */
+    lift: number;
   }[] = [];
   /** Lava cells that have a NON-lava neighbour — the shore of a lava field, and
    *  the only cells that get a halo.
@@ -2504,7 +2541,8 @@ export class Renderer {
               x: tx,
               y: ty,
               core: lampCore(piece.id),
-              headH: piece.id === "lamppost" ? LAMP_POST_HEAD_H : LAMP_HEAD_H,
+              headH: lampHeadH(piece.id),
+              lift: lampLift(piece.id),
             });
           }
         }
@@ -3371,7 +3409,8 @@ export class Renderer {
           x: tx,
           y: ty,
           core: lampCore(piece.id),
-          headH: piece.id === "lamppost" ? LAMP_POST_HEAD_H : LAMP_HEAD_H,
+          headH: lampHeadH(piece.id),
+          lift: lampLift(piece.id),
         });
       }
     }
@@ -3578,13 +3617,15 @@ export class Renderer {
       // middle is under the object making it reads as a stain. `+ TILE / 2` is
       // the step from the cell's centre to its southern edge, which is the datum
       // the art uses (see LAMP_HEAD_H).
-      // MINUS THE SAME LIFT the art takes (§drawLamp), or the pool stays on the
-      // cell's near edge while the flame throwing it has moved north, and a lamp
-      // lights the ground half a tile in front of its own head.
-      // EACH LAMP'S OWN HEAD HEIGHT, carried on the entry. The floor lamp's is
-      // the mouth of its shade and the post's is the middle of its globe, and one
-      // shared constant would have had to be wrong for one of them.
-      const cy = this.sceneY(l.y) + TILE / 2 - LAMP_LIFT - l.headH;
+      // MINUS THE SAME LIFT THE ART TAKES — the piece's own, off the entry (see
+      // `lampLift`), not the constant. A lamp that stands half a tile north of
+      // its cell needs its pool to move with it, and one that stands on the near
+      // edge like everything else needs its pool to stay put; this was LAMP_LIFT
+      // flat, so the desk lamp lit the ground half a tile behind itself.
+      // EACH LAMP'S OWN HEAD HEIGHT, carried the same way. The floor lamp's is
+      // the mouth of its shade, the desk lamp's the mouth of its much smaller
+      // one, and the post's the middle of its globe.
+      const cy = this.sceneY(l.y) + TILE / 2 - l.lift - l.headH;
       // ORANGE, not cream. Additive light adds its green channel to grass that is
       // already saturated green, so a pale warm-white pool came out milky — lit
       // lawn that read as bleached lawn. Dropping the green and blue makes the
@@ -3602,11 +3643,19 @@ export class Renderer {
       // midnight had a glowing lawn around a dim beige box. A source has to be
       // the brightest thing in its own light.
       //
-      // ITS SHAPE IS THE SOURCE'S. A 4x4 square is a FLAME seen through glass,
-      // which is what a desk lamp has; inside a floor lamp's cloth shade the same
-      // square read as a hole punched in the fabric, and inside a lamp post's
-      // glass ball it read as a box someone had left in there. So a shade glows
-      // across a wide low band at its open foot, and a globe glows as a globe.
+      // ITS SHAPE IS THE SOURCE'S. A 4x4 square is a FLAME seen through glass;
+      // inside a floor lamp's cloth shade the same square read as a hole punched
+      // in the fabric, and inside a lamp post's glass ball it read as a box
+      // someone had left in there. So a shade glows across a wide low band at its
+      // open foot, and a globe glows as a globe.
+      //
+      // THE DESK LAMP MOVED FROM "flame" TO "shade" when it was redrawn. It used
+      // to be a brass lantern with a lit slot — the head the floor lamp gave up
+      // when the two forms split — and a flame is what that had in it. It wears
+      // cloth now (content/furnishings.ts §desklamp), so it takes cloth's core:
+      // the band, at half alpha, because cloth is between you and the bulb.
+      // Nothing in the catalogue is left on "flame" but the fireplace, which is
+      // the one light that genuinely is one.
       //
       // The shade takes half the alpha, because cloth is between you and the
       // bulb. Glass is not, so the globe keeps the flame's.
