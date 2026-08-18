@@ -4859,15 +4859,33 @@ export class Renderer {
     // the camera instead of across it, and those are two different drawings
     // (render/furnishings.ts §RunAxis) rather than one rotated.
     const axis: RunAxis = cell.facing === "e" || cell.facing === "w" ? "y" : "x";
+    // TWO WAYS TO HAVE A NEIGHBOUR, and they pick the same grid for different
+    // reasons.
+    //
+    // A RUN PARTNER is the same form dressed the same way, and merging with one
+    // means sharing a worktop — so everything visible has to match or the slab
+    // would change colour down its own middle.
+    //
+    // AN ABUTTING UNIT is a different form that stands in the same run: a cooker,
+    // a fridge (content/furniture.ts §fitted). There is nothing to share with it,
+    // and the only question is whether this piece should keep drawing its end.
+    // It should not — the appliance is already drawing an outline at that seam,
+    // and two of them met two pixels thick where a counter-to-counter join was
+    // none. So NO finish or set test here: "stop drawing your edge, something
+    // else is drawing it" is true whatever the two are made of.
+    const partner = (other: FurnitureCell | undefined): boolean =>
+      other !== undefined &&
+      other.id === cell.id &&
+      other.set === cell.set &&
+      other.finish === cell.finish &&
+      other.facing === cell.facing;
+    const abuts = (other: FurnitureCell | undefined): boolean =>
+      other !== undefined &&
+      furnitureDef(cell.id).fitted === true &&
+      furnitureDef(other.id).fitted === true;
     const same = (x: number, y: number): boolean => {
       const other = world.furniture[tileKey(x, y)];
-      return (
-        other !== undefined &&
-        other.id === cell.id &&
-        other.set === cell.set &&
-        other.finish === cell.finish &&
-        other.facing === cell.facing
-      );
+      return partner(other) || abuts(other);
     };
     // STEP BY THE FOOTPRINT, not by one. Every cell in a run is the same form
     // turned the same way, so its neighbour's ANCHOR is a whole piece away — one

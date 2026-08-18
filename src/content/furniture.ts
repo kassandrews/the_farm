@@ -187,6 +187,36 @@ export interface FurnitureDef {
    *  be a relationship system arriving through the furniture table. */
   sleeps?: boolean;
 
+  /** Part of a FITTED RUN: units of this kind stand shoulder to shoulder, and a
+   *  joining piece beside one may drop its own outline against it.
+   *
+   *  This is the counter's `joins` machinery reaching one form further out. A run
+   *  of counters already merges — same form, same set, same finish, so they share
+   *  one worktop and draw an edge only where the run actually ends. But a kitchen
+   *  is counter, cooker, counter, and the moment the neighbour was a DIFFERENT
+   *  form the counter fell back to its standalone view and returned an end it
+   *  had no business returning. The appliance was drawing its own outline at the
+   *  same seam, so every counter-to-cooker and counter-to-fridge join came out
+   *  two pixels of ink thick where every counter-to-counter join was none.
+   *
+   *  A FLAG ON THE TABLE, not an id list in the renderer — same rule `light` and
+   *  `sleeps` learned. "Which things stand in a kitchen run" is a fact about the
+   *  catalogue, and the day a dishwasher is added it should join the run by being
+   *  a row rather than by somebody remembering this file exists.
+   *
+   *  IT DOES NOT MAKE THE NEIGHBOUR MERGE, and that asymmetry is the point. Only
+   *  a piece with `joins` changes what it draws; the appliance keeps its outline,
+   *  which is what the seam then IS. Both sides dropping their edge would leave a
+   *  cooker and a cupboard with no line between them at all, which is one pixel
+   *  too few in the other direction.
+   *
+   *  NO FINISH TEST, unlike a true run partner. Merging a pine worktop into a
+   *  walnut one would draw a single slab with a colour change down the middle, so
+   *  that comparison stays strict; abutting is only "stop drawing your edge,
+   *  something else is drawing it", and that is right whatever the two are made
+   *  of. */
+  fitted?: boolean;
+
   /** A SECOND finish, for the piece's other material.
    *
    *  Which classes the trim may wear. Absent means the piece is one material and
@@ -693,6 +723,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     solid: true,
     height: 14,
     finishes: ["metal"],
+    fitted: true,
     // NO `light`, and NOT an oversight. A lit stove would pool warm light for
     // four stone, which quietly undercuts the one object ore exists to buy
     // (ROADMAP §Ore's sink — "ore buys an object", and the object is a light).
@@ -712,6 +743,7 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     // that way: a fridge you look over is a cupboard.
     height: 24,
     finishes: ["metal"],
+    fitted: true,
   },
   sink: {
     id: "sink",
@@ -725,6 +757,13 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     h: 1,
     solid: true,
     height: 12,
+    // NO `fitted`, AND ON PURPOSE — it is the one kitchen unit whose drawing has
+    // not been through the run pass. It is inset two pixels each side and two
+    // pixels shorter than everything it stands beside, so telling the counter to
+    // stop drawing its edge here would remove the only line at that seam and
+    // leave the gap wider and barer than before. The flag goes on the day the
+    // art does; until then a visible end is the honest picture of a unit that
+    // does not fit.
     // PORCELAIN OR STAINLESS, because a sink is honestly either one, and the
     // picker has always been able to span classes without asking the player to
     // choose a category first (skins.ts §availableSkinsForClasses). The one row
@@ -761,6 +800,10 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     height: 14,
     finishes: ["wood"],
     trim: ["stone", "metal"],
+    // The one that DOES the joining. `fitted` here is what lets it recognise the
+    // appliances back — the flag is symmetric even though the drawing change is
+    // not (see the field's note).
+    fitted: true,
   },
 
   // --- The bathroom -----------------------------------------------------------
