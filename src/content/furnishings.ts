@@ -2355,27 +2355,63 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // The handle repeats per cell and that is FINE — it is a feature, not an edge.
   // What stripes a surface is a light line meeting a dark line at the seam, and a
   // handle in the middle of a door is neither.
+  //
+  // FULL WIDTH, LIKE ITS NEIGHBOURS. The standalone was inset a pixel each side
+  // while `mid` and `end` ran edge to edge, which is the same split the stove and
+  // the fridge had: it meant a counter beside anything that was not another
+  // counter still left a channel of floor at the seam, because `s` and `end` were
+  // drawing an inset the appliances no longer had. Back corners squared with the
+  // rest of the kitchen too.
+  //
+  // ONE DOOR PER CABINET, which is the thing this face was missing entirely. It
+  // used to be a plain field between two rails with a handle floating in the
+  // middle of it — a handle attached to nothing, which is why a run of counters
+  // read as one long panel rather than as a row of units. Now each cell carries a
+  // door: a `k`-outlined panel in shade, inset a pixel from the carcass, with the
+  // handle on it.
+  //
+  // THE DOOR IS THE SAME SIZE AND IN THE SAME PLACE IN ALL FIVE GRIDS — cols 2 to
+  // 13 — and what varies around it is the carcass. `mid` fills its margins with
+  // carcass where `s` puts an outline. The alternative was letting `mid`'s door
+  // grow into the pixel `s` spends on its side outline, which would have given a
+  // run whose middle doors were two pixels wider than its end ones. A run of
+  // identical units has to be identical.
+  //
+  // IT DOES NOT STRIPE, and it is worth saying why given how many times that rule
+  // has bitten. Adjacent cells meet carcass-to-carcass — four pixels of it between
+  // one door and the next — so no cell draws an edge at the boundary, and the
+  // worktop above still runs unbroken. A door is a repeating UNIT, which a row of
+  // cabinets genuinely has; the rule is about a continuous SURFACE being cut into
+  // cells, and the worktop is the surface here.
+  //
+  // THE HANDLE SITS OFF-CENTRE, three pixels in from the door's right edge, which
+  // is the other half of "one door". Centred, it reads as the meeting point of a
+  // pair of doors — which is exactly what the old middle-of-the-face handle was
+  // being mistaken for.
   counter: {
     s: {
       rows: [
         "................",
         "................",
-        "..kkkkkkkkkkkk..",
-        ".kTTTTTTTTTTTTk.",
-        ".kTTTTTTTTTTTTk.",
-        ".kSSSSSSSSSSSSk.",
-        ".kkkkkkkkkkkkkk.",
-        ".kcccccccccccck.",
-        ".kckkkkkkkkkkck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kccccckkccccck.",
-        ...Array<string>(13).fill(".kcccccccccccck."),
-        ".kckkkkkkkkkkck.",
-        ".kcccccccccccck.",
-        ".kkkkkkkkkkkkkk.",
-        ".kssssssssssssk.",
-        ".kssssssssssssk.",
+        "kkkkkkkkkkkkkkkk",
+        "kTTTTTTTTTTTTTTk",
+        "kTTTTTTTTTTTTTTk",
+        "kSSSSSSSSSSSSSSk",
+        "kkkkkkkkkkkkkkkk",
+        "kcccccccccccccck",
+        "kkkkkkkkkkkkkkkk",
+        "kcccccccccccccck",
+        "kckkkkkkkkkkkkck",
+        "kcksssssssssskck",
+        ...Array<string>(4).fill("kcksssssssksskck"),
+        ...Array<string>(7).fill("kcksssssssssskck"),
+        "kckkkkkkkkkkkkck",
+        "kcccccccccccccck",
+        "kkkkkkkkkkkkkkkk",
+        "kcccccccccccccck",
+        "kkkkkkkkkkkkkkkk",
+        "kssssssssssssssk",
+        "kssssssssssssssk",
       ],
       palette: { k: INK },
     },
@@ -2395,9 +2431,12 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           "cccccccccccccccc",
           "kkkkkkkkkkkkkkkk",
           "cccccccccccccccc",
+          "cckkkkkkkkkkkkcc",
+          "ccksssssssssskcc",
+          ...Array<string>(4).fill("ccksssssssksskcc"),
+          ...Array<string>(7).fill("ccksssssssssskcc"),
+          "cckkkkkkkkkkkkcc",
           "cccccccccccccccc",
-          "ccccccckkccccccc",
-          ...Array<string>(13).fill("cccccccccccccccc"),
           "kkkkkkkkkkkkkkkk",
           "cccccccccccccccc",
           "kkkkkkkkkkkkkkkk",
@@ -2410,22 +2449,25 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           rows: [
           "................",
           "................",
-          ".kkkkkkkkkkkkkkk",
-          ".kTTTTTTTTTTTTTT",
-          ".kTTTTTTTTTTTTTT",
-          ".kSSSSSSSSSSSSSS",
-          ".kkkkkkkkkkkkkkk",
-          ".kcccccccccccccc",
-          ".kkkkkkkkkkkkkkk",
-          ".kcccccccccccccc",
-          ".kcccccccccccccc",
-          ".kcccccckkcccccc",
-          ...Array<string>(13).fill(".kcccccccccccccc"),
-          ".kkkkkkkkkkkkkkk",
-          ".kcccccccccccccc",
-          ".kkkkkkkkkkkkkkk",
-          ".kssssssssssssss",
-          ".kssssssssssssss",
+          "kkkkkkkkkkkkkkkk",
+          "kTTTTTTTTTTTTTTT",
+          "kTTTTTTTTTTTTTTT",
+          "kSSSSSSSSSSSSSSS",
+          "kkkkkkkkkkkkkkkk",
+          "kccccccccccccccc",
+          "kkkkkkkkkkkkkkkk",
+          "kccccccccccccccc",
+          "kckkkkkkkkkkkkcc",
+          "kcksssssssssskcc",
+          ...Array<string>(4).fill("kcksssssssksskcc"),
+          ...Array<string>(7).fill("kcksssssssssskcc"),
+          "kckkkkkkkkkkkkcc",
+          "kccccccccccccccc",
+          "kkkkkkkkkkkkkkkk",
+          "kccccccccccccccc",
+          "kkkkkkkkkkkkkkkk",
+          "ksssssssssssssss",
+          "ksssssssssssssss",
           ],
           palette: { k: INK },
         },
@@ -2450,12 +2492,12 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           ...Array<string>(16).fill("kTTTTTTTTTTTTTTk"),
           "kkkkkkkkkkkkkkkk",
           "kcccccccccccccck",
+          "kckkkkkkkkkkkkck",
+          "kcksssssssssskck",
+          ...Array<string>(3).fill("kcksssssssksskck"),
+          ...Array<string>(3).fill("kcksssssssssskck"),
+          "kckkkkkkkkkkkkck",
           "kcccccccccccccck",
-          "kcccccccccccccck",
-          "kcccccccccccccck",
-          "kcccccccccccccck",
-          "kcccccckkcccccck",
-          ...Array<string>(5).fill("kcccccccccccccck"),
           "kkkkkkkkkkkkkkkk",
           "kssssssssssssssk",
           ],
@@ -2467,12 +2509,12 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           ...Array<string>(15).fill("kTTTTTTTTTTTTTTk"),
           "kkkkkkkkkkkkkkkk",
           "kcccccccccccccck",
+          "kckkkkkkkkkkkkck",
+          "kcksssssssssskck",
+          ...Array<string>(3).fill("kcksssssssksskck"),
+          ...Array<string>(3).fill("kcksssssssssskck"),
+          "kckkkkkkkkkkkkck",
           "kcccccccccccccck",
-          "kcccccccccccccck",
-          "kcccccccccccccck",
-          "kcccccccccccccck",
-          "kcccccckkcccccck",
-          ...Array<string>(5).fill("kcccccccccccccck"),
           "kkkkkkkkkkkkkkkk",
           "kssssssssssssssk",
           ],
