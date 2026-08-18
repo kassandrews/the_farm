@@ -212,13 +212,27 @@ const CHEST_BACK: Grid = {
     "................",
     "................",
     "................",
-    "..kkkkkkkkkkkk..",
+    ".kkkkkkkkkkkkkk.",
     ".kttttttttttttk.",
+    ".kttttttttttttk.",
+    ".kttttttttttttk.",
+    ".kkkkkkkkkkkkkk.",
     ".kssssssssssssk.",
     ".kssssssssssssk.",
     ".kssssssssssssk.",
     ".kkkkkkkkkkkkkk.",
-    ...Array<string>(15).fill(".kssssssssssssk."),
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
+    ".kssssssssssssk.",
     ".kkkkkkkkkkkkkk.",
   ],
   palette: { k: INK },
@@ -1680,8 +1694,19 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
   },
 
-  // Curved lid, hard rim, one brass clasp. The rim is the whole trick —
-  // it is what says lid rather than box, and it costs one row.
+  // A LID, A SEAM AND A LATCH, and nothing else — the shape everybody already
+  // knows a chest by. It had a curved lid (a top rule inset a pixel from the
+  // sides), a hard rim, a band of shade down its lower half, and a clasp drawn
+  // on two rows that were THEMSELVES inset a pixel, so the box stepped in and
+  // out again around its own fitting. That is the nightstand's wobble, and the
+  // curve and the shade band were two more claims than a box this size can make.
+  //
+  // What is left is a band across the top, one rule under it, and a brass latch
+  // straddling that rule. The latch is the only thing that crosses it, which is
+  // what a hasp is for: it holds the lid to the box.
+  //
+  // Wider than it was, too — one pixel of margin rather than two, so it reads as
+  // a box on the floor instead of a box in a box.
   chest: {
     n: CHEST_BACK,
     e: CHEST_BACK,
@@ -1691,28 +1716,28 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "................",
         "................",
         "................",
-        "...kkkkkkkkkk...",
-        "..kttttttttttk..",
-        "..kcccccccccck..",
-        "..kcccccccccck..",
-        "..kcccccccccck..",
-        "..kkkkkkkkkkkk..",
-        "..kssssssssssk..",
-        "..kcccccccccck..",
-        "...kcccbbccck...",
-        "...kcccbbccck...",
-        "..kcccccccccck..",
-        "..kcccccccccck..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kssssssssssk..",
-        "..kkkkkkkkkkkk..",
+        ".kkkkkkkkkkkkkk.",
+        ".kttttttttttttk.",
+        ".kttttttttttttk.",
+        ".kttttttttttttk.",
+        ".kkkkkkkkkkkkkk.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccbbccccck.",
+        ".kkkkkkbbkkkkkk.",
+        ".kcccccbbccccck.",
+        ".kcccccbbccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kcccccccccccck.",
+        ".kssssssssssssk.",
+        ".kssssssssssssk.",
+        ".kkkkkkkkkkkkkk.",
       ],
       palette: { k: INK, b: "#9c7a2c" },
     },
