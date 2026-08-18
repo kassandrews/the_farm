@@ -2093,27 +2093,56 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // Hob on top, oven under it. The plate is dark in every kitchen — a cooktop
   // rendered in the body's own metal disappears into it, and then the piece is a
   // cabinet with a handle. Same carve-out as the notice board's paper.
+  // EDGE TO EDGE, which is the table's rule arriving in the kitchen: "a joining
+  // piece earns the whole cell, because its run has to be continuous." A stove is
+  // not a joining piece in the `joins` sense — it keeps its own outline, and it
+  // should, because a stove genuinely ends where it ends — but it STANDS IN a
+  // run, and that carries the same obligation. Inset a pixel each side, it left a
+  // channel of floor between itself and the counter beside it, so a fitted
+  // kitchen came out as a row of separate white goods with daylight between them.
+  // The counter had already worked this out for itself (its `joins` grids are
+  // full width, its standalone is not); the appliances had not.
+  //
+  // SQUARE AT THE BACK CORNERS TOO, which the first pass got wrong. It kept the
+  // top row a pixel narrow each side on the theory that the bevel is what stops a
+  // tall box being a flat rectangle and the back abuts nothing — true of the
+  // bevel, wrong about the corner. Everything the stove stands beside squares
+  // off, so two missing pixels at the back read as a chip out of the hob rather
+  // than as depth. The two pixels go back in; the piece is a rectangle, like its
+  // neighbours.
+  //
+  // SHORTER LEGS, AND THE PLINTH IS WHY. This piece had FOUR rows of leg under a
+  // two-row shade band — a toe kick and a set of stilts on the same cabinet,
+  // which is one foot too many, and the tall pair made the stove read as an
+  // appliance somebody had wheeled in rather than one standing in a run. Two
+  // rows of leg leave a shadow gap under it and nothing more.
+  //
+  // The rows come off the LEGS and go into the OVEN DOOR (10 to 12), which is
+  // what keeps `height: 14` honest: the box is a fixed 30 rows, so a shorter
+  // foot with an unchanged body would have dropped the hob two pixels and put it
+  // below the counter's worktop. The top of this piece is a line it shares with
+  // every cabinet beside it, and that line does not move.
   stove: {
     s: {
       rows: [
         "................",
         "................",
-        "..kkkkkkkkkkkk..",
-        ".kmmmmmmmmmmmmk.",
-        ".kmggmmmmmmggmk.",
-        ".kmmmmmmmmmmmmk.",
-        ".kmggmmmmmmggmk.",
-        ".kmmmmmmmmmmmmk.",
-        ".kkkkkkkkkkkkkk.",
-        ".kcccccccccccck.",
-        ".kcssssssssssck.",
-        ".kckkkkkkkkkkck.",
-        ...Array<string>(10).fill(".kcssssssssssck."),
-        ".kcccccccccccck.",
-        ".kssssssssssssk.",
-        ".kssssssssssssk.",
-        ".kkkkkkkkkkkkkk.",
-        ...Array<string>(4).fill("...kk......kk..."),
+        "kkkkkkkkkkkkkkkk",
+        "kmmmmmmmmmmmmmmk",
+        "kmmggmmmmmmggmmk",
+        "kmmmmmmmmmmmmmmk",
+        "kmmggmmmmmmggmmk",
+        "kmmmmmmmmmmmmmmk",
+        "kkkkkkkkkkkkkkkk",
+        "kcccccccccccccck",
+        "kcssssssssssssck",
+        "kckkkkkkkkkkkkck",
+        ...Array<string>(12).fill("kcssssssssssssck"),
+        "kcccccccccccccck",
+        "kssssssssssssssk",
+        "kssssssssssssssk",
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(2).fill("..kk........kk.."),
       ],
       palette: { k: INK, m: "#4a4550", g: "#332f3a" },
     },
@@ -2121,25 +2150,125 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
 
   // A tall box, and the door split is the whole of what makes it a fridge rather
   // than a wardrobe: two doors, one handle line down the right of each.
+  // EDGE TO EDGE, the stove's argument — see it there. A fridge is the tallest
+  // thing in the room and was the worst offender for it: two pixels of floor
+  // showing down a 24px silhouette read as a gap somebody had left, not as a
+  // gap between two objects.
+  //
+  // AND NO LEGS AT ALL, which is the one piece in the kitchen that earns none. A
+  // stove keeps a shallow pair because an oven door has to clear the floor; a
+  // fridge is a sealed cabinet that stands on the ground, and three rows of leg
+  // under 24px of door made the tallest thing in the room look propped up. What
+  // replaces them is the COUNTER'S FOOT, verbatim — an outline and two rows of
+  // shade running to the edge of the box. That is the house's word for "a
+  // cabinet standing on the floor", and a fridge speaking it is most of what
+  // makes it read as part of the run rather than as something delivered.
+  //
+  // The three rows go into the lower door (9 to 10) plus the foot, for the
+  // stove's reason: the box is fixed, so the alternative was a shorter fridge.
+  // TURNED, IT IS NOT A FRIDGE WITH DOORS ON IT, which is the wardrobe's lesson
+  // arriving at the one other piece in the game you can walk all the way around.
+  // Without these two grids `gridFor()` served the front view for every facing
+  // and a fridge turned to the wall still showed you its doors and both handles —
+  // the one place the fallback actively lies.
+  //
+  // AS DEEP AS IT IS WIDE, unlike the wardrobe, so the side keeps the full
+  // sixteen. That was the wardrobe's correction (a one-tile footprint is what a
+  // piece may occupy, never what it must fill) and it does not apply here: a
+  // fridge really is about square in plan, which is why it is the appliance you
+  // cannot get past in a corridor.
+  //
+  // THE SIDE IS A PLAIN SLAB, painted in shade all the way up — WARDROBE_BACK's
+  // trick, and it is what makes a turn legible at a glance without inventing a
+  // colour. No panel line: a wardrobe's side is panelled and a fridge's is a
+  // pressed steel sheet, so drawing furniture joinery on it would be a lie about
+  // what the object is made of.
+  //
+  // THE BACK IS THE ONLY FACE WITH ANYTHING TO SAY. Condenser coils in a framed
+  // grille and a compressor block under them, in the STOVE'S dark (`o` is the
+  // hob plate's own value) — the two dark literals in the kitchen being the same
+  // dark is what stops "not the body's metal" becoming two different answers one
+  // piece apart. Deliberate banding, like the tent's canvas: it does not follow
+  // the tile grid, it is a grille, and a grille is what it is meant to read as.
+  //
+  // AND IT IS ONE PIPE, NOT FIVE BARS. Each run's far end turns down into the
+  // next — right, left, right — so the coil enters at the top left and leaves at
+  // the bottom right having never stopped. That is the whole difference between
+  // a condenser and a radiator grille: five separate bars have five pairs of
+  // loose ends, a serpentine has two, and the eye follows the turn and reads one
+  // tube.
+  //
+  // THE FRAME HAD TO GO FOR IT TO READ, and finding out why is worth keeping.
+  // The first version boxed the coil in an ink frame with 1px bars and 1px gaps
+  // between them. At that pitch neither stripe is figure and neither is ground —
+  // and because the ink frame touched the dark bars, the frame and the bars
+  // merged into one solid block, which made the LIGHT gaps read as the bars. The
+  // picture inverted itself. Photographed at 6x it was unmistakable and at 1x it
+  // was just muddy.
+  //
+  // So: no frame, a 1px pipe on 2px of clear panel, drawn straight onto the
+  // back. A dark line on an open field is a pipe; a dark line among equally
+  // spaced light lines is a texture. The turns are two pixels tall, which is the
+  // gap they have to cross.
   fridge: {
+    mirrorW: true,
     s: {
       rows: [
         "................",
         "................",
-        "..kkkkkkkkkkkk..",
-        ".kttttttttttttk.",
         ".kkkkkkkkkkkkkk.",
-        ...Array<string>(4).fill(".kcccccccccccck."),
-        ...Array<string>(5).fill(".kccccccccckcck."),
-        ...Array<string>(4).fill(".kcccccccccccck."),
-        ".kckkkkkkkkkkck.",
-        ...Array<string>(3).fill(".kcccccccccccck."),
-        ...Array<string>(5).fill(".kccccccccckcck."),
-        ...Array<string>(9).fill(".kcccccccccccck."),
-        ".kkkkkkkkkkkkkk.",
-        ...Array<string>(3).fill("...kk......kk..."),
+        "kttttttttttttttk",
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(4).fill("kcccccccccccccck"),
+        ...Array<string>(5).fill("kccccccccccckcck"),
+        ...Array<string>(4).fill("kcccccccccccccck"),
+        "kckkkkkkkkkkkkck",
+        ...Array<string>(3).fill("kcccccccccccccck"),
+        ...Array<string>(5).fill("kccccccccccckcck"),
+        ...Array<string>(10).fill("kcccccccccccccck"),
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(2).fill("kssssssssssssssk"),
       ],
       palette: { k: INK },
+    },
+    e: {
+      rows: [
+        "................",
+        "................",
+        ".kkkkkkkkkkkkkk.",
+        "kttttttttttttttk",
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(32).fill("kssssssssssssssk"),
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(2).fill("kssssssssssssssk"),
+      ],
+      palette: { k: INK },
+    },
+    n: {
+      rows: [
+        "................",
+        "................",
+        ".kkkkkkkkkkkkkk.",
+        "kttttttttttttttk",
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(2).fill("kssssssssssssssk"),
+        "kssoooooooooossk", // the coil: across,
+        "ksssssssssssossk", // ...down at the right,
+        "ksssssssssssossk",
+        "kssoooooooooossk", // ...back across,
+        "kssosssssssssssk", // ...down at the left,
+        "kssosssssssssssk",
+        "kssoooooooooossk",
+        "ksssssssssssossk",
+        "ksssssssssssossk",
+        "kssoooooooooossk",
+        ...Array<string>(13).fill("kssssssssssssssk"),
+        ...Array<string>(5).fill("ksssoooooooosssk"), // the compressor
+        ...Array<string>(2).fill("kssssssssssssssk"),
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(2).fill("kssssssssssssssk"),
+      ],
+      palette: { k: INK, o: "#4a4550" },
     },
   },
 
