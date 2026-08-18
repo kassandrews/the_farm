@@ -220,8 +220,13 @@ describe("joining art", () => {
     const rise = art.rise ?? 0;
     const box = rise + def.h * TILE + def.height;
 
+    // `xBack` is the same east-west run drawn from behind (render/furnishings.ts
+    // §joins), so it owes the same box and the same silhouette rules as `x`. It
+    // was invisible to this suite when it arrived, which is how a back view ships
+    // one row short and nobody sees it until a kitchen is turned round.
     const axes = [
       ["x", joins.x],
+      ...(joins.xBack ? ([["xBack", joins.xBack]] as const) : []),
       ...(joins.y ? ([["y", joins.y]] as const) : []),
     ] as const;
 
@@ -246,14 +251,41 @@ describe("joining art", () => {
     const bodyRows = (rows: readonly string[]): string[] =>
       rows.filter((r) => r.trim() !== "" && [...r].some((ch) => ch !== "k" && ch !== "."));
 
-    it(`${id} x.mid draws no side outline`, () => {
-      // The per-cell edges rule in assertion form: if the middle of a run returns
-      // its own edges, the run is a row of boxes instead of a counter.
-      for (const row of bodyRows(joins.x.mid.rows)) {
-        expect(row[0], `x.mid row "${row}" starts in ink`).not.toBe("k");
-        expect(row[row.length - 1], `x.mid row "${row}" ends in ink`).not.toBe("k");
-      }
-    });
+    // A RULE WITH SOMETHING STANDING IN IT is not a side outline, and the plain
+    // "does this row begin and end in ink" test cannot tell the two apart.
+    //
+    // A worktop's back edge runs the full width of the cell and is ink from end
+    // to end, which the `bodyRows` filter already forgives — until something
+    // crosses it. A sink's tap is mounted at the counter's near edge and stands
+    // up THROUGH that line, so one pixel of the row is steel and suddenly the row
+    // has "actual content" and is judged as though its end pixels were a cell
+    // boundary. They are not: they are the same rule they always were.
+    //
+    // So a row is also fine when its non-ink pixels form ONE CONTIGUOUS RUN with
+    // ink either side — a rule punched through in a single place. Two separate
+    // gaps would mean something else is going on and the strict test still bites.
+    // This was left strict for one pass and the art bent around it instead (the
+    // tap was drawn with a one-pixel break where it crossed), which looked like
+    // the tap disappearing behind the counter — a drawing defect caused by a test
+    // measuring the wrong thing.
+    const isPunchedRule = (row: string): boolean => {
+      if (row[0] !== "k" || row[row.length - 1] !== "k") return false;
+      const gaps = [...row].map((c, i) => (c === "k" ? -1 : i)).filter((i) => i >= 0);
+      return gaps.length > 0 && gaps[gaps.length - 1] - gaps[0] + 1 === gaps.length;
+    };
+
+    for (const [name, grids] of axes) {
+      if (name === "y") continue;
+      it(`${id} ${name}.mid draws no side outline`, () => {
+        // The per-cell edges rule in assertion form: if the middle of a run
+        // returns its own edges, the run is a row of boxes instead of a counter.
+        for (const row of bodyRows(grids.mid.rows)) {
+          if (isPunchedRule(row)) continue;
+          expect(row[0], `${name}.mid row "${row}" starts in ink`).not.toBe("k");
+          expect(row[row.length - 1], `${name}.mid row "${row}" ends in ink`).not.toBe("k");
+        }
+      });
+    }
 
     it(`${id} x.end returns its left side only`, () => {
       // Authored as the LEFT end — the run continues to its right — and mirrored
@@ -266,6 +298,7 @@ describe("joining art", () => {
       // last column is a seam the run would wear at every junction, which is the
       // whole thing this grid exists to avoid.
       for (const row of rows) {
+        if (isPunchedRule(row)) continue; // a rule with a tap through it — see above
         expect(row[row.length - 1], `end row "${row}" should stay open`).not.toBe("k");
       }
 

@@ -2421,6 +2421,45 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // the fridge made with their feet: the box is fixed, and of the things below
   // the worktop the door is the one with slack in it.
   counter: {
+    mirrorW: true,
+    // STANDING ALONE, TURNED. The run grids only answer when there IS a run —
+    // `runGridFor` returns null for a piece with nothing beside it — so without
+    // these a single counter turned north or east fell all the way back to its
+    // front view and showed you its door from behind. The joins fixed the runs
+    // and left the lone cabinet lying.
+    //
+    // ONE DRAWING FOR BOTH, and it is not laziness: from the back and from the
+    // side a base unit is the same object — a worktop you look down on and a
+    // blank carcass under it. The door is the only thing that distinguishes its
+    // faces, and neither of these is the face that has it.
+    n: {
+      rows: [
+        "................",
+        "................",
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(4).fill("kTTTTTTTTTTTTTTk"),
+        "kSSSSSSSSSSSSSSk",
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(18).fill("kcccccccccccccck"),
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(2).fill("kssssssssssssssk"),
+      ],
+      palette: { k: INK },
+    },
+    e: {
+      rows: [
+        "................",
+        "................",
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(4).fill("kTTTTTTTTTTTTTTk"),
+        "kSSSSSSSSSSSSSSk",
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(18).fill("kcccccccccccccck"),
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(2).fill("kssssssssssssssk"),
+      ],
+      palette: { k: INK },
+    },
     s: {
       rows: [
         "................",
@@ -2509,12 +2548,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           ...Array<string>(16).fill("kTTTTTTTTTTTTTTk"),
           "kkkkkkkkkkkkkkkk",
           "kcccccccccccccck",
-          "kckkkkkkkkkkkkck",
-          ...Array<string>(2).fill("kcksssssssssskck"),
-          ...Array<string>(3).fill("kcksssssssksskck"),
-          ...Array<string>(2).fill("kcksssssssssskck"),
-          "kckkkkkkkkkkkkck",
-          "kcccccccccccccck",
+          ...Array<string>(10).fill("kcccccccccccccck"),
           "kkkkkkkkkkkkkkkk",
           "kssssssssssssssk",
           ],
@@ -2526,14 +2560,48 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           ...Array<string>(15).fill("kTTTTTTTTTTTTTTk"),
           "kkkkkkkkkkkkkkkk",
           "kcccccccccccccck",
-          "kckkkkkkkkkkkkck",
-          ...Array<string>(2).fill("kcksssssssssskck"),
-          ...Array<string>(3).fill("kcksssssssksskck"),
-          ...Array<string>(2).fill("kcksssssssssskck"),
-          "kckkkkkkkkkkkkck",
-          "kcccccccccccccck",
+          ...Array<string>(10).fill("kcccccccccccccck"),
           "kkkkkkkkkkkkkkkk",
           "kssssssssssssssk",
+          ],
+          palette: { k: INK },
+        },
+      },
+      // THE SAME RUN FROM BEHIND. Everything above the carcass is identical —
+      // the worktop is one slab and does not care which side of it you stand on —
+      // and everything below it is a plain panel, because the doors are on the
+      // other face and a cabinet has one.
+      //
+      // The kick plate stays. A toe recess is cut on the front only in a real
+      // kitchen, but at this scale the plinth band IS how a floor-standing
+      // cabinet ends, and a back view that stopped one row short would read as a
+      // different piece of furniture rather than as the same one turned round.
+      xBack: {
+        mid: {
+          rows: [
+          "................",
+          "................",
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(4).fill("TTTTTTTTTTTTTTTT"),
+          "SSSSSSSSSSSSSSSS",
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(18).fill("cccccccccccccccc"),
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(2).fill("ssssssssssssssss"),
+          ],
+          palette: { k: INK },
+        },
+        end: {
+          rows: [
+          "................",
+          "................",
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(4).fill("kTTTTTTTTTTTTTTT"),
+          "kSSSSSSSSSSSSSSS",
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(18).fill("kccccccccccccccc"),
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(2).fill("ksssssssssssssss"),
           ],
           palette: { k: INK },
         },
@@ -2561,18 +2629,20 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // and a tap that made the player see-through would be the occlusion machinery
   // firing on plumbing).
   //
-  // THE BOWL IS RIMMED ON TWO SIDES ONLY, and the other two edges are lines that
-  // were already there. Its top is the worktop's own back outline; its bottom is
-  // where the dark meets the worktop's front-edge shade, which is a value change
-  // and needs no ink. Only the left and right get a drawn `k`.
+  // NO INK INSIDE THE PIECE — the bowl is a LIGHT rim around a darker interior,
+  // and that is the bathroom's construction rather than a new one. `sink` and
+  // `tub` both hollow themselves with a one-pixel `t` band around `s`, and the
+  // only `k` either of them draws is its own outer silhouette. This bowl was
+  // rimmed in ink for two passes, which made it the one basin in the game with a
+  // drawn line inside it — a different vocabulary for the same idea, two rooms
+  // apart. The rim is `r` and the interior `b`, so it is the same trick in steel
+  // literals instead of the finish's own values.
   //
-  // It had a fourth rim across the bottom for one pass and that was the bug the
-  // owner caught: a drawn line one pixel above the front edge reads as a second
-  // front edge, exactly as the counter's old rails read as a second kick plate.
-  // At five rows of worktop there is no room to draw a line beneath a line.
-  //
-  // Running it to the back also puts the tap where a tap is — at the back rim,
-  // not behind a strip of spare counter.
+  // A LINE IS NOT ALWAYS THE ANSWER, which is worth writing down beside the
+  // cushion's lesson that at this size a boundary usually IS ink. That rule is
+  // about a boundary between two things at nearly the same tone. A hollow is not
+  // that: it is a lit rim against a shaded floor, and the tone step is the whole
+  // picture. Drawing it in ink as well says "hole" twice and reads as neither.
   //
   // THE FRONT-EDGE ROW IS THE COUNTER'S, character for character, and it is the
   // one row here that must never be touched: it is the line that runs the length
@@ -2587,18 +2657,30 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // plate is enamel. `m` is the basin's own tap grey, for the reason the two
   // kitchen darks are one dark.
   //
-  // THE BOWL IS DARK, AND IT TOOK TWO GOES. First it was drawn in the worktop's
-  // own `S`, the trim's shade, which on most stones is a hair off its `T` — so
-  // the bowl came out as a faintly different rectangle of worktop and the piece
-  // read as a counter with a smudge on it. Then it was `#6e747e`, which is very
-  // nearly slate's `top` exactly, and vanished on the one worktop anybody would
-  // put a steel sink in.
+  // THE BASIN IS PORCELAIN AND THE FITTINGS ARE STEEL, which is the split that
+  // took four passes to find. `b` is `#c0bcb2` — porcelain's own `shade`, so it
+  // is the SAME COLOUR as the inside of the bath and the inside of the bathroom
+  // basin. Three basins in one game should be made of one thing, and a kitchen
+  // sink that was steel all the way through made the bathroom look like a
+  // different game's bathroom. The rim and the tap stay steel: that is what a
+  // sink's fittings are, and what "stainless" was asking for.
   //
-  // The lesson is that a hollow cannot be a colour NEAR the surface it is cut
-  // into, because it has thirteen surfaces to be near and it will match one of
-  // them. It has to be darker than all of them: `#3f444e` sits below every stone
-  // and metal `top` in the table, so the bowl reads as a hole against marble,
-  // slate and brass alike, and stays clear of the outline ink that draws its rim.
+  // WHAT THE FOUR PASSES RULED OUT, because each was wrong for its own reason
+  // and the reasons are not obvious:
+  //  - the worktop's own `S`. The trim's shade is a hair off its `T` on most
+  //    stones, so the bowl was a faintly different rectangle of worktop.
+  //  - `#6e747e`, which is very nearly slate's `top` exactly, and vanished on
+  //    the one worktop anybody would put a sink in.
+  //  - `#8f959e`, steel's shade — LIGHTER than slate, so the bowl read as a
+  //    block of metal sitting on the counter rather than a hollow in it.
+  //  - `#5a606a`, dark enough to read as a hollow on every worktop, and it read
+  //    as a hole rather than as a basin. Correct, and joyless.
+  //
+  // The one that works is not the one with the best contrast. Porcelain is
+  // LIGHTER than slate and DARKER than marble, so the bowl reads as a pale basin
+  // in a dark top and a shaded one in a pale top, and it is the same object in
+  // both. Contrast against the surround was the wrong thing to optimise; being a
+  // recognisable material was the right one.
   // NO `joins.y`, AND THE TEST IS WHY — a receding run's top band has to be
   // sixteen identical rows, because that is the cell pitch and it tiles into the
   // cell behind. A bowl is not identical rows. There is no version of a sink cut
@@ -2613,14 +2695,68 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // which is the right amount for a unit that is not merging.
   kitchensink: {
     rise: 5,
+    mirrorW: true,
+    // AND ALONE, TURNED NORTH — the run's `xBack` with both its ends returned,
+    // for the counter's reason one row over.
+    n: {
+      rows: [
+        ...Array<string>(5).fill("................"),
+        "......kkk.......",
+        "......kmk.......",
+        "kkkkkkkmkkkkkkkk",
+        "kTTrrrkmkrrrrTTk",
+        "kTTrbbkmkbbbrTTk",
+        "kTTrrrkmkrrrrTTk",
+        "kTTTTTkmkTTTTTTk",
+        "kSSSSSSSSSSSSSSk",
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(18).fill("kcccccccccccccck"),
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(2).fill("kssssssssssssssk"),
+      ],
+      palette: { k: INK, m: "#b9bec6", r: "#d2d6dc", b: "#c0bcb2" },
+    },
+    // TURNED, IT IS A PANEL WITH A TAP ON IT. The bowl is still there — you are
+    // looking along the worktop rather than at the front of the unit — so the
+    // basin keeps its rim and floor and only the CABINET changes, losing its door
+    // for the counter's reason: a door is on one face and this is not that face.
+    //
+    // `mirrorW` and nothing else, which is what "e and w are mirrors" costs when
+    // the drawing is authored once. The tap's gooseneck is the only asymmetric
+    // thing on the piece and it is exactly what has to flip.
+    e: {
+      rows: [
+        "................",
+        "................",
+        "..kkkkkk........",
+        "..kmmmmk........",
+        "..kmkkmk........",
+        "..kmkkkk........",
+        "..kmk...........",
+        "kkkmkkkkkkkkkkkk",
+        "kTkmkrrrrrrrrTTk",
+        "kTkmkrbbbbbbrTTk",
+        "kTTTTrbbbbbbrTTk",
+        "kTTTTrrrrrrrrTTk",
+        "kSSSSSSSSSSSSSSk",
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(18).fill("kcccccccccccccck"),
+        "kkkkkkkkkkkkkkkk",
+        ...Array<string>(2).fill("kssssssssssssssk"),
+      ],
+      palette: { k: INK, m: "#b9bec6", r: "#d2d6dc", b: "#c0bcb2" },
+    },
     s: {
       rows: [
         "................",
         "................",
-        "......kkkk......",
-        ...Array<string>(4).fill("......kmmk......"),
-        "kkkkkkkkkkkkkkkk",
-        ...Array<string>(4).fill("kTTkbbbbbbbbkTTk"),
+        "......kkk.......",
+        ...Array<string>(4).fill("......kmk......."),
+        "kkkkkkkmkkkkkkkk",
+        "kTTTTTkmkTTTTTTk",
+        "kTTrrrrrrrrrrTTk",
+        "kTTrbbbbbbbbrTTk",
+        "kTTrrrrrrrrrrTTk",
         "kSSSSSSSSSSSSSSk",
         "kkkkkkkkkkkkkkkk",
         ...Array<string>(3).fill("kcccccccccccccck"),
@@ -2633,7 +2769,7 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "kkkkkkkkkkkkkkkk",
         ...Array<string>(2).fill("kssssssssssssssk"),
       ],
-      palette: { k: INK, m: "#8f959e", b: "#3f444e" },
+      palette: { k: INK, m: "#b9bec6", r: "#d2d6dc", b: "#c0bcb2" },
     },
     joins: {
       x: {
@@ -2641,10 +2777,13 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           rows: [
           "................",
           "................",
-          "......kkkk......",
-          ...Array<string>(4).fill("......kmmk......"),
-          "kkkkkkkkkkkkkkkk",
-          ...Array<string>(4).fill("TTTkbbbbbbbbkTTT"),
+          "......kkk.......",
+          ...Array<string>(4).fill("......kmk......."),
+          "kkkkkkkmkkkkkkkk",
+          "TTTTTTkmkTTTTTTT",
+          "TTTrrrrrrrrrrTTT",
+          "TTTrbbbbbbbbrTTT",
+          "TTTrrrrrrrrrrTTT",
           "SSSSSSSSSSSSSSSS",
           "kkkkkkkkkkkkkkkk",
           ...Array<string>(3).fill("cccccccccccccccc"),
@@ -2657,16 +2796,19 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           "kkkkkkkkkkkkkkkk",
           ...Array<string>(2).fill("ssssssssssssssss"),
           ],
-          palette: { k: INK, m: "#8f959e", b: "#3f444e" },
+          palette: { k: INK, m: "#b9bec6", r: "#d2d6dc", b: "#c0bcb2" },
         },
         end: {
           rows: [
           "................",
           "................",
-          "......kkkk......",
-          ...Array<string>(4).fill("......kmmk......"),
-          "kkkkkkkkkkkkkkkk",
-          ...Array<string>(4).fill("kTTkbbbbbbbbkTTT"),
+          "......kkk.......",
+          ...Array<string>(4).fill("......kmk......."),
+          "kkkkkkkmkkkkkkkk",
+          "kTTTTTkmkTTTTTTT",
+          "kTTrrrrrrrrrrTTT",
+          "kTTrbbbbbbbbrTTT",
+          "kTTrrrrrrrrrrTTT",
           "kSSSSSSSSSSSSSSS",
           "kkkkkkkkkkkkkkkk",
           ...Array<string>(3).fill("kccccccccccccccc"),
@@ -2679,7 +2821,79 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           "kkkkkkkkkkkkkkkk",
           ...Array<string>(2).fill("ksssssssssssssss"),
           ],
-          palette: { k: INK, m: "#8f959e", b: "#3f444e" },
+          palette: { k: INK, m: "#b9bec6", r: "#d2d6dc", b: "#c0bcb2" },
+        },
+      },
+      // FROM BEHIND, THE TAP IS IN FRONT OF THE BASIN. It is mounted at the unit's
+      // north edge, which is the FAR edge when you look from the south and the
+      // NEAR one when you look from the north — so it moves from standing above
+      // the bowl to standing over it, and the bowl is what it occludes.
+      //
+      // ITS BASE SITS ON THE NEAR RIM, one row short of the worktop's front-edge
+      // line. That line runs the length of the kitchen and nothing may break it
+      // (§the front-edge row is the counter's); a tap mounted a pixel inside the
+      // rim is also where a tap actually goes.
+      //
+      // NO GOOSENECK — AND NOT ONLY HERE. A spout arcs out over the basin, which
+      // is NORTH-SOUTH, the axis this projection foreshortens. From behind it
+      // arcs away and from the front it arcs at you; either way the curve
+      // collapses to nothing and what is left is the riser under a cap.
+      //
+      // THE ARC EXISTS IN EXACTLY ONE VIEW, the side, which is the only one that
+      // has it in the picture plane. That is the whole rule, and the front had it
+      // wrong for three passes because a gooseneck is what a tap LOOKS like in
+      // one's head — the shape you would draw from memory rather than the shape
+      // this camera can see. The front and back differ by where the tap sits
+      // relative to the bowl, not by what shape it is.
+      //
+      // AND WHAT IS LEFT IS A STICK, with nothing on top of it. Two attempts at
+      // suggesting the arc from the front both failed and failed differently: a
+      // centred bar is a T no matter how short it is, and an off-centre one is a
+      // flag. Three pixels of steel standing on a counter is legible as a tap
+      // because of WHERE it is — rising out of a worktop behind a basin — and
+      // anything added to say so a second time only says something else.
+      //
+      // The riser breaks for one pixel at the worktop's back outline, and that is
+      // a concession to the run rule rather than to geometry: a full-width ink
+      // rule may carry no other colour, or `x.mid` starts returning its own edges
+      // (render/furnishings.ts §joins). One pixel of a three-pixel column, on a
+      // dark line, against a piece nobody will look at from behind twice.
+      xBack: {
+        mid: {
+          rows: [
+          ...Array<string>(5).fill("................"),
+          "......kkk.......",
+          "......kmk.......",
+          "kkkkkkkmkkkkkkkk",
+          "TTTrrrkmkrrrrTTT",
+          "TTTrbbkmkbbbrTTT",
+          "TTTrrrkmkrrrrTTT",
+          "TTTTTTkmkTTTTTTT",
+          "SSSSSSSSSSSSSSSS",
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(18).fill("cccccccccccccccc"),
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(2).fill("ssssssssssssssss"),
+          ],
+          palette: { k: INK, m: "#b9bec6", r: "#d2d6dc", b: "#c0bcb2" },
+        },
+        end: {
+          rows: [
+          ...Array<string>(5).fill("................"),
+          "......kkk.......",
+          "......kmk.......",
+          "kkkkkkkmkkkkkkkk",
+          "kTTrrrkmkrrrrTTT",
+          "kTTrbbkmkbbbrTTT",
+          "kTTrrrkmkrrrrTTT",
+          "kTTTTTkmkTTTTTTT",
+          "kSSSSSSSSSSSSSSS",
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(18).fill("kccccccccccccccc"),
+          "kkkkkkkkkkkkkkkk",
+          ...Array<string>(2).fill("ksssssssssssssss"),
+          ],
+          palette: { k: INK, m: "#b9bec6", r: "#d2d6dc", b: "#c0bcb2" },
         },
       },
     },

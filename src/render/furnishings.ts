@@ -111,7 +111,23 @@ export interface PieceArt {
    *  set restyles a form by supplying a DRAWING. So a joining form supplies three
    *  drawings and the game picks, which is exactly what walls already do with
    *  face, side and corner. */
-  joins?: { x: RunGrids; y?: RunGrids };
+  /** `x` is the run across the camera and `y` the run away from it, both drawn
+   *  as the piece's FRONT. `xBack` is the same east-west run seen from BEHIND.
+   *
+   *  THE FOURTH ENTRY EXISTS BECAUSE FACING DOES NOT PICK A GRID HERE. A run
+   *  cell's drawing is chosen by what is beside it, not by which way it points,
+   *  and `runNeighbours` maps facing to an AXIS — e/w to `y`, and s AND n both to
+   *  `x`. So a north-facing counter took the front grids and showed you its doors
+   *  from behind, and no amount of `n` grid would have helped: `runGridFor`
+   *  answers before `gridFor` is ever consulted, so an `n` only ever serves a
+   *  piece standing alone.
+   *
+   *  OPTIONAL, AND FALLING BACK TO `x`. Three forms join at all — counter,
+   *  kitchensink, table — and a table's back is its front, so it wants none of
+   *  this. A missing `xBack` means "the front view is honest from behind too",
+   *  which is the right default and the answer for every joining piece that is
+   *  not a cabinet. */
+  joins?: { x: RunGrids; y?: RunGrids; xBack?: RunGrids };
   /** A part of the FRONT view that moves.
    *
    *  A band of rows, and a list of replacement bands to cycle through — so the
@@ -248,6 +264,10 @@ export function runGridFor(
   axis: RunAxis,
   before: boolean,
   after: boolean,
+  /** Which way the piece points. NOT what picks the axis — the caller has
+   *  already done that from this same value — but what picks between a run's
+   *  front and back drawings, and which way its side is turned. */
+  facing: Facing = "s",
 ): { grid: Grid; mirror: boolean } | null {
   const j = art.joins;
   if (!j) return null;
@@ -266,9 +286,18 @@ export function runGridFor(
     // of it has its face covered by that cell anyway. So "is anything north of
     // me" is the entire question, and the near end and the middle share a
     // drawing.
-    return { grid: before ? y.mid : y.end, mirror: false };
+    // EAST AND WEST ARE MIRRORS. Both take the `y` grids, because both are the
+    // same run seen from the same side of the room — but the piece inside it has
+    // been turned the other way round, so anything that is not symmetric (a
+    // sink's tap, a hob's controls) has to flip with it. Drawn once and mirrored,
+    // for `mirrorW`'s reason one level up: authoring the pair is two chances to
+    // get one of them wrong.
+    return { grid: before ? y.mid : y.end, mirror: facing === "w" };
   }
-  const x = j.x;
+  // THE BACK SET WHEN THERE IS ONE. See `joins.xBack` — facing does not choose
+  // the axis here, so this is the only place a north-facing run can stop drawing
+  // its front.
+  const x = facing === "n" ? (j.xBack ?? j.x) : j.x;
   if (before && after) return { grid: x.mid, mirror: false };
   if (after) return { grid: x.end, mirror: false };
   if (before) return { grid: x.end, mirror: true };

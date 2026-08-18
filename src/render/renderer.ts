@@ -5050,7 +5050,7 @@ export class Renderer {
       // counter cell uses is a fact about the run it is in, not about its facing,
       // so this branch replaces `gridFor` rather than feeding it.
       const run = art.joins ? this.runNeighbours(world, ax, ay, cell) : null;
-      const joined = run ? runGridFor(art, run.axis, run.before, run.after) : null;
+      const joined = run ? runGridFor(art, run.axis, run.before, run.after, cell.facing) : null;
       const { grid, mirror } = joined ?? gridFor(art, cell.facing, frame);
       const rise = art.rise ?? 0;
       // Keyed on the finish as well as the piece and facing: one grid serves
