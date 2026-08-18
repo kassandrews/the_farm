@@ -2561,12 +2561,25 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // and a tap that made the player see-through would be the occlusion machinery
   // firing on plumbing).
   //
-  // THE BOWL RUNS TO THE BACK EDGE — three rows of `S` under the worktop's own
-  // back outline, with a rim only at the sides and front. Giving it a fourth
-  // outline across the top would have cost a row of the bowl to draw a line
-  // directly beneath a line, and at five rows of worktop there is no row to
-  // spare. It also puts the tap where a tap is: at the back rim, not behind a
-  // strip of spare counter.
+  // THE BOWL IS RIMMED ON TWO SIDES ONLY, and the other two edges are lines that
+  // were already there. Its top is the worktop's own back outline; its bottom is
+  // where the dark meets the worktop's front-edge shade, which is a value change
+  // and needs no ink. Only the left and right get a drawn `k`.
+  //
+  // It had a fourth rim across the bottom for one pass and that was the bug the
+  // owner caught: a drawn line one pixel above the front edge reads as a second
+  // front edge, exactly as the counter's old rails read as a second kick plate.
+  // At five rows of worktop there is no room to draw a line beneath a line.
+  //
+  // Running it to the back also puts the tap where a tap is — at the back rim,
+  // not behind a strip of spare counter.
+  //
+  // THE FRONT-EDGE ROW IS THE COUNTER'S, character for character, and it is the
+  // one row here that must never be touched: it is the line that runs the length
+  // of the kitchen (see §the worktop is as deep as the hob). It got clobbered
+  // once by a careless search-and-replace while recolouring the bowl — eight
+  // `S`s inside a row of sixteen are a substring of that row — and the result was
+  // a dark bar across the front of one cell in an otherwise unbroken run.
   //
   // THE TAP AND THE BOWL ARE LITERALS, `m` and `b`. Neither is the carcass's
   // timber nor the worktop's stone — a tap is chrome and a bowl is steel in a
@@ -2607,9 +2620,8 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "......kkkk......",
         ...Array<string>(4).fill("......kmmk......"),
         "kkkkkkkkkkkkkkkk",
-        ...Array<string>(3).fill("kTTkbbbbbbbbkTTk"),
-        "kTTkkkkkkkkkkTTk",
-        "kbbbbbbbbSSSSSSk",
+        ...Array<string>(4).fill("kTTkbbbbbbbbkTTk"),
+        "kSSSSSSSSSSSSSSk",
         "kkkkkkkkkkkkkkkk",
         ...Array<string>(3).fill("kcccccccccccccck"),
         "kckkkkkkkkkkkkck",
@@ -2632,9 +2644,8 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           "......kkkk......",
           ...Array<string>(4).fill("......kmmk......"),
           "kkkkkkkkkkkkkkkk",
-          ...Array<string>(3).fill("TTTkbbbbbbbbkTTT"),
-          "TTTkkkkkkkkkkTTT",
-          "bbbbbbbbbbbbbbbb",
+          ...Array<string>(4).fill("TTTkbbbbbbbbkTTT"),
+          "SSSSSSSSSSSSSSSS",
           "kkkkkkkkkkkkkkkk",
           ...Array<string>(3).fill("cccccccccccccccc"),
           "cckkkkkkkkkkkkcc",
@@ -2655,9 +2666,8 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
           "......kkkk......",
           ...Array<string>(4).fill("......kmmk......"),
           "kkkkkkkkkkkkkkkk",
-          ...Array<string>(3).fill("kTTkbbbbbbbbkTTT"),
-          "kTTkkkkkkkkkkTTT",
-          "kbbbbbbbbSSSSSSS",
+          ...Array<string>(4).fill("kTTkbbbbbbbbkTTT"),
+          "kSSSSSSSSSSSSSSS",
           "kkkkkkkkkkkkkkkk",
           ...Array<string>(3).fill("kccccccccccccccc"),
           "kckkkkkkkkkkkkcc",
