@@ -2546,17 +2546,33 @@ export class Renderer {
             });
           }
         }
-        // WHAT SITS ON THE FURNITURE (types.ts §atop), drawn lifted by its
-        // carrier's height — the whole of what "on" means to a renderer. Same
+        // WHAT SITS ON THE FURNITURE (types.ts §atop), drawn standing ON the
+        // carrier's top — which is not the same as lifted by its height. The
+        // full height puts the sitter's feet on the front LIP of the worktop,
+        // where it reads as pasted onto the carrier's face; a thing standing on
+        // a surface stands in the MIDDLE of the part of it you can see.
+        //
+        // The top is a compression: a carrier F cells deep spends `height` px
+        // of its southern row on the near face, so F tiles of depth are drawn
+        // in F*TILE - height px of top. The sitter's cell is row r of that
+        // footprint, its band of top is 1/F of the total, and its feet land at
+        // the band's centre — which is what makes a lamp on the north cell of
+        // a turned desk stand visibly deeper than one on the south cell. Same
         // y as the carrier's southern row with a bias one past it, so the
         // painter's sort puts the lamp after the desk it stands on and before
-        // whatever stands a row south of both. The lift is a plain integer
-        // translate in scene px, so the art never leaves the pixel grid
-        // (CLAUDE.md §Sprite rendering).
+        // whatever stands a row south of both. The lift is rounded to a whole
+        // px, so the art never leaves the pixel grid (CLAUDE.md §Sprite
+        // rendering).
         const sitter = world.atop[key];
         if (sitter) {
           const under = furnitureAt(world, tx, ty);
-          const lift = under ? furnitureDef(under.cell.id).height : 0;
+          let lift = 0;
+          if (under) {
+            const uDef = furnitureDef(under.cell.id);
+            const F = footprint(uDef, under.cell.facing).h;
+            const r = ty - under.ay;
+            lift = Math.round(TILE * (r + 1) - ((r + 0.5) * (TILE * F - uDef.height)) / F);
+          }
           const sy = under ? under.ay + footprint(furnitureDef(under.cell.id), under.cell.facing).h - 1 : ty;
           const sx = tx;
           const syc = ty;
@@ -2572,8 +2588,8 @@ export class Renderer {
             },
           });
           // A lit sitter is a lamp wherever it stands — the pool leaves from
-          // the head of the lamp, which is its own height plus the surface
-          // under it.
+          // the head of the lamp, which is its own height plus however far the
+          // surface lifted it.
           if (furnitureDef(sitter.id).light && !this.underSolidRoof(tx, ty)) {
             this.litLamps.push({
               x: tx,

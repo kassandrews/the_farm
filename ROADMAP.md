@@ -13146,12 +13146,18 @@ Settled calls, all the owner's:
   passengers with it, footprint index to footprint index, so a lamp on the
   left end stays on the left end through a turn.
 - **The draw is a translate, not a sort key**: a sitter draws after its
-  carrier (same row, bias one past) lifted by the carrier's `height` — an
-  integer translate, so the art never leaves the pixel grid. The glow lifts
-  with it (`headH + lift`), which is how a desk lamp on a desk finally reaches
-  the floor lamp's head height — the equality its row priced in from day one.
-  Deliberately NOT entangled with the roof-poke sort (agenda item 1): same
-  cell means the painter's order already holds.
+  carrier (same row, bias one past), lifted to the CENTRE of its cell's band
+  of top — not by the carrier's raw `height`, which was the first cut and put
+  the feet on the front lip of the worktop, reading as pasted onto the face
+  (the owner caught it on screen). The top is a compression — F cells of
+  depth drawn in `F*TILE - height` px — so the lift is
+  `TILE*(r+1) - (r+0.5)*(TILE*F - height)/F` for footprint row r, rounded to
+  a whole px so the art stays on the pixel grid. That is also what makes a
+  lamp on the north cell of a turned desk stand visibly deeper than one on
+  the south cell. The glow lifts with it (`headH + lift`), which is how a
+  desk lamp on a desk reaches the floor lamp's head height — the equality its
+  row priced in from day one. Deliberately NOT entangled with the roof-poke
+  sort (agenda item 1): same cell means the painter's order already holds.
 
 
 ## Known gaps and loose ends
