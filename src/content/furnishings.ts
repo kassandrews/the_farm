@@ -3618,6 +3618,40 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
       },
     },
   },
+  // A pot, and a plant standing out of it. The pot wears the finish (`t`/`c`/`s`
+  // — a ceramic piece, the bathroom's china one size down) and the plant is
+  // literal green, on the window box's exact argument: the leaves are not a
+  // material and a walnut room should not repaint them.
+  //
+  // TWO GREENS AND NO BLOSSOM. The window box earns three hues because flowers
+  // are its whole job; this is foliage on a desk, and restraint over density
+  // says the pot's finish is already the accent. The sprigs break the line the
+  // way the box's do — a contained blob of green would be a pot with paint in
+  // it. Front view from every side, like the stool: a potted plant is round.
+  houseplant: {
+    s: {
+      rows: [
+        ...Array<string>(16).fill("................"),
+        ".......g.g......",
+        ".....g.ggg.g....",
+        "....gGgggggg....",
+        ".....ggGgg.g....",
+        "......gggg......",
+        "....kkkkkkkk....",
+        "....kttttttk....",
+        ".....kcccck.....",
+        ".....kssssk.....",
+        ".....kkkkkk.....",
+        "......dddd......",
+      ],
+      palette: {
+        k: INK,
+        g: "#5d9a37",
+        G: "#3e7226",
+        d: "rgba(0,0,0,0.20)",
+      },
+    },
+  },
   painting: {
     s: {
       rows: [

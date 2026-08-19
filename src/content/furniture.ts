@@ -75,7 +75,11 @@ export type FurnitureId =
   /** The seed stall's canopy — see the row for why a stall is furniture and not
    *  a building. */
   | "awning"
-  | "windowbox";
+  | "windowbox"
+  // --- Clutter ----------------------------------------------------------------
+  // The things that stand ON the furniture (§sits) — see the group's header in
+  // the table below.
+  | "houseplant";
 
 /** Which way a piece is turned. "s" is the default — facing the camera. */
 export type Facing = "n" | "e" | "s" | "w";
@@ -975,6 +979,33 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     finishes: ["wood"],
     mount: "wall",
   },
+  // --- Clutter ---------------------------------------------------------------
+  // The small things that stand ON the furniture (§sits). The desk lamp opened
+  // the category from the Light group; this is where the rest of it grows, one
+  // row at a time, exactly as the field's note promised.
+  houseplant: {
+    id: "houseplant",
+    form: true,
+    name: "Houseplant",
+    // A pot with a plant in it. The pot is the made part and prices the row —
+    // the plant, like the window box's flowers, is not a material and is not
+    // bought; it is what a houseplant HAS. One stone, because the pot is the
+    // bathroom's china one size down (§tub: ceramic finish, stone cost).
+    cost: { stone: 1 },
+    w: 1,
+    h: 1,
+    solid: false,
+    // Pot to topmost leaf. Short enough to sit on a counter (14) without its
+    // crown reaching the wardrobe's business altitude.
+    height: 11,
+    finishes: ["ceramic"],
+    // The second sitter, and the first with no other job: the desk lamp sits
+    // AND lights, this one just stands somewhere looking taken care of. On a
+    // desk, a table, a counter — or the floor, because may sit never means
+    // must (sim/furniture.ts).
+    sits: true,
+  },
+
   // --- Town furniture, which is not for sale -------------------------------
   // The errands board. It is a row here because it is a thing standing in a
   // cell with a footprint, a height and a finish, and that is exactly what this

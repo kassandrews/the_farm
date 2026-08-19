@@ -398,6 +398,26 @@ const FARM_ICONS = {
     ],
     palette: { k: K, b: BRASS, f: FLAME, d: WOOD },
   },
+  // A pot with a plant in it: sprigs breaking the line above a tapered pot,
+  // which is the world art's silhouette at icon scale. The pot is porcelain
+  // white — the row is ceramic — and the greens are the window box's.
+  houseplant: {
+    rows: [
+      "............",
+      "....g..g....",
+      "..g.gggg.g..",
+      "..ggggsggg..",
+      "...gsgggg...",
+      "..kkkkkkkk..",
+      "..kppppppk..",
+      "...kppppk...",
+      "...kppppk...",
+      "...kkkkkk...",
+      "............",
+      "............",
+    ],
+    palette: { k: K, g: "#5d9a37", s: "#3e7226", p: "#e8eaf0" },
+  },
   // A hearth: mantel, opening, fire. STONE rather than the shared WOOD, because
   // it is the one piece of furniture in the game that is masonry and the icon
   // row should say so before the price does — every other chip in Decor is a

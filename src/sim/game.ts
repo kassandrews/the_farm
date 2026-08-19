@@ -2073,6 +2073,8 @@ function furnitureFlavour(id: FurnitureId, layer: Layer): string {
       return layer === "under"
         ? "A desk lamp, in the rock. Small, and enough."
         : "A desk lamp. One corner of the evening, argued with.";
+    case "houseplant":
+      return "A houseplant. It has opinions about the light.";
   }
 }
 

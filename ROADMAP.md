@@ -13125,6 +13125,13 @@ the surface-clutter half of the furniture project's agenda item 4, built as a
 mechanic with one sitter. The clutter itself (books, mugs, curios) stays
 future content: rows that say `sits`, when they come, and nothing else.
 
+The first such row landed the same day: **the houseplant** (owner's ask) — a
+ceramic pot priced in stone (the bathroom's china one size down; the plant,
+like the window box's flowers, is not a material), two greens and no blossom,
+front view from every side because a potted plant is round. The first sitter
+with no other job, and the proof the mechanic's promise holds: one table row,
+one grid, one icon, one line — no new code.
+
 Settled calls, all the owner's:
 
 - **`sits` and `carries` are flags, not a special case** — the desk lamp sits;
