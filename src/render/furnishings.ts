@@ -250,6 +250,57 @@ export function gridFor(art: PieceArt, facing: Facing, frame = 0): { grid: Grid;
   return { grid: front, mirror: false };
 }
 
+/** Where a carrier's DRAWN top surface is, in grid rows — `top` is the rule
+ *  along its back edge, `lip` the rule where the surface ends and the face
+ *  begins. What a sitter's feet stand between (renderer §atop).
+ *
+ *  MEASURED OFF THE ART, because the geometry lies. The projection says a top
+ *  band is `TILE - height` rows and the pieces cheat it per drawing: the desk
+ *  spends thirteen rows on its top, the counter five where geometry grants two,
+ *  and the nightstand is nearly all drawers. A lift computed from `height`
+ *  stood the desk lamp on the nightstand's drawer fronts — twice, two formulas
+ *  — which is what settled that the art is the only witness worth asking.
+ *
+ *  The measurement leans on the house drawing grammar rather than colour: every
+ *  boxy piece bounds its top slab with FULL-SPAN horizontal rules of `k` — one
+ *  along the back edge, one at the front lip — and nothing else draws an
+ *  unbroken ink row that wide (a drawer divider is inset behind the carcass
+ *  edges, a leg row has a gap between the legs). So: the first two rows whose
+ *  inked cells are contiguous, all `k`, and as wide as the piece's widest drawn
+ *  row. Null when a grid has no such pair, which no carrier's does
+ *  (furnishings.test.ts holds it for all four facings). */
+export function surfaceBand(art: PieceArt, facing: Facing): { top: number; lip: number } | null {
+  const { grid } = gridFor(art, facing);
+  let widest = 0;
+  for (const row of grid.rows) {
+    let lo = row.length;
+    let hi = -1;
+    for (let x = 0; x < row.length; x++) {
+      if (row[x] === ".") continue;
+      lo = Math.min(lo, x);
+      hi = Math.max(hi, x);
+    }
+    widest = Math.max(widest, hi - lo + 1);
+  }
+  const rules: number[] = [];
+  for (let y = 0; y < grid.rows.length && rules.length < 2; y++) {
+    const row = grid.rows[y];
+    let lo = row.length;
+    let hi = -1;
+    let allInk = true;
+    for (let x = 0; x < row.length; x++) {
+      if (row[x] === ".") continue;
+      if (row[x] !== "k") allInk = false;
+      lo = Math.min(lo, x);
+      hi = Math.max(hi, x);
+    }
+    if (hi < 0 || !allInk || hi - lo + 1 !== widest) continue;
+    for (let x = lo; x <= hi; x++) if (row[x] !== "k") allInk = false; // contiguous
+    if (allInk) rules.push(y);
+  }
+  return rules.length === 2 ? { top: rules[0], lip: rules[1] } : null;
+}
+
 /** Which drawing a joining piece uses, given whether the run carries on to
  *  either side of it. See `PieceArt.joins`.
  *

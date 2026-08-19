@@ -99,7 +99,7 @@ import {
 import { zoomLadder } from "./zoom";
 import { forEachGrainMark, GRAIN } from "./grain";
 import { roofFinish, roofPitch, type RoofPitch } from "./roof";
-import { gridFor, runGridFor, pieceCanvas } from "./furnishings";
+import { gridFor, runGridFor, pieceCanvas, surfaceBand } from "./furnishings";
 import type { RunAxis } from "./furnishings";
 import { artFor } from "../content/sets";
 import { COUNTER_MARKS } from "../content/countermarks";
@@ -2546,32 +2546,40 @@ export class Renderer {
             });
           }
         }
-        // WHAT SITS ON THE FURNITURE (types.ts §atop), drawn standing ON the
-        // carrier's top — which is not the same as lifted by its height. The
-        // full height puts the sitter's feet on the front LIP of the worktop,
-        // where it reads as pasted onto the carrier's face; a thing standing on
-        // a surface stands in the MIDDLE of the part of it you can see.
+        // WHAT SITS ON THE FURNITURE (types.ts §atop), drawn with its feet on
+        // the carrier's DRAWN top — `surfaceBand`, measured off the art,
+        // because two formulas computed from `height` both stood the lamp on
+        // the nightstand's drawer fronts (see the function's note). Feet land
+        // at the centre of the sitter's cell's share of the slab: for the
+        // everyday 1-deep carrier that is the middle of the worktop, and on a
+        // turned 2-deep one the north cell's lamp stands visibly deeper than
+        // the south cell's, which is the picture agreeing with the record.
         //
-        // The top is a compression: a carrier F cells deep spends `height` px
-        // of its southern row on the near face, so F tiles of depth are drawn
-        // in F*TILE - height px of top. The sitter's cell is row r of that
-        // footprint, its band of top is 1/F of the total, and its feet land at
-        // the band's centre — which is what makes a lamp on the north cell of
-        // a turned desk stand visibly deeper than one on the south cell. Same
-        // y as the carrier's southern row with a bias one past it, so the
+        // Same y as the carrier's southern row with a bias one past it, so the
         // painter's sort puts the lamp after the desk it stands on and before
-        // whatever stands a row south of both. The lift is rounded to a whole
-        // px, so the art never leaves the pixel grid (CLAUDE.md §Sprite
-        // rendering).
+        // whatever stands a row south of both. The lift is a whole px, so the
+        // art never leaves the pixel grid (CLAUDE.md §Sprite rendering).
         const sitter = world.atop[key];
         if (sitter) {
           const under = furnitureAt(world, tx, ty);
           let lift = 0;
           if (under) {
             const uDef = furnitureDef(under.cell.id);
+            const uArt = artFor(under.cell.id, under.cell.set);
+            const band = uArt ? surfaceBand(uArt, under.cell.facing) : null;
             const F = footprint(uDef, under.cell.facing).h;
             const r = ty - under.ay;
-            lift = Math.round(TILE * (r + 1) - ((r + 0.5) * (TILE * F - uDef.height)) / F);
+            if (uArt && band) {
+              // Art rows run top-down from the top of the drawing, which hangs
+              // `artRows - F*TILE` above the footprint; the sitter's own cell
+              // base is `(F-1-r)*TILE` above the carrier's. Solve for the
+              // translate that puts the feet on the chosen row.
+              const uGrid = gridFor(uArt, under.cell.facing).grid.rows.length;
+              const feet = Math.round(band.top + ((r + 0.5) / F) * (band.lip - band.top));
+              lift = uGrid - feet - (F - 1 - r) * TILE;
+            } else {
+              lift = uDef.height; // a carrier with no measurable slab: the lip
+            }
           }
           const sy = under ? under.ay + footprint(furnitureDef(under.cell.id), under.cell.facing).h - 1 : ty;
           const sx = tx;

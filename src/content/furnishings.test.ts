@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { FURNITURE, footprint } from "./furniture";
 import type { FurnitureId, Facing } from "./furniture";
 import { FURNITURE_ART } from "./furnishings";
-import { gridFor, gridSource, INK } from "../render/furnishings";
+import { gridFor, gridSource, surfaceBand, INK } from "../render/furnishings";
 
 const TILE = 16; // renderer.ts's scene tile, and the unit these grids are in.
 const FACINGS: Facing[] = ["s", "n", "e", "w"];
@@ -365,6 +365,28 @@ describe("gridSource agrees with gridFor", () => {
             expect(mirror).toBe(true);
             break;
         }
+      });
+    }
+  }
+});
+
+describe("every carrier has a measurable top", () => {
+  // The sitter draw (renderer §atop) stands feet on `surfaceBand`, so a
+  // carrier whose grid stops yielding one would silently drop lamps to the
+  // front lip. Held here, against every facing, so a redrawn top that loses
+  // its full-span rules fails loudly instead.
+  const FACINGS: Facing[] = ["s", "e", "n", "w"];
+  for (const def of Object.values(FURNITURE)) {
+    if (!def.carries) continue;
+    for (const f of FACINGS) {
+      it(`${def.id} facing ${f}`, () => {
+        const art = FURNITURE_ART[def.id]!;
+        const band = surfaceBand(art, f);
+        expect(band).not.toBeNull();
+        const rows = gridFor(art, f).grid.rows.length;
+        expect(band!.top).toBeGreaterThanOrEqual(0);
+        expect(band!.lip).toBeGreaterThan(band!.top);
+        expect(band!.lip).toBeLessThan(rows);
       });
     }
   }

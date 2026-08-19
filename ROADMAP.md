@@ -13146,18 +13146,22 @@ Settled calls, all the owner's:
   passengers with it, footprint index to footprint index, so a lamp on the
   left end stays on the left end through a turn.
 - **The draw is a translate, not a sort key**: a sitter draws after its
-  carrier (same row, bias one past), lifted to the CENTRE of its cell's band
-  of top — not by the carrier's raw `height`, which was the first cut and put
-  the feet on the front lip of the worktop, reading as pasted onto the face
-  (the owner caught it on screen). The top is a compression — F cells of
-  depth drawn in `F*TILE - height` px — so the lift is
-  `TILE*(r+1) - (r+0.5)*(TILE*F - height)/F` for footprint row r, rounded to
-  a whole px so the art stays on the pixel grid. That is also what makes a
-  lamp on the north cell of a turned desk stand visibly deeper than one on
-  the south cell. The glow lifts with it (`headH + lift`), which is how a
-  desk lamp on a desk reaches the floor lamp's head height — the equality its
-  row priced in from day one. Deliberately NOT entangled with the roof-poke
-  sort (agenda item 1): same cell means the painter's order already holds.
+  carrier (same row, bias one past), feet on the carrier's DRAWN top —
+  `surfaceBand` in render/furnishings.ts, measured off the art's own
+  full-span ink rules, because the geometry lies. Two formulas computed from
+  `height` both stood the lamp on the nightstand's drawer fronts (the owner
+  caught each on screen): the projection grants a `TILE - height` top band
+  and the pieces cheat it per drawing — the desk spends thirteen rows on its
+  top, the counter five where geometry grants two. The art is the only
+  witness worth asking; furnishings.test.ts holds that every carrier yields
+  a band from all four facings, so a redrawn top that loses its rules fails
+  loudly. Feet land at the centre of the sitter's cell's share of the slab,
+  whole px, which is also what stands a lamp on the north cell of a turned
+  desk visibly deeper than its south-cell twin. The glow lifts with it
+  (`headH + lift`) — a desk lamp on a desk reaches the floor lamp's head
+  height, the equality its row priced in from day one. Deliberately NOT
+  entangled with the roof-poke sort (agenda item 1): same cell means the
+  painter's order already holds.
 
 
 ## Known gaps and loose ends
