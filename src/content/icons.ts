@@ -406,8 +406,8 @@ const FARM_ICONS = {
       "............",
       "....g..g....",
       "..g.gggg.g..",
-      "..ggggsggg..",
-      "...gsgggg...",
+      "..gggggggg..",
+      "...gggggg...",
       "..kkkkkkkk..",
       "..kppppppk..",
       "...kppppk...",
@@ -416,7 +416,7 @@ const FARM_ICONS = {
       "............",
       "............",
     ],
-    palette: { k: K, g: "#5d9a37", s: "#3e7226", p: "#e8eaf0" },
+    palette: { k: K, g: "#5d9a37", p: "#e8eaf0" },
   },
   // A hearth: mantel, opening, fire. STONE rather than the shared WOOD, because
   // it is the one piece of furniture in the game that is masonry and the icon

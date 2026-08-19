@@ -3623,19 +3623,22 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // literal green, on the window box's exact argument: the leaves are not a
   // material and a walnut room should not repaint them.
   //
-  // TWO GREENS AND NO BLOSSOM. The window box earns three hues because flowers
+  // ONE GREEN AND NO BLOSSOM. The window box earns three hues because flowers
   // are its whole job; this is foliage on a desk, and restraint over density
-  // says the pot's finish is already the accent. The sprigs break the line the
-  // way the box's do — a contained blob of green would be a pot with paint in
-  // it. Front view from every side, like the stool: a potted plant is round.
+  // says the pot's finish is already the accent. A darker inner green was
+  // tried and cut on the render — at eight pixels wide the dots read as holes
+  // in the crown, not depth. The sprigs break the line the way the box's do —
+  // a contained blob of green would be a pot with paint in it — and both
+  // shoulders carry one, so the crown reads grown rather than windswept.
+  // Front view from every side, like the stool: a potted plant is round.
   houseplant: {
     s: {
       rows: [
         ...Array<string>(16).fill("................"),
-        ".......g.g......",
-        ".....g.ggg.g....",
-        "....gGgggggg....",
-        ".....ggGgg.g....",
+        "......g..g......",
+        "....g.gggg.g....",
+        "....gggggggg....",
+        ".....gggggg.....",
         "......gggg......",
         "....kkkkkkkk....",
         "....kttttttk....",
@@ -3647,7 +3650,6 @@ export const FURNITURE_ART: Partial<Record<FurnitureId, PieceArt>> = {
       palette: {
         k: INK,
         g: "#5d9a37",
-        G: "#3e7226",
         d: "rgba(0,0,0,0.20)",
       },
     },
