@@ -1606,6 +1606,13 @@ export function givenLine(id: SkinId): string | undefined {
 export const GIVEN_SET_LINES: Partial<Record<SetId, string>> = {
   moderne:
     "The monograph on sitting is finished. Its conclusions have legs ... I had plates drawn up of every piece. Take them.",
+  // The housewarming, and a different register on purpose: the moderne line is
+  // a scholar handing over findings, and this one is a neighbour who noticed
+  // you had stopped being a visitor. It says the OCCASION rather than the gift,
+  // because a set is knowledge and the moment is that somebody registered you
+  // put a bed down.
+  farmhouse:
+    "You've gone and put a bed down. That makes it a house ... my aunt's patterns, then. She'd want them somewhere with a bed in it.",
 };
 
 export function givenSetLine(id: SetId): string | undefined {

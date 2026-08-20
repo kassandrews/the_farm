@@ -30,11 +30,12 @@ import type { FurnitureId } from "./furniture";
 import { FURNITURE } from "./furniture";
 import { FURNITURE_ART } from "./furnishings";
 import { MODERNE_ART } from "./moderne";
+import { FARMHOUSE_ART } from "./farmhouse";
 import type { PieceArt } from "../render/furnishings";
 
 /** Ids are stored in saves, so they are STABLE — same rule as furniture ids.
  *  Add rows; never rename one. */
-export type SetId = "core" | "moderne";
+export type SetId = "core" | "moderne" | "farmhouse";
 
 export interface SetDef {
   id: SetId;
@@ -89,6 +90,26 @@ export const SETS: Record<SetId, SetDef> = {
     // every photograph of it keeps on the sofa (owner's call, 18 Aug 2026).
     brings: ["teak", "mustard", "teal", "burntorange", "rose", "powder", "mint"],
   },
+  // Set Three, the homely one — grammar and every silhouette's reasoning in
+  // content/farmhouse.ts. IN PILOTS as of 20 Aug 2026: four drawings, so the
+  // lattice test is red on the other twenty-three BY DESIGN (Moderne's own
+  // precedent — the red tests are the authoring checklist).
+  farmhouse: {
+    id: "farmhouse",
+    name: "Farmhouse",
+    starter: false,
+    // A HOUSEWARMING. The owner's instinct was to hang this on housing
+    // yourself, which is an ACT and not one of the doctrine's four channels
+    // (starter / seen / given / taught); reshaped into a gift given on that
+    // occasion, which keeps the channel and is warmer than an achievement.
+    // Who gives it is not settled — the tier below is a placeholder the walk
+    // will replace.
+    given: { who: "resident1", tier: "familiar" },
+    // NOTHING, and that is the finding rather than an omission: the painted
+    // register farmhouse wants was already in the wood class before this set
+    // existed (whitewash, bone, sage, ochre, oxblood). Inventing finishes to
+    // fill this field would be the tail wagging the dog.
+  },
 };
 
 /** Art, keyed by set and then by form.
@@ -100,6 +121,7 @@ export const SETS: Record<SetId, SetDef> = {
 export const SET_ART: Record<SetId, Partial<Record<FurnitureId, PieceArt>>> = {
   core: FURNITURE_ART,
   moderne: MODERNE_ART,
+  farmhouse: FARMHOUSE_ART,
 };
 
 /** The art for a piece in a set, or undefined if it is drawn some other way.
