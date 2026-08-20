@@ -12691,6 +12691,101 @@ only a zero is trustworthy). Twenty-four of twenty-eight pieces were proved
 pixel-identical that way. Edit by line number, or rewrite a whole view.
 
 
+### A room is mixed, never themed — and the two sets after Moderne (19 Aug 2026)
+
+**DESIGN §The catalog gave up restyle-in-place, deliberately.** The owner:
+"I don't actually like the idea of refurnishing an entire house in one set —
+the whole point is to mix and match." That sentence retires the catalog's
+self-described quietest good idea, and the reasoning is now in the doc: it
+treats the room as a THEME TO BE APPLIED when the pleasure on offer is
+choosing this piece here. Re-placing something because you changed your mind
+is the game — placement here is the Sims', not Stardew's, and it costs a
+click. Two findings made the change cheap: mix-and-match was ALREADY the
+behaviour (`set` is written onto a cell at placement and never read back to
+be changed), and restyle-in-place was never built — it was a promise with no
+code under it.
+
+**The footprint rule survived on a NEW justification.** It was stated as
+being bought BY restyle-in-place, so dropping one looked like dropping both.
+It stays because a form is what the sim knows — solidity, cost, what a
+carrier may stand on it, how it joins — and because a player who has learned
+a table is a tile-pair has learned it for every table in every set that will
+ever ship. A set that wants a different SIZE is reaching for a different
+form, and forms stay expensive.
+
+**The picker is the Sims', in two moves.** A furniture tile is a (FORM, SET)
+pair rather than a form: there is one tile per drawing that exists, `all`
+lays core's chair beside moderne's, and naming a catalogue shows that set's
+drawing of everything with CORE'S standing in where the set skipped a piece
+(the same fallback `loadedSet()` makes, so Storage under Moderne has no hole
+where the chest is). The catalogue row sits ABOVE the category tabs — which
+catalogue, then which shelf — and hides itself until you own two sets. And
+the set chips came OFF the finish row: a chip on the piece in your hand
+offering to make it another set's piece is the room-as-theme idea in
+miniature. What is left there is colour, which really is free to change on
+anything already built.
+
+- `world.sets.browsing` is a BROWSING POSITION (`SetId | "all"`, absent means
+  all), not a property of anything built. Clicking a tile writes that tile's
+  set into `sets.selected[tool]`, so `loadedSet()` and the placement path
+  needed no change at all.
+- **A real bug fell out of it**: `furnitureThumb`'s url cache keyed on the
+  set but the `pieceCanvas` raster INSIDE it did not, so the first set to
+  rasterize a given piece/facing/finish handed its picture to every other
+  set. Invisible while a form had one tile on screen; glaring the moment
+  `all` drew the same chair twice.
+- `scripts/drive.mjs` learned `seed.sets` — the catalogue row is
+  unphotographable without a second set, and gifts are a long conversation
+  away.
+- Benches no longer claim to join (owner: "benches don't need to join"), so
+  the doc stopped naming them among the things laid by the yard.
+
+### Set Three and Set Four, settled in conversation (19 Aug 2026)
+
+Both agreed with the owner, neither started. **FARMHOUSE FIRST**, because it
+sits further from Moderne than retro does and so stresses the grammar-writing
+muscle while both existing sets are fresh reference.
+
+- **Retro is the 70s, and its grammar is the OPPOSITION to Moderne's.** The
+  dates are adjacent and the trap is "Moderne but browner". Moderne's whole
+  identity is legs and daylight underneath; the 70s is mass sitting ON THE
+  FLOOR — modular seating, conversation-pit blocks, no visible legs, fat
+  rounded corners, wider than tall. Drawn side by side those are different
+  furniture, not different decades.
+- **Farmhouse is thicker, not bigger.** Mass rather than width: plank tops
+  with visible end grain, turned or trestle legs, aprons that come down.
+- **THE LONG DINING TABLE IS NOT A NEW FORM AND NOT AN EXTRA.** §The catalog
+  already answers it — "there is no long table on the list: it is this table,
+  laid end to end" — and the joining machinery is built and drawn for (a run
+  of tulip tables is a longer top on more stems). Farmhouse's table owes
+  `joins` like core's and moderne's. Reach for joining before reaching for a
+  second form in a bigger size.
+- **The colour tube TV is an EXTRA, the lava lamp is just the `lamp` form.**
+  A form obliges every set that ever ships to draw one; an extra obliges
+  nobody, which is exactly what a personality piece wants. An extra is a
+  furniture row with the `form` flag absent — the awning and window box
+  precedent — and those are player-placed, so being outside the lattice does
+  not make a piece unbuildable.
+- **Funky patterns cannot go on anything that takes a finish.** `c`/`t`/`s`
+  are questions, not colours; a patterned sofa would hard-code its fabric and
+  stop taking finishes. Pattern lives where literals already live — the area
+  rug, the painting, the extras — and the set BRINGS its palette instead
+  (avocado, harvest gold, burnt orange), the channel moderne's pastels used.
+- **Unlocks fill the doctrine's channels, one each.** Core is `starter`;
+  farmhouse arrives as a HOUSEWARMING when you house yourself — reshaped from
+  the owner's first instinct (an act) into `given`, because the channels are
+  starter/seen/given/taught and a gift is warmer than an achievement anyway;
+  moderne stays Prudence at `close`; retro is the Static, which implements
+  `seen` and is the one nothing has used yet. `taught` is left for a fifth.
+  The Static is not merely a gate: DESIGN describes it as the place where the
+  picture arrives damaged, and a set whose personality piece is a colour tube
+  television is furniture ABOUT the picture arriving.
+- **Process, learned the hard way one section up:** commit the set file the
+  moment it holds one piece, and again every sitting. `moderne.ts` spent its
+  whole authoring life untracked, which is why a careless edit cost a
+  forensics session instead of a `git checkout`.
+
+
 ### The kitchen and the bathroom, and a fourth finish class (11 Aug 2026)
 
 Five forms — `stove`, `fridge`, `sink`, `toilet`, `tub` — taking the checklist
