@@ -102,9 +102,15 @@ export const SETS: Record<SetId, SetDef> = {
     // yourself, which is an ACT and not one of the doctrine's four channels
     // (starter / seen / given / taught); reshaped into a gift given on that
     // occasion, which keeps the channel and is warmer than an achievement.
-    // Who gives it is not settled — the tier below is a placeholder the walk
-    // will replace.
-    given: { who: "resident1", tier: "familiar" },
+    //
+    // ARABELLA, NOT PRUDENCE, and the tests found that rather than the design:
+    // hanging a second catalogue on resident1 had her handing one over at
+    // `familiar`, which broke the assertion that the whole catalogue costs the
+    // top rung. One giver, one set. Arabella keeps the shop, so a housewarming
+    // from her is somebody who sells you things noticing you have a house —
+    // still a gift, still knowledge, and it costs `friend` rather than `close`
+    // because settling in is not the same achievement as being trusted.
+    given: { who: "shop", tier: "friend" },
     // NOTHING, and that is the finding rather than an omission: the painted
     // register farmhouse wants was already in the wood class before this set
     // existed (whitewash, bone, sage, ochre, oxblood). Inventing finishes to
