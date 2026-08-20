@@ -55,7 +55,11 @@ const CHROME =
  * Launch the game, click through onboarding, and hand back a driven page.
  *
  * `seed` shapes the save before the world loads (see the addInitScript note):
- *   { wood, clear: true, player: {x, y} | "inside" }
+ *   { wood, clear: true, player: {x, y} | "inside", sets: ["moderne"] }
+ *
+ * `sets` unlocks catalogues. Anything gated behind a gift is otherwise a long
+ * conversation away, and the Furnish wing hides its catalogue row entirely
+ * while you own one set — so a screenshot of that row is unreachable without it.
  */
 /** The clock the page is pinned to, unless a caller overrides it.
  *
@@ -210,6 +214,10 @@ function applySeed(seed) {
       for (let x = ox - 6; x <= ox + 18; x++) w.overrides[`${x},${y}`] = 0;
     }
     w.regrow = {};
+  }
+  if (seed.sets) {
+    w.sets ??= { unlocked: [], selected: {} };
+    w.sets.unlocked = [...new Set([...w.sets.unlocked, ...seed.sets])];
   }
   if (seed.player === "inside") {
     // Middle of whatever's been built — the reliable way to trigger the roof

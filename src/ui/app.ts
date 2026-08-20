@@ -513,8 +513,9 @@ export class App {
     this.renderer = new Renderer(this.canvas);
     this.hud = buildHud(
       root,
-      (t) => this.selectBuildTool(t),
+      (t, set) => this.selectBuildTool(t, set),
       (g) => this.selectBuildGroup(g),
+      (sid) => this.browseSet(sid),
       () => this.selectBuildGroup("structure"),
       () => this.openFurniture(),
       () => this.openGarden(),
@@ -3067,7 +3068,43 @@ export class App {
    *  toggles the mode off when you tap the held tool: with a real BUILD button
    *  on screen, a palette tap that quietly closed the whole bar would be the
    *  same gesture meaning two different things. */
-  private selectBuildTool(t: BuildTool): void {
+  /** Is this tile one of the ones the current browsing position shows?
+   *
+   *  In *all*, every catalogue you own. Naming one shows that set's drawing of
+   *  every form — and CORE'S where the named set skipped a piece, which is the
+   *  same fallback `loadedSet()` makes one layer down, so the tab has no hole in
+   *  it where moderne declined to draw a chest. */
+  private tileInSet(id: BuildTool, set: SetId): boolean {
+    const world = this.world;
+    if (!world) return set === "core";
+    if (!availableSets(world).includes(set)) return false;
+    const browsing = world.sets?.browsing ?? "all";
+    if (browsing === "all") return true;
+    if (set === browsing) return true;
+    return set === "core" && !artFor(id as FurnitureId, browsing);
+  }
+
+  /** Which catalogue the Furnish wing is showing. A browsing position and
+   *  nothing else — it decides which tiles are on screen, never what any placed
+   *  piece is (DESIGN §The catalog: a room is mixed, never themed). */
+  private browseSet(sid: SetId | "all"): void {
+    const world = this.world;
+    if (!world) return;
+    world.sets ??= { unlocked: [], selected: {} };
+    world.sets.browsing = sid;
+    saveWorld(world);
+    this.syncToolUi();
+    this.syncFurnitureTiles();
+  }
+
+  private selectBuildTool(t: BuildTool, set?: SetId): void {
+    // THE TILE IS THE PIECE. Clicking moderne's chair loads the chair tool with
+    // moderne in it, which is the whole of what choosing a set means now — there
+    // is no chip on the finish row offering to make it somebody else's chair.
+    if (set && this.world && isFurnitureTool(t)) {
+      this.world.sets ??= { unlocked: [], selected: {} };
+      this.world.sets.selected[t] = set;
+    }
     // Most of the palette stops at the shaft. This was once a flat refusal, with
     // a correctness argument behind it — `furniture` was a surface record with no
     // layer in its keys, so anything placed from below would have stood up in the
@@ -3276,8 +3313,23 @@ export class App {
     // Only ever one tab's worth of tools at a time, and that IS the fix: the row
     // used to hold every tool in the game, which fitted while there were eleven
     // and did not at twenty-two.
+    // THE SET ROW, above the categories and only inside the Furnish wing — the
+    // doors have no catalogue and neither does a floor swatch. Hidden entirely
+    // while you own one set, the finish row's rule.
+    const furnishing = FURNITURE_GROUPS.includes(this.buildGroup);
+    const sets = this.world ? availableSets(this.world) : ["core" as SetId];
+    const browsing = this.world?.sets?.browsing ?? "all";
+    this.hud.setTabs.style.display = building && !doors && !styles && furnishing && sets.length > 1 ? "" : "none";
+    for (const [sid, btn] of this.hud.setButtons) {
+      btn.style.display = sid === "all" || sets.includes(sid) ? "" : "none";
+      btn.classList.toggle("selected", sid === browsing);
+    }
     for (const [id, btn] of this.hud.buildButtons) {
-      btn.classList.toggle("selected", id === this.buildTool);
+      const set = (btn.dataset.set ?? "core") as SetId;
+      const tile = btn.classList.contains("tile");
+      // A form has a tile per catalogue now, so the ring has to know WHICH — one
+      // chair lit out of three, not three lit at once.
+      btn.classList.toggle("selected", id === this.buildTool && (!tile || set === loadedSet(this.world!, id)));
       // The palette says what is possible here rather than offering nine tools
       // that refuse. Hidden, not disabled: a row of greyed buttons in a tunnel
       // reads as the game being broken, where two buttons read as what the rock
@@ -3294,7 +3346,8 @@ export class App {
           // shelves are, and the one tool that takes things back cannot be a
           // walk away from any wing that places them.
           ((id === "erase" || id === "move") && this.buildGroup !== "structure"));
-      btn.style.display = inTab && toolAllowedOn(id, this.layer()) ? "" : "none";
+      const shown = inTab && (!tile || this.tileInSet(id, set));
+      btn.style.display = shown && toolAllowedOn(id, this.layer()) ? "" : "none";
     }
     // THE FLATTEN BELONGS TO THE TOOL, NOT THE MODE (DESIGN §Structures): a
     // garden tool places in the full living view, because you judge a tree
@@ -3534,12 +3587,15 @@ export class App {
       // Its OWN loaded finish, not the held tool's: the row shows five pieces at
       // once and each remembers what it was last built in, so a walnut bed and a
       // pine cot sit side by side exactly as they would in the room.
+      // Its own set as well as its own finish: in *all* the core chair and the
+      // moderne chair are two tiles side by side, and a tile that drew itself in
+      // whatever was last held would make them the same picture twice.
       art.src = furnitureThumb(
         id as FurnitureId,
         this.facing,
         loadedFinish(world, id),
         THUMB_SCALE,
-        loadedSet(world, id),
+        (btn.dataset.set ?? "core") as SetId,
       );
     }
   }
@@ -3597,45 +3653,19 @@ export class App {
     // choice — a lone chip you cannot deselect is furniture, not a control. Both
     // collapse the row to nothing, which the bottom-anchored layout absorbs
     // without moving the tools.
-    // Only the sets that DREW this piece: a set may skip a non-form extra
-    // (moderne carries no chest), and offering its chip there would place a
-    // piece the set has no drawing for.
-    const setsHere = isFurnitureTool(tool)
-      ? availableSets(world).filter((id) => id === "core" || artFor(tool, id) !== undefined)
-      : [];
-    if (options.length < 2 && setsHere.length < 2) {
+    if (options.length < 2) {
       row.replaceChildren();
       return;
     }
 
     const held = loadedFinish(world, tool);
     const heldTrim = loadedTrim(world, tool);
-    // THE SET CHIPS, ahead of the finishes: which catalogue the piece comes
-    // from, then which colour it wears — the order the two questions get asked
-    // in. Only for furniture (surfaces have no sets), and only once a second
-    // set exists to choose: a lone chip you cannot deselect is furniture, not
-    // a control, the row's own standing rule.
-    const sets = setsHere;
-    const heldSet = loadedSet(world, tool);
-    const setChips =
-      sets.length < 2
-        ? []
-        : sets.map((id) => {
-            const def = SETS[id];
-            const chip = el("button", { class: "finish-chip", ariaLabel: def.name }, [
-              el("span", { class: "finish-name" }, [def.name]),
-            ]);
-            chip.classList.toggle("chosen", id === heldSet);
-            chip.addEventListener("click", () => {
-              world.sets ??= { unlocked: [], selected: {} };
-              world.sets.selected[tool] = id;
-              saveWorld(world);
-              this.syncFinishUi();
-              this.syncFurnitureTiles();
-            });
-            hoverHint(chip, `${def.name} — a whole shape of furniture, free to swap.`);
-            return chip;
-          });
+    // THE SET CHIPS USED TO BE HERE, ahead of the finishes, and they are gone
+    // on purpose (DESIGN §The catalog). A chip on the piece in your hand that
+    // swaps which catalogue it came from is the room-as-a-theme idea in
+    // miniature; the catalogue is chosen where you BROWSE, above the categories,
+    // and the tile you clicked is the piece you are holding. What is left here
+    // is the colour, which really is free to change on anything already built.
     const chips = (options.length < 2 ? [] : options).map((id) => {
       const skin = skinDef(id);
       const isTrim = trimClasses.includes(skin.applies);
@@ -3665,7 +3695,7 @@ export class App {
       hoverHint(chip, `${skin.name} — free to change, on anything already built.`);
       return chip;
     });
-    row.replaceChildren(...setChips, ...chips);
+    row.replaceChildren(...chips);
   }
 
   /** Show the undo control only in build mode, and only when there's a stroke to
@@ -4247,6 +4277,8 @@ interface HudRefs {
   buildFinishes: HTMLElement;
   /** The category strip, hidden entirely at the structure level. */
   groupTabs: HTMLElement;
+  setTabs: HTMLElement;
+  setButtons: [SetId | "all", HTMLElement][];
   /** The Build door — walls and floors, the wing that keeps the old name. */
   buildDoor: HTMLElement;
   /** The way in to furniture, and the one tool-row button that holds no tool. */
@@ -4276,8 +4308,9 @@ interface HudRefs {
 
 function buildHud(
   root: HTMLElement,
-  onBuildTool: (t: BuildTool) => void,
+  onBuildTool: (t: BuildTool, set: SetId) => void,
   onBuildGroup: (g: BuildGroup) => void,
+  onBrowseSet: (s: SetId | "all") => void,
   onStructure: () => void,
   onFurniture: () => void,
   onGarden: () => void,
@@ -4397,17 +4430,36 @@ function buildHud(
   // category holds four of them that is the entire question. The image is filled
   // in by syncFurnitureTiles, because it depends on world state the HUD does not
   // have when it is built.
+  //
+  // A FURNITURE TILE IS A (FORM, SET) PAIR, not a form. There is one tile per
+  // drawing that exists — core's chair and moderne's chair are two tiles, and
+  // the *all* chip is what puts them next to each other. Choosing a set is
+  // BROWSING (DESIGN §The catalog), so the tile you click is the piece you get
+  // and nothing hanging off it offers to make it a different set's.
+  //
+  // Built for every set in the table rather than every set unlocked, because
+  // the buttons are built once and unlocks arrive mid-session; `syncToolUi`
+  // hides the ones you have not been given.
   for (const t of BUILD_TOOLS) {
     const tile = FURNITURE_GROUPS.includes(t.group);
-    const face = tile
-      ? [el("img", { class: "tile-art" }), el("span", { class: "tile-name" }, [t.label])]
-      : [iconEl(t.icon, SCALE.button)];
-    const btn = el("button", { class: tile ? "tool tile" : "tool", ariaLabel: t.label }, face);
-    btn.addEventListener("click", () => onBuildTool(t.id));
-    hoverHint(btn, `${t.label} — ${t.hint}`);
-    btn.dataset.group = t.group;
-    buildButtons.push([t.id, btn]);
-    buildTools.append(btn);
+    // A set only gets a tile for a piece it DREW (loadedSet's rule, one level
+    // up): moderne skipped the chest, so there is no moderne chest tile and
+    // core's is the one you see in either mode.
+    const sets = tile
+      ? (Object.keys(SETS) as SetId[]).filter((sid) => sid === "core" || artFor(t.id as FurnitureId, sid))
+      : ["core" as SetId];
+    for (const sid of sets) {
+      const face = tile
+        ? [el("img", { class: "tile-art" }), el("span", { class: "tile-name" }, [t.label])]
+        : [iconEl(t.icon, SCALE.button)];
+      const btn = el("button", { class: tile ? "tool tile" : "tool", ariaLabel: t.label }, face);
+      btn.addEventListener("click", () => onBuildTool(t.id, sid));
+      hoverHint(btn, tile && sid !== "core" ? `${t.label} — ${SETS[sid].name}. ${t.hint}` : `${t.label} — ${t.hint}`);
+      btn.dataset.group = t.group;
+      btn.dataset.set = sid;
+      buildButtons.push([t.id, btn]);
+      buildTools.append(btn);
+    }
   }
 
   // The way in to furniture, and it lives in the TOOL ROW rather than over it,
@@ -4475,6 +4527,26 @@ function buildHud(
   // not where you are — "‹ Shape" from a wing, "‹ Build" from the floor swatches
   // — because a back control that named the room you were standing in would be
   // the one thing on screen already obvious from everything else on it.
+  // WHICH CATALOGUE, above WHICH CATEGORY — the order the two questions get
+  // asked in, and the order they sit in. Hidden until a second set exists, the
+  // finish row's own standing rule: a lone chip you cannot deselect is
+  // furniture, not a control.
+  const setTabs = el("div", { class: "build-sets" });
+  const setButtons: [SetId | "all", HTMLElement][] = [];
+  for (const sid of ["all", ...(Object.keys(SETS) as SetId[])] as (SetId | "all")[]) {
+    const label = sid === "all" ? "All" : SETS[sid].name;
+    const btn = el("button", { class: "build-set", ariaLabel: label }, [label]);
+    btn.addEventListener("click", () => onBrowseSet(sid));
+    hoverHint(
+      btn,
+      sid === "all"
+        ? "Every catalogue you have, side by side."
+        : `${SETS[sid].name} — show this catalogue's drawing of everything.`,
+    );
+    setButtons.push([sid, btn]);
+    setTabs.append(btn);
+  }
+
   const groupTabs = el("div", { class: "build-groups" });
   const back = el("button", { class: "build-group build-back", ariaLabel: "Back to the doors" }, ["‹ Shape"]);
   back.addEventListener("click", onBuildBack);
@@ -4528,6 +4600,7 @@ function buildHud(
   // thing in them is, so a new piece cannot quietly overflow its own tile.
   const box = thumbBox(THUMB_SCALE);
   const buildBar = el("div", { class: "build-bar" }, [
+    setTabs,
     groupTabs,
     buildFinishes,
     el("div", { class: "build-row" }, [buildTools, el("div", { class: "build-mods" }, [rotate, undo])]),
@@ -4576,7 +4649,7 @@ function buildHud(
     action,
   ]);
   root.append(hud);
-  return { root: hud, clock, survey, flash, giveUp, actFan, action, buildButtons, groupButtons, groupTabs, buildDoor, furniture, garden, gardenTools, buildStyles, buildBack: back, buildLevel: levelName, buildFinishes, buildBar, build, rotate, undo, zoom };
+  return { root: hud, clock, survey, flash, giveUp, actFan, action, buildButtons, groupButtons, groupTabs, setTabs, setButtons, buildDoor, furniture, garden, gardenTools, buildStyles, buildBack: back, buildLevel: levelName, buildFinishes, buildBar, build, rotate, undo, zoom };
 }
 
 // --- Panel helpers ------------------------------------------------------------

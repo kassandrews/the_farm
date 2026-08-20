@@ -96,7 +96,13 @@ export function furnitureThumb(
   if (art) {
     const { grid, mirror } = gridFor(art, facing);
     const rise = art.rise ?? 0;
-    const raster = pieceCanvas(`${id}:${facing}:${finish}`, grid, skinDef(finish), mirror);
+    // THE SET BELONGS IN THIS KEY, not only in the url key above. `pieceCanvas`
+    // memoizes on the string it is handed, so a key without the set hands the
+    // first-rasterized set's picture to every other one — which is invisible
+    // while a form has one tile on screen and glaring the moment *all* puts
+    // core's chair and moderne's chair side by side and draws the same chair
+    // twice.
+    const raster = pieceCanvas(`${id}:${set}:${facing}:${finish}`, grid, skinDef(finish), mirror);
     canvas.width = raster.width * scale;
     canvas.height = raster.height * scale;
     const ctx = canvas.getContext("2d")!;

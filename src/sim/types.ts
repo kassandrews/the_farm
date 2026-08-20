@@ -139,9 +139,14 @@ export interface FurnitureCell {
    *
    *  Beside `finish` and not folded into `id`, because a set is a STYLE and not
    *  a different object: forms own the footprint, the solidity and the cost, so
-   *  two sets' chairs occupy a cell identically. That is what makes restyling a
-   *  furnished room in place possible at all — the alternative, an id per set
-   *  per form, would make every such change a demolition. */
+   *  two sets' chairs occupy a cell identically and the sim never has to learn
+   *  a second table.
+   *
+   *  WRITTEN ONCE, WHEN THE PIECE IS PLACED, and never read back to be changed.
+   *  This field used to be justified by restyling a furnished room in one move;
+   *  DESIGN §The catalog dropped that idea deliberately (a room is mixed, never
+   *  themed), so nothing anywhere rewrites it and a piece keeps the set it was
+   *  built in until it is taken up and built again. */
   set: SetId;
   /** The piece's SECOND finish, where it has one (content/furniture.ts §trim).
    *
@@ -479,6 +484,13 @@ export interface WorldState {
   sets?: {
     unlocked: SetId[];
     selected: Partial<Record<BuildTool, SetId>>;
+    /** WHICH CATALOGUE THE FURNISH WING IS SHOWING — a browsing position, not a
+     *  property of anything built (DESIGN §The catalog: a room is mixed, never
+     *  themed). `"all"` lays every unlocked set's chairs side by side in the
+     *  Seating tab, which is the mode for comparing; naming one shows that set's
+     *  drawing of every form instead. Absent means `"all"`, so a save that
+     *  predates the field opens on everything it owns. */
+    browsing?: SetId | "all";
   };
 
   /** Farming's free axis, and deliberately the same shape as `skins` above.

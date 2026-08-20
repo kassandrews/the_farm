@@ -1519,7 +1519,7 @@ the table are one tile-pair each and join with their neighbours, so their
 length is the player's rather than a number somebody guessed. That is why
 there is no "long table" on the list above: it is this table, laid end to
 end. A fixed length fits exactly one room, and the same argument applies
-to counters, benches and anything else a room wants a RUN of — so reach
+to counters and anything else a room wants a RUN of — so reach
 for joining before reaching for a second form in a bigger size.
 
 **The kitchen and the bathroom are DECORATION.** No cooking, no plumbing,
@@ -1546,12 +1546,30 @@ slot.
 **Colours ride free, because the grids never contained them.** A piece's
 art asks the finish (§Materials) rather than naming colours, so every
 set arrives in every finish of its material class the day it is drawn —
-the wooden pieces in all the woods, the soft ones in all the cloths. And
-because footprints belong to forms, two sets' chairs occupy a cell
-identically, which buys the catalog's quietest good idea: **restyle in
-place.** A furnished room can change sets without moving one thing — the
-finish swatch's delight, one level up. Collecting a set is never
-"rebuild your house"; it is "look at it again."
+the wooden pieces in all the woods, the soft ones in all the cloths.
+
+**A ROOM IS MIXED, NEVER THEMED.** A set is a collection you browse, not
+a mode the house is in. It is chosen where you are BROWSING — one current
+set above the categories, with an *all* that lays every set's chairs side
+by side — and it is written onto the piece as it is placed, beside the
+finish. A farmhouse table under a moderne lamp beside a core chair is the
+ordinary case and the whole reason for owning more than one set.
+
+**Nothing restyles a furnished room wholesale, and no piece offers to
+change which set it came from.** An earlier draft of this section made
+that the catalog's quietest good idea; it was the wrong idea, because it
+treats the room as a theme to be applied when the pleasure on offer is
+choosing THIS piece HERE. Moving something because you changed your mind
+is the game, not a chore to be saved from — placement here is the Sims',
+not Stardew's, and re-placing costs a click.
+
+**Footprints still belong to forms**, and two sets' chairs still occupy a
+cell identically — for a different reason now that restyling is not it. A
+form is what the sim knows: its solidity, its cost, what a carrier may
+stand on it, and how it joins. A player who has learned that a table is a
+tile-pair has learned it for every table there will ever be, in every set
+that ever ships. A set that wants a different SIZE is reaching for a
+different form, and forms stay expensive.
 
 **Sets unlock the way finishes unlock, through the same three doors.**
 Set One is had from the outset, like the starter finishes — furnishing

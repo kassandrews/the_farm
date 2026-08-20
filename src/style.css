@@ -227,6 +227,45 @@ select {
 /* The category tabs. Above the finishes, so the bar reads top to bottom as
    "what kind of thing → what it's made of → which one", which is the order the
    questions actually arrive in. */
+/* WHICH CATALOGUE, over WHICH CATEGORY. It sits above the category tabs because
+   that is the order the questions get asked in — the catalogue you are shopping
+   from, then the shelf you are looking at — and because a row that appears when
+   you unlock your second set grows the bar upward, leaving the tools where your
+   thumb left them (the same argument the finish row's placement makes).
+
+   Quieter than a category, which is quieter again than a tool: three rows of
+   chrome over one row of choices, each stepping back from the one below it. */
+.build-sets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.build-set {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: inherit;
+  opacity: 0.5;
+  transition: transform 0.05s;
+}
+
+.build-set.selected {
+  border-color: var(--panel-edge);
+  background: var(--panel);
+  opacity: 0.95;
+}
+
+.build-set:active {
+  transform: scale(0.94);
+}
+
 .build-groups {
   display: flex;
   flex-wrap: wrap;
