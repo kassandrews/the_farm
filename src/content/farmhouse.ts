@@ -72,8 +72,10 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // behind. The seat took the rows the top turn gave up: eight now, rule 2
   // spent where a chair can least afford to lose it.
   //
-  // AND AN APRON UNDER THE SEAT (owner, 20 Aug), inset a pixel each side so
-  // the seat overhangs it. It does two jobs for four rows: it gives the seat a
+  // AND AN APRON UNDER THE SEAT (owner, 20 Aug), the SEAT'S OWN FULL WIDTH —
+  // inset a pixel was tried first and the seat then read as overhanging a
+  // narrower rail, which is a dining table's profile, not a chair's. A chair's
+  // seat and its rail are one block. It does two jobs for four rows: it gives the seat a
   // visible UNDERSIDE, which is what says the slab has depth rather than being
   // a painted line, and it is where the leg length went. The box is fixed at
   // rise + 16 + 14, so a chair cannot simply have shorter legs — something
@@ -105,10 +107,10 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kcccccccccck..",
         "..kssssssssssk..",
         "..kkkkkkkkkkkk..",
-        "...kcccccccck...",
-        "...kcccccccck...",
-        "...kssssssssk...",
-        "...kkkkkkkkkk...",
+        "..kcccccccccck..",
+        "..kcccccccccck..",
+        "..kssssssssssk..",
+        "..kkkkkkkkkkkk..",
         "...kck....kck...",
         "...kck....kck...",
         "...kck....kck...",
