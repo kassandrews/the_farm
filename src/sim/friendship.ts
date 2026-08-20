@@ -11,6 +11,7 @@
 import type { Villager, WorldState } from "./types";
 import type { SkinId } from "../content/skins";
 import { charDef } from "../content/cast";
+import { SETS, type SetId } from "../content/sets";
 import { SKINS } from "../content/skins";
 
 /** Friendship grows a little each meaningful interaction — a chat, or a job
@@ -116,5 +117,39 @@ export function giftDue(world: WorldState, v: Villager): SkinId | null {
 export function takeGift(world: WorldState, v: Villager): SkinId | null {
   const id = giftDue(world, v);
   if (id) world.skins.unlocked.push(id);
+  return id;
+}
+
+/** The same channel, one style axis over: a furniture SET somebody is ready to
+ *  hand you (content/sets.ts `given`). Split from `giftDue` rather than merged
+ *  into it because the two return different kinds of thing and the callers
+ *  show different cards — but the ladder rules are identical, and a set is
+ *  safe on a tier for the finishes' own reason: it costs nothing, weighs
+ *  nothing, and gates nothing. */
+export function setGiftDue(world: WorldState, v: Villager): SetId | null {
+  for (const id of Object.keys(SETS) as SetId[]) {
+    const given = SETS[id].given;
+    if (!given || given.who !== v.id) continue;
+    if (world.sets?.unlocked.includes(id)) continue;
+    if (!atLeast(v, given.tier)) continue;
+    return id;
+  }
+  return null;
+}
+
+/** Hand the set over, once — `takeGift`'s idempotence argument, one axis over:
+ *  the sets you own ARE the record of which gifts happened. */
+export function takeSetGift(world: WorldState, v: Villager): SetId | null {
+  const id = setGiftDue(world, v);
+  if (id) {
+    world.sets ??= { unlocked: [], selected: {} };
+    world.sets.unlocked.push(id);
+    // And the set's palette with it (content/sets.ts `brings`): one handshake,
+    // both halves of the style. Deduped against the list, not flagged — the
+    // collection IS the record, takeGift's own argument.
+    for (const skin of SETS[id].brings ?? []) {
+      if (!world.skins.unlocked.includes(skin)) world.skins.unlocked.push(skin);
+    }
+  }
   return id;
 }

@@ -43,8 +43,8 @@
 // Evict a stale service worker before anything else — a tool page has its own
 // entry point, so main.ts's cleanup never runs here. See no-sw.ts.
 import "./no-sw";
-import { FURNITURE, footprint, type Facing, type FurnitureDef } from "../content/furniture";
-import { FURNITURE_ART } from "../content/furnishings";
+import { FURNITURE, footprint, type Facing, type FurnitureDef, type FurnitureId } from "../content/furniture";
+import { artFor, SETS, type SetId } from "../content/sets";
 import { defaultSkin, skinDef, type SkinId } from "../content/skins";
 import { FLOOR, type TileId } from "../content/tiles";
 import { newWorld } from "../sim/game";
@@ -52,6 +52,25 @@ import { gridSource } from "../render/furnishings";
 import { Renderer } from "../render/renderer";
 import { zoomLadder } from "../render/zoom";
 import type { BuildCell, WorldState } from "../sim/types";
+
+/** Which SET the sheet shows — `?set=moderne` — defaulting to core.
+ *
+ *  A QUERY PARAM AND NOT A PICKER, keeping the buildings sheet's "bare on
+ *  purpose" argument intact: the page still shows one thing, fixed; which
+ *  thing is chosen before it loads. An unknown name falls back to core rather
+ *  than erroring, so a typo shows the familiar sheet and not a blank page. */
+const SHEET_SET: SetId = ((): SetId => {
+  const q = new URLSearchParams(location.search).get("set");
+  return q && q in SETS ? (q as SetId) : "core";
+})();
+
+/** The set a CARD actually draws in — the game's own fallback, restated: a
+ *  set that skipped a piece (moderne carries no 2x2 rug, no chest) places
+ *  core's, so the sheet shows core's rather than the placeholder box the raw
+ *  cell would produce. `loadedSet()` in sim/game.ts is the rule's home. */
+function cardSet(id: FurnitureId): SetId {
+  return artFor(id, SHEET_SET) || SHEET_SET === "core" ? SHEET_SET : "core";
+}
 
 /** Scene pixels per tile, matching the renderer's own. */
 const TILE = 16;
@@ -136,12 +155,14 @@ function tileKey(x: number, y: number): string {
  *  does is phrase it: "front" reads differently under the front view, where it
  *  is the definition, than under a north that fell back to it. */
 function source(def: FurnitureDef, facing: Facing): string {
-  const art = FURNITURE_ART[def.id];
-  // The four pieces with no row in the art table at all — lamp, noticeboard,
-  // stage, awning — are drawn by bespoke paths in renderer.ts rather than from a
-  // char grid. Saying "front view" of those would be a lie about a piece that
-  // has no grids to fall back between.
-  if (!art) return "drawn by renderer";
+  const art = artFor(def.id, SHEET_SET);
+  // No art in this set: either the piece is renderer-drawn (core's lamp), or
+  // the set SKIPPED it and the card fell back to core's drawing — the same
+  // fallback the game's `loadedSet()` makes, and the caption says which.
+  if (!art) {
+    if (SHEET_SET !== "core" && artFor(def.id, "core")) return "core's drawing";
+    return "drawn by renderer";
+  }
   switch (gridSource(art, facing)) {
     case "own":
       return "own grid";
@@ -266,7 +287,7 @@ function scaleCard(base: WorldState, overrides: Record<string, TileId>, def: Fur
     ...base,
     overrides,
     build: backing(def),
-    furniture: { [tileKey(ORIGIN.x, ORIGIN.y)]: { id: def.id, facing: "s", finish, set: "core" } },
+    furniture: { [tileKey(ORIGIN.x, ORIGIN.y)]: { id: def.id, facing: "s", finish, set: cardSet(def.id) } },
     underFurniture: {},
     finishes: {},
     crops: {},
@@ -283,7 +304,7 @@ function scaleCard(base: WorldState, overrides: Record<string, TileId>, def: Fur
   cards.push({
     world,
     renderer,
-    live: FURNITURE_ART[def.id]?.anim !== undefined,
+    live: artFor(def.id, SHEET_SET)?.anim !== undefined,
     bare: { ...world, furniture: {} },
     canvas,
     gridEl,
@@ -309,7 +330,7 @@ function build(): void {
   // other and is how a stool being wider than a chair becomes visible instead of
   // being two cards apart.
   const drawnWidth = (def: FurnitureDef): number => {
-    const rows = FURNITURE_ART[def.id]?.s.rows;
+    const rows = artFor(def.id, SHEET_SET)?.s.rows;
     if (!rows) return def.w * TILE;
     let lo = Infinity;
     let hi = -1;
@@ -429,7 +450,7 @@ function card(
     ...base,
     overrides,
     build: backing(def),
-    furniture: { [tileKey(ORIGIN.x, ORIGIN.y)]: { id: def.id, facing, finish, set: "core" } },
+    furniture: { [tileKey(ORIGIN.x, ORIGIN.y)]: { id: def.id, facing, finish, set: cardSet(def.id) } },
     underFurniture: {},
     finishes: {},
     crops: {},
@@ -460,7 +481,7 @@ function card(
   cards.push({
     world,
     renderer,
-    live: FURNITURE_ART[def.id]?.anim !== undefined,
+    live: artFor(def.id, SHEET_SET)?.anim !== undefined,
     bare: { ...world, furniture: {} },
     canvas,
     gridEl: grid,

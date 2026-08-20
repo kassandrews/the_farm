@@ -27,6 +27,9 @@ import type { Facing } from "../content/furniture";
 import {
   newWorld,
   tick,
+  loadedSet,
+  availableSets,
+  isFurnitureTool,
   contextAction,
   buildAt,
   talk,
@@ -46,7 +49,7 @@ import { sameRoof } from "../sim/rooms";
 import { counterDef } from "../content/counters";
 import type { CounterId } from "../content/counters";
 import { isWalkable } from "../sim/world";
-import { officeLandClaimLine, homeLineFor, givenLine, companyYesLine, companyByeLine, gameYesLine, gameFoundLine, gameGiveUpLine, gameOfferLine, sittingLine, lookAtLine, advanceReply, replyLabel } from "../sim/dialogue";
+import { officeLandClaimLine, homeLineFor, givenLine, givenSetLine, companyYesLine, companyByeLine, gameYesLine, gameFoundLine, gameGiveUpLine, gameOfferLine, sittingLine, lookAtLine, advanceReply, replyLabel } from "../sim/dialogue";
 import { canPlay, startPlay, playing, foundThem, foundIt, spyChoices, lookKindNear, offerDue, satLineDue, endPlay } from "../sim/play";
 import { GAMES } from "../content/games";
 import type { Reply as ReplyDef } from "../content/conversations";
@@ -94,6 +97,7 @@ import { donatable, donate, collection, collectionEmpty, wingsWithDonations } fr
 import { openErrand, errandState, cardText, deliverErrand, declineErrand, notices } from "../sim/errands";
 import { festivalOn, activeFestival, nextFestival, lastFestival, daysUntil, attend } from "../sim/festival";
 import { availableSkinsForClasses, skinDef } from "../content/skins";
+import { SETS, artFor, type SetId } from "../content/sets";
 import type { SkinId } from "../content/skins";
 import { cropDef, ripenHours } from "../content/crops";
 import { STALL_OPENER, STALL_EXHAUSTED } from "../content/seedstall";
@@ -356,6 +360,7 @@ const BUILD_TOOLS: { id: BuildTool; icon: IconName; label: string; hint: string;
   { id: "houseplant", icon: "houseplant", label: "Houseplant", hint: "Stands on a desk, a table, or the floor. The plant came with the pot.", group: "decor" },
   { id: "awning", icon: "banner", label: "Awning", hint: "Shade over a shopfront. Lay them side by side and they join into one sheet.", group: "decor" },
   { id: "rug", icon: "rug", label: "Rug", hint: "Costs cloth. Walk right over it.", group: "decor" },
+  { id: "arearug", icon: "rug", label: "Area rug", hint: "The big one. Rooms go on it.", group: "decor" },
   // The one tool that wants a WALL under it rather than a floor, which the hint
   // has to say outright — a tool that refuses everywhere you point it reads as
   // broken long before it reads as specific.
@@ -982,7 +987,7 @@ export class App {
     // The intro comes first, and now it can arrive by either road: this one, or
     // walking up to the table. `withPreamble` is the shared door, so "you meet
     // the person before you meet the screen" survives the split intact.
-    this.withPreamble(them, speech.gave, () =>
+    this.withPreamble(them, speech.gave, speech.gaveSet, () =>
     this.openModal(
       (close) => {
         // A conversation is the one panel that has a FACE, so it gets its own
@@ -1193,7 +1198,7 @@ export class App {
       open();
       return;
     }
-    this.withPreamble(them, undefined, open);
+    this.withPreamble(them, undefined, undefined, open);
   }
 
   /** Counter id → the panel it opens. A record rather than a switch so that
@@ -1210,8 +1215,13 @@ export class App {
     };
   }
 
-  private withPreamble(them: Villager, gave: SkinId | undefined, open: () => void): void {
-    this.withIntro(them, () => this.withGift(them, gave, open));
+  private withPreamble(
+    them: Villager,
+    gave: SkinId | undefined,
+    gaveSet: SetId | undefined,
+    open: () => void,
+  ): void {
+    this.withIntro(them, () => this.withGift(them, gave, gaveSet, open));
   }
 
   /** A finish somebody just gave you (content/skins.ts `given`).
@@ -1237,8 +1247,13 @@ export class App {
    *  can therefore close it unseen, which is deliberate and the same deal
    *  friendship has always had — nothing is lost, the finish is in the picker,
    *  and its `hint` is gone from the locked list because it isn't locked. */
-  private withGift(them: Villager, gave: SkinId | undefined, open: () => void): void {
-    if (!gave) {
+  private withGift(
+    them: Villager,
+    gave: SkinId | undefined,
+    gaveSet: SetId | undefined,
+    open: () => void,
+  ): void {
+    if (!gave && !gaveSet) {
       open();
       return;
     }
@@ -1248,10 +1263,26 @@ export class App {
     this.persist();
     this.openModal(
       (close) => {
-        const said = el("div", {}, [
-          el("p", {}, [givenLine(gave) ?? ""]),
-          handed(skinDef(gave).name, "Available to build in, from now on."),
-        ]);
+        // A set card reads like a finish card — same beat, other style axis.
+        const said = gave
+          ? el("div", {}, [
+              el("p", {}, [givenLine(gave) ?? ""]),
+              handed(skinDef(gave).name, "Available to build in, from now on."),
+            ])
+          : el("div", {}, [
+              el("p", {}, [givenSetLine(gaveSet!) ?? ""]),
+              handed(SETS[gaveSet!].name, "Every piece of furniture, in a new shape, from now on."),
+              // The palette that came in the same handshake, named so the
+              // player knows to look for it in the pickers.
+              ...(SETS[gaveSet!].brings?.length
+                ? [
+                    handed(
+                      SETS[gaveSet!].brings!.map((id) => skinDef(id).name).join(", "),
+                      "Its colours, for anything.",
+                    ),
+                  ]
+                : []),
+            ]);
         const row = actionRow([
           primaryBtn("...", () => {
             close();
@@ -3503,7 +3534,13 @@ export class App {
       // Its OWN loaded finish, not the held tool's: the row shows five pieces at
       // once and each remembers what it was last built in, so a walnut bed and a
       // pine cot sit side by side exactly as they would in the room.
-      art.src = furnitureThumb(id as FurnitureId, this.facing, loadedFinish(world, id), THUMB_SCALE);
+      art.src = furnitureThumb(
+        id as FurnitureId,
+        this.facing,
+        loadedFinish(world, id),
+        THUMB_SCALE,
+        loadedSet(world, id),
+      );
     }
   }
 
@@ -3560,14 +3597,46 @@ export class App {
     // choice — a lone chip you cannot deselect is furniture, not a control. Both
     // collapse the row to nothing, which the bottom-anchored layout absorbs
     // without moving the tools.
-    if (options.length < 2) {
+    // Only the sets that DREW this piece: a set may skip a non-form extra
+    // (moderne carries no chest), and offering its chip there would place a
+    // piece the set has no drawing for.
+    const setsHere = isFurnitureTool(tool)
+      ? availableSets(world).filter((id) => id === "core" || artFor(tool, id) !== undefined)
+      : [];
+    if (options.length < 2 && setsHere.length < 2) {
       row.replaceChildren();
       return;
     }
 
     const held = loadedFinish(world, tool);
     const heldTrim = loadedTrim(world, tool);
-    const chips = options.map((id) => {
+    // THE SET CHIPS, ahead of the finishes: which catalogue the piece comes
+    // from, then which colour it wears — the order the two questions get asked
+    // in. Only for furniture (surfaces have no sets), and only once a second
+    // set exists to choose: a lone chip you cannot deselect is furniture, not
+    // a control, the row's own standing rule.
+    const sets = setsHere;
+    const heldSet = loadedSet(world, tool);
+    const setChips =
+      sets.length < 2
+        ? []
+        : sets.map((id) => {
+            const def = SETS[id];
+            const chip = el("button", { class: "finish-chip", ariaLabel: def.name }, [
+              el("span", { class: "finish-name" }, [def.name]),
+            ]);
+            chip.classList.toggle("chosen", id === heldSet);
+            chip.addEventListener("click", () => {
+              world.sets ??= { unlocked: [], selected: {} };
+              world.sets.selected[tool] = id;
+              saveWorld(world);
+              this.syncFinishUi();
+              this.syncFurnitureTiles();
+            });
+            hoverHint(chip, `${def.name} — a whole shape of furniture, free to swap.`);
+            return chip;
+          });
+    const chips = (options.length < 2 ? [] : options).map((id) => {
       const skin = skinDef(id);
       const isTrim = trimClasses.includes(skin.applies);
       const chip = el("button", { class: "finish-chip", ariaLabel: skin.name }, [
@@ -3596,7 +3665,7 @@ export class App {
       hoverHint(chip, `${skin.name} — free to change, on anything already built.`);
       return chip;
     });
-    row.replaceChildren(...chips);
+    row.replaceChildren(...setChips, ...chips);
   }
 
   /** Show the undo control only in build mode, and only when there's a stroke to

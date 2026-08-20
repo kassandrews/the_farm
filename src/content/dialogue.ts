@@ -13,6 +13,7 @@
 import type { AdultForm } from "./canon/forms";
 import type { CharId } from "./cast";
 import type { GameId, SpyKind } from "./games";
+import type { SetId } from "./sets";
 import type { SkinId } from "./skins";
 
 export type LineBank = Partial<Record<string, string[]>>;
@@ -1594,6 +1595,21 @@ export const GIVEN_LINES: Partial<Record<SkinId, string>> = {
  *  gift handed over in silence is a vending machine. */
 export function givenLine(id: SkinId): string | undefined {
   return GIVEN_LINES[id];
+}
+
+/** And the same moment for a furniture SET (content/sets.ts `given`).
+ *
+ *  Scholar voice for the first one: Prudence has been doing fieldwork on the
+ *  town's furniture the whole time you knew her, and the set is the monograph
+ *  coming back from the printer's. Deadpan, proprietary about the findings,
+ *  and the pun is load-bearing. */
+export const GIVEN_SET_LINES: Partial<Record<SetId, string>> = {
+  moderne:
+    "The monograph on sitting is finished. Its conclusions have legs ... I had plates drawn up of every piece. Take them.",
+};
+
+export function givenSetLine(id: SetId): string | undefined {
+  return GIVEN_SET_LINES[id];
 }
 
 /** Small helper the sim uses to look up a resident's idle bank with a safe

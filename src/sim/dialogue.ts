@@ -53,6 +53,7 @@ import { sittingAt } from "./play";
 import { CAST } from "../content/cast";
 import { conversationRoots } from "../content/conversations";
 import type { Exchange, Reply } from "../content/conversations";
+import type { SetId } from "../content/sets";
 import type { SkinId } from "../content/skins";
 import { rivalReading } from "./museum";
 import { moleGroundShallow, moleLamplit } from "./mole";
@@ -74,6 +75,10 @@ export interface Speech {
    *  same visit, and a Speech that granted unlocks merely by being composed
    *  would fire on every dialogue test that builds one. */
   gave?: SkinId;
+  /** A furniture SET they handed over instead — the same beat, the other style
+   *  axis (content/sets.ts `given`). Never both in one conversation: the skins
+   *  gift is checked first and a person hands you one thing at a time. */
+  gaveSet?: SetId;
 }
 
 /** Odds a villager reaches for a memory instead of an idle line, when it has a
@@ -668,7 +673,7 @@ export function companyByeLine(form: AdultForm, rng: Rng): string {
  *  happens once and a pool you draw one item from is a pool of one. A missing
  *  line is a content bug rather than something to paper over at runtime, and
  *  skins.test.ts fails on it. */
-export { givenLine } from "../content/dialogue";
+export { givenLine, givenSetLine } from "../content/dialogue";
 
 // The game beats, same shape as the company pair above. The fallbacks exist
 // for safety, not for use: play_lines.test.ts asserts every playable form has

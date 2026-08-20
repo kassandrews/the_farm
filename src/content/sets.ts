@@ -24,14 +24,17 @@
 // Sets may also carry pieces BEYOND the checklist — that is where a set's
 // personality lives — but an extra is never how a set meets its obligation.
 
+import type { CharId } from "./cast";
+import type { SkinId } from "./skins";
 import type { FurnitureId } from "./furniture";
 import { FURNITURE } from "./furniture";
 import { FURNITURE_ART } from "./furnishings";
+import { MODERNE_ART } from "./moderne";
 import type { PieceArt } from "../render/furnishings";
 
 /** Ids are stored in saves, so they are STABLE — same rule as furniture ids.
  *  Add rows; never rename one. */
-export type SetId = "core";
+export type SetId = "core" | "moderne";
 
 export interface SetDef {
   id: SetId;
@@ -45,6 +48,15 @@ export interface SetDef {
    *  is copying. Writing four unlock fields for one starter set would be four
    *  guesses about content nobody has authored. */
   starter: boolean;
+  /** Somebody hands it to you — `SkinDef.given`'s shape, deliberately, because
+   *  a set rides the finishes' unlock channels (ROADMAP §The catalog doctrine)
+   *  and a second shape would be a second opinion about what a gift is. */
+  given?: { who: CharId; tier: "familiar" | "friend" | "close" };
+  /** Finishes that arrive WITH the set, in the same handshake — a style is
+   *  its shapes and its palette, and unlocking the drawings without the
+   *  colours they were photographed in would hand over half a gift. Unlocked
+   *  by `takeSetGift`, accounted a source by skins.test.ts §reachable. */
+  brings?: SkinId[];
 }
 
 export const SETS: Record<SetId, SetDef> = {
@@ -60,6 +72,23 @@ export const SETS: Record<SetId, SetDef> = {
     name: "Plain",
     starter: true,
   },
+  // Set Two, mid-century — the first set to keep the lattice's promise twice.
+  // The design language and every silhouette's reasoning live in
+  // content/moderne.ts; the owner walked the pilots (18 Aug 2026) and the fill
+  // pass drew the rest to their grammar.
+  moderne: {
+    id: "moderne",
+    name: "Moderne",
+    starter: false,
+    // The doctrine's own candidate, now the plan of record: Prudence, at
+    // close. A set is knowledge arriving through friendship — weightless, free
+    // to apply, gating nothing — which is the reward class the heap rule's own
+    // reasoning carved out (ROADMAP §The catalog doctrine, the Nub argument).
+    given: { who: "resident1", tier: "close" },
+    // The plates come with their inks: the period's wood and the three cloths
+    // every photograph of it keeps on the sofa (owner's call, 18 Aug 2026).
+    brings: ["teak", "mustard", "teal", "burntorange", "rose", "powder", "mint"],
+  },
 };
 
 /** Art, keyed by set and then by form.
@@ -70,6 +99,7 @@ export const SETS: Record<SetId, SetDef> = {
  *  second set is a second module and a second row here. */
 export const SET_ART: Record<SetId, Partial<Record<FurnitureId, PieceArt>>> = {
   core: FURNITURE_ART,
+  moderne: MODERNE_ART,
 };
 
 /** The art for a piece in a set, or undefined if it is drawn some other way.

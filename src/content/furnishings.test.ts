@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { FURNITURE, footprint } from "./furniture";
 import type { FurnitureId, Facing } from "./furniture";
 import { FURNITURE_ART } from "./furnishings";
+import { SET_ART } from "./sets";
+import type { SetId } from "./sets";
 import { gridFor, gridSource, surfaceBand, INK } from "../render/furnishings";
 
 const TILE = 16; // renderer.ts's scene tile, and the unit these grids are in.
@@ -388,6 +390,62 @@ describe("every carrier has a measurable top", () => {
         expect(band!.lip).toBeGreaterThan(band!.top);
         expect(band!.lip).toBeLessThan(rows);
       });
+    }
+  }
+});
+
+// EVERY SET'S ART HOLDS THE SAME CONTRACT. The loops above walk core
+// (FURNITURE_ART); this walks every other set in SET_ART through the identical
+// size, palette, rise and carrier assertions — because a second set's grids are
+// blitted by the same renderer with the same arithmetic, and a one-pixel slide
+// is no less invisible for being mid-century.
+describe("every set's art holds the size contract", () => {
+  const others = (Object.keys(SET_ART) as SetId[]).filter((set) => set !== "core");
+  it("has a second set to check", () => {
+    expect(others.length).toBeGreaterThan(0);
+  });
+  for (const set of others) {
+    const table = SET_ART[set];
+    for (const id of Object.keys(table) as FurnitureId[]) {
+      const art = table[id]!;
+      const def = FURNITURE[id];
+      const rise = art.rise ?? 0;
+      for (const facing of FACINGS) {
+        it(`${set} ${id} facing ${facing} fits its box`, () => {
+          const { grid } = gridFor(art, facing);
+          const { w, h } = footprint(def, facing);
+          for (const row of grid.rows) expect(row).toHaveLength(w * TILE);
+          const want = def.mount === "wall" ? def.height : rise + h * TILE + def.height;
+          expect(grid.rows).toHaveLength(want);
+        });
+      }
+      it(`${set} ${id} rises under half a tile and declares its colours`, () => {
+        expect(rise).toBeLessThan(TILE / 2);
+        for (const facing of FACINGS) {
+          const { grid } = gridFor(art, facing);
+          for (const row of grid.rows) {
+            for (const ch of row) {
+              if (ch === "." || "cts".includes(ch) || "CTS".includes(ch)) continue;
+              expect(grid.palette[ch], `${set}/${id}/${facing} uses "${ch}"`).toBeTruthy();
+            }
+          }
+          if (grid.palette.k) expect(grid.palette.k).toBe(INK);
+        }
+      });
+      // NO carrier-band assertion here, deliberately: a set's slab may be a
+      // shape with no full-span rules (moderne's oval coffee table), and the
+      // renderer's atop path falls back to `def.height` for exactly that
+      // case. Core's own carriers keep the strict check above.
+      if (art.anim) {
+        it(`${set} ${id} starts on its still art and keeps frame sizes`, () => {
+          const band = art.s.rows.slice(art.anim!.row, art.anim!.row + art.anim!.frames[0].length);
+          expect(art.anim!.frames[0]).toEqual(band);
+          for (const frame of art.anim!.frames) {
+            expect(frame).toHaveLength(art.anim!.frames[0].length);
+            for (const row of frame) expect(row).toHaveLength(art.s.rows[0].length);
+          }
+        });
+      }
     }
   }
 });

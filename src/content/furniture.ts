@@ -29,6 +29,7 @@ export type FurnitureId =
   | "shelf"
   | "cushion"
   | "rug"
+  | "arearug"
   | "lamp"
   /** The lamp for OUTSIDE — see the row for why the two split. */
   | "lamppost"
@@ -369,7 +370,9 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   },
   rug: {
     id: "rug",
-    form: true,
+    // NOT a catalog form since the area rug arrived (owner's call, 19 Aug
+    // 2026): the checklist's rug slot is the 3x3 below, and a set may skip
+    // the small one — moderne does. Core keeps this drawing and the tool.
     name: "Rug",
     cost: { cloth: 2 },
     w: 2,
@@ -379,6 +382,22 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
     height: 1,
     // And therefore THE floor piece — the sentence above, made a rule. Things
     // stand on it. See `floor` on the interface.
+    floor: true,
+    finishes: ["cloth"],
+  },
+  // THE ROOM-SIZED ONE. A form and not a footprint change, which is the
+  // doctrine holding under pressure: the Moderne walk asked for a 3x3 rug in
+  // one set, and a set may never change a footprint — so the catalog grew a
+  // form instead, and every set owes it a drawing (ROADMAP §Set Two).
+  arearug: {
+    id: "arearug",
+    form: true,
+    name: "Area rug",
+    cost: { cloth: 4 },
+    w: 3,
+    h: 3,
+    solid: false,
+    height: 1,
     floor: true,
     finishes: ["cloth"],
   },
@@ -495,7 +514,10 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   // street light to be — which is also what stops it reading as a tree.
   lamppost: {
     id: "lamppost",
-    form: true,
+    // NOT a catalog form (owner's call, 18 Aug 2026): a street light belongs
+    // to the town outdoors, not to a room, so a furniture set does not owe it
+    // a restyling — the same argument that keeps the notice board out.
+    // Moderne's globe-on-a-post stays as a deliberate extra.
     name: "Lamp post",
     cost: { ore: 2 },
     w: 1,
@@ -691,7 +713,10 @@ export const FURNITURE: Record<FurnitureId, FurnitureDef> = {
   },
   chest: {
     id: "chest",
-    form: true,
+    // NOT a catalog form (owner's call, 18 Aug 2026, walking the Moderne
+    // sheet): a chest is a piece a set MAY restyle, not one every set owes —
+    // the dresser is the storage slot the checklist keeps. Moderne's drawing
+    // stays as a deliberate extra.
     name: "Chest",
     cost: { wood: 3 },
     w: 1,

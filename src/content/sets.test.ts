@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { FURNITURE } from "./furniture";
 import type { FurnitureId } from "./furniture";
 import { SETS, SET_ART, CATALOG_FORMS, artFor } from "./sets";
+import { givenSetLine } from "./dialogue";
+import { SKINS } from "./skins";
 import type { SetId } from "./sets";
 
 const setIds = Object.keys(SETS) as SetId[];
@@ -87,3 +89,41 @@ const RENDERER_DRAWN: Partial<Record<SetId, FurnitureId[]>> = {
   // split which kept the original drawing.
   core: ["lamp", "lamppost"],
 };
+
+describe("the given channel", () => {
+  it("every given set has a line to be handed over with", () => {
+    // skins.test.ts's rule, one axis over: a gift handed over in silence is a
+    // vending machine.
+    for (const id of setIds) {
+      if (!SETS[id].given) continue;
+      expect(givenSetLine(id), `${id} is given with no line`).toBeTruthy();
+    }
+  });
+
+  it("a given set is never also a starter", () => {
+    for (const id of setIds) {
+      if (SETS[id].given) expect(SETS[id].starter, `${id} is both given and starter`).toBe(false);
+    }
+  });
+});
+
+describe("what a set brings", () => {
+  it("brings only real, non-starter finishes", () => {
+    // A `brings` id that is a starter would be a gift of something already
+    // owned — silently nothing, which is worse than a typo.
+    for (const id of setIds) {
+      for (const skin of SETS[id].brings ?? []) {
+        expect(SKINS[skin], `${id} brings "${skin}", which is not a finish`).toBeDefined();
+        expect(SKINS[skin].starter, `${id} brings ${skin}, a starter`).toBeFalsy();
+      }
+    }
+  });
+
+  it("only a given set brings anything", () => {
+    // The palette arrives in the handshake; a starter set with a `brings` list
+    // would have no moment to hand it over in.
+    for (const id of setIds) {
+      if (SETS[id].brings?.length) expect(SETS[id].given, `${id} brings with no giver`).toBeDefined();
+    }
+  });
+});

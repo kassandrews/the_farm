@@ -12474,6 +12474,223 @@ prints the `rows` + `palette` block to paste into `content/furnishings.ts`.
 - One save test asserted `toEqual` on a migrated cell and became a tripwire for
   schema growth it has no opinion about; it is `toMatchObject` now.
 
+### Set Two: Moderne — built (18 Aug 2026)
+
+The first set beyond core, and the proof the lattice's promise can be kept
+twice: all twenty-nine forms, drawn in one day against a style grammar the
+owner calibrated on four pilot pieces first (sofa, credenza, floor lamp,
+chair). `content/moderne.ts` carries the grammar in its header — legs not
+plinths, taper and splay, low and long, the float — and the per-piece
+reasoning above each drawing. Since finishes ride free, the mid-century lives
+ENTIRELY in silhouette; the only literals are jewellery (brass pulls, shade
+cloth, the fire) and the two beds' linen.
+
+**Owner calls made on renders, all recorded in docblocks:** the sofa's stand
+is short and end-legged (a first draft's eight rows with centre legs read as
+scaffolding); the credenza's doors are even around a centred two-pixel seam,
+overriding the odd-pixel rule (13/14 read as a door cut wrong, not a seam
+placed); the floor lamp is a GLOBE on a tripod, as tall as it is wide (a
+sphere squashed by a quarter is a saucer, and a saucer is a UFO); the chair
+draws its front pair only — the rear-feet version was rendered, compared, and
+rejected as fur.
+
+**What the fill pass settled:**
+
+- **A carrier's feet stay inside the carcass line** — `surfaceBand()` reads
+  the widest drawn row as the surface, so a splayed foot proud of the top
+  unseats whatever stands on it. Splay is spent on chairs and sofas; casework
+  keeps its line.
+- **The tulip table is the join system's best friend**: a run of tulip tables
+  is a longer top on more stems, which is exactly what the mid grid draws.
+  The counters keep core's top-block and seam arithmetic verbatim and restyle
+  only the doors (flat slabs, one brass bar pull per cell).
+- **The cone fireplace** (Malm) is the set's personality piece — four flame
+  frames in the mouth, core's fire palette, round enough that back and side
+  are the same story in shade.
+- **The renderer's bespoke-lamp branches are gated on `artFor()`** now, so a
+  set's grid beats `drawLamp`/`drawLampPost` — the exemption stays core's
+  alone, which is what `sets.test.ts` §RENDERER_DRAWN always wanted. And
+  `lampLift()` asks the set: a grid-drawn lamp stands on the near edge, so its
+  night pool does too (checked by drive at 11pm, both sets side by side).
+- **`furnishings.test.ts` walks every set's art** through the same size,
+  palette, rise, carrier and anim assertions as core's — which immediately
+  caught the three pilot pieces missing their turned views, exactly the class
+  of hole the Set One review taught us to expect in the views nobody walked.
+
+**The unlock is built: Prudence gives the set at `close`.** The `given`
+channel from the doctrine, shaped like `SkinDef.given` on `SetDef`, granted in
+the same conversation beat as the finishes (finishes first, one gift per
+talk), with her line in `GIVEN_SET_LINES` — the monograph on sitting, whose
+conclusions have legs. `world.sets` is OPTIONAL the whole way down (the trim
+precedent), so no schema bump and no migration were owed; `loadedSet()`
+guards every read back to core. The picker is two chips at the front of the
+furniture finish row — which catalogue, then which colour — appearing only
+once a second set exists, and the catalogue tiles draw in each tool's own
+loaded set. Placement stamps `loadedSet(world, tool)`.
+
+The sheet takes `?set=moderne` (query param, not a picker — bare on purpose).
+
+**The owner's walk (second sitting, same day) resettled five pieces and the
+checklist itself:** `chest` and `lamppost` LEFT THE LATTICE — a chest is a
+piece a set may restyle, not one every set owes (the dresser keeps the storage
+slot), and a street light belongs to the town, not a room; both keep their
+moderne drawings as deliberate extras, and the cot was never a form at all.
+The beds took a taller headboard, shorter legs, and core's mattress depth (the
+float reads in the daylight, not the drop). The shelf's bottom bay closes with
+a duplicate of the top slab. The tulip stand went CHROME — cast metal, not
+the top's wood — and two rows shorter. The tub lost its feet: skirt to the
+floor, like the owner's own bathroom. And the rug became the PATCHWORK — a
+Latin square of colour blocks (rust/denim/gold literal, one hue per band left
+to the cloth finish so the picker still moves a quarter of the rug).
+
+**Third sitting, same walk:** moderne DROPPED its chest and lamp post outright
+(the owner didn't love them; a set may skip a non-form extra) — which forced
+the rule that a set only answers for pieces it drew: `loadedSet()` falls back
+to core for a piece the chosen set never drew, and the picker hides the chip,
+so no cell can ever point at art that isn't there. The bed was judged too
+close to core and got the set's own grammar instead: the headboard slab now
+FLOATS on two stiles (the chair's gap, lying down) over a mattress INSET a
+pixel each side, so the platform shows proud at the sides and foot — core's
+bed is a box, moderne's is furniture standing on furniture. THE SET ARRIVES
+WITH ITS PALETTE (`SetDef.brings`, unlocked in `takeSetGift`'s handshake, a
+sixth source in skins.test.ts §reachable): teak, and the three period cloths
+— mustard, teal, burnt orange. A style is its shapes and its colours. And the
+shelf's books and the rug's blocks QUOTE those skins' own hexes (plus a cream
+spine) rather than keeping private opinions about them — the books stay
+chaotic, per the owner's standing call; they just got new inks.
+
+**Fourth sitting:** the coffee table went OVAL on straight legs, and the call
+settled a grammar rule — SEATS SPLAY, SURFACES STAND STRAIGHT (a table's job
+is to hold still). The oval is doctrine-compatible with carriers because its
+two full-span rules sit at the slab's widest rows, exactly where
+`surfaceBand()` looks. The nightstand's pull matched the desk's two-pixel
+width. The cone fireplace got a wider flue and shorter legs (an aerial on
+stilts, before). The fridge's FACE now rounds — the first draft rounded only
+the cabinet's back edge, the one part of a vintage fridge nobody chromed. And
+the 3x3 rug request became **a new form, `arearug`** — a set may never change
+a footprint, so the catalog grew instead and every set owes the big rug a
+drawing: core's is its bordered field a tile bigger each way, moderne's is
+the patchwork at room scale. Checklist: 28 forms.
+
+**Fifth sitting:** the oval became a TRUE ellipse — the first draft kept two
+full-span rules for `surfaceBand()` and the owner read them, correctly, as a
+rectangle stuck in an oval. The renderer's atop path already falls back to
+`def.height` for a carrier with no measurable band, and at seven pixels tall
+the fallback IS the answer, so the oval is the piece that proves that branch
+earns its keep (the set-art test's carrier assertion is relaxed accordingly;
+core keeps the strict one). The cone got squat — its slope now starts one row
+above the mouth, because the drawn box does not have to be filled. And the
+fridge's DOOR is the rounded thing: an inset rounded-rectangle seam on the
+face, with the cabinet's shoulders echoing the curve — the right reading of
+the reference, one sitting late.
+
+**Sixth sitting:** the cone's flue runs the full box plus a six-pixel rise —
+sixteen rows of chimney, as close to the wall cap as `hides()` lets art reach
+(a cone fireplace is mostly flue). The fridge rounds at ALL FOUR corners now
+(no plinth — a bumper), keeps the pillowed door seam, skips the depth echo on
+its sides (you cannot really see it anyway, the owner observed), and its
+latch gained an ink outline — bare chrome on the stainless default was a
+handle only colder kitchens could see.
+The latch then went through two more drafts in one sitting: vertical chrome
+read as a door crack, its ink caps on stainless read as a pair of eyes (the
+owner: "a port-a-john"), and it settled as ONE short horizontal bar left of
+the door — chrome over an ink underline, so it reads in every finish.
+
+**Seventh sitting (19 Aug):** the tub's rim rounds at the shoulders — the
+fridge's own corner treatment — and THE PASTELS ARRIVED: `rose`, `powder`
+and `mint` joined the ceramics and the set's `brings` list, because the
+mid-century bathroom was sold in exactly those three. They colour every
+ceramic piece (tub, toilet, basin, the plant's pot); seafoam predates them
+and stays the starter grey-green. A rose tub is the most mid-century object
+in the game.
+The rim then went ROLLED (eighth sitting): near lip inset with the skirt so
+the rim rides a pixel proud all the way round — which is what rounds the
+front corners — and the basin's pool cuts its own four corners in t.
+
+**And the 2x2 rug LEFT MODERNE ENTIRELY (19 Aug):** `rug` came off the
+checklist — the rug slot is the 3x3 `arearug` now (27 forms) — and moderne
+deleted its patchwork 2x2, the chest/lamppost precedent: a set only answers
+for pieces it drew, `loadedSet()` places core's, the picker hides the chip.
+The sheet learned the same fallback: a skipped piece's card draws core's
+grid and its caption says "core's drawing" instead of showing the
+placeholder box. (The pastels needed nothing for the toilet and basin — both
+are ceramic-class, so rose/powder/mint already dress them.)
+
+**Ninth sitting (19 Aug), and the set shipped.** The bathroom's last
+geometry: the tub's skirt runs to the RIM'S FULL WIDTH, which costs the
+rolled rim its front corners — the owner took that trade explicitly, having
+seen both. The basin's pedestal ended at three courses under a closing row
+whose corners notch a pixel (the counter's top edge and the foot do the
+same), and its counter stayed at seven; four was tried and fails, because
+the tap's ink column punches through the only full-width course and the top
+surface splits into two patches either side of it. Five is the floor for
+that silhouette. The toilet was reverted to its eighth-sitting drawing
+untouched — chamfers were tried on it and rejected.
+
+**The area rug stopped being a Latin square.** Sixteen rectangles of varied
+size and proportion, staggered so no edge lines up into a row, with the `e`
+view the TRANSPOSE of `s` so turning the rug turns its pattern. The
+composition is 4-COLOURED so no two touching blocks share a colour — greedy
+assignment cannot do it and backtracks; the reference photo the owner
+brought does not obey the rule at all, and staying inside the set's four
+quoted colours (rather than its seven) was the other deliberate departure.
+
+**THE TURNED-VIEWS PASS, and the rule it settled: when a set owes a side or
+a back view, READ CORE'S SAME PIECE FIRST.** Core has every one of these
+drawn already, and its answers are not obvious enough to re-derive:
+
+- A **toilet** side view puts the cistern as a short block at the BACK with
+  the seat and bowl running forward; the back view drops the seat band
+  entirely, because the cistern hides it.
+- A **sink** moves its tap from the centre to the back edge side-on, and the
+  back view carries the tap down THROUGH the counter, splitting the bowl
+  either side of it. Moderne's tap is chunkier than core's, so it keeps its
+  ink outline where core leaves a bare stem (owner's call) — and the bowl's
+  shadow is pushed against the counter's far edge with the spout bending out
+  beside it, not over it.
+- A **sofa** side view is the hard one: the back is a strip down ONE side
+  running the piece's length, the arms cap the two ENDS, and the cushions
+  divide along the length rather than across it. The old drawing ran arms
+  down both edges and read wrong for exactly that reason. From behind, the
+  back panel is NEAREST, so it sits BELOW the seat with the cushion tops
+  peeking over — the inversion is the whole trick.
+- A **fridge** side is deliberately plain and its BACK carries the serpentine
+  condenser coil plus a vent; a **stove** draws its burner pairs closer
+  together across the shallow axis and gains a rail band behind.
+- The **kitchen sink** proves turned views and `joins` are independent
+  lookups: core carries `n`, `e` AND `joins.x`/`xBack` side by side, so
+  moderne needed only the views (over its own eighteen-row cabinet, plain —
+  the door face stays on the front) and the `mirrorW` it was missing.
+
+**Where moderne cannot follow core: the size contract.** Core lets a back
+view be SHORTER than its front (its toilet's is three rows down, the seat
+band simply gone). `furnishings.test.ts` requires every moderne view to fill
+`rise + h * TILE`, so the same effect comes from padding the top and letting
+the piece sit lower in its box. The test caught the first attempt.
+
+**Fixes found in the same walk:** the beds' `n` had the headboard at the far
+end while the pillow had already moved to the near one (it is the frame
+turned end for end, legs staying put); their side views ran the top rail
+straight THROUGH the headboard post, cutting its core into segments — the
+per-cell-edges rule again, in a new costume. The fireplace's side legs sat
+left of the body's centre line. The bench's side legs stood plumb, where a
+seat's must splay. The wardrobe's side cap overhung a unit that has no
+overhang in front. The desk's side views had no desktop at all, and borrowed
+the slab-and-apron grammar from the desk's own back view rather than an
+invented one.
+
+**A process scar worth keeping: never edit a table of sprite rows with a
+global string replacement.** Two `str.replace` calls meant to reshape the
+basin silently widened thirty-six rows across the wardrobe, table, stool,
+fireplace and the shared chair-back constant — every one of them a row that
+happened to share a literal. `moderne.ts` was untracked, so there was no
+`git checkout` to fall back on; recovery came from the PREVIOUS session's
+screenshots, re-shooting each piece and diffing against them with a small
+vertical-alignment search (card positions shift, so a raw diff is useless and
+only a zero is trustworthy). Twenty-four of twenty-eight pieces were proved
+pixel-identical that way. Edit by line number, or rewrite a whole view.
+
+
 ### The kitchen and the bathroom, and a fourth finish class (11 Aug 2026)
 
 Five forms — `stove`, `fridge`, `sink`, `toilet`, `tub` — taking the checklist

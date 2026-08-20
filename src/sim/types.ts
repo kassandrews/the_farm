@@ -5,7 +5,6 @@
 import type { TileId } from "../content/tiles";
 import type { CropId } from "../content/crops";
 import type { FloraId } from "../content/flora";
-import type { SetId } from "../content/sets";
 import type { AdultForm } from "../content/canon/forms";
 import type { CharId, NewcomerId } from "../content/cast";
 import type { MemoryLog } from "./memory";
@@ -15,6 +14,7 @@ import type { Observation } from "./notebook";
 import type { Inventory } from "./inventory";
 import type { ItemId } from "../content/items";
 import type { NodeId } from "../content/nodes";
+import type { SetId } from "../content/sets";
 import type { SkinId } from "../content/skins";
 import type { StructureId } from "../content/structures";
 import type { FurnitureId, Facing } from "../content/furniture";
@@ -469,6 +469,16 @@ export interface WorldState {
      *  whole way down, so a save written before trim existed simply resolves to
      *  each piece's default — see `loadedTrim`. */
     trim?: Partial<Record<BuildTool, SkinId>>;
+  };
+
+  /** The catalog's style axis, `skins`' shape one field over — and OPTIONAL the
+   *  whole way down, the trim precedent: a save written before sets existed
+   *  resolves every read to the starter set through `loadedSet()`, so no
+   *  migration rung was ever owed. `unlocked` holds only the sets somebody has
+   *  handed you; starters are derived from content, never stored. */
+  sets?: {
+    unlocked: SetId[];
+    selected: Partial<Record<BuildTool, SetId>>;
   };
 
   /** Farming's free axis, and deliberately the same shape as `skins` above.

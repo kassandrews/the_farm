@@ -1162,8 +1162,13 @@ function lampHeadH(id: FurnitureId): number {
  *  that opted out of it would be a special case in the one path built to have
  *  none. So the desk lamp's pool had been sitting half a tile north of the desk
  *  lamp. */
-function lampLift(id: FurnitureId): number {
-  return id === "lamp" || id === "lamppost" ? LAMP_LIFT : 0;
+function lampLift(cell: FurnitureCell): number {
+  // Set-aware for the draw path's reason (§drawFurniture): the lift belongs to
+  // the PROCEDURAL drawings, and whether a lamp is procedural is a fact about
+  // the set. A moderne lamp is a grid and stands on the near edge; its pool
+  // must stand there too.
+  if (cell.id !== "lamp" && cell.id !== "lamppost") return 0;
+  return artFor(cell.id, cell.set) ? 0 : LAMP_LIFT;
 }
 
 /** And where the LAMP POST's is — its globe's centre.
@@ -2542,7 +2547,7 @@ export class Renderer {
               y: ty,
               core: lampCore(piece.id),
               headH: lampHeadH(piece.id),
-              lift: lampLift(piece.id),
+              lift: lampLift(piece),
             });
           }
         }
@@ -2604,7 +2609,7 @@ export class Renderer {
               y: ty,
               core: lampCore(sitter.id),
               headH: lampHeadH(sitter.id) + lift,
-              lift: lampLift(sitter.id),
+              lift: lampLift(sitter),
             });
           }
         }
@@ -3472,7 +3477,7 @@ export class Renderer {
           y: ty,
           core: lampCore(piece.id),
           headH: lampHeadH(piece.id),
-          lift: lampLift(piece.id),
+          lift: lampLift(piece),
         });
       }
     }
@@ -5010,14 +5015,19 @@ export class Renderer {
     // bed, a table and a shelf really are that — and a lamp is a POST. Given the
     // generic silhouette it read as a tan pillar filling its whole cell, which is
     // a column, not a light. So it draws itself and returns.
-    if (cell.id === "lamp") {
+    // ONLY WHEN THE SET HAS NO GRID FOR IT. The bespoke drawing is core's — an
+    // exemption sets.test.ts makes each set earn by hand (§RENDERER_DRAWN) — so
+    // a set that authored a lamp grid takes the art path below like everything
+    // else, and this branch is the fallback core keeps rather than a fact about
+    // the id.
+    if (cell.id === "lamp" && !artFor(cell.id, cell.set)) {
       this.drawLamp(px, base, pw, skin);
       ctx.globalAlpha = prev;
       return;
     }
     // And the post beside it, off the same path for the same reason — a post is
     // not a box, whichever of the two lights it happens to be carrying.
-    if (cell.id === "lamppost") {
+    if (cell.id === "lamppost" && !artFor(cell.id, cell.set)) {
       this.drawLampPost(px, base, pw, skin);
       ctx.globalAlpha = prev;
       return;

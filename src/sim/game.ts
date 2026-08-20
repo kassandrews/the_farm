@@ -8,7 +8,7 @@ import type { AdultForm } from "../content/canon/forms";
 import { CAST } from "../content/cast";
 import type { CharId } from "../content/cast";
 import { makeVillager, tickVillager } from "./villagers";
-import { befriend, takeGift } from "./friendship";
+import { befriend, takeGift, takeSetGift } from "./friendship";
 import { arrivalDue, admitArrival } from "./commission";
 import { remember, hasMemory } from "./memory";
 import type { MemoryKind } from "./memory";
@@ -50,6 +50,7 @@ import { settleResidents } from "./housing";
 import { playerHome } from "./assign";
 import { placeFurniture, removeFurnitureAt } from "./furniture";
 import { FURNITURE, furnitureDef } from "../content/furniture";
+import { SETS, artFor, type SetId } from "../content/sets";
 import type { FurnitureId, Facing } from "../content/furniture";
 import { structureDef, type StructureId } from "../content/structures";
 import {
@@ -651,6 +652,32 @@ export function loadedFinish(world: WorldState, tool: BuildTool): SkinId {
     return chosen;
   }
   return defaultSkin(classes[0] ?? "wood");
+}
+
+/** Which sets the player can build in right now: the starters plus everything
+ *  handed over (content/sets.ts `given`). Derived, never stored — the starter
+ *  half comes from content, so a new set shipping as a starter would appear in
+ *  every existing save without a migration. */
+export function availableSets(world: WorldState): SetId[] {
+  return (Object.keys(SETS) as SetId[]).filter(
+    (id) => SETS[id].starter || (world.sets?.unlocked.includes(id) ?? false),
+  );
+}
+
+/** The set a furniture tool is loaded with, guarded exactly as `loadedFinish`
+ *  is: a Partial entry can be missing or can name a set this save never
+ *  unlocked (hand-edited, or a future set row removed), and both fall back to
+ *  the starter rather than throwing. */
+export function loadedSet(world: WorldState, tool: BuildTool): SetId {
+  const chosen = world.sets?.selected[tool];
+  if (!chosen || !SETS[chosen] || !availableSets(world).includes(chosen)) return "core";
+  // A SET ONLY ANSWERS FOR PIECES IT DREW. Outside the lattice a set may skip
+  // a piece (the owner axed moderne's chest and lamp post on the walk), and a
+  // cell stamped with a set that never drew it would render as the fallback
+  // box — so the piece you place is core's, and the picker says so by hiding
+  // the chip (§syncFinishUi).
+  if (isFurnitureTool(tool) && chosen !== "core" && !artFor(tool, chosen)) return "core";
+  return chosen;
 }
 
 /** The finish already worn by whatever this tool would replace here, or null if
@@ -1896,7 +1923,7 @@ function placeOrRemove(
 
   if (isFurnitureTool(tool)) {
     const def = furnitureDef(tool);
-    if (!placeFurniture(world, x, y, tool, facing, finish, "core", layer, loadedTrim(world, tool))) {
+    if (!placeFurniture(world, x, y, tool, facing, finish, loadedSet(world, tool), layer, loadedTrim(world, tool))) {
       // "Won't fit" is the honest answer for every piece in the table except the
       // one that can be refused on a cell with nothing in it. A fireplace needs a
       // wall behind it (content/furniture.ts §backs), and a refusal that talks
@@ -2000,6 +2027,8 @@ function furnitureFlavour(id: FurnitureId, layer: Layer): string {
       return "A cushion. The floor has been upgraded to a place you can be.";
     case "rug":
       return "A rug. The room stops echoing and starts being a room.";
+    case "arearug":
+      return "An area rug. The area is now this.";
     // The one line that reads the layer, because it is the one object whose
     // point changes with where you put it. Above ground a lamp is something you
     // will appreciate later; in the rock it is the reason you can see.
@@ -2220,6 +2249,12 @@ export function talk(world: WorldState, id: CharId, rng: Rng, now: number): Spee
   const speech = speak(world, v, rng, now);
   const gave = takeGift(world, v);
   if (gave) speech.gave = gave;
+  else {
+    // One gift per conversation, finishes first — a person hands you one thing
+    // at a time, and the older channel keeps its place in the queue.
+    const gaveSet = takeSetGift(world, v);
+    if (gaveSet) speech.gaveSet = gaveSet;
+  }
   return speech;
 }
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { newWorld, talk, buildAt, playerTile } from "./game";
-import { friendshipTier, atLeast, giftDue, takeGift } from "./friendship";
+import { friendshipTier, atLeast, giftDue, takeGift, setGiftDue, takeSetGift } from "./friendship";
 import { speak } from "./dialogue";
 import { makeRng } from "./rng";
 import { warmLines } from "../content/dialogue";
@@ -173,5 +173,35 @@ describe("finishes people give you", () => {
     // is not already there.
     const w = freshWorld();
     for (const v of w.villagers) expect(giftDue(w, v)).toBeNull();
+  });
+});
+
+describe("sets people give you", () => {
+  const warmTo = (w: ReturnType<typeof freshWorld>, id: string, n: number) => {
+    const v = w.villagers.find((x) => x.id === id)!;
+    v.friendship = n;
+    return v;
+  };
+
+  it("makes Prudence wait for `close` — the whole catalogue costs the top rung", () => {
+    const w = freshWorld();
+    const prudence = warmTo(w, "resident1", 35); // "friend", one rung short
+    expect(setGiftDue(w, prudence)).toBeNull();
+    prudence.friendship = 60; // "close"
+    expect(setGiftDue(w, prudence)).toBe("moderne");
+  });
+
+  it("hands it over once, and the record is the unlock list itself", () => {
+    const w = freshWorld();
+    const prudence = warmTo(w, "resident1", 100);
+    expect(takeSetGift(w, prudence)).toBe("moderne");
+    for (let i = 0; i < 5; i++) expect(takeSetGift(w, prudence)).toBeNull();
+    expect(w.sets?.unlocked.filter((s) => s === "moderne")).toHaveLength(1);
+  });
+
+  it("gives nobody else the set", () => {
+    const w = freshWorld();
+    const pesto = warmTo(w, "errands", 100);
+    expect(setGiftDue(w, pesto)).toBeNull();
   });
 });

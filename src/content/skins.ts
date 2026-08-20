@@ -50,6 +50,7 @@ export type SkinId =
   // Wood
   | "pine"
   | "walnut"
+  | "teak"
   | "whitewash"
   | "ash"
   | "salvage"
@@ -65,6 +66,9 @@ export type SkinId =
   // Cloth
   | "undyed"
   | "madder"
+  | "mustard"
+  | "teal"
+  | "burntorange"
   // Metal
   | "steel"
   | "brass"
@@ -72,7 +76,10 @@ export type SkinId =
   // Ceramic
   | "porcelain"
   | "cream"
-  | "seafoam";
+  | "seafoam"
+  | "rose"
+  | "powder"
+  | "mint";
 
 export interface SkinDef {
   id: SkinId;
@@ -137,7 +144,22 @@ export const SKINS: Record<SkinId, SkinDef> = {
     shade: "#523527",
     starter: false,
     hint: "The Quiet Ghost knows where the dark wood is.",
+  },  // --- Brought by the Moderne set (content/sets.ts `brings`) ---------------
+  // A set arrives with its palette: the woods and cloths the style was
+  // photographed in, unlocked in the same handshake as the drawings. None of
+  // these has its own `given`/heap/commission row — their source IS the set,
+  // which skins.test.ts §reachable accounts for.
+  teak: {
+    id: "teak",
+    name: "Teak",
+    applies: "wood",
+    color: "#8a5a33",
+    top: "#9d6a3d",
+    shade: "#6b4426",
+    starter: false,
+    hint: "Prudence's monograph arrives with its own inks.",
   },
+
   whitewash: {
     id: "whitewash",
     name: "Whitewash",
@@ -334,7 +356,39 @@ export const SKINS: Record<SkinId, SkinDef> = {
     top: "#c46557",
     shade: "#8e4239",
     starter: true,
+  },  // The Moderne three — the pillows in every period photograph. Brought by
+  // the set, like teak above.
+  mustard: {
+    id: "mustard",
+    name: "Mustard",
+    applies: "cloth",
+    color: "#c99a34",
+    top: "#d9ad46",
+    shade: "#a67c28",
+    starter: false,
+    hint: "Prudence's monograph arrives with its own inks.",
   },
+  teal: {
+    id: "teal",
+    name: "Teal",
+    applies: "cloth",
+    color: "#4f7d78",
+    top: "#5f8f89",
+    shade: "#3d615d",
+    starter: false,
+    hint: "Prudence's monograph arrives with its own inks.",
+  },
+  burntorange: {
+    id: "burntorange",
+    name: "Burnt orange",
+    applies: "cloth",
+    color: "#b85c34",
+    top: "#c96e42",
+    shade: "#94472a",
+    starter: false,
+    hint: "Prudence's monograph arrives with its own inks.",
+  },
+
 
   // --- Metal ---------------------------------------------------------------
   // The fourth class, and the one the ore note (ROADMAP §Ore's sink) appears to
@@ -429,6 +483,40 @@ export const SKINS: Record<SkinId, SkinDef> = {
     top: "#c7dcd3",
     shade: "#8ea99e",
     starter: true,
+  },
+  // The Moderne bathroom three — the pastel fixtures every mid-century house
+  // was sold with. Brought by the set (content/sets.ts `brings`), like teak
+  // and the cloths; seafoam above predates them and stays the starter's
+  // grey-green, where mint is warmer and greener.
+  rose: {
+    id: "rose",
+    name: "Rose",
+    applies: "ceramic",
+    color: "#e8c4c4",
+    top: "#f2d6d4",
+    shade: "#c9a0a2",
+    starter: false,
+    hint: "Prudence's monograph arrives with its own inks.",
+  },
+  powder: {
+    id: "powder",
+    name: "Powder blue",
+    applies: "ceramic",
+    color: "#c2d5dd",
+    top: "#d4e3e9",
+    shade: "#a2b8c2",
+    starter: false,
+    hint: "Prudence's monograph arrives with its own inks.",
+  },
+  mint: {
+    id: "mint",
+    name: "Mint",
+    applies: "ceramic",
+    color: "#c8dcc6",
+    top: "#d8e8d6",
+    shade: "#a8c0a6",
+    starter: false,
+    hint: "Prudence's monograph arrives with its own inks.",
   },
 };
 

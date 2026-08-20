@@ -9,6 +9,7 @@
 // that goes stale: the check lived in a sentence in a document instead of here.
 
 import { describe, it, expect } from "vitest";
+import { SETS } from "./sets";
 import { SKINS, SKIN_CLASSES, starterSkins } from "./skins";
 import type { SkinId } from "./skins";
 import { HEAP } from "./shop";
@@ -46,6 +47,7 @@ function reachable(id: SkinId): string | null {
   if (HEAP.some((r) => r.gives === id)) return "heap";
   if (ARRIVALS.some((a) => a.unlocks === id)) return "commission";
   if (FOUND.includes(id)) return "found";
+  if (Object.values(SETS).some((set) => set.brings?.includes(id))) return "set";
   return null;
 }
 
@@ -65,7 +67,7 @@ describe("every finish can be got", () => {
     // with nothing behind it. A table where everything came off the heap would
     // pass the test above and fail the design.
     const sources = new Set(ALL.map(reachable));
-    for (const s of ["starter", "given", "heap", "commission", "found"]) {
+    for (const s of ["starter", "given", "heap", "commission", "found", "set"]) {
       expect(sources, `no finish comes from ${s} any more`).toContain(s);
     }
   });
