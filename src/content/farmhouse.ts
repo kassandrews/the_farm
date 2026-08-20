@@ -46,10 +46,19 @@ import { INK } from "../render/furnishings";
 
 /** Pieces drawn so far — four pilots, awaiting the owner's walk. */
 export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
-  // THE WINDSOR BACK, which is the set's loudest sentence: five stiles and
-  // spindles under a bowed crest whose corners are knocked off a pixel. The
-  // gap up the middle is two pixels rather than one, because an even count of
-  // spindles cannot centre and a Windsor never had one in the middle anyway.
+  // THE WINDSOR BACK, which is the set's loudest sentence: four spindles under
+  // a bowed crest whose corners are knocked off a pixel. The gap up the middle
+  // is two pixels rather than one, because an even count cannot centre and a
+  // Windsor never had a spindle in the middle anyway.
+  //
+  // THE SPINDLES ARE GROOVES, NOT HOLES (owner, 20 Aug: "really cartoonish").
+  // Drawn open — ink spindles on transparent — the chair became almost all
+  // outline: black crest, black spindles, black stiles, black legs, and no
+  // mass anywhere. Core's chair is a solid body with a one-pixel line round
+  // it; that is the difference between an object and a drawing of one. So the
+  // back is a filled panel that takes the finish, with the spindles cut into
+  // it in `s`. It also fixes something the open version got wrong for free: a
+  // see-through back showed you the floor's plaid through the chair.
   //
   // The seat is four rows where core's is three — rule 2, and a chair is where
   // you can least afford to lose it, since the seat is the only slab on the
@@ -72,14 +81,14 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kttttttttttk..",
         "..kcccccccccck..",
         "..kkkkkkkkkkkk..",
-        "..k.k.k..k.k.k..",
-        "..k.k.k..k.k.k..",
-        "..k.k.k..k.k.k..",
-        "..k.k.k..k.k.k..",
-        "..k.k.k..k.k.k..",
-        "..k.k.k..k.k.k..",
-        "..k.k.k..k.k.k..",
-        "..k.k.k..k.k.k..",
+        "..kcscsccscsck..",
+        "..kcscsccscsck..",
+        "..kcscsccscsck..",
+        "..kcscsccscsck..",
+        "..kcscsccscsck..",
+        "..kcscsccscsck..",
+        "..kcscsccscsck..",
+        "..kcscsccscsck..",
         "..kkkkkkkkkkkk..",
         "..kttttttttttk..",
         "..kttttttttttk..",
