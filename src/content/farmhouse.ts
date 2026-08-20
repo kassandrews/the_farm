@@ -51,26 +51,26 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // is two pixels rather than one, because an even count cannot centre and a
   // Windsor never had a spindle in the middle anyway.
   //
-  // THE SPINDLES ARE GROOVES, NOT HOLES (owner, 20 Aug: "really cartoonish").
-  // Drawn open — ink spindles on transparent — the chair became almost all
-  // outline: black crest, black spindles, black stiles, black legs, and no
-  // mass anywhere. Core's chair is a solid body with a one-pixel line round
-  // it; that is the difference between an object and a drawing of one. So the
-  // back is a filled panel that takes the finish, with the spindles cut into
-  // it in `s`. It also fixes something the open version got wrong for free: a
-  // see-through back showed you the floor's plaid through the chair.
+  // THE SPINDLES STAY OPEN, and that was tested rather than assumed. Told the
+  // chair looked "really cartoonish" the fix tried first was filling the back
+  // and cutting the spindles as grooves — mass instead of outline, and it also
+  // stopped the floor's plaid showing through. The owner preferred the open
+  // one anyway, which located the actual complaint: it was never the back. A
+  // see-through Windsor back is the point of a Windsor back.
   //
   // The seat is four rows where core's is three — rule 2, and a chair is where
   // you can least afford to lose it, since the seat is the only slab on the
   // piece. Legs turn once, high, just under the seat, and swell again at the
   // foot; the long plain shaft between them is what makes the two turnings
-  // read as turnings rather than as a wobble. ONE TURN, AND IT SITS LOW
-  // (owner, 20 Aug). A turn high under the seat reads as a bracket rather than
-  // a lathe, and TWO of them near the ankle — tried and rejected the same
-  // sitting — read as a blob: at five pixels against three, two swells three
-  // rows apart are not a turning, they are noise. One swell with plain shaft
-  // on both sides of it is the whole trick. The seat took the rows the top
-  // turn gave up — eight now, rule 2 spent where a chair can least afford it.
+  // read as turnings rather than as a wobble. ONE SWELL, AND IT IS THE FOOT
+  // (owner, 20 Aug, in three passes). A turn high under the seat read as a
+  // bracket rather than a lathe; two of them near the ankle read as a blob (at
+  // five pixels against three, two swells three rows apart are noise, not a
+  // turning); one swell partway down still read as a bowtie hung on a stick.
+  // What works is the swell at the very END — a plain shaft the whole way down
+  // landing on a ball foot, which is what the eye expects a lathe to leave
+  // behind. The seat took the rows the top turn gave up: eight now, rule 2
+  // spent where a chair can least afford to lose it.
   chair: {
     mirrorW: true,
     rise: 6,
@@ -81,14 +81,14 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kttttttttttk..",
         "..kcccccccccck..",
         "..kkkkkkkkkkkk..",
-        "..kcscsccscsck..",
-        "..kcscsccscsck..",
-        "..kcscsccscsck..",
-        "..kcscsccscsck..",
-        "..kcscsccscsck..",
-        "..kcscsccscsck..",
-        "..kcscsccscsck..",
-        "..kcscsccscsck..",
+        "..k.k.k..k.k.k..",
+        "..k.k.k..k.k.k..",
+        "..k.k.k..k.k.k..",
+        "..k.k.k..k.k.k..",
+        "..k.k.k..k.k.k..",
+        "..k.k.k..k.k.k..",
+        "..k.k.k..k.k.k..",
+        "..k.k.k..k.k.k..",
         "..kkkkkkkkkkkk..",
         "..kttttttttttk..",
         "..kttttttttttk..",
@@ -106,12 +106,12 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "...kck....kck...",
         "...kck....kck...",
         "...kck....kck...",
+        "...kck....kck...",
+        "...kck....kck...",
+        "...kck....kck...",
         "..kccck..kccck..",
         "..kccck..kccck..",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kkk....kkk...",
+        "..kkkkk..kkkkk..",
       ],
       palette: { k: INK },
     },
