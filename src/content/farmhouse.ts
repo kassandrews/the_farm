@@ -55,7 +55,13 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // you can least afford to lose it, since the seat is the only slab on the
   // piece. Legs turn once, high, just under the seat, and swell again at the
   // foot; the long plain shaft between them is what makes the two turnings
-  // read as turnings rather than as a wobble.
+  // read as turnings rather than as a wobble. ONE TURN, AND IT SITS LOW
+  // (owner, 20 Aug). A turn high under the seat reads as a bracket rather than
+  // a lathe, and TWO of them near the ankle — tried and rejected the same
+  // sitting — read as a blob: at five pixels against three, two swells three
+  // rows apart are not a turning, they are noise. One swell with plain shaft
+  // on both sides of it is the whole trick. The seat took the rows the top
+  // turn gave up — eight now, rule 2 spent where a chair can least afford it.
   chair: {
     mirrorW: true,
     rise: 6,
@@ -79,15 +85,11 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kttttttttttk..",
         "..kcccccccccck..",
         "..kcccccccccck..",
+        "..kcccccccccck..",
+        "..kssssssssssk..",
         "..kkkkkkkkkkkk..",
         "...kck....kck...",
         "...kck....kck...",
-        "..kccck..kccck..",
-        "..kccck..kccck..",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
         "...kck....kck...",
         "...kck....kck...",
         "...kck....kck...",
@@ -96,6 +98,10 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "...kck....kck...",
         "...kck....kck...",
         "..kccck..kccck..",
+        "..kccck..kccck..",
+        "...kck....kck...",
+        "...kck....kck...",
+        "...kck....kck...",
         "...kkk....kkk...",
       ],
       palette: { k: INK },
@@ -335,46 +341,51 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // The column turns twice, high and low, around a long plain shaft, and lands
   // on a disc rather than a tripod: Moderne's floor lamp is a globe on three
   // splayed legs, so a foot that splayed would be reaching into its territory.
+  //
+  // THE SHADE IS CREAM AND NOT THE FINISH (owner, 20 Aug) — `l`/`m` are the
+  // renderer's own SHADE_CLOTH and SHADE_CLOTH_LIT, which Moderne's lamp
+  // already wears, so both sets' shades are the same cloth over different
+  // silhouettes. A shade that asked the finish came back stainless.
   lamp: {
     mirrorW: true,
     s: {
       rows: [
         "................",
         "......kkkk......",
-        ".....kccccck....",
-        "....kccccccck...",
-        "...kccccccccck..",
-        "..kcccccccccccck",
+        ".....kmmmmk.....",
+        "....kllllllk....",
+        "...kllllllllk...",
+        "..kllllllllllk..",
+        ".kllllllllllllk.",
         ".kkkkkkkkkkkkkk.",
-        "......kck.......",
-        "......kck.......",
-        ".....kcccck.....",
-        ".....kcccck.....",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        "......kck.......",
-        ".....kcccck.....",
-        ".....kcccck.....",
+        "......kcck......",
+        "......kcck......",
+        ".....kccccck....",
+        ".....kccccck....",
+        "......kcck......",
+        "......kcck......",
+        "......kcck......",
+        "......kcck......",
+        "......kcck......",
+        "......kcck......",
+        "......kcck......",
+        "......kcck......",
+        "......kcck......",
+        "......kcck......",
+        "......kcck......",
+        "......kcck......",
+        "......kcck......",
+        "......kcck......",
+        ".....kccccck....",
+        ".....kccccck....",
         "....kkkkkkkk....",
-        "...kccccccccck..",
-        "...kkkkkkkkkkk..",
+        "...kcccccccck...",
+        "...kcccccccck...",
+        "..kcccccccccck..",
+        "..kcccccccccck..",
+        "..kkkkkkkkkkkk..",
       ],
-      palette: { k: INK },
+      palette: { k: INK, l: "#e8dfc8", m: "#f6efdf" },
     },
   },
 };
