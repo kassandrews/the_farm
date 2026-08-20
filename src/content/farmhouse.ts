@@ -71,6 +71,14 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
   // landing on a ball foot, which is what the eye expects a lathe to leave
   // behind. The seat took the rows the top turn gave up: eight now, rule 2
   // spent where a chair can least afford to lose it.
+  //
+  // AND AN APRON UNDER THE SEAT (owner, 20 Aug), inset a pixel each side so
+  // the seat overhangs it. It does two jobs for four rows: it gives the seat a
+  // visible UNDERSIDE, which is what says the slab has depth rather than being
+  // a painted line, and it is where the leg length went. The box is fixed at
+  // rise + 16 + 14, so a chair cannot simply have shorter legs — something
+  // above them has to take the rows, and a rail between the leg tops is what a
+  // real chair puts there anyway.
   chair: {
     mirrorW: true,
     rise: 6,
@@ -97,10 +105,10 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         "..kcccccccccck..",
         "..kssssssssssk..",
         "..kkkkkkkkkkkk..",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
+        "...kcccccccck...",
+        "...kcccccccck...",
+        "...kssssssssk...",
+        "...kkkkkkkkkk...",
         "...kck....kck...",
         "...kck....kck...",
         "...kck....kck...",
