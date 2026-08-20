@@ -12785,6 +12785,46 @@ muscle while both existing sets are fresh reference.
   whole authoring life untracked, which is why a careless edit cost a
   forensics session instead of a `git checkout`.
 
+**FARMHOUSE'S GRAMMAR, read off the owner's five reference photos and
+confirmed by them (19 Aug).** Four sentences, the shape Moderne's header
+takes, because those four sentences turned out to be worth more than any
+single drawing:
+
+  1. **TURNED, NOT TAPERED.** The differentiator, and it is in nearly every
+     photo — the dining table, the Windsor chairs, the nightstand, the
+     dresser's feet. Core's leg is a plain post and Moderne's is a straight
+     taper; farmhouse's has a PROFILE — a bulb, a collar, a foot. At sixteen
+     pixels that is one or two pixels stepping out and back in, which is
+     enough.
+  2. **THE TOP IS A SLAB.** Thick, with a readable edge, often a seam or a
+     breadboard end. Moderne's rule is that tops lose a row; farmhouse's is
+     the reverse — the top gains one and you can see how deep it is.
+  3. **SOFT THINGS SIT DOWN, WOODEN THINGS STAND UP.** Both reference sofas
+     are slipcovered to the floor with no legs at all, while every table and
+     case piece is lifted on its turnings. Neither existing set has that
+     internal contrast — Moderne lifts EVERYTHING — and it is what makes
+     farmhouse's sofa a different drawing from core's boxy one.
+  4. **SPINDLES AND PANELS.** A back is thin vertical spindles under a bowed
+     rail; a door is a recessed panel with a small round knob. Core's back is
+     a ladder and Moderne's is a solid shell, so spindles are unclaimed.
+
+**THE SOFA IS WHERE FARMHOUSE AND RETRO WOULD HAVE COLLIDED**, and the owner
+settled it before either was drawn. Both sets put their mass on the floor, so
+without a rule they are the same piece twice. Farmhouse's upholstery has
+DEFINED BACK CUSHIONS AND ROLLED ARMS — soft, baggy, an uneven top line.
+Retro's is ONE BACK AND ONE SEAT CUSHION, crowned taller at the middle than
+at the edges. Same absence of legs, opposite handling of the mass.
+
+**Scope calls made on the references:** the bathroom photo is a different
+room from the other four — modern-traditional, fluted and crisp, where the
+rest is warm and slightly heavy — and it is OUT, except for the clawfoot tub,
+which is the best bathroom silhouette in the set and stays. And the painted
+register farmhouse wants (a cream hutch, a near-black sideboard) is mostly
+ALREADY IN THE WOOD CLASS: `whitewash`, `bone`, `sage`, `ochre`, `oxblood`.
+So `brings` may be one skin or none — a set with nothing to bring is fine,
+and inventing finishes to fill the field would be the tail wagging the dog.
+
+
 
 ### The kitchen and the bathroom, and a fourth finish class (11 Aug 2026)
 
