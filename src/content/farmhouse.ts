@@ -1179,11 +1179,21 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
   },
 
-  // One drawer, one knob, on the set's leg. The little sibling of the dresser and drawn from the same helper, so the two cannot drift.
+  // THE DRESSER'S TWO IDEAS, at nightstand size (owner, 24 Aug): its block
+  // feet, and its drawer. The block foot is two rows — a `kccck` bun and its
+  // ink — and it works because it sits at the CORNER rather than under the
+  // carcass, which is what makes a case piece look planted instead of perched.
+  // A turned leg was tried here and read as a side table on stilts.
+  //
+  // And the knob goes on ONE ROW of the drawer field. Repeating the field row
+  // to make a deeper drawer repeated the knob with it, which drew a two-pixel
+  // stripe down the whole front instead of a handle.
   nightstand: {
     mirrorW: true,
     s: {
       rows: [
+        "................",
+        "................",
         "................",
         "................",
         "................",
@@ -1197,17 +1207,15 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kcccccccccccck.",
         ".kckkkkkkkkkkck.",
         ".kcksssddssskck.",
-        ".kcksssddssskck.",
-        ".kcksssddssskck.",
+        ".kckkkkkkkkkkck.",
+        ".kcccccccccccck.",
+        ".kkkkkkkkkkkkkk.",
+        ".kcccccccccccck.",
+        ".kckkkkkkkkkkck.",
         ".kcksssddssskck.",
         ".kckkkkkkkkkkck.",
         ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        ".kcccccccccccck.",
-        "...kck....kck...",
-        "...kck....kck...",
-        "...kck....kck...",
-        "..kccck..kccck..",
+        ".kkkkkkkkkkkkkk.",
         "..kccck..kccck..",
         "..kkkkk..kkkkk..",
       ],
@@ -1601,7 +1609,11 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
     },
   },
 
-  // Two panelled doors, one knob each, under a slab cornice.
+  // ONE PAIR OF TALL DOORS on the dresser's block feet (owner, 24 Aug). The
+  // two knobs meet at the seam a little above centre, where a door's handle
+  // actually is, and they appear on one row only — see the nightstand for the
+  // stripe that taught us that. Two stacked panels was the first draft and it
+  // read as a linen press, which is a different piece of furniture.
   wardrobe: {
     mirrorW: true,
     s: {
@@ -1616,30 +1628,30 @@ export const FARMHOUSE_ART: Partial<Record<FurnitureId, PieceArt>> = {
         ".kkkkkkkkkkkkkk.",
         ".kcccccccccccck.",
         ".kckkkkkkkkkkck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
         ".kcksssddssskck.",
-        ".kcksssddssskck.",
-        ".kcksssddssskck.",
-        ".kcksssddssskck.",
-        ".kcksssddssskck.",
-        ".kcksssddssskck.",
-        ".kcksssddssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
+        ".kcksssssssskck.",
         ".kckkkkkkkkkkck.",
         ".kcccccccccccck.",
-        ".kkkkkkkkkkkkkk.",
-        ".kcccccccccccck.",
-        ".kckkkkkkkkkkck.",
-        ".kcksssddssskck.",
-        ".kcksssddssskck.",
-        ".kcksssddssskck.",
-        ".kcksssddssskck.",
-        ".kcksssddssskck.",
-        ".kcksssddssskck.",
-        ".kcksssddssskck.",
-        ".kckkkkkkkkkkck.",
-        ".kcccccccccccck.",
-        "...kck....kck...",
-        "...kck....kck...",
-        "..kccck..kccck..",
         "..kccck..kccck..",
         "..kkkkk..kkkkk..",
       ],
